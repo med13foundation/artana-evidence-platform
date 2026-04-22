@@ -1,0 +1,410 @@
+{
+    "file_size": [
+        {
+            "path": "src/routes/admin_routes/dictionary_schemas.py",
+            "max_lines": 850,
+            "reason": "Dictionary schema split is planned as a dedicated API modularization task.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/admin_routes/dictionary.py",
+            "max_lines": 920,
+            "reason": "Dictionary route handlers are temporarily co-located pending route module decomposition.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/domain/repositories/kernel/dictionary_repository.py",
+            "max_lines": 650,
+            "reason": "Repository contract includes the full Semantic Layer surface, including transform verification/promotion methods; split by bounded context is tracked as follow-up.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/repositories/kernel/kernel_dictionary_repository.py",
+            "max_lines": 1600,
+            "reason": "Phase 6 + Phase 7 (versioning/validity + transform governance) expanded repository methods; extraction by concern (search/create/governance/versioning/transforms) remains tracked follow-up work.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/repositories/kernel/dictionary_search.py",
+            "max_lines": 950,
+            "reason": "Search strategy consolidation is deferred until dictionary search behavior is stabilized.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/llm/skills/registry.py",
+            "max_lines": 1050,
+            "reason": "Skill registration remains centralized until per-domain skill modules are extracted.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/kernel/dictionary_management_service.py",
+            "max_lines": 1800,
+            "reason": "Phase 6-8 semantic-layer expansion (domain resolution, unified harness orchestration, and claim-first governance integration) increased service surface while decomposition by bounded workflow is scheduled.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/entity_recognition_service.py",
+            "max_lines": 1900,
+            "reason": "Entity recognition orchestration expanded with claim-first persistence, review-queue coordination, and extraction-failure telemetry; split remains planned after relation persistence helper modularization.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/_entity_recognition_processing_helpers.py",
+            "max_lines": 1200,
+            "reason": "Processing helpers temporarily co-locate ERA document execution and extraction handoff failure handling while follow-up decomposition into stage-specific helper modules is scheduled.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/models/database/kernel/dictionary.py",
+            "max_lines": 1400,
+            "reason": "Dictionary ORM includes expanded versioning/validity and transform-governance fields across multiple tables; model breakup is deferred to schema package reorganization.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/kernel_relations_routes.py",
+            "max_lines": 1300,
+            "reason": "Kernel relation route handlers remain consolidated while graph-route surface and filtering contracts are stabilized; module split is tracked as follow-up.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/authentication_service.py",
+            "max_lines": 650,
+            "reason": "Authentication flows are temporarily centralized while session lifecycle and admin controls finalize; service decomposition is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/_ingestion_scheduling_core_helpers.py",
+            "max_lines": 700,
+            "reason": "Scheduling helper orchestration is currently grouped for deterministic retry and lock behavior; extraction by concern is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/_pipeline_orchestration_execution_helpers.py",
+            "max_lines": 1750,
+            "reason": "Unified pipeline execution helpers stay co-located during orchestration hardening; split into stage-specific modules is planned after run-quality and monitor-scope stabilization.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/_pipeline_orchestration_graph_stage_helpers.py",
+            "max_lines": 700,
+            "reason": "Graph-stage orchestration remains centralized while graph seed inference, persistence, and timing contracts stabilize; extraction into graph-stage submodules is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/_extraction_relation_persistence_helpers.py",
+            "max_lines": 1500,
+            "reason": "Claim-first relation persistence now centralizes candidate normalization, auto-resolve retry gates, and transactional claim/relation recovery; extract into dedicated candidate-flow modules is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/type_definitions/dictionary.py",
+            "max_lines": 800,
+            "reason": "Dictionary TypedDict contracts remain centralized while semantic-layer API stabilization completes; split by capability is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/domain/ports/dictionary_port.py",
+            "max_lines": 800,
+            "reason": "Dictionary port remains broad while bounded interfaces are finalized; decomposition by capability is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/embeddings/text_embedding_provider.py",
+            "max_lines": 800,
+            "reason": "Embedding-provider orchestration remains centralized until provider-specific implementations are extracted.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/factories/ingestion_scheduler_factory.py",
+            "max_lines": 850,
+            "reason": "Scheduler factory co-locates pipeline wiring and per-source runner functions for all 9 connector families; split is planned after runtime stabilization.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/llm/adapters/dictionary_search_harness_adapter.py",
+            "max_lines": 900,
+            "reason": "Dictionary harness adapter remains centralized while search + mapping contracts stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/platform_graph/graph_service/client.py",
+            "max_lines": 2800,
+            "reason": "Typed graph-service client remains centralized while the final standalone API surface and caller migration stabilize; split by bounded API area is planned after cutover completion.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/extraction_service.py",
+            "max_lines": 900,
+            "reason": "Extraction service still co-locates orchestration and persistence integration pending helper-module decomposition.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/graph_connection_service.py",
+            "max_lines": 800,
+            "reason": "Graph-connection orchestration remains centralized while source-type pathways stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/graph_search_service.py",
+            "max_lines": 800,
+            "reason": "Graph-search orchestration remains in one module while interface contracts stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/content_enrichment_service.py",
+            "max_lines": 800,
+            "reason": "Content enrichment remains centralized while retrieval/provider flows stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/database/seeds/seeder.py",
+            "max_lines": 800,
+            "reason": "Seeder orchestration remains consolidated pending seeding package split by domain.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/concept_routes.py",
+            "max_lines": 750,
+            "reason": "Concept routes were delivered together for the initial Concept Manager surface; split by sets/members/aliases/policy/decisions is tracked as follow-up.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/data_sources/pubmed_gateway.py",
+            "max_lines": 850,
+            "reason": "PubMed gateway currently centralizes ESearch/ESummary/EFetch and enrichment parsing while source gateway extraction by API concern is scheduled.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/_source_workflow_monitor_pipeline.py",
+            "max_lines": 950,
+            "reason": "Workflow monitor pipeline helpers remain co-located during quality-gate and event-contract stabilization; split by stage is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/_pubmed_ingestion_helpers.py",
+            "max_lines": 700,
+            "reason": "PubMed ingestion helper remains broad while query repair, validation, and source-specific subflows are being separated.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/_source_workflow_monitor_relations.py",
+            "max_lines": 650,
+            "reason": "Workflow monitor relation helpers remain centralized while persisted-trace and relation-review contracts stabilize; split by review/persisted graph concerns is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/source_workflow_monitor_service.py",
+            "max_lines": 950,
+            "reason": "Source workflow monitor aggregation remains centralized while trace, diagnostic, and cost read models stabilize; service decomposition is planned after monitor contracts settle.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/workflow_monitor_routes.py",
+            "max_lines": 850,
+            "reason": "Workflow monitor route handlers remain consolidated while run-trace, cost, and document/query drill-down APIs stabilize; split by monitor/report concern is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/kernel/concept_management_service.py",
+            "max_lines": 700,
+            "reason": "Concept management orchestration remains centralized during initial rollout; decomposition by policy, decision, and membership workflows is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/_relation_endpoint_entity_resolution_helpers.py",
+            "max_lines": 650,
+            "reason": "Relation endpoint resolution helpers are grouped to preserve deterministic matching behavior while extraction submodules are being finalized.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/_extraction_relation_concept_helpers.py",
+            "max_lines": 1000,
+            "reason": "Concept resolution helpers remain centralized while semantic candidate search, alias reuse, and merge-decision workflows stabilize before further decomposition.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/_extraction_relation_candidate_write_flow.py",
+            "max_lines": 1300,
+            "reason": "Candidate write flow currently centralizes claim-first ordering, evidence-sentence fallback/provenance handling, and conflict recovery; split into smaller flow modules is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/models/database/kernel/concepts.py",
+            "max_lines": 850,
+            "reason": "Concept ORM models and typed payload contracts are temporarily co-located for schema coherence; model-package split is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/kernel_schemas.py",
+            "max_lines": 900,
+            "reason": "Kernel API schema surface remains centralized while claim-graph overlay response contracts stabilize; split by entity/relation/claim schema modules is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/kernel_entities_routes.py",
+            "max_lines": 650,
+            "reason": "Kernel entity routes remain co-located while hybrid-search and similarity API contracts stabilize; extraction by command/query route module is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/agents/services/hypothesis_generation_service.py",
+            "max_lines": 900,
+            "reason": "Hypothesis generation service currently centralizes seed resolution, scoring, deduping, and claim write orchestration; staged helper-module decomposition is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/type_definitions/graph_api_schemas/kernel_schemas.py",
+            "max_lines": 900,
+            "reason": "Shared graph API schema definitions were moved out of route modules into a neutral contract package; split by bounded API area remains follow-up work.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/graph_governance/dictionary_search.py",
+            "max_lines": 950,
+            "reason": "Shared graph governance search remains centralized after extraction from the service package; decomposition by search capability remains follow-up work.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/graph_governance/dictionary_repository.py",
+            "max_lines": 1600,
+            "reason": "Shared graph governance repository intentionally mirrors the full standalone governance surface while the extracted package settles; split by capability remains follow-up work.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/kernel/kernel_relation_projection_materialization_service.py",
+            "max_lines": 700,
+            "reason": "Projection materialization remains centralized while read-model dispatch, freshness, and rebuild orchestration settle; split by rebuild/write concern is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/marrvel_discovery_service.py",
+            "max_lines": 650,
+            "reason": "MARRVEL discovery intentionally keeps query normalization, lazy ingestor resolution, and panel rollup behavior together while the source integration settles; helper extraction is follow-up work.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/type_definitions/data_sources.py",
+            "max_lines": 650,
+            "reason": "Shared data-source metadata contracts remain centralized while ingestion telemetry and AI test payload shapes stabilize; split by metadata family is planned.",
+            "expires_on": "2026-12-31"
+        }
+    ],
+    "class_size": [
+        {
+            "path": "src/domain/ports/dictionary_port.py",
+            "class_name": "DictionaryPort",
+            "max_methods": 50,
+            "reason": "Port remains broad while dictionary capabilities are consolidated behind a single semantic layer boundary, including transform verification/promotion governance.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/domain/repositories/kernel/dictionary_repository.py",
+            "class_name": "DictionaryRepository",
+            "max_methods": 55,
+            "reason": "Repository surface is temporarily wide pending planned segmentation by dictionary dimension, including transform verification/promotion operations.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/repositories/kernel/kernel_dictionary_repository.py",
+            "class_name": "SqlAlchemyDictionaryRepository",
+            "max_methods": 50,
+            "reason": "Implementation is intentionally comprehensive until repository subcomponents are extracted; includes transform creation/verification/promotion governance.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/kernel/dictionary_management_service.py",
+            "class_name": "DictionaryManagementService",
+            "max_methods": 70,
+            "reason": "Service-level orchestration remains centralized while semantic layer interfaces are still evolving.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/platform_graph/graph_service/client.py",
+            "class_name": "GraphServiceClient",
+            "max_methods": 120,
+            "reason": "Typed graph-service client intentionally mirrors the full standalone API surface while caller migration and client generation automation are still being finalized.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/graph_governance/dictionary_repository.py",
+            "class_name": "GraphDictionaryRepository",
+            "max_methods": 50,
+            "reason": "Shared graph governance repository intentionally mirrors the extracted standalone governance surface while follow-up split by capability is tracked separately.",
+            "expires_on": "2026-12-31"
+        }
+    ],
+    "import_count": [
+        {
+            "path": "src/infrastructure/llm/adapters/dictionary_search_harness_adapter.py",
+            "max_imports": 24,
+            "reason": "Harness remains intentionally centralized while staged search strategy and mapping-judge interaction contracts stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/workflow_monitor_routes.py",
+            "max_imports": 25,
+            "reason": "Workflow monitor route remains consolidated while monitoring contracts stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/pipeline_orchestration_routes.py",
+            "max_imports": 25,
+            "reason": "Pipeline orchestration route remains consolidated while orchestration API contracts stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/kernel_relations_routes.py",
+            "max_imports": 25,
+            "reason": "Kernel relation route remains broad pending module split by claim triage, graph filtering, and curation flows.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/factories/ingestion_pipeline_factory.py",
+            "max_imports": 25,
+            "reason": "Ingestion pipeline factory stays centralized while source-specific assembly pathways stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/factories/ingestion_scheduler_factory.py",
+            "max_imports": 43,
+            "reason": "Scheduler factory centralizes orchestration dependencies across all 9 connector families (literature, structured DB, ontology loaders, translational sources including ClinicalTrials.gov, MGI and ZFIN) plus the optional AI evidence-sentence harness wiring for ontology hierarchy edges. Pending dedicated module split.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/dependency_injection/kernel_service_factories.py",
+            "max_imports": 25,
+            "reason": "Kernel DI wiring remains centralized while provider boundaries are refined.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/llm/adapters/mapping_judge_agent_adapter.py",
+            "max_imports": 25,
+            "reason": "Mapping-judge adapter remains consolidated while harness and policy integration stabilizes.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/application/services/_pubmed_ingestion_helpers.py",
+            "max_imports": 25,
+            "reason": "PubMed ingestion helper remains broad while ingestion subflows are being separated.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/graph_connection_routes.py",
+            "max_imports": 20,
+            "reason": "Graph-connection routes aggregate discovery, feature-flag, and constrained suggestion APIs while endpoint decomposition is planned.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/routes/research_spaces/workflow_monitor_stream_dependencies.py",
+            "max_imports": 20,
+            "reason": "Workflow SSE dependency wiring remains centralized while stream/session dependency boundaries stabilize.",
+            "expires_on": "2026-12-31"
+        },
+        {
+            "path": "src/infrastructure/dependency_injection/_kernel_core_service_factories.py",
+            "max_imports": 25,
+            "reason": "Core monolith DI wiring now composes directly from the standalone graph service surface; bounded-factory breakup is deferred until the remaining monolith graph callers are retired.",
+            "expires_on": "2026-12-31"
+        }
+    ]
+}

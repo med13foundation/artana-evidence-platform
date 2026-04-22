@@ -10,14 +10,28 @@ The initial scope is:
 - temporary shared runtime code currently imported from `src/`
 - optional later move of `packages/artana_api`
 
-This repository starts in planning-and-tracking mode so the migration can be
+This repository started in planning-and-tracking mode so the migration could be
 executed deliberately rather than as an ad hoc folder copy.
 
 ## Current Status
 
-As of April 22, 2026, this repository is being prepared as the new home for the
-extracted services. The code has not been imported yet. The first tracked goal
-is to land a bootable baseline import with clear acceptance gates.
+As of April 22, 2026, the first bootable baseline import is in place in this
+repository.
+
+Imported and verified in the extracted repo:
+
+- `services/artana_evidence_db`
+- `services/artana_evidence_api`
+- temporary shared runtime code from `src/`
+- service-relevant `scripts/`, `docs/`, `tests/`, and `packages/artana_api`
+- root extracted-repo tooling such as `Makefile`, `pytest.ini`,
+  `.dockerignore`, and local Postgres helpers
+
+The current migration focus is no longer "copy the code over." The current
+focus is finishing the standalone unwind:
+
+- M2: remove remaining production `src` dependencies from the graph service
+- M3: localize or explicitly own the evidence API shared-runtime dependencies
 
 ## Tracking Docs
 
@@ -45,3 +59,13 @@ Explicitly out of scope for the first cut unless requirements change:
 Get the graph service and evidence API into a dedicated repository with a
 working local/dev/test/deploy loop first, then progressively unwind the
 remaining monorepo shared-runtime dependencies.
+
+## Verified Baseline
+
+The following checks have already been run successfully from this repository:
+
+- `make graph-service-checks`
+- `make artana-evidence-api-service-checks`
+- `make run-graph-service`
+- `make run-artana-evidence-api-service`
+- Docker runtime builds for both service images

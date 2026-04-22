@@ -5,6 +5,14 @@
 This document tracks the extraction of the Artana evidence services from the
 monorepo into `artana-evidence-platform`.
 
+Status update as of April 22, 2026:
+
+- M0 repo scaffold is complete
+- M1 bootable baseline import is complete
+- the repo now owns the copied service code, temporary shared runtime, and
+  service-local validation commands
+- next focus is M2 graph-service standalone unwind
+
 The migration should be treated as a two-stage program:
 
 1. land a bootable extracted repo with minimal path churn
@@ -282,6 +290,11 @@ Success criteria:
 
 Objective: decide whether the public Python SDK should move now or later.
 
+Status update:
+
+- `packages/artana_api` was imported with the baseline cut so existing
+  references and service-adjacent assets continue to resolve in this repo
+
 Reasons to move `packages/artana_api` early:
 
 - service docs already refer to it
@@ -295,9 +308,9 @@ Reasons to defer:
 
 Recommendation:
 
-- move the SDK in phase 2 if not needed in phase 1
-- if deferred, scrub extracted docs so the new repo does not point at missing
-  package paths
+- keep the imported SDK for now so service docs and adjacent assets remain
+  coherent during the extraction
+- revisit whether it stays in this repo as part of M4 release and CI alignment
 
 Success criteria:
 
@@ -359,8 +372,8 @@ Success criteria:
 
 | Milestone | Outcome | Status |
 | --- | --- | --- |
-| M0 | Repo scaffold and tracking docs exist | In progress |
-| M1 | Bootable baseline import with temporary `src/` | Not started |
+| M0 | Repo scaffold and tracking docs exist | Complete |
+| M1 | Bootable baseline import with temporary `src/` | Complete |
 | M2 | Graph service fully standalone | Not started |
 | M3 | Evidence API green with owned shared-runtime boundaries | Not started |
 | M4 | SDK, docs, CI, and deploy topology aligned | Not started |

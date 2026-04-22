@@ -1,0 +1,96 @@
+# ruff: noqa: TC001,TC003
+"""Pydantic schemas for kernel dictionary admin endpoints."""
+
+from __future__ import annotations
+
+from .dictionary_schema_common import (
+    KernelDataType,
+    KernelDictionaryDimension,
+    KernelReviewStatus,
+    KernelSearchMatchMethod,
+    KernelSensitivity,
+)
+from .dictionary_schema_entities_relations import (
+    DictionaryEntityTypeCreateRequest,
+    DictionaryEntityTypeListResponse,
+    DictionaryEntityTypeResponse,
+    DictionaryRelationSynonymCreateRequest,
+    DictionaryRelationSynonymListResponse,
+    DictionaryRelationSynonymResponse,
+    DictionaryRelationTypeCreateRequest,
+    DictionaryRelationTypeListResponse,
+    DictionaryRelationTypeResponse,
+    EntityResolutionPolicyListResponse,
+    EntityResolutionPolicyResponse,
+    RelationConstraintListResponse,
+    RelationConstraintResponse,
+)
+from .dictionary_schema_search_misc import (
+    DictionaryChangelogListResponse,
+    DictionaryChangelogResponse,
+    DictionaryDomainContextListResponse,
+    DictionaryDomainContextResponse,
+    DictionaryReembedRequest,
+    DictionaryReembedResponse,
+    DictionarySearchListResponse,
+    DictionarySearchResultResponse,
+)
+from .dictionary_schema_value_sets import (
+    ValueSetCreateRequest,
+    ValueSetItemActiveRequest,
+    ValueSetItemCreateRequest,
+    ValueSetItemListResponse,
+    ValueSetItemResponse,
+    ValueSetListResponse,
+    ValueSetResponse,
+)
+from .dictionary_schema_variables import (
+    DictionaryMergeRequest,
+    VariableDefinitionCreateRequest,
+    VariableDefinitionListResponse,
+    VariableDefinitionResponse,
+    VariableDefinitionReviewStatusRequest,
+    VariableDefinitionRevokeRequest,
+)
+
+__all__ = [
+    "DictionaryChangelogListResponse",
+    "DictionaryChangelogResponse",
+    "DictionaryDomainContextListResponse",
+    "DictionaryDomainContextResponse",
+    "DictionaryEntityTypeCreateRequest",
+    "DictionaryEntityTypeListResponse",
+    "DictionaryEntityTypeResponse",
+    "DictionaryMergeRequest",
+    "DictionaryReembedRequest",
+    "DictionaryReembedResponse",
+    "DictionaryRelationSynonymCreateRequest",
+    "DictionaryRelationSynonymListResponse",
+    "DictionaryRelationSynonymResponse",
+    "DictionaryRelationTypeCreateRequest",
+    "DictionaryRelationTypeListResponse",
+    "DictionaryRelationTypeResponse",
+    "DictionarySearchListResponse",
+    "DictionarySearchResultResponse",
+    "EntityResolutionPolicyListResponse",
+    "EntityResolutionPolicyResponse",
+    "KernelDataType",
+    "KernelDictionaryDimension",
+    "KernelReviewStatus",
+    "KernelSearchMatchMethod",
+    "KernelSensitivity",
+    "RelationConstraintListResponse",
+    "RelationConstraintResponse",
+    "ValueSetCreateRequest",
+    "ValueSetItemActiveRequest",
+    "ValueSetItemCreateRequest",
+    "ValueSetItemListResponse",
+    "ValueSetItemResponse",
+    "ValueSetListResponse",
+    "ValueSetResponse",
+    "VariableDefinitionCreateRequest",
+    "VariableDefinitionListResponse",
+    "VariableDefinitionResponse",
+    "VariableDefinitionReviewStatusRequest",
+    "VariableDefinitionRevokeRequest",
+]

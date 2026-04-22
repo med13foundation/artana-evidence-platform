@@ -1,0 +1,192 @@
+{
+  "fixture_name": "SUPPLEMENTAL_BOUNDED_CHASE_CONTINUE",
+  "runs": [
+    {
+      "run_id": "supplemental-bounded-chase-run-1",
+      "objective": "Investigate BRCA1 and PARP inhibitor response.",
+      "sources": {
+        "pubmed": true,
+        "clinvar": true,
+        "drugbank": true,
+        "alphafold": true
+      },
+      "deterministic_baseline": {
+        "run_id": "synthetic-baseline-supplemental-bounded-chase-continue-1",
+        "status": "completed",
+        "telemetry": {
+          "status": "unavailable",
+          "model_terminal_count": 0,
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "total_tokens": null,
+          "cost_usd": null,
+          "latency_seconds": null,
+          "tool_call_count": 0
+        },
+        "telemetry_run_ids": [
+          "synthetic-baseline-supplemental-bounded-chase-continue-1"
+        ],
+        "cost_comparison": {
+          "status": "unavailable",
+          "evaluated": false,
+          "baseline_status": "unavailable",
+          "planner_status": "unavailable",
+          "baseline_total_cost_usd": null,
+          "baseline_total_tokens": null,
+          "baseline_latency_seconds": null,
+          "planner_total_cost_usd": null,
+          "planner_total_tokens": null,
+          "planner_latency_seconds": null,
+          "planner_vs_baseline_cost_ratio": null,
+          "gate_within_2x_baseline": null,
+          "notes": "Synthetic bounded-chase continuation fixture uses offline deterministic target snapshots only."
+        },
+        "environment": {
+          "compare_mode": "synthetic_fixture",
+          "planner_mode": "shadow"
+        }
+      },
+      "checkpoints": [
+        {
+          "checkpoint_key": "after_bootstrap",
+          "workspace_summary": {
+            "checkpoint_key": "after_bootstrap",
+            "objective": "Investigate BRCA1 and PARP inhibitor response.",
+            "current_round": 0,
+            "counts": {
+              "documents_ingested": 11,
+              "proposal_count": 29,
+              "pending_question_count": 1,
+              "evidence_gap_count": 1,
+              "contradiction_count": 0,
+              "error_count": 0
+            },
+            "enabled_sources": {
+              "pubmed": true,
+              "clinvar": true,
+              "drugbank": true,
+              "alphafold": true
+            },
+            "source_taxonomy": {
+              "live_evidence": [
+                "pubmed",
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "context_only": [],
+              "reserved": []
+            },
+            "available_chase_source_keys": [
+              "clinvar",
+              "drugbank",
+              "alphafold"
+            ],
+            "chase_candidates": [
+              {
+                "entity_id": "entity-parp-response",
+                "display_label": "PARP inhibitor response",
+                "normalized_label": "PARP INHIBITOR RESPONSE",
+                "candidate_rank": 1,
+                "observed_round": 1,
+                "available_source_keys": [
+                  "clinvar",
+                  "drugbank",
+                  "alphafold"
+                ],
+                "evidence_basis": "The entity was created recently in the graph, was not already present in the prior seed set, and directly sharpens the BRCA1 and PARP response objective.",
+                "novelty_basis": "not_in_previous_seed_terms"
+              },
+              {
+                "entity_id": "entity-brca1-cterm",
+                "display_label": "BRCA1 C Terminus domain",
+                "normalized_label": "BRCA1 C TERMINUS DOMAIN",
+                "candidate_rank": 2,
+                "observed_round": 1,
+                "available_source_keys": [
+                  "clinvar",
+                  "drugbank",
+                  "alphafold"
+                ],
+                "evidence_basis": "The entity was created recently in the graph, was not already present in the prior seed set, and grounds the chase around a BRCA1-specific mechanistic handle.",
+                "novelty_basis": "not_in_previous_seed_terms"
+              },
+              {
+                "entity_id": "entity-parp1",
+                "display_label": "PARP1",
+                "normalized_label": "PARP1",
+                "candidate_rank": 3,
+                "observed_round": 1,
+                "available_source_keys": [
+                  "clinvar",
+                  "drugbank",
+                  "alphafold"
+                ],
+                "evidence_basis": "The entity was created recently in the graph and stays tightly aligned with the drug-response objective through the PARP mechanism.",
+                "novelty_basis": "not_in_previous_seed_terms"
+              },
+              {
+                "entity_id": "entity-hrr-deficiency",
+                "display_label": "Homologous recombination deficiency",
+                "normalized_label": "HOMOLOGOUS RECOMBINATION DEFICIENCY",
+                "candidate_rank": 4,
+                "observed_round": 1,
+                "available_source_keys": [
+                  "clinvar",
+                  "drugbank",
+                  "alphafold"
+                ],
+                "evidence_basis": "The entity was created recently in the graph and represents a concise downstream biology concept worth a bounded chase for BRCA1 and PARP sensitivity.",
+                "novelty_basis": "not_in_previous_seed_terms"
+              }
+            ],
+            "filtered_chase_candidates": [],
+            "deterministic_selection": {
+              "selected_entity_ids": [
+                "entity-parp-response",
+                "entity-brca1-cterm",
+                "entity-parp1",
+                "entity-hrr-deficiency"
+              ],
+              "selected_labels": [
+                "PARP inhibitor response",
+                "BRCA1 C Terminus domain",
+                "PARP1",
+                "Homologous recombination deficiency"
+              ],
+              "stop_instead": false,
+              "stop_reason": null,
+              "selection_basis": "The deterministic baseline keeps a bounded BRCA1 and PARP chase set that stays close to the objective and avoids broad noisy expansion."
+            },
+            "deterministic_chase_threshold": 3,
+            "deterministic_candidate_count": 4,
+            "filtered_chase_candidate_count": 0,
+            "filtered_chase_filter_reason_counts": {},
+            "deterministic_threshold_met": true
+          },
+          "deterministic_target": {
+            "action_type": "RUN_CHASE_ROUND",
+            "source_key": null,
+            "round_number": 1,
+            "step_key": "fixture.after_bootstrap.run_chase_round",
+            "action_input": {
+              "selected_entity_ids": [
+                "entity-parp-response",
+                "entity-brca1-cterm",
+                "entity-parp1",
+                "entity-hrr-deficiency"
+              ],
+              "selected_labels": [
+                "PARP inhibitor response",
+                "BRCA1 C Terminus domain",
+                "PARP1",
+                "Homologous recombination deficiency"
+              ],
+              "selection_basis": "The deterministic baseline keeps a bounded BRCA1 and PARP chase set that stays close to the objective and avoids broad noisy expansion."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

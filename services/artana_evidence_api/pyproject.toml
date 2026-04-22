@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "artana-evidence-api"
+version = "0.1.0"
+description = "Standalone Artana graph harness API service"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["artana_evidence_api*"]

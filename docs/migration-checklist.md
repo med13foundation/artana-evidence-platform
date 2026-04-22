@@ -11,9 +11,9 @@ Legend:
 ## Current Snapshot
 
 - Date anchored: April 22, 2026
-- Repo status: planning scaffold created
-- Code imported: no
-- Active milestone: M0
+- Repo status: bootable baseline import completed
+- Code imported: yes
+- Active milestone: M2
 
 ## M0: Repo Scaffold
 
@@ -21,29 +21,29 @@ Legend:
 - [x] Add a root README that explains the extraction target
 - [x] Add a detailed migration plan
 - [x] Add a progress checklist
-- [ ] Decide whether to work directly on `main` or use a migration branch
+- [x] Decide whether to work directly on `main` or use a migration branch
 
 ## M1: Bootable Baseline Import
 
-- [ ] Import `services/artana_evidence_db`
-- [ ] Import `services/artana_evidence_api`
-- [ ] Import `src/` as temporary shared runtime code
-- [ ] Import service-relevant `scripts/`
-- [ ] Import service-relevant `docs/`
-- [ ] Import `tests/e2e/artana_evidence_api/`
-- [ ] Import `pytest.ini`
-- [ ] Import `.dockerignore`
-- [ ] Add a slim root `Makefile` focused on extracted services only
-- [ ] Verify both services import in the new repo
-- [ ] Verify both Dockerfiles still build in the new repo
+- [x] Import `services/artana_evidence_db`
+- [x] Import `services/artana_evidence_api`
+- [x] Import `src/` as temporary shared runtime code
+- [x] Import service-relevant `scripts/`
+- [x] Import service-relevant `docs/`
+- [x] Import `tests/e2e/artana_evidence_api/`
+- [x] Import `pytest.ini`
+- [x] Import `.dockerignore`
+- [x] Add a slim root `Makefile` focused on extracted services only
+- [x] Verify both services import in the new repo
+- [x] Verify both Dockerfiles still build in the new repo
 
 ## M1 Gates
 
-- [ ] Run graph OpenAPI export check
-- [ ] Run evidence API OpenAPI export check
-- [ ] Run graph lint/type/test gate
-- [ ] Run evidence API lint/type/test gate
-- [ ] Confirm the new repo can boot both services locally
+- [x] Run graph OpenAPI export check
+- [x] Run evidence API OpenAPI export check
+- [x] Run graph lint/type/test gate
+- [x] Run evidence API lint/type/test gate
+- [x] Confirm the new repo can boot both services locally
 
 ## M2: Graph Service Final Standalone Pass
 
@@ -99,9 +99,9 @@ Legend:
 
 ## M4: SDK, Docs, CI, and Deploy Alignment
 
-- [ ] Decide whether `packages/artana_api` moves in phase 1 or phase 2
-- [ ] If moving SDK: import `packages/artana_api`
-- [ ] If deferring SDK: remove or rewrite extracted doc references to it
+- [x] Decide whether `packages/artana_api` moves in phase 1 or phase 2
+- [x] If moving SDK: import `packages/artana_api`
+- [-] If deferring SDK: remove or rewrite extracted doc references to it
 - [ ] Add CI workflow for graph-service checks
 - [ ] Add CI workflow for evidence API service checks
 - [ ] Add deployment workflow for graph service
@@ -125,8 +125,8 @@ Legend:
 
 - [ ] Keep `src/` name temporarily or rename after M1
 - [ ] Separate databases immediately or use temporary shared Postgres topology
-- [ ] Include Python SDK now or later
-- [ ] Decide whether first code import lands on `main` or a migration branch
+- [x] Include Python SDK now or later
+- [x] Decide whether first code import lands on `main` or a migration branch
 
 ## Progress Notes
 
@@ -135,6 +135,10 @@ Use this section as the running log while executing the migration.
 ### Notes
 
 - April 22, 2026: repo scaffold created with plan and checklist
+- April 22, 2026: bootable baseline import landed with `services/`, temporary `src/`, root tooling, selected tests, scripts, and docs
+- April 22, 2026: verified `make graph-service-checks` and `make artana-evidence-api-service-checks` from this repo
+- April 22, 2026: verified both services boot locally from this repo after adjusting `setup-postgres` to reuse an already reachable `DATABASE_URL`
+- April 22, 2026: verified both runtime Docker images build from this repo
 
 ### Known Facts to Preserve During Migration
 

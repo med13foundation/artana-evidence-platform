@@ -1,0 +1,22 @@
+{
+  "extends": ["next/core-web-vitals", "plugin:tailwindcss/recommended"],
+  "settings": {
+    "tailwindcss": {
+      "config": "./tailwind.config.ts"
+    }
+  },
+  "rules": {
+    "tailwindcss/no-custom-classname": [
+      "warn",
+      {
+        "whitelist": [
+          "from-brand-primary/8",
+          "to-brand-secondary/8",
+          "from-brand-primary/(.*)",
+          "to-brand-secondary/(.*)",
+          "via-brand-(.*)"
+        ]
+      }
+    ]
+  }
+}

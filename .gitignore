@@ -1,0 +1,72 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+pip-wheel-metadata/
+*.egg-info/
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.hypothesis/
+.pytest_cache/
+
+# Environments
+.env
+.env.postgres
+.postgres-active
+.venv/
+venv/
+env/
+ENV/
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+
+# Type checker caches
+.mypy_cache/
+.ruff_cache/
+.pyre/
+
+# QA output
+reports/
+bandit-results.json
+pip-audit-results.json
+safety-results.json
+*-results.json
+
+# Databases and local data
+*.db
+*.sqlite
+*.sqlite3
+data/raw/
+data/transformed/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

@@ -1,0 +1,2109 @@
+{
+  "fixture_name": "BRCA1",
+  "runs": [
+    {
+      "run_id": "brca1-run-1",
+      "objective": "Investigate BRCA1 and PARP inhibitor response.",
+      "sources": {
+        "pubmed": true,
+        "clinvar": true,
+        "alphafold": true,
+        "drugbank": true
+      },
+      "deterministic_baseline": {
+        "run_id": "f3b3c50a-8dd8-4514-a2bc-07b7a51976ba",
+        "status": "completed",
+        "telemetry": {
+          "status": "unavailable",
+          "model_terminal_count": 0,
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "total_tokens": null,
+          "cost_usd": null,
+          "latency_seconds": null,
+          "tool_call_count": 0
+        },
+        "telemetry_run_ids": [
+          "f3b3c50a-8dd8-4514-a2bc-07b7a51976ba",
+          "492b5638-6bb4-460a-ab4a-a5659f027dea"
+        ],
+        "cost_comparison": {
+          "status": "unavailable",
+          "evaluated": false,
+          "baseline_status": "unavailable",
+          "planner_status": "unavailable",
+          "baseline_total_cost_usd": null,
+          "baseline_total_tokens": null,
+          "baseline_latency_seconds": null,
+          "planner_total_cost_usd": null,
+          "planner_total_tokens": null,
+          "planner_latency_seconds": null,
+          "planner_vs_baseline_cost_ratio": null,
+          "gate_within_2x_baseline": null,
+          "notes": "Cost comparison is unavailable until both deterministic baseline and shadow planner telemetry are present."
+        },
+        "environment": {
+          "pubmed_search_backend": "deterministic",
+          "compare_mode": "shared_baseline_replay",
+          "planner_mode": "shadow",
+          "pubmed_replay_mode": "selected_candidates",
+          "pubmed_replay_query_count": 4,
+          "pubmed_replay_selected_count": 10
+        }
+      },
+      "checkpoints": [
+        {
+          "checkpoint_key": "before_first_action",
+          "workspace_summary": {
+            "active_contradictions": [],
+            "available_chase_source_keys": [],
+            "chase_candidates": [],
+            "checkpoint_key": "before_first_action",
+            "counts": {
+              "contradiction_count": 0,
+              "documents_ingested": 0,
+              "error_count": 0,
+              "evidence_gap_count": 0,
+              "pending_question_count": 0,
+              "proposal_count": 0
+            },
+            "current_round": 0,
+            "deterministic_candidate_count": 0,
+            "deterministic_chase_threshold": 0,
+            "deterministic_selection": {},
+            "deterministic_threshold_met": false,
+            "enabled_sources": {
+              "alphafold": true,
+              "clinical_trials": false,
+              "clinvar": true,
+              "drugbank": true,
+              "hgnc": false,
+              "marrvel": false,
+              "mgi": false,
+              "mondo": false,
+              "pdf": false,
+              "pubmed": true,
+              "text": false,
+              "uniprot": false,
+              "zfin": false
+            },
+            "mode": "shadow",
+            "objective": "Investigate BRCA1 and PARP inhibitor response.",
+            "objective_routing_hints": {
+              "objective_tags": [
+                "drug_mechanism"
+              ],
+              "preferred_pending_structured_sources": [],
+              "preferred_structured_sources": [
+                "drugbank",
+                "clinvar",
+                "alphafold"
+              ],
+              "summary": "Structured-source routing hints are recorded for later checkpoints and should not drive the current step selection yet."
+            },
+            "planner_actions": {
+              "context_only": [
+                {
+                  "action_type": "INITIALIZE_WORKSPACE",
+                  "default_source_key": null,
+                  "planner_state": "context_only",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Initialize the durable workspace from request inputs."
+                },
+                {
+                  "action_type": "DERIVE_DRIVEN_TERMS",
+                  "default_source_key": null,
+                  "planner_state": "context_only",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Derive Round 2 driven terms from PubMed findings plus seed terms."
+                },
+                {
+                  "action_type": "REVIEW_PDF_WORKSET",
+                  "default_source_key": "pdf",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Review the current PDF workset as existing user-supplied evidence."
+                },
+                {
+                  "action_type": "REVIEW_TEXT_WORKSET",
+                  "default_source_key": "text",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Review the current text workset as existing user-supplied evidence."
+                },
+                {
+                  "action_type": "LOAD_MONDO_GROUNDING",
+                  "default_source_key": "mondo",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Load MONDO grounding context as a deferred ontology step."
+                }
+              ],
+              "live": [
+                {
+                  "action_type": "QUERY_PUBMED",
+                  "default_source_key": "pubmed",
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Run deterministic PubMed discovery queries."
+                },
+                {
+                  "action_type": "INGEST_AND_EXTRACT_PUBMED",
+                  "default_source_key": "pubmed",
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Ingest selected PubMed documents and extract evidence-backed proposals."
+                },
+                {
+                  "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Run deterministic structured enrichment for one enabled source."
+                },
+                {
+                  "action_type": "RUN_BOOTSTRAP",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Queue and execute governed research bootstrap as a child run."
+                },
+                {
+                  "action_type": "RUN_CHASE_ROUND",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Run one deterministic chase round over newly created entities."
+                },
+                {
+                  "action_type": "GENERATE_BRIEF",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Generate and store the final research brief."
+                },
+                {
+                  "action_type": "ESCALATE_TO_HUMAN",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Escalate a blocked or risky run to a human operator."
+                },
+                {
+                  "action_type": "STOP",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Record the terminal stop reason for the orchestrator run."
+                }
+              ],
+              "reserved": [
+                {
+                  "action_type": "RUN_UNIPROT_GROUNDING",
+                  "default_source_key": "uniprot",
+                  "planner_state": "reserved",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Reserve an explicit UniProt grounding action for later phases."
+                },
+                {
+                  "action_type": "RUN_HGNC_GROUNDING",
+                  "default_source_key": "hgnc",
+                  "planner_state": "reserved",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Reserve an explicit HGNC grounding action for later phases."
+                },
+                {
+                  "action_type": "RUN_GRAPH_CONNECTION",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a graph-connection action for later planner-led phases."
+                },
+                {
+                  "action_type": "RUN_HYPOTHESIS_GENERATION",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a hypothesis-generation action for later planner-led phases."
+                },
+                {
+                  "action_type": "RUN_GRAPH_SEARCH",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a graph-search action for later planner-led phases."
+                },
+                {
+                  "action_type": "SEARCH_DISCONFIRMING",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a disconfirming-evidence search action for later phases."
+                }
+              ]
+            },
+            "planner_constraints": {
+              "control_action_types_without_source_key": [
+                "RUN_BOOTSTRAP",
+                "RUN_CHASE_ROUND",
+                "GENERATE_BRIEF",
+                "ESCALATE_TO_HUMAN",
+                "STOP"
+              ],
+              "live_action_types": [
+                "QUERY_PUBMED",
+                "INGEST_AND_EXTRACT_PUBMED",
+                "RUN_STRUCTURED_ENRICHMENT",
+                "RUN_BOOTSTRAP",
+                "RUN_CHASE_ROUND",
+                "GENERATE_BRIEF",
+                "ESCALATE_TO_HUMAN",
+                "STOP"
+              ],
+              "pending_structured_enrichment_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "pubmed_ingest_pending": false,
+              "pubmed_source_key": "pubmed",
+              "source_required_action_types": [
+                "QUERY_PUBMED",
+                "INGEST_AND_EXTRACT_PUBMED",
+                "RUN_STRUCTURED_ENRICHMENT"
+              ],
+              "source_taxonomy": {
+                "context_only": [],
+                "live_evidence": [
+                  "pubmed",
+                  "clinvar",
+                  "drugbank",
+                  "alphafold"
+                ],
+                "reserved": []
+              },
+              "structured_enrichment_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ]
+            },
+            "prior_decisions": [
+              {
+                "action_input": {
+                  "seed_terms": [
+                    "BRCA1",
+                    "PARP inhibitor"
+                  ]
+                },
+                "action_type": "QUERY_PUBMED",
+                "budget_estimate": null,
+                "decision_id": "0f460ce7-d6d4-5978-b9cd-fd970b355cb0",
+                "evidence_basis": "Deterministic Phase 1 baseline will run PubMed discovery before structured enrichment.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "pubmed",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.pubmed.query_pubmed",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "max_hypotheses": 20
+                },
+                "action_type": "INGEST_AND_EXTRACT_PUBMED",
+                "budget_estimate": null,
+                "decision_id": "c2e4132b-e524-5c22-81cf-45687fdd8a91",
+                "evidence_basis": "Deterministic Phase 1 baseline will ingest selected PubMed records and extract proposals.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "pubmed",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.pubmed.ingest_and_extract_pubmed",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "seed_terms": [
+                    "BRCA1",
+                    "PARP inhibitor"
+                  ]
+                },
+                "action_type": "DERIVE_DRIVEN_TERMS",
+                "budget_estimate": null,
+                "decision_id": "bbc873b4-c000-58d1-b91a-8cdbaecd0b61",
+                "evidence_basis": "Driven terms are deterministically derived after the PubMed-backed phase.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.derive_driven_terms",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "clinvar"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "19745a1c-872e-5517-a7fc-c1d2321fe484",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "clinvar",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.clinvar.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "drugbank"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "be0955ad-a644-53c0-916f-5fd6366571b0",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "drugbank",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.drugbank.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "alphafold"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "8b0c83d7-f38b-5263-b1a9-b946c3d3c61a",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "alphafold",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.alphafold.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "max_depth": 2
+                },
+                "action_type": "RUN_BOOTSTRAP",
+                "budget_estimate": null,
+                "decision_id": "6aac4b14-3e5b-50ff-ad88-31a9f9b52ba5",
+                "evidence_basis": "The deterministic baseline queues governed bootstrap after source enrichment.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.run_bootstrap",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "round_number": 1
+                },
+                "action_type": "RUN_CHASE_ROUND",
+                "budget_estimate": null,
+                "decision_id": "575af0e7-044c-51ad-9bc3-c157f797326c",
+                "evidence_basis": "The deterministic baseline can execute up to two chase rounds using existing thresholds.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 1,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_1.control.run_chase_round",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "round_number": 2
+                },
+                "action_type": "RUN_CHASE_ROUND",
+                "budget_estimate": null,
+                "decision_id": "4f0b60e1-c61a-511a-820d-bc82bd62126c",
+                "evidence_basis": "The deterministic baseline can execute up to two chase rounds using existing thresholds.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 2,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_2.control.run_chase_round",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "result_key": "research_brief"
+                },
+                "action_type": "GENERATE_BRIEF",
+                "budget_estimate": null,
+                "decision_id": "1f64fe95-c40a-5687-bf01-6569c41941d4",
+                "evidence_basis": "The deterministic baseline ends by generating and storing the research brief.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.generate_brief",
+                "stop_reason": null
+              }
+            ],
+            "remaining_hard_limits": {
+              "max_chase_rounds": 2,
+              "max_hypotheses": 20,
+              "max_total_rounds": 3
+            },
+            "seed_terms": [
+              "BRCA1",
+              "PARP inhibitor"
+            ],
+            "source_status_summary": {
+              "alphafold": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "pending"
+              },
+              "clinical_trials": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "clinvar": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "pending"
+              },
+              "drugbank": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "pending"
+              },
+              "hgnc": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "marrvel": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "mgi": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "mondo": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "pdf": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": 0,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "pubmed": {
+                "documents_discovered": 0,
+                "documents_ingested": 0,
+                "documents_selected": 0,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "pending"
+              },
+              "text": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": 0,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "uniprot": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "zfin": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              }
+            },
+            "source_taxonomy": {
+              "context_only": [],
+              "live_evidence": [
+                "pubmed",
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "reserved": []
+            },
+            "synthesis_readiness": {
+              "chase_round_threshold_not_met": false,
+              "grounded_evidence_present": false,
+              "no_contradictions": true,
+              "no_errors": true,
+              "no_evidence_gaps": true,
+              "no_pending_questions": true,
+              "no_pending_structured_sources": false,
+              "pending_structured_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "ready_for_brief": false,
+              "summary": "Another bounded retrieval step still has qualitative value because grounded evidence is still limited; structured sources remain pending (clinvar, drugbank, alphafold)."
+            },
+            "top_evidence_gaps": []
+          },
+          "deterministic_target": {
+            "action_type": "QUERY_PUBMED",
+            "round_number": 0,
+            "step_key": "full-ai-orchestrator.v1.round_0.pubmed.query_pubmed",
+            "source_key": "pubmed"
+          }
+        },
+        {
+          "checkpoint_key": "before_terminal_stop",
+          "workspace_summary": {
+            "active_contradictions": [],
+            "available_chase_source_keys": [],
+            "chase_candidates": [],
+            "checkpoint_key": "before_terminal_stop",
+            "counts": {
+              "contradiction_count": 0,
+              "documents_ingested": 10,
+              "error_count": 43,
+              "evidence_gap_count": 0,
+              "pending_question_count": 3,
+              "proposal_count": 17
+            },
+            "current_round": 0,
+            "deterministic_candidate_count": 0,
+            "deterministic_chase_threshold": 0,
+            "deterministic_selection": {},
+            "deterministic_threshold_met": false,
+            "enabled_sources": {
+              "alphafold": true,
+              "clinical_trials": false,
+              "clinvar": true,
+              "drugbank": true,
+              "hgnc": false,
+              "marrvel": false,
+              "mgi": false,
+              "mondo": false,
+              "pdf": false,
+              "pubmed": true,
+              "text": false,
+              "uniprot": false,
+              "zfin": false
+            },
+            "mode": "shadow",
+            "objective": "Investigate BRCA1 and PARP inhibitor response.",
+            "objective_routing_hints": {
+              "objective_tags": [
+                "drug_mechanism"
+              ],
+              "preferred_pending_structured_sources": [],
+              "preferred_structured_sources": [
+                "drugbank",
+                "clinvar",
+                "alphafold"
+              ],
+              "summary": "Structured-source routing hints are recorded for later checkpoints and should not drive the current step selection yet."
+            },
+            "planner_actions": {
+              "context_only": [
+                {
+                  "action_type": "INITIALIZE_WORKSPACE",
+                  "default_source_key": null,
+                  "planner_state": "context_only",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Initialize the durable workspace from request inputs."
+                },
+                {
+                  "action_type": "DERIVE_DRIVEN_TERMS",
+                  "default_source_key": null,
+                  "planner_state": "context_only",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Derive Round 2 driven terms from PubMed findings plus seed terms."
+                },
+                {
+                  "action_type": "REVIEW_PDF_WORKSET",
+                  "default_source_key": "pdf",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Review the current PDF workset as existing user-supplied evidence."
+                },
+                {
+                  "action_type": "REVIEW_TEXT_WORKSET",
+                  "default_source_key": "text",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Review the current text workset as existing user-supplied evidence."
+                },
+                {
+                  "action_type": "LOAD_MONDO_GROUNDING",
+                  "default_source_key": "mondo",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Load MONDO grounding context as a deferred ontology step."
+                }
+              ],
+              "live": [
+                {
+                  "action_type": "QUERY_PUBMED",
+                  "default_source_key": "pubmed",
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Run deterministic PubMed discovery queries."
+                },
+                {
+                  "action_type": "INGEST_AND_EXTRACT_PUBMED",
+                  "default_source_key": "pubmed",
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Ingest selected PubMed documents and extract evidence-backed proposals."
+                },
+                {
+                  "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Run deterministic structured enrichment for one enabled source."
+                },
+                {
+                  "action_type": "RUN_BOOTSTRAP",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Queue and execute governed research bootstrap as a child run."
+                },
+                {
+                  "action_type": "RUN_CHASE_ROUND",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Run one deterministic chase round over newly created entities."
+                },
+                {
+                  "action_type": "GENERATE_BRIEF",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Generate and store the final research brief."
+                },
+                {
+                  "action_type": "ESCALATE_TO_HUMAN",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Escalate a blocked or risky run to a human operator."
+                },
+                {
+                  "action_type": "STOP",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Record the terminal stop reason for the orchestrator run."
+                }
+              ],
+              "reserved": [
+                {
+                  "action_type": "RUN_UNIPROT_GROUNDING",
+                  "default_source_key": "uniprot",
+                  "planner_state": "reserved",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Reserve an explicit UniProt grounding action for later phases."
+                },
+                {
+                  "action_type": "RUN_HGNC_GROUNDING",
+                  "default_source_key": "hgnc",
+                  "planner_state": "reserved",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Reserve an explicit HGNC grounding action for later phases."
+                },
+                {
+                  "action_type": "RUN_GRAPH_CONNECTION",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a graph-connection action for later planner-led phases."
+                },
+                {
+                  "action_type": "RUN_HYPOTHESIS_GENERATION",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a hypothesis-generation action for later planner-led phases."
+                },
+                {
+                  "action_type": "RUN_GRAPH_SEARCH",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a graph-search action for later planner-led phases."
+                },
+                {
+                  "action_type": "SEARCH_DISCONFIRMING",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a disconfirming-evidence search action for later phases."
+                }
+              ]
+            },
+            "planner_constraints": {
+              "control_action_types_without_source_key": [
+                "RUN_BOOTSTRAP",
+                "RUN_CHASE_ROUND",
+                "GENERATE_BRIEF",
+                "ESCALATE_TO_HUMAN",
+                "STOP"
+              ],
+              "live_action_types": [
+                "QUERY_PUBMED",
+                "INGEST_AND_EXTRACT_PUBMED",
+                "RUN_STRUCTURED_ENRICHMENT",
+                "RUN_BOOTSTRAP",
+                "RUN_CHASE_ROUND",
+                "GENERATE_BRIEF",
+                "ESCALATE_TO_HUMAN",
+                "STOP"
+              ],
+              "pending_structured_enrichment_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "pubmed_ingest_pending": false,
+              "pubmed_source_key": "pubmed",
+              "source_required_action_types": [
+                "QUERY_PUBMED",
+                "INGEST_AND_EXTRACT_PUBMED",
+                "RUN_STRUCTURED_ENRICHMENT"
+              ],
+              "source_taxonomy": {
+                "context_only": [],
+                "live_evidence": [
+                  "pubmed",
+                  "clinvar",
+                  "drugbank",
+                  "alphafold"
+                ],
+                "reserved": []
+              },
+              "structured_enrichment_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ]
+            },
+            "prior_decisions": [
+              {
+                "action_input": {
+                  "seed_terms": [
+                    "BRCA1",
+                    "PARP inhibitor"
+                  ]
+                },
+                "action_type": "QUERY_PUBMED",
+                "budget_estimate": null,
+                "decision_id": "0f460ce7-d6d4-5978-b9cd-fd970b355cb0",
+                "evidence_basis": "Deterministic Phase 1 baseline will run PubMed discovery before structured enrichment.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true,
+                  "pubmed_source_summary": {
+                    "documents_discovered": 20,
+                    "documents_ingested": 0,
+                    "documents_selected": 10,
+                    "documents_skipped_duplicate": 0,
+                    "observations_created": 0,
+                    "selected": true,
+                    "status": "completed"
+                  },
+                  "sources": {
+                    "alphafold": true,
+                    "clinical_trials": false,
+                    "clinvar": true,
+                    "drugbank": true,
+                    "hgnc": false,
+                    "marrvel": false,
+                    "mgi": false,
+                    "mondo": false,
+                    "pdf": false,
+                    "pubmed": true,
+                    "text": false,
+                    "uniprot": false,
+                    "zfin": false
+                  }
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "pubmed",
+                "status": "completed",
+                "step_key": "full-ai-orchestrator.v1.round_0.pubmed.query_pubmed",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "max_hypotheses": 20
+                },
+                "action_type": "INGEST_AND_EXTRACT_PUBMED",
+                "budget_estimate": null,
+                "decision_id": "c2e4132b-e524-5c22-81cf-45687fdd8a91",
+                "evidence_basis": "Deterministic Phase 1 baseline will ingest selected PubMed records and extract proposals.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "candidate_count": 10,
+                  "documents_ingested": 10,
+                  "planned": true,
+                  "proposal_count": 17,
+                  "selected_document_count": 13
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "pubmed",
+                "status": "completed",
+                "step_key": "full-ai-orchestrator.v1.round_0.pubmed.ingest_and_extract_pubmed",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "seed_terms": [
+                    "BRCA1",
+                    "PARP inhibitor"
+                  ]
+                },
+                "action_type": "DERIVE_DRIVEN_TERMS",
+                "budget_estimate": null,
+                "decision_id": "bbc873b4-c000-58d1-b91a-8cdbaecd0b61",
+                "evidence_basis": "Driven terms are deterministically derived after the PubMed-backed phase.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "driven_genes_from_pubmed": [
+                    "BRCA1",
+                    "PARP"
+                  ],
+                  "driven_terms": [
+                    "BRCA1",
+                    "PARP",
+                    "PARP inhibitor"
+                  ],
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "completed",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.derive_driven_terms",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "clinvar"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "19745a1c-872e-5517-a7fc-c1d2321fe484",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true,
+                  "source_summary": {
+                    "observations_created": 0,
+                    "records_processed": 20,
+                    "selected": true,
+                    "status": "completed"
+                  }
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "clinvar",
+                "status": "completed",
+                "step_key": "full-ai-orchestrator.v1.round_0.clinvar.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "drugbank"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "be0955ad-a644-53c0-916f-5fd6366571b0",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true,
+                  "source_summary": {
+                    "alias_candidates_count": 0,
+                    "alias_entities_touched": 0,
+                    "alias_errors": [],
+                    "aliases_persisted": 0,
+                    "aliases_skipped": 0,
+                    "observations_created": 0,
+                    "records_processed": 0,
+                    "selected": true,
+                    "status": "completed"
+                  }
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "drugbank",
+                "status": "completed",
+                "step_key": "full-ai-orchestrator.v1.round_0.drugbank.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "alphafold"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "8b0c83d7-f38b-5263-b1a9-b946c3d3c61a",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true,
+                  "source_summary": {
+                    "observations_created": 0,
+                    "records_processed": 2,
+                    "selected": true,
+                    "status": "completed"
+                  }
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "alphafold",
+                "status": "completed",
+                "step_key": "full-ai-orchestrator.v1.round_0.alphafold.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "max_depth": 2
+                },
+                "action_type": "RUN_BOOTSTRAP",
+                "budget_estimate": null,
+                "decision_id": "6aac4b14-3e5b-50ff-ad88-31a9f9b52ba5",
+                "evidence_basis": "The deterministic baseline queues governed bootstrap after source enrichment.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "bootstrap_source_type": null,
+                  "created_entity_count": 0,
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "running",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.run_bootstrap",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "round_number": 1
+                },
+                "action_type": "RUN_CHASE_ROUND",
+                "budget_estimate": null,
+                "decision_id": "575af0e7-044c-51ad-9bc3-c157f797326c",
+                "evidence_basis": "The deterministic baseline can execute up to two chase rounds using existing thresholds.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 1,
+                "source_key": null,
+                "status": "skipped",
+                "step_key": "full-ai-orchestrator.v1.round_1.control.run_chase_round",
+                "stop_reason": "threshold_not_met"
+              },
+              {
+                "action_input": {
+                  "round_number": 2
+                },
+                "action_type": "RUN_CHASE_ROUND",
+                "budget_estimate": null,
+                "decision_id": "4f0b60e1-c61a-511a-820d-bc82bd62126c",
+                "evidence_basis": "The deterministic baseline can execute up to two chase rounds using existing thresholds.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 2,
+                "source_key": null,
+                "status": "skipped",
+                "step_key": "full-ai-orchestrator.v1.round_2.control.run_chase_round",
+                "stop_reason": "threshold_not_met"
+              },
+              {
+                "action_input": {
+                  "result_key": "research_brief"
+                },
+                "action_type": "GENERATE_BRIEF",
+                "budget_estimate": null,
+                "decision_id": "1f64fe95-c40a-5687-bf01-6569c41941d4",
+                "evidence_basis": "The deterministic baseline ends by generating and storing the research brief.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "llm_markdown_present": false,
+                  "markdown_length": 0,
+                  "planned": true,
+                  "present": false,
+                  "result_key": "research_brief",
+                  "section_count": 0
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "skipped",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.generate_brief",
+                "stop_reason": "brief_not_available"
+              }
+            ],
+            "remaining_hard_limits": {
+              "max_chase_rounds": 2,
+              "max_hypotheses": 20,
+              "max_total_rounds": 3
+            },
+            "seed_terms": [
+              "BRCA1",
+              "PARP inhibitor"
+            ],
+            "source_status_summary": {
+              "alphafold": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 2,
+                "status": "completed"
+              },
+              "clinical_trials": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "clinvar": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 20,
+                "status": "completed"
+              },
+              "drugbank": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "completed"
+              },
+              "enrichment_orchestration": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": null,
+                "status": null
+              },
+              "hgnc": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "marrvel": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "mgi": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "mondo": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "pdf": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": 0,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "pubmed": {
+                "documents_discovered": 20,
+                "documents_ingested": 10,
+                "documents_selected": 10,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "completed"
+              },
+              "text": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": 0,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "uniprot": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "zfin": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              }
+            },
+            "source_taxonomy": {
+              "context_only": [],
+              "live_evidence": [
+                "pubmed",
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "reserved": []
+            },
+            "synthesis_readiness": {
+              "chase_round_threshold_not_met": true,
+              "grounded_evidence_present": true,
+              "no_contradictions": true,
+              "no_errors": false,
+              "no_evidence_gaps": true,
+              "no_pending_questions": false,
+              "no_pending_structured_sources": false,
+              "pending_structured_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "ready_for_brief": false,
+              "summary": "A chase round was already skipped because the threshold was not met, so the workflow should synthesize instead of opening another chase round."
+            },
+            "top_evidence_gaps": []
+          },
+          "deterministic_target": {
+            "action_type": "STOP",
+            "round_number": 0,
+            "step_key": "full-ai-orchestrator.v1.round_0.control.stop"
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "brca1-run-2",
+      "objective": "Investigate BRCA1 and PARP inhibitor response.",
+      "sources": {
+        "pubmed": true,
+        "clinvar": true,
+        "alphafold": true,
+        "drugbank": true
+      },
+      "deterministic_baseline": {
+        "run_id": "0b6b1736-a03d-43be-ac43-958ff06b7f0c",
+        "status": "completed",
+        "telemetry": {
+          "status": "unavailable",
+          "model_terminal_count": 0,
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "total_tokens": null,
+          "cost_usd": null,
+          "latency_seconds": null,
+          "tool_call_count": 0
+        },
+        "telemetry_run_ids": [
+          "0b6b1736-a03d-43be-ac43-958ff06b7f0c",
+          "da801d49-29e9-4386-bc59-255cf1fbfb11"
+        ],
+        "cost_comparison": {
+          "status": "unavailable",
+          "evaluated": false,
+          "baseline_status": "unavailable",
+          "planner_status": "unavailable",
+          "baseline_total_cost_usd": null,
+          "baseline_total_tokens": null,
+          "baseline_latency_seconds": null,
+          "planner_total_cost_usd": null,
+          "planner_total_tokens": null,
+          "planner_latency_seconds": null,
+          "planner_vs_baseline_cost_ratio": null,
+          "gate_within_2x_baseline": null,
+          "notes": "Cost comparison is unavailable until both deterministic baseline and shadow planner telemetry are present."
+        },
+        "environment": {
+          "pubmed_search_backend": "deterministic",
+          "compare_mode": "shared_baseline_replay",
+          "planner_mode": "shadow",
+          "pubmed_replay_mode": "selected_candidates",
+          "pubmed_replay_query_count": 4,
+          "pubmed_replay_selected_count": 10
+        }
+      },
+      "checkpoints": [
+        {
+          "checkpoint_key": "after_pubmed_discovery",
+          "workspace_summary": {
+            "active_contradictions": [],
+            "available_chase_source_keys": [],
+            "chase_candidates": [],
+            "checkpoint_key": "after_pubmed_discovery",
+            "counts": {
+              "contradiction_count": 0,
+              "documents_ingested": 0,
+              "error_count": 0,
+              "evidence_gap_count": 0,
+              "pending_question_count": 0,
+              "proposal_count": 0
+            },
+            "current_round": 0,
+            "deterministic_candidate_count": 0,
+            "deterministic_chase_threshold": 0,
+            "deterministic_selection": {},
+            "deterministic_threshold_met": false,
+            "enabled_sources": {
+              "alphafold": true,
+              "clinical_trials": false,
+              "clinvar": true,
+              "drugbank": true,
+              "hgnc": false,
+              "marrvel": false,
+              "mgi": false,
+              "mondo": false,
+              "pdf": false,
+              "pubmed": true,
+              "text": false,
+              "uniprot": false,
+              "zfin": false
+            },
+            "mode": "shadow",
+            "objective": "Investigate BRCA1 and PARP inhibitor response.",
+            "objective_routing_hints": {
+              "objective_tags": [
+                "drug_mechanism"
+              ],
+              "preferred_pending_structured_sources": [],
+              "preferred_structured_sources": [
+                "drugbank",
+                "clinvar",
+                "alphafold"
+              ],
+              "summary": "Structured-source routing hints are recorded for later, but they stay inactive until PubMed ingest and extraction are complete."
+            },
+            "planner_actions": {
+              "context_only": [
+                {
+                  "action_type": "INITIALIZE_WORKSPACE",
+                  "default_source_key": null,
+                  "planner_state": "context_only",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Initialize the durable workspace from request inputs."
+                },
+                {
+                  "action_type": "DERIVE_DRIVEN_TERMS",
+                  "default_source_key": null,
+                  "planner_state": "context_only",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Derive Round 2 driven terms from PubMed findings plus seed terms."
+                },
+                {
+                  "action_type": "REVIEW_PDF_WORKSET",
+                  "default_source_key": "pdf",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Review the current PDF workset as existing user-supplied evidence."
+                },
+                {
+                  "action_type": "REVIEW_TEXT_WORKSET",
+                  "default_source_key": "text",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Review the current text workset as existing user-supplied evidence."
+                },
+                {
+                  "action_type": "LOAD_MONDO_GROUNDING",
+                  "default_source_key": "mondo",
+                  "planner_state": "context_only",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Load MONDO grounding context as a deferred ontology step."
+                }
+              ],
+              "live": [
+                {
+                  "action_type": "QUERY_PUBMED",
+                  "default_source_key": "pubmed",
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Run deterministic PubMed discovery queries."
+                },
+                {
+                  "action_type": "INGEST_AND_EXTRACT_PUBMED",
+                  "default_source_key": "pubmed",
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Ingest selected PubMed documents and extract evidence-backed proposals."
+                },
+                {
+                  "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Run deterministic structured enrichment for one enabled source."
+                },
+                {
+                  "action_type": "RUN_BOOTSTRAP",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Queue and execute governed research bootstrap as a child run."
+                },
+                {
+                  "action_type": "RUN_CHASE_ROUND",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Run one deterministic chase round over newly created entities."
+                },
+                {
+                  "action_type": "GENERATE_BRIEF",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Generate and store the final research brief."
+                },
+                {
+                  "action_type": "ESCALATE_TO_HUMAN",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Escalate a blocked or risky run to a human operator."
+                },
+                {
+                  "action_type": "STOP",
+                  "default_source_key": null,
+                  "planner_state": "live",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Record the terminal stop reason for the orchestrator run."
+                }
+              ],
+              "reserved": [
+                {
+                  "action_type": "RUN_UNIPROT_GROUNDING",
+                  "default_source_key": "uniprot",
+                  "planner_state": "reserved",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Reserve an explicit UniProt grounding action for later phases."
+                },
+                {
+                  "action_type": "RUN_HGNC_GROUNDING",
+                  "default_source_key": "hgnc",
+                  "planner_state": "reserved",
+                  "requires_enabled_source": true,
+                  "source_bound": true,
+                  "summary": "Reserve an explicit HGNC grounding action for later phases."
+                },
+                {
+                  "action_type": "RUN_GRAPH_CONNECTION",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a graph-connection action for later planner-led phases."
+                },
+                {
+                  "action_type": "RUN_HYPOTHESIS_GENERATION",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a hypothesis-generation action for later planner-led phases."
+                },
+                {
+                  "action_type": "RUN_GRAPH_SEARCH",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a graph-search action for later planner-led phases."
+                },
+                {
+                  "action_type": "SEARCH_DISCONFIRMING",
+                  "default_source_key": null,
+                  "planner_state": "reserved",
+                  "requires_enabled_source": false,
+                  "source_bound": false,
+                  "summary": "Reserve a disconfirming-evidence search action for later phases."
+                }
+              ]
+            },
+            "planner_constraints": {
+              "control_action_types_without_source_key": [
+                "RUN_BOOTSTRAP",
+                "RUN_CHASE_ROUND",
+                "GENERATE_BRIEF",
+                "ESCALATE_TO_HUMAN",
+                "STOP"
+              ],
+              "live_action_types": [
+                "QUERY_PUBMED",
+                "INGEST_AND_EXTRACT_PUBMED",
+                "RUN_STRUCTURED_ENRICHMENT",
+                "RUN_BOOTSTRAP",
+                "RUN_CHASE_ROUND",
+                "GENERATE_BRIEF",
+                "ESCALATE_TO_HUMAN",
+                "STOP"
+              ],
+              "pending_structured_enrichment_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "pubmed_ingest_pending": true,
+              "pubmed_source_key": "pubmed",
+              "source_required_action_types": [
+                "QUERY_PUBMED",
+                "INGEST_AND_EXTRACT_PUBMED",
+                "RUN_STRUCTURED_ENRICHMENT"
+              ],
+              "source_taxonomy": {
+                "context_only": [],
+                "live_evidence": [
+                  "pubmed",
+                  "clinvar",
+                  "drugbank",
+                  "alphafold"
+                ],
+                "reserved": []
+              },
+              "structured_enrichment_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ]
+            },
+            "prior_decisions": [
+              {
+                "action_input": {
+                  "seed_terms": [
+                    "BRCA1",
+                    "PARP inhibitor"
+                  ]
+                },
+                "action_type": "QUERY_PUBMED",
+                "budget_estimate": null,
+                "decision_id": "0f460ce7-d6d4-5978-b9cd-fd970b355cb0",
+                "evidence_basis": "Deterministic Phase 1 baseline will run PubMed discovery before structured enrichment.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true,
+                  "pubmed_source_summary": {
+                    "documents_discovered": 20,
+                    "documents_ingested": 0,
+                    "documents_selected": 10,
+                    "documents_skipped_duplicate": 0,
+                    "observations_created": 0,
+                    "selected": true,
+                    "status": "completed"
+                  },
+                  "sources": {
+                    "alphafold": true,
+                    "clinical_trials": false,
+                    "clinvar": true,
+                    "drugbank": true,
+                    "hgnc": false,
+                    "marrvel": false,
+                    "mgi": false,
+                    "mondo": false,
+                    "pdf": false,
+                    "pubmed": true,
+                    "text": false,
+                    "uniprot": false,
+                    "zfin": false
+                  }
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "pubmed",
+                "status": "completed",
+                "step_key": "full-ai-orchestrator.v1.round_0.pubmed.query_pubmed",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "max_hypotheses": 20
+                },
+                "action_type": "INGEST_AND_EXTRACT_PUBMED",
+                "budget_estimate": null,
+                "decision_id": "c2e4132b-e524-5c22-81cf-45687fdd8a91",
+                "evidence_basis": "Deterministic Phase 1 baseline will ingest selected PubMed records and extract proposals.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "candidate_count": 10,
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "pubmed",
+                "status": "running",
+                "step_key": "full-ai-orchestrator.v1.round_0.pubmed.ingest_and_extract_pubmed",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "seed_terms": [
+                    "BRCA1",
+                    "PARP inhibitor"
+                  ]
+                },
+                "action_type": "DERIVE_DRIVEN_TERMS",
+                "budget_estimate": null,
+                "decision_id": "bbc873b4-c000-58d1-b91a-8cdbaecd0b61",
+                "evidence_basis": "Driven terms are deterministically derived after the PubMed-backed phase.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.derive_driven_terms",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "clinvar"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "19745a1c-872e-5517-a7fc-c1d2321fe484",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "clinvar",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.clinvar.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "drugbank"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "be0955ad-a644-53c0-916f-5fd6366571b0",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "drugbank",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.drugbank.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "source_key": "alphafold"
+                },
+                "action_type": "RUN_STRUCTURED_ENRICHMENT",
+                "budget_estimate": null,
+                "decision_id": "8b0c83d7-f38b-5263-b1a9-b946c3d3c61a",
+                "evidence_basis": "Structured enrichment for enabled sources follows the deterministic source handlers.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": "alphafold",
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.alphafold.run_structured_enrichment",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "max_depth": 2
+                },
+                "action_type": "RUN_BOOTSTRAP",
+                "budget_estimate": null,
+                "decision_id": "6aac4b14-3e5b-50ff-ad88-31a9f9b52ba5",
+                "evidence_basis": "The deterministic baseline queues governed bootstrap after source enrichment.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.run_bootstrap",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "round_number": 1
+                },
+                "action_type": "RUN_CHASE_ROUND",
+                "budget_estimate": null,
+                "decision_id": "575af0e7-044c-51ad-9bc3-c157f797326c",
+                "evidence_basis": "The deterministic baseline can execute up to two chase rounds using existing thresholds.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 1,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_1.control.run_chase_round",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "round_number": 2
+                },
+                "action_type": "RUN_CHASE_ROUND",
+                "budget_estimate": null,
+                "decision_id": "4f0b60e1-c61a-511a-820d-bc82bd62126c",
+                "evidence_basis": "The deterministic baseline can execute up to two chase rounds using existing thresholds.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 2,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_2.control.run_chase_round",
+                "stop_reason": null
+              },
+              {
+                "action_input": {
+                  "result_key": "research_brief"
+                },
+                "action_type": "GENERATE_BRIEF",
+                "budget_estimate": null,
+                "decision_id": "1f64fe95-c40a-5687-bf01-6569c41941d4",
+                "evidence_basis": "The deterministic baseline ends by generating and storing the research brief.",
+                "expected_value_band": null,
+                "fallback_reason": null,
+                "metadata": {
+                  "planned": true
+                },
+                "qualitative_rationale": null,
+                "requires_approval": null,
+                "risk_level": null,
+                "round_number": 0,
+                "source_key": null,
+                "status": "pending",
+                "step_key": "full-ai-orchestrator.v1.round_0.control.generate_brief",
+                "stop_reason": null
+              }
+            ],
+            "remaining_hard_limits": {
+              "max_chase_rounds": 2,
+              "max_hypotheses": 20,
+              "max_total_rounds": 3
+            },
+            "seed_terms": [
+              "BRCA1",
+              "PARP inhibitor"
+            ],
+            "source_status_summary": {
+              "alphafold": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "pending"
+              },
+              "clinical_trials": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "clinvar": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "pending"
+              },
+              "drugbank": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "pending"
+              },
+              "hgnc": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "marrvel": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "mgi": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "mondo": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": null,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "pdf": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": 0,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "pubmed": {
+                "documents_discovered": 20,
+                "documents_ingested": 0,
+                "documents_selected": 10,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "completed"
+              },
+              "text": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": 0,
+                "observations_created": 0,
+                "records_processed": null,
+                "status": "skipped"
+              },
+              "uniprot": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              },
+              "zfin": {
+                "documents_discovered": null,
+                "documents_ingested": null,
+                "documents_selected": null,
+                "observations_created": 0,
+                "records_processed": 0,
+                "status": "skipped"
+              }
+            },
+            "source_taxonomy": {
+              "context_only": [],
+              "live_evidence": [
+                "pubmed",
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "reserved": []
+            },
+            "synthesis_readiness": {
+              "chase_round_threshold_not_met": false,
+              "grounded_evidence_present": false,
+              "no_contradictions": true,
+              "no_errors": true,
+              "no_evidence_gaps": true,
+              "no_pending_questions": true,
+              "no_pending_structured_sources": false,
+              "pending_structured_source_keys": [
+                "clinvar",
+                "drugbank",
+                "alphafold"
+              ],
+              "ready_for_brief": false,
+              "summary": "Another bounded retrieval step still has qualitative value because grounded evidence is still limited; structured sources remain pending (clinvar, drugbank, alphafold)."
+            },
+            "top_evidence_gaps": []
+          },
+          "deterministic_target": {
+            "action_type": "INGEST_AND_EXTRACT_PUBMED",
+            "round_number": 0,
+            "step_key": "full-ai-orchestrator.v1.round_0.pubmed.ingest_and_extract_pubmed",
+            "source_key": "pubmed"
+          }
+        }
+      ]
+    }
+  ]
+}

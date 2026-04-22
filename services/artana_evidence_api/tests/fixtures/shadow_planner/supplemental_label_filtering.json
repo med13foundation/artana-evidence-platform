@@ -1,0 +1,187 @@
+{
+  "fixture_name": "SUPPLEMENTAL_LABEL_FILTERING",
+  "runs": [
+    {
+      "run_id": "supplemental-label-filtering-run-1",
+      "objective": "Investigate BRCA1 and PARP inhibitor response.",
+      "sources": {
+        "pubmed": true,
+        "clinvar": true,
+        "drugbank": true
+      },
+      "deterministic_baseline": {
+        "run_id": "synthetic-baseline-supplemental-label-filtering-1",
+        "status": "completed",
+        "telemetry": {
+          "status": "unavailable",
+          "model_terminal_count": 0,
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "total_tokens": null,
+          "cost_usd": null,
+          "latency_seconds": null,
+          "tool_call_count": 0
+        },
+        "telemetry_run_ids": [
+          "synthetic-baseline-supplemental-label-filtering-1"
+        ],
+        "cost_comparison": {
+          "status": "unavailable",
+          "evaluated": false,
+          "baseline_status": "unavailable",
+          "planner_status": "unavailable",
+          "baseline_total_cost_usd": null,
+          "baseline_total_tokens": null,
+          "baseline_latency_seconds": null,
+          "planner_total_cost_usd": null,
+          "planner_total_tokens": null,
+          "planner_latency_seconds": null,
+          "planner_vs_baseline_cost_ratio": null,
+          "gate_within_2x_baseline": null,
+          "notes": "Synthetic label-filtering fixture uses offline deterministic target snapshots only."
+        },
+        "environment": {
+          "compare_mode": "synthetic_fixture",
+          "planner_mode": "shadow"
+        }
+      },
+      "checkpoints": [
+        {
+          "checkpoint_key": "after_bootstrap",
+          "workspace_summary": {
+            "checkpoint_key": "after_bootstrap",
+            "objective": "Investigate BRCA1 and PARP inhibitor response.",
+            "current_round": 0,
+            "counts": {
+              "documents_ingested": 9,
+              "proposal_count": 22,
+              "pending_question_count": 1,
+              "evidence_gap_count": 1,
+              "contradiction_count": 0,
+              "error_count": 0
+            },
+            "enabled_sources": {
+              "pubmed": true,
+              "clinvar": true,
+              "drugbank": true
+            },
+            "source_taxonomy": {
+              "live_evidence": [
+                "pubmed",
+                "clinvar",
+                "drugbank"
+              ],
+              "context_only": [],
+              "reserved": []
+            },
+            "available_chase_source_keys": [
+              "clinvar",
+              "drugbank"
+            ],
+            "chase_candidates": [
+              {
+                "entity_id": "entity-parp-response",
+                "display_label": "PARP inhibitor response",
+                "normalized_label": "PARP INHIBITOR RESPONSE",
+                "candidate_rank": 1,
+                "observed_round": 1,
+                "available_source_keys": [
+                  "clinvar",
+                  "drugbank"
+                ],
+                "evidence_basis": "The entity was created recently in the graph, was not already present in the prior seed set, and overlaps the current research focus via parp.",
+                "novelty_basis": "not_in_previous_seed_terms"
+              },
+              {
+                "entity_id": "entity-brca1-cterm",
+                "display_label": "BRCA1 C Terminus domain",
+                "normalized_label": "BRCA1 C TERMINUS DOMAIN",
+                "candidate_rank": 2,
+                "observed_round": 1,
+                "available_source_keys": [
+                  "clinvar",
+                  "drugbank"
+                ],
+                "evidence_basis": "The entity was created recently in the graph, was not already present in the prior seed set, and overlaps the current research focus via brca1.",
+                "novelty_basis": "not_in_previous_seed_terms"
+              },
+              {
+                "entity_id": "entity-cdk8",
+                "display_label": "CDK8",
+                "normalized_label": "CDK8",
+                "candidate_rank": 3,
+                "observed_round": 1,
+                "available_source_keys": [
+                  "clinvar",
+                  "drugbank"
+                ],
+                "evidence_basis": "The entity was created recently in the graph and was not part of the prior seed set.",
+                "novelty_basis": "not_in_previous_seed_terms"
+              }
+            ],
+            "filtered_chase_candidates": [
+              {
+                "entity_id": "entity-cterm-generic",
+                "display_label": "C Terminus domain",
+                "normalized_label": "C TERMINUS DOMAIN",
+                "observed_rank": 3,
+                "observed_round": 1,
+                "filter_reason": "underanchored_fragment_label"
+              },
+              {
+                "entity_id": "entity-result-1",
+                "display_label": "result 1",
+                "normalized_label": "RESULT 1",
+                "observed_rank": 4,
+                "observed_round": 1,
+                "filter_reason": "generic_result_label"
+              }
+            ],
+            "deterministic_selection": {
+              "selected_entity_ids": [
+                "entity-parp-response",
+                "entity-brca1-cterm",
+                "entity-cdk8"
+              ],
+              "selected_labels": [
+                "PARP inhibitor response",
+                "BRCA1 C Terminus domain",
+                "CDK8"
+              ],
+              "stop_instead": false,
+              "stop_reason": null,
+              "selection_basis": "The deterministic baseline keeps the bounded BRCA1/PARP chase set after filtering low-signal and underanchored labels."
+            },
+            "deterministic_chase_threshold": 3,
+            "deterministic_candidate_count": 3,
+            "filtered_chase_candidate_count": 2,
+            "filtered_chase_filter_reason_counts": {
+              "underanchored_fragment_label": 1,
+              "generic_result_label": 1
+            },
+            "deterministic_threshold_met": true
+          },
+          "deterministic_target": {
+            "action_type": "RUN_CHASE_ROUND",
+            "source_key": null,
+            "round_number": 1,
+            "step_key": "fixture.after_bootstrap.run_chase_round",
+            "action_input": {
+              "selected_entity_ids": [
+                "entity-parp-response",
+                "entity-brca1-cterm",
+                "entity-cdk8"
+              ],
+              "selected_labels": [
+                "PARP inhibitor response",
+                "BRCA1 C Terminus domain",
+                "CDK8"
+              ],
+              "selection_basis": "The deterministic baseline keeps the bounded BRCA1/PARP chase set after filtering low-signal and underanchored labels."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+MED13 is a subunit of the Mediator complex.
+MED25 physically interacts with MED13 and MED16.
+The Mediator complex links DNA-bound transcription factors to RNA polymerase II.
+MED13 is required for proper transcriptional regulation in plants.

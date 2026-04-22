@@ -1,0 +1,145 @@
+# Artana runtime configuration (active keys only)
+# The state backend URI is resolved via:
+# 1) ARTANA_STATE_URI env var, else 2) DATABASE_URL-derived URI with artana schema.
+
+[runtime]
+replay_policy = "fork_on_drift"
+extraction_config_version = "v1"
+context_system_prompt_hash = ""
+context_builder_version = ""
+context_compaction_version = ""
+
+[models]
+default_query_generation = "openai:gpt-5.4-mini"
+default_evidence_extraction = "openai:gpt-5.4-mini"
+default_curation = "openai:gpt-5.4-mini"
+default_judge = "openai:gpt-5.4-mini"
+allow_runtime_model_overrides = false
+
+[models.registry."openai:gpt-4o-mini"]
+display_name = "GPT-4o Mini"
+provider = "openai"
+capabilities = ["query_generation", "judge"]
+cost_tier = "low"
+is_reasoning_model = false
+max_retries = 3
+timeout_seconds = 30.0
+is_enabled = true
+is_default = true
+
+[models.registry."openai:gpt-5-mini"]
+display_name = "GPT-5 Mini"
+provider = "openai"
+capabilities = ["query_generation", "evidence_extraction", "curation", "judge"]
+cost_tier = "low"
+is_reasoning_model = true
+max_retries = 1
+timeout_seconds = 300.0
+is_enabled = true
+is_default = true
+
+[models.registry."openai:gpt-5-mini".default_reasoning_settings]
+effort = "medium"
+verbosity = "medium"
+
+[models.registry."openai:gpt-5.4-mini"]
+display_name = "GPT-5.4 Mini"
+provider = "openai"
+capabilities = ["query_generation", "evidence_extraction", "curation", "judge"]
+cost_tier = "low"
+is_reasoning_model = true
+max_retries = 1
+timeout_seconds = 300.0
+is_enabled = true
+is_default = true
+
+[models.registry."openai:gpt-5.4-mini".default_reasoning_settings]
+effort = "medium"
+verbosity = "medium"
+
+[models.registry."openai:gpt-5-nano"]
+display_name = "GPT-5 Nano"
+provider = "openai"
+capabilities = ["query_generation", "evidence_extraction", "curation", "judge"]
+cost_tier = "low"
+is_reasoning_model = false
+max_retries = 3
+timeout_seconds = 30.0
+is_enabled = true
+is_default = false
+
+[models.registry."openai:gpt-5"]
+display_name = "GPT-5"
+provider = "openai"
+capabilities = ["query_generation", "evidence_extraction", "curation", "judge"]
+cost_tier = "high"
+is_reasoning_model = true
+max_retries = 1
+timeout_seconds = 900.0
+is_enabled = true
+is_default = false
+
+[models.registry."openai:gpt-5".default_reasoning_settings]
+effort = "medium"
+verbosity = "medium"
+
+[models.registry."openai:gpt-5.2"]
+display_name = "GPT-5.2"
+provider = "openai"
+capabilities = ["query_generation", "evidence_extraction", "curation", "judge"]
+cost_tier = "high"
+is_reasoning_model = true
+max_retries = 1
+timeout_seconds = 900.0
+is_enabled = true
+is_default = false
+
+[models.registry."openai:gpt-5.2".default_reasoning_settings]
+effort = "medium"
+verbosity = "medium"
+
+[cost.providers.openai."gpt-4o-mini"]
+prompt_tokens_per_1k = 0.00015
+completion_tokens_per_1k = 0.0006
+
+[cost.providers.openai."gpt-5-mini"]
+prompt_tokens_per_1k = 0.00025
+completion_tokens_per_1k = 0.002
+
+[cost.providers.openai."gpt-5.4-mini"]
+prompt_tokens_per_1k = 0.00025
+completion_tokens_per_1k = 0.002
+
+[cost.providers.openai."gpt-5-nano"]
+prompt_tokens_per_1k = 0.00005
+completion_tokens_per_1k = 0.0004
+
+[cost.providers.openai."gpt-5"]
+prompt_tokens_per_1k = 0.00125
+completion_tokens_per_1k = 0.01
+
+[cost.providers.openai."gpt-5.2"]
+prompt_tokens_per_1k = 0.00175
+completion_tokens_per_1k = 0.014
+
+[cost.providers.openai."text-embedding-3-small"]
+prompt_tokens_per_1k = 0.00002
+completion_tokens_per_1k = 0.0
+
+[budgets.default]
+total_cost_usd = 1.0
+max_turns = 10
+max_tokens = 8192
+
+[budgets.research]
+total_cost_usd = 5.0
+max_turns = 25
+max_tokens = 16384
+
+[source_profiles.pubmed]
+budget_profile = "research"
+timeout_seconds = 45.0
+
+[source_profiles.clinvar]
+model = "openai:gpt-5.4-mini"
+budget_profile = "research"

@@ -1,0 +1,184 @@
+"use client"
+
+import { useEffect, useState } from 'react'
+import { useSpaceContext } from '@/components/space-context-provider'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
+import {
+  Database,
+  Settings,
+  FileText,
+  LayoutDashboard,
+  Users,
+  Search,
+} from 'lucide-react'
+import { usePrefetchOnHover } from '@/hooks/use-prefetch'
+
+interface NavItem {
+  label: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  description?: string
+  prefetch?: (spaceId: string) => void
+  subsections?: NavItem[]
+}
+
+export function SpaceNavigation() {
+  const { currentSpaceId } = useSpaceContext()
+  const pathname = usePathname()
+  const {
+    prefetchSpaceDetail,
+    prefetchSpaceMembers,
+    prefetchSpaceCuration,
+    prefetchSpaceDiscovery,
+  } = usePrefetchOnHover()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted || !currentSpaceId) {
+    return null
+  }
+
+  const basePath = `/spaces/${currentSpaceId}`
+
+  const navItems: NavItem[] = [
+    {
+      label: 'Overview',
+      href: basePath,
+      icon: LayoutDashboard,
+      description: 'Space details and information',
+      prefetch: prefetchSpaceDetail,
+    },
+    {
+      label: 'Data Sources',
+      href: `${basePath}/data-sources`,
+      icon: Database,
+      description: 'Manage activated data sources',
+      prefetch: prefetchSpaceDetail,
+      subsections: [
+        {
+          label: 'Discover Sources',
+          href: `${basePath}/discovery`,
+          icon: Search,
+          description: 'Discover and test data sources within this space',
+          prefetch: prefetchSpaceDiscovery,
+        },
+      ],
+    },
+    {
+      label: 'Data Curation',
+      href: `${basePath}/curation`,
+      icon: FileText,
+      description: 'Curate and review data',
+      prefetch: prefetchSpaceCuration,
+    },
+    {
+      label: 'Members',
+      href: `${basePath}/members`,
+      icon: Users,
+      description: 'Manage team members',
+      prefetch: prefetchSpaceMembers,
+    },
+    {
+      label: 'Settings',
+      href: `${basePath}/settings`,
+      icon: Settings,
+      description: 'Space configuration',
+      prefetch: prefetchSpaceDetail,
+    },
+  ]
+
+  return (
+    <nav className="border-b border-border bg-card">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex overflow-x-auto">
+          <div className="flex min-w-0 space-x-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+              const isSubsectionActive = item.subsections?.some(
+                (subsection) => pathname === subsection.href || pathname.startsWith(`${subsection.href}/`)
+              )
+              const Icon = item.icon
+
+              return (
+                <div key={item.href} className="flex flex-col">
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
+                      'border-b-2 border-transparent hover:border-border hover:text-foreground',
+                      'whitespace-nowrap',
+                      isActive || isSubsectionActive
+                        ? 'border-primary text-foreground bg-accent/50'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                    title={item.description}
+                    onMouseEnter={() => {
+                      if (item.prefetch && currentSpaceId) {
+                        item.prefetch(currentSpaceId)
+                      }
+                    }}
+                    onFocus={() => {
+                      if (item.prefetch && currentSpaceId) {
+                        item.prefetch(currentSpaceId)
+                      }
+                    }}
+                    prefetch={true}
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    <span className="hidden sm:inline">{item.label}</span>
+                    <span className="sm:hidden">{item.label.split(' ')[0]}</span>
+                  </Link>
+
+                  {item.subsections && (isActive || isSubsectionActive) && (
+                    <div className="flex space-x-1 pl-4">
+                      {item.subsections.map((subsection) => {
+                        const isSubActive = pathname === subsection.href || pathname.startsWith(`${subsection.href}/`)
+                        const SubIcon = subsection.icon
+
+                        return (
+                          <Link
+                            key={subsection.href}
+                            href={subsection.href}
+                            className={cn(
+                              'flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors',
+                              'border-b-2 border-transparent hover:border-border hover:text-foreground',
+                              'whitespace-nowrap',
+                              isSubActive
+                                ? 'border-primary text-foreground bg-accent/30'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
+                            title={subsection.description}
+                            onMouseEnter={() => {
+                              if (subsection.prefetch && currentSpaceId) {
+                                subsection.prefetch(currentSpaceId)
+                              }
+                            }}
+                            onFocus={() => {
+                              if (subsection.prefetch && currentSpaceId) {
+                                subsection.prefetch(currentSpaceId)
+                              }
+                            }}
+                            prefetch={true}
+                          >
+                            <SubIcon className="size-3 shrink-0" />
+                            <span className="hidden sm:inline">{subsection.label}</span>
+                            <span className="sm:hidden">{subsection.label.split(' ')[0]}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </nav>
+  )
+}

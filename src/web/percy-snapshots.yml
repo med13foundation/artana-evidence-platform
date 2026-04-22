@@ -1,0 +1,10 @@
+snapshots:
+  - name: Landing Page
+    url: /
+  - name: Dashboard Overview
+    url: /dashboard
+  - name: New Research Space
+    url: /spaces/new
+  - name: Data Discovery Workspace
+  - name: Settings
+    url: /settings

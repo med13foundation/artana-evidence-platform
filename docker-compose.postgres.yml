@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${ARTANA_POSTGRES_DB:-artana_dev}
+      POSTGRES_USER: ${ARTANA_POSTGRES_USER:-artana_dev}
+      POSTGRES_PASSWORD: ${ARTANA_POSTGRES_PASSWORD:-artana_dev_password}
+    ports:
+      - "${ARTANA_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - artana-postgres-data:/var/lib/postgresql/data
+      - ./scripts/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -d ${ARTANA_POSTGRES_DB:-artana_dev} -U ${ARTANA_POSTGRES_USER:-artana_dev}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  artana-postgres-data:
+    driver: local
