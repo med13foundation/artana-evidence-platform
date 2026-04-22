@@ -12460,7 +12460,7 @@
         "type": "object"
       },
       "SearchEntity": {
-        "description": "Searchable entities in the system.",
+        "description": "Searchable graph resources.",
         "enum": [
           "entities",
           "observations",
@@ -12511,7 +12511,7 @@
         "type": "object"
       },
       "SearchResultType": {
-        "description": "Type of search result.",
+        "description": "Type of unified search result.",
         "enum": [
           "entity",
           "observation",

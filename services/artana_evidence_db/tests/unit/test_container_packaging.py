@@ -57,7 +57,7 @@ def test_artana_evidence_db_test_stage_copies_required_repo_test_assets() -> Non
         "COPY services/artana_evidence_db ./services/artana_evidence_db"
         not in dockerfile
     )
-    assert "COPY src ./src" in dockerfile
+    assert "COPY src ./src" not in dockerfile
     assert "COPY src/web/types ./src/web/types" not in dockerfile
     assert "COPY services/__init__.py ./services/__init__.py" not in dockerfile
     assert "COPY services ./services" not in dockerfile

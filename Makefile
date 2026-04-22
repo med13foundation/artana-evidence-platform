@@ -173,7 +173,7 @@ define check_venv
 fi
 endef
 
-.PHONY: help venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-test graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-test artana-evidence-api-service-checks run-graph-service run-artana-evidence-api-service
+.PHONY: help venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-test graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-test artana-evidence-api-service-checks run-graph-service run-artana-evidence-api-service
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
@@ -267,6 +267,10 @@ graph-service-contract-check: ## Verify graph service OpenAPI and types are curr
 	$(USE_PYTHON) scripts/export_graph_openapi.py --output $(GRAPH_SERVICE_OPENAPI_OUTPUT) --check
 	$(USE_PYTHON) scripts/generate_ts_types.py --module artana_evidence_db.service_contracts --output $(GRAPH_SERVICE_TS_TYPES_OUTPUT) --check
 
+graph-service-boundary-check: ## Validate graph service standalone boundary rules
+	$(call check_venv)
+	$(USE_PYTHON) scripts/validate_graph_service_boundary.py
+
 artana-evidence-api-openapi: ## Export evidence API OpenAPI
 	$(call check_venv)
 	$(USE_PYTHON) scripts/export_artana_evidence_api_openapi.py --output $(ARTANA_EVIDENCE_API_OPENAPI_OUTPUT)
@@ -299,6 +303,7 @@ graph-service-test: ## Run graph service tests against isolated Postgres
 graph-service-checks: ## Run graph service gates
 	@$(MAKE) -s graph-service-lint
 	@$(MAKE) -s graph-service-type-check
+	@$(MAKE) -s graph-service-boundary-check
 	@$(MAKE) -s graph-service-contract-check
 	@$(MAKE) -s graph-phase6-release-check
 	@$(MAKE) -s graph-service-test

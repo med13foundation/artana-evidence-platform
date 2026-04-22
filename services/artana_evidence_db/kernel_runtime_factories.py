@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
-
 from artana_evidence_db.entity_claim_summary_projector import (
     KernelEntityClaimSummaryProjector,
 )
@@ -43,9 +41,12 @@ from artana_evidence_db.read_model_support import (
 )
 from artana_evidence_db.relation_autopromotion_policy import AutoPromotionPolicy
 from artana_evidence_db.runtime.pack_registry import create_graph_domain_pack
+from artana_evidence_db.text_embedding_provider import (
+    HybridTextEmbeddingProvider as DefaultHybridTextEmbeddingProvider,
+)
 from sqlalchemy.orm import Session
 
-HybridTextEmbeddingProvider = None
+HybridTextEmbeddingProvider = DefaultHybridTextEmbeddingProvider
 
 
 def _build_relation_autopromotion_policy() -> AutoPromotionPolicy:
@@ -80,12 +81,11 @@ def _build_entity_embedding_status_repository(
 
 
 def _build_embedding_provider() -> object:
-    """Resolve the shared embedding provider without a module-level import."""
+    """Resolve the graph-owned embedding provider."""
     if callable(HybridTextEmbeddingProvider):
         return HybridTextEmbeddingProvider()
-    embeddings_module = importlib.import_module("src.infrastructure.embeddings")
-    provider_class = embeddings_module.HybridTextEmbeddingProvider
-    return provider_class()
+    message = "HybridTextEmbeddingProvider is not configured as a callable provider"
+    raise RuntimeError(message)
 
 
 def create_kernel_entity_embedding_status_service(

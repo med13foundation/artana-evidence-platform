@@ -9,9 +9,10 @@ Status update as of April 22, 2026:
 
 - M0 repo scaffold is complete
 - M1 bootable baseline import is complete
+- M2 graph-service standalone unwind is complete
 - the repo now owns the copied service code, temporary shared runtime, and
   service-local validation commands
-- next focus is M2 graph-service standalone unwind
+- next focus is M3 evidence API shared-runtime unwind
 
 The migration should be treated as a two-stage program:
 
@@ -374,7 +375,7 @@ Success criteria:
 | --- | --- | --- |
 | M0 | Repo scaffold and tracking docs exist | Complete |
 | M1 | Bootable baseline import with temporary `src/` | Complete |
-| M2 | Graph service fully standalone | Not started |
+| M2 | Graph service fully standalone | Complete |
 | M3 | Evidence API green with owned shared-runtime boundaries | Not started |
 | M4 | SDK, docs, CI, and deploy topology aligned | Not started |
 | M5 | Cutover complete and monorepo copy deprecated | Not started |

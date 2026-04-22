@@ -30,7 +30,7 @@ Imported and verified in the extracted repo:
 The current migration focus is no longer "copy the code over." The current
 focus is finishing the standalone unwind:
 
-- M2: remove remaining production `src` dependencies from the graph service
+- M2: graph service standalone unwind complete
 - M3: localize or explicitly own the evidence API shared-runtime dependencies
 
 ## Tracking Docs

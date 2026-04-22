@@ -29,7 +29,6 @@ RUN pip install --upgrade pip \
     && pip install -r /tmp/artana_evidence_db_requirements.txt
 
 COPY services/artana_evidence_db ./artana_evidence_db
-COPY src ./src
 
 FROM base AS test
 

@@ -6,25 +6,26 @@ from collections.abc import Mapping, Sequence
 from uuid import UUID
 
 from artana_evidence_db.auth import get_current_active_user
+from artana_evidence_db.composition import build_entity_repository
 from artana_evidence_db.database import get_session
 from artana_evidence_db.dependencies import (
     get_space_access_port,
     verify_space_membership,
 )
+from artana_evidence_db.kernel_runtime_factories import build_relation_repository
+from artana_evidence_db.observation_repository import (
+    SqlAlchemyKernelObservationRepository,
+)
 from artana_evidence_db.ports import SpaceAccessPort
-from artana_evidence_db.user_models import User
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
-
-from src.application.search.search_service import (
+from artana_evidence_db.search_service import (
     SearchEntity,
     SearchResultType,
     UnifiedSearchService,
 )
-from src.infrastructure.dependency_injection.dependencies import (
-    get_legacy_dependency_container,
-)
+from artana_evidence_db.user_models import User
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/v1/search", tags=["search"])
 
@@ -68,9 +69,12 @@ class SearchStatisticsResponse(BaseModel):
 def get_search_service(
     db: Session = Depends(get_session),
 ) -> UnifiedSearchService:
-    """Resolve the unified search service using the shared library wiring."""
-    container = get_legacy_dependency_container()
-    return container.create_unified_search_service(db)
+    """Resolve the graph-owned unified search service."""
+    return UnifiedSearchService(
+        entity_repo=build_entity_repository(db),
+        observation_repo=SqlAlchemyKernelObservationRepository(db),
+        relation_repo=build_relation_repository(db),
+    )
 
 
 @router.post(

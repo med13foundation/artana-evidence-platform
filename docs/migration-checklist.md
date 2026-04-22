@@ -13,7 +13,7 @@ Legend:
 - Date anchored: April 22, 2026
 - Repo status: bootable baseline import completed
 - Code imported: yes
-- Active milestone: M2
+- Active milestone: M3
 
 ## M0: Repo Scaffold
 
@@ -47,19 +47,19 @@ Legend:
 
 ## M2: Graph Service Final Standalone Pass
 
-- [ ] Inventory remaining production `src` imports in `services/artana_evidence_db`
-- [ ] Replace the shared unified search dependency with graph-owned code
-- [ ] Remove `src/` from graph-service runtime packaging
-- [ ] Re-run graph boundary validation
-- [ ] Re-run graph OpenAPI export check
-- [ ] Re-run graph test gate
-- [ ] Confirm graph-service Docker image no longer copies `src/`
+- [x] Inventory remaining production `src` imports in `services/artana_evidence_db`
+- [x] Replace the shared unified search dependency with graph-owned code
+- [x] Remove `src/` from graph-service runtime packaging
+- [x] Re-run graph boundary validation
+- [x] Re-run graph OpenAPI export check
+- [x] Re-run graph test gate
+- [x] Confirm graph-service Docker image no longer copies `src/`
 
 ## M2 Commands
 
-- [ ] `rg "from src\\.|import src\\." services/artana_evidence_db -g '!**/tests/**'`
-- [ ] `python scripts/validate_graph_service_boundary.py`
-- [ ] `python scripts/export_graph_openapi.py --output services/artana_evidence_db/openapi.json --check`
+- [x] `rg "from src\\.|import src\\." services/artana_evidence_db -g '!**/tests/**'`
+- [x] `python scripts/validate_graph_service_boundary.py`
+- [x] `python scripts/export_graph_openapi.py --output services/artana_evidence_db/openapi.json --check`
 
 ## M3: Evidence API Dependency Unwind
 
@@ -139,10 +139,11 @@ Use this section as the running log while executing the migration.
 - April 22, 2026: verified `make graph-service-checks` and `make artana-evidence-api-service-checks` from this repo
 - April 22, 2026: verified both services boot locally from this repo after adjusting `setup-postgres` to reuse an already reachable `DATABASE_URL`
 - April 22, 2026: verified both runtime Docker images build from this repo
+- April 22, 2026: graph-service standalone unwind completed by localizing unified search and embedding-provider runtime dependencies, removing `COPY src ./src`, and making boundary validation part of graph-service checks
 
 ### Known Facts to Preserve During Migration
 
 - `artana_evidence_db` is the standalone governed graph service
 - `artana_evidence_api` is the AI evidence/orchestration service
-- the graph service is closer to full extraction than the evidence API
+- the graph service no longer has production `src` imports and no longer copies `src/` into its runtime image
 - the evidence API still depends on temporary shared runtime code from `src`

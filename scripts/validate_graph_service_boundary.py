@@ -77,6 +77,7 @@ FORBIDDEN_GRAPH_TEST_AND_SCRIPT_IMPORT_PREFIXES = (
 )
 FORBIDDEN_GRAPH_SERVICE_DOCKERFILE_SNIPPETS = (
     "COPY services ./services",
+    "COPY src ./src",
     "COPY pyproject.toml",
     "COPY artana.toml",
     "pip install .",
@@ -258,6 +259,13 @@ def _find_violations() -> list[BoundaryViolation]:
             root=GRAPH_SERVICE_ROOT,
             is_allowed_file=lambda _: False,
             forbidden_import_prefixes=FORBIDDEN_GRAPH_SERVICE_SHARED_IMPORT_PREFIXES,
+        ),
+    )
+    violations.extend(
+        _scan_tree_for_dynamic_import_violations(
+            root=GRAPH_SERVICE_ROOT,
+            is_allowed_file=lambda _: False,
+            forbidden_import_prefixes=FORBIDDEN_GRAPH_SERVICE_AI_IMPORT_PREFIXES,
         ),
     )
     violations.extend(
