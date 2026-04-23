@@ -684,13 +684,9 @@ class TestRunMarrvelEnrichment:
         mock_service.search = AsyncMock(return_value=mock_result)
         mock_service.close = MagicMock()
 
-        fake_module = MagicMock(
-            MarrvelDiscoveryService=lambda: mock_service,
-        )
-
-        with patch.dict(
-            "sys.modules",
-            {"src.application.services.marrvel_discovery_service": fake_module},
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_marrvel_discovery_service",
+            return_value=mock_service,
         ):
             result = asyncio.run(
                 run_marrvel_enrichment(
@@ -719,9 +715,9 @@ class TestRunMarrvelEnrichment:
         artifact_store: HarnessArtifactStore,
         parent_run: object,
     ) -> None:
-        with patch.dict(
-            "sys.modules",
-            {"src.application.services.marrvel_discovery_service": None},
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_marrvel_discovery_service",
+            return_value=None,
         ):
             result = asyncio.run(
                 run_marrvel_enrichment(
@@ -753,13 +749,9 @@ class TestRunMarrvelEnrichment:
         mock_service.search = AsyncMock(return_value=mock_result)
         mock_service.close = MagicMock()
 
-        fake_module = MagicMock(
-            MarrvelDiscoveryService=lambda: mock_service,
-        )
-
-        with patch.dict(
-            "sys.modules",
-            {"src.application.services.marrvel_discovery_service": fake_module},
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_marrvel_discovery_service",
+            return_value=mock_service,
         ):
             result = asyncio.run(
                 run_marrvel_enrichment(

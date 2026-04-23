@@ -31,12 +31,15 @@ The current migration focus is no longer "copy the code over." The current
 focus is finishing the standalone unwind:
 
 - M2: graph service standalone unwind complete
-- M3: localize or explicitly own the evidence API shared-runtime dependencies
+- M3: evidence API direct production `src` imports eliminated
+- M4: CI, deploy workflows, and deploy/runtime docs complete
+- M5: upstream replay audit complete; OpenAPI refresh, full gates, and staging verification next
 
 ## Tracking Docs
 
 - [Migration Plan](docs/migration-plan.md)
 - [Migration Checklist](docs/migration-checklist.md)
+- [Extracted Services Deploy Runbook](docs/deployment/extracted-services-runbook.md)
 
 ## Intended First-Cut Boundaries
 

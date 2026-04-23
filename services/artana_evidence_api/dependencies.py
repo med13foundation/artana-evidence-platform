@@ -58,6 +58,10 @@ from artana_evidence_api.space_acl import check_space_access
 from artana_evidence_api.space_lifecycle_sync import (
     HarnessGraphServiceSpaceLifecycleSync,
 )
+from artana_evidence_api.space_sync_types import (
+    GraphSyncMembership,
+    graph_sync_membership_from_model,
+)
 from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessApprovalStore,
     SqlAlchemyHarnessChatSessionStore,
@@ -71,11 +75,6 @@ from artana_evidence_api.sqlalchemy_stores import (
 )
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import desc, select
-
-from src.domain.entities.research_space_membership import (
-    MembershipRole,
-    ResearchSpaceMembership,
-)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterator
@@ -112,7 +111,7 @@ class _HarnessGraphSyncMembershipSnapshotStore:
         space_id: UUID,
         skip: int = 0,
         limit: int = 50,
-    ) -> list[ResearchSpaceMembership]:
+    ) -> list[GraphSyncMembership]:
         stmt = (
             select(ResearchSpaceMembershipModel)
             .where(
@@ -124,21 +123,7 @@ class _HarnessGraphSyncMembershipSnapshotStore:
             .limit(limit)
         )
         rows = self._session.execute(stmt).scalars().all()
-        return [
-            ResearchSpaceMembership(
-                id=row.id,
-                space_id=row.space_id,
-                user_id=row.user_id,
-                role=MembershipRole(row.role.value),
-                invited_by=row.invited_by,
-                invited_at=row.invited_at,
-                joined_at=row.joined_at,
-                is_active=bool(row.is_active),
-                created_at=row.created_at,
-                updated_at=row.updated_at,
-            )
-            for row in rows
-        ]
+        return [graph_sync_membership_from_model(row) for row in rows]
 
 
 def get_approval_store(

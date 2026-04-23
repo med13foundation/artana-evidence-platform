@@ -65,14 +65,13 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationSuggestionListResponse,
     KernelRelationSuggestionRequest,
 )
-from fastapi import HTTPException, status
-
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.graph_fact_assessment import (
     GroundingLevel,
     MappingStatus,
     SpeculationLevel,
     build_fact_assessment_from_confidence,
 )
+from fastapi import HTTPException, status
 
 if TYPE_CHECKING:
     from artana_evidence_api.approval_store import HarnessApprovalStore

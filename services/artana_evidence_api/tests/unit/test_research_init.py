@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import sys
 import time
 from contextlib import nullcontext
 from dataclasses import replace
 from datetime import UTC, datetime
-from types import ModuleType
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -5692,14 +5690,12 @@ async def test_sync_pubmed_observation_bridge_uses_combined_postgres_search_path
             return None
 
     def _fake_create_entity_recognition_service(
-        session: object,
         *,
-        include_extraction_stage: bool = True,
+        session: object,
         source_document_repository: object | None = None,
         pipeline_run_event_repository: object | None = None,
     ) -> _FakeEntityRecognitionService:
-        del session
-        assert include_extraction_stage is False
+        assert session is fake_session
         assert isinstance(
             source_document_repository,
             _FakeSourceDocumentRepository,
@@ -5720,25 +5716,13 @@ async def test_sync_pubmed_observation_bridge_uses_combined_postgres_search_path
     )
     monkeypatch.setattr(
         research_init_runtime,
-        "SqlAlchemySourceDocumentRepository",
+        "build_source_document_repository",
         _FakeSourceDocumentRepository,
     )
-    fake_container_module = ModuleType(
-        "src.infrastructure.dependency_injection.container",
-    )
-    fake_container_module.container = type(
-        "_FakeContainer",
-        (),
-        {
-            "create_entity_recognition_service": staticmethod(
-                _fake_create_entity_recognition_service,
-            ),
-        },
-    )()
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.dependency_injection.container",
-        fake_container_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "create_observation_bridge_entity_recognition_service",
+        _fake_create_entity_recognition_service,
     )
 
     result = await research_init_runtime._sync_pubmed_documents_into_shared_observation_ingestion(
@@ -5921,14 +5905,12 @@ async def test_sync_pubmed_observation_bridge_persists_source_documents(
             return None
 
     def _fake_create_entity_recognition_service(
-        session: object,
         *,
-        include_extraction_stage: bool = True,
+        session: object,
         source_document_repository: object | None = None,
         pipeline_run_event_repository: object | None = None,
     ) -> _FakeEntityRecognitionService:
-        del session
-        assert include_extraction_stage is False
+        assert session is bridge_session
         assert isinstance(
             source_document_repository,
             SqlAlchemySourceDocumentRepository,
@@ -5943,22 +5925,10 @@ async def test_sync_pubmed_observation_bridge_persists_source_documents(
         "artana_evidence_api.database.SessionLocal",
         lambda: nullcontext(bridge_session),
     )
-    fake_container_module = ModuleType(
-        "src.infrastructure.dependency_injection.container",
-    )
-    fake_container_module.container = type(
-        "_FakeContainer",
-        (),
-        {
-            "create_entity_recognition_service": staticmethod(
-                _fake_create_entity_recognition_service,
-            ),
-        },
-    )()
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.dependency_injection.container",
-        fake_container_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "create_observation_bridge_entity_recognition_service",
+        _fake_create_entity_recognition_service,
     )
 
     result = await research_init_runtime._sync_pubmed_documents_into_shared_observation_ingestion(
@@ -6115,14 +6085,13 @@ async def test_sync_pubmed_observation_bridge_caps_timeouts(
     observed_service: _FakeEntityRecognitionService | None = None
 
     def _fake_create_entity_recognition_service(
-        session: object,
         *,
-        include_extraction_stage: bool = True,
+        session: object,
         source_document_repository: object | None = None,
         pipeline_run_event_repository: object | None = None,
     ) -> _FakeEntityRecognitionService:
-        del session, pipeline_run_event_repository
-        assert include_extraction_stage is False
+        del pipeline_run_event_repository
+        assert session is bridge_session
         assert isinstance(
             source_document_repository,
             SqlAlchemySourceDocumentRepository,
@@ -6135,22 +6104,10 @@ async def test_sync_pubmed_observation_bridge_caps_timeouts(
         "artana_evidence_api.database.SessionLocal",
         lambda: nullcontext(bridge_session),
     )
-    fake_container_module = ModuleType(
-        "src.infrastructure.dependency_injection.container",
-    )
-    fake_container_module.container = type(
-        "_FakeContainer",
-        (),
-        {
-            "create_entity_recognition_service": staticmethod(
-                _fake_create_entity_recognition_service,
-            ),
-        },
-    )()
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.dependency_injection.container",
-        fake_container_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "create_observation_bridge_entity_recognition_service",
+        _fake_create_entity_recognition_service,
     )
 
     result = await research_init_runtime._sync_pubmed_documents_into_shared_observation_ingestion(
@@ -6278,14 +6235,13 @@ async def test_sync_pubmed_observation_bridge_times_out_batch_and_marks_document
             return None
 
     def _fake_create_entity_recognition_service(
-        session: object,
         *,
-        include_extraction_stage: bool = True,
+        session: object,
         source_document_repository: object | None = None,
         pipeline_run_event_repository: object | None = None,
     ) -> _SlowEntityRecognitionService:
-        del session, pipeline_run_event_repository
-        assert include_extraction_stage is False
+        del pipeline_run_event_repository
+        assert session is bridge_session
         assert isinstance(
             source_document_repository,
             SqlAlchemySourceDocumentRepository,
@@ -6301,22 +6257,10 @@ async def test_sync_pubmed_observation_bridge_times_out_batch_and_marks_document
         "_OBSERVATION_BRIDGE_BATCH_TIMEOUT_SECONDS",
         0.01,
     )
-    fake_container_module = ModuleType(
-        "src.infrastructure.dependency_injection.container",
-    )
-    fake_container_module.container = type(
-        "_FakeContainer",
-        (),
-        {
-            "create_entity_recognition_service": staticmethod(
-                _fake_create_entity_recognition_service,
-            ),
-        },
-    )()
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.dependency_injection.container",
-        fake_container_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "create_observation_bridge_entity_recognition_service",
+        _fake_create_entity_recognition_service,
     )
 
     result = await research_init_runtime._sync_pubmed_documents_into_shared_observation_ingestion(
@@ -6496,14 +6440,12 @@ async def test_sync_file_upload_observation_bridge_persists_source_documents(
             return None
 
     def _fake_create_entity_recognition_service(
-        session: object,
         *,
-        include_extraction_stage: bool = True,
+        session: object,
         source_document_repository: object | None = None,
         pipeline_run_event_repository: object | None = None,
     ) -> _FakeEntityRecognitionService:
-        del session
-        assert include_extraction_stage is False
+        assert session is bridge_session
         assert isinstance(
             source_document_repository,
             SqlAlchemySourceDocumentRepository,
@@ -6518,22 +6460,10 @@ async def test_sync_file_upload_observation_bridge_persists_source_documents(
         "artana_evidence_api.database.SessionLocal",
         lambda: nullcontext(bridge_session),
     )
-    fake_container_module = ModuleType(
-        "src.infrastructure.dependency_injection.container",
-    )
-    fake_container_module.container = type(
-        "_FakeContainer",
-        (),
-        {
-            "create_entity_recognition_service": staticmethod(
-                _fake_create_entity_recognition_service,
-            ),
-        },
-    )()
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.dependency_injection.container",
-        fake_container_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "create_observation_bridge_entity_recognition_service",
+        _fake_create_entity_recognition_service,
     )
 
     result = await research_init_runtime._sync_file_upload_documents_into_shared_observation_ingestion(
@@ -6704,13 +6634,13 @@ async def test_observation_bridge_persistence_regression(
             return None
 
     def _fake_create(
-        session: object,
         *,
-        include_extraction_stage: bool = True,
+        session: object,
         source_document_repository: object | None = None,
         pipeline_run_event_repository: object | None = None,
     ) -> _FakeEntityRecognitionService:
-        del session, include_extraction_stage, pipeline_run_event_repository
+        del pipeline_run_event_repository
+        assert session is bridge_session
         assert isinstance(
             source_document_repository,
             SqlAlchemySourceDocumentRepository,
@@ -6721,18 +6651,10 @@ async def test_observation_bridge_persistence_regression(
         "artana_evidence_api.database.SessionLocal",
         lambda: nullcontext(bridge_session),
     )
-    fake_container_module = ModuleType(
-        "src.infrastructure.dependency_injection.container",
-    )
-    fake_container_module.container = type(
-        "_C",
-        (),
-        {"create_entity_recognition_service": staticmethod(_fake_create)},
-    )()
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.dependency_injection.container",
-        fake_container_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "create_observation_bridge_entity_recognition_service",
+        _fake_create,
     )
 
     pubmed_result = await research_init_runtime._sync_pubmed_documents_into_shared_observation_ingestion(

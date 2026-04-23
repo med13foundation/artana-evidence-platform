@@ -14,7 +14,6 @@ to the database (entities + observations) while avoiding LLM calls.
 from __future__ import annotations
 
 from contextlib import nullcontext
-from types import ModuleType
 from uuid import UUID, uuid4
 
 import pytest
@@ -120,8 +119,6 @@ async def test_observation_bridge_persists_source_documents_entities_and_observa
 ) -> None:
     """End-to-end proof: one bridge run produces persisted source_documents,
     entities, and observations in the database."""
-    import sys
-
     bridge_session = _create_bridge_session()
     space_id = uuid4()
     owner_id = uuid4()
@@ -250,14 +247,13 @@ async def test_observation_bridge_persists_source_documents_entities_and_observa
             return None
 
     def _fake_create(
-        session: object,
         *,
-        include_extraction_stage: bool = True,
+        session: object,
         source_document_repository: object | None = None,
         pipeline_run_event_repository: object | None = None,
     ) -> _PersistingEntityRecognitionService:
-        del session, pipeline_run_event_repository
-        assert include_extraction_stage is False
+        del pipeline_run_event_repository
+        assert session is bridge_session
         assert isinstance(
             source_document_repository,
             SqlAlchemySourceDocumentRepository,
@@ -268,16 +264,10 @@ async def test_observation_bridge_persists_source_documents_entities_and_observa
         "artana_evidence_api.database.SessionLocal",
         lambda: nullcontext(bridge_session),
     )
-    fake_container = ModuleType("src.infrastructure.dependency_injection.container")
-    fake_container.container = type(
-        "_C",
-        (),
-        {"create_entity_recognition_service": staticmethod(_fake_create)},
-    )()
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.dependency_injection.container",
-        fake_container,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "create_observation_bridge_entity_recognition_service",
+        _fake_create,
     )
 
     result = await research_init_runtime._sync_pubmed_documents_into_shared_observation_ingestion(

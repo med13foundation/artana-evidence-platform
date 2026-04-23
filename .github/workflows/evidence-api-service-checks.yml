@@ -1,0 +1,94 @@
+name: Evidence API Service Checks
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "Makefile"
+      - "pyproject.toml"
+      - "pytest.ini"
+      - ".env.postgres.example"
+      - "docker-compose.postgres.yml"
+      - "scripts/**"
+      - "services/**"
+      - "src/**"
+      - "tests/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/**"
+      - "Makefile"
+      - "pyproject.toml"
+      - "pytest.ini"
+      - ".env.postgres.example"
+      - "docker-compose.postgres.yml"
+      - "scripts/**"
+      - "services/**"
+      - "src/**"
+      - "tests/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evidence-api-service-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-api-service-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: artana_dev
+          POSTGRES_USER: artana_dev
+          POSTGRES_PASSWORD: artana_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U artana_dev -d artana_dev"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: make install-dev
+
+      - name: Write Postgres env file
+        run: |
+          printf '%s\n' \
+            'ARTANA_POSTGRES_DB=artana_dev' \
+            'ARTANA_POSTGRES_USER=artana_dev' \
+            'ARTANA_POSTGRES_PASSWORD=artana_dev_password' \
+            'ARTANA_POSTGRES_PORT=5432' \
+            'ARTANA_POSTGRES_HOST=127.0.0.1' \
+            'DATABASE_URL=postgresql+psycopg2://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev' \
+            'ASYNC_DATABASE_URL=postgresql+asyncpg://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev' \
+            'ALEMBIC_DATABASE_URL=postgresql+psycopg2://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev' \
+            'FLUJO_STATE_URI=postgresql://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev?options=-c%20search_path=flujo,public' \
+            'ARTANA_ENABLE_ENTITY_EMBEDDINGS=0' \
+            'ARTANA_ENABLE_RELATION_SUGGESTIONS=0' \
+            'NCBI_API_KEY=' \
+            'NCBI_EMAIL=' \
+            'NCBI_TOOL=artana-resource-library' \
+            'ARTANA_ADMIN_PASSWORD=change_me_locally1' \
+            > .env.postgres
+
+      - name: Run evidence API service checks
+        run: make artana-evidence-api-service-checks

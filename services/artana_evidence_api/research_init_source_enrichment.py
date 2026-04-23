@@ -14,6 +14,18 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from artana_evidence_api.source_enrichment_bridges import (
+    ClinVarQueryConfig,
+    build_alphafold_gateway,
+    build_clinicaltrials_gateway,
+    build_clinvar_gateway,
+    build_drugbank_gateway,
+    build_marrvel_discovery_service,
+    build_mgi_gateway,
+    build_uniprot_gateway,
+    build_zfin_gateway,
+)
+
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.document_store import (
@@ -171,13 +183,10 @@ async def run_clinvar_enrichment(
     records_processed = 0
     records_by_gene: dict[str, list[dict[str, object]]] = {}
 
-    try:
-        from src.domain.entities.data_source_configs.clinvar import ClinVarQueryConfig
-        from src.infrastructure.data_sources.clinvar_gateway import (
-            ClinVarSourceGateway,
-        )
-
-        gateway = ClinVarSourceGateway()
+    gateway = build_clinvar_gateway()
+    if gateway is None:
+        all_errors.append("ClinVar gateway not available")
+    else:
         for gene_symbol in gene_symbols[:_MAX_TERMS_PER_SOURCE]:
             try:
                 config = ClinVarQueryConfig(
@@ -211,8 +220,6 @@ async def run_clinvar_enrichment(
                 msg = f"ClinVar query for {gene_symbol}: {exc}"
                 logger.warning(msg)
                 all_errors.append(msg)
-    except ImportError:
-        all_errors.append("ClinVar gateway not available")
 
     # Create proposals directly from structured records
     all_proposals = _create_clinvar_proposals(gene_symbols, documents, records_by_gene)
@@ -368,12 +375,10 @@ async def run_drugbank_enrichment(
     all_errors: list[str] = []
     records_processed = 0
 
-    try:
-        from src.infrastructure.data_sources.drugbank_gateway import (
-            DrugBankSourceGateway,
-        )
-
-        gateway = DrugBankSourceGateway()
+    gateway = build_drugbank_gateway()
+    if gateway is None:
+        all_errors.append("DrugBank gateway not available")
+    else:
         for term in seed_terms[:_MAX_TERMS_PER_SOURCE]:
             try:
                 # DrugBank gateway.fetch_records() uses asyncio.run() internally,
@@ -410,8 +415,6 @@ async def run_drugbank_enrichment(
                 msg = f"DrugBank query for {term}: {exc}"
                 logger.warning(msg)
                 all_errors.append(msg)
-    except ImportError:
-        all_errors.append("DrugBank gateway not available")
 
     return SourceEnrichmentResult(
         source_key="drugbank",
@@ -448,11 +451,9 @@ async def _resolve_gene_to_uniprot(gene_symbol: str) -> str | None:
     try:
         import asyncio
 
-        from src.infrastructure.data_sources.uniprot_gateway import (
-            UniProtSourceGateway,
-        )
-
-        gateway = UniProtSourceGateway()
+        gateway = build_uniprot_gateway()
+        if gateway is None:
+            return None
         result = await asyncio.to_thread(
             gateway.fetch_records,
             query=gene_symbol,
@@ -497,12 +498,10 @@ async def run_alphafold_enrichment(
     # Collect (term, uniprot_id, records) for proposal creation
     alphafold_record_groups: list[tuple[str, str, list[dict[str, object]]]] = []
 
-    try:
-        from src.infrastructure.data_sources.alphafold_gateway import (
-            AlphaFoldSourceGateway,
-        )
-
-        gateway = AlphaFoldSourceGateway()
+    gateway = build_alphafold_gateway()
+    if gateway is None:
+        all_errors.append("AlphaFold gateway not available")
+    else:
         for term in candidates[:_MAX_TERMS_PER_SOURCE]:
             try:
                 # Resolve gene symbols to UniProt accession IDs –
@@ -551,8 +550,6 @@ async def run_alphafold_enrichment(
                 msg = f"AlphaFold query for {term}: {exc}"
                 logger.warning(msg)
                 all_errors.append(msg)
-    except ImportError:
-        all_errors.append("AlphaFold gateway not available")
 
     # Create proposals directly from structured records
     all_proposals: list[object] = []
@@ -664,12 +661,10 @@ async def run_marrvel_enrichment(
     all_errors: list[str] = []
     records_processed = 0
 
-    try:
-        from src.application.services.marrvel_discovery_service import (
-            MarrvelDiscoveryService,
-        )
-
-        service = MarrvelDiscoveryService()
+    service = build_marrvel_discovery_service()
+    if service is None:
+        all_errors.append("MARRVEL discovery service not available")
+    else:
         for gene_symbol in gene_symbols[:_MAX_TERMS_PER_SOURCE]:
             try:
                 result = await service.search(
@@ -707,8 +702,6 @@ async def run_marrvel_enrichment(
                 logger.warning(msg)
                 all_errors.append(msg)
         service.close()
-    except ImportError:
-        all_errors.append("MARRVEL discovery service not available")
 
     return SourceEnrichmentResult(
         source_key="marrvel",
@@ -1207,12 +1200,10 @@ async def run_clinicaltrials_enrichment(
     records_processed = 0
     records_by_term: dict[str, list[dict[str, object]]] = {}
 
-    try:
-        from src.infrastructure.data_sources.clinicaltrials_gateway import (
-            ClinicalTrialsSourceGateway,
-        )
-
-        gateway = ClinicalTrialsSourceGateway()
+    gateway = build_clinicaltrials_gateway()
+    if gateway is None:
+        all_errors.append("ClinicalTrials.gov gateway not available")
+    else:
         for term in candidate_terms[:_MAX_TERMS_PER_SOURCE]:
             try:
                 fetch_result = await gateway.fetch_records_async(
@@ -1245,8 +1236,6 @@ async def run_clinicaltrials_enrichment(
                 msg = f"ClinicalTrials.gov query for {term}: {exc}"
                 logger.warning(msg)
                 all_errors.append(msg)
-    except ImportError:
-        all_errors.append("ClinicalTrials.gov gateway not available")
 
     proposals = _create_clinicaltrials_proposals(records_by_term)
 
@@ -1498,10 +1487,10 @@ async def run_mgi_enrichment(
     records_processed = 0
     records_by_term: dict[str, list[dict[str, object]]] = {}
 
-    try:
-        from src.infrastructure.data_sources.mgi_gateway import MGISourceGateway
-
-        gateway = MGISourceGateway()
+    gateway = build_mgi_gateway()
+    if gateway is None:
+        all_errors.append("MGI gateway not available")
+    else:
         for term in candidate_terms[:_MAX_TERMS_PER_SOURCE]:
             try:
                 fetch_result = await gateway.fetch_records_async(
@@ -1534,8 +1523,6 @@ async def run_mgi_enrichment(
                 msg = f"MGI query for {term}: {exc}"
                 logger.warning(msg)
                 all_errors.append(msg)
-    except ImportError:
-        all_errors.append("MGI gateway not available")
 
     proposals = _create_mgi_proposals(records_by_term)
 
@@ -1774,10 +1761,10 @@ async def run_zfin_enrichment(
     records_processed = 0
     records_by_term: dict[str, list[dict[str, object]]] = {}
 
-    try:
-        from src.infrastructure.data_sources.zfin_gateway import ZFINSourceGateway
-
-        gateway = ZFINSourceGateway()
+    gateway = build_zfin_gateway()
+    if gateway is None:
+        all_errors.append("ZFIN gateway not available")
+    else:
         for term in candidate_terms[:_MAX_TERMS_PER_SOURCE]:
             try:
                 fetch_result = await gateway.fetch_records_async(
@@ -1810,8 +1797,6 @@ async def run_zfin_enrichment(
                 msg = f"ZFIN query for {term}: {exc}"
                 logger.warning(msg)
                 all_errors.append(msg)
-    except ImportError:
-        all_errors.append("ZFIN gateway not available")
 
     proposals = _create_zfin_proposals(records_by_term)
 

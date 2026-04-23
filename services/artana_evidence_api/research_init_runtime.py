@@ -16,6 +16,10 @@ from threading import Thread
 from typing import TYPE_CHECKING, Protocol
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
+from artana_evidence_api.alias_yield_reporting import (
+    attach_alias_yield_rollup,
+    source_results_with_alias_yield,
+)
 from artana_evidence_api.bootstrap_proposal_review import (
     review_bootstrap_enrichment_proposals,
 )
@@ -26,6 +30,7 @@ from artana_evidence_api.full_ai_orchestrator_contracts import (
     ResearchOrchestratorChaseSelection,
     ResearchOrchestratorFilteredChaseCandidate,
 )
+from artana_evidence_api.graph_db_schema import resolve_graph_db_schema
 from artana_evidence_api.graph_integration.preflight import GraphAIPreflightService
 from artana_evidence_api.graph_integration.submission import (
     GraphWorkflowSubmissionService,
@@ -37,6 +42,12 @@ from artana_evidence_api.objective_label_filters import (
     is_organism_focused_objective,
     looks_like_taxonomic_name,
     text_tokens,
+)
+from artana_evidence_api.ontology_runtime_bridges import (
+    build_mondo_ingestion_service,
+)
+from artana_evidence_api.ontology_runtime_bridges import (
+    build_mondo_writer as build_mondo_writer_bridge,
 )
 from artana_evidence_api.proposal_actions import infer_graph_entity_type_from_label
 from artana_evidence_api.queued_run_support import store_primary_result_artifact
@@ -50,29 +61,26 @@ from artana_evidence_api.research_bootstrap_runtime import (
 from artana_evidence_api.research_question_policy import (
     has_prior_research_guidance,
 )
+from artana_evidence_api.source_document_bridges import (
+    DocumentExtractionStatus,
+    DocumentFormat,
+    EnrichmentStatus,
+    SourceDocumentRepositoryProtocol,
+    SourceType,
+    build_source_document,
+    build_source_document_repository,
+    create_observation_bridge_entity_recognition_service,
+    source_document_extraction_status_value,
+    source_document_id,
+    source_document_metadata,
+    source_document_model_copy,
+)
 from artana_evidence_api.transparency import ensure_run_transparency_seed
 from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityEmbeddingRefreshRequest,
 )
 from pydantic import ValidationError
-
-from src.application.services.alias_yield_reporting import (
-    attach_alias_yield_rollup,
-    source_results_with_alias_yield,
-)
-from src.database.graph_schema import resolve_graph_db_schema
-from src.domain.entities.data_sources import SourceType
-from src.domain.entities.source_document import (
-    DocumentExtractionStatus,
-    DocumentFormat,
-    EnrichmentStatus,
-    SourceDocument,
-)
-from src.domain.repositories.pipeline_run_event_repository import (
-    PipelineRunEventRepository,
-)
-from src.infrastructure.repositories import SqlAlchemySourceDocumentRepository
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
@@ -90,8 +98,6 @@ if TYPE_CHECKING:
         SourceEnrichmentResult,
     )
     from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
-
-    from src.domain.entities.pipeline_run_event import PipelineRunEvent
 
 _TOTAL_PROGRESS_STEPS = 5
 _DOCUMENT_EXTRACTION_CONCURRENCY_LIMIT = 4
@@ -281,10 +287,10 @@ class _ObservationBridgeBatchResult:
     errors: tuple[str, ...] = ()
 
 
-class _NoOpPipelineRunEventRepository(PipelineRunEventRepository):
+class _NoOpPipelineRunEventRepository:
     """Drop pipeline trace events for transient observation-bridge runs."""
 
-    def append(self, event: PipelineRunEvent) -> PipelineRunEvent:
+    def append(self, event: object) -> object:
         return event
 
     def list_events(  # noqa: PLR0913
@@ -299,7 +305,7 @@ class _NoOpPipelineRunEventRepository(PipelineRunEventRepository):
         scope_id: str | None = None,
         agent_kind: str | None = None,
         limit: int = 200,
-    ) -> list[PipelineRunEvent]:
+    ) -> list[object]:
         del (
             research_space_id,
             source_id,
@@ -702,7 +708,7 @@ def _build_observation_bridge_result(
     source_document: object | None,
 ) -> _PubMedObservationSyncResult:
     """Build one observation-bridge result from the persisted source document."""
-    if not isinstance(source_document, SourceDocument):
+    if source_document is None:
         return _PubMedObservationSyncResult(
             source_document_id=document.id,
             status="failed",
@@ -712,7 +718,19 @@ def _build_observation_bridge_result(
             errors=("mirrored_source_document_missing",),
         )
 
-    metadata = source_document.metadata
+    document_id = source_document_id(source_document)
+    metadata = source_document_metadata(source_document)
+    status = source_document_extraction_status_value(source_document)
+    if document_id is None or metadata is None or status is None:
+        return _PubMedObservationSyncResult(
+            source_document_id=document.id,
+            status="failed",
+            observations_created=0,
+            entities_created=0,
+            seed_entity_ids=(),
+            errors=("mirrored_source_document_missing",),
+        )
+
     observations_created = metadata.get(
         "entity_recognition_ingestion_observations_created",
         0,
@@ -745,8 +763,8 @@ def _build_observation_bridge_result(
         ):
             errors.append(normalized_entity_recognition_error)
     return _PubMedObservationSyncResult(
-        source_document_id=str(source_document.id),
-        status=source_document.extraction_status.value,
+        source_document_id=str(document_id),
+        status=status,
         observations_created=(
             observations_created if isinstance(observations_created, int) else 0
         ),
@@ -762,10 +780,10 @@ def _build_pubmed_bridge_source_document(
     space_id: UUID,
     source_id: UUID,
     ingestion_job_id: UUID,
-) -> SourceDocument:
+) -> object:
     """Build one SourceDocument for a bridged PubMed harness record."""
     raw_record = _build_pubmed_raw_record_from_document(document)
-    return SourceDocument(
+    return build_source_document(
         id=UUID(document.id),
         research_space_id=space_id,
         source_id=source_id,
@@ -797,9 +815,9 @@ def _build_file_upload_bridge_source_document(
     space_id: UUID,
     source_id: UUID,
     ingestion_job_id: UUID,
-) -> SourceDocument:
+) -> object:
     """Build one SourceDocument for a bridged text/PDF harness record."""
-    return SourceDocument(
+    return build_source_document(
         id=UUID(document.id),
         research_space_id=space_id,
         source_id=source_id,
@@ -875,16 +893,12 @@ async def _run_observation_bridge_batch(
     pipeline_run_id: str | None,
     build_source_document: Callable[
         [HarnessDocumentRecord, UUID, UUID, UUID],
-        SourceDocument,
+        object,
     ],
 ) -> _ObservationBridgeBatchResult:
     """Run the shared observation-ingestion bridge with persisted SourceDocuments."""
     from artana_evidence_api.database import SessionLocal
     from sqlalchemy import text as sa_text
-
-    from src.infrastructure.dependency_injection.container import (
-        container as dependency_container,
-    )
 
     if not documents:
         return _ObservationBridgeBatchResult(
@@ -908,17 +922,15 @@ async def _run_observation_bridge_batch(
         if session.bind and session.bind.dialect.name == "postgresql":
             session.execute(
                 sa_text(
-                    "SET search_path TO "
-                    f"{_observation_bridge_postgres_search_path()}"
+                    f"SET search_path TO {_observation_bridge_postgres_search_path()}"
                 ),
             )
-        source_document_repository = SqlAlchemySourceDocumentRepository(session)
+        source_document_repository = build_source_document_repository(session)
         source_document_repository.upsert_many(source_documents)
 
         entity_recognition_service = (
-            dependency_container.create_entity_recognition_service(
-                session,
-                include_extraction_stage=False,
+            create_observation_bridge_entity_recognition_service(
+                session=session,
                 source_document_repository=source_document_repository,
                 pipeline_run_event_repository=_NoOpPipelineRunEventRepository(),
             )
@@ -1020,15 +1032,16 @@ def _cap_service_timeout(
 def _mark_observation_bridge_documents_failed(
     *,
     documents: list[HarnessDocumentRecord],
-    source_document_repository: SqlAlchemySourceDocumentRepository,
+    source_document_repository: SourceDocumentRepositoryProtocol,
     failure_reason: str,
     error_message: str,
 ) -> None:
     for document in documents:
         source_document = source_document_repository.get_by_id(UUID(document.id))
-        if not isinstance(source_document, SourceDocument):
+        metadata = source_document_metadata(source_document) if source_document else None
+        if metadata is None:
             continue
-        existing_errors = source_document.metadata.get(
+        existing_errors = metadata.get(
             "entity_recognition_ingestion_errors",
         )
         normalized_errors = (
@@ -1042,19 +1055,20 @@ def _mark_observation_bridge_documents_failed(
         )
         if error_message not in normalized_errors:
             normalized_errors.append(error_message)
-        source_document_repository.upsert(
-            source_document.model_copy(
-                update={
-                    "extraction_status": DocumentExtractionStatus.FAILED,
-                    "metadata": {
-                        **source_document.metadata,
-                        "entity_recognition_failure_reason": failure_reason,
-                        "entity_recognition_error": failure_reason,
-                        "entity_recognition_ingestion_errors": normalized_errors,
-                    },
+        updated_source_document = source_document_model_copy(
+            source_document,
+            update={
+                "extraction_status": DocumentExtractionStatus.FAILED,
+                "metadata": {
+                    **metadata,
+                    "entity_recognition_failure_reason": failure_reason,
+                    "entity_recognition_error": failure_reason,
+                    "entity_recognition_ingestion_errors": normalized_errors,
                 },
-            ),
+            },
         )
+        if updated_source_document is not None:
+            source_document_repository.upsert(updated_source_document)
 
 
 async def _sync_pubmed_documents_into_shared_observation_ingestion(
@@ -3107,28 +3121,10 @@ def _build_mondo_writer(
     space_id: UUID,
 ) -> object | None:
     """Build the optional ontology graph writer for MONDO loading."""
-    try:
-        from src.infrastructure.ingest.graph_ontology_entity_writer import (
-            GraphOntologyEntityWriter,
-        )
-
-        mondo_ai_harness = None
-        try:
-            from src.infrastructure.llm.adapters import (
-                ArtanaEvidenceSentenceHarnessAdapter,
-            )
-
-            mondo_ai_harness = ArtanaEvidenceSentenceHarnessAdapter()
-        except Exception:  # noqa: BLE001, S110
-            mondo_ai_harness = None
-
-        return GraphOntologyEntityWriter(
-            graph_api_gateway=graph_api_gateway,
-            research_space_id=space_id,
-            evidence_sentence_harness=mondo_ai_harness,
-        )
-    except Exception:  # noqa: BLE001, S110
-        return None
+    return build_mondo_writer_bridge(
+        graph_api_gateway=graph_api_gateway,
+        space_id=space_id,
+    )
 
 
 async def _execute_deferred_mondo_load(
@@ -3143,18 +3139,13 @@ async def _execute_deferred_mondo_load(
     mondo_source_result = _empty_mondo_source_result(selected=True, status="background")
 
     try:
-        from src.application.services.ontology_ingestion_service import (
-            OntologyIngestionService,
-        )
-        from src.infrastructure.ingest.mondo_gateway import MondoGateway
-
         mondo_writer = _build_mondo_writer(
             graph_api_gateway=graph_api_gateway,
             space_id=space_id,
         )
-        mondo_gateway = MondoGateway()
-        mondo_service = OntologyIngestionService(
-            gateway=mondo_gateway,
+        mondo_service = build_mondo_ingestion_service(
+            graph_api_gateway=graph_api_gateway,
+            space_id=space_id,
             entity_writer=mondo_writer,
         )
         mondo_summary = await mondo_service.ingest(
@@ -4016,9 +4007,9 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             for document in existing_source_documents
             if _classify_document_source(document) == "text"
         )
-        source_results["pubmed"][
-            "documents_selected"
-        ] = existing_pubmed_documents_selected
+        source_results["pubmed"]["documents_selected"] = (
+            existing_pubmed_documents_selected
+        )
         source_results["pdf"]["documents_selected"] = sum(
             1
             for document in existing_source_documents
@@ -4236,9 +4227,9 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                     errors.append(f"Document ingestion failed: {doc_exc}")
 
         source_results["pubmed"]["documents_ingested"] = documents_ingested
-        source_results["pubmed"][
-            "documents_skipped_duplicate"
-        ] = skipped_duplicate_documents
+        source_results["pubmed"]["documents_skipped_duplicate"] = (
+            skipped_duplicate_documents
+        )
 
         artifact_store.patch_workspace(
             space_id=space_id,
@@ -4395,9 +4386,9 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 for source_key in deferred_enrichment_sources:
                     source_results.setdefault(source_key, {})
                     source_results[source_key]["status"] = "deferred"
-                    source_results[source_key][
-                        "deferred_reason"
-                    ] = "guarded_source_selection"
+                    source_results[source_key]["deferred_reason"] = (
+                        "guarded_source_selection"
+                    )
                     source_results[source_key]["guarded_selected_source_key"] = (
                         selected_enrichment_sources[0]
                     )
@@ -5184,9 +5175,9 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                         progress_observer=progress_observer,
                     )
 
-            source_results["pubmed"][
-                "observations_created"
-            ] = pubmed_observations_created
+            source_results["pubmed"]["observations_created"] = (
+                pubmed_observations_created
+            )
             source_results["text"]["observations_created"] = text_observations_created
             source_results["pdf"]["observations_created"] = pdf_observations_created
 

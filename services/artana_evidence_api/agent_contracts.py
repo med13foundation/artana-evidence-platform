@@ -5,12 +5,11 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     assessment_confidence,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class EvidenceSourceType(str, Enum):

@@ -27,8 +27,7 @@ from artana_evidence_api.full_ai_orchestrator_shadow_planner import (
     shadow_planner_prompt_version,
     validate_shadow_planner_output,
 )
-
-from src.infrastructure.llm.costs import calculate_openai_usage_cost_usd
+from artana_evidence_api.llm_costs import calculate_openai_usage_cost_usd
 
 
 def _install_shadow_planner_test_doubles(
@@ -185,11 +184,13 @@ def test_workspace_summary_is_checkpoint_scoped_and_size_bounded() -> None:
         "STOP",
     ]
     assert summary["planner_constraints"]["source_required_action_types"] == []
-    assert "RUN_CHASE_ROUND" in (
-        summary["planner_constraints"]["control_action_types_without_source_key"]
+    assert (
+        "RUN_CHASE_ROUND"
+        in (summary["planner_constraints"]["control_action_types_without_source_key"])
     )
-    assert "STOP" in (
-        summary["planner_constraints"]["control_action_types_without_source_key"]
+    assert (
+        "STOP"
+        in (summary["planner_constraints"]["control_action_types_without_source_key"])
     )
     assert summary["planner_constraints"]["structured_enrichment_source_keys"] == [
         "clinvar"
@@ -442,8 +443,9 @@ def test_workspace_summary_adds_objective_routing_hints_for_structured_sources()
         "clinvar",
         "alphafold",
     ]
-    assert "therapy or inhibitor questions" in (
-        summary["objective_routing_hints"]["summary"]
+    assert (
+        "therapy or inhibitor questions"
+        in (summary["objective_routing_hints"]["summary"])
     )
 
 
@@ -479,8 +481,9 @@ def test_workspace_summary_defers_objective_source_hints_until_after_pubmed_inge
     assert (
         summary["objective_routing_hints"]["preferred_pending_structured_sources"] == []
     )
-    assert "stay inactive until PubMed ingest and extraction are complete" in (
-        summary["objective_routing_hints"]["summary"]
+    assert (
+        "stay inactive until PubMed ingest and extraction are complete"
+        in (summary["objective_routing_hints"]["summary"])
     )
 
 

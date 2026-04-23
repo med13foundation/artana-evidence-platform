@@ -1,0 +1,347 @@
+name: Artana Evidence API Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - ".github/workflows/artana-evidence-api-deploy.yml"
+      - ".dockerignore"
+      - "Makefile"
+      - "pyproject.toml"
+      - "pytest.ini"
+      - "scripts/**"
+      - "services/artana_evidence_api/**"
+      - "services/artana_evidence_db/openapi.json"
+      - "src/**"
+      - "tests/e2e/artana_evidence_api/**"
+      - "tests/unit/infrastructure/artana_evidence_api/**"
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Optional deployment target for manual runs
+        required: false
+        default: none
+        type: choice
+        options:
+          - none
+          - dev
+          - staging
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+concurrency:
+  group: artana-evidence-api-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGION: us-central1
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_DEPLOYER_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+jobs:
+  deploy-dev:
+    name: Deploy Artana Evidence API to Dev
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Google Cloud deploy config
+        run: |
+          missing=()
+          [ -n "${PROJECT_ID}" ] || missing+=("secrets.GCP_PROJECT_ID")
+          [ -n "${GCP_WORKLOAD_IDENTITY_PROVIDER}" ] || missing+=("vars.GCP_WORKLOAD_IDENTITY_PROVIDER")
+          [ -n "${GCP_DEPLOYER_SERVICE_ACCOUNT}" ] || missing+=("vars.GCP_DEPLOYER_SERVICE_ACCOUNT")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required GitHub Actions deploy configuration:\n' >&2
+            printf ' - %s\n' "${missing[@]}" >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Ensure Artifact Registry repository exists
+        run: bash scripts/deploy/ensure_artifact_registry_repository.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build and push Artana Evidence API image (Dev)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/artana_evidence_api/Dockerfile
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api-dev:${{ github.sha }}
+          cache-from: type=gha,scope=artana-evidence-api
+          cache-to: type=gha,mode=max,scope=artana-evidence-api
+
+      - name: Grant Artana Evidence API secret access (Dev)
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          REGION: ${{ env.REGION }}
+          ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api-dev
+          ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_DEV }}
+          AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_DEV }}
+          OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_DEV }}
+          ARTANA_EVIDENCE_API_GRANT_SECRET_ACCESS_ONLY: "true"
+        run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
+
+      - name: Deploy Artana Evidence API to Cloud Run (Dev)
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: artana-evidence-api-dev
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api-dev:${{ github.sha }}
+          region: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+          flags: --no-allow-unauthenticated
+
+      - name: Sync Artana Evidence API runtime config (Dev)
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          REGION: ${{ env.REGION }}
+          ARTANA_ENV: development
+          ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api-dev
+          ARTANA_EVIDENCE_API_CLOUDSQL_CONNECTION_NAME: ${{ vars.GRAPH_HARNESS_CLOUDSQL_CONNECTION_NAME_DEV }}
+          ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_DEV }}
+          AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_DEV }}
+          OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_DEV }}
+          GRAPH_API_URL: ${{ vars.GRAPH_PUBLIC_URL_DEV }}
+          ARTANA_EVIDENCE_API_MIN_INSTANCES: ${{ vars.GRAPH_HARNESS_MIN_INSTANCES_DEV }}
+          ARTANA_EVIDENCE_API_PUBLIC: ${{ vars.GRAPH_HARNESS_PUBLIC_DEV }}
+          ARTANA_EVIDENCE_API_SERVICE_NAME: Artana Evidence API (Dev)
+          ARTANA_EVIDENCE_API_DB_POOL_SIZE: ${{ vars.GRAPH_HARNESS_DB_POOL_SIZE_DEV }}
+          ARTANA_EVIDENCE_API_DB_MAX_OVERFLOW: ${{ vars.GRAPH_HARNESS_DB_MAX_OVERFLOW_DEV }}
+          ARTANA_EVIDENCE_API_DB_POOL_TIMEOUT_SECONDS: ${{ vars.GRAPH_HARNESS_DB_POOL_TIMEOUT_SECONDS_DEV }}
+          ARTANA_EVIDENCE_API_DB_POOL_RECYCLE_SECONDS: ${{ vars.GRAPH_HARNESS_DB_POOL_RECYCLE_SECONDS_DEV }}
+          ARTANA_EVIDENCE_API_DB_POOL_USE_LIFO: ${{ vars.GRAPH_HARNESS_DB_POOL_USE_LIFO_DEV }}
+          ARTANA_EVIDENCE_API_MIGRATION_JOB_NAME: ${{ vars.GRAPH_HARNESS_MIGRATION_JOB_NAME_DEV }}
+          ARTANA_EVIDENCE_API_MIGRATION_JOB_IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api-dev:${{ github.sha }}
+          ARTANA_POOL_MIN_SIZE: ${{ vars.ARTANA_POOL_MIN_SIZE_DEV }}
+          ARTANA_POOL_MAX_SIZE: ${{ vars.ARTANA_POOL_MAX_SIZE_DEV }}
+          ARTANA_COMMAND_TIMEOUT_SECONDS: ${{ vars.ARTANA_COMMAND_TIMEOUT_SECONDS_DEV }}
+        run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
+
+  deploy-staging:
+    name: Deploy Artana Evidence API to Staging
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Google Cloud deploy config
+        run: |
+          missing=()
+          [ -n "${PROJECT_ID}" ] || missing+=("secrets.GCP_PROJECT_ID")
+          [ -n "${GCP_WORKLOAD_IDENTITY_PROVIDER}" ] || missing+=("vars.GCP_WORKLOAD_IDENTITY_PROVIDER")
+          [ -n "${GCP_DEPLOYER_SERVICE_ACCOUNT}" ] || missing+=("vars.GCP_DEPLOYER_SERVICE_ACCOUNT")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required GitHub Actions deploy configuration:\n' >&2
+            printf ' - %s\n' "${missing[@]}" >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Ensure Artifact Registry repository exists
+        run: bash scripts/deploy/ensure_artifact_registry_repository.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build and push Artana Evidence API image (Staging)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/artana_evidence_api/Dockerfile
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api-staging:${{ github.sha }}
+          cache-from: type=gha,scope=artana-evidence-api
+          cache-to: type=gha,mode=max,scope=artana-evidence-api
+
+      - name: Grant Artana Evidence API secret access (Staging)
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          REGION: ${{ env.REGION }}
+          ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api-staging
+          ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_STAGING }}
+          AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_STAGING }}
+          OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_STAGING }}
+          ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME: ${{ vars.ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME_STAGING }}
+          ARTANA_EVIDENCE_API_GRANT_SECRET_ACCESS_ONLY: "true"
+        run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
+
+      - name: Deploy Artana Evidence API to Cloud Run (Staging)
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: artana-evidence-api-staging
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api-staging:${{ github.sha }}
+          region: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+          flags: --no-allow-unauthenticated
+
+      - name: Sync Artana Evidence API runtime config (Staging)
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          REGION: ${{ env.REGION }}
+          ARTANA_ENV: staging
+          ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api-staging
+          ARTANA_EVIDENCE_API_CLOUDSQL_CONNECTION_NAME: ${{ vars.GRAPH_HARNESS_CLOUDSQL_CONNECTION_NAME_STAGING }}
+          ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_STAGING }}
+          AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_STAGING }}
+          OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_STAGING }}
+          ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME: ${{ vars.ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME_STAGING }}
+          ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY: ${{ vars.ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY_STAGING }}
+          GRAPH_API_URL: ${{ vars.GRAPH_PUBLIC_URL_STAGING }}
+          ARTANA_EVIDENCE_API_MIN_INSTANCES: ${{ vars.GRAPH_HARNESS_MIN_INSTANCES_STAGING }}
+          ARTANA_EVIDENCE_API_PUBLIC: ${{ vars.GRAPH_HARNESS_PUBLIC_STAGING }}
+          ARTANA_EVIDENCE_API_SERVICE_NAME: Artana Evidence API (Staging)
+          ARTANA_EVIDENCE_API_DB_POOL_SIZE: ${{ vars.GRAPH_HARNESS_DB_POOL_SIZE_STAGING }}
+          ARTANA_EVIDENCE_API_DB_MAX_OVERFLOW: ${{ vars.GRAPH_HARNESS_DB_MAX_OVERFLOW_STAGING }}
+          ARTANA_EVIDENCE_API_DB_POOL_TIMEOUT_SECONDS: ${{ vars.GRAPH_HARNESS_DB_POOL_TIMEOUT_SECONDS_STAGING }}
+          ARTANA_EVIDENCE_API_DB_POOL_RECYCLE_SECONDS: ${{ vars.GRAPH_HARNESS_DB_POOL_RECYCLE_SECONDS_STAGING }}
+          ARTANA_EVIDENCE_API_DB_POOL_USE_LIFO: ${{ vars.GRAPH_HARNESS_DB_POOL_USE_LIFO_STAGING }}
+          ARTANA_EVIDENCE_API_MIGRATION_JOB_NAME: ${{ vars.GRAPH_HARNESS_MIGRATION_JOB_NAME_STAGING }}
+          ARTANA_EVIDENCE_API_MIGRATION_JOB_IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api-staging:${{ github.sha }}
+          ARTANA_POOL_MIN_SIZE: ${{ vars.ARTANA_POOL_MIN_SIZE_STAGING }}
+          ARTANA_POOL_MAX_SIZE: ${{ vars.ARTANA_POOL_MAX_SIZE_STAGING }}
+          ARTANA_COMMAND_TIMEOUT_SECONDS: ${{ vars.ARTANA_COMMAND_TIMEOUT_SECONDS_STAGING }}
+        run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
+
+  deploy-production:
+    name: Deploy Artana Evidence API to Production
+    if: >
+      (github.event_name == 'release' && github.event.action == 'published') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Google Cloud deploy config
+        run: |
+          missing=()
+          [ -n "${PROJECT_ID}" ] || missing+=("secrets.GCP_PROJECT_ID")
+          [ -n "${GCP_WORKLOAD_IDENTITY_PROVIDER}" ] || missing+=("vars.GCP_WORKLOAD_IDENTITY_PROVIDER")
+          [ -n "${GCP_DEPLOYER_SERVICE_ACCOUNT}" ] || missing+=("vars.GCP_DEPLOYER_SERVICE_ACCOUNT")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required GitHub Actions deploy configuration:\n' >&2
+            printf ' - %s\n' "${missing[@]}" >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Ensure Artifact Registry repository exists
+        run: bash scripts/deploy/ensure_artifact_registry_repository.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build and push Artana Evidence API image (Production)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/artana_evidence_api/Dockerfile
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api:${{ github.sha }}
+          cache-from: type=gha,scope=artana-evidence-api
+          cache-to: type=gha,mode=max,scope=artana-evidence-api
+
+      - name: Grant Artana Evidence API secret access (Production)
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          REGION: ${{ env.REGION }}
+          ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api
+          ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_PROD }}
+          AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_PROD }}
+          OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_PROD }}
+          ARTANA_EVIDENCE_API_GRANT_SECRET_ACCESS_ONLY: "true"
+        run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
+
+      - name: Deploy Artana Evidence API to Cloud Run (Production)
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: artana-evidence-api
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api:${{ github.sha }}
+          region: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+          flags: --no-allow-unauthenticated
+
+      - name: Sync Artana Evidence API runtime config (Production)
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          REGION: ${{ env.REGION }}
+          ARTANA_ENV: production
+          ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api
+          ARTANA_EVIDENCE_API_CLOUDSQL_CONNECTION_NAME: ${{ vars.GRAPH_HARNESS_CLOUDSQL_CONNECTION_NAME_PROD }}
+          ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_PROD }}
+          AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_PROD }}
+          OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_PROD }}
+          GRAPH_API_URL: ${{ vars.GRAPH_PUBLIC_URL_PROD }}
+          ARTANA_EVIDENCE_API_MIN_INSTANCES: ${{ vars.GRAPH_HARNESS_MIN_INSTANCES_PROD }}
+          ARTANA_EVIDENCE_API_PUBLIC: ${{ vars.GRAPH_HARNESS_PUBLIC_PROD }}
+          ARTANA_EVIDENCE_API_SERVICE_NAME: Artana Evidence API
+          ARTANA_EVIDENCE_API_DB_POOL_SIZE: ${{ vars.GRAPH_HARNESS_DB_POOL_SIZE_PROD }}
+          ARTANA_EVIDENCE_API_DB_MAX_OVERFLOW: ${{ vars.GRAPH_HARNESS_DB_MAX_OVERFLOW_PROD }}
+          ARTANA_EVIDENCE_API_DB_POOL_TIMEOUT_SECONDS: ${{ vars.GRAPH_HARNESS_DB_POOL_TIMEOUT_SECONDS_PROD }}
+          ARTANA_EVIDENCE_API_DB_POOL_RECYCLE_SECONDS: ${{ vars.GRAPH_HARNESS_DB_POOL_RECYCLE_SECONDS_PROD }}
+          ARTANA_EVIDENCE_API_DB_POOL_USE_LIFO: ${{ vars.GRAPH_HARNESS_DB_POOL_USE_LIFO_PROD }}
+          ARTANA_EVIDENCE_API_MIGRATION_JOB_NAME: ${{ vars.GRAPH_HARNESS_MIGRATION_JOB_NAME_PROD }}
+          ARTANA_EVIDENCE_API_MIGRATION_JOB_IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/artana-evidence-api:${{ github.sha }}
+          ARTANA_POOL_MIN_SIZE: ${{ vars.ARTANA_POOL_MIN_SIZE_PROD }}
+          ARTANA_POOL_MAX_SIZE: ${{ vars.ARTANA_POOL_MAX_SIZE_PROD }}
+          ARTANA_COMMAND_TIMEOUT_SECONDS: ${{ vars.ARTANA_COMMAND_TIMEOUT_SECONDS_PROD }}
+        run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh

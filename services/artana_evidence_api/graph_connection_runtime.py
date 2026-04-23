@@ -43,9 +43,8 @@ from artana_evidence_api.runtime_support import (
     normalize_litellm_model_id,
 )
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
+from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
-
-from src.domain.agents.contracts.fact_assessment import assessment_confidence
 
 _DEFAULT_AGENT_IDENTITY = "You are the graph-harness autonomous graph-connection agent."
 _MAX_GRAPH_CONNECTION_ITERATIONS = 6

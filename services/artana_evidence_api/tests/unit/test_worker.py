@@ -75,15 +75,14 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationClaimListResponse,
     KernelRelationClaimResponse,
 )
-from artana_evidence_api.worker import run_worker_tick
-
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.graph_fact_assessment import (
     GroundingLevel,
     MappingStatus,
     SpeculationLevel,
     SupportBand,
     build_fact_assessment_from_confidence,
 )
+from artana_evidence_api.worker import run_worker_tick
 
 if TYPE_CHECKING:
     from artana_evidence_api.composition import GraphHarnessKernelRuntime

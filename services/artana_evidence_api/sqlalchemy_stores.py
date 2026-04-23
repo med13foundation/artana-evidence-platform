@@ -46,8 +46,6 @@ from artana_evidence_api.research_space_store import (
 from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
-from src.infrastructure.mappers.research_space_mapper import ResearchSpaceMapper
-
 from .chat_sessions import (
     HarnessChatMessageRecord,
     HarnessChatSessionRecord,
@@ -81,6 +79,7 @@ from .schedule_store import (
     HarnessScheduleRecord,
     HarnessScheduleStore,
 )
+from .space_sync_types import SpaceLifecycleSyncPort, graph_sync_space_from_model
 
 _ASSIGNABLE_MEMBER_ROLE_VALUES = frozenset(
     role.value for role in MembershipRoleEnum if role is not MembershipRoleEnum.OWNER
@@ -89,8 +88,6 @@ _ASSIGNABLE_MEMBER_ROLE_VALUES = frozenset(
 if TYPE_CHECKING:
     from artana_evidence_api.types.common import JSONObject, ResearchSpaceSettings
     from sqlalchemy.orm import Session
-
-    from src.domain.ports.space_lifecycle_sync_port import SpaceLifecycleSyncPort
 
 
 def _json_object(value: object) -> JSONObject:
@@ -888,15 +885,15 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
                 HarnessReviewItemModel.review_type == review_item.review_type,
                 HarnessReviewItemModel.source_key == review_item.source_key,
             )
-        models = self.session.execute(
-            stmt.order_by(HarnessReviewItemModel.updated_at.desc()),
-        ).scalars().all()
+        models = (
+            self.session.execute(
+                stmt.order_by(HarnessReviewItemModel.updated_at.desc()),
+            )
+            .scalars()
+            .all()
+        )
         preferred_match = next(
-            (
-                model
-                for model in models
-                if model.status == "pending_review"
-            ),
+            (model for model in models if model.status == "pending_review"),
             None,
         )
         if preferred_match is not None:
@@ -1500,11 +1497,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
     def _sync_space_model(self, model: ResearchSpaceModel) -> None:
         if self._space_lifecycle_sync is None:
             return
-        domain_space = ResearchSpaceMapper.to_domain(model)
-        if domain_space is None:
-            msg = f"Failed to map research space {model.id} for graph tenant sync"
-            raise ValueError(msg)
-        self._space_lifecycle_sync.sync_space(domain_space)
+        self._space_lifecycle_sync.sync_space(graph_sync_space_from_model(model))
 
     def _ensure_owner_user(  # noqa: PLR0913
         self,

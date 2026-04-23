@@ -23,8 +23,7 @@ from artana_evidence_api.ranking import (
     rank_chat_graph_write_candidate,
 )
 from artana_evidence_api.tool_runtime import run_suggest_relations
-
-from src.domain.agents.contracts.fact_assessment import assessment_confidence
+from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore

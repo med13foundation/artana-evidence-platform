@@ -2688,7 +2688,7 @@ def _derive_shadow_planner_model_terminal_cost_usd(payload: object) -> float | N
     if ":" in normalized_model_id and not normalized_model_id.startswith("openai:"):
         return None
 
-    from src.infrastructure.llm.costs import calculate_openai_usage_cost_usd
+    from artana_evidence_api.llm_costs import calculate_openai_usage_cost_usd
 
     with suppress(Exception):
         cost_usd = calculate_openai_usage_cost_usd(

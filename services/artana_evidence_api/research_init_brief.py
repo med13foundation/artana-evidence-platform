@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from src.application.services.alias_yield_reporting import build_alias_yield_rollup
+from artana_evidence_api.alias_yield_reporting import build_alias_yield_rollup
 
 if TYPE_CHECKING:
     from .artifact_store import HarnessArtifactStore

@@ -6,7 +6,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar
+from typing import Protocol, TypeAlias, TypeVar
 from uuid import UUID
 
 import httpx
@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict
 from .config import get_settings
 from .graph_integration.context import GraphCallContext
 from .request_context import REQUEST_ID_HEADER, build_request_id_headers
+from .space_sync_types import GraphSyncMembership, GraphSyncSpace
 from .types.common import JSONObject
 from .types.graph_contracts import (
     AIDecisionResponse,
@@ -71,10 +72,6 @@ from .types.graph_contracts import (
     OperatingModeResponse,
     ValidationExplanationRequest,
 )
-
-if TYPE_CHECKING:
-    from src.domain.entities.research_space import ResearchSpace
-    from src.domain.entities.research_space_membership import ResearchSpaceMembership
 
 ResponseModelT = TypeVar("ResponseModelT", bound=BaseModel)
 GraphServiceRequestPrimitive: TypeAlias = str | int | float | bool | None
@@ -673,7 +670,9 @@ class GraphDictionaryTransport(_GraphTransportBase):
         *,
         domain_context: str | None = None,
     ) -> DictionaryRelationTypeListResponse:
-        params = {"domain_context": domain_context} if domain_context is not None else None
+        params = (
+            {"domain_context": domain_context} if domain_context is not None else None
+        )
         return self._runtime.request_model(
             "GET",
             "/v1/dictionary/relation-types",
@@ -686,7 +685,9 @@ class GraphDictionaryTransport(_GraphTransportBase):
         *,
         domain_context: str | None = None,
     ) -> DictionaryEntityTypeListResponse:
-        params = {"domain_context": domain_context} if domain_context is not None else None
+        params = (
+            {"domain_context": domain_context} if domain_context is not None else None
+        )
         return self._runtime.request_model(
             "GET",
             "/v1/dictionary/entity-types",
@@ -960,8 +961,8 @@ class GraphRawMutationTransport(_GraphTransportBase):
     def sync_space(
         self,
         *,
-        space: ResearchSpace,
-        memberships: Sequence[ResearchSpaceMembership],
+        space: GraphSyncSpace,
+        memberships: Sequence[GraphSyncMembership],
     ) -> JSONObject:
         payload = GraphSpaceSyncRequest(
             slug=space.slug,

@@ -11,23 +11,22 @@ from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
 )
-from artana_evidence_api.variant_aware_document_extraction import (
-    document_supports_variant_aware_extraction,
-    extract_variant_aware_document,
-)
-
-from src.domain.agents.contracts.extraction import (
-    ExtractedEntityCandidate,
-    ExtractedRelation,
-    ExtractionContract,
-    RejectedFact,
-)
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     GroundingLevel,
     MappingStatus,
     SpeculationLevel,
     SupportBand,
+)
+from artana_evidence_api.variant_aware_document_extraction import (
+    document_supports_variant_aware_extraction,
+    extract_variant_aware_document,
+)
+from artana_evidence_api.variant_extraction_contracts import (
+    ExtractedEntityCandidate,
+    ExtractedRelation,
+    ExtractionContract,
+    RejectedFact,
 )
 
 

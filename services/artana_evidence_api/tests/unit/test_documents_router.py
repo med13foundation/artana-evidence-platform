@@ -45,22 +45,21 @@ from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
     KernelEntityResponse,
 )
-from artana_evidence_api.variant_aware_document_extraction import (
-    VariantAwareDocumentExtractionResult,
-)
-from fastapi.testclient import TestClient
-
-from src.domain.agents.contracts.extraction import (
-    ExtractedEntityCandidate,
-    ExtractionContract,
-)
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     GroundingLevel,
     MappingStatus,
     SpeculationLevel,
     SupportBand,
 )
+from artana_evidence_api.variant_aware_document_extraction import (
+    VariantAwareDocumentExtractionResult,
+)
+from artana_evidence_api.variant_extraction_contracts import (
+    ExtractedEntityCandidate,
+    ExtractionContract,
+)
+from fastapi.testclient import TestClient
 
 _TEST_USER_ID: Final[str] = "11111111-1111-1111-1111-111111111111"
 _TEST_USER_EMAIL: Final[str] = "graph-harness-docs@example.com"

@@ -11,35 +11,30 @@ from artana_evidence_api.graph_client import GraphServiceClientError
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from artana_evidence_api.ranking import rank_candidate_claim
 from artana_evidence_api.review_item_store import HarnessReviewItemDraft
-from artana_evidence_api.types.common import JSONObject, JSONValue
-
-from src.application.agents.services._fact_assessment_scoring import (
+from artana_evidence_api.shared_fact_assessment_helpers import (
     fact_assessment_payload,
     fact_evidence_weight,
+    to_json_value,
 )
-from src.domain.agents.contexts.extraction_context import ExtractionContext
-from src.domain.agents.contracts.extraction import (
-    ExtractedEntityCandidate,
-    ExtractedRelation,
-    ExtractionContract,
-    RejectedFact,
-)
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.common import JSONObject, JSONValue
+from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     GroundingLevel,
     MappingStatus,
     SpeculationLevel,
     SupportBand,
 )
-from src.domain.services.genomics_signal_parser import build_genomics_signal_bundle
-from src.infrastructure.llm.adapters.extraction_agent_adapter import (
+from artana_evidence_api.variant_extraction_bridges import (
     ArtanaExtractionAdapter,
+    ExtractionContext,
+    build_genomics_signal_bundle,
 )
-from src.infrastructure.llm.graph_domain_ai_config import (
-    BIOMEDICAL_EXTRACTION_PAYLOAD_CONFIG,
-    BIOMEDICAL_EXTRACTION_PROMPT_CONFIG,
+from artana_evidence_api.variant_extraction_contracts import (
+    ExtractedEntityCandidate,
+    ExtractedRelation,
+    ExtractionContract,
+    RejectedFact,
 )
-from src.type_definitions.json_utils import to_json_value
 
 if TYPE_CHECKING:
     from artana_evidence_api.document_extraction import DocumentExtractionReviewContext
@@ -156,10 +151,7 @@ async def extract_variant_aware_document(
         genomics_signals=signals,
         shadow_mode=True,
     )
-    adapter = ArtanaExtractionAdapter(
-        prompt_config=BIOMEDICAL_EXTRACTION_PROMPT_CONFIG,
-        payload_config=BIOMEDICAL_EXTRACTION_PAYLOAD_CONFIG,
-    )
+    adapter = ArtanaExtractionAdapter()
     try:
         contract = await adapter.extract(context)
     finally:
