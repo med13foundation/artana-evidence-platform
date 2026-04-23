@@ -149,7 +149,7 @@ define check_venv
 fi
 endef
 
-.PHONY: help venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-test graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-test artana-evidence-api-service-checks run-graph-service run-artana-evidence-api-service
+.PHONY: help venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-test graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-test artana-evidence-api-service-checks run-graph-service run-artana-evidence-api-service run-all
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
@@ -313,3 +313,44 @@ run-artana-evidence-api-service: ## Run the standalone evidence API locally
 	$(call check_venv)
 	@$(MAKE) -s setup-postgres
 	$(call run_with_postgres_env,$(BACKEND_DEV_ENV) PYTHONPATH="$(CURDIR)/services" DATABASE_URL="$$DATABASE_URL" ARTANA_EVIDENCE_API_DATABASE_URL="$$DATABASE_URL" GRAPH_API_URL="http://127.0.0.1:$(GRAPH_SERVICE_PORT)" ARTANA_EVIDENCE_API_SERVICE_HOST=0.0.0.0 ARTANA_EVIDENCE_API_SERVICE_PORT=$(ARTANA_EVIDENCE_API_PORT) ARTANA_EVIDENCE_API_SERVICE_RELOAD=1 $(USE_PYTHON) -m artana_evidence_api)
+
+run-all: ## Run Postgres, graph service, and evidence API locally
+	$(call check_venv)
+	@$(MAKE) -s setup-postgres
+	$(call ensure_postgres_env)
+	@echo "Using Postgres env ($(POSTGRES_ENV_FILE))"
+	@/bin/bash -lc '\
+		set -euo pipefail; \
+		set -a; source "$(POSTGRES_ENV_FILE)"; set +a; \
+		export AUTH_JWT_SECRET="$(BACKEND_DEV_JWT_SECRET)"; \
+		export GRAPH_JWT_SECRET="$(BACKEND_DEV_JWT_SECRET)"; \
+		export GRAPH_JWT_ISSUER="$(BACKEND_DEV_JWT_ISSUER)"; \
+		export ARTANA_EVIDENCE_API_BOOTSTRAP_KEY="$(ARTANA_EVIDENCE_API_BOOTSTRAP_KEY)"; \
+		export AUTH_ALLOW_TEST_AUTH_HEADERS="$(AUTH_ALLOW_TEST_AUTH_HEADERS)"; \
+		export PYTHONPATH="$(CURDIR)/services"; \
+		export GRAPH_DATABASE_URL="$$DATABASE_URL"; \
+		export GRAPH_SERVICE_HOST="0.0.0.0"; \
+		export GRAPH_SERVICE_PORT="$(GRAPH_SERVICE_PORT)"; \
+		export GRAPH_SERVICE_RELOAD="1"; \
+		export ARTANA_EVIDENCE_API_DATABASE_URL="$$DATABASE_URL"; \
+		export GRAPH_API_URL="http://127.0.0.1:$(GRAPH_SERVICE_PORT)"; \
+		export ARTANA_EVIDENCE_API_SERVICE_HOST="0.0.0.0"; \
+		export ARTANA_EVIDENCE_API_SERVICE_PORT="$(ARTANA_EVIDENCE_API_PORT)"; \
+		export ARTANA_EVIDENCE_API_SERVICE_RELOAD="1"; \
+		cleanup() { \
+			trap - INT TERM EXIT; \
+			[ -n "$${graph_pid:-}" ] && kill "$$graph_pid" 2>/dev/null || true; \
+			[ -n "$${api_pid:-}" ] && kill "$$api_pid" 2>/dev/null || true; \
+			wait 2>/dev/null || true; \
+		}; \
+		trap cleanup INT TERM EXIT; \
+		echo "Starting graph service on http://127.0.0.1:$(GRAPH_SERVICE_PORT)"; \
+		$(USE_PYTHON) -m artana_evidence_db & graph_pid=$$!; \
+		echo "Starting evidence API on http://127.0.0.1:$(ARTANA_EVIDENCE_API_PORT)"; \
+		$(USE_PYTHON) -m artana_evidence_api & api_pid=$$!; \
+		while kill -0 "$$graph_pid" 2>/dev/null && kill -0 "$$api_pid" 2>/dev/null; do sleep 1; done; \
+		status=0; \
+		if ! kill -0 "$$graph_pid" 2>/dev/null; then wait "$$graph_pid" || status=$$?; echo "Graph service exited."; fi; \
+		if ! kill -0 "$$api_pid" 2>/dev/null; then wait "$$api_pid" || status=$$?; echo "Evidence API exited."; fi; \
+		exit "$$status"; \
+	'
