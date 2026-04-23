@@ -765,7 +765,7 @@ async def test_maybe_select_chase_round_selection_accepts_matched_synthetic_stop
         }
         return recommendation_payload, comparison
 
-    observer._get_or_emit_shadow_checkpoint = _fake_checkpoint  # type: ignore[method-assign]
+    observer._get_or_emit_shadow_checkpoint = _fake_checkpoint
 
     selection = await observer.maybe_select_chase_round_selection(
         round_number=1,

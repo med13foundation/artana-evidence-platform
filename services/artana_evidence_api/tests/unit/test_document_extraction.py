@@ -117,7 +117,7 @@ class _FakeKernelStore:
 
 
 class _FakeKernel:
-    def __init__(self, *, store, model_port, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, *, store, model_port, **kwargs) -> None:
         del kwargs
         self.store = store
         self.model_port = model_port
@@ -129,7 +129,7 @@ class _FakeKernel:
 
 
 class _FakeSingleStepClient:
-    def __init__(self, *, kernel) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, *, kernel) -> None:
         self.kernel = kernel
 
 
@@ -408,7 +408,7 @@ async def test_extract_relation_candidates_with_llm_uses_fresh_store_and_closes(
         created_stores.append(store)
         return store
 
-    async def _fake_run_single_step_with_policy(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
         return SimpleNamespace(
             output={
                 "relations": [
@@ -466,7 +466,7 @@ async def test_extract_relation_candidates_with_llm_scopes_step_key_to_document_
 ) -> None:
     captured_step_keys: list[str] = []
 
-    async def _fake_run_single_step_with_policy(*_args, **kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
         captured_step_keys.append(kwargs["step_key"])
         return SimpleNamespace(
             output={
@@ -544,7 +544,7 @@ async def test_extract_relation_candidates_with_llm_closes_store_on_failure(
         created_stores.append(store)
         return store
 
-    async def _boom(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+    async def _boom(*_args, **_kwargs):
         raise RuntimeError("synthetic llm outage")
 
     monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
@@ -587,7 +587,7 @@ async def test_review_document_extraction_drafts_with_diagnostics_closes_store(
         created_stores.append(store)
         return store
 
-    async def _fake_run_single_step_with_policy(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
         return SimpleNamespace(
             output={
                 "reviews": [
@@ -705,7 +705,7 @@ async def test_review_document_extraction_drafts_scopes_step_key_to_review_paylo
 ) -> None:
     captured_step_keys: list[str] = []
 
-    async def _fake_run_single_step_with_policy(*_args, **kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
         captured_step_keys.append(kwargs["step_key"])
         return SimpleNamespace(
             output={
@@ -846,7 +846,7 @@ async def test_review_document_extraction_drafts_with_diagnostics_times_out(
         created_stores.append(store)
         return store
 
-    async def _slow_run_single_step_with_policy(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+    async def _slow_run_single_step_with_policy(*_args, **_kwargs):
         await asyncio.sleep(0.01)
         return SimpleNamespace(output={"reviews": []})
 
@@ -959,7 +959,7 @@ async def test_pre_resolve_entities_with_ai_caps_ai_budget(
 ) -> None:
     seen_labels: list[str] = []
 
-    def _fake_exact_match(*, space_id, label: str, graph_api_gateway):  # type: ignore[no-untyped-def]
+    def _fake_exact_match(*, space_id, label: str, graph_api_gateway):
         del space_id, graph_api_gateway
         if label == "BRCA1":
             return {
@@ -1040,7 +1040,7 @@ async def test_pre_resolve_entities_with_ai_times_out_and_falls_back(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    def _never_exact_match(*, space_id, label: str, graph_api_gateway):  # type: ignore[no-untyped-def]
+    def _never_exact_match(*, space_id, label: str, graph_api_gateway):
         del space_id, label, graph_api_gateway
 
     async def _slow_resolve_entity_with_ai(

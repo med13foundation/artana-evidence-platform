@@ -813,7 +813,7 @@ class GraphAIPreflightService:
         ):
             commands.append(
                 GovernedGraphCommand(
-                    kind=cast("str", create_command_kind),
+                    kind=create_command_kind,
                     payload=cast("JSONObject", normalized_request.model_dump(mode="json")),
                 ),
             )

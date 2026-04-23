@@ -204,7 +204,7 @@ def _graph_submission_service() -> GraphWorkflowSubmissionService:
     return GraphWorkflowSubmissionService()
 
 
-def _run_async_preflight(awaitable):  # type: ignore[no-untyped-def]
+def _run_async_preflight(awaitable):
     try:
         asyncio.get_running_loop()
     except RuntimeError:

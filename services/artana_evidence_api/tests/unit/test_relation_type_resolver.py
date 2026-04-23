@@ -56,7 +56,7 @@ class _FakeKernelStore:
 
 
 class _FakeKernel:
-    def __init__(self, *, store, model_port, tool_port=None, middleware=None, policy=None) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, *, store, model_port, tool_port=None, middleware=None, policy=None) -> None:
         del tool_port, middleware, policy
         self.store = store
         self.model_port = model_port
@@ -68,7 +68,7 @@ class _FakeKernel:
 
 
 class _FakeGraphHarnessSkillContextBuilder:
-    def __init__(self, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, **kwargs) -> None:
         self.kwargs = kwargs
 
 
@@ -80,11 +80,11 @@ class _FakeGraphHarnessSkillAutonomousAgent:
     )
     run_exc: Exception | None = None
 
-    def __init__(self, kernel, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, kernel, **kwargs) -> None:
         self.kernel = kernel
         self.kwargs = kwargs
 
-    async def run(self, **kwargs):  # type: ignore[no-untyped-def]
+    async def run(self, **kwargs):
         self.kwargs.update(kwargs)
         if self.__class__.run_exc is not None:
             raise self.__class__.run_exc

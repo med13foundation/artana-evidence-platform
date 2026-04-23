@@ -115,6 +115,9 @@ _HARNESS_PRODUCTION_EXCLUDED_DIRS = frozenset(
         "tests",
     },
 )
+_ROUTER_IMPORT_ALLOWED_FILES = {
+    HARNESS_ROOT / "app.py",
+}
 
 
 @dataclass(frozen=True)
@@ -227,6 +230,40 @@ def _identity_model_import_violations(file_path: Path) -> list[BoundaryViolation
     return violations
 
 
+def _runtime_router_import_violations(file_path: Path) -> list[BoundaryViolation]:
+    if not _is_harness_production_file(file_path):
+        return []
+    if file_path in _ROUTER_IMPORT_ALLOWED_FILES:
+        return []
+    if "routers" in file_path.relative_to(HARNESS_ROOT).parts:
+        return []
+    tree = ast.parse(file_path.read_text(encoding="utf-8"), filename=str(file_path))
+    violations: list[BoundaryViolation] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            module_names = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            module_names = [node.module] if node.module is not None else []
+        else:
+            continue
+        violations.extend(
+            [
+                BoundaryViolation(
+                    file_path=str(file_path.relative_to(REPO_ROOT)),
+                    line_number=getattr(node, "lineno", 0),
+                    imported_module=(
+                        "production runtime import from router module: "
+                        f"{module_name}"
+                    ),
+                )
+                for module_name in module_names
+                if module_name == "artana_evidence_api.routers"
+                or module_name.startswith("artana_evidence_api.routers.")
+            ],
+        )
+    return violations
+
+
 def _call_method_and_path(node: ast.Call) -> tuple[str | None, str | None]:
     if isinstance(node.func, ast.Attribute) and node.func.attr in {
         "post",
@@ -331,6 +368,7 @@ def _find_violations() -> list[BoundaryViolation]:
         violations.extend(_read_imports(file_path))
         if _is_harness_production_file(file_path):
             violations.extend(_identity_model_import_violations(file_path))
+            violations.extend(_runtime_router_import_violations(file_path))
             violations.extend(_raw_mutation_import_violations(file_path))
             violations.extend(_read_forbidden_graph_mutation_calls(file_path))
     for path in HARNESS_TEST_PATHS:

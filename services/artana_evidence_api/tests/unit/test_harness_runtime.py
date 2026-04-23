@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from typing import cast
 from uuid import UUID
@@ -78,10 +77,7 @@ def services() -> HarnessExecutionServices:
         ),
         graph_chat_runner=cast("HarnessGraphChatRunner", _FakeGraphChatRunner()),
         graph_api_gateway_factory=GraphTransportBundle,
-        pubmed_discovery_service_factory=cast(
-            "Callable[[], AbstractContextManager[PubMedDiscoveryService]]",
-            _fake_pubmed_discovery_service_factory,
-        ),
+        pubmed_discovery_service_factory=_fake_pubmed_discovery_service_factory,
     )
 
 

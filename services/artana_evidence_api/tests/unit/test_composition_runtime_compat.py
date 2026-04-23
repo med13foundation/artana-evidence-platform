@@ -182,9 +182,9 @@ class _KernelWithAmbiguousToolOutcome:
 def test_runtime_adapter_matches_installed_artana_read_api_signatures() -> None:
     sync_kernel = _KernelWithCurrentReadApiSignatures()
     runtime = GraphHarnessKernelRuntime(
-        kernel=_KernelThatMustStayAsyncOnly(),  # type: ignore[arg-type]
-        _runner=_SynchronousRunner(),  # type: ignore[arg-type]
-        _sync_kernel=sync_kernel,  # type: ignore[arg-type]
+        kernel=_KernelThatMustStayAsyncOnly(),
+        _runner=_SynchronousRunner(),
+        _sync_kernel=sync_kernel,
     )
 
     assert runtime.ensure_run(run_id="run-1", tenant_id="space-1") is True
@@ -257,9 +257,9 @@ def test_runtime_adapter_bounds_append_run_summary_with_timeout() -> None:
     sync_kernel = _KernelWithCurrentReadApiSignatures()
     runner = _RecordingRunner()
     runtime = GraphHarnessKernelRuntime(
-        kernel=_KernelThatMustStayAsyncOnly(),  # type: ignore[arg-type]
-        _runner=runner,  # type: ignore[arg-type]
-        _sync_kernel=sync_kernel,  # type: ignore[arg-type]
+        kernel=_KernelThatMustStayAsyncOnly(),
+        _runner=runner,
+        _sync_kernel=sync_kernel,
     )
 
     result = runtime.append_run_summary(
@@ -278,11 +278,11 @@ def test_runtime_adapter_raises_typed_reconciliation_error_for_unknown_outcome()
     None
 ):
     runtime = GraphHarnessKernelRuntime(
-        kernel=_KernelThatMustStayAsyncOnly(),  # type: ignore[arg-type]
-        _runner=_SynchronousRunner(),  # type: ignore[arg-type]
+        kernel=_KernelThatMustStayAsyncOnly(),
+        _runner=_SynchronousRunner(),
         _sync_kernel=_KernelWithAmbiguousToolOutcome(
             outcome="unknown_outcome",
-        ),  # type: ignore[arg-type]
+        ),
     )
 
     with pytest.raises(GraphHarnessToolReconciliationRequiredError) as exc_info:
@@ -290,7 +290,7 @@ def test_runtime_adapter_raises_typed_reconciliation_error_for_unknown_outcome()
             run_id="run-1",
             tenant_id="space-1",
             tool_name="list_relation_conflicts",
-            arguments=object(),  # type: ignore[arg-type]
+            arguments=object(),
             step_key="claim_curation.relation_conflicts",
         )
 
@@ -306,11 +306,11 @@ def test_runtime_adapter_reraises_original_tool_failure_for_non_ambiguous_outcom
     None
 ):
     runtime = GraphHarnessKernelRuntime(
-        kernel=_KernelThatMustStayAsyncOnly(),  # type: ignore[arg-type]
-        _runner=_SynchronousRunner(),  # type: ignore[arg-type]
+        kernel=_KernelThatMustStayAsyncOnly(),
+        _runner=_SynchronousRunner(),
         _sync_kernel=_KernelWithAmbiguousToolOutcome(
             outcome="failed",
-        ),  # type: ignore[arg-type]
+        ),
     )
 
     with pytest.raises(RuntimeError, match="tool execution failed"):
@@ -318,7 +318,7 @@ def test_runtime_adapter_reraises_original_tool_failure_for_non_ambiguous_outcom
             run_id="run-1",
             tenant_id="space-1",
             tool_name="list_relation_conflicts",
-            arguments=object(),  # type: ignore[arg-type]
+            arguments=object(),
             step_key="claim_curation.relation_conflicts",
         )
 
@@ -339,9 +339,9 @@ class _KernelWithTenantAwareLoadRunSignature:
 def test_runtime_adapter_supports_tenant_aware_load_run_signatures() -> None:
     sync_kernel = _KernelWithTenantAwareLoadRunSignature()
     runtime = GraphHarnessKernelRuntime(
-        kernel=_KernelThatMustStayAsyncOnly(),  # type: ignore[arg-type]
-        _runner=_SynchronousRunner(),  # type: ignore[arg-type]
-        _sync_kernel=sync_kernel,  # type: ignore[arg-type]
+        kernel=_KernelThatMustStayAsyncOnly(),
+        _runner=_SynchronousRunner(),
+        _sync_kernel=sync_kernel,
     )
 
     assert runtime.ensure_run(run_id="run-2", tenant_id="space-2") is True
@@ -368,9 +368,9 @@ class _KernelWithLoadRunTimeout:
 def test_runtime_adapter_ensures_run_after_load_timeout() -> None:
     sync_kernel = _KernelWithLoadRunTimeout()
     runtime = GraphHarnessKernelRuntime(
-        kernel=_KernelThatMustStayAsyncOnly(),  # type: ignore[arg-type]
-        _runner=_SynchronousRunner(),  # type: ignore[arg-type]
-        _sync_kernel=sync_kernel,  # type: ignore[arg-type]
+        kernel=_KernelThatMustStayAsyncOnly(),
+        _runner=_SynchronousRunner(),
+        _sync_kernel=sync_kernel,
     )
 
     assert runtime.ensure_run(run_id="run-timeout", tenant_id="space-timeout") is True
@@ -479,9 +479,9 @@ class _SuccessfulStepClient:
 def test_runtime_adapter_supports_tenant_aware_read_api_signatures() -> None:
     sync_kernel = _KernelWithTenantAwareReadApiSignatures()
     runtime = GraphHarnessKernelRuntime(
-        kernel=_KernelThatMustStayAsyncOnly(),  # type: ignore[arg-type]
-        _runner=_SynchronousRunner(),  # type: ignore[arg-type]
-        _sync_kernel=sync_kernel,  # type: ignore[arg-type]
+        kernel=_KernelThatMustStayAsyncOnly(),
+        _runner=_SynchronousRunner(),
+        _sync_kernel=sync_kernel,
     )
 
     assert runtime.ensure_run(run_id="run-3", tenant_id="space-3") is True
@@ -549,7 +549,7 @@ def test_run_single_step_with_policy_records_step_health() -> None:
             tenant=object(),
             model="openai/gpt-5-mini",
             prompt="return ok",
-            output_schema=dict,  # type: ignore[arg-type]
+            output_schema=dict,
             step_key="document_extraction.proposal_review.v1",
             replay_policy="fork_on_drift",
         ),

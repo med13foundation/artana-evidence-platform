@@ -45,7 +45,7 @@ class _FakeKernelStore:
 
 
 class _FakeKernel:
-    def __init__(self, *, store, model_port, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, *, store, model_port, **kwargs) -> None:
         del kwargs
         self.store = store
         self.model_port = model_port
@@ -57,7 +57,7 @@ class _FakeKernel:
 
 
 class _FakeSingleStepClient:
-    def __init__(self, *, kernel) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, *, kernel) -> None:
         self.kernel = kernel
 
 
@@ -230,7 +230,7 @@ def _patch_variant_adapter_runtime(
         created_stores.append(store)
         return store
 
-    async def _fake_run_single_step_with_policy(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
         return SimpleNamespace(output=step_output)
 
     monkeypatch.setattr(

@@ -201,7 +201,7 @@ def test_send_chat_message_offloads_preflight_to_thread(
     to_thread_calls: list[object] = []
     queued_run: HarnessRunRecord | None = None
 
-    async def _fake_to_thread(func, /, *args, **kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_to_thread(func, /, *args, **kwargs):
         to_thread_calls.append(func)
         result = func(*args, **kwargs)
         nonlocal queued_run
@@ -221,7 +221,7 @@ def test_send_chat_message_offloads_preflight_to_thread(
         assert queued_run is not None
         return QueuedRunWaitOutcome(run=queued_run, timed_out=False)
 
-    async def _fake_maybe_execute_test_worker_run(**_kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_maybe_execute_test_worker_run(**_kwargs):
         return None
 
     monkeypatch.setattr(chat_router.asyncio, "to_thread", _fake_to_thread)

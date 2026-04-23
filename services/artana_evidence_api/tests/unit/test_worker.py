@@ -385,7 +385,7 @@ def test_list_queued_worker_runs_uses_catalog_records_without_runtime_hydration(
             return _FakeResult()
 
     class _ExplodingRegistry(HarnessRunRegistry):
-        def get_run(self, *, space_id, run_id):  # type: ignore[override]
+        def get_run(self, *, space_id, run_id):
             raise AssertionError(
                 f"get_run should not be called for {space_id}:{run_id}"
             )

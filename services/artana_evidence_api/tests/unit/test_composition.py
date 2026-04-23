@@ -132,8 +132,8 @@ def test_graph_harness_kernel_runtime_get_model_health_combines_probe_and_step_s
     )
 
     runtime = composition.GraphHarnessKernelRuntime(
-        kernel=object(),  # type: ignore[arg-type]
-        _runner=object(),  # type: ignore[arg-type]
+        kernel=object(),
+        _runner=object(),
     )
     health = runtime.get_model_health()
 

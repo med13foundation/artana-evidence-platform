@@ -5,16 +5,14 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import inspect
-import json
 import logging
 import os
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from threading import Thread
-from typing import TYPE_CHECKING, Protocol
-from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
+from typing import TYPE_CHECKING
+from uuid import UUID
 
 from artana_evidence_api.alias_yield_reporting import (
     attach_alias_yield_rollup,
@@ -23,25 +21,13 @@ from artana_evidence_api.alias_yield_reporting import (
 from artana_evidence_api.bootstrap_proposal_review import (
     review_bootstrap_enrichment_proposals,
 )
-from artana_evidence_api.db_schema import resolve_harness_db_schema
-from artana_evidence_api.document_extraction import resolve_graph_entity_label
+from artana_evidence_api.document_extraction import (
+    normalize_text_document,
+    sha256_hex,
+)
+from artana_evidence_api.document_ingestion_support import _enrich_pdf_document
 from artana_evidence_api.full_ai_orchestrator_contracts import (
-    ResearchOrchestratorChaseCandidate,
     ResearchOrchestratorChaseSelection,
-    ResearchOrchestratorFilteredChaseCandidate,
-)
-from artana_evidence_api.graph_db_schema import resolve_graph_db_schema
-from artana_evidence_api.graph_integration.preflight import GraphAIPreflightService
-from artana_evidence_api.graph_integration.submission import (
-    GraphWorkflowSubmissionService,
-)
-from artana_evidence_api.low_signal_labels import filtered_low_signal_label_reason
-from artana_evidence_api.objective_label_filters import (
-    filtered_taxonomic_spillover_reason,
-    filtered_underanchored_fragment_reason,
-    is_organism_focused_objective,
-    looks_like_taxonomic_name,
-    text_tokens,
 )
 from artana_evidence_api.ontology_runtime_bridges import (
     build_mondo_ingestion_service,
@@ -49,7 +35,6 @@ from artana_evidence_api.ontology_runtime_bridges import (
 from artana_evidence_api.ontology_runtime_bridges import (
     build_mondo_writer as build_mondo_writer_bridge,
 )
-from artana_evidence_api.proposal_actions import infer_graph_entity_type_from_label
 from artana_evidence_api.queued_run_support import store_primary_result_artifact
 from artana_evidence_api.request_context import build_request_id_headers
 from artana_evidence_api.research_bootstrap_runtime import (
@@ -58,25 +43,65 @@ from artana_evidence_api.research_bootstrap_runtime import (
     execute_research_bootstrap_run,
     queue_research_bootstrap_run,
 )
+from artana_evidence_api.research_init_chase import (
+    _enabled_chase_source_keys,
+    _filtered_chase_reason_counts,
+    _prepare_chase_round,
+    _run_entity_chase_round,
+    _serialize_chase_preparation,
+)
+from artana_evidence_api.research_init_helpers import (
+    _HTTP_OK,
+    _MAX_PREVIEWS_PER_QUERY,
+    _SYSTEM_OWNER_ID,
+    _build_pubmed_queries,
+    _build_scope_refinement_questions,
+    _candidate_key,
+    _merge_candidate,
+    _PubMedCandidate,
+    _select_candidates_for_ingestion,
+)
+from artana_evidence_api.research_init_models import (
+    ResearchInitExecutionResult,
+    ResearchInitProgressObserver,
+    ResearchInitPubMedReplayBundle,
+    ResearchInitPubMedReplayDocument,
+    ResearchInitPubMedResultRecord,
+    ResearchInitStructuredEnrichmentReplayBundle,
+    ResearchInitStructuredEnrichmentReplaySource,
+    ResearchInitStructuredReplayDocument,
+    ResearchInitStructuredReplayProposal,
+    _ChaseRoundPreparation,
+    _ObservationBridgeBatchResult,
+    _PreparedDocumentExtraction,
+    _PubMedObservationSyncResult,
+    _PubMedQueryExecutionResult,
+    _StoredReplayProposalResult,
+)
+from artana_evidence_api.research_init_observation_bridge import (
+    _append_unique_entity_ids,
+    _ground_candidate_claim_drafts,
+    _ground_replay_candidate_claim_drafts,
+    _proposal_payload_entity_ids,
+    _sync_file_upload_documents_into_shared_observation_ingestion,
+    _sync_pubmed_documents_into_shared_observation_ingestion,
+)
+from artana_evidence_api.research_init_replay import (
+    _clone_pubmed_query_execution,
+    _clone_selected_pubmed_candidates,
+    _collect_pubmed_candidates,
+    _pubmed_replay_document_by_sha256,
+    build_pubmed_replay_bundle_with_document_outputs,
+    deserialize_pubmed_replay_bundle,
+    load_pubmed_replay_bundle_artifact,
+    serialize_pubmed_replay_bundle,
+    store_pubmed_replay_bundle_artifact,
+)
 from artana_evidence_api.research_init_source_results import (
     build_source_results,
 )
 from artana_evidence_api.research_question_policy import (
     has_prior_research_guidance,
-)
-from artana_evidence_api.source_document_bridges import (
-    DocumentExtractionStatus,
-    DocumentFormat,
-    EnrichmentStatus,
-    SourceDocumentRepositoryProtocol,
-    SourceType,
-    build_source_document,
-    build_source_document_repository,
-    create_observation_bridge_entity_recognition_service,
-    source_document_extraction_status_value,
-    source_document_id,
-    source_document_metadata,
-    source_document_model_copy,
 )
 from artana_evidence_api.transparency import ensure_run_transparency_seed
 from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
@@ -137,1004 +162,86 @@ _STRUCTURED_REPLAY_SOURCE_KIND_TO_KEY = {
 _MIN_GENE_FAMILY_TOKEN_LENGTH = 4
 
 
-@dataclass(frozen=True, slots=True)
-class ResearchInitPubMedResultRecord:
-    """Compact summary of one PubMed query family."""
-
-    query: str
-    total_found: int
-    abstracts_ingested: int
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchInitExecutionResult:
-    """Terminal result for one research-init worker run."""
-
-    run: HarnessRunRecord
-    pubmed_results: tuple[ResearchInitPubMedResultRecord, ...]
-    documents_ingested: int
-    proposal_count: int
-    research_state: JSONObject | None
-    pending_questions: list[str]
-    errors: list[str]
-    claim_curation: JSONObject | None = None
-    research_brief_markdown: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class _PreparedDocumentExtraction:
-    """Prepared extraction output for one selected workset document."""
-
-    document: HarnessDocumentRecord
-    drafts: tuple[HarnessProposalDraft, ...]
-    errors: tuple[str, ...]
-    failed: bool = False
 
-
-@dataclass(frozen=True, slots=True)
-class _PubMedQueryExecutionResult:
-    """One completed PubMed query family plus ordered candidate outputs."""
-
-    query_result: ResearchInitPubMedResultRecord | None
-    candidates: tuple[object, ...]
-    errors: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchInitPubMedReplayBundle:
-    """Replayable PubMed inputs captured before document ingestion."""
-
-    query_executions: tuple[_PubMedQueryExecutionResult, ...]
-    selected_candidates: tuple[tuple[object, object], ...]
-    selection_errors: tuple[str, ...]
-    documents: tuple[ResearchInitPubMedReplayDocument, ...] = ()
-
 
-@dataclass(frozen=True, slots=True)
-class ResearchInitPubMedReplayDocument:
-    """Replayable PubMed document outputs captured from a baseline run."""
 
-    source_document_id: str
-    sha256: str
-    title: str
-    extraction_proposals: tuple[ResearchInitStructuredReplayProposal, ...] = ()
 
 
-@dataclass(frozen=True, slots=True)
-class ResearchInitStructuredReplayDocument:
-    """Replayable structured-source document payload."""
-
-    source_document_id: str
-    created_by: str
-    title: str
-    source_type: str
-    filename: str | None
-    media_type: str
-    sha256: str
-    byte_size: int
-    page_count: int | None
-    text_content: str
-    raw_storage_key: str | None
-    enriched_storage_key: str | None
-    enrichment_status: str
-    extraction_status: str
-    metadata: JSONObject
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchInitStructuredReplayProposal:
-    """Replayable structured-source proposal payload."""
-
-    proposal_type: str
-    source_kind: str
-    source_key: str
-    title: str
-    summary: str
-    confidence: float
-    ranking_score: float
-    reasoning_path: JSONObject
-    evidence_bundle: list[JSONObject]
-    payload: JSONObject
-    metadata: JSONObject
-    source_document_id: str | None = None
-    claim_fingerprint: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchInitStructuredEnrichmentReplaySource:
-    """Replayable outputs for one structured enrichment source."""
-
-    source_key: str
-    documents: tuple[ResearchInitStructuredReplayDocument, ...]
-    proposals: tuple[ResearchInitStructuredReplayProposal, ...]
-    document_extraction_proposals: tuple[ResearchInitStructuredReplayProposal, ...] = ()
-    records_processed: int = 0
-    errors: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class ResearchInitStructuredEnrichmentReplayBundle:
-    """Replayable structured enrichment outputs captured from a prior run."""
-
-    sources: tuple[ResearchInitStructuredEnrichmentReplaySource, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class _StoredReplayProposalResult:
-    """One replay-proposal storage result plus surfaced current-space entities."""
-
-    proposal_count: int
-    surfaced_entity_ids: tuple[str, ...] = ()
-    created_entity_ids: tuple[str, ...] = ()
-    errors: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class _PubMedObservationSyncResult:
-    """Outcome of mirroring one harness PubMed document into shared ingestion."""
-
-    source_document_id: str
-    status: str
-    observations_created: int
-    entities_created: int
-    seed_entity_ids: tuple[str, ...]
-    errors: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class _ObservationBridgeBatchResult:
-    """Batch result for one shared observation-bridge run."""
-
-    document_results: dict[str, _PubMedObservationSyncResult]
-    seed_entity_ids: tuple[str, ...]
-    errors: tuple[str, ...] = ()
-
-
-class _NoOpPipelineRunEventRepository:
-    """Drop pipeline trace events for transient observation-bridge runs."""
-
-    def append(self, event: object) -> object:
-        return event
-
-    def list_events(  # noqa: PLR0913
-        self,
-        *,
-        research_space_id: UUID | None = None,
-        source_id: UUID | None = None,
-        pipeline_run_id: str | None = None,
-        stage: str | None = None,
-        level: str | None = None,
-        scope_kind: str | None = None,
-        scope_id: str | None = None,
-        agent_kind: str | None = None,
-        limit: int = 200,
-    ) -> list[object]:
-        del (
-            research_space_id,
-            source_id,
-            pipeline_run_id,
-            stage,
-            level,
-            scope_kind,
-            scope_id,
-            agent_kind,
-            limit,
-        )
-        return []
-
-
-class ResearchInitProgressObserver(Protocol):
-    """Observer notified whenever research-init advances one major phase."""
-
-    def on_progress(
-        self,
-        *,
-        phase: str,
-        message: str,
-        progress_percent: float,
-        completed_steps: int,
-        metadata: JSONObject,
-        workspace_snapshot: JSONObject,
-    ) -> None: ...
-
-
-def _research_init_pubmed_source_id(space_id: UUID) -> UUID:
-    """Return a stable hidden shared-source id for research-init PubMed docs."""
-    return uuid5(NAMESPACE_URL, f"research-init-pubmed-source:{space_id}")
-
-
-def _research_init_upload_source_id(space_id: UUID) -> UUID:
-    """Return a stable hidden shared-source id for research-init uploaded docs."""
-    return uuid5(NAMESPACE_URL, f"research-init-upload-source:{space_id}")
-
-
-def _build_pubmed_raw_record_from_document(
-    document: HarnessDocumentRecord,
-) -> JSONObject:
-    """Build the shared PubMed raw-record shape from one harness document."""
-    metadata = document.metadata
-    pubmed_metadata = (
-        metadata.get("pubmed") if isinstance(metadata.get("pubmed"), dict) else {}
-    )
-    source_queries = metadata.get("source_queries")
-    queries = (
-        [item for item in source_queries if isinstance(item, str) and item.strip()]
-        if isinstance(source_queries, list)
-        else []
-    )
-    raw_record: JSONObject = {
-        "title": document.title,
-        "abstract": document.text_content,
-        "text": document.text_content,
-        "source": "research-init-pubmed",
-        "source_queries": queries,
-    }
-    for source_key, target_key in (
-        ("pmid", "pubmed_id"),
-        ("doi", "doi"),
-        ("pmc_id", "pmc_id"),
-        ("journal", "journal"),
-    ):
-        value = pubmed_metadata.get(source_key)
-        if isinstance(value, str) and value.strip():
-            normalized_value = value.strip()
-            raw_record[target_key] = normalized_value
-            if source_key == "pmid":
-                raw_record["pmid"] = normalized_value
-    return raw_record
-
-
-def _compute_pubmed_payload_hash(record: JSONObject) -> str:
-    """Return a stable hash for one bridged PubMed raw record."""
-    serialized = json.dumps(
-        record,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=str,
-    )
-    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-
-
-def _build_pubmed_external_record_id(record: JSONObject) -> str:
-    """Return the canonical PubMed external record id for one bridged record."""
-    for key in ("pmid", "pubmed_id", "doi"):
-        value = record.get(key)
-        if isinstance(value, str) and value.strip():
-            normalized = value.strip()
-            if key == "doi":
-                normalized = normalized.lower()
-            return f"pubmed:{key}:{normalized}"
-        if isinstance(value, int):
-            return f"pubmed:{key}:{value}"
-    return f"pubmed:hash:{_compute_pubmed_payload_hash(record)}"
-
-
-def _build_file_upload_raw_record_from_document(
-    document: HarnessDocumentRecord,
-) -> JSONObject:
-    """Build the shared raw-record shape for uploaded text/PDF documents."""
-    raw_record: JSONObject = {
-        "title": document.title,
-        "source": f"research-init-{document.source_type}",
-        "text": document.text_content,
-        "full_text": document.text_content,
-        "full_text_source": (
-            "research_init_pdf_enrichment"
-            if document.source_type == "pdf"
-            else "research_init_text"
-        ),
-        "media_type": document.media_type,
-    }
-    if document.filename is not None and document.filename.strip():
-        raw_record["filename"] = document.filename.strip()
-    if document.page_count is not None:
-        raw_record["page_count"] = document.page_count
-    return raw_record
-
-
-def _extract_graph_entity_id(entity_payload: object) -> str | None:
-    """Extract one graph entity id from a service response payload."""
-    if not isinstance(entity_payload, dict):
-        return None
-    nested_entity = entity_payload.get("entity")
-    resolved_payload = (
-        nested_entity if isinstance(nested_entity, dict) else entity_payload
-    )
-    entity_id = resolved_payload.get("id")
-    if not isinstance(entity_id, str) or entity_id.strip() == "":
-        return None
-    return entity_id.strip()
-
-
-def _append_unique_entity_ids(
-    *,
-    target: list[str],
-    entity_ids: Sequence[str],
-) -> None:
-    """Append UUID-backed entity ids while preserving order and uniqueness."""
-    seen = set(target)
-    for entity_id in entity_ids:
-        if entity_id in seen:
-            continue
-        target.append(entity_id)
-        seen.add(entity_id)
-
-
-def _normalized_uuid_string(value: object) -> str | None:
-    """Return one normalized UUID string when the input is UUID-like."""
-    if not isinstance(value, str) or value.strip() == "":
-        return None
-    try:
-        return str(UUID(value.strip()))
-    except ValueError:
-        return None
-
-
-def _proposal_payload_entity_ids(
-    proposals: Sequence[object],
-) -> tuple[str, ...]:
-    """Collect UUID-backed proposal endpoints that can feed chase preparation."""
-    entity_ids: list[str] = []
-    for proposal in proposals:
-        payload = getattr(proposal, "payload", None)
-        if not isinstance(payload, dict):
-            continue
-        for key in ("proposed_subject", "proposed_object"):
-            entity_id = _normalized_uuid_string(payload.get(key))
-            if entity_id is None or entity_id in entity_ids:
-                continue
-            entity_ids.append(entity_id)
-    return tuple(entity_ids)
-
-
-def _proposal_endpoint_label(
-    *,
-    payload: JSONObject,
-    key: str,
-) -> tuple[str | None, str | None]:
-    """Return a proposal endpoint ref together with the best local grounding label."""
-    raw_entity_ref = payload.get(key)
-    entity_ref = (
-        raw_entity_ref.strip()
-        if isinstance(raw_entity_ref, str) and raw_entity_ref.strip() != ""
-        else None
-    )
-    raw_label = payload.get(f"{key}_label")
-    if isinstance(raw_label, str) and raw_label.strip() != "":
-        return entity_ref, raw_label.strip()
-    if entity_ref is None or not entity_ref.startswith("unresolved:"):
-        return entity_ref, None
-    label = entity_ref.removeprefix("unresolved:").replace("_", " ").strip()
-    return entity_ref, label or None
-
-
-def _ground_replay_candidate_claim_drafts(
-    *,
-    space_id: UUID,
-    drafts: tuple[HarnessProposalDraft, ...],
-    graph_api_gateway: GraphTransportBundle,
-) -> tuple[
-    tuple[HarnessProposalDraft, ...],
-    tuple[str, ...],
-    tuple[str, ...],
-    tuple[str, ...],
-]:
-    """Rewrite replayed candidate-claim drafts to current-space graph entity ids."""
-    grounded_drafts: list[HarnessProposalDraft] = []
-    surfaced_entity_ids: list[str] = []
-    created_entity_ids: list[str] = []
-    errors: list[str] = []
-    resolved_entity_ids: dict[str, str] = {}
-    for draft in drafts:
-        if draft.proposal_type != "candidate_claim":
-            grounded_drafts.append(draft)
-            continue
-        payload = dict(draft.payload)
-        for key in ("proposed_subject", "proposed_object"):
-            _, label = _proposal_endpoint_label(payload=payload, key=key)
-            if label is None:
-                continue
-            entity_id, created_entity_id, error = _ground_candidate_claim_endpoint(
-                space_id=space_id,
-                entity_ref=f"label::{label.casefold()}",
-                label=label,
-                graph_api_gateway=graph_api_gateway,
-                resolved_entity_ids=resolved_entity_ids,
-            )
-            if error is not None:
-                errors.append(error)
-                continue
-            if entity_id is not None:
-                payload[key] = entity_id
-                if entity_id not in surfaced_entity_ids:
-                    surfaced_entity_ids.append(entity_id)
-            if (
-                created_entity_id is not None
-                and created_entity_id not in created_entity_ids
-            ):
-                created_entity_ids.append(created_entity_id)
-        grounded_drafts.append(replace(draft, payload=payload))
-    return (
-        tuple(grounded_drafts),
-        tuple(surfaced_entity_ids),
-        tuple(created_entity_ids),
-        tuple(errors),
-    )
-
-
-def _ground_candidate_claim_endpoint(
-    *,
-    space_id: UUID,
-    entity_ref: str,
-    label: str,
-    graph_api_gateway: GraphTransportBundle,
-    resolved_entity_ids: dict[str, str],
-) -> tuple[str | None, str | None, str | None]:
-    """Return one UUID-backed entity reference for a deferred proposal endpoint."""
-    cached_entity_id = resolved_entity_ids.get(entity_ref)
-    if cached_entity_id is not None:
-        return cached_entity_id, None, None
-    try:
-        try:
-            resolved_entity = resolve_graph_entity_label(
-                space_id=space_id,
-                label=label,
-                graph_api_gateway=graph_api_gateway,
-            )
-        except Exception:  # noqa: BLE001
-            resolved_entity = None
-        entity_id = _extract_graph_entity_id(resolved_entity)
-        if entity_id is not None:
-            resolved_entity_ids[entity_ref] = entity_id
-            created_entity_id: str | None = None
-        else:
-            preflight_service = GraphAIPreflightService()
-            submission_service = GraphWorkflowSubmissionService()
-            resolved_intent = preflight_service.prepare_entity_create(
-                space_id=space_id,
-                entity_type=infer_graph_entity_type_from_label(label),
-                display_label=label,
-                aliases=None,
-                graph_transport=graph_api_gateway,
-            )
-            created_entity = submission_service.submit_resolved_intent(
-                resolved_intent=resolved_intent,
-                graph_transport=graph_api_gateway,
-            )
-            entity_id = _extract_graph_entity_id(created_entity)
-            if entity_id is None:
-                return (
-                    None,
-                    None,
-                    f"Entity auto-creation skipped for '{label}': missing entity id",
-                )
-            resolved_entity_ids[entity_ref] = entity_id
-            created_entity_id = entity_id
-        return entity_id, created_entity_id, None  # noqa: TRY300
-    except Exception as entity_exc:  # noqa: BLE001
-        return (
-            None,
-            None,
-            f"Entity auto-creation skipped for '{label}': {type(entity_exc).__name__}",
-        )
-
-
-def _ground_candidate_claim_drafts(
-    *,
-    space_id: UUID,
-    drafts: tuple[HarnessProposalDraft, ...],
-    graph_api_gateway: GraphTransportBundle,
-) -> tuple[
-    tuple[HarnessProposalDraft, ...],
-    tuple[str, ...],
-    tuple[str, ...],
-    tuple[str, ...],
-]:
-    """Resolve deferred candidate-claim endpoints to UUID-backed graph entities."""
-    grounded_drafts: list[HarnessProposalDraft] = []
-    surfaced_entity_ids: list[str] = []
-    created_entity_ids: list[str] = []
-    errors: list[str] = []
-    resolved_entity_ids: dict[str, str] = {}
-    for draft in drafts:
-        if draft.proposal_type != "candidate_claim":
-            grounded_drafts.append(draft)
-            continue
-        payload = dict(draft.payload)
-        for key in ("proposed_subject", "proposed_object"):
-            raw_entity_ref = payload.get(key)
-            if not isinstance(raw_entity_ref, str):
-                continue
-            entity_ref = raw_entity_ref.strip()
-            if not entity_ref.startswith("unresolved:"):
-                continue
-            label_key = f"{key}_label"
-            raw_label = payload.get(label_key)
-            if isinstance(raw_label, str) and raw_label.strip() != "":
-                label = raw_label.strip()
-            else:
-                label = entity_ref.removeprefix("unresolved:").replace("_", " ").strip()
-            if label == "":
-                continue
-            entity_id, created_entity_id, error = _ground_candidate_claim_endpoint(
-                space_id=space_id,
-                entity_ref=entity_ref,
-                label=label,
-                graph_api_gateway=graph_api_gateway,
-                resolved_entity_ids=resolved_entity_ids,
-            )
-            if error is not None:
-                errors.append(error)
-                continue
-            if entity_id is not None:
-                payload[key] = entity_id
-                surfaced_entity_ids.append(entity_id)
-            if created_entity_id is not None:
-                created_entity_ids.append(created_entity_id)
-        grounded_drafts.append(replace(draft, payload=payload))
-    return (
-        tuple(grounded_drafts),
-        tuple(surfaced_entity_ids),
-        tuple(created_entity_ids),
-        tuple(errors),
-    )
-
-
-async def _sync_pubmed_document_into_shared_observation_ingestion(
-    *,
-    space_id: UUID,
-    owner_id: UUID,
-    document: HarnessDocumentRecord,
-) -> _PubMedObservationSyncResult:
-    """Mirror one harness PubMed document into the shared observation pipeline."""
-    batch_result = await _sync_pubmed_documents_into_shared_observation_ingestion(
-        space_id=space_id,
-        owner_id=owner_id,
-        documents=[document],
-    )
-    return batch_result.document_results.get(
-        document.id,
-        _PubMedObservationSyncResult(
-            source_document_id=document.id,
-            status="failed",
-            observations_created=0,
-            entities_created=0,
-            seed_entity_ids=(),
-            errors=("missing_observation_bridge_result",),
-        ),
-    )
-
-
-def _build_observation_bridge_result(
-    *,
-    document: HarnessDocumentRecord,
-    source_document: object | None,
-) -> _PubMedObservationSyncResult:
-    """Build one observation-bridge result from the persisted source document."""
-    if source_document is None:
-        return _PubMedObservationSyncResult(
-            source_document_id=document.id,
-            status="failed",
-            observations_created=0,
-            entities_created=0,
-            seed_entity_ids=(),
-            errors=("mirrored_source_document_missing",),
-        )
-
-    document_id = source_document_id(source_document)
-    metadata = source_document_metadata(source_document)
-    status = source_document_extraction_status_value(source_document)
-    if document_id is None or metadata is None or status is None:
-        return _PubMedObservationSyncResult(
-            source_document_id=document.id,
-            status="failed",
-            observations_created=0,
-            entities_created=0,
-            seed_entity_ids=(),
-            errors=("mirrored_source_document_missing",),
-        )
-
-    observations_created = metadata.get(
-        "entity_recognition_ingestion_observations_created",
-        0,
-    )
-    entities_created = metadata.get(
-        "entity_recognition_ingestion_entities_created",
-        0,
-    )
-    raw_errors = metadata.get("entity_recognition_ingestion_errors")
-    errors: list[str] = []
-    if isinstance(raw_errors, list):
-        for error in raw_errors:
-            if not isinstance(error, str):
-                continue
-            normalized_error = error.strip()
-            if normalized_error == "" or normalized_error in errors:
-                continue
-            errors.append(normalized_error)
-    failure_reason = metadata.get("entity_recognition_failure_reason")
-    if isinstance(failure_reason, str):
-        normalized_failure_reason = failure_reason.strip()
-        if normalized_failure_reason != "" and normalized_failure_reason not in errors:
-            errors.append(normalized_failure_reason)
-    entity_recognition_error = metadata.get("entity_recognition_error")
-    if isinstance(entity_recognition_error, str):
-        normalized_entity_recognition_error = entity_recognition_error.strip()
-        if (
-            normalized_entity_recognition_error != ""
-            and normalized_entity_recognition_error not in errors
-        ):
-            errors.append(normalized_entity_recognition_error)
-    return _PubMedObservationSyncResult(
-        source_document_id=str(document_id),
-        status=status,
-        observations_created=(
-            observations_created if isinstance(observations_created, int) else 0
-        ),
-        entities_created=entities_created if isinstance(entities_created, int) else 0,
-        seed_entity_ids=(),
-        errors=tuple(errors),
-    )
-
-
-def _build_pubmed_bridge_source_document(
-    *,
-    document: HarnessDocumentRecord,
-    space_id: UUID,
-    source_id: UUID,
-    ingestion_job_id: UUID,
-) -> object:
-    """Build one SourceDocument for a bridged PubMed harness record."""
-    raw_record = _build_pubmed_raw_record_from_document(document)
-    return build_source_document(
-        id=UUID(document.id),
-        research_space_id=space_id,
-        source_id=source_id,
-        ingestion_job_id=ingestion_job_id,
-        external_record_id=_build_pubmed_external_record_id(raw_record),
-        source_type=SourceType.PUBMED,
-        document_format=DocumentFormat.MEDLINE_XML,
-        raw_storage_key=document.raw_storage_key,
-        enriched_storage_key=document.enriched_storage_key,
-        content_hash=document.sha256,
-        content_length_chars=len(document.text_content),
-        enrichment_status=EnrichmentStatus.SKIPPED,
-        enrichment_method="research_init_bridge",
-        enrichment_agent_run_id=None,
-        extraction_status=DocumentExtractionStatus.PENDING,
-        extraction_agent_run_id=None,
-        metadata={
-            "raw_record": raw_record,
-            "harness_document_id": document.id,
-            "harness_ingestion_run_id": document.ingestion_run_id,
-            "bridge_source": "research_init_pubmed",
-        },
-    )
-
-
-def _build_file_upload_bridge_source_document(
-    *,
-    document: HarnessDocumentRecord,
-    space_id: UUID,
-    source_id: UUID,
-    ingestion_job_id: UUID,
-) -> object:
-    """Build one SourceDocument for a bridged text/PDF harness record."""
-    return build_source_document(
-        id=UUID(document.id),
-        research_space_id=space_id,
-        source_id=source_id,
-        ingestion_job_id=ingestion_job_id,
-        external_record_id=f"research-init-upload:{document.id}",
-        source_type=SourceType.FILE_UPLOAD,
-        document_format=(
-            DocumentFormat.PDF if document.source_type == "pdf" else DocumentFormat.TEXT
-        ),
-        raw_storage_key=document.raw_storage_key,
-        enriched_storage_key=document.enriched_storage_key,
-        content_hash=document.sha256,
-        content_length_chars=len(document.text_content),
-        enrichment_status=EnrichmentStatus.SKIPPED,
-        enrichment_method="research_init_bridge",
-        enrichment_agent_run_id=None,
-        extraction_status=DocumentExtractionStatus.PENDING,
-        extraction_agent_run_id=None,
-        metadata={
-            "raw_record": _build_file_upload_raw_record_from_document(document),
-            "harness_document_id": document.id,
-            "harness_ingestion_run_id": document.ingestion_run_id,
-            "bridge_source": "research_init_upload",
-        },
-    )
-
-
-def _observation_bridge_postgres_search_path(
-    *,
-    graph_schema: str | None = None,
-    harness_schema: str | None = None,
-) -> str:
-    """Build a bridge search path that can see graph and harness tables.
-
-    The observation bridge writes to graph-owned `source_documents`, but the
-    shared entity-recognition runtime can still touch harness-owned tables while
-    it processes the batch. Keep graph first so graph-owned tables remain the
-    primary resolution target, then expose the harness schema, and always leave
-    `public` available for shared platform tables.
-    """
-
-    resolved_graph_schema = resolve_graph_db_schema(
-        (
-            graph_schema
-            if graph_schema is not None
-            else os.getenv("GRAPH_DB_SCHEMA", "graph_runtime")
-        ),
-    )
-    resolved_harness_schema = resolve_harness_db_schema(harness_schema)
-
-    ordered_schemas: list[str] = []
-    if resolved_graph_schema != "public":
-        ordered_schemas.append(resolved_graph_schema)
-    if (
-        resolved_harness_schema != "public"
-        and resolved_harness_schema not in ordered_schemas
-    ):
-        ordered_schemas.append(resolved_harness_schema)
-    ordered_schemas.append("public")
-
-    return ", ".join(
-        "public" if schema_name == "public" else f'"{schema_name}"'
-        for schema_name in ordered_schemas
-    )
-
-
-async def _run_observation_bridge_batch(
-    *,
-    space_id: UUID,
-    documents: list[HarnessDocumentRecord],
-    source_id: UUID,
-    source_type: SourceType,
-    pipeline_run_id: str | None,
-    build_source_document: Callable[
-        [HarnessDocumentRecord, UUID, UUID, UUID],
-        object,
-    ],
-) -> _ObservationBridgeBatchResult:
-    """Run the shared observation-ingestion bridge with persisted SourceDocuments."""
-    from artana_evidence_api.database import SessionLocal
-    from sqlalchemy import text as sa_text
-
-    if not documents:
-        return _ObservationBridgeBatchResult(
-            document_results={},
-            seed_entity_ids=(),
-            errors=(),
-        )
-
-    batch_ingestion_job_id = uuid4()
-    source_documents = [
-        build_source_document(  # type: ignore[call-arg]
-            document=document,
-            space_id=space_id,
-            source_id=source_id,
-            ingestion_job_id=batch_ingestion_job_id,
-        )
-        for document in documents
-    ]
-
-    with SessionLocal() as session:
-        if session.bind and session.bind.dialect.name == "postgresql":
-            session.execute(
-                sa_text(
-                    f"SET search_path TO {_observation_bridge_postgres_search_path()}"
-                ),
-            )
-        source_document_repository = build_source_document_repository(session)
-        source_document_repository.upsert_many(source_documents)
-
-        entity_recognition_service = (
-            create_observation_bridge_entity_recognition_service(
-                session=session,
-                source_document_repository=source_document_repository,
-                pipeline_run_event_repository=_NoOpPipelineRunEventRepository(),
-            )
-        )
-        _apply_observation_bridge_time_budget(
-            entity_recognition_service=entity_recognition_service,
-        )
-        try:
-            summary = await asyncio.wait_for(
-                entity_recognition_service.process_pending_documents(
-                    limit=len(documents),
-                    source_id=source_id,
-                    research_space_id=space_id,
-                    ingestion_job_id=batch_ingestion_job_id,
-                    source_type=source_type.value,
-                    pipeline_run_id=pipeline_run_id,
-                ),
-                timeout=_OBSERVATION_BRIDGE_BATCH_TIMEOUT_SECONDS,
-            )
-        except TimeoutError:
-            timeout_error_message = (
-                "Observation bridge batch timed out after "
-                f"{_OBSERVATION_BRIDGE_BATCH_TIMEOUT_SECONDS:.1f}s"
-            )
-            _mark_observation_bridge_documents_failed(
-                documents=documents,
-                source_document_repository=source_document_repository,
-                failure_reason="observation_bridge_batch_timeout",
-                error_message=timeout_error_message,
-            )
-            document_results = {
-                document.id: _build_observation_bridge_result(
-                    document=document,
-                    source_document=source_document_repository.get_by_id(
-                        UUID(document.id),
-                    ),
-                )
-                for document in documents
-            }
-            return _ObservationBridgeBatchResult(
-                document_results=document_results,
-                seed_entity_ids=(),
-                errors=(timeout_error_message,),
-            )
-        finally:
-            await entity_recognition_service.close()
-
-        document_results = {
-            document.id: _build_observation_bridge_result(
-                document=document,
-                source_document=source_document_repository.get_by_id(
-                    UUID(document.id),
-                ),
-            )
-            for document in documents
-        }
-
-    return _ObservationBridgeBatchResult(
-        document_results=document_results,
-        seed_entity_ids=summary.derived_graph_seed_entity_ids,
-        errors=summary.errors,
-    )
-
-
-def _apply_observation_bridge_time_budget(
-    *,
-    entity_recognition_service: object,
-) -> None:
-    """Keep bridge-side extraction bounded so research-init does not stall."""
-
-    _cap_service_timeout(
-        entity_recognition_service=entity_recognition_service,
-        attribute_name="_agent_timeout_seconds",
-        max_seconds=_OBSERVATION_BRIDGE_AGENT_TIMEOUT_SECONDS,
-    )
-    _cap_service_timeout(
-        entity_recognition_service=entity_recognition_service,
-        attribute_name="_extraction_stage_timeout_seconds",
-        max_seconds=_OBSERVATION_BRIDGE_EXTRACTION_STAGE_TIMEOUT_SECONDS,
-    )
-
-
-def _cap_service_timeout(
-    *,
-    entity_recognition_service: object,
-    attribute_name: str,
-    max_seconds: float,
-) -> None:
-    current_value = getattr(entity_recognition_service, attribute_name, None)
-    if not isinstance(current_value, int | float):
-        return
-    setattr(
-        entity_recognition_service,
-        attribute_name,
-        min(float(current_value), max_seconds),
-    )
-
-
-def _mark_observation_bridge_documents_failed(
-    *,
-    documents: list[HarnessDocumentRecord],
-    source_document_repository: SourceDocumentRepositoryProtocol,
-    failure_reason: str,
-    error_message: str,
-) -> None:
-    for document in documents:
-        source_document = source_document_repository.get_by_id(UUID(document.id))
-        metadata = source_document_metadata(source_document) if source_document else None
-        if metadata is None:
-            continue
-        existing_errors = metadata.get(
-            "entity_recognition_ingestion_errors",
-        )
-        normalized_errors = (
-            [
-                error
-                for error in existing_errors
-                if isinstance(error, str) and error.strip() != ""
-            ]
-            if isinstance(existing_errors, list)
-            else []
-        )
-        if error_message not in normalized_errors:
-            normalized_errors.append(error_message)
-        updated_source_document = source_document_model_copy(
-            source_document,
-            update={
-                "extraction_status": DocumentExtractionStatus.FAILED,
-                "metadata": {
-                    **metadata,
-                    "entity_recognition_failure_reason": failure_reason,
-                    "entity_recognition_error": failure_reason,
-                    "entity_recognition_ingestion_errors": normalized_errors,
-                },
-            },
-        )
-        if updated_source_document is not None:
-            source_document_repository.upsert(updated_source_document)
-
-
-async def _sync_pubmed_documents_into_shared_observation_ingestion(
-    *,
-    space_id: UUID,
-    owner_id: UUID,
-    documents: list[HarnessDocumentRecord],
-    pipeline_run_id: str | None = None,
-) -> _ObservationBridgeBatchResult:
-    """Bridge PubMed harness docs into shared observation ingestion."""
-    del owner_id
-    return await _run_observation_bridge_batch(
-        space_id=space_id,
-        documents=documents,
-        source_id=_research_init_pubmed_source_id(space_id),
-        source_type=SourceType.PUBMED,
-        pipeline_run_id=pipeline_run_id,
-        build_source_document=_build_pubmed_bridge_source_document,
-    )
-
-
-async def _sync_file_upload_document_into_shared_observation_ingestion(
-    *,
-    space_id: UUID,
-    owner_id: UUID,
-    document: HarnessDocumentRecord,
-) -> _PubMedObservationSyncResult:
-    """Mirror one harness text/PDF document into the shared observation pipeline."""
-    batch_result = await _sync_file_upload_documents_into_shared_observation_ingestion(
-        space_id=space_id,
-        owner_id=owner_id,
-        documents=[document],
-    )
-    return batch_result.document_results.get(
-        document.id,
-        _PubMedObservationSyncResult(
-            source_document_id=document.id,
-            status="failed",
-            observations_created=0,
-            entities_created=0,
-            seed_entity_ids=(),
-            errors=("missing_observation_bridge_result",),
-        ),
-    )
-
-
-async def _sync_file_upload_documents_into_shared_observation_ingestion(
-    *,
-    space_id: UUID,
-    owner_id: UUID,
-    documents: list[HarnessDocumentRecord],
-    pipeline_run_id: str | None = None,
-) -> _ObservationBridgeBatchResult:
-    """Bridge text/PDF harness docs into shared observation ingestion."""
-    del owner_id
-    return await _run_observation_bridge_batch(
-        space_id=space_id,
-        documents=documents,
-        source_id=_research_init_upload_source_id(space_id),
-        source_type=SourceType.FILE_UPLOAD,
-        pipeline_run_id=pipeline_run_id,
-        build_source_document=_build_file_upload_bridge_source_document,
-    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def _classify_document_source(record: HarnessDocumentRecord) -> str:
@@ -2057,7 +1164,6 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
         LocalPubMedDiscoveryService,
         RunPubmedSearchRequest,
     )
-    from artana_evidence_api.routers import research_init as research_init_router
 
     local_errors: list[str] = []
     local_candidates: dict[str, object] = {}
@@ -2079,7 +1185,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
 
         pmids = [
             preview.get("pmid")
-            for preview in previews[: research_init_router._MAX_PREVIEWS_PER_QUERY]
+            for preview in previews[:_MAX_PREVIEWS_PER_QUERY]
             if preview.get("pmid")
         ]
         abstracts_by_pmid: dict[str, str] = {}
@@ -2100,7 +1206,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
                         },
                         headers=build_request_id_headers(),
                     )
-                    if efetch_response.status_code == research_init_router._HTTP_OK:
+                    if efetch_response.status_code == _HTTP_OK:
                         root = ElementTree.fromstring(
                             efetch_response.content,
                         )
@@ -2149,7 +1255,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
             except Exception as efetch_exc:  # noqa: BLE001
                 local_errors.append(f"efetch failed: {efetch_exc}")
 
-        for preview in previews[: research_init_router._MAX_PREVIEWS_PER_QUERY]:
+        for preview in previews[:_MAX_PREVIEWS_PER_QUERY]:
             title_text = preview.get("title", "")
             if not title_text:
                 continue
@@ -2194,7 +1300,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
                         f"'{title_text[:80]}': {full_text_exc}",
                     )
 
-            candidate = research_init_router._PubMedCandidate(
+            candidate = _PubMedCandidate(
                 title=title_text,
                 text=text,
                 queries=[query_params.get("search_term", "")],
@@ -2207,7 +1313,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
                     else None
                 ),
             )
-            key = research_init_router._candidate_key(
+            key = _candidate_key(
                 pmid=candidate.pmid,
                 title=candidate.title,
             )
@@ -2215,7 +1321,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
             if existing_candidate is None:
                 local_candidates[key] = candidate
             else:
-                local_candidates[key] = research_init_router._merge_candidate(
+                local_candidates[key] = _merge_candidate(
                     existing_candidate,
                     candidate,
                 )
@@ -2239,497 +1345,34 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
         pubmed_service.close()
 
 
-def _collect_pubmed_candidates(
-    *,
-    query_executions: tuple[_PubMedQueryExecutionResult, ...],
-) -> dict[str, object]:
-    from artana_evidence_api.routers import research_init as research_init_router
-
-    collected_candidates: dict[str, object] = {}
-    for query_execution in query_executions:
-        for candidate in query_execution.candidates:
-            candidate_key = research_init_router._candidate_key(
-                pmid=getattr(candidate, "pmid", None),
-                title=str(getattr(candidate, "title", "")),
-            )
-            existing_candidate = collected_candidates.get(candidate_key)
-            if existing_candidate is None:
-                collected_candidates[candidate_key] = candidate
-            else:
-                collected_candidates[candidate_key] = (
-                    research_init_router._merge_candidate(
-                        existing_candidate,
-                        candidate,
-                    )
-                )
-    return collected_candidates
 
 
-def _clone_pubmed_candidate(candidate: object) -> object:
-    from artana_evidence_api.routers import research_init as research_init_router
-
-    raw_queries = getattr(candidate, "queries", ())
-    queries = [
-        query for query in raw_queries if isinstance(query, str) and query.strip() != ""
-    ]
-    return research_init_router._PubMedCandidate(
-        title=str(getattr(candidate, "title", "")),
-        text=str(getattr(candidate, "text", "")),
-        queries=list(queries),
-        pmid=getattr(candidate, "pmid", None),
-        doi=getattr(candidate, "doi", None),
-        pmc_id=getattr(candidate, "pmc_id", None),
-        journal=getattr(candidate, "journal", None),
-    )
 
 
-def _clone_pubmed_candidate_review(review: object) -> object:
-    from artana_evidence_api.routers import research_init as research_init_router
-
-    return research_init_router._PubMedCandidateReview(
-        method=getattr(review, "method", "heuristic"),
-        label=getattr(review, "label", "relevant"),
-        confidence=float(getattr(review, "confidence", 0.0)),
-        rationale=str(getattr(review, "rationale", "")),
-        agent_run_id=getattr(review, "agent_run_id", None),
-        signal_count=int(getattr(review, "signal_count", 0)),
-        focus_signal_count=int(getattr(review, "focus_signal_count", 0)),
-        query_specificity=int(getattr(review, "query_specificity", 0)),
-    )
 
 
-def _clone_pubmed_query_execution(
-    query_execution: _PubMedQueryExecutionResult,
-) -> _PubMedQueryExecutionResult:
-    return _PubMedQueryExecutionResult(
-        query_result=query_execution.query_result,
-        candidates=tuple(
-            _clone_pubmed_candidate(candidate)
-            for candidate in query_execution.candidates
-        ),
-        errors=tuple(query_execution.errors),
-    )
 
 
-def _clone_selected_pubmed_candidates(
-    *,
-    selected_candidates: tuple[tuple[object, object], ...],
-) -> list[tuple[object, object]]:
-    return [
-        (
-            _clone_pubmed_candidate(candidate),
-            _clone_pubmed_candidate_review(review),
-        )
-        for candidate, review in selected_candidates
-    ]
 
 
-def _serialize_replay_proposal(
-    proposal: ResearchInitStructuredReplayProposal,
-) -> JSONObject:
-    return {
-        "proposal_type": proposal.proposal_type,
-        "source_kind": proposal.source_kind,
-        "source_key": proposal.source_key,
-        "title": proposal.title,
-        "summary": proposal.summary,
-        "confidence": proposal.confidence,
-        "ranking_score": proposal.ranking_score,
-        "reasoning_path": dict(proposal.reasoning_path),
-        "evidence_bundle": list(proposal.evidence_bundle),
-        "payload": dict(proposal.payload),
-        "metadata": dict(proposal.metadata),
-        "source_document_id": proposal.source_document_id,
-        "claim_fingerprint": proposal.claim_fingerprint,
-    }
 
 
-def _deserialize_replay_proposal(  # noqa: PLR0911
-    payload: object,
-) -> ResearchInitStructuredReplayProposal | None:
-    if not isinstance(payload, dict):
-        return None
-    proposal_type = payload.get("proposal_type")
-    source_kind = payload.get("source_kind")
-    source_key = payload.get("source_key")
-    title = payload.get("title")
-    summary = payload.get("summary")
-    confidence = payload.get("confidence")
-    ranking_score = payload.get("ranking_score")
-    reasoning_path = payload.get("reasoning_path")
-    evidence_bundle = payload.get("evidence_bundle")
-    proposal_payload = payload.get("payload")
-    metadata = payload.get("metadata")
-    source_document_id = payload.get("source_document_id")
-    claim_fingerprint = payload.get("claim_fingerprint")
-    if not all(
-        isinstance(value, str)
-        for value in (proposal_type, source_kind, source_key, title, summary)
-    ):
-        return None
-    if not isinstance(confidence, int | float) or not isinstance(
-        ranking_score,
-        int | float,
-    ):
-        return None
-    if not isinstance(reasoning_path, dict):
-        return None
-    if not isinstance(evidence_bundle, list):
-        return None
-    if not isinstance(proposal_payload, dict) or not isinstance(metadata, dict):
-        return None
-    if source_document_id is not None and not isinstance(source_document_id, str):
-        return None
-    if claim_fingerprint is not None and not isinstance(claim_fingerprint, str):
-        return None
-    return ResearchInitStructuredReplayProposal(
-        proposal_type=proposal_type,
-        source_kind=source_kind,
-        source_key=source_key,
-        title=title,
-        summary=summary,
-        confidence=float(confidence),
-        ranking_score=float(ranking_score),
-        reasoning_path=dict(reasoning_path),
-        evidence_bundle=[item for item in evidence_bundle if isinstance(item, dict)],
-        payload=dict(proposal_payload),
-        metadata=dict(metadata),
-        source_document_id=source_document_id,
-        claim_fingerprint=claim_fingerprint,
-    )
 
 
-def _serialize_pubmed_candidate(candidate: object) -> JSONObject:
-    return {
-        "title": str(getattr(candidate, "title", "")),
-        "text": str(getattr(candidate, "text", "")),
-        "queries": [
-            query
-            for query in getattr(candidate, "queries", ())
-            if isinstance(query, str) and query.strip() != ""
-        ],
-        "pmid": (
-            getattr(candidate, "pmid", None)
-            if isinstance(getattr(candidate, "pmid", None), str)
-            else None
-        ),
-        "doi": (
-            getattr(candidate, "doi", None)
-            if isinstance(getattr(candidate, "doi", None), str)
-            else None
-        ),
-        "pmc_id": (
-            getattr(candidate, "pmc_id", None)
-            if isinstance(getattr(candidate, "pmc_id", None), str)
-            else None
-        ),
-        "journal": (
-            getattr(candidate, "journal", None)
-            if isinstance(getattr(candidate, "journal", None), str)
-            else None
-        ),
-    }
 
 
-def _serialize_pubmed_candidate_review(review: object) -> JSONObject:
-    return {
-        "method": str(getattr(review, "method", "heuristic")),
-        "label": str(getattr(review, "label", "relevant")),
-        "confidence": float(getattr(review, "confidence", 0.0)),
-        "rationale": str(getattr(review, "rationale", "")),
-        "agent_run_id": (
-            getattr(review, "agent_run_id", None)
-            if isinstance(getattr(review, "agent_run_id", None), str)
-            else None
-        ),
-        "signal_count": int(getattr(review, "signal_count", 0)),
-        "focus_signal_count": int(getattr(review, "focus_signal_count", 0)),
-        "query_specificity": int(getattr(review, "query_specificity", 0)),
-    }
 
 
-def serialize_pubmed_replay_bundle(
-    replay_bundle: ResearchInitPubMedReplayBundle,
-) -> JSONObject:
-    """Serialize one replay bundle so a queued run can reload it later."""
-    return {
-        "version": 1,
-        "query_executions": [
-            {
-                "query_result": (
-                    {
-                        "query": query_execution.query_result.query,
-                        "total_found": query_execution.query_result.total_found,
-                        "abstracts_ingested": (
-                            query_execution.query_result.abstracts_ingested
-                        ),
-                    }
-                    if query_execution.query_result is not None
-                    else None
-                ),
-                "candidates": [
-                    _serialize_pubmed_candidate(candidate)
-                    for candidate in query_execution.candidates
-                ],
-                "errors": list(query_execution.errors),
-            }
-            for query_execution in replay_bundle.query_executions
-        ],
-        "selected_candidates": [
-            {
-                "candidate": _serialize_pubmed_candidate(candidate),
-                "review": _serialize_pubmed_candidate_review(review),
-            }
-            for candidate, review in replay_bundle.selected_candidates
-        ],
-        "selection_errors": list(replay_bundle.selection_errors),
-        "documents": [
-            {
-                "source_document_id": document.source_document_id,
-                "sha256": document.sha256,
-                "title": document.title,
-                "extraction_proposals": [
-                    _serialize_replay_proposal(proposal)
-                    for proposal in document.extraction_proposals
-                ],
-            }
-            for document in replay_bundle.documents
-        ],
-    }
 
 
-def _deserialize_pubmed_candidate(payload: object) -> object | None:
-    from artana_evidence_api.routers import research_init as research_init_router
-
-    if not isinstance(payload, dict):
-        return None
-    title = payload.get("title")
-    text = payload.get("text")
-    raw_queries = payload.get("queries")
-    if not isinstance(title, str) or not isinstance(text, str):
-        return None
-    queries = (
-        [
-            query
-            for query in raw_queries
-            if isinstance(query, str) and query.strip() != ""
-        ]
-        if isinstance(raw_queries, list)
-        else []
-    )
-    pmid = payload.get("pmid")
-    doi = payload.get("doi")
-    pmc_id = payload.get("pmc_id")
-    journal = payload.get("journal")
-    return research_init_router._PubMedCandidate(
-        title=title,
-        text=text,
-        queries=queries,
-        pmid=pmid if isinstance(pmid, str) and pmid.strip() != "" else None,
-        doi=doi if isinstance(doi, str) and doi.strip() != "" else None,
-        pmc_id=pmc_id if isinstance(pmc_id, str) and pmc_id.strip() != "" else None,
-        journal=(
-            journal if isinstance(journal, str) and journal.strip() != "" else None
-        ),
-    )
 
 
-def _deserialize_pubmed_candidate_review(payload: object) -> object | None:
-    from artana_evidence_api.routers import research_init as research_init_router
-
-    if not isinstance(payload, dict):
-        return None
-    method = payload.get("method")
-    label = payload.get("label")
-    confidence = payload.get("confidence")
-    rationale = payload.get("rationale")
-    if (
-        method not in {"heuristic", "llm"}
-        or label not in {"relevant", "non_relevant"}
-        or not isinstance(confidence, int | float)
-        or not isinstance(rationale, str)
-    ):
-        return None
-    agent_run_id = payload.get("agent_run_id")
-    signal_count = payload.get("signal_count", 0)
-    focus_signal_count = payload.get("focus_signal_count", 0)
-    query_specificity = payload.get("query_specificity", 0)
-    return research_init_router._PubMedCandidateReview(
-        method=method,
-        label=label,
-        confidence=float(confidence),
-        rationale=rationale,
-        agent_run_id=agent_run_id if isinstance(agent_run_id, str) else None,
-        signal_count=int(signal_count) if isinstance(signal_count, int | float) else 0,
-        focus_signal_count=(
-            int(focus_signal_count)
-            if isinstance(focus_signal_count, int | float)
-            else 0
-        ),
-        query_specificity=(
-            int(query_specificity) if isinstance(query_specificity, int | float) else 0
-        ),
-    )
 
 
-def deserialize_pubmed_replay_bundle(  # noqa: PLR0911,PLR0912
-    payload: object,
-) -> ResearchInitPubMedReplayBundle | None:
-    """Deserialize one stored replay bundle back into runtime objects."""
-    if not isinstance(payload, dict):
-        return None
-    query_execution_payloads = payload.get("query_executions")
-    selected_candidate_payloads = payload.get("selected_candidates")
-    selection_errors_payload = payload.get("selection_errors")
-    documents_payload = payload.get("documents", [])
-    if not isinstance(query_execution_payloads, list):
-        return None
-    if not isinstance(selected_candidate_payloads, list):
-        return None
-    if not isinstance(selection_errors_payload, list):
-        return None
-    if not isinstance(documents_payload, list):
-        return None
-
-    query_executions: list[_PubMedQueryExecutionResult] = []
-    for query_execution_payload in query_execution_payloads:
-        if not isinstance(query_execution_payload, dict):
-            return None
-        raw_query_result = query_execution_payload.get("query_result")
-        query_result: ResearchInitPubMedResultRecord | None = None
-        if raw_query_result is not None:
-            if not isinstance(raw_query_result, dict):
-                return None
-            query = raw_query_result.get("query")
-            total_found = raw_query_result.get("total_found")
-            abstracts_ingested = raw_query_result.get("abstracts_ingested")
-            if (
-                not isinstance(query, str)
-                or not isinstance(total_found, int)
-                or not isinstance(abstracts_ingested, int)
-            ):
-                return None
-            query_result = ResearchInitPubMedResultRecord(
-                query=query,
-                total_found=total_found,
-                abstracts_ingested=abstracts_ingested,
-            )
-        raw_candidates = query_execution_payload.get("candidates")
-        raw_errors = query_execution_payload.get("errors")
-        if not isinstance(raw_candidates, list) or not isinstance(raw_errors, list):
-            return None
-        candidates: list[object] = []
-        for raw_candidate in raw_candidates:
-            candidate = _deserialize_pubmed_candidate(raw_candidate)
-            if candidate is None:
-                return None
-            candidates.append(candidate)
-        errors = [
-            error for error in raw_errors if isinstance(error, str) and error != ""
-        ]
-        query_executions.append(
-            _PubMedQueryExecutionResult(
-                query_result=query_result,
-                candidates=tuple(candidates),
-                errors=tuple(errors),
-            ),
-        )
-
-    selected_candidates: list[tuple[object, object]] = []
-    for selected_candidate_payload in selected_candidate_payloads:
-        if not isinstance(selected_candidate_payload, dict):
-            return None
-        candidate = _deserialize_pubmed_candidate(
-            selected_candidate_payload.get("candidate"),
-        )
-        review = _deserialize_pubmed_candidate_review(
-            selected_candidate_payload.get("review"),
-        )
-        if candidate is None or review is None:
-            return None
-        selected_candidates.append((candidate, review))
-
-    selection_errors = [
-        error
-        for error in selection_errors_payload
-        if isinstance(error, str) and error != ""
-    ]
-    documents: list[ResearchInitPubMedReplayDocument] = []
-    for document_payload in documents_payload:
-        if not isinstance(document_payload, dict):
-            return None
-        source_document_id = document_payload.get("source_document_id")
-        sha256 = document_payload.get("sha256")
-        title = document_payload.get("title")
-        raw_extraction_proposals = document_payload.get("extraction_proposals", [])
-        if not all(
-            isinstance(value, str) and value != ""
-            for value in (source_document_id, sha256, title)
-        ):
-            return None
-        if not isinstance(raw_extraction_proposals, list):
-            return None
-        extraction_proposals: list[ResearchInitStructuredReplayProposal] = []
-        for raw_extraction_proposal in raw_extraction_proposals:
-            extraction_proposal = _deserialize_replay_proposal(
-                raw_extraction_proposal,
-            )
-            if extraction_proposal is None:
-                return None
-            extraction_proposals.append(extraction_proposal)
-        documents.append(
-            ResearchInitPubMedReplayDocument(
-                source_document_id=source_document_id,
-                sha256=sha256,
-                title=title,
-                extraction_proposals=tuple(extraction_proposals),
-            ),
-        )
-    return ResearchInitPubMedReplayBundle(
-        query_executions=tuple(query_executions),
-        selected_candidates=tuple(selected_candidates),
-        selection_errors=tuple(selection_errors),
-        documents=tuple(documents),
-    )
 
 
-def store_pubmed_replay_bundle_artifact(
-    *,
-    artifact_store: HarnessArtifactStore,
-    space_id: UUID,
-    run_id: str,
-    replay_bundle: ResearchInitPubMedReplayBundle,
-) -> None:
-    """Persist one PubMed replay bundle for queued research-init execution."""
-    artifact_store.put_artifact(
-        space_id=space_id,
-        run_id=run_id,
-        artifact_key=_PUBMED_REPLAY_ARTIFACT_KEY,
-        media_type="application/json",
-        content=serialize_pubmed_replay_bundle(replay_bundle),
-    )
-    artifact_store.patch_workspace(
-        space_id=space_id,
-        run_id=run_id,
-        patch={"pubmed_replay_bundle_key": _PUBMED_REPLAY_ARTIFACT_KEY},
-    )
 
 
-def load_pubmed_replay_bundle_artifact(
-    *,
-    artifact_store: HarnessArtifactStore,
-    space_id: UUID,
-    run_id: str,
-) -> ResearchInitPubMedReplayBundle | None:
-    """Load one persisted PubMed replay bundle for queued research-init runs."""
-    artifact = artifact_store.get_artifact(
-        space_id=space_id,
-        run_id=run_id,
-        artifact_key=_PUBMED_REPLAY_ARTIFACT_KEY,
-    )
-    if artifact is None:
-        return None
-    return deserialize_pubmed_replay_bundle(artifact.content)
 
 
 async def _run_pubmed_query_executions(
@@ -2737,9 +1380,8 @@ async def _run_pubmed_query_executions(
     objective: str,
     seed_terms: list[str],
 ) -> tuple[_PubMedQueryExecutionResult, ...]:
-    from artana_evidence_api.routers import research_init as research_init_router
 
-    queries = research_init_router._build_pubmed_queries(objective, seed_terms)
+    queries = _build_pubmed_queries(objective, seed_terms)
     if not queries:
         return ()
 
@@ -2751,7 +1393,7 @@ async def _run_pubmed_query_executions(
         async with query_semaphore:
             return await _execute_pubmed_query(
                 query_params=query_params,
-                owner_id=research_init_router._SYSTEM_OWNER_ID,
+                owner_id=_SYSTEM_OWNER_ID,
             )
 
     return tuple(
@@ -3135,7 +1777,6 @@ async def prepare_pubmed_replay_bundle(
     seed_terms: list[str],
 ) -> ResearchInitPubMedReplayBundle:
     """Capture the exact selected PubMed inputs for replay across runs."""
-    from artana_evidence_api.routers import research_init as research_init_router
 
     query_executions = await _run_pubmed_query_executions(
         objective=objective,
@@ -3145,7 +1786,7 @@ async def prepare_pubmed_replay_bundle(
         query_executions=query_executions,
     )
     selection_errors: list[str] = []
-    selected_candidates = await research_init_router._select_candidates_for_ingestion(
+    selected_candidates = await _select_candidates_for_ingestion(
         list(collected_candidates.values()),
         objective=objective,
         seed_terms=seed_terms,
@@ -3158,634 +1799,40 @@ async def prepare_pubmed_replay_bundle(
     )
 
 
-def _pubmed_replay_document_by_sha256(
-    replay_bundle: ResearchInitPubMedReplayBundle | None,
-    *,
-    sha256: str,
-) -> ResearchInitPubMedReplayDocument | None:
-    if replay_bundle is None:
-        return None
-    for document in replay_bundle.documents:
-        if document.sha256 == sha256:
-            return document
-    return None
 
 
-def build_pubmed_replay_bundle_with_document_outputs(
-    *,
-    replay_bundle: ResearchInitPubMedReplayBundle,
-    space_id: UUID,
-    run_id: UUID | str,
-    document_store: HarnessDocumentStore,
-    proposal_store: HarnessProposalStore,
-) -> ResearchInitPubMedReplayBundle:
-    """Attach replayable PubMed document extraction outputs from one baseline run."""
-    from artana_evidence_api.routers.documents import (
-        normalize_text_document,
-        sha256_hex,
-    )
-
-    candidate_sha256s = {
-        sha256_hex(
-            normalize_text_document(str(getattr(candidate, "text", ""))).encode("utf-8")
-        )
-        for candidate, _review in replay_bundle.selected_candidates
-        if normalize_text_document(str(getattr(candidate, "text", ""))) != ""
-    }
-    if not candidate_sha256s:
-        return replay_bundle
-
-    pubmed_documents_by_id: dict[str, HarnessDocumentRecord] = {}
-    for document in document_store.list_documents(space_id=space_id):
-        if document.source_type != "pubmed":
-            continue
-        if not _is_research_init_pubmed_document(document):
-            continue
-        if document.sha256 not in candidate_sha256s:
-            continue
-        pubmed_documents_by_id[document.id] = document
-
-    if not pubmed_documents_by_id:
-        return replay_bundle
-
-    proposals_by_document_id: dict[str, list[ResearchInitStructuredReplayProposal]] = {
-        document_id: [] for document_id in pubmed_documents_by_id
-    }
-    for proposal in proposal_store.list_proposals(
-        space_id=space_id, run_id=str(run_id)
-    ):
-        if proposal.source_kind != "document_extraction":
-            continue
-        if proposal.document_id not in pubmed_documents_by_id:
-            continue
-        proposals_by_document_id[proposal.document_id].append(
-            ResearchInitStructuredReplayProposal(
-                proposal_type=proposal.proposal_type,
-                source_kind=proposal.source_kind,
-                source_key=proposal.source_key,
-                title=proposal.title,
-                summary=proposal.summary,
-                confidence=proposal.confidence,
-                ranking_score=proposal.ranking_score,
-                reasoning_path=dict(proposal.reasoning_path),
-                evidence_bundle=list(proposal.evidence_bundle),
-                payload=dict(proposal.payload),
-                metadata=dict(proposal.metadata),
-                source_document_id=proposal.document_id,
-                claim_fingerprint=proposal.claim_fingerprint,
-            ),
-        )
-
-    replay_documents = tuple(
-        ResearchInitPubMedReplayDocument(
-            source_document_id=document.id,
-            sha256=document.sha256,
-            title=document.title,
-            extraction_proposals=tuple(proposals_by_document_id[document.id]),
-        )
-        for document in sorted(
-            pubmed_documents_by_id.values(),
-            key=lambda current: (current.title, current.id),
-        )
-    )
-    return ResearchInitPubMedReplayBundle(
-        query_executions=replay_bundle.query_executions,
-        selected_candidates=replay_bundle.selected_candidates,
-        selection_errors=replay_bundle.selection_errors,
-        documents=replay_documents,
-    )
 
 
-@dataclass(frozen=True, slots=True)
-class _ChaseRoundResult:
-    """Result of one entity chase round."""
-
-    new_seed_terms: list[str]
-    documents_created: int
-    proposals_created: int
-    errors: list[str]
 
 
-@dataclass(frozen=True, slots=True)
-class _ChaseRoundPreparation:
-    """Derived candidate set plus the deterministic chase selection."""
-
-    candidates: tuple[ResearchOrchestratorChaseCandidate, ...]
-    filtered_candidates: tuple[ResearchOrchestratorFilteredChaseCandidate, ...]
-    deterministic_selection: ResearchOrchestratorChaseSelection
-    errors: list[str]
 
 
-def _enabled_chase_source_keys(
-    *,
-    sources: ResearchSpaceSourcePreferences,
-) -> list[str]:
-    chase_source_keys: list[str] = []
-    if sources.get("clinvar", True):
-        chase_source_keys.append("clinvar")
-    if sources.get("drugbank", False):
-        chase_source_keys.append("drugbank")
-    if sources.get("alphafold", False):
-        chase_source_keys.append("alphafold")
-    if sources.get("marrvel", True):
-        chase_source_keys.append("marrvel")
-    return chase_source_keys
 
 
-def _filtered_chase_reason(
-    *,
-    display_label: str,
-    objective: str | None,
-) -> str | None:
-    """Return the low-signal filter reason for one chase label, when present."""
-    low_signal_reason = filtered_low_signal_label_reason(display_label)
-    if low_signal_reason is not None:
-        return low_signal_reason
-    underanchored_reason = filtered_underanchored_fragment_reason(
-        label=display_label,
-        objective=objective,
-    )
-    if underanchored_reason is not None:
-        return underanchored_reason
-    return filtered_taxonomic_spillover_reason(
-        label=display_label,
-        objective=objective,
-    )
 
 
-def _filtered_chase_reason_counts(
-    filtered_candidates: Sequence[ResearchOrchestratorFilteredChaseCandidate],
-) -> JSONObject:
-    counts: dict[str, int] = {}
-    for candidate in filtered_candidates:
-        counts[candidate.filter_reason] = counts.get(candidate.filter_reason, 0) + 1
-    return counts
 
 
-def _focus_token_matches(candidate_token: str, focus_token: str) -> bool:
-    if candidate_token == focus_token:
-        return True
-    if min(len(candidate_token), len(focus_token)) < _MIN_GENE_FAMILY_TOKEN_LENGTH:
-        return False
-    if not (
-        any(character.isdigit() for character in candidate_token)
-        and any(character.isdigit() for character in focus_token)
-    ):
-        return False
-    return candidate_token.startswith(focus_token) or focus_token.startswith(
-        candidate_token,
-    )
 
 
-def _matching_focus_tokens(
-    *,
-    display_label: str,
-    focus_tokens: frozenset[str],
-) -> tuple[str, ...]:
-    candidate_tokens = text_tokens(display_label)
-    return tuple(
-        focus_token
-        for focus_token in sorted(focus_tokens)
-        if any(
-            _focus_token_matches(candidate_token, focus_token)
-            for candidate_token in candidate_tokens
-        )
-    )
 
 
-def _candidate_focus_rank_key(
-    *,
-    display_label: str,
-    objective: str,
-    previous_seed_terms: set[str],
-    observed_rank: int,
-) -> tuple[int, int, int, int]:
-    seed_overlap = _matching_focus_tokens(
-        display_label=display_label,
-        focus_tokens=frozenset(
-            token for term in previous_seed_terms for token in text_tokens(term)
-        ),
-    )
-    objective_overlap = _matching_focus_tokens(
-        display_label=display_label,
-        focus_tokens=frozenset(text_tokens(objective)),
-    )
-    organism_bonus = int(
-        looks_like_taxonomic_name(display_label)
-        and is_organism_focused_objective(objective)
-    )
-    return (
-        (len(seed_overlap) * 2) + len(objective_overlap) + organism_bonus,
-        len(seed_overlap),
-        len(objective_overlap) + organism_bonus,
-        -observed_rank,
-    )
 
 
-def _chase_candidate_evidence_basis(
-    *,
-    display_label: str,
-    objective: str,
-    previous_seed_terms: set[str],
-) -> str:
-    seed_overlap = _matching_focus_tokens(
-        display_label=display_label,
-        focus_tokens=frozenset(
-            token for term in previous_seed_terms for token in text_tokens(term)
-        ),
-    )
-    objective_overlap = _matching_focus_tokens(
-        display_label=display_label,
-        focus_tokens=frozenset(text_tokens(objective)),
-    )
-    if seed_overlap or objective_overlap:
-        overlap_terms = list(seed_overlap)
-        overlap_terms.extend(
-            token for token in objective_overlap if token not in set(seed_overlap)
-        )
-        focus_terms_text = ", ".join(overlap_terms[:4])
-        return (
-            "The entity was created recently in the graph, was not already present "
-            "in the prior seed set, and overlaps the current research focus via "
-            f"{focus_terms_text}."
-        )
-    if looks_like_taxonomic_name(display_label) and is_organism_focused_objective(
-        objective
-    ):
-        return (
-            "The entity was created recently in the graph, was not already present "
-            "in the prior seed set, and remains in scope because the objective is "
-            "organism-focused."
-        )
-    return (
-        "The entity was created recently in the graph and its label was not "
-        "already present in the prior seed set."
-    )
 
 
-def _serialize_chase_preparation(
-    *,
-    round_number: int,
-    preparation: _ChaseRoundPreparation,
-) -> JSONObject:
-    deterministic_selection = preparation.deterministic_selection
-    return {
-        "round_number": round_number,
-        "chase_candidates": [
-            candidate.model_dump(mode="json") for candidate in preparation.candidates
-        ],
-        "filtered_chase_candidates": [
-            candidate.model_dump(mode="json")
-            for candidate in preparation.filtered_candidates
-        ],
-        "deterministic_selection": deterministic_selection.model_dump(mode="json"),
-        "deterministic_chase_threshold": _MIN_CHASE_ENTITIES,
-        "deterministic_candidate_count": len(preparation.candidates),
-        "filtered_chase_candidate_count": len(preparation.filtered_candidates),
-        "filtered_chase_filter_reason_counts": _filtered_chase_reason_counts(
-            preparation.filtered_candidates
-        ),
-        "deterministic_threshold_met": not deterministic_selection.stop_instead,
-        "available_chase_source_keys": (
-            list(preparation.candidates[0].available_source_keys)
-            if preparation.candidates
-            else []
-        ),
-    }
 
 
-def _chase_round_action_input(
-    *,
-    preparation: _ChaseRoundPreparation,
-) -> JSONObject:
-    selection = preparation.deterministic_selection
-    return {
-        "selected_entity_ids": list(selection.selected_entity_ids),
-        "selected_labels": list(selection.selected_labels),
-        "selection_basis": selection.selection_basis,
-    }
 
 
-def _chase_round_metadata(
-    *,
-    round_number: int,
-    preparation: _ChaseRoundPreparation,
-    chase_summary: JSONObject | None = None,
-) -> JSONObject:
-    payload = _serialize_chase_preparation(
-        round_number=round_number,
-        preparation=preparation,
-    )
-    if chase_summary is not None:
-        payload.update(chase_summary)
-    return payload
 
 
-def _deterministic_chase_selection(
-    *,
-    candidates: Sequence[ResearchOrchestratorChaseCandidate],
-) -> ResearchOrchestratorChaseSelection:
-    if len(candidates) < _MIN_CHASE_ENTITIES:
-        return ResearchOrchestratorChaseSelection(
-            selected_entity_ids=[],
-            selected_labels=[],
-            stop_instead=True,
-            stop_reason="threshold_not_met",
-            selection_basis=(
-                "Fewer than the deterministic chase threshold of new candidates were "
-                "available, so the baseline stops instead of opening another chase "
-                "round."
-            ),
-        )
-    return ResearchOrchestratorChaseSelection(
-        selected_entity_ids=[candidate.entity_id for candidate in candidates],
-        selected_labels=[candidate.display_label for candidate in candidates],
-        stop_instead=False,
-        stop_reason=None,
-        selection_basis=(
-            "The deterministic baseline chases the bounded candidate set in "
-            "objective-relevance rank order after filtering out prior seed terms."
-        ),
-    )
 
 
-def _prepare_chase_round(
-    *,
-    space_id: UUID,
-    objective: str,
-    round_number: int,
-    created_entity_ids: Sequence[str],
-    previous_seed_terms: set[str],
-    sources: ResearchSpaceSourcePreferences,
-    graph_api_gateway: GraphTransportBundle,
-) -> _ChaseRoundPreparation:
-    try:
-        entity_response = graph_api_gateway.list_entities(
-            space_id=space_id,
-            ids=list(created_entity_ids[-20:]),
-            limit=20,
-        )
-    except Exception as exc:  # noqa: BLE001
-        return _ChaseRoundPreparation(
-            candidates=(),
-            filtered_candidates=(),
-            deterministic_selection=ResearchOrchestratorChaseSelection(
-                selected_entity_ids=[],
-                selected_labels=[],
-                stop_instead=True,
-                stop_reason="entity_lookup_failed",
-                selection_basis=(
-                    "The baseline could not derive chase candidates because entity "
-                    "lookup failed."
-                ),
-            ),
-            errors=[f"Chase round {round_number}: entity lookup failed: {exc}"],
-        )
-
-    upper_seen = {t.upper() for t in previous_seed_terms}
-    available_source_keys = _enabled_chase_source_keys(sources=sources)
-    candidate_rows: list[tuple[tuple[int, int, int, int], str, str]] = []
-    filtered_candidates: list[ResearchOrchestratorFilteredChaseCandidate] = []
-    for observed_rank, entity in enumerate(entity_response.entities, start=1):
-        display_label = entity.display_label
-        if not display_label:
-            continue
-        normalized_label = display_label.strip().upper()
-        filter_reason = _filtered_chase_reason(
-            display_label=display_label,
-            objective=objective,
-        )
-        if filter_reason is not None:
-            filtered_candidates.append(
-                ResearchOrchestratorFilteredChaseCandidate(
-                    entity_id=str(entity.id),
-                    display_label=display_label,
-                    normalized_label=normalized_label,
-                    observed_rank=observed_rank,
-                    observed_round=round_number,
-                    filter_reason=filter_reason,
-                )
-            )
-            continue
-        if normalized_label in upper_seen:
-            continue
-        candidate_rows.append(
-            (
-                _candidate_focus_rank_key(
-                    display_label=display_label,
-                    objective=objective,
-                    previous_seed_terms=previous_seed_terms,
-                    observed_rank=observed_rank,
-                ),
-                str(entity.id),
-                display_label,
-            )
-        )
-    candidates: list[ResearchOrchestratorChaseCandidate] = []
-    for candidate_rank, (_rank_key, entity_id, display_label) in enumerate(
-        sorted(candidate_rows, key=lambda row: row[0], reverse=True)[
-            :_MAX_CHASE_CANDIDATES
-        ],
-        start=1,
-    ):
-        candidates.append(
-            ResearchOrchestratorChaseCandidate(
-                entity_id=entity_id,
-                display_label=display_label,
-                normalized_label=display_label.strip().upper(),
-                candidate_rank=candidate_rank,
-                observed_round=round_number,
-                available_source_keys=list(available_source_keys),
-                evidence_basis=_chase_candidate_evidence_basis(
-                    display_label=display_label,
-                    objective=objective,
-                    previous_seed_terms=previous_seed_terms,
-                ),
-                novelty_basis="not_in_previous_seed_terms",
-            ),
-        )
-
-    deterministic_selection = _deterministic_chase_selection(candidates=candidates)
-    return _ChaseRoundPreparation(
-        candidates=tuple(candidates),
-        filtered_candidates=tuple(filtered_candidates),
-        deterministic_selection=deterministic_selection,
-        errors=[],
-    )
 
 
-async def _execute_entity_chase_round_terms(
-    *,
-    space_id: UUID,
-    round_number: int,
-    new_terms: Sequence[str],
-    sources: ResearchSpaceSourcePreferences,
-    document_store: object,
-    run_registry: object,
-    artifact_store: object,
-    parent_run: object,
-) -> _ChaseRoundResult:
-    """Execute the deterministic chase round using one fixed term selection."""
-
-    errors: list[str] = []
-    documents_created = 0
-    proposals_created = 0
-
-    clinvar_enabled = sources.get("clinvar", True)
-    drugbank_enabled = sources.get("drugbank", False)
-    alphafold_enabled = sources.get("alphafold", False)
-    marrvel_chase_enabled = sources.get("marrvel", True)
-
-    try:
-        from artana_evidence_api.research_init_source_enrichment import (
-            run_alphafold_enrichment,
-            run_clinvar_enrichment,
-            run_drugbank_enrichment,
-            run_marrvel_enrichment,
-        )
-    except ImportError:
-        run_clinvar_enrichment = None
-        run_drugbank_enrichment = None
-        run_alphafold_enrichment = None
-        run_marrvel_enrichment = None
-        errors.append("Chase round: structured enrichment modules not available")
-
-    if run_clinvar_enrichment is not None:
-        if clinvar_enabled:
-            try:
-                clinvar_result = await run_clinvar_enrichment(
-                    space_id=space_id,
-                    seed_terms=list(new_terms),
-                    document_store=document_store,
-                    run_registry=run_registry,
-                    artifact_store=artifact_store,
-                    parent_run=parent_run,
-                )
-                documents_created += len(clinvar_result.documents_created)
-                proposals_created += len(clinvar_result.proposals_created)
-                errors.extend(clinvar_result.errors)
-            except Exception as exc:  # noqa: BLE001
-                errors.append(f"Chase round {round_number} ClinVar: {exc}")
-
-        if drugbank_enabled and run_drugbank_enrichment is not None:
-            try:
-                drugbank_result = await run_drugbank_enrichment(
-                    space_id=space_id,
-                    seed_terms=list(new_terms),
-                    document_store=document_store,
-                    run_registry=run_registry,
-                    artifact_store=artifact_store,
-                    parent_run=parent_run,
-                )
-                documents_created += len(drugbank_result.documents_created)
-                proposals_created += len(drugbank_result.proposals_created)
-                errors.extend(drugbank_result.errors)
-            except Exception as exc:  # noqa: BLE001
-                errors.append(f"Chase round {round_number} DrugBank: {exc}")
-
-        if alphafold_enabled and run_alphafold_enrichment is not None:
-            try:
-                alphafold_result = await run_alphafold_enrichment(
-                    space_id=space_id,
-                    seed_terms=list(new_terms),
-                    document_store=document_store,
-                    run_registry=run_registry,
-                    artifact_store=artifact_store,
-                    parent_run=parent_run,
-                )
-                documents_created += len(alphafold_result.documents_created)
-                proposals_created += len(alphafold_result.proposals_created)
-                errors.extend(alphafold_result.errors)
-            except Exception as exc:  # noqa: BLE001
-                errors.append(f"Chase round {round_number} AlphaFold: {exc}")
-
-        if marrvel_chase_enabled and run_marrvel_enrichment is not None:
-            try:
-                marrvel_result = await run_marrvel_enrichment(
-                    space_id=space_id,
-                    seed_terms=list(new_terms),
-                    document_store=document_store,
-                    run_registry=run_registry,
-                    artifact_store=artifact_store,
-                    parent_run=parent_run,
-                )
-                documents_created += len(marrvel_result.documents_created)
-                proposals_created += len(marrvel_result.proposals_created)
-                errors.extend(marrvel_result.errors)
-            except Exception as exc:  # noqa: BLE001
-                errors.append(f"Chase round {round_number} MARRVEL: {exc}")
-
-    return _ChaseRoundResult(
-        new_seed_terms=list(new_terms),
-        documents_created=documents_created,
-        proposals_created=proposals_created,
-        errors=errors,
-    )
 
 
-async def _run_entity_chase_round(  # noqa: PLR0915
-    *,
-    space_id: UUID,
-    objective: str,
-    round_number: int,
-    created_entity_ids: list[str],
-    previous_seed_terms: set[str],
-    sources: ResearchSpaceSourcePreferences,
-    graph_api_gateway: GraphTransportBundle,
-    document_store: object,
-    run_registry: object,
-    artifact_store: object,
-    parent_run: object,
-    preparation: _ChaseRoundPreparation | None = None,
-) -> _ChaseRoundResult:
-    """Run one entity chase round.
-
-    Looks up entities created so far, finds new ones not in previous seeds,
-    queries structured sources (ClinVar, DrugBank, AlphaFold) for them.
-    """
-    if preparation is None:
-        preparation = _prepare_chase_round(
-            space_id=space_id,
-            objective=objective,
-            round_number=round_number,
-            created_entity_ids=created_entity_ids,
-            previous_seed_terms=previous_seed_terms,
-            sources=sources,
-            graph_api_gateway=graph_api_gateway,
-        )
-    errors = list(preparation.errors)
-    new_terms = list(preparation.deterministic_selection.selected_labels)
-
-    if preparation.deterministic_selection.stop_instead:
-        return _ChaseRoundResult(
-            new_seed_terms=[
-                candidate.display_label for candidate in preparation.candidates
-            ],
-            documents_created=0,
-            proposals_created=0,
-            errors=errors,
-        )
-
-    logging.getLogger(__name__).info(
-        "Chase round %d: %d new terms — %s",
-        round_number,
-        len(new_terms),
-        ", ".join(new_terms[:5]),
-    )
-    execution_result = await _execute_entity_chase_round_terms(
-        space_id=space_id,
-        round_number=round_number,
-        new_terms=new_terms,
-        sources=sources,
-        document_store=document_store,
-        run_registry=run_registry,
-        artifact_store=artifact_store,
-        parent_run=parent_run,
-    )
-    return replace(
-        execution_result,
-        errors=[*errors, *execution_result.errors],
-    )
 
 
 async def execute_research_init_run(  # noqa: PLR0912, PLR0915
@@ -3813,13 +1860,6 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
         pre_resolve_entities_with_ai,
         review_document_extraction_drafts,
     )
-    from artana_evidence_api.routers import documents as documents_router
-    from artana_evidence_api.routers import research_init as research_init_router
-    from artana_evidence_api.routers.documents import (
-        normalize_text_document,
-        sha256_hex,
-    )
-
     effective_pubmed_replay_bundle = pubmed_replay_bundle
     if effective_pubmed_replay_bundle is None:
         effective_pubmed_replay_bundle = load_pubmed_replay_bundle_artifact(
@@ -3949,7 +1989,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                     query_executions=query_executions,
                 )
                 selected_candidates = (
-                    await research_init_router._select_candidates_for_ingestion(
+                    await _select_candidates_for_ingestion(
                         list(collected_candidates.values()),
                         objective=objective,
                         seed_terms=seed_terms,
@@ -4075,7 +2115,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
 
                     record = document_store.create_document(
                         space_id=space_id,
-                        created_by=research_init_router._SYSTEM_OWNER_ID,
+                        created_by=_SYSTEM_OWNER_ID,
                         title=candidate.title[:256],
                         source_type="pubmed",
                         filename=None,
@@ -4527,7 +2567,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                     ):
                         batch_result = await _sync_pubmed_documents_into_shared_observation_ingestion(
                             space_id=space_id,
-                            owner_id=research_init_router._SYSTEM_OWNER_ID,
+                            owner_id=_SYSTEM_OWNER_ID,
                             documents=bridge_batch,
                             pipeline_run_id=run.id,
                         )
@@ -4762,7 +2802,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                                     services,
                                 ).document_binary_store
                                 current_document = (
-                                    await documents_router._enrich_pdf_document(
+                                    await _enrich_pdf_document(
                                         space_id=space_id,
                                         document=current_document,
                                         run_registry=run_registry,
@@ -4946,7 +2986,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 try:
                     batch_result = await _sync_file_upload_documents_into_shared_observation_ingestion(
                         space_id=space_id,
-                        owner_id=research_init_router._SYSTEM_OWNER_ID,
+                        owner_id=_SYSTEM_OWNER_ID,
                         documents=upload_documents_to_bridge,
                         pipeline_run_id=run.id,
                     )
@@ -5534,7 +3574,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             effective_pending_questions = (
                 []
                 if has_prior_research_context
-                else research_init_router._build_scope_refinement_questions(
+                else _build_scope_refinement_questions(
                     objective=objective,
                     seed_terms=seed_terms,
                 )

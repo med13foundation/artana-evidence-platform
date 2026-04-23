@@ -885,7 +885,7 @@ class _FakeKernelStore:
 
 
 class _FakeKernel:
-    def __init__(self, *, store, model_port, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, *, store, model_port, **kwargs) -> None:
         del kwargs
         self.store = store
         self.model_port = model_port
@@ -897,7 +897,7 @@ class _FakeKernel:
 
 
 class _FakeSingleStepClient:
-    def __init__(self, *, kernel) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, *, kernel) -> None:
         self.kernel = kernel
 
 
@@ -921,7 +921,7 @@ class TestGenerateLlmResearchBrief:
         deterministic = _make_deterministic_brief()
 
         # Force ImportError by making _generate_brief_with_kernel raise
-        async def _raise_import(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        async def _raise_import(*_args, **_kwargs):
             raise ImportError("no artana kernel")
 
         monkeypatch.setattr(
@@ -946,7 +946,7 @@ class TestGenerateLlmResearchBrief:
         """When the kernel call fails, falls back to deterministic brief."""
         deterministic = _make_deterministic_brief()
 
-        async def _raise_runtime(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        async def _raise_runtime(*_args, **_kwargs):
             raise RuntimeError("synthetic llm outage")
 
         monkeypatch.setattr(
@@ -986,7 +986,7 @@ class TestGenerateLlmResearchBrief:
         """When the kernel succeeds, returns an LLM-enhanced brief."""
         deterministic = _make_deterministic_brief()
 
-        async def _fake_run_single_step(*_args, **kwargs):  # type: ignore[no-untyped-def]
+        async def _fake_run_single_step(*_args, **kwargs):
             return SimpleNamespace(
                 output={
                     "title": "LLM-Enhanced Brief: BRCA1",
@@ -1064,7 +1064,7 @@ class TestGenerateLlmResearchBrief:
             next_steps=("Original step",),
         )
 
-        async def _fake_run_single_step(*_args, **kwargs):  # type: ignore[no-untyped-def]
+        async def _fake_run_single_step(*_args, **kwargs):
             return SimpleNamespace(
                 output={
                     "title": "LLM Title",
@@ -1129,7 +1129,7 @@ class TestGenerateLlmResearchBrief:
         """When LLM returns empty gaps/next_steps, deterministic ones are used."""
         deterministic = _make_deterministic_brief()
 
-        async def _fake_run_single_step(*_args, **kwargs):  # type: ignore[no-untyped-def]
+        async def _fake_run_single_step(*_args, **kwargs):
             return SimpleNamespace(
                 output={
                     "title": "LLM Title",
@@ -1192,7 +1192,7 @@ class TestGenerateLlmResearchBrief:
         deterministic = _make_deterministic_brief()
         created_stores: list[_FakeKernelStore] = []
 
-        async def _fake_run_single_step(*_args, **kwargs):  # type: ignore[no-untyped-def]
+        async def _fake_run_single_step(*_args, **kwargs):
             return SimpleNamespace(
                 output={
                     "title": "Title",
@@ -1256,7 +1256,7 @@ class TestGenerateLlmResearchBrief:
         deterministic = _make_deterministic_brief()
         created_stores: list[_FakeKernelStore] = []
 
-        async def _boom(*_args, **kwargs):  # type: ignore[no-untyped-def]
+        async def _boom(*_args, **kwargs):
             raise RuntimeError("synthetic llm outage")
 
         def _create_store() -> _FakeKernelStore:

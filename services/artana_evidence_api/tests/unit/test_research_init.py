@@ -12,7 +12,12 @@ from typing import cast
 from uuid import UUID, uuid4
 
 import pytest
-from artana_evidence_api import full_ai_orchestrator_runtime, research_init_runtime
+from artana_evidence_api import (
+    full_ai_orchestrator_runtime,
+    research_init_helpers,
+    research_init_observation_bridge,
+    research_init_runtime,
+)
 from artana_evidence_api.approval_store import HarnessApprovalStore
 from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,
@@ -420,7 +425,7 @@ async def test_select_candidates_for_ingestion_falls_back_to_heuristics_on_llm_e
         del candidate, objective
         raise RuntimeError("synthetic llm outage")
 
-    monkeypatch.setattr(research_init, "_review_candidate_with_llm", _raise_llm_error)
+    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _raise_llm_error)
 
     selected = await research_init._select_candidates_for_ingestion(
         [candidate],
@@ -466,8 +471,8 @@ async def test_select_candidates_for_ingestion_falls_back_to_heuristics_on_llm_t
             rationale="slow success",
         )
 
-    monkeypatch.setattr(research_init, "_review_candidate_with_llm", _slow_llm_review)
-    monkeypatch.setattr(research_init, "_LLM_RELEVANCE_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _slow_llm_review)
+    monkeypatch.setattr(research_init_helpers, "_LLM_RELEVANCE_TIMEOUT_SECONDS", 0.01)
 
     selected = await research_init._select_candidates_for_ingestion(
         [candidate],
@@ -511,7 +516,7 @@ async def test_select_candidates_for_ingestion_keeps_llm_non_relevant_rejections
             rationale="not aligned enough",
         )
 
-    monkeypatch.setattr(research_init, "_review_candidate_with_llm", _reject_with_llm)
+    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _reject_with_llm)
 
     selected = await research_init._select_candidates_for_ingestion(
         [candidate],
@@ -562,7 +567,7 @@ async def test_select_candidates_for_ingestion_reviews_llm_shortlist_concurrentl
         finally:
             current_concurrency -= 1
 
-    monkeypatch.setattr(research_init, "_review_candidate_with_llm", _track_concurrency)
+    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _track_concurrency)
 
     selected = await research_init._select_candidates_for_ingestion(
         candidates,
@@ -721,7 +726,7 @@ class _StubGraphChatRunner:
 
 
 def _fake_pubmed_discovery_service_factory():
-    return nullcontext(cast("object", object()))
+    return nullcontext(object())
 
 
 def _build_execution_services(
@@ -1466,8 +1471,8 @@ def test_require_worker_ready_logs_dead_worker_details(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     monkeypatch.setattr(
-        research_init,
-        "_read_heartbeat",
+        research_init_helpers,
+        "read_heartbeat",
         lambda *_args, **_kwargs: ProcessHealth(
             status="degraded",
             last_tick="36s ago",
@@ -1503,8 +1508,8 @@ def test_require_worker_ready_reports_loop_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        research_init,
-        "_read_heartbeat",
+        research_init_helpers,
+        "read_heartbeat",
         lambda *_args, **_kwargs: ProcessHealth(
             status="degraded",
             last_tick="4s ago",
@@ -1751,7 +1756,7 @@ async def test_execute_research_init_processes_existing_text_documents_without_s
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         _unexpected_pubmed_queries,
     )
@@ -1919,7 +1924,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [],
     )
@@ -1973,7 +1978,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
         )
 
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _fake_select_candidates_for_ingestion,
     )
@@ -3299,7 +3304,7 @@ async def test_execute_research_init_auto_creates_entities_with_improved_types(
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         _unexpected_pubmed_queries,
     )
@@ -3550,12 +3555,12 @@ async def test_execute_research_init_processes_pdf_documents_when_pdf_source_sel
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         _unexpected_pubmed_queries,
     )
     monkeypatch.setattr(
-        "artana_evidence_api.routers.documents._enrich_pdf_document",
+        "artana_evidence_api.research_init_runtime._enrich_pdf_document",
         _fake_enrich_pdf_document,
     )
     monkeypatch.setattr(
@@ -3690,7 +3695,7 @@ async def test_execute_research_init_runs_pubmed_queries_concurrently_preserving
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [
             {"search_term": "slow-query", "gene_symbol": None},
@@ -3703,7 +3708,7 @@ async def test_execute_research_init_runs_pubmed_queries_concurrently_preserving
         _fake_execute_pubmed_query,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _fake_select_candidates_for_ingestion,
     )
@@ -3810,7 +3815,7 @@ async def test_prepare_pubmed_replay_bundle_captures_selected_candidates(
         ]
 
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [
             {"search_term": "MED13", "gene_symbol": None},
@@ -3822,7 +3827,7 @@ async def test_prepare_pubmed_replay_bundle_captures_selected_candidates(
         _fake_execute_pubmed_query,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _fake_select_candidates_for_ingestion,
     )
@@ -4204,7 +4209,7 @@ async def test_execute_research_init_uses_pubmed_replay_bundle_without_live_quer
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: (_ for _ in ()).throw(
             AssertionError("pubmed queries should not be rebuilt from replay")
@@ -4235,7 +4240,7 @@ async def test_execute_research_init_uses_pubmed_replay_bundle_without_live_quer
         _unexpected_execute_pubmed_query,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _unexpected_select_candidates,
     )
@@ -4619,7 +4624,7 @@ async def test_execute_research_init_loads_pubmed_replay_bundle_from_artifact(
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: (_ for _ in ()).throw(
             AssertionError("pubmed queries should not be rebuilt from replay artifact")
@@ -4652,7 +4657,7 @@ async def test_execute_research_init_loads_pubmed_replay_bundle_from_artifact(
         _unexpected_execute_pubmed_query,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _unexpected_select_candidates,
     )
@@ -4776,7 +4781,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [{"search_term": "MED13 syndrome"}],
     )
@@ -4822,7 +4827,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
         _fake_execute_pubmed_query,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _fake_select_candidates_for_ingestion,
     )
@@ -4986,7 +4991,7 @@ async def test_execute_research_init_skips_duplicate_pubmed_documents(
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [
             {"search_term": "MED13", "gene_symbol": None},
@@ -4998,7 +5003,7 @@ async def test_execute_research_init_skips_duplicate_pubmed_documents(
         _fake_execute_pubmed_query,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _fake_select_candidates_for_ingestion,
     )
@@ -5163,7 +5168,7 @@ async def test_execute_research_init_suppresses_scope_refinement_after_prior_con
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [
             {"search_term": "MED13", "gene_symbol": None},
@@ -5175,7 +5180,7 @@ async def test_execute_research_init_suppresses_scope_refinement_after_prior_con
         _fake_execute_pubmed_query,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _fake_select_candidates_for_ingestion,
     )
@@ -5315,7 +5320,7 @@ async def test_execute_research_init_syncs_pubmed_observations_for_existing_pubm
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [],
     )
@@ -5475,7 +5480,7 @@ async def test_execute_research_init_keeps_llm_candidate_fallback_diagnostics_ou
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_build_pubmed_queries",
         lambda _objective, _seed_terms: [],
     )
@@ -5703,7 +5708,7 @@ async def test_sync_pubmed_observation_bridge_uses_combined_postgres_search_path
         )
         assert isinstance(
             pipeline_run_event_repository,
-            research_init_runtime._NoOpPipelineRunEventRepository,
+            research_init_observation_bridge._NoOpPipelineRunEventRepository,
         )
         return _FakeEntityRecognitionService(source_document_repository)
 
@@ -5716,12 +5721,12 @@ async def test_sync_pubmed_observation_bridge_uses_combined_postgres_search_path
         lambda: nullcontext(fake_session),
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "build_source_document_repository",
         _FakeSourceDocumentRepository,
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "create_observation_bridge_entity_recognition_service",
         _fake_create_entity_recognition_service,
     )
@@ -5743,21 +5748,21 @@ async def test_sync_pubmed_observation_bridge_uses_combined_postgres_search_path
 
 def test_observation_bridge_postgres_search_path_keeps_public_last() -> None:
     assert (
-        research_init_runtime._observation_bridge_postgres_search_path(
+        research_init_observation_bridge._observation_bridge_postgres_search_path(
             graph_schema="graph_runtime",
             harness_schema="artana_evidence_api",
         )
         == '"graph_runtime", "artana_evidence_api", public'
     )
     assert (
-        research_init_runtime._observation_bridge_postgres_search_path(
+        research_init_observation_bridge._observation_bridge_postgres_search_path(
             graph_schema="public",
             harness_schema="artana_evidence_api",
         )
         == '"artana_evidence_api", public'
     )
     assert (
-        research_init_runtime._observation_bridge_postgres_search_path(
+        research_init_observation_bridge._observation_bridge_postgres_search_path(
             graph_schema="graph_runtime",
             harness_schema="public",
         )
@@ -5857,8 +5862,11 @@ async def test_sync_pubmed_observation_bridge_persists_source_documents(
             pipeline_run_id: str | None = None,
         ) -> object:
             assert limit == 1
-            assert source_id == research_init_runtime._research_init_pubmed_source_id(
-                space_id,
+            assert (
+                source_id
+                == research_init_observation_bridge._research_init_pubmed_source_id(
+                    space_id,
+                )
             )
             assert research_space_id == space_id
             assert ingestion_job_id is not None
@@ -5916,7 +5924,7 @@ async def test_sync_pubmed_observation_bridge_persists_source_documents(
         )
         assert isinstance(
             pipeline_run_event_repository,
-            research_init_runtime._NoOpPipelineRunEventRepository,
+            research_init_observation_bridge._NoOpPipelineRunEventRepository,
         )
         return _FakeEntityRecognitionService(source_document_repository)
 
@@ -5925,7 +5933,7 @@ async def test_sync_pubmed_observation_bridge_persists_source_documents(
         lambda: nullcontext(bridge_session),
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "create_observation_bridge_entity_recognition_service",
         _fake_create_entity_recognition_service,
     )
@@ -6102,7 +6110,7 @@ async def test_sync_pubmed_observation_bridge_caps_timeouts(
         lambda: nullcontext(bridge_session),
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "create_observation_bridge_entity_recognition_service",
         _fake_create_entity_recognition_service,
     )
@@ -6248,12 +6256,12 @@ async def test_sync_pubmed_observation_bridge_times_out_batch_and_marks_document
         lambda: nullcontext(bridge_session),
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "_OBSERVATION_BRIDGE_BATCH_TIMEOUT_SECONDS",
         0.01,
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "create_observation_bridge_entity_recognition_service",
         _fake_create_entity_recognition_service,
     )
@@ -6378,8 +6386,11 @@ async def test_sync_file_upload_observation_bridge_persists_source_documents(
             pipeline_run_id: str | None = None,
         ) -> object:
             assert limit == 2
-            assert source_id == research_init_runtime._research_init_upload_source_id(
-                space_id,
+            assert (
+                source_id
+                == research_init_observation_bridge._research_init_upload_source_id(
+                    space_id,
+                )
             )
             assert research_space_id == space_id
             assert ingestion_job_id is not None
@@ -6445,7 +6456,7 @@ async def test_sync_file_upload_observation_bridge_persists_source_documents(
         )
         assert isinstance(
             pipeline_run_event_repository,
-            research_init_runtime._NoOpPipelineRunEventRepository,
+            research_init_observation_bridge._NoOpPipelineRunEventRepository,
         )
         return _FakeEntityRecognitionService(source_document_repository)
 
@@ -6454,7 +6465,7 @@ async def test_sync_file_upload_observation_bridge_persists_source_documents(
         lambda: nullcontext(bridge_session),
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "create_observation_bridge_entity_recognition_service",
         _fake_create_entity_recognition_service,
     )
@@ -6643,7 +6654,7 @@ async def test_observation_bridge_persistence_regression(
         lambda: nullcontext(bridge_session),
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "create_observation_bridge_entity_recognition_service",
         _fake_create,
     )
@@ -6898,7 +6909,7 @@ async def test_run_structured_enrichment_source_times_out_marrvel_and_keeps_run_
         source_key="marrvel",
         source_label="MARRVEL",
         log_message="Phase 2b: running MARRVEL enrichment for space %s",
-        runner=_slow_marrvel_runner,  # type: ignore[arg-type]
+        runner=_slow_marrvel_runner,
         space_id=space_id,
         seed_terms=["BRCA1"],
         document_store=document_store,
@@ -7386,8 +7397,8 @@ def test_ground_candidate_claim_drafts_tracks_surfaced_entity_ids() -> None:
             del space_id, entity_type, display_label
             return {"id": created_entity_id}
 
-    original_resolve = research_init_runtime.resolve_graph_entity_label
-    research_init_runtime.resolve_graph_entity_label = _fake_resolve_graph_entity_label
+    original_resolve = research_init_observation_bridge.resolve_graph_entity_label
+    research_init_observation_bridge.resolve_graph_entity_label = _fake_resolve_graph_entity_label
     try:
         grounded_drafts, surfaced_entity_ids, created_entity_ids, errors = (
             research_init_runtime._ground_candidate_claim_drafts(
@@ -7417,7 +7428,7 @@ def test_ground_candidate_claim_drafts_tracks_surfaced_entity_ids() -> None:
             )
         )
     finally:
-        research_init_runtime.resolve_graph_entity_label = original_resolve
+        research_init_observation_bridge.resolve_graph_entity_label = original_resolve
 
     assert errors == ()
     assert surfaced_entity_ids == (existing_entity_id, created_entity_id)
@@ -7560,8 +7571,8 @@ def test_ground_replay_candidate_claim_drafts_grounds_labels_in_current_space() 
         ),
     )
 
-    original_resolve = research_init_runtime.resolve_graph_entity_label
-    research_init_runtime.resolve_graph_entity_label = _fake_resolve_graph_entity_label
+    original_resolve = research_init_observation_bridge.resolve_graph_entity_label
+    research_init_observation_bridge.resolve_graph_entity_label = _fake_resolve_graph_entity_label
     try:
         grounded_drafts, surfaced_entity_ids, created_entity_ids, errors = (
             research_init_runtime._ground_replay_candidate_claim_drafts(
@@ -7571,7 +7582,7 @@ def test_ground_replay_candidate_claim_drafts_grounds_labels_in_current_space() 
             )
         )
     finally:
-        research_init_runtime.resolve_graph_entity_label = original_resolve
+        research_init_observation_bridge.resolve_graph_entity_label = original_resolve
 
     assert errors == ()
     assert surfaced_entity_ids == (existing_entity_id, created_entity_id)
@@ -7584,7 +7595,7 @@ def test_ground_replay_candidate_claim_drafts_grounds_labels_in_current_space() 
 
 def _build_chase_preparation_for_test() -> research_init_runtime._ChaseRoundPreparation:
     candidates = (
-        research_init_runtime.ResearchOrchestratorChaseCandidate(
+        full_ai_orchestrator_runtime.ResearchOrchestratorChaseCandidate(
             entity_id="entity-1",
             display_label="CDK8",
             normalized_label="CDK8",
@@ -7594,7 +7605,7 @@ def _build_chase_preparation_for_test() -> research_init_runtime._ChaseRoundPrep
             evidence_basis="Candidate one.",
             novelty_basis="not_in_previous_seed_terms",
         ),
-        research_init_runtime.ResearchOrchestratorChaseCandidate(
+        full_ai_orchestrator_runtime.ResearchOrchestratorChaseCandidate(
             entity_id="entity-2",
             display_label="MED12",
             normalized_label="MED12",
@@ -7604,7 +7615,7 @@ def _build_chase_preparation_for_test() -> research_init_runtime._ChaseRoundPrep
             evidence_basis="Candidate two.",
             novelty_basis="not_in_previous_seed_terms",
         ),
-        research_init_runtime.ResearchOrchestratorChaseCandidate(
+        full_ai_orchestrator_runtime.ResearchOrchestratorChaseCandidate(
             entity_id="entity-3",
             display_label="MED13L",
             normalized_label="MED13L",
@@ -8286,7 +8297,7 @@ async def test_maybe_select_guarded_chase_round_selection_uses_observer() -> Non
                 *,
                 round_number: int,
                 chase_candidates: tuple[
-                    research_init_runtime.ResearchOrchestratorChaseCandidate,
+                    full_ai_orchestrator_runtime.ResearchOrchestratorChaseCandidate,
                     ...,
                 ],
                 deterministic_selection: research_init_runtime.ResearchOrchestratorChaseSelection,

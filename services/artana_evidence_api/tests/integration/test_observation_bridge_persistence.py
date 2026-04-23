@@ -17,7 +17,7 @@ from contextlib import nullcontext
 from uuid import UUID, uuid4
 
 import pytest
-from artana_evidence_api import research_init_runtime
+from artana_evidence_api import research_init_observation_bridge, research_init_runtime
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.source_document_bridges import (
     DocumentExtractionStatus,
@@ -266,7 +266,7 @@ async def test_observation_bridge_persists_source_documents_entities_and_observa
         lambda: nullcontext(bridge_session),
     )
     monkeypatch.setattr(
-        research_init_runtime,
+        research_init_observation_bridge,
         "create_observation_bridge_entity_recognition_service",
         _fake_create,
     )

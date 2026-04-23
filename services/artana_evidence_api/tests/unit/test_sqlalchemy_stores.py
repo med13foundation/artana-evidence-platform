@@ -1132,14 +1132,14 @@ def test_sqlalchemy_harness_review_item_store_reuses_existing_item_after_unique_
         original_find_existing = second_store._find_existing_review_item_model
         call_count = 0
 
-        def _stale_lookup(*, space_id: str, review_item: HarnessReviewItemDraft):  # type: ignore[no-untyped-def]
+        def _stale_lookup(*, space_id: str, review_item: HarnessReviewItemDraft):
             nonlocal call_count
             call_count += 1
             if call_count == 1:
                 return None
             return original_find_existing(space_id=space_id, review_item=review_item)
 
-        second_store._find_existing_review_item_model = _stale_lookup  # type: ignore[method-assign]
+        second_store._find_existing_review_item_model = _stale_lookup
 
         reused = second_store.create_review_items(
             space_id=space_id,
