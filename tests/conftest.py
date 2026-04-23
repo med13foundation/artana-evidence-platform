@@ -14,12 +14,9 @@ from types import ModuleType
 import pytest
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import NullPool, StaticPool
-
-from tests.sqlite_utils import build_sqlite_connect_args, configure_sqlite_engine
+from sqlalchemy.pool import StaticPool
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _ARTANA_API_SDK_SRC = _REPO_ROOT / "packages" / "artana_api" / "src"
@@ -34,83 +31,71 @@ if not _bootstrap_database_url.startswith("postgresql"):
     os.environ.setdefault("GRAPH_DB_SCHEMA", "public")
     os.environ.setdefault("ARTANA_EVIDENCE_API_DB_SCHEMA", "public")
 
-try:
-    import src.models.database  # noqa: F401
-    from src.database.graph_schema import graph_postgres_search_path, graph_schema_name
-    from src.database.url_resolver import (
-        resolve_async_database_url,
-        to_async_database_url,
+_SRC_AVAILABLE = False
+AuditLog = object
+UserModel = object
+
+
+def to_async_database_url(sync_url: str) -> str:
+    replacements = (
+        ("postgresql+psycopg2://", "postgresql+asyncpg://"),
+        ("postgresql+psycopg://", "postgresql+asyncpg://"),
+        ("postgresql://", "postgresql+asyncpg://"),
     )
-    from src.models.database.audit import AuditLog  # noqa: F401
-    from src.models.database.base import Base
-    from src.models.database.user import UserModel  # noqa: F401
+    for prefix, replacement in replacements:
+        if sync_url.startswith(prefix):
+            return sync_url.replace(prefix, replacement, 1)
+    return sync_url
 
-    _SRC_AVAILABLE = True
+
+def resolve_async_database_url() -> str:
+    async_override = os.getenv("ASYNC_DATABASE_URL")
+    if async_override:
+        return async_override
+    return to_async_database_url(os.getenv("DATABASE_URL", TEST_DATABASE_URL))
+
+
+def graph_schema_name(raw_value: str | None = None) -> str | None:
+    schema = (
+        raw_value if raw_value is not None else os.getenv("GRAPH_DB_SCHEMA", "graph_runtime")
+    ).strip() or "graph_runtime"
+    if schema == "public":
+        return None
+    return schema
+
+
+def graph_postgres_search_path(raw_value: str | None = None) -> str:
+    schema = graph_schema_name(raw_value)
+    if schema is None:
+        return "public"
+    return f'"{schema}", public'
+
+
+try:
+    import artana_evidence_db.claim_relation_persistence_model  # noqa: F401
+
+    # Load service-local mappings so the shared test engine can create graph
+    # tables in the standalone graph-service test image.
+    import artana_evidence_db.entity_embedding_model  # noqa: F401
+    import artana_evidence_db.entity_lookup_models  # noqa: F401
+    import artana_evidence_db.kernel_claim_models  # noqa: F401
+    import artana_evidence_db.kernel_concept_models  # noqa: F401
+    import artana_evidence_db.kernel_dictionary_models  # noqa: F401
+    import artana_evidence_db.kernel_entity_models  # noqa: F401
+    import artana_evidence_db.kernel_relation_models  # noqa: F401
+    import artana_evidence_db.observation_persistence_model  # noqa: F401
+    import artana_evidence_db.operation_run_models  # noqa: F401
+    import artana_evidence_db.pack_seed_models  # noqa: F401
+    import artana_evidence_db.provenance_model  # noqa: F401
+    import artana_evidence_db.read_models  # noqa: F401
+    import artana_evidence_db.reasoning_path_persistence_models  # noqa: F401
+    import artana_evidence_db.relation_projection_source_model  # noqa: F401
+    import artana_evidence_db.source_document_model  # noqa: F401
+    import artana_evidence_db.space_models  # noqa: F401
+    from artana_evidence_db.orm_base import Base
 except ModuleNotFoundError:
-    _SRC_AVAILABLE = False
-    AuditLog = object
-    UserModel = object
-
-    def to_async_database_url(sync_url: str) -> str:
-        replacements = (
-            ("postgresql+psycopg2://", "postgresql+asyncpg://"),
-            ("postgresql+psycopg://", "postgresql+asyncpg://"),
-            ("postgresql://", "postgresql+asyncpg://"),
-        )
-        for prefix, replacement in replacements:
-            if sync_url.startswith(prefix):
-                return sync_url.replace(prefix, replacement, 1)
-        return sync_url
-
-    def resolve_async_database_url() -> str:
-        async_override = os.getenv("ASYNC_DATABASE_URL")
-        if async_override:
-            return async_override
-        return to_async_database_url(os.getenv("DATABASE_URL", TEST_DATABASE_URL))
-
-    def graph_schema_name(raw_value: str | None = None) -> str | None:
-        schema = (
-            raw_value
-            if raw_value is not None
-            else os.getenv("GRAPH_DB_SCHEMA", "graph_runtime")
-        ).strip() or "graph_runtime"
-        if schema == "public":
-            return None
-        return schema
-
-    def graph_postgres_search_path(raw_value: str | None = None) -> str:
-        schema = graph_schema_name(raw_value)
-        if schema is None:
-            return "public"
-        return f'"{schema}", public'
-
-    try:
-        import artana_evidence_db.claim_relation_persistence_model  # noqa: F401
-
-        # Load service-local mappings so the shared test engine can create graph
-        # tables in the standalone graph-service test image.
-        import artana_evidence_db.entity_embedding_model  # noqa: F401
-        import artana_evidence_db.entity_lookup_models  # noqa: F401
-        import artana_evidence_db.kernel_claim_models  # noqa: F401
-        import artana_evidence_db.kernel_concept_models  # noqa: F401
-        import artana_evidence_db.kernel_dictionary_models  # noqa: F401
-        import artana_evidence_db.kernel_entity_models  # noqa: F401
-        import artana_evidence_db.kernel_relation_models  # noqa: F401
-        import artana_evidence_db.observation_persistence_model  # noqa: F401
-        import artana_evidence_db.operation_run_models  # noqa: F401
-        import artana_evidence_db.pack_seed_models  # noqa: F401
-        import artana_evidence_db.provenance_model  # noqa: F401
-        import artana_evidence_db.read_models  # noqa: F401
-        import artana_evidence_db.reasoning_path_persistence_models  # noqa: F401
-        import artana_evidence_db.relation_projection_source_model  # noqa: F401
-        import artana_evidence_db.source_document_model  # noqa: F401
-        import artana_evidence_db.space_models  # noqa: F401
-        from artana_evidence_db.orm_base import Base
-    except ModuleNotFoundError:
-        import artana_evidence_api.models.harness  # noqa: F401
-        from artana_evidence_api.models.base import Base
-
-# The original `from src.models.database.base import Base` was here, but it's moved up.
+    import artana_evidence_api.models.harness  # noqa: F401
+    from artana_evidence_api.models.base import Base
 
 # Test database configuration (absolute path to avoid divergent relative paths)
 # Support pytest-xdist by using unique database files per worker
@@ -257,65 +242,7 @@ def _prepare_postgres_graph_schema(engine) -> None:
 
 
 def _wire_container_dependencies() -> None:
-    if not _SRC_AVAILABLE:
-        return
-
-    try:
-        from src.infrastructure.dependency_injection import (
-            container as container_module,
-        )
-        from src.infrastructure.security.jwt_provider import JWTProvider
-    except ImportError:
-        return
-
-    test_secret = os.environ["AUTH_JWT_SECRET"]
-    container_module.container.jwt_secret_key = test_secret
-    container_module.container.jwt_provider = JWTProvider(
-        secret_key=test_secret,
-        algorithm=container_module.container.jwt_algorithm,
-    )
-    resolved_db_url = resolve_async_database_url()
-    engine_kwargs: dict[str, object] = {"echo": False, "pool_pre_ping": True}
-    if os.environ.get("TESTING") == "true" and not resolved_db_url.startswith("sqlite"):
-        # Avoid cross-event-loop reuse of asyncpg connections during test runs.
-        engine_kwargs["poolclass"] = NullPool
-    if resolved_db_url.startswith("sqlite"):
-        engine_kwargs["connect_args"] = build_sqlite_connect_args(
-            include_thread_check=False,
-        )
-        engine_kwargs["poolclass"] = NullPool
-
-    async_engine = create_async_engine(resolved_db_url, **engine_kwargs)
-    if resolved_db_url.startswith("sqlite"):
-        configure_sqlite_engine(async_engine.sync_engine)
-    elif resolved_db_url.startswith("postgresql"):
-        graph_schema = graph_schema_name()
-        if graph_schema is not None:
-
-            @event.listens_for(async_engine.sync_engine, "connect")
-            def _set_async_graph_search_path(
-                dbapi_connection: object,
-                _connection_record: object,
-            ) -> None:
-                cursor = dbapi_connection.cursor()
-                try:
-                    cursor.execute(
-                        f"SET search_path TO {graph_postgres_search_path(graph_schema)}",
-                    )
-                finally:
-                    cursor.close()
-
-    container_module.container.database_url = resolved_db_url
-    container_module.container.engine = async_engine
-    container_module.container.async_session_factory = async_sessionmaker(
-        async_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
-    container_module.container._authentication_service = None
-    container_module.container._authentication_service_loop = None
-    container_module.container._user_repository = None
-    container_module.container._session_repository = None
+    return None
 
 
 def _propagate_session_local(session_module: ModuleType) -> None:
@@ -334,53 +261,7 @@ def _propagate_session_local(session_module: ModuleType) -> None:
 
 
 def _wire_sync_session() -> None:
-    if not _SRC_AVAILABLE:
-        return
-
-    try:
-        from src.database import session as session_module
-    except ImportError:
-        return
-
-    sync_db_url = os.environ["DATABASE_URL"]
-    sync_engine_kwargs: dict[str, object] = {"future": True, "pool_pre_ping": True}
-    if sync_db_url.startswith("sqlite"):
-        sync_engine_kwargs["connect_args"] = build_sqlite_connect_args()
-        sync_engine_kwargs["poolclass"] = NullPool
-
-    sync_engine = create_engine(sync_db_url, **sync_engine_kwargs)
-    if sync_db_url.startswith("sqlite"):
-        configure_sqlite_engine(sync_engine)
-    elif sync_db_url.startswith("postgresql"):
-        graph_schema = graph_schema_name()
-        if graph_schema is not None:
-
-            @event.listens_for(sync_engine, "connect")
-            def _set_sync_graph_search_path(
-                dbapi_connection: object,
-                _connection_record: object,
-            ) -> None:
-                cursor = dbapi_connection.cursor()
-                try:
-                    cursor.execute(
-                        f"SET search_path TO {graph_postgres_search_path(graph_schema)}",
-                    )
-                finally:
-                    cursor.close()
-
-        _prepare_postgres_graph_schema(sync_engine)
-
-    session_module.DATABASE_URL = sync_db_url
-    session_module.engine = sync_engine
-    session_module.SessionLocal = sessionmaker(
-        bind=sync_engine,
-        autoflush=False,
-        autocommit=False,
-        expire_on_commit=False,
-        class_=Session,
-    )
-    Base.metadata.create_all(bind=sync_engine)
-    _propagate_session_local(session_module)
+    return None
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -456,22 +337,8 @@ def sample_phenotype_data():
 @pytest.fixture
 def sample_provenance():
     """Provide sample provenance data for testing."""
-    from datetime import UTC, datetime
-
-    if not _SRC_AVAILABLE:
-        pytest.skip(
-            "Monolith provenance model is unavailable in service-only test images",
-        )
-
-    from src.domain.value_objects.provenance import DataSource, Provenance
-
-    return Provenance(
-        source=DataSource.CLINVAR,
-        acquired_at=datetime.now(UTC),
-        acquired_by="test_system",
-        processing_steps=["normalized", "validated"],
-        validation_status="valid",
-        quality_score=0.95,
+    pytest.skip(
+        "Monolith provenance model is unavailable in service-only test images",
     )
 
 
@@ -562,17 +429,9 @@ def clean_database(db_session):
 @pytest.fixture
 def skip_if_no_database():
     """Skip test if database is not available."""
-    if not _SRC_AVAILABLE:
-        pytest.skip(
-            "Monolith database session is unavailable in service-only test images",
-        )
-
-    try:
-        from src.database.session import engine
-
-        engine.execute("SELECT 1")
-    except Exception:
-        pytest.skip("Database not available")
+    pytest.skip(
+        "Monolith database session is unavailable in service-only test images",
+    )
 
 
 @pytest.fixture

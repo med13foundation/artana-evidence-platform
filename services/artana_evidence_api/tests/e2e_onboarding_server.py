@@ -87,9 +87,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from artana_evidence_api.pubmed_discovery import PubMedDiscoveryService
+    from artana_evidence_api.research_space_store import HarnessResearchSpaceRecord
     from artana_evidence_api.run_registry import HarnessRunRecord
-
-    from src.domain.entities.research_space import ResearchSpace
 
 
 class _StubGraphApiGateway:
@@ -112,7 +111,7 @@ class _FakeRunSummary:
 class _NoOpSpaceLifecycleSync:
     """Skip graph tenant sync in deterministic onboarding E2E runs."""
 
-    def sync_space(self, space: ResearchSpace) -> None:
+    def sync_space(self, space: HarnessResearchSpaceRecord) -> None:
         del space
 
 

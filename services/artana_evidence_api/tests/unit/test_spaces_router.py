@@ -25,7 +25,10 @@ from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
 from artana_evidence_api.models.research_space import ResearchSpaceModel
 from artana_evidence_api.models.user import HarnessUserModel
 from artana_evidence_api.proposal_store import HarnessProposalStore
-from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
+from artana_evidence_api.research_space_store import (
+    HarnessResearchSpaceRecord,
+    HarnessResearchSpaceStore,
+)
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.run_registry import HarnessRunRegistry
 from artana_evidence_api.schedule_store import HarnessScheduleStore
@@ -33,8 +36,6 @@ from artana_evidence_api.sqlalchemy_stores import SqlAlchemyHarnessResearchSpace
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
-from src.domain.entities.research_space import ResearchSpace
 
 _TEST_USER_ID: Final[str] = "11111111-1111-1111-1111-111111111111"
 _TEST_USER_EMAIL: Final[str] = "graph-harness-test@example.com"
@@ -55,9 +56,9 @@ class _HarnessSpaceTestStores:
 
 class _RecordingSpaceLifecycleSync:
     def __init__(self) -> None:
-        self.spaces: list[ResearchSpace] = []
+        self.spaces: list[HarnessResearchSpaceRecord] = []
 
-    def sync_space(self, space: ResearchSpace) -> None:
+    def sync_space(self, space: HarnessResearchSpaceRecord) -> None:
         self.spaces.append(space)
 
 

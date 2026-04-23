@@ -25,7 +25,6 @@ backups
 data
 tests
 docs
-src/web
 services/frontdoor
 *.log
 .DS_Store
@@ -33,5 +32,3 @@ services/frontdoor
 !tests/**
 !docs/
 !docs/**
-!src/web/types/
-!src/web/types/**

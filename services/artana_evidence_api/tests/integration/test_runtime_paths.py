@@ -131,16 +131,15 @@ from artana_evidence_api.transparency import (
     append_manual_review_decision,
     append_skill_activity,
 )
-from artana_evidence_api.worker import list_queued_worker_runs, run_worker_tick
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session, sessionmaker
-
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.graph_fact_assessment import (
     GroundingLevel,
     MappingStatus,
     SpeculationLevel,
     build_fact_assessment_from_confidence,
 )
+from artana_evidence_api.worker import list_queued_worker_runs, run_worker_tick
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session, sessionmaker
 
 if TYPE_CHECKING:
     from artana_evidence_api.composition import GraphHarnessKernelRuntime

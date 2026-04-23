@@ -1,1 +1,0 @@
-"""RO-Crate packaging components."""

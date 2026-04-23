@@ -10,13 +10,13 @@ Legend:
 
 ## Current Snapshot
 
-- Date anchored: April 22, 2026
-- Repo status: source-of-truth cutover completed
+- Date anchored: April 23, 2026
+- Repo status: source-of-truth cutover completed; temporary top-level `src/` removal completed
 - Code imported: yes
-- Active milestone: M6
+- Active milestone: M6 complete
 - Important status note: M5 means the service ownership cutover is complete; it
-  does not mean the temporary `src/` package has been physically removed from
-  this repository.
+  did not mean the temporary `src/` package had been physically removed from
+  this repository. M6 is the post-cutover cleanup milestone that removed it.
 
 ## M0: Repo Scaffold
 
@@ -138,12 +138,12 @@ Legend:
 - [x] Remove source-document bridge dependencies on `src`
 - [x] Remove ontology-runtime bridge dependencies on `src`
 - [x] Remove variant-extraction bridge dependencies on `src`
-- [ ] Remove `COPY src ./src` from the evidence API Dockerfile
-- [ ] Remove or archive monorepo-era scripts that still import `src`
-- [ ] Move remaining reusable test fixtures away from `tests/conftest.py` `src` imports
-- [ ] Remove `src` from packaging, lint, type, and coverage config
-- [ ] Delete the physical `src/` directory
-- [ ] Re-run both extracted service gates without `src/`
+- [x] Remove `COPY src ./src` from the evidence API Dockerfile
+- [x] Remove or archive monorepo-era scripts that still import `src`
+- [x] Move remaining reusable test fixtures away from `tests/conftest.py` `src` imports
+- [x] Remove `src` from packaging, lint, type, and coverage config
+- [x] Delete the physical `src/` directory
+- [x] Re-run both extracted service gates without `src/`
 
 ## Decisions to Close
 
@@ -188,14 +188,16 @@ Use this section as the running log while executing the migration.
 - April 23, 2026: localized the observation-bridge source-document model and SQLAlchemy repository into `services/artana_evidence_api/source_document_bridges.py`, removed that bridge's lazy `src` imports, and verified the focused observation-bridge unit tests, `services/artana_evidence_api/tests/integration/test_observation_bridge_persistence.py`, `scripts/validate_artana_evidence_api_service_boundary.py`, and `make artana-evidence-api-type-check`; the old shared entity-recognition runtime now fails closed until it is ported service-local
 - April 23, 2026: removed the ontology-runtime bridge's lazy `src` imports, rewired MONDO tests to patch `research_init_runtime.build_mondo_ingestion_service`, and verified the deferred/guarded MONDO tests, the research-init e2e pipeline test, `scripts/validate_artana_evidence_api_service_boundary.py`, and `make artana-evidence-api-type-check`; MONDO ingestion now fails closed until it is ported service-local
 - April 23, 2026: localized deterministic variant signal parsing into `services/artana_evidence_api/variant_extraction_bridges.py`, removed that bridge's lazy extraction-runtime `src` imports, and verified the variant-aware extraction tests plus `make artana-evidence-api-service-checks`; the LLM extraction adapter now returns a fallback contract until it is ported service-local, and production `services/artana_evidence_api` has no remaining `src` references
+- April 23, 2026: completed M6 by removing `COPY src ./src` from the evidence API Dockerfile, deleting/archiving monorepo-era scripts and tests that depended on top-level `src`, narrowing packaging/lint/type/coverage configuration to service packages plus the SDK, replacing reusable test-fixture imports with service-local models, deleting the physical top-level `src/` directory, and re-running `make graph-service-checks` plus `make artana-evidence-api-service-checks` successfully without that directory
 
 ### Known Facts to Preserve During Migration
 
 - `artana_evidence_db` is the standalone governed graph service
 - `artana_evidence_api` is the AI evidence/orchestration service
 - the graph service no longer has production `src` imports and no longer copies `src/` into its runtime image
-- the evidence API no longer has production `src` imports or lazy `src` bridge references; remaining M6 work is packaging, scripts/tests/config cleanup, and physical `src/` deletion
+- the evidence API no longer has production `src` imports or lazy `src` bridge references, and no longer copies `src/` into its runtime image
+- the top-level temporary `src/` package has been deleted from this repository
+- remaining `src` references are package-local SDK paths such as `packages/artana_api/src`, boundary-validator forbidden-prefix strings, or historical docs; they are not the removed monorepo runtime package
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover
-- keep the temporary `src/` import root name for now; rename only in a future cleanup slice after cutover stability
 - keep the temporary shared Postgres topology for now; database separation is deferred beyond the completed source-of-truth cutover
-- M6 is the active post-cutover cleanup milestone for making the repo work with no physical `src/` directory
+- M6 is complete: both extracted service gates pass with no physical top-level `src/` directory

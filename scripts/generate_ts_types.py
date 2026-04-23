@@ -2,8 +2,8 @@
 """
 Generate TypeScript definitions from Pydantic models.
 
-This script keeps the frontend's shared types in sync with the backend
-API schemas described in src/models/api/.
+This script keeps generated TypeScript contracts in sync with service-local
+Pydantic API schemas.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 from pydantic import BaseModel
 
-DEFAULT_OUTPUT_PATH = Path("src/web/types/generated.ts")
+DEFAULT_OUTPUT_PATH = Path("services/artana_evidence_db/artana-evidence-db.generated.ts")
 OUTPUT_PATH = DEFAULT_OUTPUT_PATH
 
 PRIMITIVE_TYPE_MAP: dict[type[object], str] = {
@@ -58,21 +58,8 @@ UNION_TYPES = (Union, types.UnionType)
 
 
 def _discover_default_modules(repo_root: Path) -> list[str]:
-    base_dir = repo_root / "src/models/api"
-    modules: list[str] = []
-    if base_dir.exists():
-        for path in base_dir.rglob("*.py"):
-            if path.name == "__init__.py":
-                continue
-            rel = path.with_suffix("").relative_to(repo_root)
-            modules.append(".".join(rel.parts))
-
-    # Include shared data discovery parameter models used by generated contracts.
-    discovery_parameters = "src.domain.entities.data_discovery_parameters"
-    if discovery_parameters not in modules:
-        modules.append(discovery_parameters)
-
-    return sorted(set(modules))
+    del repo_root
+    return ["artana_evidence_db.service_contracts"]
 
 
 def _parse_args(default_modules: list[str]) -> tuple[list[str], argparse.Namespace]:

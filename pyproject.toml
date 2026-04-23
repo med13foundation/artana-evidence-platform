@@ -16,9 +16,8 @@ name = "Artana"
 dev = [ "pytest>=8.0.0", "pytest-asyncio>=0.23.0", "pytest-cov>=5.0.0", "black>=26.3.1", "flake8>=7.0.0", "ruff>=0.11.10,<0.12.0", "mypy>=1.8.0", "types-defusedxml", "types-jsonschema", "types-PyYAML", "pre-commit>=3.7.0", "pip-audit>=2.7.0", "bandit>=1.8.0", "jaraco.context>=6.1.0", "pytest-watch>=4.2.0", "pytest-xdist>=3.6.0", "hypothesis>=6.112.1", "schemathesis>=3.24.6", "allure-python-commons>=2.15.3", "virtualenv>=20.36.1", "psutil", "watchdog>=3.0.0", "python-dotenv>=1.0.0", "mkdocs>=1.5.0", "mkdocs-material>=9.0.0",]
 
 [tool.setuptools.packages.find]
-where = [ "."]
-include = [ "src*"]
-exclude = [ "src.web*"]
+where = [ "services", "packages/artana_api/src"]
+include = [ "artana_evidence_api*", "artana_evidence_db*", "artana_api*"]
 namespaces = false
 
 [tool.black]
@@ -54,14 +53,6 @@ module = [ "jsonschema", "jsonschema.*",]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = [ "src.type_definitions.json_utils", "src.application.packaging.*",]
-disallow_any_expr = false
-
-[[tool.mypy.overrides]]
-module = [ "src.domain.events.*", "src.domain.entities.*", "src.type_definitions.domain",]
-disallow_any_expr = true
-
-[[tool.mypy.overrides]]
 module = [ "artana", "artana.*",]
 ignore_missing_imports = true
 
@@ -70,60 +61,15 @@ module = [ "artana_evidence_db", "artana_evidence_db.*",]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = [ "src.infrastructure.llm.adapters.*",]
-disallow_any_unimported = false
-warn_return_any = false
-disallow_subclassing_any = false
-
-[[tool.mypy.overrides]]
-module = [
-  "src.application.agents.services.*",
-  "src.application.export.*",
-  "src.application.search.*",
-  "src.application.services.research_query_service",
-  "src.application.services.dashboard_service",
-  "src.infrastructure.ingestion.*",
-  "src.infrastructure.llm.skills.graph_tools",
-  "src.infrastructure.llm.skills.*",
-  "src.infrastructure.platform_graph.graph_service.*",
-]
-disallow_any_unimported = false
-warn_return_any = false
-disallow_subclassing_any = false
-
-[[tool.mypy.overrides]]
-module = [
-  "src.infrastructure.dependency_injection.*",
-  "src.infrastructure.factories.*",
-  "src.infrastructure.dependency_injection._graph_runtime_builders",
-  "src.infrastructure.dependency_injection._kernel_core_service_factories",
-  "src.infrastructure.dependency_injection._kernel_reasoning_hypothesis_service_factories",
-]
-disallow_any_unimported = false
-warn_return_any = false
-disable_error_code = [ "attr-defined", "call-arg", "unused-ignore",]
-
-[[tool.mypy.overrides]]
 module = [
   "services.artana_evidence_db.legacy_dependency_factories",
-  "src.infrastructure.dependency_injection._kernel_core_service_factories",
-  "src.infrastructure.dependency_injection.service_factories",
 ]
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
-  "src.routes.research_spaces._kernel_dictionary_entity_dependencies",
-  "src.routes.research_spaces._kernel_graph_operation_dependencies",
-]
-warn_return_any = false
-
-[[tool.mypy.overrides]]
-module = [
   "services.artana_evidence_db.routers.graph_views",
   "services.artana_evidence_db.routers.reasoning_paths",
-  "src.routes.research_spaces.kernel_graph_view_schemas",
-  "src.routes.research_spaces.kernel_reasoning_path_schemas",
 ]
 disable_error_code = [ "arg-type",]
 
@@ -131,7 +77,7 @@ disable_error_code = [ "arg-type",]
 [tool.flake8]
 max-line-length = 88
 extend-ignore = [ "E203", "W503", "E501",]
-exclude = [ ".git", "__pycache__", "build", "dist", "*.egg-info", ".venv", ".tox", "migrations", "src/web/node_modules",]
+exclude = [ ".git", "__pycache__", "build", "dist", "*.egg-info", ".venv", ".tox", "migrations",]
 per-file-ignores = [
   "scripts/*.py:E402",
 ]
@@ -149,14 +95,13 @@ select = [ "E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", 
 ignore = [ "E203", "E501", "W291", "W292", "W293", "COM812",]
 
 [tool.coverage.run]
-source = [ "src",]
-omit = [ "*/tests/*", "*/test_*.py", "src/main.py",]
+source = [ "services",]
+omit = [ "*/tests/*", "*/test_*.py",]
 
 [tool.coverage.report]
 exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
 
 [tool.ruff.lint.per-file-ignores]
-"src/web/**" = [ "T20", "ARG", "ERA",]
 "scripts/**" = [ "E402", "S107", "TRY400", "PLC0415", "BLE001", "C901", "PLR0911", "T201", "TC003", "S105", "TRY003", "EM101", "EM102", "EXE001", "S603", "ARG005", "PERF401", "S101", "S608", "PLR1714",]
 "tests/**" = [ "S101", "ARG", "ERA", "PLR2004", "SLF001", "E402", "S106", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
 "packages/artana_api/tests/**" = [ "S101", "ARG", "ARG005", "ERA", "PLR2004", "SLF001", "E402", "S106", "S107", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "TC006", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
@@ -166,7 +111,6 @@ exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if sett
 "packages/artana_api/src/artana_api/models.py" = [ "TC003", "TRY003", "EM101",]
 "services/artana_evidence_db/tests/**" = [ "S101", "ARG", "ERA", "PLR2004", "SLF001", "E402", "S106", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
 "services/artana_evidence_api/tests/**" = [ "S101", "ARG", "ERA", "PLR2004", "SLF001", "E402", "S106", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
-"src/routes/**" = [ "B008", "BLE001", "B904", "TRY300", "RET504", "ARG001", "PLR0913", "FBT001", "FBT003", "TRY301", "SLF001", "C901", "S106", "TC001", "TC002", "TC003",]
 "services/artana_evidence_db/routers/*.py" = [ "B008", "TC001", "TC002", "TC003", "PLR0913", "TRY301", "TRY300", "FBT003", "TC006", "C901", "PLR0912", "S106",]
 "services/artana_evidence_db/_*.py" = [ "TC001", "TC002", "TC003", "PLR0913",]
 "services/artana_evidence_db/*.py" = [ "TC001", "TC002", "TC003", "PLR0913", "C901", "S106", "S105", "PYI034", "PYI036", "UP040",]
@@ -187,14 +131,3 @@ exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if sett
 "services/research_inbox_runtime/manage.py" = [ "S603", "S608", "T201", "PLR2004",]
 "services/research_inbox_runtime/store.py" = [ "S608",]
 "services/research_inbox_runtime/types.py" = [ "A005",]
-"src/infrastructure/graph_service/*.py" = [ "TC001", "TC002", "TC003", "PLR0913", "TRY003", "EM101", "EM102", "S105", "PYI034", "PYI036", "UP040",]
-"src/infrastructure/platform_graph/graph_service/*.py" = [ "TC001", "TC002", "TC003", "PLR0913", "TRY003", "EM101", "EM102", "S105", "PYI034", "PYI036", "UP040",]
-"src/infrastructure/platform_graph/artana_evidence_api/*.py" = [ "TC001", "TC002", "TC003", "PLR0913", "TRY003", "EM101", "EM102", "S105", "PYI034", "PYI036", "UP040",]
-"src/domain/entities/kernel/*.py" = [ "TC001", "TC002", "TC003",]
-"src/domain/ports/*.py" = [ "TC001", "TC002", "TC003",]
-"src/infrastructure/repositories/kernel/kernel_space_*.py" = [ "TC001", "TC002", "TC003",]
-"src/application/services/membership_management_service.py" = [ "TC001",]
-"src/application/services/research_space_management_service.py" = [ "TC001",]
-"src/application/services/space_lifecycle_sync_service.py" = [ "TC001", "TC003",]
-"src/domain/transform/**" = [ "TID252", "C901", "PLR0911", "PLR0912", "PLR2004", "BLE001", "T201", "ERA001", "TRY003", "EM101", "EM102", "SIM102", "PLC0415", "PERF401", "ARG002", "RET504", "SIM105", "DTZ007", "DTZ001", "N817", "PLC0105", "FBT001", "FBT002", "TRY300", "TRY400", "G004", "SLF001", "TC003", "PLC0206",]
-"src/domain/validation/**" = [ "TID", "TC001", "TC002", "TC003", "C901", "FBT001", "FBT002", "PERF401", "SIM118", "A002", "UP007", "PLR0913", "PLR2004", "TRY003", "EM102", "SLF001", "PLC0415", "PLR0912",]

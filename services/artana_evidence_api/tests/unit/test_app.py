@@ -194,16 +194,15 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationSuggestionScoreBreakdownResponse,
     KernelRelationSuggestionSkippedSourceResponse,
 )
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
-from starlette.requests import Request
-
-from src.domain.agents.contracts.fact_assessment import (
+from artana_evidence_api.types.graph_fact_assessment import (
     GroundingLevel,
     MappingStatus,
     SpeculationLevel,
     build_fact_assessment_from_confidence,
 )
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
+from starlette.requests import Request
 
 _TEST_USER_ID: Final[str] = "11111111-1111-1111-1111-111111111111"
 _TEST_USER_EMAIL: Final[str] = "graph-harness-test@example.com"

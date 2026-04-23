@@ -20,6 +20,7 @@ from artana_evidence_api.models.research_space import (
     ResearchSpaceModel,
 )
 from artana_evidence_api.proposal_store import HarnessProposalDraft
+from artana_evidence_api.research_space_store import HarnessResearchSpaceRecord
 from artana_evidence_api.review_item_store import HarnessReviewItemDraft
 from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessApprovalStore,
@@ -35,8 +36,6 @@ from artana_evidence_api.sqlalchemy_stores import (
 from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
-
-from src.domain.entities.research_space import ResearchSpace
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -452,14 +451,14 @@ def test_sqlalchemy_harness_research_space_store_generates_space_ids(
 
 class _RecordingSpaceLifecycleSync:
     def __init__(self) -> None:
-        self.spaces: list[ResearchSpace] = []
+        self.spaces: list[HarnessResearchSpaceRecord] = []
 
-    def sync_space(self, space: ResearchSpace) -> None:
+    def sync_space(self, space: HarnessResearchSpaceRecord) -> None:
         self.spaces.append(space)
 
 
 class _FailingSpaceLifecycleSync:
-    def sync_space(self, space: ResearchSpace) -> None:
+    def sync_space(self, space: HarnessResearchSpaceRecord) -> None:
         del space
         raise RuntimeError("graph sync unavailable")
 

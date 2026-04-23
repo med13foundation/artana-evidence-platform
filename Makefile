@@ -92,7 +92,6 @@ ARTANA_EVIDENCE_API_LINT_PATHS := \
  services/artana_evidence_api \
  scripts/export_artana_evidence_api_openapi.py \
  scripts/validate_artana_evidence_api_service_boundary.py \
- tests/unit/infrastructure/artana_evidence_api \
  tests/e2e/artana_evidence_api
 
 ARTANA_EVIDENCE_API_MYPY_FLAGS := \
@@ -116,7 +115,6 @@ ARTANA_EVIDENCE_API_MYPY_FLAGS := \
 ARTANA_EVIDENCE_API_TEST_PATHS := \
  tests/e2e/artana_evidence_api \
  services/artana_evidence_api/tests/integration \
- tests/unit/infrastructure/artana_evidence_api \
  services/artana_evidence_api/tests/unit
 
 GRAPH_ALEMBIC_CONFIG := services/artana_evidence_db/alembic.ini

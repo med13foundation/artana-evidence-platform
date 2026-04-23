@@ -39,9 +39,6 @@ for path in (repo_root, repo_root / "services"):
     if resolved not in sys.path:
         sys.path.insert(0, resolved)
 
-import src.models.database  # noqa: F401
-from src.models.database.base import Base as MonolithBase
-
 import artana_evidence_api.models.harness  # noqa: F401
 from artana_evidence_api.db_schema import harness_schema_name
 from artana_evidence_api.models import Base as HarnessBase
@@ -74,7 +71,6 @@ try:
         connection.execute(text('CREATE SCHEMA IF NOT EXISTS "artana"'))
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public"))
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public"))
-    MonolithBase.metadata.create_all(bind=engine, checkfirst=True)
     HarnessBase.metadata.create_all(bind=engine, checkfirst=True)
     GraphServiceBase.metadata.create_all(bind=engine, checkfirst=True)
 finally:
@@ -83,7 +79,20 @@ finally:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.database.url_resolver import to_async_database_url  # noqa: E402
+
+def to_async_database_url(database_url: str) -> str:
+    """Convert a sync PostgreSQL URL into the asyncpg form used by tests."""
+    if database_url.startswith("postgresql+asyncpg://"):
+        return database_url
+    if database_url.startswith("postgresql+psycopg2://"):
+        return database_url.replace(
+            "postgresql+psycopg2://",
+            "postgresql+asyncpg://",
+            1,
+        )
+    if database_url.startswith("postgresql://"):
+        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return database_url
 
 
 @dataclass(frozen=True)
