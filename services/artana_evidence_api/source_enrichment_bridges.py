@@ -164,8 +164,10 @@ def build_uniprot_gateway() -> UniProtGatewayProtocol | None:
 
 
 def build_alphafold_gateway() -> AlphaFoldGatewayProtocol | None:
-    """Return the service-local AlphaFold gateway when implemented."""
-    return None
+    """Construct the service-local AlphaFold gateway."""
+    from artana_evidence_api.alphafold_gateway import AlphaFoldSourceGateway
+
+    return AlphaFoldSourceGateway()
 
 
 def build_marrvel_discovery_service() -> MarrvelDiscoveryServiceProtocol | None:

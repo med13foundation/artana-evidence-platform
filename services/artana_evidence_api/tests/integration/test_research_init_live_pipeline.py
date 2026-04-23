@@ -190,23 +190,52 @@ class TestClinVarEnrichmentWithRealData:
 
 
 @_live_external_api_required
-@pytest.mark.skip(
-    reason="AlphaFold gateway live tests are deferred until the gateway is service-local",
-)
 class TestAlphaFoldLiveIntegration:
     """Verify AlphaFold returns real protein structure predictions."""
 
     def test_alphafold_fetches_structure_for_known_uniprot_id(self) -> None:
         """AlphaFold should return a prediction for P53 (human, P04637)."""
-        pytest.skip("AlphaFold gateway is not service-local yet")
+        from artana_evidence_api.alphafold_gateway import AlphaFoldSourceGateway
+
+        result = AlphaFoldSourceGateway().fetch_records(
+            uniprot_id="P04637",
+            max_results=1,
+        )
+
+        assert result.fetched_records >= 1
+        assert result.records
+        assert result.records[0]["uniprot_id"] == "P04637"
+        assert "p53" in str(result.records[0]["protein_name"]).lower()
 
     def test_alphafold_returns_empty_for_invalid_uniprot_id(self) -> None:
         """AlphaFold should return empty results for a nonsense UniProt ID."""
-        pytest.skip("AlphaFold gateway is not service-local yet")
+        from artana_evidence_api.alphafold_gateway import AlphaFoldSourceGateway
+
+        result = AlphaFoldSourceGateway().fetch_records(
+            uniprot_id="NOTAREAL0000",
+            max_results=1,
+        )
+
+        assert result.records == []
+        assert result.fetched_records == 0
 
     def test_alphafold_enrichment_formatting_with_real_data(self) -> None:
         """Enrichment formatter should produce readable text from real AlphaFold data."""
-        pytest.skip("AlphaFold gateway is not service-local yet")
+        from artana_evidence_api.alphafold_gateway import AlphaFoldSourceGateway
+        from artana_evidence_api.research_init_source_enrichment import (
+            _format_alphafold_results,
+        )
+
+        result = AlphaFoldSourceGateway().fetch_records(
+            uniprot_id="P04637",
+            max_results=1,
+        )
+
+        assert result.records
+        text = _format_alphafold_results("P04637", result.records)
+        assert "AlphaFold Structure Predictions" in text
+        assert "P04637" in text
+        assert "p53" in text.lower()
 
 
 # ---------------------------------------------------------------------------
