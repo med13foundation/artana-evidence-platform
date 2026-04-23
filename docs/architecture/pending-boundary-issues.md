@@ -1,77 +1,77 @@
 # Pending Boundary Issues
 
-This note tracks architecture issues that are real but larger than a narrow
-release-gate patch.
+Status date: April 23, 2026.
 
-## Evidence API Data Ownership
+The repo is now an extracted two-service backend, but a few architecture issues
+remain too large for a narrow patch.
+
+## Evidence API Identity Ownership
 
 Status: partially addressed.
 
-The evidence API is operationally separated from the graph service, but it still
-uses service-local ORM mappings for identity and tenancy tables that were
-originally shared platform tables:
+The Evidence API now routes identity and tenancy through
+`IdentityGateway`, which gives the codebase a real boundary. The current gateway
+is still backed by local Evidence API SQL tables.
 
-- `services/artana_evidence_api/models/user.py`
-- `services/artana_evidence_api/models/research_space.py`
-- `services/artana_evidence_api/models/discovery.py`
+Current state:
 
-Two immediate cleanups have landed:
+- low-friction tester access uses `X-Artana-Key`;
+- admin tester creation lives at `POST /v1/auth/testers`;
+- owner/member checks use the gateway;
+- direct identity ORM imports are blocked outside the allowlist by
+  `scripts/validate_artana_evidence_api_service_boundary.py`.
 
-- PostgreSQL startup no longer creates auth tables opportunistically;
-  production-like schemas should be managed by Alembic migrations, not app
-  startup DDL.
-- Identity and tenancy operations now go through the local identity gateway
-  documented in [local-identity-boundary.md](./local-identity-boundary.md).
+Open decision:
 
-Target state:
-
-- Keep the Evidence API on `IdentityGateway`, not direct identity-table writes.
-- Rename the schema helpers and comments away from "shared platform" if these
-  tables remain owned by the Evidence API during testing.
-- When growth requires it, replace `LocalIdentityGateway` with a remote
-  identity/tenancy adapter and keep Evidence API workflow code unchanged.
-
-Until remote extraction or final local ownership is decided, this is a clean
-local boundary but not yet a fully autonomous identity service.
+- keep identity local while testing remains small, or
+- replace `LocalIdentityGateway` with a future remote identity service when
+  external-user onboarding, account recovery, audit, or SSO requirements grow.
 
 ## Runtime To Router Imports
 
 Status: partially addressed.
 
 The full AI orchestrator no longer imports the private
-`research_init_runtime._build_source_results` helper. Source-result construction
-now lives below both runtimes in
-`services/artana_evidence_api/research_init_source_results.py`.
+`research_init_runtime._build_source_results` helper. Shared source-result
+construction lives in:
 
-Remaining runtime-to-router imports still exist in
-`services/artana_evidence_api/research_init_runtime.py`. The largest ones are
-PubMed candidate selection helpers and PDF enrichment helpers currently owned by
-router modules.
+- `services/artana_evidence_api/research_init_source_results.py`
 
-Target state:
+Remaining cleanup:
 
-- Move PubMed query building, candidate models, relevance selection, and scope
-  refinement helpers into a service module below both router and worker code.
-- Move PDF enrichment workflow helpers below `routers/documents.py` so the
-  worker can enrich PDFs without importing router internals.
-- Add a boundary validator rule that fails production runtime imports from
-  `artana_evidence_api.routers.*` after those moves are complete.
+- move PubMed query/candidate/relevance helpers below router code;
+- move PDF enrichment helpers below `routers/documents.py`;
+- then add a validator rule that prevents production runtime imports from
+  `artana_evidence_api.routers.*`.
 
 ## Large Runtime Modules
 
 Status: open.
 
-The biggest orchestration modules remain large:
+The largest modules still mix several responsibilities:
 
 - `services/artana_evidence_api/research_init_runtime.py`
 - `services/artana_evidence_api/full_ai_orchestrator_runtime.py`
 - `services/artana_evidence_db/graph_workflow_service.py`
 
-Target state:
+Target split:
 
-- Split research-init into source discovery, replay, document preparation,
-  extraction staging, and state finalization modules.
-- Split full AI orchestration into planner, action executor, guarded policy, and
-  artifact writer modules.
-- Split graph workflow service by command family once the current checks are
+- research-init: source discovery, replay, document preparation, extraction
+  staging, state finalization;
+- full AI orchestrator: planner, action executor, guarded policy, artifact
+  writer;
+- graph workflows: command-family modules once current service gates stay
   stable.
+
+## Deployable Artifact Boundary
+
+Status: guarded by checks, still worth watching.
+
+The intended boundary is HTTP-first: the Evidence API should consume graph
+contracts and graph HTTP endpoints, not graph internals. Keep this protected
+with:
+
+- `make artana-evidence-api-boundary-check`
+- `make graph-service-boundary-check`
+- `make graph-service-contract-check`
+- `make artana-evidence-api-contract-check`

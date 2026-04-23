@@ -10,7 +10,7 @@ source.
 Submit text:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/text" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -25,7 +25,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
 Upload a PDF:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/pdf" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/pdf" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -F "file=@./med13-paper.pdf" \
   -F "title=MED13 paper"
@@ -34,7 +34,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/pdf" \
 Then extract reviewable findings:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -X POST
 ```
@@ -48,7 +48,7 @@ Use this when you want discovery before review.
 Search PubMed:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -63,7 +63,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
 Search MARRVEL:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/marrvel/searches" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/marrvel/searches" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -82,7 +82,7 @@ direct-write path.
 Use `research-init` when you already know the topic and source mix:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/research-init" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/research-init" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

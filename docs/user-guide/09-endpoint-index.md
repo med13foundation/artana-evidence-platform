@@ -65,6 +65,7 @@ Use these for identity, API keys, and membership management.
 | Goal | Endpoint(s) |
 | --- | --- |
 | Bootstrap first user | `POST /v1/auth/bootstrap` |
+| Create tester user and key | `POST /v1/auth/testers` |
 | List API keys | `GET /v1/auth/api-keys` |
 | Create API key | `POST /v1/auth/api-keys` |
 | Revoke API key | `DELETE /v1/auth/api-keys/{key_id}` |
