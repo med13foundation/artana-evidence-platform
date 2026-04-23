@@ -9,19 +9,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SRC_ROOT = REPO_ROOT / "src"
+REMOVED_MONOREPO_SRC_ROOT = REPO_ROOT / "src"
 TESTS_ROOT = REPO_ROOT / "tests"
 SCRIPTS_ROOT = REPO_ROOT / "scripts"
 GRAPH_SERVICE_ROOT = REPO_ROOT / "services" / "artana_evidence_db"
 GRAPH_SERVICE_DOCKERFILE = GRAPH_SERVICE_ROOT / "Dockerfile"
 _SRC_GRAPH_PACKAGE = "src" + ".graph"
 
-FORBIDDEN_IMPORT_PREFIXES = (
-    "src.application.services.kernel",
-    "src.infrastructure.repositories.kernel",
-    "src.models.database.kernel",
-)
-FORBIDDEN_SERVICE_IMPORT_PREFIX = "services.artana_evidence_db"
 FORBIDDEN_GRAPH_SERVICE_AI_IMPORT_PREFIXES = (
     "artana",
     "openai",
@@ -83,20 +77,6 @@ FORBIDDEN_GRAPH_SERVICE_DOCKERFILE_SNIPPETS = (
     "pip install .",
     "pip install -e .",
 )
-
-ALLOWED_PREFIXES = (
-    "services/artana_evidence_db/",
-    "src/application/services/kernel/",
-    "src/database/graph_schema.py",
-    "src/infrastructure/graph_governance/",
-    "src/infrastructure/queries/graph_security_queries.py",
-    "src/infrastructure/repositories/graph_observability_repository.py",
-    "src/infrastructure/repositories/kernel/",
-    "src/models/database/kernel/",
-)
-
-LEGACY_ALLOWLIST = frozenset()
-
 
 @dataclass(frozen=True)
 class BoundaryViolation:
@@ -180,12 +160,6 @@ def _module_matches_forbidden_prefixes(
     return False
 
 
-def _is_allowed_file(relative_path: str) -> bool:
-    return relative_path in LEGACY_ALLOWLIST or relative_path.startswith(
-        ALLOWED_PREFIXES,
-    )
-
-
 def _scan_tree_for_violations(
     *,
     root: Path,
@@ -228,18 +202,15 @@ def _scan_tree_for_violations(
 
 
 def _find_violations() -> list[BoundaryViolation]:
-    violations = _scan_tree_for_violations(
-        root=SRC_ROOT,
-        is_allowed_file=_is_allowed_file,
-        forbidden_import_prefixes=FORBIDDEN_IMPORT_PREFIXES,
-    )
-    violations.extend(
-        _scan_tree_for_violations(
-            root=SRC_ROOT,
-            is_allowed_file=lambda _: False,
-            forbidden_import_prefixes=(FORBIDDEN_SERVICE_IMPORT_PREFIX,),
-        ),
-    )
+    violations: list[BoundaryViolation] = []
+    if REMOVED_MONOREPO_SRC_ROOT.exists():
+        violations.append(
+            BoundaryViolation(
+                file_path="src",
+                line_number=0,
+                imported_module="removed monorepo src directory is present",
+            ),
+        )
     violations.extend(
         _scan_tree_for_violations(
             root=GRAPH_SERVICE_ROOT,

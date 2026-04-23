@@ -28,7 +28,6 @@ RUN pip install --upgrade pip \
 
 COPY services/artana_evidence_api/requirements-dev.txt /tmp/artana_evidence_api_requirements_dev.txt
 COPY services/artana_evidence_api ./artana_evidence_api
-COPY services/artana_evidence_db ./artana_evidence_db
 
 FROM base AS test
 
@@ -55,7 +54,7 @@ CMD ["pytest", "artana_evidence_api/tests/unit", "artana_evidence_api/tests/inte
 
 FROM base AS runtime
 
-RUN rm -rf /app/artana_evidence_api/tests /app/artana_evidence_db/tests \
+RUN rm -rf /app/artana_evidence_api/tests \
     && find /app -type d -name '__pycache__' -prune -exec rm -rf {} + \
     && find /app -type f \( -name '*.pyc' -o -name '*.pyo' -o -name '*.db' \) -delete
 

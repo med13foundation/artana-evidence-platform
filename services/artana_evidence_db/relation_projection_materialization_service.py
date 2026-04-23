@@ -48,6 +48,10 @@ def _compute_canonicalization_fingerprint(
 
 if TYPE_CHECKING:
     from artana_evidence_db.graph_core_models import KernelEntity, KernelRelation
+    from artana_evidence_db.kernel_claim_models import (
+        ClaimEvidenceModel,
+        RelationProjectionSourceModel,
+    )
     from artana_evidence_db.kernel_domain_models import (
         DictionaryRelationType,
         KernelClaimParticipant,
@@ -157,9 +161,9 @@ class ClaimEvidenceRepositoryLike(Protocol):
         confidence: float,
         source_document_ref: str | None = None,
         metadata: dict[str, object] | None = None,
-    ) -> object: ...
+    ) -> ClaimEvidenceModel: ...
 
-    def find_by_claim_id(self, claim_id: str) -> list[object]: ...
+    def find_by_claim_id(self, claim_id: str) -> list[ClaimEvidenceModel]: ...
 
 
 class EntityRepositoryLike(Protocol):
@@ -213,14 +217,14 @@ class RelationProjectionSourceRepositoryLike(Protocol):
         agent_run_id: str | None,
         source_document_ref: str | None = None,
         metadata: dict[str, object] | None = None,
-    ) -> object: ...
+    ) -> RelationProjectionSourceModel: ...
 
     def find_by_claim_id(
         self,
         *,
         research_space_id: str,
         claim_id: str,
-    ) -> list[object]: ...
+    ) -> list[RelationProjectionSourceModel]: ...
 
     def delete_projection_source(
         self,
@@ -230,7 +234,10 @@ class RelationProjectionSourceRepositoryLike(Protocol):
         claim_id: str,
     ) -> bool: ...
 
-    def find_by_relation_id(self, relation_id: str) -> list[object]: ...
+    def find_by_relation_id(
+        self,
+        relation_id: str,
+    ) -> list[RelationProjectionSourceModel]: ...
 
     def delete_by_claim_id(
         self,

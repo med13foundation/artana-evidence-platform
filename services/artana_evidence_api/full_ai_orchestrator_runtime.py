@@ -40,11 +40,11 @@ from artana_evidence_api.research_init_runtime import (
     ResearchInitProgressObserver,
     ResearchInitPubMedReplayBundle,
     ResearchInitStructuredEnrichmentReplayBundle,
-    _build_source_results,
     deserialize_pubmed_replay_bundle,
     execute_research_init_run,
     serialize_pubmed_replay_bundle,
 )
+from artana_evidence_api.research_init_source_results import build_source_results
 from artana_evidence_api.response_serialization import serialize_run_record
 from artana_evidence_api.transparency import ensure_run_transparency_seed
 from artana_evidence_api.types.common import (
@@ -4318,7 +4318,7 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
     guarded_chase_rollout_enabled = _guarded_profile_allows_chase(
         guarded_rollout_profile=resolved_guarded_rollout_profile,
     )
-    source_results = _build_source_results(sources=sources)
+    source_results = build_source_results(sources=sources)
     shadow_workspace_summary = build_shadow_planner_workspace_summary(
         checkpoint_key="before_first_action",
         mode=_planner_mode_value(planner_mode),
@@ -4588,7 +4588,7 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
         max_depth=max_depth,
         max_hypotheses=max_hypotheses,
         workspace_snapshot={
-            "source_results": _build_source_results(sources=sources),
+            "source_results": build_source_results(sources=sources),
             "current_round": 0,
             "documents_ingested": 0,
             "proposal_count": 0,

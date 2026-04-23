@@ -229,6 +229,11 @@ declare -a harness_env_pairs=(
 if [[ -n "${ARTANA_ENV:-}" ]]; then
   harness_env_pairs+=("ARTANA_ENV=${ARTANA_ENV}")
 fi
+if [[ -n "${SPACE_ACL_MODE:-}" ]]; then
+  harness_env_pairs+=("SPACE_ACL_MODE=${SPACE_ACL_MODE}")
+elif [[ "${ARTANA_ENV:-}" == "production" || "${ARTANA_ENV:-}" == "staging" ]]; then
+  harness_env_pairs+=("SPACE_ACL_MODE=enforce")
+fi
 if [[ -n "${ARTANA_EVIDENCE_API_SERVICE_NAME:-}" ]]; then
   harness_env_pairs+=("ARTANA_EVIDENCE_API_APP_NAME=${ARTANA_EVIDENCE_API_SERVICE_NAME}")
 fi

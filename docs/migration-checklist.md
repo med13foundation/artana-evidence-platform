@@ -105,8 +105,7 @@ Legend:
 ## M4: SDK, Docs, CI, and Deploy Alignment
 
 - [x] Decide whether `packages/artana_api` moves in phase 1 or phase 2
-- [x] If moving SDK: import `packages/artana_api`
-- [-] If deferring SDK: remove or rewrite extracted doc references to it
+- [x] If deferring SDK: remove or rewrite extracted doc references to it
 - [x] Add CI workflow for graph-service checks
 - [x] Add CI workflow for evidence API service checks
 - [x] Add deployment workflow for graph service
@@ -219,7 +218,7 @@ Use this section as the running log while executing the migration.
 - M7 optional runtime restoration is complete in code; any skipped live-source checks are opt-in external API tests, not known fail-closed runtime gaps
 - the evidence API no longer has production `src` imports or lazy `src` bridge references, and no longer copies `src/` into its runtime image
 - the top-level temporary `src/` package has been deleted from this repository
-- remaining `src` references are package-local SDK paths such as `packages/artana_api/src`, boundary-validator forbidden-prefix strings, or historical docs; they are not the removed monorepo runtime package
+- remaining `src` references are boundary-validator forbidden-prefix strings or historical docs; they are not the removed monorepo runtime package
 - Variant LLM extraction has been restored service-local; without a usable `OPENAI_API_KEY`, it still intentionally falls back to deterministic variant signals
 - ClinVar, DrugBank, AlphaFold, UniProt, ClinicalTrials.gov, MGI, and ZFIN structured-source enrichment have all been restored service-local
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from artana_evidence_db.claim_projection_readiness_support import (
     ClaimProjectionReadinessIssue,
@@ -20,6 +20,14 @@ from artana_evidence_db.claim_projection_readiness_support import (
     load_projection_relevant_support_claims,
     load_projection_rows,
 )
+
+if TYPE_CHECKING:
+    from artana_evidence_db.kernel_claim_models import (
+        ClaimEvidenceModel,
+        ClaimParticipantModel,
+        RelationClaimModel,
+        RelationProjectionSourceModel,
+    )
 
 
 class _RelationLike(Protocol):
@@ -250,8 +258,8 @@ class KernelClaimProjectionReadinessService:
     def _build_missing_participant_issue(
         self,
         *,
-        support_claims: list[object],
-        participants_by_claim_id: dict[str, list[object]],
+        support_claims: list[RelationClaimModel],
+        participants_by_claim_id: dict[str, list[ClaimParticipantModel]],
         sample_limit: int,
     ) -> ClaimProjectionReadinessIssue:
         samples: list[ClaimProjectionReadinessSample] = []
@@ -290,8 +298,8 @@ class KernelClaimProjectionReadinessService:
     def _build_missing_evidence_issue(
         self,
         *,
-        support_claims: list[object],
-        evidence_by_claim_id: dict[str, list[object]],
+        support_claims: list[RelationClaimModel],
+        evidence_by_claim_id: dict[str, list[ClaimEvidenceModel]],
         sample_limit: int,
     ) -> ClaimProjectionReadinessIssue:
         samples: list[ClaimProjectionReadinessSample] = []
@@ -319,9 +327,9 @@ class KernelClaimProjectionReadinessService:
     def _build_linked_relation_mismatch_issue(
         self,
         *,
-        support_claims: list[object],
-        participants_by_claim_id: dict[str, list[object]],
-        projection_rows_by_claim_id: dict[str, list[object]],
+        support_claims: list[RelationClaimModel],
+        participants_by_claim_id: dict[str, list[ClaimParticipantModel]],
+        projection_rows_by_claim_id: dict[str, list[RelationProjectionSourceModel]],
         sample_limit: int,
     ) -> ClaimProjectionReadinessIssue:
         samples: list[ClaimProjectionReadinessSample] = []
@@ -367,7 +375,7 @@ class KernelClaimProjectionReadinessService:
     def _linked_relation_mismatch_reason(
         self,
         *,
-        claim: object,
+        claim: RelationClaimModel,
         linked_relation_id: str | None,
         projected_relation_ids: set[str],
         has_required_participants: bool,
@@ -410,15 +418,15 @@ class KernelClaimProjectionReadinessService:
     def _build_invalid_projection_relation_issue(
         self,
         *,
-        projection_rows: list[object],
-        participants_by_claim_id: dict[str, list[object]],
+        projection_rows: list[RelationProjectionSourceModel],
+        participants_by_claim_id: dict[str, list[ClaimParticipantModel]],
         sample_limit: int,
     ) -> ClaimProjectionReadinessIssue:
         claims_by_id = load_claims_by_ids(
             self._session,
             claim_ids=[str(row.claim_id) for row in projection_rows],
         )
-        rows_by_relation_id: dict[str, list[object]] = {}
+        rows_by_relation_id: dict[str, list[RelationProjectionSourceModel]] = {}
         for row in projection_rows:
             rows_by_relation_id.setdefault(str(row.relation_id), []).append(row)
 

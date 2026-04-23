@@ -514,7 +514,52 @@ class TestMemberEndpoints:
         # Viewer cannot write, so should get 403
         assert resp.status_code == 403
 
-    def test_db_backed_add_member_bootstraps_missing_user(self, db_session: Session) -> None:
+    def test_member_cannot_use_owner_route_in_audit_mode(
+        self,
+        db_session: Session,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("SPACE_ACL_MODE", "audit")
+        from artana_evidence_api.config import get_settings
+
+        get_settings.cache_clear()
+        try:
+            app = create_app()
+            app.dependency_overrides[get_research_space_store] = (
+                lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
+            )
+            store = SqlAlchemyHarnessResearchSpaceStore(db_session)
+            record = store.create_space(
+                owner_id=_OWNER_USER_ID,
+                name="DB Test Space",
+                description="desc",
+            )
+            store.add_member(
+                space_id=record.id,
+                user_id=_OTHER_USER_ID,
+                role="researcher",
+            )
+
+            with TestClient(app) as client:
+                resp = client.patch(
+                    f"/v1/spaces/{record.id}/settings",
+                    headers=_auth_headers(
+                        user_id=_OTHER_USER_ID,
+                        email=_OTHER_USER_EMAIL,
+                        role="researcher",
+                    ),
+                    json={"research_orchestration_mode": "full_ai_shadow"},
+                )
+
+            assert resp.status_code == 403
+            assert resp.json()["detail"] == "Owner access to this space is required"
+        finally:
+            get_settings.cache_clear()
+
+    def test_db_backed_add_member_requires_existing_user(
+        self,
+        db_session: Session,
+    ) -> None:
         app = create_app()
         app.dependency_overrides[get_research_space_store] = (
             lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
@@ -533,11 +578,28 @@ class TestMemberEndpoints:
                 json={"user_id": _OTHER_USER_ID, "role": "viewer"},
             )
 
-        assert response.status_code == 201
-        payload = response.json()
-        assert payload["user_id"] == _OTHER_USER_ID
+        assert response.status_code == 404
+        assert response.json()["detail"] == (
+            "User must exist before they can be added to a space"
+        )
         persisted_user = db_session.get(HarnessUserModel, UUID(_OTHER_USER_ID))
-        assert persisted_user is not None
+        assert persisted_user is None
+
+        _persist_sqlalchemy_user(
+            db_session,
+            user_id=_OTHER_USER_ID,
+            email=_OTHER_USER_EMAIL,
+        )
+        with TestClient(app) as client:
+            retry_response = client.post(
+                f"/v1/spaces/{record.id}/members",
+                headers=_auth_headers(),
+                json={"user_id": _OTHER_USER_ID, "role": "viewer"},
+            )
+
+        assert retry_response.status_code == 201
+        payload = retry_response.json()
+        assert payload["user_id"] == _OTHER_USER_ID
 
 
 class TestServiceRoleEnum:

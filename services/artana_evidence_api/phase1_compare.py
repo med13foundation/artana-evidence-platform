@@ -66,13 +66,13 @@ from artana_evidence_api.full_ai_orchestrator_shadow_planner import (
 )
 from artana_evidence_api.research_init_runtime import (
     ResearchInitProgressObserver,
-    _build_source_results,
     build_pubmed_replay_bundle_with_document_outputs,
     build_structured_enrichment_replay_bundle,
     execute_research_init_run,
     prepare_pubmed_replay_bundle,
     queue_research_init_run,
 )
+from artana_evidence_api.research_init_source_results import build_source_results
 from artana_evidence_api.runtime_support import create_artana_postgres_store
 from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
 from pydantic import ValidationError
@@ -151,7 +151,7 @@ def _build_compare_orchestrator_progress_observer(
         max_depth=request.max_depth,
         max_hypotheses=request.max_hypotheses,
         workspace_snapshot={
-            "source_results": _build_source_results(sources=request.sources),
+            "source_results": build_source_results(sources=request.sources),
             "current_round": 0,
             "documents_ingested": 0,
             "proposal_count": 0,

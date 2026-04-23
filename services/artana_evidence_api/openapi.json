@@ -1744,6 +1744,75 @@
         "title": "CreateHarnessResearchSpaceRequest",
         "type": "object"
       },
+      "CreateTesterRequest": {
+        "description": "Create a tester user plus an initial API key.",
+        "properties": {
+          "api_key_description": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Api Key Description",
+            "type": "string"
+          },
+          "api_key_name": {
+            "default": "Tester SDK Key",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Api Key Name",
+            "type": "string"
+          },
+          "create_default_space": {
+            "default": true,
+            "title": "Create Default Space",
+            "type": "boolean"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "role": {
+            "default": "researcher",
+            "enum": [
+              "viewer",
+              "researcher",
+              "curator"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "CreateTesterRequest",
+        "type": "object"
+      },
       "DiscoveryProvider": {
         "description": "Supported discovery providers.",
         "enum": [
@@ -11318,6 +11387,56 @@
           }
         ],
         "summary": "Resolve the current authenticated identity",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/testers": {
+      "post": {
+        "description": "Create a low-friction tester identity through the local identity boundary.",
+        "operationId": "create_tester_v1_auth_testers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTesterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthCredentialResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create a tester user and API key",
         "tags": [
           "auth"
         ]

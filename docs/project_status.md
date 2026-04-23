@@ -1,6 +1,6 @@
 # Artana Resource Library - Current Project Status
 
-**Status date:** April 12, 2026 (updated for measured alias-yield reporting)
+**Status date:** April 23, 2026 (updated for extracted-repo service topology)
 
 ## Purpose
 
@@ -29,7 +29,7 @@ As of April 12, 2026, all four phases of the plan are substantively implemented,
 
 - **Phase 1 (Foundation)**: knowledge model finalized (35/35 relation types, 18 entity types, 5 domain contexts including anatomy and translational, 208 relation synonyms, 106 relation constraints, 32 forbidden triples with wildcard target support); proposal-to-relation projection landed (promoted proposals route through `POST /relations` and create canonical relations atomically); edge production gaps closed; AI-generated ontology evidence sentences shipped with a per-namespace rollout vector (`ARTANA_ONTOLOGY_LLM_EVIDENCE_SENTENCES_HP=1` etc.) and per-namespace observability stats so the rollout can be validated from prod logs without enabling the harness blindly. Default OFF, awaiting flag flip in Cloud Run.
 - **Phase 2 (Density)**: cross-source orchestration with driven Round 2 (PubMed gene mention extraction drives enrichment queries) + theme-organized brief; cross-source overlap detection; brief delivery as the first onboarding message; deterministic alias harvesting exists for HPO, UniProt, DrugBank, and HGNC, with PR #337 adding normalized backend-derived alias-yield reporting.
-- **Phase 3 (Reasoning)**: ClinicalTrials.gov, MGI (mouse), and ZFIN (zebrafish) now have steady-state scheduler ingestion in addition to research-init enrichment, extraction processing, and Research Inbox wizard visibility. MGI and ZFIN share an `AllianceGenomeIngestor` base class so future WormBase/FlyBase/RGD/SGD siblings cost ~15 lines of subclass config.
+- **Phase 3 (Reasoning)**: ClinicalTrials.gov, MGI (mouse), and ZFIN (zebrafish) now have research-init enrichment and extraction processing in the extracted evidence API. MGI and ZFIN share service-local Alliance gateway code in `services/artana_evidence_api/alliance_gene_gateways.py`.
 - **Phase 4 (Discovery)**: all four Tier 4 discovery queries from the plan exposed as HTTP endpoints — contradiction detection, single-source fragility, reachability gap analysis, and mechanistic explanation gap detection (which now accepts a `max_hops` query param 2..4 with bridge-path response field, extending the original 2-hop bridge test to find longer mechanism chains via a constrained BFS with visited-node cap and early termination).
 - **Performance**: MONDO batch entity creation endpoint added (capped at 500 rows/request, atomic commit). `OntologyIngestionService` now runs a two-pass loop that turns ~26k single POSTs into ~130 batch POSTs, eliminating the per-entity HTTP + commit overhead that dominated load time.
 
@@ -43,15 +43,26 @@ Remaining work is **not another model-build phase**. The live follow-up is:
 
 ### Service topology
 
-The current repo is multi-service:
+The current extracted repo contains two service packages:
 
 - `services/artana_evidence_db`: graph service and graph-owned schema/API
 - `services/artana_evidence_api`: harness, bootstrap, proposal, and workflow runtimes
-- `services/research_inbox`: canonical authenticated UI
-- `services/research_inbox_runtime`: canonical inbox runtime
-- `services/frontdoor`: front-door web surface
 
-The original "presentation in `src/routes`" picture is no longer the best description of the running system. Router ownership has shifted into service-local packages.
+The monorepo UI/runtime packages are not present in this checkout. Router
+ownership for the extracted backend surfaces lives in the service-local packages.
+
+### Identity and tenancy
+
+The evidence API uses a local identity boundary for low-friction testing:
+
+- `services/artana_evidence_api/identity/contracts.py`
+- `services/artana_evidence_api/identity/local_gateway.py`
+
+Users, API keys, spaces, memberships, and space-access decisions should flow
+through this gateway. The current implementation is SQL-backed and local to the
+Evidence API, with `X-Artana-Key` as the tester-friendly access path. A future
+standalone identity service should replace the gateway adapter rather than
+rewriting workflow code.
 
 ### Core graph model
 
@@ -271,15 +282,10 @@ This is real implementation detail and should be treated as part of the current 
 
 ## UI Status
 
-The canonical authenticated UI is now `services/research_inbox`.
-
-That said, the repo still contains substantial `src/web` code. The practical status is:
-
-- `services/research_inbox` is the active direction
-- service-local inbox/read-model ownership is established
-- legacy web surfaces still exist during migration and overlap
-
-Any status report that describes the frontend as a single finished, consolidated UI would be too optimistic.
+This extracted checkout does not include an authenticated UI package. The
+backend workflow surfaces are available through `services/artana_evidence_api`
+HTTP routes and generated OpenAPI docs. Any frontend status should be checked in
+the UI-owning repository or monorepo snapshot, not inferred from this repo.
 
 ## Security and Compliance Status
 
@@ -380,14 +386,14 @@ All three translational sources are shipped end-to-end (gateway + ingestor + ext
 - **P5.1 ClinicalTrials.gov**: `SourceType.CLINICAL_TRIALS`, `run_clinicaltrials_enrichment`, full v2 REST API client. Emits `DRUG → TREATS → DISEASE` proposals when interventions are drugs and `CLINICAL_TRIAL → TARGETS → DISEASE` otherwise.
 - **P5.2 MGI (Mouse Genome Informatics)**: `SourceType.MGI`, `run_mgi_enrichment`, Alliance of Genome Resources REST API client filtered to `Mus musculus`. Emits `GENE → ASSOCIATED_WITH → PHENOTYPE` (mouse model phenotypes) and `GENE → CAUSES → DISEASE` (disease associations from mouse models).
 - **P5.3 ZFIN (Zebrafish Information Network)**: `SourceType.ZFIN`, `run_zfin_enrichment`, same Alliance API client filtered to `Danio rerio`. Adds `_extract_expression_terms` to capture zebrafish anatomy expression patterns and emits `GENE → EXPRESSED_IN → TISSUE` proposals on top of the phenotype/disease ones.
-- **P5.4 Shared Alliance Genome base class**: `src/infrastructure/ingest/alliance_genome_base.py` consolidates the duplicated MGI/ZFIN logic into one `AllianceGenomeIngestor` ABC + `AllianceGenomePage` shared dataclass. Subclasses configure themselves via `ClassVar` declarations (`_SOURCE_NAME`, `_SPECIES_FILTER`, `_PROVIDER_PREFIX`, `_ID_KEY`, `_PAGE_CLASS`) and contribute extra fields via an `_extract_extra_fields` template-method hook. A future WormBase / FlyBase / RGD / SGD sibling now costs ~15 lines of subclass config instead of ~250 lines of duplicated boilerplate.
+- **P5.4 Shared Alliance Genome gateway**: `services/artana_evidence_api/alliance_gene_gateways.py` consolidates the duplicated MGI/ZFIN fetch path into a service-local `_AllianceGeneSourceGateway` base plus `MGISourceGateway` and `ZFINSourceGateway` specializations. Future model-organism sources should extend that service-local gateway pattern rather than resurrecting the removed top-level `src/` ingestion package.
 
 ### P6 -- Cross-Source Orchestration and Brief Delivery (completed)
 
 - **P6.1 Driven Round 2**: enrichment sources (ClinVar, DrugBank, AlphaFold, MARRVEL) now query for entity mentions extracted from PubMed abstracts (`extract_gene_mentions_from_text` with stopword filtering), not just user seed terms. The MGI/ZFIN/ClinicalTrials.gov enrichment helpers participate in this loop via the same `_extract_likely_gene_symbols` filter.
 - **P6.2 Cross-source overlap detection**: `compute_cross_source_overlaps()` finds entities mentioned by 2+ sources, surfaced as concrete connection candidates in the brief.
 - **P6.3 Theme-organized brief**: LLM prompt restructured to organize findings by theme (mechanism chains, drug-target, variant impact) instead of per-source counts; grounds the LLM in real overlap candidates.
-- **P6.4 Brief delivery as first inbox message**: `services/research_inbox_runtime/service.py:_research_init_success_content` now uses the brief markdown (rendered to HTML with bold/italic support) as the inbox message body and the brief title (e.g., "Research Brief: BRCA1 in breast cancer") as the subject, replacing the generic "Initial research kickoff completed" label.
+- **P6.4 Brief generation for onboarding delivery**: the evidence API can generate the theme-organized research brief used by onboarding flows; UI/inbox delivery code is outside this extracted checkout.
 
 ### P7 -- Performance and Polish (completed)
 

@@ -1,50 +1,29 @@
 # Graph Service Upgrade Guide
 
-This guide covers operator-side upgrades for the standalone graph service.
+This guide describes the supported upgrade path for operators and dependent
+services consuming the standalone graph service.
 
-## 1. Review The Release Boundary
+## Before Upgrading
 
-- Read the intended contract and compatibility rules in
-  [release-policy.md](/Users/alvaro1/Documents/med13/foundation/resource_library/docs/graph/reference/release-policy.md).
-- Review whether the release is additive or breaking for `/v1`.
-- If the release includes breaking intent, read the migration notes before rollout.
+Run `make graph-service-checks` from the repository root. This validates the
+graph service boundary, OpenAPI artifact, generated client artifact, type gate,
+and release documentation contract.
 
-## 2. Refresh And Verify Artifacts
+Review new `alembic` migrations under the graph service migration tree before
+applying them to shared environments.
 
-- Regenerate release artifacts with `make graph-service-sync-contracts`.
-- Verify contract freshness with `make graph-service-contract-check`.
-- Confirm the generated OpenAPI and TypeScript artifacts are committed with the runtime change.
+## Upgrade Steps
 
-## 3. Validate The Candidate
+1. Deploy the new graph service image.
+2. Apply graph-service `alembic` migrations.
+3. Confirm `/health` reports the expected service version.
+4. Confirm the deployed OpenAPI document matches
+   `services/artana_evidence_db/openapi.json`.
+5. Roll dependent services only after they are confirmed to consume the HTTP
+   contract or generated artifacts.
 
-- Run `make graph-service-checks`.
-- Run `make graph-phase6-release-check`.
-- If the release touches graph query or reasoning indexes, run the relevant benchmark or rebuild checks as part of rollout prep.
+## Rollback Notes
 
-## 4. Apply Database Changes
-
-- Ensure Postgres connectivity is ready for the graph service.
-- Apply graph migrations with the graph-service Alembic flow. The release path
-  assumes `alembic`-managed schema upgrades, for example:
-
-```bash
-python -m services.artana_evidence_db.manage upgrade head
-```
-
-- If the release introduces new derived tables or indexes, rebuild them as required by the release notes.
-
-## 5. Roll Out Runtime
-
-- Deploy the graph-service runtime with the intended image and runtime config.
-- Verify the graph-service URL, JWT secret, and database settings are correct for the target environment.
-
-## 6. Smoke Test Post-Upgrade
-
-- Check `/health` and confirm the expected runtime version.
-- Run a minimal graph-service contract smoke check against the deployed service.
-- Confirm the admin and graph-space routes required by the release are operational.
-
-## 7. Communicate Breaking Changes
-
-- If `/v1` changed incompatibly, distribute the explicit migration notes.
-- Ensure dependent callers update against the generated TypeScript client from the same release line.
+Roll back application code only after checking whether a migration changed the
+database shape. When a migration is not reversible, pause rollout and use a
+forward repair migration instead of downgrading production data.

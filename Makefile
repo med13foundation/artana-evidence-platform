@@ -56,32 +56,9 @@ GRAPH_SERVICE_LINT_PATHS := \
 	 tests/e2e/graph_service/test_user_flows.py
 
 GRAPH_SERVICE_TYPE_PATHS := \
- services/artana_evidence_db/ai_full_mode_models.py \
- services/artana_evidence_db/ai_full_mode_persistence_models.py \
- services/artana_evidence_db/ai_full_mode_service.py \
- services/artana_evidence_db/decision_confidence.py \
- services/artana_evidence_db/workflow_models.py \
- services/artana_evidence_db/workflow_persistence_models.py \
-	 services/artana_evidence_db/graph_workflow_service.py \
-	 services/artana_evidence_db/kernel_entity_errors.py \
-	 services/artana_evidence_db/entity_service.py \
-	 services/artana_evidence_db/kernel_entity_models.py \
-	 services/artana_evidence_db/entity_repository.py \
-	 services/artana_evidence_db/governance.py \
-	 services/artana_evidence_db/governance_ports.py \
-	 services/artana_evidence_db/_dictionary_relation_types.py \
-	 services/artana_evidence_db/__main__.py \
-	 services/artana_evidence_db/config.py \
- services/artana_evidence_db/database.py \
- services/artana_evidence_db/manage.py \
- services/artana_evidence_db/graph_api_schemas/ai_full_mode_schemas.py \
- services/artana_evidence_db/graph_api_schemas/workflow_schemas.py \
- services/artana_evidence_db/routers/ai_full_mode.py \
- services/artana_evidence_db/routers/workflows.py \
- services/artana_evidence_db/routers/claims.py \
- services/artana_evidence_db/routers/entities.py \
- services/artana_evidence_db/routers/relations.py \
+ services/artana_evidence_db \
  scripts/export_graph_openapi.py
+GRAPH_SERVICE_TYPE_EXCLUDE := services/artana_evidence_db/(tests|alembic)/
 
 GRAPH_SERVICE_TEST_PATHS := \
 	 tests/e2e/graph_service \
@@ -269,7 +246,7 @@ graph-service-lint: ## Run ruff on graph service paths
 
 graph-service-type-check: ## Run mypy on graph service paths
 	$(call check_venv)
-	$(USE_PYTHON) -m mypy $(GRAPH_SERVICE_TYPE_PATHS) --show-error-codes --no-warn-unused-configs --follow-imports=skip --disable-error-code no-any-unimported --disable-error-code no-any-return --disable-error-code misc --disable-error-code untyped-decorator
+	$(USE_PYTHON) -m mypy $(GRAPH_SERVICE_TYPE_PATHS) --exclude '$(GRAPH_SERVICE_TYPE_EXCLUDE)' --show-error-codes --no-warn-unused-configs --follow-imports=skip --disable-error-code no-any-unimported --disable-error-code no-any-return --disable-error-code misc --disable-error-code untyped-decorator
 
 graph-service-test: ## Run graph service tests against isolated Postgres
 	$(call check_venv)

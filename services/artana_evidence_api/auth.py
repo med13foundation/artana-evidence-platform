@@ -8,13 +8,15 @@ from enum import Enum
 from uuid import UUID
 
 import jwt
-from artana_evidence_api.api_keys import resolve_user_from_api_key
 from artana_evidence_api.database import get_session
-from artana_evidence_api.models.user import HarnessUserModel
+from artana_evidence_api.identity.contracts import (
+    IdentityUserConflictError,
+    IdentityUserRecord,
+)
+from artana_evidence_api.identity.local_gateway import LocalIdentityGateway
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 _AUTH_JWT_SECRET_ENV = "AUTH_JWT_SECRET"
@@ -170,6 +172,28 @@ def _build_harness_user(
     )
 
 
+def _identity_record_from_harness_user(user: HarnessUser) -> IdentityUserRecord:
+    return IdentityUserRecord(
+        id=user.id,
+        email=str(user.email),
+        username=user.username,
+        full_name=user.full_name,
+        role=user.role.value,
+        status=user.status.value,
+    )
+
+
+def _build_harness_user_from_identity(record: IdentityUserRecord) -> HarnessUser:
+    return _build_harness_user(
+        user_id=record.id,
+        role=_parse_role(record.role),
+        email=record.email,
+        username=record.username,
+        full_name=record.full_name,
+        status_value=record.status,
+    )
+
+
 def _build_user_from_test_headers(request: Request) -> HarnessUser | None:
     if not _allow_test_auth_headers():
         return None
@@ -191,42 +215,19 @@ def _canonicalize_shared_harness_user(
     *,
     user: HarnessUser,
 ) -> HarnessUser:
-    """Reuse the shared user row when claims describe an existing identity."""
+    """Reuse the local identity row when claims describe an existing identity."""
     if not isinstance(session, Session):
         return user
-    existing_user = session.get(HarnessUserModel, user.id)
-    if existing_user is not None:
-        return user
-
-    normalized_email = str(user.email).strip().lower()
-    normalized_username = user.username.strip()
-    identity_match = (
-        session.execute(
-            select(HarnessUserModel).where(
-                or_(
-                    HarnessUserModel.email == normalized_email,
-                    HarnessUserModel.username == normalized_username,
-                ),
-            ),
+    try:
+        identity_user = LocalIdentityGateway(session=session).canonicalize_user_claims(
+            _identity_record_from_harness_user(user),
         )
-        .scalars()
-        .first()
-    )
-    if identity_match is None:
-        return user
-    if identity_match.email != normalized_email:
+    except IdentityUserConflictError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Username is already in use",
-        )
-    return user.model_copy(
-        update={
-            "id": _parse_user_id(str(identity_match.id)),
-            "email": identity_match.email,
-            "username": identity_match.username,
-            "full_name": identity_match.full_name,
-        },
-    )
+            detail=str(exc),
+        ) from exc
+    return _build_harness_user_from_identity(identity_user)
 
 
 def _decode_access_token(token: str) -> Mapping[str, object]:
@@ -301,24 +302,14 @@ async def get_current_harness_user(
         )
 
     if isinstance(api_key, str) and api_key.strip() != "":
-        api_key_user = resolve_user_from_api_key(
-            session,
-            raw_key=api_key,
-        )
+        api_key_user = LocalIdentityGateway(session=session).resolve_api_key(api_key)
         if api_key_user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid API key",
                 headers={"WWW-Authenticate": "APIKey"},
             )
-        return _build_harness_user(
-            user_id=_parse_user_id(str(api_key_user.id)),
-            role=_parse_role(api_key_user.role),
-            email=api_key_user.email,
-            username=api_key_user.username,
-            full_name=api_key_user.full_name,
-            status_value=api_key_user.status,
-        )
+        return _build_harness_user_from_identity(api_key_user)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

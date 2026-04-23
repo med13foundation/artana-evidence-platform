@@ -41,13 +41,13 @@ Choose one:
 - search MARRVEL directly if you want gene-centered discovery without starting
   from your own documents
 
-If you are using the Python SDK, the matching helpers are:
+If you are scripting the API from Python, call the same HTTP routes with
+`httpx` or `requests`. The matching route families are:
 
-- `client.documents.submit_text(...)`
-- `client.documents.upload_pdf(...)`
-- `client.chat.ask_with_text(...)`
-- `client.chat.ask_with_pdf(...)`
-- `client.pubmed.search(...)`
+- `POST /v1/spaces/{space_id}/documents/text`
+- `POST /v1/spaces/{space_id}/documents/pdf`
+- `POST /v1/spaces/{space_id}/chat-sessions/{session_id}/messages`
+- `POST /v1/spaces/{space_id}/pubmed/searches`
 
 If your space is brand new and you want the service to guide setup before you
 start reviewing evidence, the newer setup endpoints are:

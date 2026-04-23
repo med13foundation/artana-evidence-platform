@@ -16,8 +16,8 @@ name = "Artana"
 dev = [ "pytest>=8.0.0", "pytest-asyncio>=0.23.0", "pytest-cov>=5.0.0", "black>=26.3.1", "flake8>=7.0.0", "ruff>=0.11.10,<0.12.0", "mypy>=1.8.0", "types-defusedxml", "types-jsonschema", "types-PyYAML", "pre-commit>=3.7.0", "pip-audit>=2.7.0", "bandit>=1.8.0", "jaraco.context>=6.1.0", "pytest-watch>=4.2.0", "pytest-xdist>=3.6.0", "hypothesis>=6.112.1", "schemathesis>=3.24.6", "allure-python-commons>=2.15.3", "virtualenv>=20.36.1", "psutil", "watchdog>=3.0.0", "python-dotenv>=1.0.0", "mkdocs>=1.5.0", "mkdocs-material>=9.0.0",]
 
 [tool.setuptools.packages.find]
-where = [ "services", "packages/artana_api/src"]
-include = [ "artana_evidence_api*", "artana_evidence_db*", "artana_api*"]
+where = [ "services"]
+include = [ "artana_evidence_api*", "artana_evidence_db*"]
 namespaces = false
 
 [tool.black]
@@ -104,11 +104,6 @@ exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if sett
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = [ "E402", "S107", "TRY400", "PLC0415", "BLE001", "C901", "PLR0911", "T201", "TC003", "S105", "TRY003", "EM101", "EM102", "EXE001", "S603", "ARG005", "PERF401", "S101", "S608", "PLR1714",]
 "tests/**" = [ "S101", "ARG", "ERA", "PLR2004", "SLF001", "E402", "S106", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
-"packages/artana_api/tests/**" = [ "S101", "ARG", "ARG005", "ERA", "PLR2004", "SLF001", "E402", "S106", "S107", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "TC006", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
-"packages/artana_api/examples/**" = [ "INP001", "T201", "E402", "TC003",]
-"packages/artana_api/src/artana_api/client.py" = [ "TC001", "TC003", "TRY003", "EM101", "EM102", "SLF001", "PLR0913",]
-"packages/artana_api/src/artana_api/config.py" = [ "TC003", "TRY003", "EM101",]
-"packages/artana_api/src/artana_api/models.py" = [ "TC003", "TRY003", "EM101",]
 "services/artana_evidence_db/tests/**" = [ "S101", "ARG", "ERA", "PLR2004", "SLF001", "E402", "S106", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
 "services/artana_evidence_api/tests/**" = [ "S101", "ARG", "ERA", "PLR2004", "SLF001", "E402", "S106", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
 "services/artana_evidence_db/routers/*.py" = [ "B008", "TC001", "TC002", "TC003", "PLR0913", "TRY301", "TRY300", "FBT003", "TC006", "C901", "PLR0912", "S106",]
@@ -124,10 +119,3 @@ exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if sett
 "services/artana_evidence_api/models/*.py" = [ "TC001", "TC002", "TC003",]
 "services/artana_evidence_api/types/*.py" = [ "TC001", "TC002", "TC003",]
 "services/artana_evidence_api/alembic/versions/*.py" = [ "S608",]
-"services/research_inbox_runtime/tests/**" = [ "S101", "ARG", "ERA", "PLR2004", "SLF001", "E402", "S106", "PT011", "B017", "N806", "PLC0415", "PTH123", "EM102", "TRY003", "S105", "INP001", "B007", "PERF102", "RET504", "PTH110", "SIM222", "PLR0913", "PT003", "TRY002", "BLE001", "B023", "S603", "S608", "TC001", "TC002", "TC003", "PLR0911", "PLR0915", "C901", "PT017", "EM101", "S108",]
-"services/research_inbox_runtime/routers/*.py" = [ "B008", "TC001", "TC002", "TC003", "PLR0913", "TRY301", "TRY300", "FBT003", "TC006", "C901", "PLR0912", "S106", "INP001",]
-"services/research_inbox_runtime/*.py" = [ "TC001", "TC002", "TC003", "PLR0913", "C901", "S106", "S105", "PYI034", "PYI036", "UP040", "TRY003", "EM101", "EM102",]
-"services/research_inbox_runtime/dependencies.py" = [ "B008",]
-"services/research_inbox_runtime/manage.py" = [ "S603", "S608", "T201", "PLR2004",]
-"services/research_inbox_runtime/store.py" = [ "S608",]
-"services/research_inbox_runtime/types.py" = [ "A005",]

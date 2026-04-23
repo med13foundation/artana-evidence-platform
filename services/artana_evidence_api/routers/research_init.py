@@ -18,7 +18,7 @@ from artana_evidence_api.dependencies import (
     get_artifact_store,
     get_graph_api_gateway,
     get_harness_execution_services,
-    get_research_space_store,
+    get_identity_gateway,
     get_run_registry,
     require_harness_space_write_access,
 )
@@ -58,8 +58,8 @@ if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.graph_client import GraphTransportBundle
     from artana_evidence_api.harness_runtime import HarnessExecutionServices
+    from artana_evidence_api.identity.contracts import IdentityGateway
     from artana_evidence_api.proposal_store import HarnessProposalStore
-    from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
     from artana_evidence_api.run_registry import HarnessRunRegistry
 
 router = APIRouter(
@@ -1295,10 +1295,10 @@ async def create_research_init(  # noqa: PLR0913, PLR0915
         get_harness_execution_services,
     ),
     current_user: HarnessUser = Depends(get_current_harness_user),
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> ResearchInitResponse:
     """Queue a research-init run and return immediately."""
-    space_record = research_space_store.get_space(
+    space_record = identity_gateway.get_space(
         space_id=space_id,
         user_id=current_user.id,
         is_admin=current_user.role == HarnessUserRole.ADMIN,

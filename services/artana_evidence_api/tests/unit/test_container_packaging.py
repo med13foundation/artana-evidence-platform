@@ -58,6 +58,11 @@ def test_artana_evidence_api_test_stage_copies_subprocess_and_validator_inputs()
 
     assert "PYTHONPATH=/app" in dockerfile
     assert "COPY services/artana_evidence_api ./artana_evidence_api" in dockerfile
+    assert "COPY services/artana_evidence_db ./artana_evidence_db" not in dockerfile
+    assert (
+        "COPY services/artana_evidence_db/openapi.json "
+        "./services/artana_evidence_db/openapi.json"
+    ) in dockerfile
     assert (
         "COPY services/artana_evidence_api ./services/artana_evidence_api"
         not in dockerfile
