@@ -145,6 +145,13 @@ Legend:
 - [x] Delete the physical `src/` directory
 - [x] Re-run both extracted service gates without `src/`
 
+## M7: Restore Optional Runtime Features
+
+- [x] Restore service-local Variant LLM extraction runtime
+- [ ] Restore non-MARRVEL structured-source gateways
+- [ ] Restore MONDO ingestion as a service-local runtime
+- [ ] Restore shared entity-recognition runtime as a service-local runtime
+
 ## Decisions to Close
 
 - [x] Keep `src/` name temporarily or rename after M1
@@ -189,6 +196,7 @@ Use this section as the running log while executing the migration.
 - April 23, 2026: removed the ontology-runtime bridge's lazy `src` imports, rewired MONDO tests to patch `research_init_runtime.build_mondo_ingestion_service`, and verified the deferred/guarded MONDO tests, the research-init e2e pipeline test, `scripts/validate_artana_evidence_api_service_boundary.py`, and `make artana-evidence-api-type-check`; MONDO ingestion now fails closed until it is ported service-local
 - April 23, 2026: localized deterministic variant signal parsing into `services/artana_evidence_api/variant_extraction_bridges.py`, removed that bridge's lazy extraction-runtime `src` imports, and verified the variant-aware extraction tests plus `make artana-evidence-api-service-checks`; the LLM extraction adapter now returns a fallback contract until it is ported service-local, and production `services/artana_evidence_api` has no remaining `src` references
 - April 23, 2026: completed M6 by removing `COPY src ./src` from the evidence API Dockerfile, deleting/archiving monorepo-era scripts and tests that depended on top-level `src`, narrowing packaging/lint/type/coverage configuration to service packages plus the SDK, replacing reusable test-fixture imports with service-local models, deleting the physical top-level `src/` directory, and re-running `make graph-service-checks` plus `make artana-evidence-api-service-checks` successfully without that directory
+- April 23, 2026: started M7 optional runtime restoration by wiring `services/artana_evidence_api/variant_extraction_bridges.py` to the service-local Artana single-step runtime for Variant LLM extraction, using the evidence-extraction model registry capability, deterministic run/step keys, schema validation through `ExtractionContract`, and fail-closed fallback when the key/runtime/schema is unavailable; verified focused variant-aware extraction tests and `make artana-evidence-api-service-checks`
 
 ### Known Facts to Preserve During Migration
 
@@ -198,6 +206,7 @@ Use this section as the running log while executing the migration.
 - the evidence API no longer has production `src` imports or lazy `src` bridge references, and no longer copies `src/` into its runtime image
 - the top-level temporary `src/` package has been deleted from this repository
 - remaining `src` references are package-local SDK paths such as `packages/artana_api/src`, boundary-validator forbidden-prefix strings, or historical docs; they are not the removed monorepo runtime package
+- Variant LLM extraction has been restored service-local; without a usable `OPENAI_API_KEY`, it still intentionally falls back to deterministic variant signals
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover
 - keep the temporary shared Postgres topology for now; database separation is deferred beyond the completed source-of-truth cutover
 - M6 is complete: both extracted service gates pass with no physical top-level `src/` directory

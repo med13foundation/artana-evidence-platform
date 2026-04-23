@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
+from artana_evidence_api.runtime_support import (
+    GovernanceConfig,
+    ModelCapability,
+    create_artana_postgres_store,
+    get_model_registry,
+    has_configured_openai_api_key,
+    load_runtime_policy,
+    normalize_litellm_model_id,
+    stable_sha256_digest,
+)
 from artana_evidence_api.shared_fact_assessment_helpers import to_json_value
+from artana_evidence_api.step_helpers import run_single_step_with_policy
 from artana_evidence_api.types.common import (
     JSONObject,
     JSONValue,
@@ -98,6 +110,41 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v1"
+_VARIANT_EXTRACTION_TEXT_LIMIT = 12000
+_VARIANT_EXTRACTION_SYSTEM_PROMPT = """
+You are the Artana Variant-Aware Extraction Agent.
+
+Mission:
+- Extract variant-centered facts from the supplied document text and structured
+  genomics signals.
+- Return a valid ExtractionContract only.
+- Prefer direct source-backed evidence over broad biomedical knowledge.
+
+Hard rules:
+- Do not invent genes, HGVS strings, phenotypes, mechanisms, citations, or
+  source identifiers.
+- Every entity, observation, relation, and rejected fact must be grounded in
+  the provided request context.
+- Use exact evidence_excerpt text from the document or structured source record
+  whenever possible.
+- If a candidate is weak, speculative, missing anchors, or unsupported, put it
+  in rejected_facts instead of promoting it.
+- Keep shadow_mode true; this step proposes candidates only.
+
+Useful output conventions:
+- Variant entities should use entity_type="VARIANT".
+- Variant anchors should include gene_symbol and hgvs_notation when available.
+- Variant metadata can include transcript, hgvs_cdna, hgvs_protein,
+  hgvs_genomic, genomic_position, genome_build, zygosity, inheritance,
+  exon_or_intron, and classification.
+- Relations should be small typed claims such as VARIANT CAUSES PHENOTYPE,
+  VARIANT ASSOCIATED_WITH PHENOTYPE, VARIANT LOCATED_IN PROTEIN_DOMAIN, or
+  VARIANT AFFECTS PROCESS.
+- Use decision="generated" when you found usable, evidence-backed candidates.
+- Use decision="escalate" when the text looks relevant but evidence is too weak.
+- Use decision="fallback" only when no LLM-supported extraction is possible.
+""".strip()
 
 
 def _empty_payload() -> JSONObject:
@@ -486,30 +533,201 @@ def _read_scalar(payload: JSONObject, *keys: str) -> str | None:
     return None
 
 
+def _fallback_contract(
+    *,
+    context: ExtractionContext,
+    rationale: str,
+    agent_run_id: str | None = None,
+) -> ExtractionContract:
+    return ExtractionContract(
+        decision="fallback",
+        confidence_score=0.0,
+        rationale=rationale,
+        evidence=[],
+        source_type=context.source_type,
+        document_id=context.document_id,
+        entities=[],
+        observations=[],
+        relations=[],
+        rejected_facts=[],
+        pipeline_payloads=[],
+        shadow_mode=context.shadow_mode,
+        agent_run_id=agent_run_id,
+    )
+
+
+def _variant_extraction_run_id(
+    *,
+    context: ExtractionContext,
+    extraction_config_version: str,
+) -> str:
+    fingerprint = stable_sha256_digest(
+        "|".join(
+            [
+                context.research_space_id or "global",
+                context.source_type,
+                context.document_id,
+                str(context.raw_record.get("sha256", "")),
+                str(context.raw_record.get("title", "")),
+                str(context.raw_record.get("text", ""))[:2048],
+                extraction_config_version,
+            ],
+        ),
+        length=32,
+    )
+    return f"variant_extraction:{context.source_type}:{fingerprint}"
+
+
+def _variant_extraction_step_key(*, context: ExtractionContext) -> str:
+    fingerprint = stable_sha256_digest(
+        "|".join(
+            [
+                context.source_type,
+                context.document_id,
+                str(context.raw_record.get("sha256", "")),
+                str(context.raw_record.get("text", ""))[:2048],
+                str(context.genomics_signals.get("variant_candidates", [])),
+            ],
+        ),
+        length=32,
+    )
+    return f"variant.extraction.{_VARIANT_EXTRACTION_STEP_KEY_VERSION}:{fingerprint}"
+
+
+def _truncate_prompt_value(value: object, *, limit: int = 4000) -> str:
+    rendered = str(value).strip()
+    if len(rendered) <= limit:
+        return rendered
+    return f"{rendered[: limit - 3]}..."
+
+
+def _prompt_payload_from_context(context: ExtractionContext) -> JSONObject:
+    raw_record = dict(context.raw_record)
+    for key in ("text", "content", "abstract", "full_text"):
+        value = raw_record.get(key)
+        if isinstance(value, str):
+            raw_record[key] = _truncate_prompt_value(
+                value,
+                limit=_VARIANT_EXTRACTION_TEXT_LIMIT,
+            )
+    return {
+        "document_id": context.document_id,
+        "source_type": context.source_type,
+        "research_space_id": context.research_space_id,
+        "shadow_mode": context.shadow_mode,
+        "raw_record": raw_record,
+        "recognized_entities": context.recognized_entities,
+        "recognized_observations": context.recognized_observations,
+        "genomics_signals": context.genomics_signals,
+    }
+
+
 class ArtanaExtractionAdapter:
-    """Fail-closed extraction adapter until the LLM runtime is service-local."""
+    """Service-local Artana adapter for variant-aware LLM extraction."""
+
+    def __init__(self, model: str | None = None) -> None:
+        self._default_model = model
+        self._governance = GovernanceConfig.from_environment()
+        self._runtime_policy = load_runtime_policy()
+        self._registry = get_model_registry()
 
     async def extract(self, context: ExtractionContext) -> ExtractionContract:
-        """Return a fallback contract when the extraction runtime is unavailable."""
-        return ExtractionContract(
-            decision="fallback",
-            confidence_score=0.0,
-            rationale="Variant-aware extraction runtime is not available in this service.",
-            evidence=[],
-            source_type=context.source_type,
-            document_id=context.document_id,
-            entities=[],
-            observations=[],
-            relations=[],
-            rejected_facts=[],
-            pipeline_payloads=[],
-            shadow_mode=context.shadow_mode,
-            agent_run_id=None,
+        """Extract a service-local LLM contract with deterministic fallback."""
+        if not has_configured_openai_api_key():
+            return _fallback_contract(
+                context=context,
+                rationale="OPENAI_API_KEY is not configured for variant-aware extraction.",
+            )
+
+        run_id = _variant_extraction_run_id(
+            context=context,
+            extraction_config_version=self._runtime_policy.extraction_config_version,
         )
+        try:
+            return await self._extract_with_artana(context=context, run_id=run_id)
+        except Exception as exc:  # noqa: BLE001 - extraction must fail closed
+            return _fallback_contract(
+                context=context,
+                rationale=f"Variant-aware LLM extraction failed closed: {exc}",
+                agent_run_id=run_id,
+            )
 
     async def close(self) -> None:
         """No-op close hook for interface compatibility."""
         return
+
+    async def _extract_with_artana(
+        self,
+        *,
+        context: ExtractionContext,
+        run_id: str,
+    ) -> ExtractionContract:
+        from artana.agent import SingleStepModelClient
+        from artana.kernel import ArtanaKernel
+        from artana.models import TenantContext
+        from artana.ports.model import LiteLLMAdapter
+
+        resolved_model_id = self._resolve_model_id()
+        execution_model_id = normalize_litellm_model_id(resolved_model_id)
+        timeout_seconds = float(
+            self._registry.get_model(resolved_model_id).timeout_seconds,
+        )
+        budget_limit = self._governance.usage_limits.total_cost_usd or 1.0
+        store = create_artana_postgres_store()
+        kernel = ArtanaKernel(
+            store=store,
+            model_port=LiteLLMAdapter(timeout_seconds=timeout_seconds),
+        )
+        try:
+            client = SingleStepModelClient(kernel=kernel)
+            tenant = TenantContext(
+                tenant_id=f"variant_extraction:{context.research_space_id or 'global'}",
+                capabilities=frozenset(),
+                budget_usd_limit=max(float(budget_limit), 0.01),
+            )
+            result = await run_single_step_with_policy(
+                client,
+                run_id=run_id,
+                tenant=tenant,
+                model=execution_model_id,
+                prompt=self._build_prompt(context),
+                output_schema=ExtractionContract,
+                step_key=_variant_extraction_step_key(context=context),
+                replay_policy=self._runtime_policy.replay_policy,
+            )
+            output = result.output
+            contract = (
+                output
+                if isinstance(output, ExtractionContract)
+                else ExtractionContract.model_validate(output)
+            )
+            return contract.model_copy(
+                update={
+                    "source_type": context.source_type,
+                    "document_id": context.document_id,
+                    "shadow_mode": context.shadow_mode,
+                    "agent_run_id": run_id,
+                },
+            )
+        finally:
+            try:
+                await kernel.close()
+            finally:
+                await store.close()
+
+    def _resolve_model_id(self) -> str:
+        if self._default_model is not None:
+            return self._default_model
+        return self._registry.get_default_model(ModelCapability.EVIDENCE_EXTRACTION).model_id
+
+    @staticmethod
+    def _build_prompt(context: ExtractionContext) -> str:
+        payload = _prompt_payload_from_context(context)
+        return (
+            f"{_VARIANT_EXTRACTION_SYSTEM_PROMPT}\n\n"
+            "---\nREQUEST CONTEXT\n---\n"
+            f"{json.dumps(payload, sort_keys=True, indent=2)}\n"
+        )
 
 
 __all__ = [

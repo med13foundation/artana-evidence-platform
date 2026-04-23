@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
+from artana_evidence_api import variant_extraction_bridges
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
@@ -28,6 +30,32 @@ from artana_evidence_api.variant_extraction_contracts import (
     ExtractionContract,
     RejectedFact,
 )
+
+
+class _FakeKernelStore:
+    def __init__(self) -> None:
+        self.closed = False
+        self.kernel: _FakeKernel | None = None
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+class _FakeKernel:
+    def __init__(self, *, store, model_port, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        del kwargs
+        self.store = store
+        self.model_port = model_port
+        self.closed = False
+        store.kernel = self
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+class _FakeSingleStepClient:
+    def __init__(self, *, kernel) -> None:  # type: ignore[no-untyped-def]
+        self.kernel = kernel
 
 
 class _EmptyGraphGateway:
@@ -121,6 +149,142 @@ def _single_variant_contract(*, document_id: str) -> ExtractionContract:
         shadow_mode=True,
         agent_run_id="variant-aware-source-test",
     )
+
+
+def _variant_context(*, document_id: str = "doc-variant-1") -> (
+    variant_extraction_bridges.ExtractionContext
+):
+    return variant_extraction_bridges.ExtractionContext(
+        document_id=document_id,
+        source_type="pubmed",
+        research_space_id=str(uuid4()),
+        raw_record={
+            "document_id": document_id,
+            "title": "Synthetic MED13 variant note",
+            "text": (
+                "MED13 NM_015335.6:c.977C>A (p.Thr326Lys) was classified "
+                "as Likely Pathogenic in a child with developmental delay."
+            ),
+        },
+        genomics_signals={
+            "variant_aware_recommended": True,
+            "variant_candidates": [
+                {
+                    "gene_symbol": "MED13",
+                    "hgvs_notation": "c.977C>A",
+                    "evidence_excerpt": "MED13 NM_015335.6:c.977C>A",
+                },
+            ],
+        },
+        shadow_mode=True,
+    )
+
+
+def _patch_variant_adapter_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    step_output: object,
+) -> list[_FakeKernelStore]:
+    created_stores: list[_FakeKernelStore] = []
+
+    def _create_store() -> _FakeKernelStore:
+        store = _FakeKernelStore()
+        created_stores.append(store)
+        return store
+
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        return SimpleNamespace(output=step_output)
+
+    monkeypatch.setattr(
+        variant_extraction_bridges,
+        "has_configured_openai_api_key",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        variant_extraction_bridges,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+            get_model=lambda _model_id: SimpleNamespace(timeout_seconds=30.0),
+        ),
+    )
+    monkeypatch.setattr(
+        variant_extraction_bridges,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id.replace(":", "/"),
+    )
+    monkeypatch.setattr(
+        variant_extraction_bridges,
+        "create_artana_postgres_store",
+        _create_store,
+    )
+    monkeypatch.setattr(
+        variant_extraction_bridges,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    return created_stores
+
+
+def test_artana_extraction_adapter_returns_fallback_without_openai_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        variant_extraction_bridges,
+        "has_configured_openai_api_key",
+        lambda: False,
+    )
+
+    context = _variant_context()
+    result = asyncio.run(variant_extraction_bridges.ArtanaExtractionAdapter().extract(context))
+
+    assert result.decision == "fallback"
+    assert result.document_id == context.document_id
+    assert result.source_type == context.source_type
+    assert "OPENAI_API_KEY" in result.rationale
+
+
+def test_artana_extraction_adapter_runs_service_local_llm_step(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = _variant_context()
+    contract = _single_variant_contract(document_id=context.document_id)
+    created_stores = _patch_variant_adapter_runtime(
+        monkeypatch,
+        step_output=contract.model_dump(mode="json"),
+    )
+
+    result = asyncio.run(variant_extraction_bridges.ArtanaExtractionAdapter().extract(context))
+
+    assert result.decision == "generated"
+    assert result.document_id == context.document_id
+    assert result.source_type == context.source_type
+    assert result.agent_run_id is not None
+    assert result.agent_run_id.startswith("variant_extraction:pubmed:")
+    assert len(created_stores) == 1
+    assert created_stores[0].closed is True
+    assert created_stores[0].kernel is not None
+    assert created_stores[0].kernel.closed is True
+
+
+def test_artana_extraction_adapter_fails_closed_on_invalid_llm_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = _variant_context()
+    _patch_variant_adapter_runtime(monkeypatch, step_output={"decision": "generated"})
+
+    result = asyncio.run(variant_extraction_bridges.ArtanaExtractionAdapter().extract(context))
+
+    assert result.decision == "fallback"
+    assert result.document_id == context.document_id
+    assert result.source_type == context.source_type
+    assert result.agent_run_id is not None
+    assert result.agent_run_id.startswith("variant_extraction:pubmed:")
+    assert "failed closed" in result.rationale
 
 
 def test_document_supports_variant_aware_extraction_detects_genomics_signals() -> None:
