@@ -49,6 +49,12 @@ from artana_evidence_api.routers.documents import (
 from artana_evidence_api.routers.health import ProcessHealth
 from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
 from artana_evidence_api.schedule_store import HarnessScheduleStore
+from artana_evidence_api.source_document_bridges import (
+    DocumentExtractionStatus,
+    DocumentFormat,
+    SourceDocument,
+    SqlAlchemySourceDocumentRepository,
+)
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityEmbeddingRefreshRequest,
     KernelEntityEmbeddingRefreshResponse,
@@ -59,12 +65,6 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationClaimResponse,
 )
 from fastapi import HTTPException
-
-from src.domain.entities.source_document import (
-    DocumentExtractionStatus,
-    DocumentFormat,
-    SourceDocument,
-)
 
 
 def test_build_pubmed_queries_preserves_objective_anchor_terms() -> None:
@@ -5772,8 +5772,6 @@ async def test_sync_pubmed_observation_bridge_persists_source_documents(
     from sqlalchemy import text as sa_text
     from sqlalchemy.orm import sessionmaker as sa_sessionmaker
 
-    from src.infrastructure.repositories import SqlAlchemySourceDocumentRepository
-
     bridge_engine = create_engine("sqlite:///:memory:")
     with bridge_engine.connect() as _conn:
         _conn.execute(
@@ -5958,8 +5956,6 @@ async def test_sync_pubmed_observation_bridge_caps_timeouts(
     from sqlalchemy import text as sa_text
     from sqlalchemy.orm import sessionmaker as sa_sessionmaker
 
-    from src.infrastructure.repositories import SqlAlchemySourceDocumentRepository
-
     bridge_engine = create_engine("sqlite:///:memory:")
     with bridge_engine.connect() as _conn:
         _conn.execute(
@@ -6131,8 +6127,6 @@ async def test_sync_pubmed_observation_bridge_times_out_batch_and_marks_document
     from sqlalchemy import text as sa_text
     from sqlalchemy.orm import sessionmaker as sa_sessionmaker
 
-    from src.infrastructure.repositories import SqlAlchemySourceDocumentRepository
-
     bridge_engine = create_engine("sqlite:///:memory:")
     with bridge_engine.connect() as _conn:
         _conn.execute(
@@ -6286,8 +6280,6 @@ async def test_sync_file_upload_observation_bridge_persists_source_documents(
     from sqlalchemy import create_engine
     from sqlalchemy import text as sa_text
     from sqlalchemy.orm import sessionmaker as sa_sessionmaker
-
-    from src.infrastructure.repositories import SqlAlchemySourceDocumentRepository
 
     bridge_engine = create_engine("sqlite:///:memory:")
     with bridge_engine.connect() as _conn:
@@ -6499,8 +6491,6 @@ async def test_observation_bridge_persistence_regression(
     from sqlalchemy import create_engine
     from sqlalchemy import text as sa_text
     from sqlalchemy.orm import sessionmaker as sa_sessionmaker
-
-    from src.infrastructure.repositories import SqlAlchemySourceDocumentRepository
 
     bridge_engine = create_engine("sqlite:///:memory:")
     with bridge_engine.connect() as _conn:

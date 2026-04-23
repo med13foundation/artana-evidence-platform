@@ -19,13 +19,14 @@ from uuid import UUID, uuid4
 import pytest
 from artana_evidence_api import research_init_runtime
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.source_document_bridges import (
+    DocumentExtractionStatus,
+    SqlAlchemySourceDocumentRepository,
+)
 from sqlalchemy import create_engine
 from sqlalchemy import event as sa_event
 from sqlalchemy import text as sa_text
 from sqlalchemy.orm import sessionmaker as sa_sessionmaker
-
-from src.domain.entities.source_document import DocumentExtractionStatus
-from src.infrastructure.repositories import SqlAlchemySourceDocumentRepository
 
 pytestmark = pytest.mark.integration
 
