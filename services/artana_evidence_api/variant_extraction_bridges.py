@@ -24,7 +24,10 @@ from artana_evidence_api.types.common import (
     JSONValue,
     ResearchSpaceSettings,
 )
-from artana_evidence_api.variant_extraction_contracts import ExtractionContract
+from artana_evidence_api.variant_extraction_contracts import (
+    ExtractionContract,
+    LLMExtractionContract,
+)
 from pydantic import BaseModel, Field
 
 _TEXT_FIELD_PRIORITY = (
@@ -118,7 +121,7 @@ You are the Artana Variant-Aware Extraction Agent.
 Mission:
 - Extract variant-centered facts from the supplied document text and structured
   genomics signals.
-- Return a valid ExtractionContract only.
+- Return a valid LLMExtractionContract only.
 - Prefer direct source-backed evidence over broad biomedical knowledge.
 
 Hard rules:
@@ -135,6 +138,9 @@ Hard rules:
 Useful output conventions:
 - Variant entities should use entity_type="VARIANT".
 - Variant anchors should include gene_symbol and hgvs_notation when available.
+- Represent anchors, metadata, source_anchors, target_anchors, and rejected
+  payload as arrays of {"key": "...", "value": "..."} entries, not nested JSON
+  objects.
 - Variant metadata can include transcript, hgvs_cdna, hgvs_protein,
   hgvs_genomic, genomic_position, genome_build, zygosity, inheritance,
   exon_or_intron, and classification.
@@ -691,16 +697,17 @@ class ArtanaExtractionAdapter:
                 tenant=tenant,
                 model=execution_model_id,
                 prompt=self._build_prompt(context),
-                output_schema=ExtractionContract,
+                output_schema=LLMExtractionContract,
                 step_key=_variant_extraction_step_key(context=context),
                 replay_policy=self._runtime_policy.replay_policy,
             )
             output = result.output
-            contract = (
+            llm_contract = (
                 output
-                if isinstance(output, ExtractionContract)
-                else ExtractionContract.model_validate(output)
+                if isinstance(output, LLMExtractionContract)
+                else LLMExtractionContract.model_validate(output)
             )
+            contract = llm_contract.to_extraction_contract()
             return contract.model_copy(
                 update={
                     "source_type": context.source_type,

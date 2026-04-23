@@ -28,6 +28,9 @@ from artana_evidence_api.variant_extraction_contracts import (
     ExtractedEntityCandidate,
     ExtractedRelation,
     ExtractionContract,
+    LLMExtractedEntityCandidate,
+    LLMExtractionContract,
+    LLMKeyValueField,
     RejectedFact,
 )
 
@@ -151,6 +154,41 @@ def _single_variant_contract(*, document_id: str) -> ExtractionContract:
     )
 
 
+def _single_variant_llm_contract(*, document_id: str) -> LLMExtractionContract:
+    return LLMExtractionContract(
+        decision="generated",
+        confidence_score=0.0,
+        rationale="Recovered one anchored variant from the source record.",
+        evidence=[],
+        source_type="pubmed",
+        document_id=document_id,
+        entities=[
+            LLMExtractedEntityCandidate(
+                entity_type="VARIANT",
+                label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                anchors=[
+                    LLMKeyValueField(key="gene_symbol", value="MED13"),
+                    LLMKeyValueField(key="hgvs_notation", value="c.977C>A"),
+                ],
+                metadata=[
+                    LLMKeyValueField(key="transcript", value="NM_015335.6"),
+                    LLMKeyValueField(key="hgvs_cdna", value="c.977C>A"),
+                    LLMKeyValueField(key="hgvs_protein", value="p.Thr326Lys"),
+                    LLMKeyValueField(key="classification", value="Likely Pathogenic"),
+                ],
+                evidence_excerpt="MED13 NM_015335.6:c.977C>A (p.Thr326Lys)",
+                evidence_locator="text_span:10-34",
+                assessment=_assessment(),
+            ),
+        ],
+        observations=[],
+        relations=[],
+        rejected_facts=[],
+        shadow_mode=True,
+        agent_run_id="variant-aware-source-test",
+    )
+
+
 def _variant_context(*, document_id: str = "doc-variant-1") -> (
     variant_extraction_bridges.ExtractionContext
 ):
@@ -252,7 +290,7 @@ def test_artana_extraction_adapter_runs_service_local_llm_step(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     context = _variant_context()
-    contract = _single_variant_contract(document_id=context.document_id)
+    contract = _single_variant_llm_contract(document_id=context.document_id)
     created_stores = _patch_variant_adapter_runtime(
         monkeypatch,
         step_output=contract.model_dump(mode="json"),
@@ -263,6 +301,10 @@ def test_artana_extraction_adapter_runs_service_local_llm_step(
     assert result.decision == "generated"
     assert result.document_id == context.document_id
     assert result.source_type == context.source_type
+    assert result.entities[0].anchors == {
+        "gene_symbol": "MED13",
+        "hgvs_notation": "c.977C>A",
+    }
     assert result.agent_run_id is not None
     assert result.agent_run_id.startswith("variant_extraction:pubmed:")
     assert len(created_stores) == 1
