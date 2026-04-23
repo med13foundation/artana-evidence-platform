@@ -3,6 +3,14 @@
 `artana-evidence-platform` is the extraction target for the Artana evidence
 services that currently live inside the monorepo.
 
+As of April 23, 2026, this repository is the source of truth for:
+
+- `services/artana_evidence_db`
+- `services/artana_evidence_api`
+
+Staging deployments for both services now run from this repository's GitHub
+Actions workflows.
+
 The initial scope is:
 
 - `services/artana_evidence_db`: standalone governed graph service
@@ -27,13 +35,12 @@ Imported and verified in the extracted repo:
 - root extracted-repo tooling such as `Makefile`, `pytest.ini`,
   `.dockerignore`, and local Postgres helpers
 
-The current migration focus is no longer "copy the code over." The current
-focus is finishing the standalone unwind:
+The migration cutover is complete:
 
 - M2: graph service standalone unwind complete
 - M3: evidence API direct production `src` imports eliminated
 - M4: CI, deploy workflows, and deploy/runtime docs complete
-- M5: upstream replay audit complete; OpenAPI refresh, full gates, and staging verification next
+- M5: cutover complete, staging verified, monorepo copies deprecated
 
 ## Tracking Docs
 

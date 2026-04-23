@@ -11,9 +11,9 @@ Legend:
 ## Current Snapshot
 
 - Date anchored: April 22, 2026
-- Repo status: bootable baseline import completed
+- Repo status: source-of-truth cutover completed
 - Code imported: yes
-- Active milestone: M5
+- Active milestone: Complete
 
 ## M0: Repo Scaffold
 
@@ -113,20 +113,20 @@ Legend:
 
 ## M5: Cutover
 
-- [ ] Announce short freeze for extracted services in the monorepo
+- [x] Announce short freeze for extracted services in the monorepo
 - [x] Replay final upstream changes into this repo as a no-op audit
-- [ ] Regenerate both OpenAPI artifacts
-- [ ] Run all extracted service gates
-- [ ] Deploy staging from this repo
-- [ ] Verify graph service smoke flows
-- [ ] Verify evidence API smoke flows
-- [ ] Mark this repo as source of truth
-- [ ] Deprecate or remove old monorepo copies
+- [x] Regenerate both OpenAPI artifacts
+- [x] Run all extracted service gates
+- [x] Deploy staging from this repo
+- [x] Verify graph service smoke flows
+- [x] Verify evidence API smoke flows
+- [x] Mark this repo as source of truth
+- [x] Deprecate or remove old monorepo copies
 
 ## Decisions to Close
 
-- [ ] Keep `src/` name temporarily or rename after M1
-- [ ] Separate databases immediately or use temporary shared Postgres topology
+- [x] Keep `src/` name temporarily or rename after M1
+- [x] Separate databases immediately or use temporary shared Postgres topology
 - [x] Include Python SDK now or later
 - [x] Decide whether first code import lands on `main` or a migration branch
 
@@ -155,6 +155,11 @@ Use this section as the running log while executing the migration.
 - April 22, 2026: added deploy-only GitHub Actions workflows in `.github/workflows/artana-evidence-db-deploy.yml` and `.github/workflows/artana-evidence-api-deploy.yml`, porting the extracted repo’s Cloud Run promotion flow onto the existing `scripts/deploy/*cloud_run_runtime_config.sh` runtime-sync scripts and validating all workflow YAML locally
 - April 22, 2026: added `docs/deployment/extracted-services-runbook.md`, documenting the code-backed runtime env contract for both services plus the GitHub Actions deploy-variable contract and a minimal staging smoke checklist, and linked it from the repo README
 - April 22, 2026: completed the M5 upstream replay audit as a no-op sync; the extracted repo was not missing any files from the imported monorepo scope, and the remaining clean diffs were confirmed as intentional extraction-owned changes in graph boundary validation, graph search wiring, Docker packaging, and generated OpenAPI shape
+- April 23, 2026: regenerated both OpenAPI artifacts, re-ran `make graph-service-checks` and `make artana-evidence-api-service-checks` locally, then verified the same gates again through the extracted repo GitHub Actions runs `24809280090` and `24809280080`
+- April 23, 2026: configured the extracted repo's GitHub Actions deploy settings and extended the existing GitHub workload-identity provider plus deployer service-account IAM bindings so `med13foundation/artana-evidence-platform` can deploy directly
+- April 23, 2026: deployed staging from this repo through GitHub Actions runs `24809418596` and `24809418691`, promoting commit `93079378e32f4474f43cf66cb5f68d515162c6ef` to `artana-evidence-db-staging` and `artana-evidence-api-staging`
+- April 23, 2026: completed staging smoke verification: graph `/health` and `/openapi.json` returned 200, evidence `/health` and `/openapi.json` returned 200, evidence runtime config now points `GRAPH_API_URL` at the staging graph service rather than localhost, and bootstrap auth smoke returned HTTP 409 `Bootstrap has already been completed for this deployment`
+- April 23, 2026: marked this repository as the source of truth and added freeze/deprecation notices to the monorepo service READMEs and docs READMEs
 
 ### Known Facts to Preserve During Migration
 
@@ -163,3 +168,5 @@ Use this section as the running log while executing the migration.
 - the graph service no longer has production `src` imports and no longer copies `src/` into its runtime image
 - the evidence API no longer has direct production `src` imports; remaining temporary shared runtime dependencies are now isolated behind service-owned lazy bridge modules for source enrichment, source documents, deferred ontology loading, and variant-aware extraction
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover
+- keep the temporary `src/` import root name for now; rename only in a future cleanup slice after cutover stability
+- keep the temporary shared Postgres topology for now; database separation is deferred beyond the completed source-of-truth cutover
