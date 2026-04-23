@@ -1,13 +1,39 @@
 # Docs Index
 
-Useful starting points:
+Status date: April 23, 2026.
 
-- [User Guide](./user-guide/README.md)
+This directory describes the current extracted backend repo. The source of
+truth in this checkout is two Python services:
+
+- `services/artana_evidence_api`: evidence workflows, identity/API keys,
+  documents, proposals, review queue, research-init, chat, and AI runs.
+- `services/artana_evidence_db`: governed graph, dictionary, claims,
+  relations, provenance, graph views, workflows, and graph admin sync.
+
+Not present in this checkout: a frontend app, the old top-level `src/` package,
+or `packages/artana_api`.
+
+## Start Here
+
+- [Current System](./architecture/current-system.md)
 - [Project Status](./project_status.md)
-- [Remaining Work Priorities](./remaining_work_priorities.md)
+- [User Guide](./user-guide/README.md)
+- [Engineering Plan](./plan.md)
+- [Remaining Work](./remaining_work_priorities.md)
+
+## Architecture
+
 - [Local Identity Boundary](./architecture/local-identity-boundary.md)
 - [Pending Boundary Issues](./architecture/pending-boundary-issues.md)
-- [GitHub Projects Playbook](./github_projects_playbook.md)
+- [Research Init Architecture](./research_init_architecture.md)
+- [Full AI Orchestrator](./full_AI_orchestrator.md)
+- [Artana Kernel Integration Notes](./artana-kernel/docs/README.md)
+
+## Migration And Release
+
+- [Migration Plan](./migration-plan.md)
+- [Migration Checklist](./migration-checklist.md)
 - [Graph Release Policy](./graph/reference/release-policy.md)
-- [Graph Service Release Checklist](./graph/reference/release-checklist.md)
-- [Graph Service Upgrade Guide](./graph/reference/upgrade-guide.md)
+- [Graph Release Checklist](./graph/reference/release-checklist.md)
+- [Graph Upgrade Guide](./graph/reference/upgrade-guide.md)
+- [GitHub Projects Playbook](./github_projects_playbook.md)

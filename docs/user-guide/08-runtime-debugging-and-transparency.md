@@ -84,9 +84,10 @@ Approval body:
 
 Use approvals when a workflow needs permission before applying a gated action.
 
-## Harness Discovery
+## Workflow Template Discovery
 
-Harnesses are workflow templates.
+Harnesses are the internal workflow-template objects exposed by the Evidence
+API.
 
 Useful endpoints:
 

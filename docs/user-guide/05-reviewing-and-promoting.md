@@ -6,7 +6,7 @@ knowledge.
 ## List The Review Queue
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -22,7 +22,7 @@ Useful filters include:
 For example, list items from one document:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -31,7 +31,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>
 Promote means: "I reviewed this and want it to become trusted graph knowledge."
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -44,7 +44,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
 ## Reject A Weak Item
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
