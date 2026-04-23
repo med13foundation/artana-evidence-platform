@@ -1,16 +1,15 @@
 """Service-local bridges for research-init structured source enrichment.
 
 This module gives ``artana_evidence_api`` ownership of the enrichment-facing
-interfaces used by research-init. Some builders still delegate to temporary
-shared runtime implementations via lazy loading, but the calling service no
-longer imports those shared modules directly.
+interfaces used by research-init. MARRVEL is implemented locally; the remaining
+optional structured-source gateways intentionally fail closed until service-local
+gateway implementations are added.
 """
 
 from __future__ import annotations
 
-import importlib
 from dataclasses import dataclass
-from typing import Protocol, cast
+from typing import Protocol
 from uuid import UUID
 
 from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryService
@@ -145,70 +144,24 @@ class MarrvelDiscoveryServiceProtocol(Protocol):
     def close(self) -> None: ...
 
 
-def _load_constructor(module_path: str, attribute_name: str) -> object | None:
-    try:
-        module = importlib.import_module(module_path)
-    except ImportError:
-        return None
-    return getattr(module, attribute_name, None)
-
-
-def _build_instance(module_path: str, attribute_name: str) -> object | None:
-    resolved_constructor = _load_constructor(module_path, attribute_name)
-    if not callable(resolved_constructor):
-        return None
-    try:
-        return resolved_constructor()
-    except TypeError:
-        return None
-
-
-def _has_callable(instance: object, method_name: str) -> bool:
-    return callable(getattr(instance, method_name, None))
-
-
 def build_clinvar_gateway() -> ClinVarGatewayProtocol | None:
-    """Construct the current ClinVar structured-enrichment gateway."""
-    gateway = _build_instance(
-        "src.infrastructure.data_sources.clinvar_gateway",
-        "ClinVarSourceGateway",
-    )
-    if gateway is None or not _has_callable(gateway, "fetch_records"):
-        return None
-    return cast("ClinVarGatewayProtocol", gateway)
+    """Return the service-local ClinVar gateway when implemented."""
+    return None
 
 
 def build_drugbank_gateway() -> DrugBankGatewayProtocol | None:
-    """Construct the current DrugBank structured-enrichment gateway."""
-    gateway = _build_instance(
-        "src.infrastructure.data_sources.drugbank_gateway",
-        "DrugBankSourceGateway",
-    )
-    if gateway is None or not _has_callable(gateway, "fetch_records"):
-        return None
-    return cast("DrugBankGatewayProtocol", gateway)
+    """Return the service-local DrugBank gateway when implemented."""
+    return None
 
 
 def build_uniprot_gateway() -> UniProtGatewayProtocol | None:
-    """Construct the current UniProt structured-enrichment gateway."""
-    gateway = _build_instance(
-        "src.infrastructure.data_sources.uniprot_gateway",
-        "UniProtSourceGateway",
-    )
-    if gateway is None or not _has_callable(gateway, "fetch_records"):
-        return None
-    return cast("UniProtGatewayProtocol", gateway)
+    """Return the service-local UniProt gateway when implemented."""
+    return None
 
 
 def build_alphafold_gateway() -> AlphaFoldGatewayProtocol | None:
-    """Construct the current AlphaFold structured-enrichment gateway."""
-    gateway = _build_instance(
-        "src.infrastructure.data_sources.alphafold_gateway",
-        "AlphaFoldSourceGateway",
-    )
-    if gateway is None or not _has_callable(gateway, "fetch_records"):
-        return None
-    return cast("AlphaFoldGatewayProtocol", gateway)
+    """Return the service-local AlphaFold gateway when implemented."""
+    return None
 
 
 def build_marrvel_discovery_service() -> MarrvelDiscoveryServiceProtocol | None:
@@ -217,36 +170,18 @@ def build_marrvel_discovery_service() -> MarrvelDiscoveryServiceProtocol | None:
 
 
 def build_clinicaltrials_gateway() -> ClinicalTrialsGatewayProtocol | None:
-    """Construct the current ClinicalTrials.gov structured-enrichment gateway."""
-    gateway = _build_instance(
-        "src.infrastructure.data_sources.clinicaltrials_gateway",
-        "ClinicalTrialsSourceGateway",
-    )
-    if gateway is None or not _has_callable(gateway, "fetch_records_async"):
-        return None
-    return cast("ClinicalTrialsGatewayProtocol", gateway)
+    """Return the service-local ClinicalTrials.gov gateway when implemented."""
+    return None
 
 
 def build_mgi_gateway() -> AllianceGeneGatewayProtocol | None:
-    """Construct the current MGI structured-enrichment gateway."""
-    gateway = _build_instance(
-        "src.infrastructure.data_sources.mgi_gateway",
-        "MGISourceGateway",
-    )
-    if gateway is None or not _has_callable(gateway, "fetch_records_async"):
-        return None
-    return cast("AllianceGeneGatewayProtocol", gateway)
+    """Return the service-local MGI gateway when implemented."""
+    return None
 
 
 def build_zfin_gateway() -> AllianceGeneGatewayProtocol | None:
-    """Construct the current ZFIN structured-enrichment gateway."""
-    gateway = _build_instance(
-        "src.infrastructure.data_sources.zfin_gateway",
-        "ZFINSourceGateway",
-    )
-    if gateway is None or not _has_callable(gateway, "fetch_records_async"):
-        return None
-    return cast("AllianceGeneGatewayProtocol", gateway)
+    """Return the service-local ZFIN gateway when implemented."""
+    return None
 
 
 __all__ = [

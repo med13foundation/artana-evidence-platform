@@ -366,23 +366,9 @@ class TestRunClinVarEnrichment:
         mock_gateway = MagicMock()
         mock_gateway.fetch_records = AsyncMock(return_value=mock_records)
 
-        mock_config_cls = MagicMock()
-
-        # The function uses lazy imports inside a try block so we inject
-        # fake modules into sys.modules to intercept those imports.
-        fake_clinvar_gw_module = MagicMock(
-            ClinVarSourceGateway=lambda: mock_gateway,
-        )
-        fake_clinvar_config_module = MagicMock(
-            ClinVarQueryConfig=mock_config_cls,
-        )
-
-        with patch.dict(
-            "sys.modules",
-            {
-                "src.infrastructure.data_sources.clinvar_gateway": fake_clinvar_gw_module,
-                "src.domain.entities.data_source_configs.clinvar": fake_clinvar_config_module,
-            },
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_clinvar_gateway",
+            return_value=mock_gateway,
         ):
             result = asyncio.run(
                 run_clinvar_enrichment(
@@ -411,12 +397,9 @@ class TestRunClinVarEnrichment:
         artifact_store: HarnessArtifactStore,
         parent_run: object,
     ) -> None:
-        with patch.dict(
-            "sys.modules",
-            {
-                "src.infrastructure.data_sources.clinvar_gateway": None,
-                "src.domain.entities.data_source_configs.clinvar": None,
-            },
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_clinvar_gateway",
+            return_value=None,
         ):
             result = asyncio.run(
                 run_clinvar_enrichment(
@@ -469,9 +452,9 @@ class TestRunDrugBankEnrichment:
         artifact_store: HarnessArtifactStore,
         parent_run: object,
     ) -> None:
-        with patch.dict(
-            "sys.modules",
-            {"src.infrastructure.data_sources.drugbank_gateway": None},
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_drugbank_gateway",
+            return_value=None,
         ):
             result = asyncio.run(
                 run_drugbank_enrichment(
@@ -794,11 +777,9 @@ class TestResolveGeneToUniprot:
         mock_gateway = MagicMock()
         mock_gateway.fetch_records = MagicMock(return_value=mock_result)
 
-        fake_module = MagicMock(UniProtSourceGateway=lambda: mock_gateway)
-
-        with patch.dict(
-            "sys.modules",
-            {"src.infrastructure.data_sources.uniprot_gateway": fake_module},
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_uniprot_gateway",
+            return_value=mock_gateway,
         ):
             result = asyncio.run(_resolve_gene_to_uniprot("MED13"))
 
@@ -816,11 +797,9 @@ class TestResolveGeneToUniprot:
         mock_gateway = MagicMock()
         mock_gateway.fetch_records = MagicMock(return_value=mock_result)
 
-        fake_module = MagicMock(UniProtSourceGateway=lambda: mock_gateway)
-
-        with patch.dict(
-            "sys.modules",
-            {"src.infrastructure.data_sources.uniprot_gateway": fake_module},
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_uniprot_gateway",
+            return_value=mock_gateway,
         ):
             result = asyncio.run(_resolve_gene_to_uniprot("NOTAREALGENE"))
 
@@ -831,11 +810,9 @@ class TestResolveGeneToUniprot:
         mock_gateway = MagicMock()
         mock_gateway.fetch_records = MagicMock(side_effect=RuntimeError("boom"))
 
-        fake_module = MagicMock(UniProtSourceGateway=lambda: mock_gateway)
-
-        with patch.dict(
-            "sys.modules",
-            {"src.infrastructure.data_sources.uniprot_gateway": fake_module},
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_uniprot_gateway",
+            return_value=mock_gateway,
         ):
             result = asyncio.run(_resolve_gene_to_uniprot("MED13"))
 
@@ -859,18 +836,12 @@ class TestRunAlphaFoldEnrichment:
         parent_run: object,
     ) -> None:
         """When _resolve_gene_to_uniprot returns None the term is skipped."""
-        fake_af_module = MagicMock(
-            AlphaFoldSourceGateway=lambda: MagicMock(),
-        )
-
         resolver_mock = AsyncMock(return_value=None)
 
         with (
-            patch.dict(
-                "sys.modules",
-                {
-                    "src.infrastructure.data_sources.alphafold_gateway": fake_af_module,
-                },
+            patch(
+                "artana_evidence_api.research_init_source_enrichment.build_alphafold_gateway",
+                return_value=MagicMock(),
             ),
             patch(
                 "artana_evidence_api.research_init_source_enrichment._resolve_gene_to_uniprot",
@@ -915,18 +886,12 @@ class TestRunAlphaFoldEnrichment:
         mock_af_gateway = MagicMock()
         mock_af_gateway.fetch_records = MagicMock(return_value=mock_af_result)
 
-        fake_af_module = MagicMock(
-            AlphaFoldSourceGateway=lambda: mock_af_gateway,
-        )
-
         resolver_mock = AsyncMock(return_value="Q9UHV7")
 
         with (
-            patch.dict(
-                "sys.modules",
-                {
-                    "src.infrastructure.data_sources.alphafold_gateway": fake_af_module,
-                },
+            patch(
+                "artana_evidence_api.research_init_source_enrichment.build_alphafold_gateway",
+                return_value=mock_af_gateway,
             ),
             patch(
                 "artana_evidence_api.research_init_source_enrichment._resolve_gene_to_uniprot",
@@ -1256,21 +1221,10 @@ class TestEnrichmentReturnsProposals:
 
         mock_gateway = MagicMock()
         mock_gateway.fetch_records = AsyncMock(return_value=mock_records)
-        mock_config_cls = MagicMock()
 
-        fake_clinvar_gw_module = MagicMock(
-            ClinVarSourceGateway=lambda: mock_gateway,
-        )
-        fake_clinvar_config_module = MagicMock(
-            ClinVarQueryConfig=mock_config_cls,
-        )
-
-        with patch.dict(
-            "sys.modules",
-            {
-                "src.infrastructure.data_sources.clinvar_gateway": fake_clinvar_gw_module,
-                "src.domain.entities.data_source_configs.clinvar": fake_clinvar_config_module,
-            },
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_clinvar_gateway",
+            return_value=mock_gateway,
         ):
             result = asyncio.run(
                 run_clinvar_enrichment(
@@ -1311,18 +1265,12 @@ class TestEnrichmentReturnsProposals:
         mock_af_gateway = MagicMock()
         mock_af_gateway.fetch_records = MagicMock(return_value=mock_af_result)
 
-        fake_af_module = MagicMock(
-            AlphaFoldSourceGateway=lambda: mock_af_gateway,
-        )
-
         resolver_mock = AsyncMock(return_value="Q9UHV7")
 
         with (
-            patch.dict(
-                "sys.modules",
-                {
-                    "src.infrastructure.data_sources.alphafold_gateway": fake_af_module,
-                },
+            patch(
+                "artana_evidence_api.research_init_source_enrichment.build_alphafold_gateway",
+                return_value=mock_af_gateway,
             ),
             patch(
                 "artana_evidence_api.research_init_source_enrichment._resolve_gene_to_uniprot",
@@ -1440,25 +1388,25 @@ class TestAsyncStructuredEnrichmentGateways:
         artifact_store: HarnessArtifactStore,
         parent_run: object,
     ) -> None:
-        with (
-            patch(
-                "src.infrastructure.data_sources.clinicaltrials_gateway.ClinicalTrialsSourceGateway.fetch_records",
-                side_effect=AssertionError("sync fetch_records should not be used"),
+        gateway = MagicMock()
+        gateway.fetch_records = MagicMock(
+            side_effect=AssertionError("sync fetch_records should not be used"),
+        )
+        gateway.fetch_records_async = AsyncMock(
+            return_value=MagicMock(
+                records=[
+                    {
+                        "nct_id": "NCT00000001",
+                        "brief_title": "BRCA1 trial",
+                        "overall_status": "RECRUITING",
+                    },
+                ],
             ),
-            patch(
-                "src.infrastructure.data_sources.clinicaltrials_gateway.ClinicalTrialsSourceGateway.fetch_records_async",
-                new=AsyncMock(
-                    return_value=MagicMock(
-                        records=[
-                            {
-                                "nct_id": "NCT00000001",
-                                "brief_title": "BRCA1 trial",
-                                "overall_status": "RECRUITING",
-                            },
-                        ],
-                    ),
-                ),
-            ) as fetch_async,
+        )
+
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_clinicaltrials_gateway",
+            return_value=gateway,
         ):
             result = await run_clinicaltrials_enrichment(
                 space_id=space_id,
@@ -1469,7 +1417,8 @@ class TestAsyncStructuredEnrichmentGateways:
                 parent_run=parent_run,  # type: ignore[arg-type]
             )
 
-        fetch_async.assert_awaited()
+        gateway.fetch_records.assert_not_called()
+        gateway.fetch_records_async.assert_awaited()
         assert result.records_processed == 1
         assert len(result.documents_created) == 1
 
@@ -1482,25 +1431,25 @@ class TestAsyncStructuredEnrichmentGateways:
         artifact_store: HarnessArtifactStore,
         parent_run: object,
     ) -> None:
-        with (
-            patch(
-                "src.infrastructure.data_sources.mgi_gateway.MGISourceGateway.fetch_records",
-                side_effect=AssertionError("sync fetch_records should not be used"),
+        gateway = MagicMock()
+        gateway.fetch_records = MagicMock(
+            side_effect=AssertionError("sync fetch_records should not be used"),
+        )
+        gateway.fetch_records_async = AsyncMock(
+            return_value=MagicMock(
+                records=[
+                    {
+                        "mgi_id": "MGI:12345",
+                        "gene_symbol": "Brca1",
+                        "gene_name": "breast cancer 1",
+                    },
+                ],
             ),
-            patch(
-                "src.infrastructure.data_sources.mgi_gateway.MGISourceGateway.fetch_records_async",
-                new=AsyncMock(
-                    return_value=MagicMock(
-                        records=[
-                            {
-                                "mgi_id": "MGI:12345",
-                                "gene_symbol": "Brca1",
-                                "gene_name": "breast cancer 1",
-                            },
-                        ],
-                    ),
-                ),
-            ) as fetch_async,
+        )
+
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_mgi_gateway",
+            return_value=gateway,
         ):
             result = await run_mgi_enrichment(
                 space_id=space_id,
@@ -1511,7 +1460,8 @@ class TestAsyncStructuredEnrichmentGateways:
                 parent_run=parent_run,  # type: ignore[arg-type]
             )
 
-        fetch_async.assert_awaited()
+        gateway.fetch_records.assert_not_called()
+        gateway.fetch_records_async.assert_awaited()
         assert result.records_processed == 1
         assert len(result.documents_created) == 1
 
@@ -1524,24 +1474,24 @@ class TestAsyncStructuredEnrichmentGateways:
         artifact_store: HarnessArtifactStore,
         parent_run: object,
     ) -> None:
-        with (
-            patch(
-                "src.infrastructure.data_sources.zfin_gateway.ZFINSourceGateway.fetch_records",
-                side_effect=AssertionError("sync fetch_records should not be used"),
+        gateway = MagicMock()
+        gateway.fetch_records = MagicMock(
+            side_effect=AssertionError("sync fetch_records should not be used"),
+        )
+        gateway.fetch_records_async = AsyncMock(
+            return_value=MagicMock(
+                records=[
+                    {
+                        "zfin_id": "ZDB-GENE-000000-1",
+                        "gene_symbol": "brca1",
+                    },
+                ],
             ),
-            patch(
-                "src.infrastructure.data_sources.zfin_gateway.ZFINSourceGateway.fetch_records_async",
-                new=AsyncMock(
-                    return_value=MagicMock(
-                        records=[
-                            {
-                                "zfin_id": "ZDB-GENE-000000-1",
-                                "gene_symbol": "brca1",
-                            },
-                        ],
-                    ),
-                ),
-            ) as fetch_async,
+        )
+
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_zfin_gateway",
+            return_value=gateway,
         ):
             result = await run_zfin_enrichment(
                 space_id=space_id,
@@ -1552,6 +1502,7 @@ class TestAsyncStructuredEnrichmentGateways:
                 parent_run=parent_run,  # type: ignore[arg-type]
             )
 
-        fetch_async.assert_awaited()
+        gateway.fetch_records.assert_not_called()
+        gateway.fetch_records_async.assert_awaited()
         assert result.records_processed == 1
         assert len(result.documents_created) == 1

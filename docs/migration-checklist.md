@@ -87,7 +87,7 @@ Legend:
 - [x] Move or localize source-document repository usage
 - [x] Move or localize alias-yield reporting helpers
 - [x] Move or localize source gateway dependencies needed by the service
-  Research-init now goes through service-owned source-enrichment bridge builders in `services/artana_evidence_api/source_enrichment_bridges.py`, and MARRVEL uses the local discovery service; the remaining shared gateway implementations are still temporary lazy bridge targets behind that service-owned boundary.
+  Research-init now goes through service-owned source-enrichment bridge builders in `services/artana_evidence_api/source_enrichment_bridges.py`, and MARRVEL uses the local discovery service. As of M6, the source-enrichment bridge no longer lazy-loads shared `src` gateways; non-MARRVEL structured-source gateways now fail closed until service-local gateway implementations are added.
 - [x] Re-run research-init tests
 
 ### E4 Orchestrator Helpers
@@ -134,6 +134,10 @@ Legend:
 - [x] Remove graph-service check and deploy path dependencies on `src`
 - [x] Remove graph-service Makefile check paths that still execute monorepo support tests
 - [ ] Remove or replace evidence API lazy bridge dependencies on `src`
+- [x] Remove source-enrichment bridge dependencies on `src`
+- [ ] Remove source-document bridge dependencies on `src`
+- [ ] Remove ontology-runtime bridge dependencies on `src`
+- [ ] Remove variant-extraction bridge dependencies on `src`
 - [ ] Remove `COPY src ./src` from the evidence API Dockerfile
 - [ ] Remove or archive monorepo-era scripts that still import `src`
 - [ ] Move remaining reusable test fixtures away from `tests/conftest.py` `src` imports
@@ -180,13 +184,14 @@ Use this section as the running log while executing the migration.
 - April 23, 2026: marked this repository as the source of truth and added freeze/deprecation notices to the monorepo service READMEs and docs READMEs
 - April 23, 2026: opened M6 for post-cutover removal of the temporary `src/` package, confirmed service production modules have no direct `src` imports, and started the cleanup by removing graph-service Makefile check paths plus graph-service check/deploy workflow path dependencies on `src`
 - April 23, 2026: verified the first M6 graph-service cleanup slice with `make graph-service-checks`; the slimmer graph gate passes without lint/type/test path dependencies on monorepo `src`
+- April 23, 2026: removed the source-enrichment bridge's lazy `src` imports, rewired the source-enrichment unit tests to patch service-owned builder seams, and verified `services/artana_evidence_api/tests/unit/test_research_init_source_enrichment.py` plus `scripts/validate_artana_evidence_api_service_boundary.py`; non-MARRVEL optional source gateways now fail closed until service-local implementations are added
 
 ### Known Facts to Preserve During Migration
 
 - `artana_evidence_db` is the standalone governed graph service
 - `artana_evidence_api` is the AI evidence/orchestration service
 - the graph service no longer has production `src` imports and no longer copies `src/` into its runtime image
-- the evidence API no longer has direct production `src` imports; remaining temporary shared runtime dependencies are now isolated behind service-owned lazy bridge modules for source enrichment, source documents, deferred ontology loading, and variant-aware extraction
+- the evidence API no longer has direct production `src` imports; remaining temporary shared runtime dependencies are isolated behind service-owned lazy bridge modules for source documents, deferred ontology loading, and variant-aware extraction
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover
 - keep the temporary `src/` import root name for now; rename only in a future cleanup slice after cutover stability
 - keep the temporary shared Postgres topology for now; database separation is deferred beyond the completed source-of-truth cutover
