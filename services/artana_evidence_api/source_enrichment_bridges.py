@@ -145,8 +145,10 @@ class MarrvelDiscoveryServiceProtocol(Protocol):
 
 
 def build_clinvar_gateway() -> ClinVarGatewayProtocol | None:
-    """Return the service-local ClinVar gateway when implemented."""
-    return None
+    """Construct the service-local ClinVar gateway."""
+    from artana_evidence_api.clinvar_gateway import ClinVarSourceGateway
+
+    return ClinVarSourceGateway()
 
 
 def build_drugbank_gateway() -> DrugBankGatewayProtocol | None:
