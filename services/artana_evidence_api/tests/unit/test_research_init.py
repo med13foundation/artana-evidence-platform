@@ -6990,10 +6990,6 @@ async def test_execute_research_init_marks_pending_sources_as_deferred(
         "execute_research_bootstrap_run",
         _fake_execute_bootstrap,
     )
-    # Disable MONDO loading so we don't fetch the 51 MB file.
-    import sys
-    from types import ModuleType
-
     class _StubOntologyIngestionSummary:
         def __init__(self) -> None:
             self.terms_imported = 0
@@ -7013,24 +7009,10 @@ async def test_execute_research_init_marks_pending_sources_as_deferred(
         async def ingest(self, **_kwargs: object) -> _StubOntologyIngestionSummary:
             return _StubOntologyIngestionSummary()
 
-    class _StubMondoGateway:
-        pass
-
-    fake_mondo_module = ModuleType("src.infrastructure.ingest.mondo_gateway")
-    fake_mondo_module.MondoGateway = _StubMondoGateway  # type: ignore[attr-defined]
-    fake_ontology_module = ModuleType(
-        "src.application.services.ontology_ingestion_service",
-    )
-    fake_ontology_module.OntologyIngestionService = _StubOntologyIngestionService  # type: ignore[attr-defined]
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.ingest.mondo_gateway",
-        fake_mondo_module,
-    )
-    monkeypatch.setitem(
-        sys.modules,
-        "src.application.services.ontology_ingestion_service",
-        fake_ontology_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "build_mondo_ingestion_service",
+        lambda **_kwargs: _StubOntologyIngestionService(),
     )
     deferred_mondo_tasks: list[asyncio.Task[None]] = []
 
@@ -7239,9 +7221,6 @@ async def test_execute_research_init_honors_guarded_structured_source_subset(
         "execute_research_bootstrap_run",
         _fake_execute_bootstrap,
     )
-    import sys
-    from types import ModuleType
-
     class _StubOntologyIngestionSummary:
         def __init__(self) -> None:
             self.terms_imported = 0
@@ -7261,24 +7240,10 @@ async def test_execute_research_init_honors_guarded_structured_source_subset(
         async def ingest(self, **_kwargs: object) -> _StubOntologyIngestionSummary:
             return _StubOntologyIngestionSummary()
 
-    class _StubMondoGateway:
-        pass
-
-    fake_mondo_module = ModuleType("src.infrastructure.ingest.mondo_gateway")
-    fake_mondo_module.MondoGateway = _StubMondoGateway  # type: ignore[attr-defined]
-    fake_ontology_module = ModuleType(
-        "src.application.services.ontology_ingestion_service",
-    )
-    fake_ontology_module.OntologyIngestionService = _StubOntologyIngestionService  # type: ignore[attr-defined]
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.ingest.mondo_gateway",
-        fake_mondo_module,
-    )
-    monkeypatch.setitem(
-        sys.modules,
-        "src.application.services.ontology_ingestion_service",
-        fake_ontology_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "build_mondo_ingestion_service",
+        lambda **_kwargs: _StubOntologyIngestionService(),
     )
     deferred_mondo_tasks: list[asyncio.Task[None]] = []
 

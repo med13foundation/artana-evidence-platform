@@ -18,9 +18,7 @@ Run with:
 from __future__ import annotations
 
 import asyncio
-import sys
 from contextlib import nullcontext
-from types import ModuleType
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -345,24 +343,10 @@ async def test_research_init_full_pipeline_e2e(
             phases_executed["mondo"] = True
             return _StubOntologyIngestionSummary()
 
-    class _StubMondoGateway:
-        pass
-
-    fake_mondo_module = ModuleType("src.infrastructure.ingest.mondo_gateway")
-    fake_mondo_module.MondoGateway = _StubMondoGateway  # type: ignore[attr-defined]
-    fake_ontology_module = ModuleType(
-        "src.application.services.ontology_ingestion_service",
-    )
-    fake_ontology_module.OntologyIngestionService = _StubOntologyIngestionService  # type: ignore[attr-defined]
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.ingest.mondo_gateway",
-        fake_mondo_module,
-    )
-    monkeypatch.setitem(
-        sys.modules,
-        "src.application.services.ontology_ingestion_service",
-        fake_ontology_module,
+    monkeypatch.setattr(
+        research_init_runtime,
+        "build_mondo_ingestion_service",
+        lambda **_kwargs: _StubOntologyIngestionService(),
     )
     deferred_mondo_tasks: list[asyncio.Task[None]] = []
 
@@ -381,22 +365,6 @@ async def test_research_init_full_pipeline_e2e(
         research_init_runtime,
         "_start_deferred_mondo_load",
         _start_deferred_mondo_load,
-    )
-
-    # Also stub GraphOntologyEntityWriter import to prevent real graph writes
-    fake_entity_writer_module = ModuleType(
-        "src.infrastructure.ingest.graph_ontology_entity_writer",
-    )
-
-    class _StubGraphOntologyEntityWriter:
-        def __init__(self, **_kwargs: object) -> None:
-            pass
-
-    fake_entity_writer_module.GraphOntologyEntityWriter = _StubGraphOntologyEntityWriter  # type: ignore[attr-defined]
-    monkeypatch.setitem(
-        sys.modules,
-        "src.infrastructure.ingest.graph_ontology_entity_writer",
-        fake_entity_writer_module,
     )
 
     # ── 3b. PubMed: stub _execute_pubmed_query ────────────────────────

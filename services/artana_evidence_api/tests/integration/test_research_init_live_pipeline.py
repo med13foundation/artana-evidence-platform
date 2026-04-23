@@ -345,6 +345,9 @@ class TestAlphaFoldLiveIntegration:
 
 
 @_live_external_api_required
+@pytest.mark.skip(
+    reason="MONDO gateway live tests are deferred until the gateway is service-local",
+)
 class TestMONDOLiveIntegration:
     """Verify MONDO gateway fetches and parses real ontology data."""
 
