@@ -152,8 +152,10 @@ def build_clinvar_gateway() -> ClinVarGatewayProtocol | None:
 
 
 def build_drugbank_gateway() -> DrugBankGatewayProtocol | None:
-    """Return the service-local DrugBank gateway when implemented."""
-    return None
+    """Construct the service-local DrugBank gateway."""
+    from artana_evidence_api.drugbank_gateway import DrugBankSourceGateway
+
+    return DrugBankSourceGateway()
 
 
 def build_uniprot_gateway() -> UniProtGatewayProtocol | None:

@@ -150,7 +150,7 @@ Legend:
 - [x] Restore service-local Variant LLM extraction runtime
 - [ ] Restore non-MARRVEL structured-source gateways
 - [x] Restore service-local ClinVar structured-source gateway
-- [ ] Restore service-local DrugBank structured-source gateway
+- [x] Restore service-local DrugBank structured-source gateway
 - [ ] Restore service-local AlphaFold structured-source gateway
 - [ ] Restore service-local UniProt structured-source gateway
 - [ ] Restore service-local ClinicalTrials.gov structured-source gateway
@@ -205,6 +205,7 @@ Use this section as the running log while executing the migration.
 - April 23, 2026: completed M6 by removing `COPY src ./src` from the evidence API Dockerfile, deleting/archiving monorepo-era scripts and tests that depended on top-level `src`, narrowing packaging/lint/type/coverage configuration to service packages plus the SDK, replacing reusable test-fixture imports with service-local models, deleting the physical top-level `src/` directory, and re-running `make graph-service-checks` plus `make artana-evidence-api-service-checks` successfully without that directory
 - April 23, 2026: started M7 optional runtime restoration by wiring `services/artana_evidence_api/variant_extraction_bridges.py` to the service-local Artana single-step runtime for Variant LLM extraction, using the evidence-extraction model registry capability, deterministic run/step keys, schema validation through `ExtractionContract`, and fail-closed fallback when the key/runtime/schema is unavailable; verified focused variant-aware extraction tests and `make artana-evidence-api-service-checks`
 - April 23, 2026: restored the service-local ClinVar structured-source gateway in `services/artana_evidence_api/clinvar_gateway.py`, backed by NCBI ESearch/ESummary through the evidence API's own `httpx` runtime, normalizing records into the existing research-init document/proposal fields without reintroducing the deleted top-level `src` package
+- April 23, 2026: restored the service-local DrugBank structured-source gateway in `services/artana_evidence_api/drugbank_gateway.py`, backed by DrugBank API search and target endpoints through the evidence API's own `httpx` runtime; when `DRUGBANK_API_KEY` is not configured it skips gracefully with an empty result, preserving the existing optional-source behavior
 
 ### Known Facts to Preserve During Migration
 
@@ -215,7 +216,7 @@ Use this section as the running log while executing the migration.
 - the top-level temporary `src/` package has been deleted from this repository
 - remaining `src` references are package-local SDK paths such as `packages/artana_api/src`, boundary-validator forbidden-prefix strings, or historical docs; they are not the removed monorepo runtime package
 - Variant LLM extraction has been restored service-local; without a usable `OPENAI_API_KEY`, it still intentionally falls back to deterministic variant signals
-- ClinVar structured-source enrichment has been restored service-local; the remaining non-MARRVEL structured gateways are DrugBank, AlphaFold, UniProt, ClinicalTrials.gov, MGI, and ZFIN
+- ClinVar and DrugBank structured-source enrichment have been restored service-local; the remaining non-MARRVEL structured gateways are AlphaFold, UniProt, ClinicalTrials.gov, MGI, and ZFIN
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover
 - keep the temporary shared Postgres topology for now; database separation is deferred beyond the completed source-of-truth cutover
 - M6 is complete: both extracted service gates pass with no physical top-level `src/` directory
