@@ -13,7 +13,10 @@ Legend:
 - Date anchored: April 22, 2026
 - Repo status: source-of-truth cutover completed
 - Code imported: yes
-- Active milestone: Complete
+- Active milestone: M6
+- Important status note: M5 means the service ownership cutover is complete; it
+  does not mean the temporary `src/` package has been physically removed from
+  this repository.
 
 ## M0: Repo Scaffold
 
@@ -123,6 +126,21 @@ Legend:
 - [x] Mark this repo as source of truth
 - [x] Deprecate or remove old monorepo copies
 
+## M6: Remove Temporary `src/` Package
+
+- [x] Make the checklist distinguish completed cutover from incomplete `src/` removal
+- [x] Inventory remaining `src` references by runtime, packaging, scripts, tests, and workflows
+- [x] Confirm production service modules no longer have direct `src` imports
+- [x] Remove graph-service check and deploy path dependencies on `src`
+- [x] Remove graph-service Makefile check paths that still execute monorepo support tests
+- [ ] Remove or replace evidence API lazy bridge dependencies on `src`
+- [ ] Remove `COPY src ./src` from the evidence API Dockerfile
+- [ ] Remove or archive monorepo-era scripts that still import `src`
+- [ ] Move remaining reusable test fixtures away from `tests/conftest.py` `src` imports
+- [ ] Remove `src` from packaging, lint, type, and coverage config
+- [ ] Delete the physical `src/` directory
+- [ ] Re-run both extracted service gates without `src/`
+
 ## Decisions to Close
 
 - [x] Keep `src/` name temporarily or rename after M1
@@ -160,6 +178,8 @@ Use this section as the running log while executing the migration.
 - April 23, 2026: deployed staging from this repo through GitHub Actions runs `24809418596` and `24809418691`, promoting commit `93079378e32f4474f43cf66cb5f68d515162c6ef` to `artana-evidence-db-staging` and `artana-evidence-api-staging`
 - April 23, 2026: completed staging smoke verification: graph `/health` and `/openapi.json` returned 200, evidence `/health` and `/openapi.json` returned 200, evidence runtime config now points `GRAPH_API_URL` at the staging graph service rather than localhost, and bootstrap auth smoke returned HTTP 409 `Bootstrap has already been completed for this deployment`
 - April 23, 2026: marked this repository as the source of truth and added freeze/deprecation notices to the monorepo service READMEs and docs READMEs
+- April 23, 2026: opened M6 for post-cutover removal of the temporary `src/` package, confirmed service production modules have no direct `src` imports, and started the cleanup by removing graph-service Makefile check paths plus graph-service check/deploy workflow path dependencies on `src`
+- April 23, 2026: verified the first M6 graph-service cleanup slice with `make graph-service-checks`; the slimmer graph gate passes without lint/type/test path dependencies on monorepo `src`
 
 ### Known Facts to Preserve During Migration
 
@@ -170,3 +190,4 @@ Use this section as the running log while executing the migration.
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover
 - keep the temporary `src/` import root name for now; rename only in a future cleanup slice after cutover stability
 - keep the temporary shared Postgres topology for now; database separation is deferred beyond the completed source-of-truth cutover
+- M6 is the active post-cutover cleanup milestone for making the repo work with no physical `src/` directory

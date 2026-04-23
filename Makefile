@@ -31,22 +31,16 @@ GRAPH_SERVICE_LINT_PATHS := \
  services/artana_evidence_db/decision_confidence.py \
  services/artana_evidence_db/workflow_models.py \
  services/artana_evidence_db/workflow_persistence_models.py \
- services/artana_evidence_db/graph_workflow_service.py \
- services/artana_evidence_db/kernel_entity_errors.py \
- services/artana_evidence_db/entity_service.py \
- src/database/graph_schema.py \
- services/artana_evidence_db/kernel_entity_models.py \
- services/artana_evidence_db/entity_repository.py \
- src/domain/value_objects/entity_resolution.py \
- src/infrastructure/dependency_injection/_graph_runtime_builders.py \
- services/artana_evidence_db/governance.py \
- services/artana_evidence_db/governance_ports.py \
- src/infrastructure/repositories/graph_observability_repository.py \
- src/infrastructure/queries/graph_security_queries.py \
- src/models/database/kernel/entities.py \
- services/artana_evidence_db/_dictionary_relation_types.py \
- services/artana_evidence_db/alembic \
- services/artana_evidence_db/__main__.py \
+	 services/artana_evidence_db/graph_workflow_service.py \
+	 services/artana_evidence_db/kernel_entity_errors.py \
+	 services/artana_evidence_db/entity_service.py \
+	 services/artana_evidence_db/kernel_entity_models.py \
+	 services/artana_evidence_db/entity_repository.py \
+	 services/artana_evidence_db/governance.py \
+	 services/artana_evidence_db/governance_ports.py \
+	 services/artana_evidence_db/_dictionary_relation_types.py \
+	 services/artana_evidence_db/alembic \
+	 services/artana_evidence_db/__main__.py \
  services/artana_evidence_db/config.py \
  services/artana_evidence_db/database.py \
  services/artana_evidence_db/manage.py \
@@ -56,16 +50,10 @@ GRAPH_SERVICE_LINT_PATHS := \
  services/artana_evidence_db/routers/ai_full_mode.py \
  services/artana_evidence_db/routers/workflows.py \
  services/artana_evidence_db/routers/claims.py \
- services/artana_evidence_db/routers/entities.py \
- services/artana_evidence_db/routers/relations.py \
- src/infrastructure/dependency_injection/service_factories.py \
- scripts/export_graph_openapi.py \
- tests/e2e/graph_service/test_user_flows.py \
- tests/unit/database/test_023_graph_external_fk_decoupling_contract.py \
- tests/unit/infrastructure/graph_service \
- tests/unit/infrastructure/test_kernel_entity_repository.py \
- tests/unit/infrastructure/dependency_injection/test_graph_service_factory_delegation.py \
- tests/unit/kernel/test_kernel_services.py
+	 services/artana_evidence_db/routers/entities.py \
+	 services/artana_evidence_db/routers/relations.py \
+	 scripts/export_graph_openapi.py \
+	 tests/e2e/graph_service/test_user_flows.py
 
 GRAPH_SERVICE_TYPE_PATHS := \
  services/artana_evidence_db/ai_full_mode_models.py \
@@ -74,22 +62,16 @@ GRAPH_SERVICE_TYPE_PATHS := \
  services/artana_evidence_db/decision_confidence.py \
  services/artana_evidence_db/workflow_models.py \
  services/artana_evidence_db/workflow_persistence_models.py \
- services/artana_evidence_db/graph_workflow_service.py \
- services/artana_evidence_db/kernel_entity_errors.py \
- services/artana_evidence_db/entity_service.py \
- src/database/graph_schema.py \
- services/artana_evidence_db/kernel_entity_models.py \
- services/artana_evidence_db/entity_repository.py \
- src/domain/value_objects/entity_resolution.py \
- src/infrastructure/dependency_injection/_graph_runtime_builders.py \
- services/artana_evidence_db/governance.py \
- services/artana_evidence_db/governance_ports.py \
- src/infrastructure/repositories/graph_observability_repository.py \
- src/infrastructure/queries/graph_security_queries.py \
- src/models/database/kernel/entities.py \
- services/artana_evidence_db/_dictionary_relation_types.py \
- services/artana_evidence_db/__main__.py \
- services/artana_evidence_db/config.py \
+	 services/artana_evidence_db/graph_workflow_service.py \
+	 services/artana_evidence_db/kernel_entity_errors.py \
+	 services/artana_evidence_db/entity_service.py \
+	 services/artana_evidence_db/kernel_entity_models.py \
+	 services/artana_evidence_db/entity_repository.py \
+	 services/artana_evidence_db/governance.py \
+	 services/artana_evidence_db/governance_ports.py \
+	 services/artana_evidence_db/_dictionary_relation_types.py \
+	 services/artana_evidence_db/__main__.py \
+	 services/artana_evidence_db/config.py \
  services/artana_evidence_db/database.py \
  services/artana_evidence_db/manage.py \
  services/artana_evidence_db/graph_api_schemas/ai_full_mode_schemas.py \
@@ -102,13 +84,9 @@ GRAPH_SERVICE_TYPE_PATHS := \
  scripts/export_graph_openapi.py
 
 GRAPH_SERVICE_TEST_PATHS := \
- tests/e2e/graph_service \
- services/artana_evidence_db/tests/unit \
- services/artana_evidence_db/tests/integration \
- tests/unit/database/test_023_graph_external_fk_decoupling_contract.py \
- tests/unit/infrastructure/graph_service \
- tests/unit/infrastructure/test_kernel_entity_repository.py \
- tests/unit/kernel/test_kernel_services.py
+	 tests/e2e/graph_service \
+	 services/artana_evidence_db/tests/unit \
+	 services/artana_evidence_db/tests/integration
 
 ARTANA_EVIDENCE_API_LINT_PATHS := \
  services/artana_evidence_api \

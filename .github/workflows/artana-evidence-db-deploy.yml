@@ -13,7 +13,6 @@ on:
       - "pytest.ini"
       - "scripts/**"
       - "services/artana_evidence_db/**"
-      - "src/**"
       - "tests/**"
   release:
     types:
