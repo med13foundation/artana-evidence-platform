@@ -1,9 +1,9 @@
 """Service-local bridges for research-init structured source enrichment.
 
 This module gives ``artana_evidence_api`` ownership of the enrichment-facing
-interfaces used by research-init. MARRVEL is implemented locally; the remaining
-optional structured-source gateways intentionally fail closed until service-local
-gateway implementations are added.
+interfaces used by research-init. Each optional structured-source gateway is
+implemented locally so research-init does not depend on the old top-level
+``src`` package.
 """
 
 from __future__ import annotations
@@ -159,8 +159,10 @@ def build_drugbank_gateway() -> DrugBankGatewayProtocol | None:
 
 
 def build_uniprot_gateway() -> UniProtGatewayProtocol | None:
-    """Return the service-local UniProt gateway when implemented."""
-    return None
+    """Construct the service-local UniProt gateway."""
+    from artana_evidence_api.uniprot_gateway import UniProtSourceGateway
+
+    return UniProtSourceGateway()
 
 
 def build_alphafold_gateway() -> AlphaFoldGatewayProtocol | None:
@@ -176,18 +178,24 @@ def build_marrvel_discovery_service() -> MarrvelDiscoveryServiceProtocol | None:
 
 
 def build_clinicaltrials_gateway() -> ClinicalTrialsGatewayProtocol | None:
-    """Return the service-local ClinicalTrials.gov gateway when implemented."""
-    return None
+    """Construct the service-local ClinicalTrials.gov gateway."""
+    from artana_evidence_api.clinicaltrials_gateway import ClinicalTrialsSourceGateway
+
+    return ClinicalTrialsSourceGateway()
 
 
 def build_mgi_gateway() -> AllianceGeneGatewayProtocol | None:
-    """Return the service-local MGI gateway when implemented."""
-    return None
+    """Construct the service-local MGI gateway."""
+    from artana_evidence_api.alliance_gene_gateways import MGISourceGateway
+
+    return MGISourceGateway()
 
 
 def build_zfin_gateway() -> AllianceGeneGatewayProtocol | None:
-    """Return the service-local ZFIN gateway when implemented."""
-    return None
+    """Construct the service-local ZFIN gateway."""
+    from artana_evidence_api.alliance_gene_gateways import ZFINSourceGateway
+
+    return ZFINSourceGateway()
 
 
 __all__ = [

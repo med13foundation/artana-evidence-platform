@@ -13,7 +13,7 @@ Legend:
 - Date anchored: April 23, 2026
 - Repo status: source-of-truth cutover completed; temporary top-level `src/` removal completed
 - Code imported: yes
-- Active milestone: M7 optional runtime restoration
+- Active milestone: M7 optional runtime restoration complete; next work should be new scope, hardening, or deployment validation
 - Important status note: M5 means the service ownership cutover is complete; it
   did not mean the temporary `src/` package had been physically removed from
   this repository. M6 is the post-cutover cleanup milestone that removed it.
@@ -87,7 +87,7 @@ Legend:
 - [x] Move or localize source-document repository usage
 - [x] Move or localize alias-yield reporting helpers
 - [x] Move or localize source gateway dependencies needed by the service
-  Research-init now goes through service-owned source-enrichment bridge builders in `services/artana_evidence_api/source_enrichment_bridges.py`, and MARRVEL uses the local discovery service. As of M6, the source-enrichment bridge no longer lazy-loads shared `src` gateways; non-MARRVEL structured-source gateways now fail closed until service-local gateway implementations are added.
+  Research-init now goes through service-owned source-enrichment bridge builders in `services/artana_evidence_api/source_enrichment_bridges.py`, and MARRVEL uses the local discovery service. As of M6, the source-enrichment bridge no longer lazy-loads shared `src` gateways; the remaining non-MARRVEL gateway implementations were tracked in M7 and are now restored.
 - [x] Re-run research-init tests
 
 ### E4 Orchestrator Helpers
@@ -148,16 +148,16 @@ Legend:
 ## M7: Restore Optional Runtime Features
 
 - [x] Restore service-local Variant LLM extraction runtime
-- [ ] Restore non-MARRVEL structured-source gateways
+- [x] Restore non-MARRVEL structured-source gateways
 - [x] Restore service-local ClinVar structured-source gateway
 - [x] Restore service-local DrugBank structured-source gateway
 - [x] Restore service-local AlphaFold structured-source gateway
-- [ ] Restore service-local UniProt structured-source gateway
-- [ ] Restore service-local ClinicalTrials.gov structured-source gateway
-- [ ] Restore service-local MGI structured-source gateway
-- [ ] Restore service-local ZFIN structured-source gateway
-- [ ] Restore MONDO ingestion as a service-local runtime
-- [ ] Restore shared entity-recognition runtime as a service-local runtime
+- [x] Restore service-local UniProt structured-source gateway
+- [x] Restore service-local ClinicalTrials.gov structured-source gateway
+- [x] Restore service-local MGI structured-source gateway
+- [x] Restore service-local ZFIN structured-source gateway
+- [x] Restore MONDO ingestion as a service-local runtime
+- [x] Restore shared entity-recognition runtime as a service-local runtime
 
 ## Decisions to Close
 
@@ -198,26 +198,30 @@ Use this section as the running log while executing the migration.
 - April 23, 2026: marked this repository as the source of truth and added freeze/deprecation notices to the monorepo service READMEs and docs READMEs
 - April 23, 2026: opened M6 for post-cutover removal of the temporary `src/` package, confirmed service production modules have no direct `src` imports, and started the cleanup by removing graph-service Makefile check paths plus graph-service check/deploy workflow path dependencies on `src`
 - April 23, 2026: verified the first M6 graph-service cleanup slice with `make graph-service-checks`; the slimmer graph gate passes without lint/type/test path dependencies on monorepo `src`
-- April 23, 2026: removed the source-enrichment bridge's lazy `src` imports, rewired the source-enrichment unit tests to patch service-owned builder seams, and verified `services/artana_evidence_api/tests/unit/test_research_init_source_enrichment.py` plus `scripts/validate_artana_evidence_api_service_boundary.py`; non-MARRVEL optional source gateways now fail closed until service-local implementations are added
-- April 23, 2026: localized the observation-bridge source-document model and SQLAlchemy repository into `services/artana_evidence_api/source_document_bridges.py`, removed that bridge's lazy `src` imports, and verified the focused observation-bridge unit tests, `services/artana_evidence_api/tests/integration/test_observation_bridge_persistence.py`, `scripts/validate_artana_evidence_api_service_boundary.py`, and `make artana-evidence-api-type-check`; the old shared entity-recognition runtime now fails closed until it is ported service-local
-- April 23, 2026: removed the ontology-runtime bridge's lazy `src` imports, rewired MONDO tests to patch `research_init_runtime.build_mondo_ingestion_service`, and verified the deferred/guarded MONDO tests, the research-init e2e pipeline test, `scripts/validate_artana_evidence_api_service_boundary.py`, and `make artana-evidence-api-type-check`; MONDO ingestion now fails closed until it is ported service-local
-- April 23, 2026: localized deterministic variant signal parsing into `services/artana_evidence_api/variant_extraction_bridges.py`, removed that bridge's lazy extraction-runtime `src` imports, and verified the variant-aware extraction tests plus `make artana-evidence-api-service-checks`; the LLM extraction adapter now returns a fallback contract until it is ported service-local, and production `services/artana_evidence_api` has no remaining `src` references
+- April 23, 2026: removed the source-enrichment bridge's lazy `src` imports, rewired the source-enrichment unit tests to patch service-owned builder seams, and verified `services/artana_evidence_api/tests/unit/test_research_init_source_enrichment.py` plus `scripts/validate_artana_evidence_api_service_boundary.py`; the non-MARRVEL optional source gateways were left as explicit M7 restoration work and are now complete
+- April 23, 2026: localized the observation-bridge source-document model and SQLAlchemy repository into `services/artana_evidence_api/source_document_bridges.py`, removed that bridge's lazy `src` imports, and verified the focused observation-bridge unit tests, `services/artana_evidence_api/tests/integration/test_observation_bridge_persistence.py`, `scripts/validate_artana_evidence_api_service_boundary.py`, and `make artana-evidence-api-type-check`; the old shared entity-recognition runtime was left as explicit M7 restoration work and is now service-local
+- April 23, 2026: removed the ontology-runtime bridge's lazy `src` imports, rewired MONDO tests to patch `research_init_runtime.build_mondo_ingestion_service`, and verified the deferred/guarded MONDO tests, the research-init e2e pipeline test, `scripts/validate_artana_evidence_api_service_boundary.py`, and `make artana-evidence-api-type-check`; MONDO ingestion was left as explicit M7 restoration work and is now service-local
+- April 23, 2026: localized deterministic variant signal parsing into `services/artana_evidence_api/variant_extraction_bridges.py`, removed that bridge's lazy extraction-runtime `src` imports, and verified the variant-aware extraction tests plus `make artana-evidence-api-service-checks`; production `services/artana_evidence_api` had no remaining `src` references, and the service-local Variant LLM extraction runtime was completed in M7
 - April 23, 2026: completed M6 by removing `COPY src ./src` from the evidence API Dockerfile, deleting/archiving monorepo-era scripts and tests that depended on top-level `src`, narrowing packaging/lint/type/coverage configuration to service packages plus the SDK, replacing reusable test-fixture imports with service-local models, deleting the physical top-level `src/` directory, and re-running `make graph-service-checks` plus `make artana-evidence-api-service-checks` successfully without that directory
 - April 23, 2026: started M7 optional runtime restoration by wiring `services/artana_evidence_api/variant_extraction_bridges.py` to the service-local Artana single-step runtime for Variant LLM extraction, using the evidence-extraction model registry capability, deterministic run/step keys, schema validation through `ExtractionContract`, and fail-closed fallback when the key/runtime/schema is unavailable; verified focused variant-aware extraction tests and `make artana-evidence-api-service-checks`
 - April 23, 2026: restored the service-local ClinVar structured-source gateway in `services/artana_evidence_api/clinvar_gateway.py`, backed by NCBI ESearch/ESummary through the evidence API's own `httpx` runtime, normalizing records into the existing research-init document/proposal fields without reintroducing the deleted top-level `src` package
 - April 23, 2026: restored the service-local DrugBank structured-source gateway in `services/artana_evidence_api/drugbank_gateway.py`, backed by DrugBank API search and target endpoints through the evidence API's own `httpx` runtime; when `DRUGBANK_API_KEY` is not configured it skips gracefully with an empty result, preserving the existing optional-source behavior
 - April 23, 2026: restored the service-local AlphaFold structured-source gateway in `services/artana_evidence_api/alphafold_gateway.py`, backed by the public EBI AlphaFold DB prediction API with mocked unit coverage plus opt-in live tests behind `RUN_LIVE_EXTERNAL_API_TESTS=1`
+- April 23, 2026: restored the remaining service-local structured-source gateways: UniProt via the UniProt REST API, ClinicalTrials.gov via API v2, and MGI/ZFIN via Alliance Genome search, with mocked unit coverage and opt-in live tests for each source behind `RUN_LIVE_EXTERNAL_API_TESTS=1`
+- April 23, 2026: restored MONDO ingestion as a service-local runtime in `services/artana_evidence_api/mondo_runtime.py`, including OBO fetch/parse/filtering, research-init summary metrics, graph-writer integration for batch entity upsert / hierarchy / xref paths, unit coverage, and opt-in live OBO tests
+- April 23, 2026: restored the shared entity-recognition observation bridge as a service-local deterministic runtime in `services/artana_evidence_api/source_document_bridges.py`; pending PubMed/text/PDF source documents now extract obvious biomedical mentions, opportunistically persist entity/observation rows through the bridge session, and update extraction metadata without depending on the old top-level `src` package
 
 ### Known Facts to Preserve During Migration
 
 - `artana_evidence_db` is the standalone governed graph service
 - `artana_evidence_api` is the AI evidence/orchestration service
 - the graph service no longer has production `src` imports and no longer copies `src/` into its runtime image
+- M7 optional runtime restoration is complete in code; any skipped live-source checks are opt-in external API tests, not known fail-closed runtime gaps
 - the evidence API no longer has production `src` imports or lazy `src` bridge references, and no longer copies `src/` into its runtime image
 - the top-level temporary `src/` package has been deleted from this repository
 - remaining `src` references are package-local SDK paths such as `packages/artana_api/src`, boundary-validator forbidden-prefix strings, or historical docs; they are not the removed monorepo runtime package
 - Variant LLM extraction has been restored service-local; without a usable `OPENAI_API_KEY`, it still intentionally falls back to deterministic variant signals
-- ClinVar, DrugBank, and AlphaFold structured-source enrichment have been restored service-local; the remaining non-MARRVEL structured gateways are UniProt, ClinicalTrials.gov, MGI, and ZFIN
+- ClinVar, DrugBank, AlphaFold, UniProt, ClinicalTrials.gov, MGI, and ZFIN structured-source enrichment have all been restored service-local
 - the M5 upstream replay audit found no missing imported-scope monorepo files to port into this repo before staging cutover
 - keep the temporary shared Postgres topology for now; database separation is deferred beyond the completed source-of-truth cutover
 - M6 is complete: both extracted service gates pass with no physical top-level `src/` directory

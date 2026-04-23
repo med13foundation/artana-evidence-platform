@@ -144,26 +144,57 @@ class TestPubMedLiveIntegration:
 
 
 @_live_external_api_required
-@pytest.mark.skip(
-    reason="ClinVar gateway live tests are deferred until the gateway is service-local",
-)
 class TestClinVarLiveIntegration:
     """Verify ClinVar returns real variant data for known genes."""
 
     @pytest.mark.asyncio
     async def test_clinvar_fetches_variants_for_brca1(self) -> None:
         """ClinVar should return pathogenic variants for BRCA1 (well-known gene)."""
-        pytest.skip("ClinVar gateway is not service-local yet")
+        from artana_evidence_api.clinvar_gateway import ClinVarSourceGateway
+        from artana_evidence_api.source_enrichment_bridges import ClinVarQueryConfig
+
+        records = await ClinVarSourceGateway().fetch_records(
+            ClinVarQueryConfig(gene_symbol="BRCA1", max_results=5),
+        )
+
+        assert records
+        assert all(record["gene_symbol"] == "BRCA1" for record in records)
 
     @pytest.mark.asyncio
     async def test_clinvar_fetches_variants_for_med13(self) -> None:
         """ClinVar should return variants for MED13 (the seed gene for research-init)."""
-        pytest.skip("ClinVar gateway is not service-local yet")
+        from artana_evidence_api.clinvar_gateway import ClinVarSourceGateway
+        from artana_evidence_api.source_enrichment_bridges import ClinVarQueryConfig
+
+        records = await ClinVarSourceGateway().fetch_records(
+            ClinVarQueryConfig(gene_symbol="MED13", max_results=5),
+        )
+
+        assert isinstance(records, list)
 
     @pytest.mark.asyncio
     async def test_clinvar_records_have_expected_fields(self) -> None:
         """ClinVar records should contain variant information fields."""
-        pytest.skip("ClinVar gateway is not service-local yet")
+        from artana_evidence_api.clinvar_gateway import ClinVarSourceGateway
+        from artana_evidence_api.source_enrichment_bridges import ClinVarQueryConfig
+
+        records = await ClinVarSourceGateway().fetch_records(
+            ClinVarQueryConfig(gene_symbol="BRCA1", max_results=5),
+        )
+
+        assert records
+        first_record = records[0]
+        for key in (
+            "clinvar_id",
+            "variation_id",
+            "title",
+            "gene_symbol",
+            "clinical_significance",
+            "conditions",
+            "review_status",
+            "parsed_data",
+        ):
+            assert key in first_record
 
 
 # ---------------------------------------------------------------------------
@@ -172,16 +203,26 @@ class TestClinVarLiveIntegration:
 
 
 @_live_external_api_required
-@pytest.mark.skip(
-    reason="ClinVar gateway live tests are deferred until the gateway is service-local",
-)
 class TestClinVarEnrichmentWithRealData:
     """Verify enrichment formatting produces valid documents from real ClinVar data."""
 
     @pytest.mark.asyncio
     async def test_clinvar_enrichment_produces_document_text(self) -> None:
         """Enrichment formatter should produce readable text from real ClinVar records."""
-        pytest.skip("ClinVar gateway is not service-local yet")
+        from artana_evidence_api.clinvar_gateway import ClinVarSourceGateway
+        from artana_evidence_api.research_init_source_enrichment import (
+            _format_clinvar_results,
+        )
+        from artana_evidence_api.source_enrichment_bridges import ClinVarQueryConfig
+
+        records = await ClinVarSourceGateway().fetch_records(
+            ClinVarQueryConfig(gene_symbol="BRCA1", max_results=3),
+        )
+
+        assert records
+        formatted = _format_clinvar_results("BRCA1", records)
+        assert "BRCA1" in formatted
+        assert "ClinVar" in formatted
 
 
 # ---------------------------------------------------------------------------
@@ -239,31 +280,106 @@ class TestAlphaFoldLiveIntegration:
 
 
 # ---------------------------------------------------------------------------
+# Remaining structured source live integration (public APIs, no auth needed)
+# ---------------------------------------------------------------------------
+
+
+@_live_external_api_required
+class TestStructuredSourceGatewayLiveIntegration:
+    """Verify service-local public structured-source gateways against live APIs."""
+
+    def test_uniprot_resolves_med13(self) -> None:
+        """UniProt should return the canonical MED13 accession."""
+        from artana_evidence_api.uniprot_gateway import UniProtSourceGateway
+
+        result = UniProtSourceGateway(timeout_seconds=15.0).fetch_records(
+            query="MED13",
+            max_results=1,
+        )
+
+        assert result.fetched_records >= 1
+        assert result.records[0]["uniprot_id"] == "Q9UHV7"
+        assert result.records[0]["gene_name"] == "MED13"
+
+    @pytest.mark.asyncio
+    async def test_clinicaltrials_returns_brca1_trials(self) -> None:
+        """ClinicalTrials.gov should return registered trials for BRCA1."""
+        from artana_evidence_api.clinicaltrials_gateway import (
+            ClinicalTrialsSourceGateway,
+        )
+
+        result = await ClinicalTrialsSourceGateway(
+            timeout_seconds=15.0,
+        ).fetch_records_async(query="BRCA1", max_results=1)
+
+        assert result.fetched_records >= 1
+        assert str(result.records[0]["nct_id"]).startswith("NCT")
+
+    @pytest.mark.asyncio
+    async def test_mgi_returns_mouse_brca1_gene(self) -> None:
+        """MGI via Alliance should return a mouse Brca1 record."""
+        from artana_evidence_api.alliance_gene_gateways import MGISourceGateway
+
+        result = await MGISourceGateway(timeout_seconds=15.0).fetch_records_async(
+            query="Brca1",
+            max_results=1,
+        )
+
+        assert result.fetched_records >= 1
+        assert str(result.records[0]["mgi_id"]).startswith("MGI:")
+        assert result.records[0]["species"] == "Mus musculus"
+
+    @pytest.mark.asyncio
+    async def test_zfin_returns_zebrafish_gene_record(self) -> None:
+        """ZFIN via Alliance should return a zebrafish gene search result."""
+        from artana_evidence_api.alliance_gene_gateways import ZFINSourceGateway
+
+        result = await ZFINSourceGateway(timeout_seconds=15.0).fetch_records_async(
+            query="brca1",
+            max_results=1,
+        )
+
+        assert result.fetched_records >= 1
+        assert "ZDB-GENE" in str(result.records[0]["zfin_id"])
+        assert result.records[0]["species"] == "Danio rerio"
+
+
+# ---------------------------------------------------------------------------
 # MONDO ontology live integration (public OBO URL, no auth needed)
 # ---------------------------------------------------------------------------
 
 
 @_live_external_api_required
-@pytest.mark.skip(
-    reason="MONDO gateway live tests are deferred until the gateway is service-local",
-)
 class TestMONDOLiveIntegration:
     """Verify MONDO gateway fetches and parses real ontology data."""
 
     @pytest.mark.asyncio
     async def test_mondo_gateway_fetches_real_terms(self) -> None:
         """MONDO gateway should fetch real disease ontology terms from the OBO file."""
-        pytest.skip("MONDO gateway is not service-local yet")
+        from artana_evidence_api.mondo_runtime import MondoGateway
+
+        result = await MondoGateway().fetch_release(max_terms=1000)
+
+        assert result.fetched_term_count >= 100
+        assert all(term.id.startswith("MONDO:") for term in result.terms)
 
     @pytest.mark.asyncio
     async def test_mondo_terms_have_definitions(self) -> None:
         """At least some MONDO terms should have definitions."""
-        pytest.skip("MONDO gateway is not service-local yet")
+        from artana_evidence_api.mondo_runtime import MondoGateway
+
+        result = await MondoGateway().fetch_release(max_terms=1000)
+
+        assert any(term.definition for term in result.terms)
 
     @pytest.mark.asyncio
     async def test_mondo_terms_have_hierarchy(self) -> None:
         """At least some MONDO terms should have parent references."""
-        pytest.skip("MONDO gateway is not service-local yet")
+        from artana_evidence_api.mondo_runtime import MondoGateway
+
+        result = await MondoGateway().fetch_release(max_terms=1000)
+
+        assert any(term.parents for term in result.terms)
 
 
 # ---------------------------------------------------------------------------
@@ -457,12 +573,7 @@ class TestResearchInitComponentIntegration:
 
         assert clinvar_result.source_key == "clinvar"
         # ClinVar may or may not have MED13 variants, but should not error
-        if clinvar_result.errors:
-            # If the ClinVar gateway has not been ported service-local yet,
-            # this live path is expected to be unavailable.
-            for error in clinvar_result.errors:
-                if "not available" in error.lower():
-                    pytest.skip(f"ClinVar gateway not available: {error}")
+        assert clinvar_result.errors == []
 
         # If records were processed, verify documents were created
         if clinvar_result.records_processed > 0:

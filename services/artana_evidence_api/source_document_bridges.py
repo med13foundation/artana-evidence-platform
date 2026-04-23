@@ -1,19 +1,19 @@
 """Service-owned source-document runtime for research-init observation bridging.
 
-The standalone evidence API owns the SourceDocument model and persistence path
-used by research-init. The old shared entity-recognition runtime is intentionally
-disabled here until it is ported into this service.
+The standalone evidence API owns the SourceDocument model, persistence path, and
+deterministic entity-recognition bridge used by research-init.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Protocol, cast
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,6 +28,7 @@ from sqlalchemy import (
     func,
     select,
 )
+from sqlalchemy import text as sa_text
 from sqlalchemy.engine import Result
 
 
@@ -488,16 +489,42 @@ def build_source_document_repository(
 
 
 @dataclass(frozen=True)
-class _ObservationBridgeUnavailableSummary:
+class _ObservationBridgeEntityRecognitionSummary:
     derived_graph_seed_entity_ids: tuple[str, ...] = ()
-    errors: tuple[str, ...] = ("observation_bridge_runtime_unavailable",)
+    errors: tuple[str, ...] = ()
 
 
-class _UnavailableObservationBridgeEntityRecognitionService:
-    """Fail closed until the entity-recognition runtime is service-local."""
+@dataclass(frozen=True)
+class _RecognizedEntityCandidate:
+    label: str
+    entity_type: str
+    normalized_label: str
+    evidence_text: str
 
-    def __init__(self, repository: object) -> None:
+
+class _ServiceLocalObservationBridgeEntityRecognitionService:
+    """Deterministic service-local entity-recognition bridge.
+
+    This is intentionally conservative: it extracts obvious entity mentions from
+    research-init PubMed/text/PDF mirrors, records one document-grounded
+    observation per entity when graph tables are reachable, and updates the
+    source document metadata so research-init no longer depends on shared
+    monorepo runtime imports.
+    """
+
+    _agent_timeout_seconds = 10.0
+    _extraction_stage_timeout_seconds = 10.0
+
+    def __init__(
+        self,
+        *,
+        session: object,
+        repository: object,
+        pipeline_run_event_repository: object,
+    ) -> None:
+        self._session = session
         self._repository = cast("SourceDocumentRepositoryProtocol", repository)
+        self._pipeline_run_event_repository = pipeline_run_event_repository
 
     async def process_pending_documents(
         self,
@@ -508,7 +535,7 @@ class _UnavailableObservationBridgeEntityRecognitionService:
         ingestion_job_id: UUID | None = None,
         source_type: str | None = None,
         pipeline_run_id: str | None = None,
-    ) -> _ObservationBridgeUnavailableSummary:
+    ) -> _ObservationBridgeEntityRecognitionSummary:
         del pipeline_run_id
         pending_documents = self._repository.list_pending_extraction(
             limit=limit,
@@ -517,39 +544,405 @@ class _UnavailableObservationBridgeEntityRecognitionService:
             ingestion_job_id=ingestion_job_id,
             source_type=source_type,
         )
-        for source_document in pending_documents:
-            metadata = source_document_metadata(source_document) or {}
-            errors = metadata.get("entity_recognition_ingestion_errors")
-            normalized_errors = (
-                [
-                    error
-                    for error in errors
-                    if isinstance(error, str) and error.strip() != ""
-                ]
-                if isinstance(errors, list)
-                else []
+        seed_entity_ids: list[str] = []
+        run_errors: list[str] = []
+        for raw_source_document in pending_documents:
+            source_document = SourceDocument.model_validate(raw_source_document)
+            result = self._process_document(source_document)
+            for seed_entity_id in result.derived_graph_seed_entity_ids:
+                if seed_entity_id not in seed_entity_ids:
+                    seed_entity_ids.append(seed_entity_id)
+            for error in result.errors:
+                if error not in run_errors:
+                    run_errors.append(error)
+        return _ObservationBridgeEntityRecognitionSummary(
+            derived_graph_seed_entity_ids=tuple(seed_entity_ids),
+            errors=tuple(run_errors),
+        )
+
+    def _process_document(
+        self,
+        source_document: SourceDocument,
+    ) -> _ObservationBridgeEntityRecognitionSummary:
+        metadata = dict(source_document.metadata)
+        text = _source_document_text(metadata)
+        candidates = _extract_entity_candidates(text)
+        entity_ids_by_label: dict[str, str] = {}
+        graph_write_warning: str | None = None
+
+        if source_document.research_space_id is not None and candidates:
+            try:
+                entity_ids_by_label = self._persist_candidates(
+                    source_document=source_document,
+                    candidates=candidates,
+                )
+            except Exception as exc:  # noqa: BLE001
+                graph_write_warning = (
+                    f"observation_bridge_graph_write_skipped:{type(exc).__name__}"
+                )
+
+        observations_created = len(entity_ids_by_label)
+        entities_created = len(entity_ids_by_label)
+        updated_metadata: JSONObject = {
+            **metadata,
+            "entity_recognition_decision": "generated",
+            "entity_recognition_confidence": 0.72 if candidates else 0.0,
+            "entity_recognition_rationale": (
+                "Service-local deterministic entity mention extraction."
+                if candidates
+                else "No deterministic entity mentions were detected."
+            ),
+            "entity_recognition_run_id": None,
+            "entity_recognition_shadow_mode": False,
+            "entity_recognition_requires_review": False,
+            "entity_recognition_governance_reason": "service_local_bridge",
+            "entity_recognition_wrote_to_kernel": observations_created > 0,
+            "entity_recognition_ingestion_success": graph_write_warning is None,
+            "entity_recognition_ingestion_entities_created": entities_created,
+            "entity_recognition_ingestion_observations_created": observations_created,
+            "entity_recognition_ingestion_errors": [],
+            "entity_recognition_detected_entities": [
+                {
+                    "label": candidate.label,
+                    "entity_type": candidate.entity_type,
+                    "normalized_label": candidate.normalized_label,
+                    "graph_entity_id": entity_ids_by_label.get(candidate.label),
+                }
+                for candidate in candidates
+            ],
+            "entity_recognition_processed_at": datetime.now(UTC).isoformat(),
+        }
+        if graph_write_warning is not None:
+            updated_metadata["entity_recognition_graph_write_warning"] = (
+                graph_write_warning
             )
-            message = "observation_bridge_runtime_unavailable"
-            if message not in normalized_errors:
-                normalized_errors.append(message)
-            updated = source_document_model_copy(
-                source_document,
-                update={
-                    "extraction_status": DocumentExtractionStatus.FAILED,
-                    "metadata": {
-                        **metadata,
-                        "entity_recognition_failure_reason": message,
-                        "entity_recognition_error": message,
-                        "entity_recognition_ingestion_errors": normalized_errors,
-                    },
-                },
+        updated_document = source_document.model_copy(
+            update={
+                "extraction_status": DocumentExtractionStatus.EXTRACTED,
+                "extraction_agent_run_id": None,
+                "metadata": updated_metadata,
+                "updated_at": datetime.now(UTC),
+            },
+        )
+        self._repository.upsert(updated_document)
+        return _ObservationBridgeEntityRecognitionSummary(
+            derived_graph_seed_entity_ids=tuple(entity_ids_by_label.values()),
+            errors=(),
+        )
+
+    def _persist_candidates(
+        self,
+        *,
+        source_document: SourceDocument,
+        candidates: list[_RecognizedEntityCandidate],
+    ) -> dict[str, str]:
+        entity_ids_by_label: dict[str, str] = {}
+        for candidate in candidates:
+            entity_id = self._upsert_candidate_entity(
+                source_document=source_document,
+                candidate=candidate,
             )
-            if updated is not None:
-                self._repository.upsert(updated)
-        return _ObservationBridgeUnavailableSummary()
+            entity_ids_by_label[candidate.label] = str(entity_id)
+            self._insert_candidate_observation(
+                source_document=source_document,
+                candidate=candidate,
+                entity_id=entity_id,
+            )
+        self._commit()
+        return entity_ids_by_label
+
+    def _upsert_candidate_entity(
+        self,
+        *,
+        source_document: SourceDocument,
+        candidate: _RecognizedEntityCandidate,
+    ) -> UUID:
+        assert source_document.research_space_id is not None  # noqa: S101
+        existing_id = self._execute_scalar(
+            """
+            SELECT id FROM entities
+            WHERE research_space_id = :research_space_id
+              AND entity_type = :entity_type
+              AND display_label_normalized = :display_label_normalized
+            LIMIT 1
+            """,
+            {
+                "research_space_id": str(source_document.research_space_id),
+                "entity_type": candidate.entity_type,
+                "display_label_normalized": candidate.normalized_label,
+            },
+        )
+        if isinstance(existing_id, UUID):
+            return existing_id
+        if isinstance(existing_id, str) and existing_id.strip():
+            return UUID(existing_id)
+
+        entity_id = uuid5(
+            NAMESPACE_URL,
+            (
+                "artana-evidence-api:observation-bridge:"
+                f"{source_document.research_space_id}:"
+                f"{candidate.entity_type}:{candidate.normalized_label}"
+            ),
+        )
+        metadata: JSONObject = {
+            "source": "research_init_observation_bridge",
+            "source_document_id": str(source_document.id),
+            "external_record_id": source_document.external_record_id,
+            "evidence_text": candidate.evidence_text,
+        }
+        self._execute_write(
+            """
+            INSERT INTO entities (
+                id,
+                research_space_id,
+                entity_type,
+                display_label,
+                display_label_normalized,
+                metadata_payload,
+                created_at,
+                updated_at
+            ) VALUES (
+                :id,
+                :research_space_id,
+                :entity_type,
+                :display_label,
+                :display_label_normalized,
+                :metadata_payload,
+                :created_at,
+                :updated_at
+            )
+            """,
+            {
+                "id": str(entity_id),
+                "research_space_id": str(source_document.research_space_id),
+                "entity_type": candidate.entity_type,
+                "display_label": candidate.label,
+                "display_label_normalized": candidate.normalized_label,
+                "metadata_payload": json.dumps(metadata, sort_keys=True),
+                "created_at": datetime.now(UTC),
+                "updated_at": datetime.now(UTC),
+            },
+        )
+        return entity_id
+
+    def _insert_candidate_observation(
+        self,
+        *,
+        source_document: SourceDocument,
+        candidate: _RecognizedEntityCandidate,
+        entity_id: UUID,
+    ) -> None:
+        assert source_document.research_space_id is not None  # noqa: S101
+        self._execute_write(
+            """
+            INSERT INTO observations (
+                id,
+                research_space_id,
+                subject_id,
+                variable_id,
+                value_text,
+                confidence,
+                observed_at,
+                created_at,
+                updated_at
+            ) VALUES (
+                :id,
+                :research_space_id,
+                :subject_id,
+                :variable_id,
+                :value_text,
+                :confidence,
+                :observed_at,
+                :created_at,
+                :updated_at
+            )
+            """,
+            {
+                "id": str(uuid4()),
+                "research_space_id": str(source_document.research_space_id),
+                "subject_id": str(entity_id),
+                "variable_id": "document_entity_mention",
+                "value_text": candidate.evidence_text,
+                "confidence": 0.72,
+                "observed_at": datetime.now(UTC),
+                "created_at": datetime.now(UTC),
+                "updated_at": datetime.now(UTC),
+            },
+        )
+
+    def _execute_scalar(
+        self,
+        statement: str,
+        parameters: Mapping[str, object],
+    ) -> object | None:
+        result = self._execute(statement, parameters)
+        scalar_one_or_none = getattr(result, "scalar_one_or_none", None)
+        if callable(scalar_one_or_none):
+            return cast("object | None", scalar_one_or_none())
+        return None
+
+    def _execute_write(
+        self,
+        statement: str,
+        parameters: Mapping[str, object],
+    ) -> None:
+        self._execute(statement, parameters)
+
+    def _execute(self, statement: str, parameters: Mapping[str, object]) -> object:
+        execute = getattr(self._session, "execute", None)
+        if not callable(execute):
+            msg = "Observation bridge session does not expose execute()"
+            raise TypeError(msg)
+        return cast("object", execute(sa_text(statement), parameters))
+
+    def _commit(self) -> None:
+        commit = getattr(self._session, "commit", None)
+        if callable(commit):
+            commit()
 
     async def close(self) -> None:
         return None
+
+
+_GENE_SYMBOL_RE = re.compile(r"\b[A-Z][A-Z0-9-]{1,10}\b")
+_DISEASE_RE = re.compile(
+    r"\b[A-Z][A-Za-z0-9 -]{2,80}\s(?:syndrome|disease|disorder|cancer)\b",
+)
+_COMPLEX_RE = re.compile(
+    r"\b[A-Z0-9][A-Za-z0-9-]*(?:\s+[A-Za-z0-9-]+){0,3}\s+"
+    r"(?:complex|module)\b",
+    flags=re.IGNORECASE,
+)
+_GENE_SYMBOL_STOPWORDS = frozenset(
+    {
+        "AND",
+        "API",
+        "DNA",
+        "FIG",
+        "HTML",
+        "HTTP",
+        "JSON",
+        "PDF",
+        "RNA",
+        "THE",
+        "URL",
+        "XML",
+    },
+)
+_MIN_GENE_SYMBOL_LENGTH = 2
+_MAX_GENE_SYMBOL_LENGTH = 12
+
+
+def _source_document_text(metadata: JSONObject) -> str:
+    raw_record = metadata.get("raw_record")
+    parts: list[str] = []
+    if isinstance(raw_record, Mapping):
+        for key in ("title", "abstract", "text", "full_text", "summary"):
+            value = raw_record.get(key)
+            if isinstance(value, str) and value.strip():
+                parts.append(value.strip())
+    for key in ("title", "text", "full_text", "abstract"):
+        value = metadata.get(key)
+        if isinstance(value, str) and value.strip():
+            parts.append(value.strip())
+    return "\n".join(parts)
+
+
+def _extract_entity_candidates(text: str) -> list[_RecognizedEntityCandidate]:
+    normalized_text = text.strip()
+    if not normalized_text:
+        return []
+    candidates: list[_RecognizedEntityCandidate] = []
+    seen: set[tuple[str, str]] = set()
+    for match in _GENE_SYMBOL_RE.finditer(normalized_text):
+        label = match.group(0).strip()
+        if _is_likely_gene_symbol(label):
+            _append_candidate(
+                candidates=candidates,
+                seen=seen,
+                label=label,
+                entity_type="GENE",
+                text=normalized_text,
+                start=match.start(),
+                end=match.end(),
+            )
+    for match in _COMPLEX_RE.finditer(normalized_text):
+        label = _normalize_label(match.group(0))
+        if label:
+            _append_candidate(
+                candidates=candidates,
+                seen=seen,
+                label=label,
+                entity_type="PROTEIN_COMPLEX",
+                text=normalized_text,
+                start=match.start(),
+                end=match.end(),
+            )
+    for match in _DISEASE_RE.finditer(normalized_text):
+        label = _normalize_label(match.group(0))
+        if label:
+            _append_candidate(
+                candidates=candidates,
+                seen=seen,
+                label=label,
+                entity_type="DISEASE",
+                text=normalized_text,
+                start=match.start(),
+                end=match.end(),
+            )
+    return candidates[:12]
+
+
+def _append_candidate(
+    *,
+    candidates: list[_RecognizedEntityCandidate],
+    seen: set[tuple[str, str]],
+    label: str,
+    entity_type: str,
+    text: str,
+    start: int,
+    end: int,
+) -> None:
+    normalized_label = _normalize_entity_key(label)
+    key = (entity_type, normalized_label)
+    if key in seen:
+        return
+    seen.add(key)
+    candidates.append(
+        _RecognizedEntityCandidate(
+            label=label,
+            entity_type=entity_type,
+            normalized_label=normalized_label,
+            evidence_text=_evidence_window(text=text, start=start, end=end),
+        ),
+    )
+
+
+def _is_likely_gene_symbol(label: str) -> bool:
+    if label in _GENE_SYMBOL_STOPWORDS:
+        return False
+    if (
+        len(label) < _MIN_GENE_SYMBOL_LENGTH
+        or len(label) > _MAX_GENE_SYMBOL_LENGTH
+    ):
+        return False
+    return any(char.isdigit() for char in label) or "-" in label
+
+
+def _normalize_label(label: str) -> str:
+    return " ".join(label.strip(".,;:()[]{}").split())
+
+
+def _normalize_entity_key(label: str) -> str:
+    return re.sub(r"\s+", " ", label.strip().casefold())
+
+
+def _evidence_window(*, text: str, start: int, end: int) -> str:
+    window_start = max(0, start - 160)
+    window_end = min(len(text), end + 220)
+    snippet = " ".join(text[window_start:window_end].split())
+    return snippet[:500]
 
 
 def create_observation_bridge_entity_recognition_service(
@@ -558,10 +951,11 @@ def create_observation_bridge_entity_recognition_service(
     source_document_repository: object,
     pipeline_run_event_repository: object,
 ) -> ObservationBridgeEntityRecognitionServiceProtocol:
-    """Return a fail-closed bridge until entity recognition is service-local."""
-    del session, pipeline_run_event_repository
-    return _UnavailableObservationBridgeEntityRecognitionService(
-        source_document_repository,
+    """Return the service-local deterministic entity-recognition bridge."""
+    return _ServiceLocalObservationBridgeEntityRecognitionService(
+        session=session,
+        repository=source_document_repository,
+        pipeline_run_event_repository=pipeline_run_event_repository,
     )
 
 

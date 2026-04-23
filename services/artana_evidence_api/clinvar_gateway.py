@@ -19,6 +19,10 @@ _DEFAULT_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 _DEFAULT_TIMEOUT_SECONDS = 30.0
 _FETCH_BATCH_SIZE = 50
 _NCBI_BATCH_DELAY_SECONDS = 0.1
+_NCBI_RETRY_ATTEMPTS = 3
+_NCBI_RETRY_DELAY_SECONDS = 2.0
+_HTTP_TOO_MANY_REQUESTS = 429
+_HTTP_SERVER_ERROR_MIN = 500
 _USER_AGENT = "artana-evidence-platform/clinvar-gateway"
 
 
@@ -127,12 +131,29 @@ class ClinVarSourceGateway:
         endpoint: str,
         params: Mapping[str, str | int],
     ) -> dict[str, object]:
-        try:
-            response = await client.get(endpoint, params=params)
-            response.raise_for_status()
-        except httpx.HTTPError as exc:
-            msg = f"ClinVar API request failed for {endpoint}: {exc}"
-            raise ClinVarGatewayError(msg) from exc
+        for attempt in range(_NCBI_RETRY_ATTEMPTS):
+            try:
+                response = await client.get(endpoint, params=params)
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                should_retry = (
+                    status_code == _HTTP_TOO_MANY_REQUESTS
+                    or status_code >= _HTTP_SERVER_ERROR_MIN
+                )
+                if should_retry and attempt < _NCBI_RETRY_ATTEMPTS - 1:
+                    await asyncio.sleep(_NCBI_RETRY_DELAY_SECONDS * (attempt + 1))
+                    continue
+                msg = f"ClinVar API request failed for {endpoint}: {exc}"
+                raise ClinVarGatewayError(msg) from exc
+            except httpx.HTTPError as exc:
+                if attempt < _NCBI_RETRY_ATTEMPTS - 1:
+                    await asyncio.sleep(_NCBI_RETRY_DELAY_SECONDS * (attempt + 1))
+                    continue
+                msg = f"ClinVar API request failed for {endpoint}: {exc}"
+                raise ClinVarGatewayError(msg) from exc
+            else:
+                break
 
         payload: object = response.json()
         if not isinstance(payload, dict):

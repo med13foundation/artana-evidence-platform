@@ -1142,6 +1142,7 @@ class GraphTransportBundle:
         self.validation = GraphValidationTransport(runtime)
         self.dictionary = GraphDictionaryTransport(runtime)
         self.workflow = GraphWorkflowTransport(runtime)
+        self.raw_mutation = GraphRawMutationTransport(runtime)
 
     @property
     def call_context(self) -> GraphCallContext:
@@ -1453,6 +1454,70 @@ class GraphTransportBundle:
         request: ConnectorProposalCreateRequest,
     ) -> ConnectorProposalResponse:
         return self.workflow.propose_connector_metadata(
+            space_id=space_id,
+            request=request,
+        )
+
+    def upsert_entity_direct(
+        self,
+        *,
+        space_id: UUID | str,
+        entity_type: str,
+        display_label: str,
+        aliases: list[str] | None = None,
+        metadata: JSONObject | None = None,
+        identifiers: dict[str, str] | None = None,
+    ) -> JSONObject:
+        """Direct entity upsert for allowlisted service-owned ingestion flows."""
+        return self.raw_mutation.upsert_entity_direct(
+            space_id=space_id,
+            entity_type=entity_type,
+            display_label=display_label,
+            aliases=aliases,
+            metadata=metadata,
+            identifiers=identifiers,
+        )
+
+    def update_entity_direct(
+        self,
+        *,
+        space_id: UUID | str,
+        entity_id: UUID | str,
+        display_label: str | None = None,
+        aliases: list[str] | None = None,
+        metadata: JSONObject | None = None,
+        identifiers: dict[str, str] | None = None,
+    ) -> JSONObject:
+        """Direct entity update for allowlisted service-owned ingestion flows."""
+        return self.raw_mutation.update_entity_direct(
+            space_id=space_id,
+            entity_id=entity_id,
+            display_label=display_label,
+            aliases=aliases,
+            metadata=metadata,
+            identifiers=identifiers,
+        )
+
+    def create_entities_batch_direct(
+        self,
+        *,
+        space_id: UUID | str,
+        entities: list[dict[str, object]],
+    ) -> JSONObject:
+        """Direct batch entity upsert for allowlisted ontology ingestion."""
+        return self.raw_mutation.create_entities_batch_direct(
+            space_id=space_id,
+            entities=entities,
+        )
+
+    def materialize_relation_direct(
+        self,
+        *,
+        space_id: UUID | str,
+        request: KernelRelationCreateRequest,
+    ) -> KernelRelationResponse:
+        """Direct relation materialization for allowlisted ontology ingestion."""
+        return self.raw_mutation.materialize_relation_direct(
             space_id=space_id,
             request=request,
         )
