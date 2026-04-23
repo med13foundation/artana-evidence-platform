@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Final, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
+import artana_evidence_api.app as app_module
 import pytest
 from artana_evidence_api import rate_limits as rate_limits_module
 from artana_evidence_api.agent_contracts import (
@@ -236,6 +237,42 @@ _GRAPH_CHAT_FIFTH_SUGGESTION_TARGET_ID: Final[str] = (
 _GRAPH_CHAT_SIXTH_SUGGESTION_TARGET_ID: Final[str] = (
     "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
 )
+
+
+@pytest.mark.asyncio
+async def test_app_lifespan_skips_auth_table_ddl_for_postgres(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """PostgreSQL schemas should be migration-managed, not created by app startup."""
+    created_tables: list[str] = []
+    fake_engine = type(
+        "_FakeEngine",
+        (),
+        {"dialect": type("_FakeDialect", (), {"name": "postgresql"})()},
+    )()
+
+    def _record_user_create(*_args: object, **_kwargs: object) -> None:
+        created_tables.append("users")
+
+    def _record_api_key_create(*_args: object, **_kwargs: object) -> None:
+        created_tables.append("api_keys")
+
+    monkeypatch.setattr(app_module, "engine", fake_engine)
+    monkeypatch.setattr(
+        app_module.HarnessUserModel.__table__,
+        "create",
+        _record_user_create,
+    )
+    monkeypatch.setattr(
+        app_module.HarnessApiKeyModel.__table__,
+        "create",
+        _record_api_key_create,
+    )
+
+    async with app_module._app_lifespan(app_module.FastAPI()):
+        pass
+
+    assert created_tables == []
 
 
 class _PermissiveHarnessResearchSpaceStore(HarnessResearchSpaceStore):

@@ -8,6 +8,9 @@ from artana_evidence_db.graph_domain_config import (
     GRAPH_SERVICE_RELATION_SUGGESTION_CONFIG,
     GRAPH_SERVICE_VIEW_CONFIG,
 )
+from artana_evidence_db.relation_autopromotion_policy import (
+    RelationAutopromotionDefaults,
+)
 from artana_evidence_db.runtime.contracts import (
     FeatureFlagDefinition,
     GraphAgentCapabilities,
@@ -106,7 +109,7 @@ def create_graph_domain_context_policy() -> GraphDomainContextPolicy:
     return BIOMEDICAL_GRAPH_DOMAIN_PACK.domain_context_policy
 
 
-def create_relation_autopromotion_defaults():
+def create_relation_autopromotion_defaults() -> RelationAutopromotionDefaults:
     """Return the active-pack relation auto-promotion defaults."""
     return BIOMEDICAL_GRAPH_DOMAIN_PACK.relation_autopromotion_defaults
 

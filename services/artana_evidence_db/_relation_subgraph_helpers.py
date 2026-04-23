@@ -25,7 +25,7 @@ _CURATION_STATUS_PRIORITY: dict[str, int] = {
     "RETRACTED": 1,
 }
 _STARTER_FETCH_MULTIPLIER = 6
-GraphRelationRequest = KernelGraphSubgraphRequest | KernelGraphDocumentRequest
+type GraphRelationRequest = KernelGraphSubgraphRequest | KernelGraphDocumentRequest
 
 
 def _status_priority(status: str) -> int:

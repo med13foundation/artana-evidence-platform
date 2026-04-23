@@ -16,8 +16,8 @@ from artana_evidence_api.dependencies import (
     get_chat_session_store,
     get_document_store,
     get_graph_snapshot_store,
+    get_identity_gateway,
     get_proposal_store,
-    get_research_space_store,
     get_research_state_store,
     get_run_registry,
     get_schedule_store,
@@ -26,12 +26,16 @@ from artana_evidence_api.dependencies import (
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
+from artana_evidence_api.identity.contracts import (
+    IdentityGateway,
+    IdentityUserConflictError,
+    IdentityUserNotFoundError,
+    IdentityUserRecord,
+)
 from artana_evidence_api.proposal_store import HarnessProposalStore
 from artana_evidence_api.research_space_store import (
     HarnessResearchSpaceRecord,
-    HarnessResearchSpaceStore,
     HarnessSpaceMemberRecord,
-    HarnessUserIdentityConflictError,
 )
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.run_registry import HarnessRunRegistry
@@ -70,6 +74,17 @@ _GUARDED_ROLLOUT_PROFILES = frozenset(
         "guarded_low_risk",
     ),
 )
+
+
+def _identity_from_user(user: HarnessUser) -> IdentityUserRecord:
+    return IdentityUserRecord(
+        id=user.id,
+        email=str(user.email),
+        username=user.username,
+        full_name=user.full_name,
+        role=user.role.value,
+        status=user.status.value,
+    )
 
 
 class HarnessResearchSpaceResponse(BaseModel):
@@ -236,10 +251,10 @@ def list_spaces(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=200, ge=1, le=1000),
     current_user: HarnessUser = Depends(require_harness_read_access),
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessResearchSpaceListResponse:
     """Return research spaces visible to the authenticated caller."""
-    records = research_space_store.list_spaces(
+    records = identity_gateway.list_spaces(
         user_id=current_user.id,
         is_admin=current_user.role == HarnessUserRole.ADMIN,
     )
@@ -262,22 +277,17 @@ def list_spaces(
 def create_space(
     request: CreateHarnessResearchSpaceRequest,
     current_user: HarnessUser = Depends(require_harness_write_access),
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessResearchSpaceResponse:
     """Create one new research space owned by the authenticated caller."""
     try:
-        record = research_space_store.create_space(
-            owner_id=current_user.id,
-            owner_email=str(current_user.email),
-            owner_username=current_user.username,
-            owner_full_name=current_user.full_name,
-            owner_role=current_user.role.value,
-            owner_status=current_user.status.value,
+        record = identity_gateway.create_space(
+            owner=_identity_from_user(current_user),
             name=request.name,
             description=request.description,
             settings={"sources": request.sources} if request.sources else None,
         )
-    except HarnessUserIdentityConflictError as exc:
+    except IdentityUserConflictError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
@@ -294,10 +304,10 @@ def update_space_settings(
     space_id: UUID,
     request: UpdateHarnessResearchSpaceSettingsRequest,
     current_user: HarnessUser = Depends(require_harness_space_owner_access),
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessResearchSpaceResponse:
     """Update owner-managed settings for one research space."""
-    current = research_space_store.get_space(
+    current = identity_gateway.get_space(
         space_id=space_id,
         user_id=current_user.id,
         is_admin=current_user.role == HarnessUserRole.ADMIN,
@@ -330,7 +340,7 @@ def update_space_settings(
             )
         next_settings["full_ai_guarded_rollout_profile"] = profile
     try:
-        updated = research_space_store.update_space_settings(
+        updated = identity_gateway.update_space_settings(
             space_id=space_id,
             settings=next_settings,
         )
@@ -349,19 +359,14 @@ def update_space_settings(
 )
 def ensure_default_space(
     current_user: HarnessUser = Depends(require_harness_write_access),
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessResearchSpaceResponse:
     """Return the caller's personal default space, creating it when needed."""
     try:
-        record = research_space_store.ensure_default_space(
-            owner_id=current_user.id,
-            owner_email=str(current_user.email),
-            owner_username=current_user.username,
-            owner_full_name=current_user.full_name,
-            owner_role=current_user.role.value,
-            owner_status=current_user.status.value,
+        record = identity_gateway.ensure_default_space(
+            owner=_identity_from_user(current_user),
         )
-    except HarnessUserIdentityConflictError as exc:
+    except IdentityUserConflictError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
@@ -382,7 +387,6 @@ def delete_space(
         description="Required when archiving a non-empty space.",
     ),
     current_user: HarnessUser = Depends(require_harness_write_access),
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
     run_registry: HarnessRunRegistry = Depends(get_run_registry),
     chat_session_store: HarnessChatSessionStore = Depends(get_chat_session_store),
     document_store: HarnessDocumentStore = Depends(get_document_store),
@@ -392,10 +396,11 @@ def delete_space(
     proposal_store: HarnessProposalStore = Depends(get_proposal_store),
     research_state_store: HarnessResearchStateStore = Depends(get_research_state_store),
     schedule_store: HarnessScheduleStore = Depends(get_schedule_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessResearchSpaceArchiveResponse:
     """Archive one research space owned by the caller or visible to an admin."""
     try:
-        research_space_store.prepare_space_archive(
+        identity_gateway.prepare_space_archive(
             space_id=space_id,
             user_id=current_user.id,
             is_admin=current_user.role == HarnessUserRole.ADMIN,
@@ -430,7 +435,7 @@ def delete_space(
         )
 
     try:
-        archived_record = research_space_store.archive_space(
+        archived_record = identity_gateway.archive_space(
             space_id=space_id,
             user_id=current_user.id,
             is_admin=current_user.role == HarnessUserRole.ADMIN,
@@ -530,10 +535,10 @@ class AddSpaceMemberRequest(BaseModel):
 )
 def list_space_members(
     space_id: UUID,
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessSpaceMemberListResponse:
     """Return all active members for one research space."""
-    records = research_space_store.list_members(space_id=space_id)
+    records = identity_gateway.list_members(space_id=space_id)
     return HarnessSpaceMemberListResponse(
         members=[HarnessSpaceMemberResponse.from_record(r) for r in records],
         total=len(records),
@@ -551,11 +556,11 @@ def add_space_member(
     space_id: UUID,
     request: AddSpaceMemberRequest,
     current_user: HarnessUser = Depends(require_harness_write_access),
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessSpaceMemberResponse:
     """Add or invite a user to one research space. Requires owner-level access."""
     try:
-        record = research_space_store.add_member(
+        record = identity_gateway.add_member(
             space_id=space_id,
             user_id=request.user_id,
             role=request.role,
@@ -565,6 +570,11 @@ def add_space_member(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Space not found",
+        ) from exc
+    except IdentityUserNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
         ) from exc
     except ValueError as exc:
         raise HTTPException(
@@ -583,10 +593,10 @@ def add_space_member(
 def remove_space_member(
     space_id: UUID,
     user_id: UUID,
-    research_space_store: HarnessResearchSpaceStore = Depends(get_research_space_store),
+    identity_gateway: IdentityGateway = Depends(get_identity_gateway),
 ) -> HarnessSpaceMemberResponse:
     """Remove a user from one research space. Requires owner-level access."""
-    record = research_space_store.remove_member(
+    record = identity_gateway.remove_member(
         space_id=space_id,
         user_id=user_id,
     )

@@ -243,6 +243,67 @@ def test_bootstrap_route_recovers_existing_user_without_api_key(
     assert api_keys[0].user_id == existing_user.id
 
 
+def test_admin_can_create_tester_user_api_key_and_default_space(
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv(
+        "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY",
+        "bootstrap-secret",
+    )
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: db_session
+    app.dependency_overrides[get_research_space_store] = (
+        lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
+    )
+
+    with TestClient(app) as client:
+        bootstrap_response = client.post(
+            "/v1/auth/bootstrap",
+            headers={"X-Artana-Bootstrap-Key": "bootstrap-secret"},
+            json={"email": "admin@example.com", "role": "admin"},
+        )
+        assert bootstrap_response.status_code == 201
+        admin_key = bootstrap_response.json()["api_key"]["api_key"]
+
+        response = client.post(
+            "/v1/auth/testers",
+            headers={"X-Artana-Key": admin_key},
+            json={
+                "email": "tester@example.com",
+                "username": "tester",
+                "full_name": "Tester Example",
+                "role": "researcher",
+                "api_key_name": "Tester Key",
+                "create_default_space": True,
+            },
+        )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["user"]["email"] == "tester@example.com"
+    assert payload["user"]["role"] == "researcher"
+    assert payload["api_key"]["name"] == "Tester Key"
+    assert payload["api_key"]["api_key"].startswith("art_sk_")
+    assert payload["default_space"]["is_default"] is True
+
+
+def test_non_admin_cannot_create_tester_user(
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    client, api_key, _ = _bootstrap_and_get_client(db_session, monkeypatch)
+
+    response = client.post(
+        "/v1/auth/testers",
+        headers={"X-Artana-Key": api_key},
+        json={"email": "tester@example.com"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin role required to create tester users"
+
+
 def test_auth_me_reuses_existing_shared_user_for_jwt_identity_mismatch(
     db_session: Session,
 ) -> None:

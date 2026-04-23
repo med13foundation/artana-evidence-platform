@@ -52,10 +52,6 @@ Read:
   do versus what it actually did
 - [API Reference](./api-reference.md) if you already know the workflow and just
   want route details
-- [SDK README](../../packages/artana_api/README.md) if you plan to use Python
-  instead of raw HTTP
-- [SDK Examples](../../packages/artana_api/examples/README.md) if you want
-  runnable scripts you can copy from
 
 What this service does:
 

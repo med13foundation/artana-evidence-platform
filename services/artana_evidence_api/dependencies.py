@@ -41,6 +41,8 @@ from artana_evidence_api.graph_integration.context import (
 from artana_evidence_api.graph_search_runtime import HarnessGraphSearchRunner
 from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
+from artana_evidence_api.identity.contracts import IdentityGateway
+from artana_evidence_api.identity.local_gateway import LocalIdentityGateway
 from artana_evidence_api.models.research_space import (
     ResearchSpaceMembershipModel,
 )
@@ -54,7 +56,6 @@ from artana_evidence_api.research_onboarding_agent_runtime import (
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.review_item_store import HarnessReviewItemStore
-from artana_evidence_api.space_acl import check_space_access
 from artana_evidence_api.space_lifecycle_sync import (
     HarnessGraphServiceSpaceLifecycleSync,
 )
@@ -199,7 +200,7 @@ def get_review_item_store(
 def get_research_space_store(
     session: Session = _SESSION_DEPENDENCY,
 ) -> HarnessResearchSpaceStore:
-    """Return the research-space store backed by shared platform tables."""
+    """Return the local research-space table adapter used by identity."""
     return SqlAlchemyHarnessResearchSpaceStore(
         session,
         space_lifecycle_sync=HarnessGraphServiceSpaceLifecycleSync(
@@ -216,6 +217,20 @@ def get_research_space_store(
 
 
 _RESEARCH_SPACE_STORE_DEPENDENCY = Depends(get_research_space_store)
+
+
+def get_identity_gateway(
+    session: Session = _SESSION_DEPENDENCY,
+    research_space_store: HarnessResearchSpaceStore = _RESEARCH_SPACE_STORE_DEPENDENCY,
+) -> IdentityGateway:
+    """Return the local identity boundary gateway."""
+    return LocalIdentityGateway(
+        session=session,
+        research_space_store=research_space_store,
+    )
+
+
+_IDENTITY_GATEWAY_DEPENDENCY = Depends(get_identity_gateway)
 
 _SPACE_WRITE_ROLES = frozenset({"owner", "admin", "curator", "researcher"})
 
@@ -240,45 +255,44 @@ def _require_space_access(
     *,
     space_id: UUID,
     current_user: HarnessUser,
-    research_space_store: HarnessResearchSpaceStore,
+    identity_gateway: IdentityGateway,
     require_write: bool,
 ) -> HarnessUser:
-    record = research_space_store.get_space(
+    decision = identity_gateway.check_space_access(
         space_id=space_id,
         user_id=current_user.id,
-        is_admin=current_user.role == HarnessUserRole.ADMIN,
+        is_platform_admin=current_user.role == HarnessUserRole.ADMIN,
+        is_service_user=current_user.role == HarnessUserRole.SERVICE,
+        minimum_role="researcher" if require_write else "viewer",
     )
-    if record is None:
+    if decision.space is None and current_user.role != HarnessUserRole.SERVICE:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Space not found",
         )
-    if require_write and record.role not in _SPACE_WRITE_ROLES:
+    if not decision.allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=decision.reason or "Access to this space is not permitted",
+        )
+    if require_write and decision.actual_role not in _SPACE_WRITE_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Write access to this space is not permitted",
         )
-    # Run the new space-level ACL check (audit or enforce depending on config)
-    minimum_role = "researcher" if require_write else "viewer"
-    check_space_access(
-        space_id=space_id,
-        current_user=current_user,
-        research_space_store=research_space_store,
-        minimum_role=minimum_role,
-    )
     return current_user
 
 
 def require_harness_space_read_access(
     space_id: UUID,
     current_user: HarnessUser = _HARNESS_READ_ACCESS_DEPENDENCY,
-    research_space_store: HarnessResearchSpaceStore = _RESEARCH_SPACE_STORE_DEPENDENCY,
+    identity_gateway: IdentityGateway = _IDENTITY_GATEWAY_DEPENDENCY,
 ) -> HarnessUser:
     """Require read access to one specific research space."""
     return _require_space_access(
         space_id=space_id,
         current_user=current_user,
-        research_space_store=research_space_store,
+        identity_gateway=identity_gateway,
         require_write=False,
     )
 
@@ -286,13 +300,13 @@ def require_harness_space_read_access(
 def require_harness_space_write_access(
     space_id: UUID,
     current_user: HarnessUser = _HARNESS_WRITE_ACCESS_DEPENDENCY,
-    research_space_store: HarnessResearchSpaceStore = _RESEARCH_SPACE_STORE_DEPENDENCY,
+    identity_gateway: IdentityGateway = _IDENTITY_GATEWAY_DEPENDENCY,
 ) -> HarnessUser:
     """Require write access to one specific research space."""
     return _require_space_access(
         space_id=space_id,
         current_user=current_user,
-        research_space_store=research_space_store,
+        identity_gateway=identity_gateway,
         require_write=True,
     )
 
@@ -300,25 +314,34 @@ def require_harness_space_write_access(
 def require_harness_space_owner_access(
     space_id: UUID,
     current_user: HarnessUser = _HARNESS_WRITE_ACCESS_DEPENDENCY,
-    research_space_store: HarnessResearchSpaceStore = _RESEARCH_SPACE_STORE_DEPENDENCY,
+    identity_gateway: IdentityGateway = _IDENTITY_GATEWAY_DEPENDENCY,
 ) -> HarnessUser:
     """Require owner-level access to one specific research space."""
-    record = research_space_store.get_space(
+    decision = identity_gateway.check_space_access(
         space_id=space_id,
         user_id=current_user.id,
-        is_admin=current_user.role == HarnessUserRole.ADMIN,
+        is_platform_admin=current_user.role == HarnessUserRole.ADMIN,
+        is_service_user=current_user.role == HarnessUserRole.SERVICE,
+        minimum_role="owner",
     )
-    if record is None:
+    if decision.space is None and current_user.role != HarnessUserRole.SERVICE:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Space not found",
         )
-    check_space_access(
-        space_id=space_id,
-        current_user=current_user,
-        research_space_store=research_space_store,
-        minimum_role="owner",
-    )
+    if not decision.allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Owner access to this space is required",
+        )
+    if (
+        current_user.role not in (HarnessUserRole.ADMIN, HarnessUserRole.SERVICE)
+        and decision.actual_role != "owner"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Owner access to this space is required",
+        )
     return current_user
 
 
@@ -478,6 +501,7 @@ __all__ = [
     "get_graph_snapshot_store",
     "get_graph_search_runner",
     "get_harness_execution_services",
+    "get_identity_gateway",
     "get_pubmed_discovery_service",
     "get_pubmed_discovery_service_factory",
     "get_proposal_store",

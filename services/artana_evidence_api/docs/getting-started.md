@@ -299,10 +299,9 @@ What success looks like:
 - the review queue shows pending items linked back to the document
 - chat returns an answer plus verification metadata
 
-If you prefer Python instead of `curl`, the matching SDK guides are:
-
-- [SDK README](../../packages/artana_api/README.md)
-- [SDK Examples](../../packages/artana_api/examples/README.md)
+If you prefer Python instead of `curl`, use the same HTTP routes shown here
+with `httpx` or `requests`. A repository-local Python SDK is not included in
+this extracted checkout.
 
 ## First Six Calls To Make
 

@@ -115,4 +115,4 @@ Long-term, bootstrap may converge with general orchestration once graph-connecti
 | `services/artana_evidence_api/research_bootstrap_runtime.py` | Child runtime: graph connection → hypotheses → curation |
 | `services/artana_evidence_api/routers/research_init.py` | API endpoint for research init |
 | `services/artana_evidence_api/routers/research_bootstrap_runs.py` | API endpoint for standalone bootstrap |
-| `services/research_inbox/app/api/research-init/route.ts` | UI entry point |
+| External UI client | The Research Inbox UI is not present in this extracted checkout |

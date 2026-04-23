@@ -6,7 +6,6 @@ across unit, integration, and end-to-end tests.
 """
 
 import os
-import sys
 from collections.abc import Generator
 from pathlib import Path
 from types import ModuleType
@@ -17,14 +16,6 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
-
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_ARTANA_API_SDK_SRC = _REPO_ROOT / "packages" / "artana_api" / "src"
-_ARTANA_API_SDK_TESTS = _REPO_ROOT / "packages" / "artana_api" / "tests"
-if str(_ARTANA_API_SDK_SRC) not in sys.path:
-    sys.path.insert(0, str(_ARTANA_API_SDK_SRC))
-if str(_ARTANA_API_SDK_TESTS) not in sys.path:
-    sys.path.insert(0, str(_ARTANA_API_SDK_TESTS))
 
 _bootstrap_database_url = os.environ.get("DATABASE_URL", "")
 if not _bootstrap_database_url.startswith("postgresql"):

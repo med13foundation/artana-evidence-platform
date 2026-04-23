@@ -15,7 +15,7 @@ from artana_evidence_api.dependencies import (
     get_artifact_store,
     get_graph_api_gateway,
     get_harness_execution_services,
-    get_research_space_store,
+    get_identity_gateway,
     get_run_registry,
     require_harness_space_write_access,
 )
@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.graph_client import GraphTransportBundle
     from artana_evidence_api.harness_runtime import HarnessExecutionServices
-    from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
+    from artana_evidence_api.identity.contracts import IdentityGateway
     from artana_evidence_api.run_registry import HarnessRunRegistry
 
 router = APIRouter(
@@ -66,7 +66,7 @@ _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
 _GRAPH_API_GATEWAY_DEPENDENCY = Depends(get_graph_api_gateway)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
 _CURRENT_USER_DEPENDENCY = Depends(get_current_harness_user)
-_RESEARCH_SPACE_STORE_DEPENDENCY = Depends(get_research_space_store)
+_IDENTITY_GATEWAY_DEPENDENCY = Depends(get_identity_gateway)
 
 
 @router.post(
@@ -86,7 +86,7 @@ async def create_full_ai_orchestrator_run(  # noqa: PLR0913
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
     current_user: HarnessUser = _CURRENT_USER_DEPENDENCY,
-    research_space_store: HarnessResearchSpaceStore = _RESEARCH_SPACE_STORE_DEPENDENCY,
+    identity_gateway: IdentityGateway = _IDENTITY_GATEWAY_DEPENDENCY,
 ) -> FullAIOrchestratorRunResponse:
     """Queue and execute the deterministic Phase 1 orchestrator baseline."""
     objective = request.objective.strip()
@@ -103,7 +103,7 @@ async def create_full_ai_orchestrator_run(  # noqa: PLR0913
     title = (
         request.title.strip() if isinstance(request.title, str) else ""
     ) or "Full AI Orchestrator Harness"
-    space_record = research_space_store.get_space(
+    space_record = identity_gateway.get_space(
         space_id=space_id,
         user_id=current_user.id,
         is_admin=current_user.role == HarnessUserRole.ADMIN,

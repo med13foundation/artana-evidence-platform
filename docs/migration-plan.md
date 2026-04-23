@@ -1,5 +1,10 @@
 # Migration Plan
 
+> Historical note: this plan records the extraction strategy from the early
+> cutover. For the current checkout shape, use [README.md](../README.md) and
+> [migration-checklist.md](./migration-checklist.md); the temporary `src/`
+> package and `packages/artana_api` SDK are no longer present here.
+
 ## Summary
 
 This document tracks the extraction of the Artana evidence services from the

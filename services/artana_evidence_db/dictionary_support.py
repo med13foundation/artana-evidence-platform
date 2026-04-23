@@ -323,7 +323,7 @@ def get_constraint_schema_for_data_type(data_type: str) -> JSONObject:
     return deepcopy(schema)
 
 
-ConstraintValue = JSONValue | date | datetime
+type ConstraintValue = JSONValue | date | datetime
 
 
 def _compile_constraints_model(

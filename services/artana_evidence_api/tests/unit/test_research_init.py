@@ -30,6 +30,7 @@ from artana_evidence_api.document_store import (
 )
 from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
+from artana_evidence_api.identity.local_gateway import LocalIdentityGateway
 from artana_evidence_api.proposal_store import (
     HarnessProposalDraft,
     HarnessProposalRecord,
@@ -913,7 +914,7 @@ async def test_create_research_init_uses_saved_sources_for_marrvel_only_runs(
             role=HarnessUserRole.RESEARCHER,
             status=HarnessUserStatus.ACTIVE,
         ),
-        research_space_store=space_store,
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
     )
 
     stored_runs = run_registry.list_runs(space_id=space_record.id)
@@ -991,7 +992,7 @@ async def test_create_research_init_shadow_mode_routes_to_full_orchestrator(
             role=HarnessUserRole.RESEARCHER,
             status=HarnessUserStatus.ACTIVE,
         ),
-        research_space_store=space_store,
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
     )
 
     stored_runs = run_registry.list_runs(space_id=space_record.id)
@@ -1058,7 +1059,7 @@ async def test_create_research_init_saved_guarded_mode_routes_to_full_orchestrat
             role=HarnessUserRole.RESEARCHER,
             status=HarnessUserStatus.ACTIVE,
         ),
-        research_space_store=space_store,
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
     )
 
     stored_runs = run_registry.list_runs(space_id=space_record.id)
@@ -1126,7 +1127,7 @@ async def test_create_research_init_guarded_profile_request_overrides_space_sett
             role=HarnessUserRole.RESEARCHER,
             status=HarnessUserStatus.ACTIVE,
         ),
-        research_space_store=space_store,
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
     )
 
     stored_runs = run_registry.list_runs(space_id=space_record.id)
@@ -1193,7 +1194,7 @@ async def test_create_research_init_request_deterministic_overrides_saved_guarde
             role=HarnessUserRole.RESEARCHER,
             status=HarnessUserStatus.ACTIVE,
         ),
-        research_space_store=space_store,
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
     )
 
     stored_runs = run_registry.list_runs(space_id=space_record.id)
@@ -1266,7 +1267,7 @@ async def test_create_research_init_captures_pubmed_replay_bundle(
             role=HarnessUserRole.RESEARCHER,
             status=HarnessUserStatus.ACTIVE,
         ),
-        research_space_store=space_store,
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
     )
 
     workspace = artifact_store.get_workspace(
@@ -1386,7 +1387,7 @@ async def test_create_research_init_uses_supplied_pubmed_replay_bundle(
             role=HarnessUserRole.RESEARCHER,
             status=HarnessUserStatus.ACTIVE,
         ),
-        research_space_store=space_store,
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
     )
 
     workspace = artifact_store.get_workspace(
@@ -1452,7 +1453,7 @@ async def test_create_research_init_rejects_invalid_pubmed_replay_bundle(
                 role=HarnessUserRole.RESEARCHER,
                 status=HarnessUserStatus.ACTIVE,
             ),
-            research_space_store=space_store,
+            identity_gateway=LocalIdentityGateway(research_space_store=space_store),
         )
 
     assert exc_info.value.status_code == 400
@@ -1571,7 +1572,7 @@ async def test_create_research_init_preserves_worker_ready_http_exception(
                 role=HarnessUserRole.RESEARCHER,
                 status=HarnessUserStatus.ACTIVE,
             ),
-            research_space_store=space_store,
+            identity_gateway=LocalIdentityGateway(research_space_store=space_store),
         )
 
     assert exc_info.value.status_code == 503

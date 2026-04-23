@@ -108,9 +108,10 @@ def _validation_error_detail(error: RequestValidationError) -> str:
 
 @asynccontextmanager
 async def _app_lifespan(_: FastAPI) -> AsyncIterator[None]:
-    """Ensure required auth tables exist when the app starts."""
-    HarnessUserModel.__table__.create(bind=engine, checkfirst=True)
-    HarnessApiKeyModel.__table__.create(bind=engine, checkfirst=True)
+    """Keep lightweight SQLite test bootstraps working without production DDL."""
+    if engine.dialect.name != "postgresql":
+        HarnessUserModel.__table__.create(bind=engine, checkfirst=True)
+        HarnessApiKeyModel.__table__.create(bind=engine, checkfirst=True)
     yield
 
 
