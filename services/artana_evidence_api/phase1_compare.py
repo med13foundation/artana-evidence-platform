@@ -43,11 +43,15 @@ from artana_evidence_api.full_ai_orchestrator_contracts import (
     ResearchOrchestratorChaseCandidate,
     ResearchOrchestratorChaseSelection,
 )
-from artana_evidence_api.full_ai_orchestrator_runtime import (
+from artana_evidence_api.full_ai_orchestrator_guarded_rollout import (
     _GUARDED_PROFILE_CHASE_ONLY,
     _GUARDED_PROFILE_DRY_RUN,
     _GUARDED_PROFILE_LOW_RISK,
     _GUARDED_PROFILE_SOURCE_CHASE,
+    _guarded_profile_allows_chase,
+    _guarded_rollout_profile,
+)
+from artana_evidence_api.full_ai_orchestrator_runtime import (
     _STRUCTURED_ENRICHMENT_SOURCES,
     _accepted_guarded_chase_selection_action,
     _accepted_guarded_control_flow_action,
@@ -55,8 +59,6 @@ from artana_evidence_api.full_ai_orchestrator_runtime import (
     _accepted_guarded_structured_source_action,
     _build_initial_decision_history,
     _FullAIOrchestratorProgressObserver,
-    _guarded_profile_allows_chase,
-    _guarded_rollout_profile,
     execute_full_ai_orchestrator_run,
     orchestrator_action_registry,
     queue_full_ai_orchestrator_run,

@@ -81,13 +81,9 @@ ARTANA_EVIDENCE_API_MYPY_FLAGS := \
  --disable-error-code no-untyped-def \
  --disable-error-code arg-type \
  --disable-error-code attr-defined \
- --disable-error-code redundant-cast \
  --disable-error-code assignment \
  --disable-error-code unreachable \
- --disable-error-code operator \
- --disable-error-code valid-type \
- --disable-error-code has-type \
- --disable-error-code unused-ignore
+ --disable-error-code has-type
 
 ARTANA_EVIDENCE_API_TEST_PATHS := \
  tests/e2e/artana_evidence_api \

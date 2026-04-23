@@ -245,9 +245,9 @@ class TestMarrvelEnrichmentHelpers:
         )
 
         labels = marrvel_enrichment.resolve_marrvel_gene_labels(
-            space_id="space-1",  # type: ignore[arg-type]
+            space_id="space-1",
             objective="Investigate MED13 syndrome",
-            graph_api_gateway=_FailingGraphGateway(),  # type: ignore[arg-type]
+            graph_api_gateway=_FailingGraphGateway(),
             logger=logging.getLogger(__name__),
         )
 

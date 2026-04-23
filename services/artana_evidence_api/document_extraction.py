@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field
 try:  # pragma: no cover - import guard
     from pypdf import PdfReader
 except ModuleNotFoundError:  # pragma: no cover - exercised in env-dependent tests
-    PdfReader = None  # type: ignore[assignment]
+    PdfReader = None
 
 if TYPE_CHECKING:
     from artana_evidence_api.graph_client import GraphTransportBundle

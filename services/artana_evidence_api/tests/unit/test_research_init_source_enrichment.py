@@ -338,7 +338,7 @@ class TestRunClinVarEnrichment:
                 document_store=document_store,
                 run_registry=run_registry,
                 artifact_store=artifact_store,
-                parent_run=parent_run,  # type: ignore[arg-type]
+                parent_run=parent_run,
             ),
         )
         assert result.source_key == "clinvar"
@@ -377,7 +377,7 @@ class TestRunClinVarEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
 
@@ -408,7 +408,7 @@ class TestRunClinVarEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
         assert result.source_key == "clinvar"
@@ -438,7 +438,7 @@ class TestRunDrugBankEnrichment:
                 document_store=document_store,
                 run_registry=run_registry,
                 artifact_store=artifact_store,
-                parent_run=parent_run,  # type: ignore[arg-type]
+                parent_run=parent_run,
             ),
         )
         assert result.source_key == "drugbank"
@@ -463,7 +463,7 @@ class TestRunDrugBankEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
         assert result.source_key == "drugbank"
@@ -634,7 +634,7 @@ class TestRunMarrvelEnrichment:
                 document_store=document_store,
                 run_registry=run_registry,
                 artifact_store=artifact_store,
-                parent_run=parent_run,  # type: ignore[arg-type]
+                parent_run=parent_run,
             ),
         )
         assert result.source_key == "marrvel"
@@ -678,7 +678,7 @@ class TestRunMarrvelEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
 
@@ -709,7 +709,7 @@ class TestRunMarrvelEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
         assert result.source_key == "marrvel"
@@ -743,7 +743,7 @@ class TestRunMarrvelEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
 
@@ -855,7 +855,7 @@ class TestRunAlphaFoldEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
 
@@ -905,7 +905,7 @@ class TestRunAlphaFoldEnrichment:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
 
@@ -1233,7 +1233,7 @@ class TestEnrichmentReturnsProposals:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
 
@@ -1284,7 +1284,7 @@ class TestEnrichmentReturnsProposals:
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
-                    parent_run=parent_run,  # type: ignore[arg-type]
+                    parent_run=parent_run,
                 ),
             )
 
@@ -1309,7 +1309,7 @@ class TestEnrichmentReturnsProposals:
                 document_store=document_store,
                 run_registry=run_registry,
                 artifact_store=artifact_store,
-                parent_run=parent_run,  # type: ignore[arg-type]
+                parent_run=parent_run,
             ),
         )
         assert result.proposals_created == []
@@ -1414,7 +1414,7 @@ class TestAsyncStructuredEnrichmentGateways:
                 document_store=document_store,
                 run_registry=run_registry,
                 artifact_store=artifact_store,
-                parent_run=parent_run,  # type: ignore[arg-type]
+                parent_run=parent_run,
             )
 
         gateway.fetch_records.assert_not_called()
@@ -1457,7 +1457,7 @@ class TestAsyncStructuredEnrichmentGateways:
                 document_store=document_store,
                 run_registry=run_registry,
                 artifact_store=artifact_store,
-                parent_run=parent_run,  # type: ignore[arg-type]
+                parent_run=parent_run,
             )
 
         gateway.fetch_records.assert_not_called()
@@ -1499,7 +1499,7 @@ class TestAsyncStructuredEnrichmentGateways:
                 document_store=document_store,
                 run_registry=run_registry,
                 artifact_store=artifact_store,
-                parent_run=parent_run,  # type: ignore[arg-type]
+                parent_run=parent_run,
             )
 
         gateway.fetch_records.assert_not_called()

@@ -153,7 +153,7 @@ async def test_ncbi_pubmed_gateway_retries_rate_limit_and_succeeds(
         settings=NCBIPubMedGatewaySettings(timeout_seconds=1.0),
         transport=httpx.MockTransport(handler),
     )
-    gateway._rate_limiter = _NoOpLimiter()  # type: ignore[attr-defined]
+    gateway._rate_limiter = _NoOpLimiter()
 
     payload = await gateway.run_search(
         AdvancedQueryParameters(

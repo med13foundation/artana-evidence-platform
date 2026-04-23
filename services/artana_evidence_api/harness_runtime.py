@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeAlias, cast
 from uuid import UUID
 
 from artana.harness import BaseHarness, HarnessContext, SupervisorHarness
@@ -100,7 +100,7 @@ if TYPE_CHECKING:
     from .run_registry import HarnessRunRegistry
     from .schedule_store import HarnessScheduleStore
 
-HarnessExecutionResult = (
+HarnessExecutionResult: TypeAlias = (
     FullAIOrchestratorExecutionResult
     | ResearchInitExecutionResult
     | ResearchBootstrapExecutionResult

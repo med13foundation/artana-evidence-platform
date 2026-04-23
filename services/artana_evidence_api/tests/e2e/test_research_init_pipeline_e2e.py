@@ -136,7 +136,7 @@ class _StubGraphChatRunner:
 
 
 def _fake_pubmed_discovery_service_factory():
-    return nullcontext(cast("object", object()))
+    return nullcontext(object())
 
 
 def _build_execution_services(

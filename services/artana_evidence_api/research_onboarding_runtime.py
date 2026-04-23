@@ -464,22 +464,22 @@ def _assistant_message_from_contract(
         title=contract.title,
         summary=contract.summary,
         sections=_json_objects_from_models(
-            cast("list[BaseModel]", list(contract.sections)),
+            list(contract.sections),
         ),
         questions=_json_objects_from_models(
-            cast("list[BaseModel]", list(contract.questions)),
+            list(contract.questions),
         ),
         suggested_actions=_json_objects_from_models(
-            cast("list[BaseModel]", list(contract.suggested_actions)),
+            list(contract.suggested_actions),
         ),
         artifacts=_json_objects_from_models(
-            cast("list[BaseModel]", list(contract.artifacts)),
+            list(contract.artifacts),
         ),
         state_patch=_json_object_from_model(contract.state_patch),
         confidence_score=contract.confidence_score,
         rationale=contract.rationale,
         evidence=_json_objects_from_models(
-            cast("list[BaseModel]", list(contract.evidence)),
+            list(contract.evidence),
         ),
     )
 

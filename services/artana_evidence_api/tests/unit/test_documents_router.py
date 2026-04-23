@@ -1232,7 +1232,7 @@ def test_extract_pdf_document_runs_enrichment_before_extraction(monkeypatch) -> 
     client, _, document_store, proposal_store, run_registry, space_id = _build_client()
 
     monkeypatch.setattr(
-        "artana_evidence_api.routers.documents.extract_pdf_text",
+        "artana_evidence_api.document_ingestion_support.extract_pdf_text",
         lambda payload: DocumentTextExtraction(
             text_content="MED13 associates with cardiomyopathy.",
             page_count=2,

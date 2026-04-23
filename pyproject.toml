@@ -73,7 +73,6 @@ module = [
 ]
 disable_error_code = [ "arg-type",]
 
-
 [tool.flake8]
 max-line-length = 88
 extend-ignore = [ "E203", "W503", "E501",]

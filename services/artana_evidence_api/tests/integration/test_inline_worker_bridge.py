@@ -193,7 +193,7 @@ class _KernelAdapter:
             run_id=cast("str", kwargs["run_id"]),
             tenant_id=cast("TenantContext", kwargs["tenant"]).tenant_id,
             tool_name=cast("str", kwargs["tool_name"]),
-            arguments=cast("object", kwargs["arguments"]),
+            arguments=kwargs["arguments"],
             step_key=cast("str", kwargs["step_key"]),
             parent_step_key=cast("str | None", kwargs.get("parent_step_key")),
         )
@@ -259,15 +259,15 @@ def _build_chat_harness_fixture(
 ) -> _ChatHarnessFixture:
     runtime = _KernelRuntimeWithAdapter()
     artifact_store = ArtanaBackedHarnessArtifactStore(
-        runtime=cast("object", runtime),
+        runtime=runtime,
     )
     run_registry = ArtanaBackedHarnessRunRegistry(
         session=db_session,
-        runtime=cast("object", runtime),
+        runtime=runtime,
     )
     chat_session_store = SqlAlchemyHarnessChatSessionStore(db_session)
     execution_services = HarnessExecutionServices(
-        runtime=cast("object", runtime),
+        runtime=runtime,
         run_registry=cast("HarnessRunRegistry", run_registry),
         artifact_store=artifact_store,
         chat_session_store=chat_session_store,
@@ -277,8 +277,8 @@ def _build_chat_harness_fixture(
         research_state_store=SqlAlchemyHarnessResearchStateStore(db_session),
         graph_snapshot_store=SqlAlchemyHarnessGraphSnapshotStore(db_session),
         schedule_store=SqlAlchemyHarnessScheduleStore(db_session),
-        graph_connection_runner=cast("object", object()),
-        graph_chat_runner=cast("object", runner),
+        graph_connection_runner=object(),
+        graph_chat_runner=runner,
         graph_api_gateway_factory=lambda: _StubGraphApiGateway(),
         pubmed_discovery_service_factory=_fake_pubmed_discovery_context,
         execution_override=execution_override,

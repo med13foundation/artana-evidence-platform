@@ -41,11 +41,11 @@ from artana_evidence_api.queued_run_support import (
     wait_for_terminal_run,
     wake_worker_for_queued_run,
 )
+from artana_evidence_api.research_init_helpers import _resolve_research_init_sources
 from artana_evidence_api.research_init_runtime import (
     deserialize_pubmed_replay_bundle,
     prepare_pubmed_replay_bundle,
 )
-from artana_evidence_api.routers.research_init import _resolve_research_init_sources
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.responses import JSONResponse
 

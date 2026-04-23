@@ -78,7 +78,7 @@ def test_run_list_relation_conflicts_reconciles_typed_unknown_outcome() -> None:
     runtime = _ReconcilingRuntime()
 
     response = run_list_relation_conflicts(
-        runtime=runtime,  # type: ignore[arg-type]
+        runtime=runtime,
         run=_run_record(),
         arguments=ListRelationConflictsToolArgs(
             space_id=str(uuid4()),
@@ -94,7 +94,7 @@ def test_run_list_relation_conflicts_reconciles_typed_unknown_outcome() -> None:
 def test_run_list_relation_conflicts_reraises_non_reconcilable_errors() -> None:
     with pytest.raises(RuntimeError, match="plain tool failure"):
         run_list_relation_conflicts(
-            runtime=_ExplodingRuntime(),  # type: ignore[arg-type]
+            runtime=_ExplodingRuntime(),
             run=_run_record(),
             arguments=ListRelationConflictsToolArgs(
                 space_id=str(uuid4()),

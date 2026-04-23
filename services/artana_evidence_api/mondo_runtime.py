@@ -396,7 +396,9 @@ class ServiceGraphOntologyEntityWriter:
 
     def supports_batch_upsert(self) -> bool:
         """Return whether the graph gateway exposes the batch entity path."""
-        return callable(getattr(self._gateway, "create_entities_batch_direct", None))
+        return callable(
+            getattr(self._privileged_gateway(), "create_entities_batch_direct", None),
+        )
 
     def upsert_terms_batch(
         self,
@@ -405,7 +407,11 @@ class ServiceGraphOntologyEntityWriter:
         research_space_id: str | None,
     ) -> int:
         """Bulk-upsert ontology entities when the graph transport supports it."""
-        create_batch = getattr(self._gateway, "create_entities_batch_direct", None)
+        create_batch = getattr(
+            self._privileged_gateway(),
+            "create_entities_batch_direct",
+            None,
+        )
         if not callable(create_batch):
             return self._upsert_terms_one_by_one(
                 terms=terms,
@@ -494,7 +500,7 @@ class ServiceGraphOntologyEntityWriter:
             return False
 
         materialize_relation = getattr(
-            self._gateway,
+            self._privileged_gateway(),
             "materialize_relation_direct",
             None,
         )
@@ -562,7 +568,11 @@ class ServiceGraphOntologyEntityWriter:
         if not identifier_value:
             return False
 
-        update_entity = getattr(self._gateway, "update_entity_direct", None)
+        update_entity = getattr(
+            self._privileged_gateway(),
+            "update_entity_direct",
+            None,
+        )
         if not callable(update_entity):
             return False
         try:
@@ -609,7 +619,11 @@ class ServiceGraphOntologyEntityWriter:
         space_id: UUID | str,
         payload: JSONObject,
     ) -> JSONObject | None:
-        upsert_entity = getattr(self._gateway, "upsert_entity_direct", None)
+        upsert_entity = getattr(
+            self._privileged_gateway(),
+            "upsert_entity_direct",
+            None,
+        )
         if callable(upsert_entity):
             return cast(
                 "JSONObject",
@@ -645,6 +659,16 @@ class ServiceGraphOntologyEntityWriter:
                     display_label=str(payload["display_label"]),
                 ),
             )
+
+    def _privileged_gateway(self) -> object:
+        privileged_transport = getattr(
+            self._gateway,
+            "privileged_mutation_transport",
+            None,
+        )
+        if callable(privileged_transport):
+            return privileged_transport()
+        return self._gateway
 
 
 def parse_obo_terms(content: str) -> list[OntologyTerm]:

@@ -12,7 +12,7 @@ from uuid import UUID
 
 import psycopg2  # type: ignore[import-untyped]
 from artana_evidence_api.database import DATABASE_URL
-from psycopg2 import OperationalError  # type: ignore[import-untyped]
+from psycopg2 import OperationalError
 from sqlalchemy.engine import make_url
 
 LOGGER = logging.getLogger(__name__)

@@ -74,7 +74,7 @@ def test_run_single_step_with_policy_logs_replayed_terminal_without_traceback(
                 tenant=object(),
                 model="openai/gpt-5.4-mini",
                 prompt="return ok",
-                output_schema=dict,  # type: ignore[arg-type]
+                output_schema=dict,
                 step_key="document_extraction.proposal_review.v1",
                 replay_policy="fork_on_drift",
             ),
@@ -113,7 +113,7 @@ def test_run_single_step_with_policy_logs_generic_failures_with_traceback(
                 tenant=object(),
                 model="openai/gpt-5.4-mini",
                 prompt="return ok",
-                output_schema=dict,  # type: ignore[arg-type]
+                output_schema=dict,
                 step_key="document_extraction.proposal_review.v1",
                 replay_policy="fork_on_drift",
             ),

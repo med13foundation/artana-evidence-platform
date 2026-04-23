@@ -10,8 +10,8 @@ from uuid import UUID
 
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.graph_client import GraphServiceClientError
+from artana_evidence_api.process_health import read_heartbeat
 from artana_evidence_api.response_serialization import serialize_run_record
-from artana_evidence_api.routers.health import _read_heartbeat
 from artana_evidence_api.types.common import JSONObject
 from fastapi import HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -141,7 +141,7 @@ def build_accepted_run_response(
 
 def require_worker_ready(*, operation_name: str) -> None:
     """Raise when the background worker heartbeat is stale or missing."""
-    worker = _read_heartbeat(
+    worker = read_heartbeat(
         _WORKER_HEARTBEAT_PATH,
         max_age_seconds=_WORKER_MAX_AGE_SECONDS,
     )

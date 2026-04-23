@@ -1180,8 +1180,8 @@ def test_artana_backed_run_registry_works_through_runtime_adapter(
 ) -> None:
     kernel = _KernelWithCurrentArtanaSignatures()
     runtime = GraphHarnessKernelRuntime(
-        kernel=kernel,  # type: ignore[arg-type]
-        _runner=_SynchronousRunner(),  # type: ignore[arg-type]
+        kernel=kernel,
+        _runner=_SynchronousRunner(),
     )
     registry = ArtanaBackedHarnessRunRegistry(session=session, runtime=runtime)
     space_id = str(uuid4())

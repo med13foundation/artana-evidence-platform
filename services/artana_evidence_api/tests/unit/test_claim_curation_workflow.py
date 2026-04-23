@@ -157,8 +157,8 @@ def test_execute_claim_curation_run_cleans_new_run_when_skill_activity_append_fa
             artifact_store=artifact_store,
             proposal_store=proposal_store,
             approval_store=HarnessApprovalStore(),
-            graph_api_gateway=_StubGraphApiGateway(),  # type: ignore[arg-type]
-            runtime=object(),  # type: ignore[arg-type]
+            graph_api_gateway=_StubGraphApiGateway(),
+            runtime=object(),
         )
 
     assert run_registry.list_runs(space_id=space_id) == []
@@ -199,8 +199,8 @@ def test_execute_claim_curation_run_cleans_new_run_when_pause_state_persistence_
             artifact_store=artifact_store,
             proposal_store=proposal_store,
             approval_store=_ExplodingApprovalStore(),
-            graph_api_gateway=_StubGraphApiGateway(),  # type: ignore[arg-type]
-            runtime=object(),  # type: ignore[arg-type]
+            graph_api_gateway=_StubGraphApiGateway(),
+            runtime=object(),
         )
 
     assert run_registry.list_runs(space_id=space_id) == []
@@ -250,8 +250,8 @@ def test_execute_claim_curation_run_marks_existing_run_failed_when_skill_activit
             artifact_store=artifact_store,
             proposal_store=proposal_store,
             approval_store=HarnessApprovalStore(),
-            graph_api_gateway=_StubGraphApiGateway(),  # type: ignore[arg-type]
-            runtime=object(),  # type: ignore[arg-type]
+            graph_api_gateway=_StubGraphApiGateway(),
+            runtime=object(),
             existing_run=existing_run,
         )
 
@@ -328,8 +328,8 @@ def test_execute_claim_curation_run_marks_existing_run_failed_when_pause_state_p
             artifact_store=artifact_store,
             proposal_store=proposal_store,
             approval_store=_ExplodingApprovalStore(),
-            graph_api_gateway=_StubGraphApiGateway(),  # type: ignore[arg-type]
-            runtime=object(),  # type: ignore[arg-type]
+            graph_api_gateway=_StubGraphApiGateway(),
+            runtime=object(),
             existing_run=existing_run,
         )
 

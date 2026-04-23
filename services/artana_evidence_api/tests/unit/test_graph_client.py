@@ -1027,7 +1027,7 @@ def _gateway_with_client(client: object) -> GraphTransportBundle:
             timeout_seconds=5.0,
             default_headers={"Authorization": "Bearer test-token"},
         ),
-        client=cast("object", client),
+        client=client,
     )
 
 
@@ -1041,7 +1041,7 @@ def _bundle_factory_with_client(
                 timeout_seconds=5.0,
                 default_headers=call_context.default_headers(),
             ),
-            client=cast("object", client),
+            client=client,
             call_context=call_context,
         )
 
