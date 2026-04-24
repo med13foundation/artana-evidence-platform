@@ -1,9 +1,9 @@
 # Reviewing And Promoting Evidence
 
-The review queue is the safest default way to decide what becomes trusted graph
+The review items list is the safest default way to decide what becomes trusted graph
 knowledge.
 
-## List The Review Queue
+## List Review Items
 
 ```bash
 curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items" \
@@ -31,7 +31,7 @@ curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items?document_id=<docu
 Promote means: "I reviewed this and want it to become trusted graph knowledge."
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/decision" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -44,7 +44,7 @@ curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions
 ## Reject A Weak Item
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/decision" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -75,14 +75,14 @@ linked `entity_candidate` first. Then retry or promote the observation.
 
 That keeps the graph clean: observations should attach to known entities.
 
-## Lower-Level Proposal Endpoints
+## Lower-Level Proposed-Update Endpoints
 
-The review queue is the preferred surface, but lower-level proposal endpoints
+The review items list is the preferred surface, but lower-level proposed-update endpoints
 exist:
 
-- `GET /v2/spaces/{space_id}/proposals`
-- `GET /v2/spaces/{space_id}/proposals/{proposal_id}`
-- `POST /v2/spaces/{space_id}/proposals/{proposal_id}/promote`
-- `POST /v2/spaces/{space_id}/proposals/{proposal_id}/reject`
+- `GET /v2/spaces/{space_id}/proposed-updates`
+- `GET /v2/spaces/{space_id}/proposed-updates/{proposal_id}`
+- `POST /v2/spaces/{space_id}/proposed-updates/{proposal_id}/promote`
+- `POST /v2/spaces/{space_id}/proposed-updates/{proposal_id}/reject`
 
 Use those when building advanced tools or debugging proposal records directly.

@@ -88,6 +88,12 @@ def test_high_traffic_docs_are_v2_first() -> None:
             "/v2/spaces/{space_id}/tasks/{task_id}",
             "/v2/workflow-templates",
         ),
+        "docs/user-guide/10-real-use-cases.md": (
+            "/v2/spaces/{space_id}/research-plan",
+            "/v2/spaces/{space_id}/documents/{document_id}/extraction",
+            "/v2/spaces/{space_id}/workflows/evidence-search/tasks",
+            "/v2/spaces/{space_id}/schedules",
+        ),
     }
 
     for relative_path, required_fragments in doc_expectations.items():
@@ -96,3 +102,48 @@ def test_high_traffic_docs_are_v2_first() -> None:
         assert "/v1/" not in contents, relative_path
         for fragment in required_fragments:
             assert fragment in contents, (relative_path, fragment)
+
+
+def test_user_guide_matches_key_v2_public_endpoints() -> None:
+    doc_expectations = {
+        "docs/user-guide/02-core-concepts.md": (
+            "/v2/spaces/{space_id}/proposed-updates",
+            "/v2/spaces/{space_id}/review-items/{item_id}/decision",
+        ),
+        "docs/user-guide/03-workflow-overview.md": (
+            "/v2/spaces/{space_id}/review-items/{item_id}/decision",
+        ),
+        "docs/user-guide/05-reviewing-and-promoting.md": (
+            "/v2/spaces/$SPACE_ID/review-items/<item_id>/decision",
+            "/v2/spaces/{space_id}/proposed-updates",
+        ),
+        "docs/user-guide/06-exploring-and-asking.md": (
+            "/v2/spaces/$SPACE_ID/evidence-map/export",
+        ),
+        "docs/user-guide/08-runtime-debugging-and-transparency.md": (
+            "/v2/spaces/{space_id}/tasks/{task_id}/approvals/{approval_key}/decision",
+        ),
+        "docs/user-guide/09-endpoint-index.md": (
+            "/v2/spaces/{space_id}/documents/{document_id}/extraction",
+            "/v2/spaces/{space_id}/sources/pubmed/searches",
+            "/v2/spaces/{space_id}/sources/marrvel/searches",
+            "/v2/spaces/{space_id}/sources/marrvel/ingestion",
+        ),
+    }
+    forbidden_fragments = (
+        "/v2/spaces/{space_id}/proposals",
+        "/v2/spaces/$SPACE_ID/review-items/<item_id>/actions",
+        "/v2/spaces/{space_id}/review-items/{item_id}/actions",
+        "/v2/spaces/$SPACE_ID/evidence-map/document",
+        "/v2/spaces/{space_id}/tasks/{task_id}/approvals/{approval_key}`",
+        "sources/sources",
+        "extractionion",
+        "ingestionion",
+    )
+
+    for relative_path, required_fragments in doc_expectations.items():
+        contents = _read(relative_path)
+        for fragment in required_fragments:
+            assert fragment in contents, (relative_path, fragment)
+        for fragment in forbidden_fragments:
+            assert fragment not in contents, (relative_path, fragment)

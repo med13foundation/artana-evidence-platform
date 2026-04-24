@@ -120,5 +120,5 @@ curl -s "$ARTANA_API_BASE_URL/health"
 ## What To Read Next
 
 Next, read [Core Concepts](./02-core-concepts.md). It explains the words you
-will see in the API: space, document, run, proposal, review queue, graph, and
-artifact.
+will see in the API: space, evidence item, task, proposed update, review item,
+evidence map, and output.

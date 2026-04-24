@@ -15,6 +15,7 @@ If you are new, read these in order:
 7. [Multi-Source And Automated Workflows](./07-multi-source-and-automation.md)
 8. [Runtime, Debugging, And Transparency](./08-runtime-debugging-and-transparency.md)
 9. [Endpoint Index](./09-endpoint-index.md)
+10. [Real Use Cases](./10-real-use-cases.md)
 
 ## The Short Version
 

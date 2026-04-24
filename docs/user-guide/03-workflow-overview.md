@@ -23,7 +23,7 @@ Choose topic
 | 3. Add your own evidence | Upload text notes or PDFs | `POST /v2/spaces/{space_id}/documents/text` and `POST /v2/spaces/{space_id}/documents/pdf` | Upload a MED13 paper, note, or copied abstract |
 | 4. Search sources directly | Run source-specific discovery | `POST /v2/spaces/{space_id}/sources/pubmed/searches` and `POST /v2/spaces/{space_id}/sources/marrvel/searches` | Search MED13 papers or MARRVEL gene panels |
 | 5. Extract proposals | Turn documents or evidence into reviewable suggestions | `POST /v2/spaces/{space_id}/documents/{document_id}/extraction` | Extract MED13 claims, entities, observations, or variants |
-| 6. Review proposals | Have a human approve, reject, or resolve staged work | `GET /v2/spaces/{space_id}/review-items` and `POST /v2/spaces/{space_id}/review-items/{item_id}/actions` | Promote strong evidence and reject weak claims |
+| 6. Review proposals | Have a human approve, reject, or resolve staged work | `GET /v2/spaces/{space_id}/review-items` and `POST /v2/spaces/{space_id}/review-items/{item_id}/decision` | Promote strong evidence and reject weak claims |
 | 7. Build graph | Approved proposals become trusted graph knowledge | Review action with `{"action": "promote"}` | Add an approved MED13 claim to the graph |
 | 8. Explore graph | Browse trusted entities, claims, and evidence | `GET /v2/spaces/{space_id}/evidence-map/entities`, `GET /v2/spaces/{space_id}/evidence-map/claims`, and `GET /v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence` | See MED13 claims and supporting evidence |
 | 9. Ask questions | Query the graph and documents with AI | `POST /v2/spaces/{space_id}/workflows/evidence-search/tasks` or `POST /v2/spaces/{space_id}/chat-sessions/{session_id}/messages` | Ask "What is the strongest MED13 evidence?" |
@@ -31,7 +31,7 @@ Choose topic
 
 ## The Most Important Rule
 
-The AI can find evidence and create proposals, but the review queue is the gate
+The AI can find evidence and create proposals, but the review items list is the gate
 between "the system found something" and "this is trusted graph knowledge."
 
 Humans promote or reject proposals before they become official graph state.

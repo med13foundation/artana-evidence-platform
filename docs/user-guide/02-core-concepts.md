@@ -4,7 +4,7 @@ These are the main words you will see across the API.
 
 ## Space
 
-A space is your research workspace.
+A space is your research space.
 
 For MED13, you might create one space called `MED13 Workspace`. It keeps the
 topic, permissions, evidence, graph context, and research state together.
@@ -34,9 +34,9 @@ Useful endpoints:
 - `POST /v2/spaces/{space_id}/sources/pubmed/searches`
 - `POST /v2/spaces/{space_id}/sources/marrvel/searches`
 
-## Run
+## Task
 
-A run is one job the system performs.
+A task is one job the system performs.
 
 Examples:
 
@@ -51,21 +51,21 @@ Useful endpoints:
 - `GET /v2/spaces/{space_id}/tasks/{task_id}`
 - `GET /v2/spaces/{space_id}/tasks/{task_id}/events`
 
-## Proposal
+## Proposed Update
 
-A proposal is a suggested fact that needs review.
+A proposed update is a suggested fact that needs review.
 
 Think of it as the system saying: "This may be worth adding to the graph, but a
 human should check it first."
 
 Useful endpoints:
 
-- `GET /v2/spaces/{space_id}/proposals`
+- `GET /v2/spaces/{space_id}/proposed-updates`
 - `GET /v2/spaces/{space_id}/review-items`
 
-## Review Queue
+## Review Item
 
-The review queue is the main human decision surface.
+The review items list is the main human decision surface.
 
 It can include:
 
@@ -78,7 +78,7 @@ This is the gate between AI suggestion and trusted graph knowledge.
 Useful endpoints:
 
 - `GET /v2/spaces/{space_id}/review-items`
-- `POST /v2/spaces/{space_id}/review-items/{item_id}/actions`
+- `POST /v2/spaces/{space_id}/review-items/{item_id}/decision`
 
 ## Graph
 
@@ -94,9 +94,9 @@ Useful endpoints:
 - `GET /v2/spaces/{space_id}/evidence-map/claims`
 - `GET /v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence`
 
-## Artifact
+## Output
 
-An artifact is an output from a run.
+An output is saved material produced by a task.
 
 Examples:
 

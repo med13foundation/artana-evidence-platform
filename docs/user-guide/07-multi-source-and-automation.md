@@ -3,7 +3,7 @@
 Once the basic document and review flow is comfortable, these workflows help
 you cover more ground.
 
-## Research Init
+## Research Plan
 
 Use `research-plan` when you already know the research question and source mix.
 
@@ -17,14 +17,14 @@ Endpoint:
 
 - `POST /v2/spaces/{space_id}/research-plan`
 
-## Research Bootstrap
+## Topic Setup
 
-Use research bootstrap when you want a first map of a topic.
+Use topic setup when you want a first map of a topic.
 
 Good for:
 
 - getting a head start from seed entities
-- staging initial graph-write proposals for review
+- staging initial proposed updates for review
 - creating a first research brief
 
 Endpoint:
@@ -61,9 +61,9 @@ Useful endpoints:
 Use schedules only after you are confident the workflow is producing useful
 reviewable output.
 
-## Graph Curation
+## Evidence Curation
 
-Graph curation is a more governed path for claim-writing workflows.
+Evidence curation is a more governed path for claim-writing workflows.
 
 Endpoint:
 
@@ -74,9 +74,9 @@ Good for:
 - high-impact claims
 - workflows where explicit review and approval checkpoints matter
 
-## Supervisor
+## Full Research
 
-Supervisor composes larger workflows, such as bootstrap, briefing chat, and
+Full research composes larger workflows, such as topic setup, briefing chat, and
 curation.
 
 Useful endpoints:
@@ -86,12 +86,12 @@ Useful endpoints:
 - `GET /v2/spaces/{space_id}/workflows/full-research/tasks/{task_id}`
 - `GET /v2/spaces/{space_id}/workflows/full-research/dashboard`
 
-Supervisor is powerful, but it is not the best first workflow. Learn documents,
-review queue, graph explorer, and graph search first.
+Full research is powerful, but it is not the best first workflow. Learn documents,
+review items, the evidence map, and evidence search first.
 
-## Full AI Orchestrator
+## Autopilot
 
-The full AI orchestrator is the largest deterministic orchestration surface.
+Autopilot is the broadest guarded AI workflow surface.
 
 Endpoint:
 

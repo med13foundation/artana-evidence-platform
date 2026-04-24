@@ -26,10 +26,10 @@ curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/claims/<claim_id>
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
-Build a graph document around seed entities:
+Export an evidence-map document around seed entities:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/document" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/export" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -40,8 +40,8 @@ curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/document" \
   }'
 ```
 
-Use graph explorer when you want read-only inspection without starting a new AI
-run.
+Use the evidence map when you want read-only inspection without starting a new AI
+task.
 
 ## Ask A Graph Search Question
 
