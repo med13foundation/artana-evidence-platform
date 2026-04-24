@@ -6,7 +6,7 @@ rules, and whether they affect canonicalization (scoping qualifiers).
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Literal
 
@@ -226,7 +226,7 @@ def validate_qualifier(key: str, value: object) -> tuple[bool, str | None]:
     return _VALIDATORS[defn.value_type](key, value, defn)
 
 
-def validate_qualifiers(qualifiers: dict[str, object]) -> list[str]:
+def validate_qualifiers(qualifiers: Mapping[str, object]) -> list[str]:
     """Validate all qualifiers in a dict. Returns list of error messages."""
     errors: list[str] = []
     for key, value in qualifiers.items():

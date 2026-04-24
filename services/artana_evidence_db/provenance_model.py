@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_table_name,
@@ -22,6 +23,9 @@ def _existing_table(table_name: str) -> Table | None:
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
 
 
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _provenance_table = _existing_table("provenance")
 if _provenance_table is None:
     _provenance_table = Table(
@@ -94,11 +98,25 @@ if _provenance_table is None:
         **graph_table_options(comment="Data provenance chain for reproducibility"),
     )
 
+_provenance_table_model_table = require_table(_provenance_table)
 
 class GraphProvenanceModel(Base):
     """Service-local provenance chain row."""
 
-    __table__ = _provenance_table
+
+    __table__ = _provenance_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        source_type: Mapped[str]
+        source_ref: Mapped[str | None]
+        extraction_run_id: Mapped[str | None]
+        mapping_method: Mapped[str | None]
+        mapping_confidence: Mapped[float | None]
+        agent_model: Mapped[str | None]
+        raw_input: Mapped[JSONObject | None]
+        created_at: Mapped[datetime]
 
 
 ProvenanceModel = GraphProvenanceModel

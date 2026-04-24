@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Protocol
 
-from artana_evidence_db.graph_core_models import RelationEvidenceWrite
+from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.graph_core_models import (
+    KernelRelationEvidence,
+    RelationEvidenceWrite,
+)
 from artana_evidence_db.read_model_support import (
     GraphReadModelTrigger,
     GraphReadModelUpdate,
@@ -29,7 +34,7 @@ from artana_evidence_db.relation_type_support import normalize_relation_type
 
 
 def _compute_canonicalization_fingerprint(
-    participants: list[object],
+    participants: Sequence[KernelClaimParticipant],
 ) -> str:
     """Compute a stable fingerprint from scoping qualifiers on participants.
 
@@ -47,16 +52,20 @@ def _compute_canonicalization_fingerprint(
 
 
 if TYPE_CHECKING:
-    from artana_evidence_db.graph_core_models import KernelEntity, KernelRelation
-    from artana_evidence_db.kernel_claim_models import (
-        ClaimEvidenceModel,
-        RelationProjectionSourceModel,
+    from artana_evidence_db.claim_evidence_models import (
+        ClaimEvidenceSentenceConfidence,
+        ClaimEvidenceSentenceSource,
+        KernelClaimEvidence,
     )
+    from artana_evidence_db.graph_core_models import KernelEntity, KernelRelation
     from artana_evidence_db.kernel_domain_models import (
         DictionaryRelationType,
         KernelClaimParticipant,
         KernelRelationClaim,
         RelationConstraint,
+    )
+    from artana_evidence_db.relation_projection_source_model import (
+        KernelRelationProjectionSource,
     )
 
 
@@ -94,7 +103,7 @@ class RelationRepositoryLike(Protocol):
         relation_id: str,
         claim_backed_only: bool = True,
         limit: int | None = None,
-    ) -> list[object]: ...
+    ) -> list[KernelRelationEvidence]: ...
 
     def replace_derived_evidence_cache(
         self,
@@ -153,17 +162,17 @@ class ClaimEvidenceRepositoryLike(Protocol):
         source_document_id: str | None,
         agent_run_id: str | None,
         sentence: str | None,
-        sentence_source: str | None,
-        sentence_confidence: str | None,
+        sentence_source: ClaimEvidenceSentenceSource | None,
+        sentence_confidence: ClaimEvidenceSentenceConfidence | None,
         sentence_rationale: str | None,
         figure_reference: str | None,
         table_reference: str | None,
         confidence: float,
         source_document_ref: str | None = None,
-        metadata: dict[str, object] | None = None,
-    ) -> ClaimEvidenceModel: ...
+        metadata: JSONObject | None = None,
+    ) -> KernelClaimEvidence: ...
 
-    def find_by_claim_id(self, claim_id: str) -> list[ClaimEvidenceModel]: ...
+    def find_by_claim_id(self, claim_id: str) -> list[KernelClaimEvidence]: ...
 
 
 class EntityRepositoryLike(Protocol):
@@ -216,15 +225,15 @@ class RelationProjectionSourceRepositoryLike(Protocol):
         source_document_id: str | None,
         agent_run_id: str | None,
         source_document_ref: str | None = None,
-        metadata: dict[str, object] | None = None,
-    ) -> RelationProjectionSourceModel: ...
+        metadata: JSONObject | None = None,
+    ) -> KernelRelationProjectionSource: ...
 
     def find_by_claim_id(
         self,
         *,
         research_space_id: str,
         claim_id: str,
-    ) -> list[RelationProjectionSourceModel]: ...
+    ) -> list[KernelRelationProjectionSource]: ...
 
     def delete_projection_source(
         self,
@@ -237,7 +246,7 @@ class RelationProjectionSourceRepositoryLike(Protocol):
     def find_by_relation_id(
         self,
         relation_id: str,
-    ) -> list[RelationProjectionSourceModel]: ...
+    ) -> list[KernelRelationProjectionSource]: ...
 
     def delete_by_claim_id(
         self,
@@ -800,7 +809,7 @@ class KernelRelationProjectionMaterializationService:
         self,
         *,
         endpoints: ProjectionEndpoints,
-        claim_evidences: list[object],
+        claim_evidences: Sequence[KernelClaimEvidence],
     ) -> None:
         constraint = self._get_promotable_relation_constraint(
             source_type=endpoints.source_type,

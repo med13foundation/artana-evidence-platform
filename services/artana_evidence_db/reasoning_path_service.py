@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol
 from uuid import UUID
 
+from artana_evidence_db.claim_relation_models import (
+    ClaimRelationReviewStatus,
+    ClaimRelationType,
+)
 from artana_evidence_db.kernel_entity_models import EntityModel
 from artana_evidence_db.read_model_support import (
     GraphReadModelTrigger,
@@ -26,6 +30,12 @@ from artana_evidence_db.reasoning_path_support import (
     resolve_ordered_canonical_relation_ids,
     resolve_ordered_claim_ids,
     resolve_participant_anchor_entities,
+)
+from artana_evidence_db.relation_claim_models import (
+    RelationClaimPersistability,
+    RelationClaimPolarity,
+    RelationClaimStatus,
+    RelationClaimValidationState,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
@@ -112,7 +122,18 @@ class RelationClaimServiceLike(Protocol):
     def list_by_research_space(
         self,
         research_space_id: str,
-        **kwargs: object,
+        *,
+        claim_status: RelationClaimStatus | None = None,
+        assertion_class: str | None = None,
+        validation_state: RelationClaimValidationState | None = None,
+        persistability: RelationClaimPersistability | None = None,
+        polarity: RelationClaimPolarity | None = None,
+        source_document_id: str | None = None,
+        relation_type: str | None = None,
+        linked_relation_id: str | None = None,
+        certainty_band: Literal["HIGH", "MEDIUM", "LOW"] | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[KernelRelationClaim]: ...
 
     def list_claims_by_ids(
@@ -145,7 +166,14 @@ class ClaimRelationServiceLike(Protocol):
     def list_by_research_space(
         self,
         research_space_id: str,
-        **kwargs: object,
+        *,
+        relation_type: ClaimRelationType | None = None,
+        review_status: ClaimRelationReviewStatus | None = None,
+        source_claim_id: str | None = None,
+        target_claim_id: str | None = None,
+        claim_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[KernelClaimRelation]: ...
 
     def get_claim_relation(self, relation_id: str) -> KernelClaimRelation | None: ...

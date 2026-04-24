@@ -122,7 +122,7 @@ class SqlAlchemyKernelSpaceRegistryRepository(SpaceRegistryPort):
             model.description = entry.description
             model.owner_id = entry.owner_id
             model.status = GraphSpaceStatusEnum(entry.status)
-            model.settings = _serialize_settings(entry.settings)
+            model.settings = entry.settings
             model.sync_source = entry.sync_source
             model.sync_fingerprint = entry.sync_fingerprint
             model.source_updated_at = entry.source_updated_at

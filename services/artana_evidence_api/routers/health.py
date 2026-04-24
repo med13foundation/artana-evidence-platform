@@ -6,7 +6,7 @@ from artana_evidence_api.config import get_settings
 from artana_evidence_api.process_health import ProcessHealth, read_heartbeat
 from artana_evidence_api.runtime_support import get_artana_model_health
 from artana_evidence_api.step_helpers import get_step_execution_health
-from artana_evidence_api.types.common import JSONObject
+from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict
 
@@ -55,7 +55,7 @@ def health_check() -> HarnessHealthResponse:
             "logs/artana-evidence-api-worker-heartbeat.json",
             max_age_seconds=120,  # 2 minutes (worker polls every 30s)
         ),
-        artana_model=artana_model,
+        artana_model=json_object_or_empty(artana_model),
     )
 
 

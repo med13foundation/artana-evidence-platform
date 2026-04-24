@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from artana_evidence_api.approval_store import (
@@ -43,6 +43,7 @@ from artana_evidence_api.research_space_store import (
     HarnessUserIdentityConflictError,
     build_unique_space_slug,
 )
+from artana_evidence_api.types.common import json_object_or_empty
 from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -100,10 +101,12 @@ def _json_object_list(value: object) -> list[JSONObject]:
     return [item for item in value if isinstance(item, dict)]
 
 
+def _result_rowcount(result: object) -> int:
+    rowcount = getattr(result, "rowcount", 0)
+    return rowcount if isinstance(rowcount, int) else 0
+
+
 def _normalize_assignable_member_role(role: str) -> str:
-    if not isinstance(role, str):
-        msg = f"Invalid space member role: {role!r}"
-        raise TypeError(msg)
     normalized_role = role.strip().lower()
     if normalized_role == "":
         msg = f"Invalid space member role: {role!r}"
@@ -440,7 +443,11 @@ def _research_space_record_from_model(
         status=model.status.value,
         role=role,
         is_default=_is_personal_default_space(model),
-        settings=model.settings if isinstance(model.settings, dict) else None,
+        settings=(
+            cast("ResearchSpaceSettings", model.settings)
+            if isinstance(model.settings, dict)
+            else None
+        ),
     )
 
 
@@ -618,7 +625,7 @@ class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
                 decision_reason=normalized_reason,
             ),
         )
-        if update_result.rowcount != 1:
+        if _result_rowcount(update_result) != 1:
             refreshed_status = self.session.execute(status_stmt).scalars().first()
             if refreshed_status is None:
                 return None
@@ -813,7 +820,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 },
             ),
         )
-        if update_result.rowcount != 1:
+        if _result_rowcount(update_result) != 1:
             refreshed_status_row = self.session.execute(status_stmt).one_or_none()
             if refreshed_status_row is None:
                 return None
@@ -857,7 +864,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             ),
         )
         self.session.commit()
-        return result.rowcount
+        return _result_rowcount(result)
 
 
 class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedStore):
@@ -1092,7 +1099,7 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
                 },
             ),
         )
-        if update_result.rowcount != 1:
+        if _result_rowcount(update_result) != 1:
             refreshed_status_row = self.session.execute(status_stmt).one_or_none()
             if refreshed_status_row is None:
                 return None
@@ -1442,7 +1449,7 @@ class SqlAlchemyHarnessScheduleStore(HarnessScheduleStore, _SessionBackedStore):
         )
         result = self.session.execute(stmt)
         self.session.commit()
-        if result.rowcount != 1:
+        if _result_rowcount(result) != 1:
             return None
         model = self.session.get(HarnessScheduleModel, str(schedule_id))
         if model is None or model.space_id != str(space_id):
@@ -1469,7 +1476,7 @@ class SqlAlchemyHarnessScheduleStore(HarnessScheduleStore, _SessionBackedStore):
         )
         result = self.session.execute(stmt)
         self.session.commit()
-        if result.rowcount != 1:
+        if _result_rowcount(result) != 1:
             return None
         model = self.session.get(HarnessScheduleModel, str(schedule_id))
         if model is None or model.space_id != str(space_id):
@@ -1778,7 +1785,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
         self.session.add(model)
         try:
             self.session.flush()
-            self._ensure_owner_membership(space_id=model.id, owner_id=owner_uuid)
+            self._ensure_owner_membership(space_id=_as_uuid(model.id), owner_id=owner_uuid)
             self.session.flush()
             self._sync_space_model(model)
             self.session.commit()
@@ -1834,7 +1841,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
             raise
 
         try:
-            self._ensure_owner_membership(space_id=model.id, owner_id=owner_uuid)
+            self._ensure_owner_membership(space_id=_as_uuid(model.id), owner_id=owner_uuid)
             self.session.flush()
             self._sync_space_model(model)
             self.session.commit()
@@ -1858,7 +1865,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
         if model is None or model.status == SpaceStatusEnum.ARCHIVED:
             msg = "Space not found"
             raise KeyError(msg)
-        model.settings = dict(settings)
+        model.settings = json_object_or_empty(settings)
         try:
             self.session.flush()
             self.session.commit()

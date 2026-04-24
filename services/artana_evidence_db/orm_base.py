@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, Table
 from sqlalchemy.orm import DeclarativeBase
 
 _NAMING_CONVENTION = {
@@ -30,4 +30,12 @@ class Base(DeclarativeBase):
         return f"<{self.__class__.__name__}(id={getattr(self, 'id', None)})>"
 
 
-__all__ = ["Base", "metadata"]
+def require_table(table: Table | None) -> Table:
+    """Return reflected/declared table metadata after construction."""
+    if table is None:
+        message = "SQLAlchemy table metadata was not initialized"
+        raise RuntimeError(message)
+    return table
+
+
+__all__ = ["Base", "metadata", "require_table"]

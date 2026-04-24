@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from copy import deepcopy
+from typing import TYPE_CHECKING
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from artana_evidence_api.full_ai_orchestrator_common_support import (
@@ -29,7 +30,13 @@ from artana_evidence_api.research_init_runtime import (
 from artana_evidence_api.types.common import (
     JSONObject,
     ResearchSpaceSourcePreferences,
+    json_array_or_empty,
+    json_object,
+    json_object_or_empty,
 )
+
+if TYPE_CHECKING:
+    from artana_evidence_api.artifact_store import HarnessArtifactStore
 
 _LOGGER = logging.getLogger(__name__)
 _PROGRESS_PERSISTENCE_BACKOFF_SECONDS = float(
@@ -282,10 +289,8 @@ def _build_workspace_summary(*, workspace_snapshot: JSONObject) -> JSONObject:
         "guarded_rollout_profile_source": workspace_snapshot.get(
             "guarded_rollout_profile_source",
         ),
-        "guarded_rollout_policy": (
-            dict(workspace_snapshot.get("guarded_rollout_policy"))
-            if isinstance(workspace_snapshot.get("guarded_rollout_policy"), dict)
-            else None
+        "guarded_rollout_policy": json_object(
+            workspace_snapshot.get("guarded_rollout_policy")
         ),
         "guarded_chase_rollout_enabled": workspace_snapshot.get(
             "guarded_chase_rollout_enabled",
@@ -303,33 +308,13 @@ def _build_workspace_summary(*, workspace_snapshot: JSONObject) -> JSONObject:
             "guarded_execution_log_key",
         ),
         "guarded_readiness_key": workspace_snapshot.get("guarded_readiness_key"),
-        "guarded_execution": (
-            dict(workspace_snapshot.get("guarded_execution"))
-            if isinstance(workspace_snapshot.get("guarded_execution"), dict)
-            else None
+        "guarded_execution": json_object(workspace_snapshot.get("guarded_execution")),
+        "guarded_readiness": json_object(workspace_snapshot.get("guarded_readiness")),
+        "pending_question_count": len(
+            json_array_or_empty(workspace_snapshot.get("pending_questions"))
         ),
-        "guarded_readiness": (
-            dict(workspace_snapshot.get("guarded_readiness"))
-            if isinstance(workspace_snapshot.get("guarded_readiness"), dict)
-            else None
-        ),
-        "pending_question_count": (
-            len(
-                workspace_snapshot.get("pending_questions", []),
-            )
-            if isinstance(workspace_snapshot.get("pending_questions"), list)
-            else 0
-        ),
-        "artifact_keys": (
-            list(workspace_snapshot.get("artifact_keys", []))
-            if isinstance(workspace_snapshot.get("artifact_keys"), list)
-            else []
-        ),
-        "result_keys": (
-            list(workspace_snapshot.get("result_keys", []))
-            if isinstance(workspace_snapshot.get("result_keys"), list)
-            else []
-        ),
+        "artifact_keys": json_array_or_empty(workspace_snapshot.get("artifact_keys")),
+        "result_keys": json_array_or_empty(workspace_snapshot.get("result_keys")),
     }
 
 def _sanitize_replayed_workspace_snapshot(
@@ -350,10 +335,8 @@ def _build_source_execution_summary(
 ) -> JSONObject:
     source_results = workspace_snapshot.get("source_results")
     return {
-        "selected_sources": dict(selected_sources),
-        "source_results": (
-            dict(source_results) if isinstance(source_results, dict) else {}
-        ),
+        "selected_sources": json_object_or_empty(selected_sources),
+        "source_results": json_object_or_empty(source_results),
         "pubmed_result_count": len(research_init_result.pubmed_results),
         "documents_ingested": research_init_result.documents_ingested,
         "proposal_count": research_init_result.proposal_count,
@@ -413,7 +396,7 @@ def _build_decision_history(  # noqa: PLR0913
             },
             evidence_basis="Queued Phase 1 deterministic full AI orchestrator baseline.",
             status="completed",
-            metadata={"enabled_sources": dict(sources)},
+            metadata={"enabled_sources": json_object_or_empty(sources)},
         ),
     )
     pubmed_enabled = sources.get("pubmed", True)
@@ -450,28 +433,20 @@ def _build_decision_history(  # noqa: PLR0913
             round_number=0,
             action_input={
                 "seed_terms": list(seed_terms),
-                "driven_terms_count": (
-                    len(
-                        workspace_snapshot.get("driven_terms", []),
-                    )
-                    if isinstance(workspace_snapshot.get("driven_terms"), list)
-                    else 0
+                "driven_terms_count": len(
+                    json_array_or_empty(workspace_snapshot.get("driven_terms"))
                 ),
             },
             evidence_basis="Driven terms were derived from PubMed findings plus initial seed terms.",
             status="completed",
             metadata={
-                "driven_terms": (
-                    list(workspace_snapshot.get("driven_terms", []))
-                    if isinstance(workspace_snapshot.get("driven_terms"), list)
-                    else []
+                "driven_terms": json_array_or_empty(
+                    workspace_snapshot.get("driven_terms")
                 ),
                 "driven_genes_from_pubmed": (
-                    list(workspace_snapshot.get("driven_genes_from_pubmed", []))
-                    if isinstance(
-                        workspace_snapshot.get("driven_genes_from_pubmed"), list
+                    json_array_or_empty(
+                        workspace_snapshot.get("driven_genes_from_pubmed")
                     )
-                    else []
                 ),
             },
         ),
@@ -542,15 +517,11 @@ def _build_decision_history(  # noqa: PLR0913
         )
         else None
     )
-    guarded_terminal_control_action = (
-        dict(workspace_snapshot.get("guarded_terminal_control_action"))
-        if isinstance(workspace_snapshot.get("guarded_terminal_control_action"), dict)
-        else {}
+    guarded_terminal_control_action = json_object_or_empty(
+        workspace_snapshot.get("guarded_terminal_control_action")
     )
-    guarded_execution_summary = (
-        dict(workspace_snapshot.get("guarded_execution"))
-        if isinstance(workspace_snapshot.get("guarded_execution"), dict)
-        else {}
+    guarded_execution_summary = json_object_or_empty(
+        workspace_snapshot.get("guarded_execution")
     )
     for chase_round in (1, 2):
         chase_summary = workspace_snapshot.get(f"chase_round_{chase_round}")
@@ -562,15 +533,18 @@ def _build_decision_history(  # noqa: PLR0913
             workspace_snapshot=workspace_snapshot,
             round_number=chase_round,
         )
+        raw_guarded_stop_reason = guarded_terminal_control_action.get("stop_reason")
+        guarded_terminal_stop_reason = (
+            raw_guarded_stop_reason
+            if isinstance(raw_guarded_stop_reason, str)
+            else None
+        )
         guarded_stop_reason = (
             "guarded_generate_brief"
             if guarded_stop_after_chase_round == chase_round - 1
-            else (
-                guarded_terminal_control_action.get("stop_reason")
-                if guarded_terminal_control_after_chase_round == chase_round - 1
-                and isinstance(guarded_terminal_control_action.get("stop_reason"), str)
-                else None
-            )
+            else guarded_terminal_stop_reason
+            if guarded_terminal_control_after_chase_round == chase_round - 1
+            else None
         )
         decisions.append(
             _build_decision(
@@ -634,8 +608,11 @@ def _build_decision_history(  # noqa: PLR0913
             ),
             status="completed",
             stop_reason=(
-                guarded_terminal_control_action.get("stop_reason")
-                if isinstance(guarded_terminal_control_action.get("stop_reason"), str)
+                raw_stop_reason
+                if isinstance(
+                    (raw_stop_reason := guarded_terminal_control_action.get("stop_reason")),
+                    str,
+                )
                 else _stop_reason(
                     research_init_result=research_init_result,
                     workspace_snapshot=workspace_snapshot,
@@ -717,7 +694,7 @@ def _collect_chase_round_summaries(
 
 def _store_action_output_artifacts(  # noqa: PLR0913
     *,
-    artifact_store,
+    artifact_store: HarnessArtifactStore,
     space_id: UUID,
     run_id: str,
     objective: str,
@@ -734,9 +711,7 @@ def _store_action_output_artifacts(  # noqa: PLR0913
         artifact_key=_PUBMED_ARTIFACT_KEY,
         media_type="application/json",
         content={
-            "pubmed_results": (
-                list(pubmed_results) if isinstance(pubmed_results, list) else []
-            ),
+            "pubmed_results": json_array_or_empty(pubmed_results),
             "documents_ingested": workspace_snapshot.get("documents_ingested", 0),
         },
     )
@@ -749,14 +724,12 @@ def _store_action_output_artifacts(  # noqa: PLR0913
             "objective": objective,
             "seed_terms": list(seed_terms),
             "driven_terms": (
-                list(workspace_snapshot.get("driven_terms", []))
-                if isinstance(workspace_snapshot.get("driven_terms"), list)
-                else []
+                json_array_or_empty(workspace_snapshot.get("driven_terms"))
             ),
             "driven_genes_from_pubmed": (
-                list(workspace_snapshot.get("driven_genes_from_pubmed", []))
-                if isinstance(workspace_snapshot.get("driven_genes_from_pubmed"), list)
-                else []
+                json_array_or_empty(
+                    workspace_snapshot.get("driven_genes_from_pubmed")
+                )
             ),
         },
     )

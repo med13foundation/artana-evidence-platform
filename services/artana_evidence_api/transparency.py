@@ -14,6 +14,7 @@ from artana_evidence_api.tool_catalog import (
     get_graph_harness_tool_spec,
     visible_tool_names_for_harness,
 )
+from artana_evidence_api.types.common import JSONObject, json_value
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
@@ -22,7 +23,6 @@ if TYPE_CHECKING:
         HarnessRunRecord,
         HarnessRunRegistry,
     )
-    from artana_evidence_api.types.common import JSONObject
 
 _RUN_CAPABILITIES_KEY = "run_capabilities"
 _POLICY_DECISIONS_KEY = "policy_decisions"
@@ -90,19 +90,13 @@ def build_run_capabilities_snapshot(
         spec = get_graph_harness_tool_spec(tool_name)
         if spec is None:
             continue
+        decision_value = raw_decision.get("decision")
+        reason_value = raw_decision.get("reason")
         descriptors.append(
             _tool_descriptor(
                 spec=spec,
-                decision=(
-                    raw_decision.get("decision")
-                    if isinstance(raw_decision.get("decision"), str)
-                    else "filtered"
-                ),
-                reason=(
-                    raw_decision.get("reason")
-                    if isinstance(raw_decision.get("reason"), str)
-                    else "filtered_unknown"
-                ),
+                decision=decision_value if isinstance(decision_value, str) else "filtered",
+                reason=reason_value if isinstance(reason_value, str) else "filtered_unknown",
             ),
         )
     visible_tools = [entry for entry in descriptors if entry["decision"] == "allowed"]
@@ -120,13 +114,13 @@ def build_run_capabilities_snapshot(
         ),
         "policy_profile": {
             "kernel_policy": _POLICY_PROFILE_NAME,
-            "model": explain.get("model"),
-            "tenant_capabilities": explain.get("tenant_capabilities", []),
-            "visible_tool_names_applied": explain.get(
+            "model": json_value(explain.get("model")),
+            "tenant_capabilities": json_value(explain.get("tenant_capabilities", [])),
+            "visible_tool_names_applied": json_value(explain.get(
                 "visible_tool_names_applied",
                 False,
-            ),
-            "final_allowed_tools": explain.get("final_allowed_tools", []),
+            )),
+            "final_allowed_tools": json_value(explain.get("final_allowed_tools", [])),
         },
         "visible_tools": visible_tools,
         "filtered_tools": filtered_tools,
@@ -272,7 +266,7 @@ def _tool_records_from_events(  # noqa: C901, PLR0912, PLR0915
                 if isinstance(idempotency_key, str) and idempotency_key != ""
                 else event.event_id
             )
-            record = {
+            record: JSONObject = {
                 "record_id": f"tool:{request_key}",
                 "decision_source": "tool",
                 "tool_name": tool_name,
@@ -295,9 +289,9 @@ def _tool_records_from_events(  # noqa: C901, PLR0912, PLR0915
             approval_id, tool_name = _parse_pause_context(event)
             if tool_name is None:
                 continue
-            record_index = pending_by_tool.get(tool_name)
-            if record_index is None:
+            if tool_name not in pending_by_tool:
                 continue
+            record_index = pending_by_tool[tool_name]
             record = records[record_index]
             record["decision"] = "approval_required"
             record["reason"] = "approval_required"
@@ -312,12 +306,16 @@ def _tool_records_from_events(  # noqa: C901, PLR0912, PLR0915
         received_key = payload.get("received_idempotency_key")
         if not isinstance(tool_name, str):
             continue
-        record_index = None
-        if isinstance(received_key, str) and received_key != "":
-            record_index = pending_by_key.get(received_key)
-        if record_index is None:
-            record_index = pending_by_tool.get(tool_name)
-        if record_index is None:
+        completed_record_index: int | None = None
+        if (
+            isinstance(received_key, str)
+            and received_key != ""
+            and received_key in pending_by_key
+        ):
+            completed_record_index = pending_by_key[received_key]
+        elif tool_name in pending_by_tool:
+            completed_record_index = pending_by_tool[tool_name]
+        else:
             records.append(
                 {
                     "record_id": f"tool:{event.event_id}",
@@ -340,7 +338,7 @@ def _tool_records_from_events(  # noqa: C901, PLR0912, PLR0915
                 },
             )
             continue
-        record = records[record_index]
+        record = records[completed_record_index]
         record["decision"] = "executed"
         record["reason"] = (
             payload.get("outcome")
@@ -352,7 +350,7 @@ def _tool_records_from_events(  # noqa: C901, PLR0912, PLR0915
         )
         record["completed_at"] = event.timestamp.isoformat()
         record["event_id"] = event.event_id
-        if received_key in pending_by_key:
+        if isinstance(received_key, str) and received_key in pending_by_key:
             del pending_by_key[received_key]
         if pending_by_tool.get(tool_name) == record_index:
             del pending_by_tool[tool_name]
@@ -461,6 +459,7 @@ def sync_policy_decisions_artifact(
     manual_records = _manual_review_records(existing_policy)
     skill_records = _skill_records(existing_policy)
     records = _sort_records([*tool_records, *manual_records, *skill_records])
+    summary = _summary_for_records(records)
     content = {
         "run_id": run.id,
         "space_id": run.space_id,
@@ -470,7 +469,7 @@ def sync_policy_decisions_artifact(
             capabilities_artifact.content,
         ),
         "records": records,
-        "summary": _summary_for_records(records),
+        "summary": summary,
         "created_at": (
             existing_policy.get("created_at")
             if isinstance(existing_policy.get("created_at"), str)
@@ -490,9 +489,9 @@ def sync_policy_decisions_artifact(
         run_id=run.id,
         patch={
             "policy_decisions_key": _POLICY_DECISIONS_KEY,
-            "policy_decision_count": content["summary"]["total_records"],
-            "policy_manual_review_count": content["summary"]["manual_review_count"],
-            "policy_skill_count": content["summary"]["skill_record_count"],
+            "policy_decision_count": summary["total_records"],
+            "policy_manual_review_count": summary["manual_review_count"],
+            "policy_skill_count": summary["skill_record_count"],
         },
     )
     return content
@@ -549,10 +548,11 @@ def append_manual_review_decision(  # noqa: PLR0913
             if isinstance(record, dict)
         ],
     )
+    updated_summary = _summary_for_records(updated_records)
     updated_content = {
         **current,
         "records": updated_records,
-        "summary": _summary_for_records(updated_records),
+        "summary": updated_summary,
         "updated_at": now,
     }
     artifact_store.put_artifact(
@@ -567,11 +567,9 @@ def append_manual_review_decision(  # noqa: PLR0913
         run_id=run_id,
         patch={
             "policy_decisions_key": _POLICY_DECISIONS_KEY,
-            "policy_decision_count": updated_content["summary"]["total_records"],
-            "policy_manual_review_count": updated_content["summary"][
-                "manual_review_count"
-            ],
-            "policy_skill_count": updated_content["summary"]["skill_record_count"],
+            "policy_decision_count": updated_summary["total_records"],
+            "policy_manual_review_count": updated_summary["manual_review_count"],
+            "policy_skill_count": updated_summary["skill_record_count"],
         },
     )
     run_registry.record_event(
@@ -660,10 +658,11 @@ def append_skill_activity(  # noqa: PLR0913
             if isinstance(record, dict)
         ],
     )
+    updated_summary = _summary_for_records(updated_records)
     updated_content = {
         **current,
         "records": updated_records,
-        "summary": _summary_for_records(updated_records),
+        "summary": updated_summary,
         "updated_at": now,
     }
     artifact_store.put_artifact(
@@ -678,11 +677,9 @@ def append_skill_activity(  # noqa: PLR0913
         run_id=run_id,
         patch={
             "policy_decisions_key": _POLICY_DECISIONS_KEY,
-            "policy_decision_count": updated_content["summary"]["total_records"],
-            "policy_manual_review_count": updated_content["summary"][
-                "manual_review_count"
-            ],
-            "policy_skill_count": updated_content["summary"]["skill_record_count"],
+            "policy_decision_count": updated_summary["total_records"],
+            "policy_manual_review_count": updated_summary["manual_review_count"],
+            "policy_skill_count": updated_summary["skill_record_count"],
         },
     )
 

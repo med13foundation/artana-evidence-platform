@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import cast
 
 from artana_evidence_api.full_ai_orchestrator_common_support import (
     _SHADOW_PLANNER_CHECKPOINT_ORDER,
@@ -20,6 +21,7 @@ from artana_evidence_api.full_ai_orchestrator_contracts import (
 )
 from artana_evidence_api.full_ai_orchestrator_response_support import _build_decision
 from artana_evidence_api.full_ai_orchestrator_shadow_planner import (
+    ShadowPlannerRecommendationResult,
     build_shadow_planner_comparison,
     build_shadow_planner_workspace_summary,
     recommend_shadow_planner_action,
@@ -27,6 +29,9 @@ from artana_evidence_api.full_ai_orchestrator_shadow_planner import (
 from artana_evidence_api.types.common import (
     JSONObject,
     ResearchSpaceSourcePreferences,
+    json_array_or_empty,
+    json_object,
+    json_object_or_empty,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -434,16 +439,17 @@ def _shadow_planner_recommendation_payload(
     planner_result: object,
     mode: str,
 ) -> JSONObject:
-    decision = planner_result.decision
+    typed_planner_result = cast("ShadowPlannerRecommendationResult", planner_result)
+    decision = typed_planner_result.decision
     return {
         "mode": mode,
-        "planner_status": getattr(planner_result, "planner_status", None),
-        "used_fallback": getattr(planner_result, "used_fallback", None),
-        "model_id": getattr(planner_result, "model_id", None),
-        "agent_run_id": getattr(planner_result, "agent_run_id", None),
-        "prompt_version": getattr(planner_result, "prompt_version", None),
-        "validation_error": getattr(planner_result, "validation_error", None),
-        "error": getattr(planner_result, "error", None),
+        "planner_status": typed_planner_result.planner_status,
+        "used_fallback": typed_planner_result.used_fallback,
+        "model_id": typed_planner_result.model_id,
+        "agent_run_id": typed_planner_result.agent_run_id,
+        "prompt_version": typed_planner_result.prompt_version,
+        "validation_error": typed_planner_result.validation_error,
+        "error": typed_planner_result.error,
         "telemetry": _shadow_planner_telemetry_payload(
             getattr(planner_result, "telemetry", None),
         ),
@@ -1003,8 +1009,7 @@ def _phase_record(
     records = phase_records.get(phase)
     if not isinstance(records, list) or not records:
         return None
-    first_record = records[0]
-    return first_record if isinstance(first_record, dict) else None
+    return records[0]
 
 def _phase_record_with_chase(
     *,
@@ -1016,8 +1021,6 @@ def _phase_record_with_chase(
         if not isinstance(records, list):
             continue
         for record in records:
-            if not isinstance(record, dict):
-                continue
             workspace_snapshot = record.get("workspace_snapshot")
             if not isinstance(workspace_snapshot, dict):
                 continue
@@ -1069,7 +1072,7 @@ def _checkpoint_phase_record_map(
             if record is not None:
                 checkpoint_map["after_bootstrap"] = record
                 break
-    final_record = {
+    final_record: JSONObject = {
         "workspace_snapshot": final_workspace_snapshot,
         "decisions": [decision.model_dump(mode="json") for decision in final_decisions],
     }
@@ -1118,11 +1121,11 @@ async def _build_shadow_planner_timeline(  # noqa: PLR0913
                 workspace_snapshot=(
                     workspace_snapshot if isinstance(workspace_snapshot, dict) else {}
                 ),
-                prior_decisions=(
-                    list(record.get("decisions", []))
-                    if isinstance(record.get("decisions"), list)
-                    else []
-                ),
+                prior_decisions=[
+                    decision_payload
+                    for item in json_array_or_empty(record.get("decisions"))
+                    if (decision_payload := json_object(item)) is not None
+                ],
                 action_registry=action_registry,
             )
         planner_result = await recommend_shadow_planner_action(
@@ -1177,7 +1180,7 @@ def _build_initial_decision_history(  # noqa: PLR0913
             },
             evidence_basis="Queued Phase 1 deterministic full AI orchestrator baseline.",
             status="completed",
-            metadata={"enabled_sources": dict(sources)},
+            metadata={"enabled_sources": json_object_or_empty(sources)},
         ),
     ]
     pubmed_enabled = sources.get("pubmed", True)

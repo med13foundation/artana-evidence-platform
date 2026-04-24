@@ -166,7 +166,7 @@ def _selected_proposals_response(
 
 def build_claim_curation_run_response(
     execution: ClaimCurationRunExecution,
-) -> ClaimCurationRunResponse:
+) -> ClaimCurationRunResponse | JSONResponse:
     """Serialize one claim-curation execution into the public route response."""
     return ClaimCurationRunResponse(
         run=HarnessRunResponse.from_record(execution.run),
@@ -197,7 +197,7 @@ async def create_claim_curation_run(  # noqa: PLR0913
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
-) -> ClaimCurationRunResponse:
+) -> ClaimCurationRunResponse | JSONResponse:
     """Create a governed curation run that pauses for explicit approval."""
     proposal_ids = normalize_requested_proposal_ids(request.proposal_ids)
     _ = load_curatable_proposals(

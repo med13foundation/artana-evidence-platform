@@ -8,10 +8,10 @@ import asyncio
 import inspect
 import logging
 import os
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import replace
 from threading import Thread
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from artana_evidence_api.alias_yield_reporting import (
@@ -59,6 +59,7 @@ from artana_evidence_api.research_init_helpers import (
     _candidate_key,
     _merge_candidate,
     _PubMedCandidate,
+    _PubMedCandidateReview,
     _select_candidates_for_ingestion,
 )
 from artana_evidence_api.research_init_models import (
@@ -104,7 +105,14 @@ from artana_evidence_api.research_question_policy import (
     has_prior_research_guidance,
 )
 from artana_evidence_api.transparency import ensure_run_transparency_seed
-from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
+from artana_evidence_api.types.common import (
+    JSONObject,
+    ResearchSpaceSourcePreferences,
+    json_array_or_empty,
+    json_int,
+    json_object,
+    json_object_or_empty,
+)
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityEmbeddingRefreshRequest,
 )
@@ -112,6 +120,7 @@ from pydantic import ValidationError
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
+    from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
     from artana_evidence_api.document_store import (
         HarnessDocumentRecord,
         HarnessDocumentStore,
@@ -761,7 +770,7 @@ def queue_research_init_run(  # noqa: PLR0913
         input_payload={
             "objective": objective,
             "seed_terms": list(seed_terms),
-            "sources": dict(sources),
+            "sources": json_object_or_empty(sources),
             "max_depth": max_depth,
             "max_hypotheses": max_hypotheses,
         },
@@ -781,7 +790,7 @@ def queue_research_init_run(  # noqa: PLR0913
             "status": "queued",
             "objective": objective,
             "seed_terms": list(seed_terms),
-            "sources": dict(sources),
+            "sources": json_object_or_empty(sources),
             "source_results": source_results,
             "documents_ingested": 0,
             "proposal_count": 0,
@@ -824,7 +833,7 @@ def _research_init_result_payload(
     serialized_source_results = source_results_with_alias_yield(source_results)
     result: JSONObject = {
         "run_id": run_id,
-        "selected_sources": dict(selected_sources),
+        "selected_sources": json_object_or_empty(selected_sources),
         "source_results": serialized_source_results,
         "pubmed_results": [
             {
@@ -1155,7 +1164,7 @@ async def _maybe_verify_guarded_brief_generation(
 
 async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
     *,
-    query_params: dict[str, str | None],
+    query_params: Mapping[str, str | None],
     owner_id: UUID,
 ) -> _PubMedQueryExecutionResult:
     """Execute one PubMed query family and return discovered candidates."""
@@ -1166,7 +1175,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
     )
 
     local_errors: list[str] = []
-    local_candidates: dict[str, object] = {}
+    local_candidates: dict[str, _PubMedCandidate] = {}
     pubmed_service = LocalPubMedDiscoveryService()
 
     try:
@@ -1181,12 +1190,18 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
             request=search_request,
         )
         total = job.total_results
-        previews = job.result_metadata.get("preview_records", [])
+        previews: list[JSONObject] = []
+        for preview_value in json_array_or_empty(
+            job.result_metadata.get("preview_records"),
+        ):
+            preview = json_object(preview_value)
+            if preview is not None:
+                previews.append(preview)
 
         pmids = [
-            preview.get("pmid")
+            pmid
             for preview in previews[:_MAX_PREVIEWS_PER_QUERY]
-            if preview.get("pmid")
+            if isinstance((pmid := preview.get("pmid")), str) and pmid.strip() != ""
         ]
         abstracts_by_pmid: dict[str, str] = {}
         if pmids:
@@ -1256,7 +1271,8 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
                 local_errors.append(f"efetch failed: {efetch_exc}")
 
         for preview in previews[:_MAX_PREVIEWS_PER_QUERY]:
-            title_text = preview.get("title", "")
+            title_value = preview.get("title")
+            title_text = title_value.strip() if isinstance(title_value, str) else ""
             if not title_text:
                 continue
             pmid_value = preview.get("pmid")
@@ -1268,20 +1284,24 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
             xml_text = abstracts_by_pmid.get(pmid or "", "")
             if xml_text:
                 text = xml_text
-                if preview.get("journal") and preview["journal"] not in text:
-                    text += f"\n\nJournal: {preview['journal']}"
-                if preview.get("doi"):
-                    text += f"\nDOI: {preview['doi']}"
+                journal_value = preview.get("journal")
+                if isinstance(journal_value, str) and journal_value not in text:
+                    text += f"\n\nJournal: {journal_value}"
+                doi_value = preview.get("doi")
+                if isinstance(doi_value, str) and doi_value.strip() != "":
+                    text += f"\nDOI: {doi_value}"
             else:
                 parts = [title_text]
-                if preview.get("journal"):
-                    parts.append(f"Published in: {preview['journal']}")
-                if preview.get("doi"):
-                    parts.append(f"DOI: {preview['doi']}")
+                journal_value = preview.get("journal")
+                if isinstance(journal_value, str) and journal_value.strip() != "":
+                    parts.append(f"Published in: {journal_value}")
+                doi_value = preview.get("doi")
+                if isinstance(doi_value, str) and doi_value.strip() != "":
+                    parts.append(f"DOI: {doi_value}")
                 text = "\n".join(parts)
 
             pmc_id = preview.get("pmc_id")
-            if pmc_id:
+            if isinstance(pmc_id, str) and pmc_id.strip() != "":
                 try:
                     from artana_evidence_api.pubmed_full_text import (
                         fetch_pmc_open_access_full_text,
@@ -1303,14 +1323,16 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
             candidate = _PubMedCandidate(
                 title=title_text,
                 text=text,
-                queries=[query_params.get("search_term", "")],
+                queries=[
+                    search_term
+                    for search_term in [query_params.get("search_term")]
+                    if search_term
+                ],
                 pmid=pmid,
-                doi=preview.get("doi") if isinstance(preview.get("doi"), str) else None,
+                doi=doi_value if isinstance(doi_value, str) else None,
                 pmc_id=pmc_id if isinstance(pmc_id, str) else None,
                 journal=(
-                    preview.get("journal")
-                    if isinstance(preview.get("journal"), str)
-                    else None
+                    journal_value if isinstance(journal_value, str) else None
                 ),
             )
             key = _candidate_key(
@@ -1328,7 +1350,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
 
         return _PubMedQueryExecutionResult(
             query_result=ResearchInitPubMedResultRecord(
-                query=query_params.get("search_term", ""),
+                query=query_params.get("search_term") or "",
                 total_found=total,
                 abstracts_ingested=len(abstracts_by_pmid),
             ),
@@ -1388,7 +1410,7 @@ async def _run_pubmed_query_executions(
     query_semaphore = asyncio.Semaphore(_PUBMED_QUERY_CONCURRENCY_LIMIT)
 
     async def _run_bounded_pubmed_query(
-        query_params: dict[str, str | None],
+        query_params: Mapping[str, str | None],
     ) -> _PubMedQueryExecutionResult:
         async with query_semaphore:
             return await _execute_pubmed_query(
@@ -1920,7 +1942,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 "status": "running",
                 "objective": objective,
                 "seed_terms": list(seed_terms),
-                "sources": dict(sources),
+                "sources": json_object_or_empty(sources),
                 "source_results": source_results,
             },
         )
@@ -1962,12 +1984,12 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             ),
             progress_percent=0.10,
             completed_steps=1,
-            metadata={"sources": dict(sources)},
+            metadata={"sources": json_object_or_empty(sources)},
             progress_observer=progress_observer,
         )
 
-        collected_candidates: dict[str, object] = {}
-        selected_candidates: list[tuple[object, object]] = []
+        collected_candidates: dict[str, _PubMedCandidate] = {}
+        selected_candidates: list[tuple[_PubMedCandidate, _PubMedCandidateReview]] = []
         query_executions: tuple[_PubMedQueryExecutionResult, ...] = ()
 
         if pubmed_enabled and effective_pubmed_replay_bundle is not None:
@@ -1975,8 +1997,13 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 _clone_pubmed_query_execution(query_execution)
                 for query_execution in effective_pubmed_replay_bundle.query_executions
             )
-            selected_candidates = _clone_selected_pubmed_candidates(
-                selected_candidates=effective_pubmed_replay_bundle.selected_candidates,
+            selected_candidates = cast(
+                "list[tuple[_PubMedCandidate, _PubMedCandidateReview]]",
+                _clone_selected_pubmed_candidates(
+                    selected_candidates=(
+                        effective_pubmed_replay_bundle.selected_candidates
+                    ),
+                ),
             )
             errors.extend(effective_pubmed_replay_bundle.selection_errors)
         elif pubmed_enabled:
@@ -2256,25 +2283,48 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
         if marrvel_enrichment_enabled:
             enrichment_sources.append("marrvel")
 
+        run_clinvar_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+        run_drugbank_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+        run_alphafold_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+        run_clinicaltrials_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+        run_mgi_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+        run_zfin_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+        run_marrvel_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
         if enrichment_sources:
             try:
                 from artana_evidence_api.research_init_source_enrichment import (
-                    run_alphafold_enrichment,
-                    run_clinicaltrials_enrichment,
-                    run_clinvar_enrichment,
-                    run_drugbank_enrichment,
-                    run_marrvel_enrichment,
-                    run_mgi_enrichment,
-                    run_zfin_enrichment,
+                    run_alphafold_enrichment as imported_run_alphafold_enrichment,
+                )
+                from artana_evidence_api.research_init_source_enrichment import (
+                    run_clinicaltrials_enrichment as imported_run_clinicaltrials_enrichment,
+                )
+                from artana_evidence_api.research_init_source_enrichment import (
+                    run_clinvar_enrichment as imported_run_clinvar_enrichment,
+                )
+                from artana_evidence_api.research_init_source_enrichment import (
+                    run_drugbank_enrichment as imported_run_drugbank_enrichment,
+                )
+                from artana_evidence_api.research_init_source_enrichment import (
+                    run_marrvel_enrichment as imported_run_marrvel_enrichment,
+                )
+                from artana_evidence_api.research_init_source_enrichment import (
+                    run_mgi_enrichment as imported_run_mgi_enrichment,
+                )
+                from artana_evidence_api.research_init_source_enrichment import (
+                    run_zfin_enrichment as imported_run_zfin_enrichment,
                 )
             except ImportError:
-                run_clinvar_enrichment = None
-                run_drugbank_enrichment = None
-                run_alphafold_enrichment = None
-                run_clinicaltrials_enrichment = None
-                run_mgi_enrichment = None
-                run_zfin_enrichment = None
-                run_marrvel_enrichment = None
+                pass
+            else:
+                run_clinvar_enrichment = imported_run_clinvar_enrichment
+                run_drugbank_enrichment = imported_run_drugbank_enrichment
+                run_alphafold_enrichment = imported_run_alphafold_enrichment
+                run_clinicaltrials_enrichment = (
+                    imported_run_clinicaltrials_enrichment
+                )
+                run_mgi_enrichment = imported_run_mgi_enrichment
+                run_zfin_enrichment = imported_run_zfin_enrichment
+                run_marrvel_enrichment = imported_run_marrvel_enrichment
 
         if enrichment_sources and run_clinvar_enrichment is not None:
             selected_enrichment_sources = list(enrichment_sources)
@@ -2798,9 +2848,12 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                                 current_document.source_type == "pdf"
                                 and current_document.text_content.strip() == ""
                             ):
-                                binary_store = _require_research_init_binary_store(
-                                    services,
-                                ).document_binary_store
+                                binary_store = cast(
+                                    "HarnessDocumentBinaryStore",
+                                    _require_research_init_binary_store(
+                                        services,
+                                    ).document_binary_store,
+                                )
                                 current_document = (
                                     await _enrich_pdf_document(
                                         space_id=space_id,
@@ -3323,19 +3376,19 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                     "bootstrap_source_type": bootstrap_source_type,
                     "bootstrap_summary": {
                         "proposal_count": len(bootstrap_result.proposal_records),
-                        "linked_proposal_count": int(
+                        "linked_proposal_count": json_int(
                             bootstrap_result.source_inventory.get(
                                 "linked_proposal_count",
                                 0,
                             ),
                         ),
-                        "bootstrap_generated_proposal_count": int(
+                        "bootstrap_generated_proposal_count": json_int(
                             bootstrap_result.source_inventory.get(
                                 "bootstrap_generated_proposal_count",
                                 0,
                             ),
                         ),
-                        "graph_connection_timeout_count": int(
+                        "graph_connection_timeout_count": json_int(
                             bootstrap_result.source_inventory.get(
                                 "graph_connection_timeout_count",
                                 0,
@@ -3596,7 +3649,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
         result_errors = list(bootstrap_result.errors) if bootstrap_result else []
         if (
             bootstrap_result is not None
-            and int(
+            and json_int(
                 bootstrap_result.source_inventory.get("linked_proposal_count", 0),
             )
             > 0
@@ -3609,7 +3662,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             ]
         final_errors = [*errors, *result_errors]
         bootstrap_generated_proposal_count = (
-            int(
+            json_int(
                 bootstrap_result.source_inventory.get(
                     "bootstrap_generated_proposal_count",
                     0,
@@ -3633,13 +3686,15 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
 
             chase_rounds_completed = 0
             # Count chase rounds from workspace artifacts
+            workspace_record = artifact_store.get_workspace(
+                space_id=space_id,
+                run_id=run.id,
+            )
+            workspace_payload = (
+                workspace_record.snapshot if workspace_record is not None else {}
+            )
             for cr in range(1, 3):
-                if artifact_store.get_workspace(
-                    space_id=space_id,
-                    run_id=run.id,
-                ) and f"chase_round_{cr}" in (
-                    artifact_store.get_workspace(space_id=space_id, run_id=run.id) or {}
-                ):
+                if f"chase_round_{cr}" in workspace_payload:
                     chase_rounds_completed = cr
 
             # Pull proposals to ground cross-source overlap detection in
@@ -3787,7 +3842,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             research_state=research_state_data,
             pending_questions=effective_pending_questions,
             errors=final_errors,
-            claim_curation=result_payload.get("claim_curation"),
+            claim_curation=json_object(result_payload.get("claim_curation")),
             research_brief_markdown=research_brief_markdown,
         )
     except Exception:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta  # noqa: TC003
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated, cast
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.artifact_store import (
@@ -94,10 +94,14 @@ from artana_evidence_api.transparency import (
     append_manual_review_decision,
     ensure_run_transparency_seed,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import JSONObject, json_value
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from artana_evidence_api.auth import HarnessUser
+    from artana_evidence_api.harness_runtime import HarnessExecutionServices
 
 router = APIRouter(
     prefix="/v1/spaces",
@@ -437,7 +441,7 @@ class SupervisorChatGraphWriteCandidateDecisionResponse(BaseModel):
 
 def _build_supervisor_chat_graph_write_review_responses(
     *,
-    summary: dict[str, object],
+    summary: JSONObject,
 ) -> list[SupervisorChatGraphWriteReviewResponse]:
     return [
         SupervisorChatGraphWriteReviewResponse.model_validate(review)
@@ -1269,18 +1273,24 @@ def _filtered_supervisor_run_details(
 
 def build_supervisor_run_response(
     result: SupervisorExecutionResult,
-) -> SupervisorRunResponse:
+) -> SupervisorRunResponse | JSONResponse:
     """Serialize one supervisor execution result for HTTP responses."""
     return SupervisorRunResponse(
         run=HarnessRunResponse.from_record(result.run),
-        bootstrap=build_research_bootstrap_run_response(result.bootstrap),
+        bootstrap=cast(
+            "ResearchBootstrapRunResponse",
+            build_research_bootstrap_run_response(result.bootstrap),
+        ),
         chat=(
-            build_chat_message_run_response(result.chat)
+            cast("ChatMessageRunResponse", build_chat_message_run_response(result.chat))
             if result.chat is not None
             else None
         ),
         curation=(
-            build_claim_curation_run_response(result.curation)
+            cast(
+                "ClaimCurationRunResponse",
+                build_claim_curation_run_response(result.curation),
+            )
             if result.curation is not None
             else None
         ),
@@ -1307,7 +1317,7 @@ def _require_supervisor_run_record(
     space_id: UUID,
     run_id: UUID,
     run_registry: HarnessRunRegistry,
-):
+) -> HarnessRunRecord:
     run = run_registry.get_run(space_id=space_id, run_id=run_id)
     if run is None:
         raise HTTPException(
@@ -1327,7 +1337,7 @@ def _supervisor_summary(
     space_id: UUID,
     run_id: str,
     artifact_store: HarnessArtifactStore,
-) -> dict[str, object]:
+) -> JSONObject:
     summary_artifact = artifact_store.get_artifact(
         space_id=space_id,
         run_id=run_id,
@@ -1400,8 +1410,8 @@ def _require_supervisor_briefing_chat_context(
 
 def _supervisor_review_history(
     *,
-    summary: dict[str, object],
-) -> list[dict[str, object]]:
+    summary: JSONObject,
+) -> list[JSONObject]:
     raw_reviews = summary.get("chat_graph_write_reviews")
     if not isinstance(raw_reviews, list):
         return []
@@ -1410,19 +1420,19 @@ def _supervisor_review_history(
 
 def _upsert_supervisor_review_step(
     *,
-    summary: dict[str, object],
+    summary: JSONObject,
     chat_run_id: str,
     review_count: int,
     decision_status: str,
     candidate_index: int,
-) -> list[dict[str, object]]:
+) -> list[JSONObject]:
     raw_steps = summary.get("steps")
     existing_steps = (
         [item for item in raw_steps if isinstance(item, dict)]
         if isinstance(raw_steps, list)
         else []
     )
-    updated_step = {
+    updated_step: JSONObject = {
         "step": "chat_graph_write_review",
         "status": "completed",
         "harness_id": "graph-chat",
@@ -1432,7 +1442,7 @@ def _upsert_supervisor_review_step(
             f"Latest decision: {decision_status} candidate {candidate_index}."
         ),
     }
-    updated_steps: list[dict[str, object]] = []
+    updated_steps: list[JSONObject] = []
     step_found = False
     for step in existing_steps:
         if step.get("step") == "chat_graph_write_review":
@@ -1458,12 +1468,14 @@ async def create_supervisor_run(  # noqa: PLR0913
     request: SupervisorRunRequest,
     *,
     prefer: Annotated[str | None, Header()] = None,
-    current_user=_CURRENT_USER_DEPENDENCY,
+    current_user: HarnessUser = _CURRENT_USER_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     parent_graph_api_gateway: GraphTransportBundle = _PARENT_GRAPH_API_GATEWAY_DEPENDENCY,
-    execution_services=_HARNESS_EXECUTION_SERVICES_DEPENDENCY,
-) -> SupervisorRunResponse:
+    execution_services: HarnessExecutionServices = (
+        _HARNESS_EXECUTION_SERVICES_DEPENDENCY
+    ),
+) -> SupervisorRunResponse | JSONResponse:
     """Run the forward-only supervisor composition across bootstrap, chat, and curation."""
     objective = (
         request.objective.strip() if isinstance(request.objective, str) else None
@@ -1730,7 +1742,9 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _PARENT_GRAPH_API_GATEWAY_DEPENDENCY,
-    execution_services=_HARNESS_EXECUTION_SERVICES_DEPENDENCY,
+    execution_services: HarnessExecutionServices = (
+        _HARNESS_EXECUTION_SERVICES_DEPENDENCY
+    ),
 ) -> SupervisorChatGraphWriteCandidateDecisionResponse:
     supervisor_run = _require_supervisor_run_record(
         space_id=space_id,
@@ -1758,13 +1772,13 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
             proposal_store=proposal_store,
             run_registry=run_registry,
         )
-        request_metadata = {
+        request_metadata: JSONObject = {
             **request.metadata,
             "chat_candidate_index": candidate_index,
             "chat_session_id": chat_session_id,
             "supervisor_run_id": supervisor_run.id,
         }
-        supervisor_workspace_patch = {
+        supervisor_workspace_patch: JSONObject = {
             "last_supervisor_chat_graph_write_candidate_index": candidate_index,
             "last_supervisor_chat_graph_write_candidate_decision": request.decision,
             "last_supervisor_chat_graph_write_proposal_id": proposal.id,
@@ -1858,7 +1872,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 runtime=execution_services.runtime,
             )
         review_artifact_key = "supervisor_chat_graph_write_review"
-        review_entry: dict[str, object] = {
+        review_entry: JSONObject = {
             "reviewed_at": datetime.now(UTC).isoformat(),
             "chat_run_id": chat_run_id,
             "chat_session_id": chat_session_id,
@@ -1867,11 +1881,11 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
             "decision_status": updated_proposal.status,
             "proposal_id": updated_proposal.id,
             "proposal_status": updated_proposal.status,
-            "candidate": candidate.model_dump(mode="json"),
+            "candidate": json_value(candidate.model_dump(mode="json")),
         }
         if request.decision == "promote":
-            review_entry["graph_claim_id"] = updated_proposal.metadata.get(
-                "graph_claim_id",
+            review_entry["graph_claim_id"] = json_value(
+                updated_proposal.metadata.get("graph_claim_id"),
             )
         artifact_store.put_artifact(
             space_id=space_id,
@@ -1892,7 +1906,7 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
             *_supervisor_review_history(summary=summary),
             review_entry,
         ]
-        updated_summary = {
+        updated_summary: JSONObject = {
             **summary,
             "chat_graph_write_reviews": review_history,
             "chat_graph_write_review_count": len(review_history),

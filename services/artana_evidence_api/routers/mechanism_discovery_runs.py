@@ -150,7 +150,7 @@ def _normalize_seed_entity_ids(seed_entity_ids: list[str]) -> tuple[str, ...]:
 
 def build_mechanism_discovery_run_response(
     result: MechanismDiscoveryRunExecutionResult,
-) -> MechanismDiscoveryRunResponse:
+) -> MechanismDiscoveryRunResponse | JSONResponse:
     """Serialize one completed mechanism-discovery execution."""
     return MechanismDiscoveryRunResponse(
         run=HarnessRunResponse.from_record(result.run),
@@ -180,7 +180,7 @@ async def create_mechanism_discovery_run(  # noqa: PLR0913
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
-) -> MechanismDiscoveryRunResponse:
+) -> MechanismDiscoveryRunResponse | JSONResponse:
     """Read reasoning paths, rank converging mechanisms, and stage hypotheses."""
     try:
         seed_entity_ids = _normalize_seed_entity_ids(request.seed_entity_ids)

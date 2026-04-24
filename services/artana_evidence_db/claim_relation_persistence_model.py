@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -33,6 +34,9 @@ def _existing_table(table_name: str) -> Table | None:
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
 
 
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _claim_relations_table = _existing_table("claim_relations")
 if _claim_relations_table is None:
     _claim_relations_table = Table(
@@ -167,11 +171,29 @@ if _claim_relations_table is None:
         ),
     )
 
+_claim_relations_table_model_table = require_table(_claim_relations_table)
 
 class GraphClaimRelationModel(Base):
     """Directed claim-to-claim ledger edge."""
 
-    __table__ = _claim_relations_table
+
+    __table__ = _claim_relations_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        source_claim_id: Mapped[UUID]
+        target_claim_id: Mapped[UUID]
+        relation_type: Mapped[str]
+        agent_run_id: Mapped[str | None]
+        source_document_id: Mapped[UUID | None]
+        source_document_ref: Mapped[str | None]
+        confidence: Mapped[float]
+        review_status: Mapped[str]
+        evidence_summary: Mapped[str | None]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 ClaimRelationModel = GraphClaimRelationModel

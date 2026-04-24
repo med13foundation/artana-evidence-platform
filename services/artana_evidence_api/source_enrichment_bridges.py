@@ -9,10 +9,13 @@ implemented locally so research-init does not depend on the old top-level
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, cast
 from uuid import UUID
 
-from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryService
+from artana_evidence_api.marrvel_discovery import (
+    MarrvelDiscoveryResult,
+    MarrvelDiscoveryService,
+)
 
 
 def _normalize_optional_list(values: list[str] | None) -> list[str] | None:
@@ -139,7 +142,7 @@ class MarrvelDiscoveryServiceProtocol(Protocol):
         protein_variant: str | None = None,
         taxon_id: int = 9606,
         panels: tuple[str, ...] | list[str] | None = None,
-    ) -> object: ...
+    ) -> MarrvelDiscoveryResult: ...
 
     def close(self) -> None: ...
 
@@ -155,21 +158,21 @@ def build_drugbank_gateway() -> DrugBankGatewayProtocol | None:
     """Construct the service-local DrugBank gateway."""
     from artana_evidence_api.drugbank_gateway import DrugBankSourceGateway
 
-    return DrugBankSourceGateway()
+    return cast("DrugBankGatewayProtocol", DrugBankSourceGateway())
 
 
 def build_uniprot_gateway() -> UniProtGatewayProtocol | None:
     """Construct the service-local UniProt gateway."""
     from artana_evidence_api.uniprot_gateway import UniProtSourceGateway
 
-    return UniProtSourceGateway()
+    return cast("UniProtGatewayProtocol", UniProtSourceGateway())
 
 
 def build_alphafold_gateway() -> AlphaFoldGatewayProtocol | None:
     """Construct the service-local AlphaFold gateway."""
     from artana_evidence_api.alphafold_gateway import AlphaFoldSourceGateway
 
-    return AlphaFoldSourceGateway()
+    return cast("AlphaFoldGatewayProtocol", AlphaFoldSourceGateway())
 
 
 def build_marrvel_discovery_service() -> MarrvelDiscoveryServiceProtocol | None:
@@ -181,21 +184,21 @@ def build_clinicaltrials_gateway() -> ClinicalTrialsGatewayProtocol | None:
     """Construct the service-local ClinicalTrials.gov gateway."""
     from artana_evidence_api.clinicaltrials_gateway import ClinicalTrialsSourceGateway
 
-    return ClinicalTrialsSourceGateway()
+    return cast("ClinicalTrialsGatewayProtocol", ClinicalTrialsSourceGateway())
 
 
 def build_mgi_gateway() -> AllianceGeneGatewayProtocol | None:
     """Construct the service-local MGI gateway."""
     from artana_evidence_api.alliance_gene_gateways import MGISourceGateway
 
-    return MGISourceGateway()
+    return cast("AllianceGeneGatewayProtocol", MGISourceGateway())
 
 
 def build_zfin_gateway() -> AllianceGeneGatewayProtocol | None:
     """Construct the service-local ZFIN gateway."""
     from artana_evidence_api.alliance_gene_gateways import ZFINSourceGateway
 
-    return ZFINSourceGateway()
+    return cast("AllianceGeneGatewayProtocol", ZFINSourceGateway())
 
 
 __all__ = [

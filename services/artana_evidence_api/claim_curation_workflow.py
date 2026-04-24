@@ -23,7 +23,10 @@ from artana_evidence_api.types.common import JSONObject
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from artana_evidence_api.approval_store import HarnessApprovalStore
+    from artana_evidence_api.approval_store import (
+        HarnessApprovalAction,
+        HarnessApprovalStore,
+    )
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.claim_curation_runtime import (
         ClaimCurationProposalReview,
@@ -332,7 +335,7 @@ def _store_claim_curation_pause_state(  # noqa: PLR0913
     reviews: list[ClaimCurationProposalReview],
     curation_packet: JSONObject,
     review_plan: JSONObject,
-    approval_actions: list[JSONObject],
+    approval_actions: tuple[HarnessApprovalAction, ...],
     approval_store: HarnessApprovalStore,
     artifact_store: HarnessArtifactStore,
     run_registry: HarnessRunRegistry,

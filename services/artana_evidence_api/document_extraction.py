@@ -9,8 +9,8 @@ import logging
 import re
 from contextlib import suppress
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Literal
-from uuid import UUID
+from typing import TYPE_CHECKING, Literal, Protocol, cast
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
 from artana_evidence_api.document_store import HarnessDocumentRecord
@@ -22,15 +22,40 @@ from artana_evidence_api.step_helpers import run_single_step_with_policy
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from pydantic import BaseModel, ConfigDict, Field
 
-try:  # pragma: no cover - import guard
-    from pypdf import PdfReader
-except ModuleNotFoundError:  # pragma: no cover - exercised in env-dependent tests
-    PdfReader = None
-
 if TYPE_CHECKING:
     from artana_evidence_api.graph_client import GraphTransportBundle
 
 logger = logging.getLogger(__name__)
+_LLM_EXTRACTION_PSEUDO_SPACE_ID = uuid5(
+    NAMESPACE_URL,
+    "artana-evidence-api:llm-extraction",
+)
+
+
+class _LLMRelationLike(Protocol):
+    subject: str
+    relation_type: str
+    object: str
+    sentence: str
+
+
+class _LLMExtractionResultLike(Protocol):
+    relations: list[_LLMRelationLike]
+
+
+class _ProposalReviewItemLike(Protocol):
+    index: int
+    factual_support: FactualSupportScale
+    goal_relevance: GoalRelevanceScale
+    priority: PriorityScale
+    rationale: str
+    factual_rationale: str
+    relevance_rationale: str
+
+
+class _ProposalReviewResultLike(Protocol):
+    reviews: list[_ProposalReviewItemLike]
+
 
 def _graph_ai_preflight_service() -> GraphAIPreflightService:
     return GraphAIPreflightService()
@@ -404,10 +429,12 @@ def _proposal_review_step_key(
 
 def extract_pdf_text(payload: bytes) -> DocumentTextExtraction:
     """Extract text content from one PDF payload."""
-    if PdfReader is None:
+    try:
+        from pypdf import PdfReader
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError(
             "PDF upload support requires the optional 'pypdf' dependency.",
-        )
+        ) from exc
     reader = PdfReader(io.BytesIO(payload))
     page_texts = [page.extract_text() or "" for page in reader.pages]
     return DocumentTextExtraction(
@@ -992,10 +1019,13 @@ async def extract_relation_candidates_with_llm(  # noqa: PLR0912, PLR0915
         )
 
         output = result.output
-        parsed = (
-            output
-            if isinstance(output, output_schema)
-            else output_schema.model_validate(output)
+        parsed = cast(
+            "_LLMExtractionResultLike",
+            (
+                output
+                if isinstance(output, output_schema)
+                else output_schema.model_validate(output)
+            ),
         )
 
         # Convert to ExtractedRelationCandidate with label cleanup
@@ -1040,7 +1070,7 @@ async def extract_relation_candidates_with_llm(  # noqa: PLR0912, PLR0915
                 preflight_service = _graph_ai_preflight_service()
                 decisions = {
                     candidate: await preflight_service.resolve_relation_type(
-                        space_id="llm-extraction",
+                        space_id=_LLM_EXTRACTION_PSEUDO_SPACE_ID,
                         relation_type=candidate,
                         known_types=sorted(_LLM_VALID_RELATION_TYPES),
                         space_context=space_context,
@@ -1775,10 +1805,13 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
             timeout=_LLM_PROPOSAL_REVIEW_TIMEOUT_SECONDS,
         )
         output = result.output
-        parsed = (
-            output
-            if isinstance(output, output_schema)
-            else output_schema.model_validate(output)
+        parsed = cast(
+            "_ProposalReviewResultLike",
+            (
+                output
+                if isinstance(output, output_schema)
+                else output_schema.model_validate(output)
+            ),
         )
         reviews_by_index = {
             item.index: DocumentProposalReview(

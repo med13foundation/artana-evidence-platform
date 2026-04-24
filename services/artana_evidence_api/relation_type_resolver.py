@@ -913,7 +913,7 @@ async def resolve_entity_with_ai(  # noqa: PLR0911
             }
 
     # Build candidate list for kernel agent resolution
-    candidate_entities = [
+    candidate_entities: list[dict[str, str | list[str]]] = [
         {
             "id": str(entity.id),
             "display_label": entity.display_label or str(entity.id),

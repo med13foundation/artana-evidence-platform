@@ -19,14 +19,29 @@ from artana_evidence_api.types.graph_fact_assessment import (
 class HarnessProposalAssessmentSource(Protocol):
     """Minimal proposal surface needed to derive a graph-write assessment."""
 
-    source_kind: str
-    source_key: str
-    title: str
-    summary: str
-    reasoning_path: JSONObject
-    evidence_bundle: list[JSONObject]
-    payload: JSONObject
-    metadata: JSONObject
+    @property
+    def source_kind(self) -> str: ...
+
+    @property
+    def source_key(self) -> str: ...
+
+    @property
+    def title(self) -> str: ...
+
+    @property
+    def summary(self) -> str: ...
+
+    @property
+    def reasoning_path(self) -> JSONObject: ...
+
+    @property
+    def evidence_bundle(self) -> list[JSONObject]: ...
+
+    @property
+    def payload(self) -> JSONObject: ...
+
+    @property
+    def metadata(self) -> JSONObject: ...
 
 
 _FACTUAL_SUPPORT_BANDS: dict[str, SupportBand] = {
@@ -134,7 +149,7 @@ def chat_graph_write_fact_assessment(
 def _assessment_from_proposal_review(
     *,
     proposal: HarnessProposalAssessmentSource,
-    proposal_review: Mapping[object, object],
+    proposal_review: Mapping[str, object],
 ) -> FactAssessment | None:
     factual_support = _string_mapping_value(proposal_review, "factual_support")
     if factual_support is None:
@@ -265,7 +280,7 @@ def _normalize_json_value(value: object) -> JSONValue:
 
 
 def _string_mapping_value(
-    payload: Mapping[object, object],
+    payload: Mapping[str, object],
     field_name: str,
 ) -> str | None:
     value = payload.get(field_name)

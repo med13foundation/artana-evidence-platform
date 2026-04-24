@@ -33,6 +33,7 @@ from artana_evidence_api.transparency import (
     append_skill_activity,
     ensure_run_transparency_seed,
 )
+from artana_evidence_api.types.common import JSONObject, json_array_or_empty
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
@@ -58,8 +59,6 @@ if TYPE_CHECKING:
         HarnessRunRecord,
         HarnessRunRegistry,
     )
-    from artana_evidence_api.types.common import JSONObject
-
 DEFAULT_CHAT_SESSION_TITLE = "New Graph Chat"
 _SESSION_TITLE_MAX_LENGTH = 80
 
@@ -406,11 +405,13 @@ async def execute_graph_chat_message(  # noqa: C901, PLR0912, PLR0913, PLR0915
                     include_evidence_chains=include_evidence_chains,
                     memory_context=memory_context,
                     document_ids=[document.id for document in referenced_documents],
-                    document_context=(
-                        list(memory_context["referenced_documents"])
-                        if isinstance(memory_context.get("referenced_documents"), list)
-                        else []
-                    ),
+                    document_context=[
+                        item
+                        for item in json_array_or_empty(
+                            memory_context.get("referenced_documents")
+                        )
+                        if isinstance(item, dict)
+                    ],
                     refresh_pubmed_if_needed=refresh_pubmed_if_needed,
                 ),
                 graph_service_status=graph_health.status,
@@ -650,7 +651,7 @@ async def execute_graph_chat_message(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 )
 
         if referenced_documents:
-            proposals_by_document_id = {
+            proposals_by_document_id: dict[str, list[JSONObject]] = {
                 document.id: [
                     {
                         "id": proposal.id,

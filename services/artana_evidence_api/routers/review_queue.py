@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC
+from typing import TYPE_CHECKING
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.approval_store import (
@@ -49,6 +50,9 @@ from .proposals import (
     promote_proposal,
     reject_proposal,
 )
+
+if TYPE_CHECKING:
+    from artana_evidence_api.harness_runtime import HarnessExecutionServices
 
 router = APIRouter(
     prefix="/v1/spaces",
@@ -820,7 +824,9 @@ def act_on_review_queue_item(  # noqa: PLR0913
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
-    execution_services=_HARNESS_EXECUTION_SERVICES_DEPENDENCY,
+    execution_services: HarnessExecutionServices = (
+        _HARNESS_EXECUTION_SERVICES_DEPENDENCY
+    ),
 ) -> HarnessReviewQueueItemResponse:
     """Apply one action to a queue item and return the refreshed queue view."""
     item_type, resource_key = _split_review_queue_item_id(item_id)

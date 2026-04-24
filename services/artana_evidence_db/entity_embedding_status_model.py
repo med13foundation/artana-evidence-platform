@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -22,6 +23,10 @@ def _existing_table(table_name: str) -> Table | None:
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
 
 
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.orm import Mapped
 _entity_embedding_status_table = _existing_table("entity_embedding_status")
 if _entity_embedding_status_table is None:
     _entity_embedding_status_table = Table(
@@ -97,11 +102,26 @@ if _entity_embedding_status_table is None:
         ),
     )
 
+_entity_embedding_status_table_model_table = require_table(_entity_embedding_status_table)
 
 class GraphEntityEmbeddingStatusModel(Base):
     """Readiness state for graph-owned entity embedding projections."""
 
-    __table__ = _entity_embedding_status_table
+
+    __table__ = _entity_embedding_status_table_model_table
+
+    if TYPE_CHECKING:
+        research_space_id: Mapped[UUID]
+        entity_id: Mapped[UUID]
+        state: Mapped[str]
+        desired_fingerprint: Mapped[str]
+        embedding_model: Mapped[str]
+        embedding_version: Mapped[int]
+        last_requested_at: Mapped[datetime]
+        last_attempted_at: Mapped[datetime | None]
+        last_refreshed_at: Mapped[datetime | None]
+        last_error_code: Mapped[str | None]
+        last_error_message: Mapped[str | None]
 
 
 EntityEmbeddingStatusModel = GraphEntityEmbeddingStatusModel

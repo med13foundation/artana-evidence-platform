@@ -7,8 +7,9 @@ import hashlib
 import json
 import re
 import threading
+from collections.abc import Coroutine
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, cast
 from uuid import UUID
 
 from artana_evidence_api.artifact_store import (
@@ -37,6 +38,7 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationClaimCreateRequest,
     KernelRelationClaimResponse,
     KernelRelationCreateRequest,
+    KernelRelationResponse,
 )
 from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
 from fastapi import HTTPException, status
@@ -46,6 +48,8 @@ if TYPE_CHECKING:
         HarnessProposalRecord,
         HarnessProposalStore,
     )
+
+_T = TypeVar("_T")
 
 _NON_GENE_DISEASE_LABELS = frozenset({"ADHD", "ASD"})
 _DISEASE_HINTS = (
@@ -204,7 +208,7 @@ def _graph_submission_service() -> GraphWorkflowSubmissionService:
     return GraphWorkflowSubmissionService()
 
 
-def _run_async_preflight(awaitable):
+def _run_async_preflight(awaitable: Coroutine[object, object, _T]) -> _T:
     try:
         asyncio.get_running_loop()
     except RuntimeError:
@@ -224,7 +228,7 @@ def _run_async_preflight(awaitable):
     thread.join()
     if "value" in error:
         raise error["value"]
-    return result["value"]
+    return cast("_T", result["value"])
 
 
 def _message_from_graph_detail_mapping(
@@ -1181,15 +1185,16 @@ def promote_to_graph_claim(
             status_code=status_code,
             detail=detail,
         ) from exc
-    source_claim_id = relation.source_claim_id
+    relation_response = cast("KernelRelationResponse", relation)
+    source_claim_id = relation_response.source_claim_id
     return {
         "graph_claim_id": str(source_claim_id) if source_claim_id is not None else None,
         "graph_claim_status": "RESOLVED",
         "graph_claim_validation_state": "ALLOWED",
         "graph_claim_persistability": "PERSISTABLE",
         "graph_claim_polarity": "SUPPORT",
-        "graph_relation_id": str(relation.id),
-        "graph_relation_curation_status": relation.curation_status,
+        "graph_relation_id": str(relation_response.id),
+        "graph_relation_curation_status": relation_response.curation_status,
         "graph_promotion_mode": "canonical_relation",
     }
 
@@ -1227,7 +1232,9 @@ def _promote_to_open_graph_claim(
             status_code=status_code,
             detail=detail,
         ) from exc
-    return _graph_claim_promotion_result(claim=claim)
+    return _graph_claim_promotion_result(
+        claim=cast("KernelRelationClaimResponse", claim)
+    )
 
 
 def _graph_claim_promotion_result(

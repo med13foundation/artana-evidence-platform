@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
 from artana_evidence_db._dictionary_repository_constraints_merge_mixin import (
@@ -440,7 +440,7 @@ class GraphDictionaryRepository(
                 display_name=definition.display_name,
                 data_type=definition.data_type,
                 description=definition.description,
-                constraints=definition.constraints,
+                constraints=cast("JSONObject | None", definition.constraints),
                 domain_context="general",
                 sensitivity="NON_SENSITIVE",
                 created_by="seed",

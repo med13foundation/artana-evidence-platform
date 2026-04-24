@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
+    qualify_graph_table_name,
 )
 from sqlalchemy import (
     CheckConstraint,
@@ -27,7 +29,12 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
-_claim_evidence_table = Base.metadata.tables.get("claim_evidence")
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
+_claim_evidence_table = Base.metadata.tables.get(
+    qualify_graph_table_name("claim_evidence"),
+)
 if _claim_evidence_table is None:
     _claim_evidence_table = Table(
         "claim_evidence",
@@ -104,7 +111,9 @@ if _claim_evidence_table is None:
         ),
     )
 
-_claim_participants_table = Base.metadata.tables.get("claim_participants")
+_claim_participants_table = Base.metadata.tables.get(
+    qualify_graph_table_name("claim_participants"),
+)
 if _claim_participants_table is None:
     _claim_participants_table = Table(
         "claim_participants",
@@ -183,7 +192,9 @@ if _claim_participants_table is None:
         ),
     )
 
-_relation_claims_table = Base.metadata.tables.get("relation_claims")
+_relation_claims_table = Base.metadata.tables.get(
+    qualify_graph_table_name("relation_claims"),
+)
 if _relation_claims_table is None:
     _relation_claims_table = Table(
         "relation_claims",
@@ -326,7 +337,7 @@ if _relation_claims_table is None:
     )
 
 _relation_projection_sources_table = Base.metadata.tables.get(
-    "relation_projection_sources",
+    qualify_graph_table_name("relation_projection_sources"),
 )
 if _relation_projection_sources_table is None:
     _relation_projection_sources_table = Table(
@@ -441,29 +452,109 @@ if _relation_projection_sources_table is None:
         ),
     )
 
+_claim_evidence_table_model_table = require_table(_claim_evidence_table)
 
 class GraphClaimEvidenceModel(Base):
     """Sentence/table/figure evidence rows attached to relation claims."""
 
-    __table__ = _claim_evidence_table
 
+    __table__ = _claim_evidence_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        claim_id: Mapped[UUID]
+        source_document_id: Mapped[UUID | None]
+        source_document_ref: Mapped[str | None]
+        agent_run_id: Mapped[str | None]
+        sentence: Mapped[str | None]
+        sentence_source: Mapped[str | None]
+        sentence_confidence: Mapped[str | None]
+        sentence_rationale: Mapped[str | None]
+        figure_reference: Mapped[str | None]
+        table_reference: Mapped[str | None]
+        confidence: Mapped[float]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+
+
+_claim_participants_table_model_table = require_table(_claim_participants_table)
 
 class GraphClaimParticipantModel(Base):
     """N-ary participant rows linked to relation claims."""
 
-    __table__ = _claim_participants_table
 
+    __table__ = _claim_participants_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        claim_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        label: Mapped[str | None]
+        entity_id: Mapped[UUID | None]
+        role: Mapped[str]
+        position: Mapped[int | None]
+        qualifiers: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_relation_claims_table_model_table = require_table(_relation_claims_table)
 
 class GraphRelationClaimModel(Base):
     """One extracted relation candidate captured for review."""
 
-    __table__ = _relation_claims_table
 
+    __table__ = _relation_claims_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        source_document_id: Mapped[UUID | None]
+        source_document_ref: Mapped[str | None]
+        source_ref: Mapped[str | None]
+        agent_run_id: Mapped[str | None]
+        source_type: Mapped[str]
+        relation_type: Mapped[str]
+        target_type: Mapped[str]
+        source_label: Mapped[str | None]
+        target_label: Mapped[str | None]
+        confidence: Mapped[float]
+        validation_state: Mapped[str]
+        validation_reason: Mapped[str | None]
+        persistability: Mapped[str]
+        assertion_class: Mapped[str]
+        claim_status: Mapped[str]
+        polarity: Mapped[str]
+        claim_text: Mapped[str | None]
+        claim_section: Mapped[str | None]
+        linked_relation_id: Mapped[UUID | None]
+        metadata_payload: Mapped[JSONObject]
+        triaged_by: Mapped[UUID | None]
+        triaged_at: Mapped[datetime | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_relation_projection_sources_table_model_table = require_table(_relation_projection_sources_table)
 
 class GraphRelationProjectionSourceModel(Base):
     """Claim-backed lineage rows for canonical relation projections."""
 
-    __table__ = _relation_projection_sources_table
+
+    __table__ = _relation_projection_sources_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        relation_id: Mapped[UUID]
+        claim_id: Mapped[UUID]
+        projection_origin: Mapped[str]
+        source_document_id: Mapped[UUID | None]
+        source_document_ref: Mapped[str | None]
+        agent_run_id: Mapped[str | None]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 ClaimEvidenceModel = GraphClaimEvidenceModel

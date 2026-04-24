@@ -266,11 +266,20 @@ class ExtractionContract(EvidenceBackedAgentContract):
 
     @model_validator(mode="after")
     def _normalize_confidence_score(self) -> ExtractionContract:
-        confidence_scores = [
-            item.confidence
-            for item in (*self.entities, *self.observations, *self.relations)
-            if item.confidence > 0.0
+        entity_scores = [
+            entity.confidence for entity in self.entities if entity.confidence > 0.0
         ]
+        observation_scores = [
+            observation.confidence
+            for observation in self.observations
+            if observation.confidence > 0.0
+        ]
+        relation_scores = [
+            relation.confidence
+            for relation in self.relations
+            if relation.confidence > 0.0
+        ]
+        confidence_scores = [*entity_scores, *observation_scores, *relation_scores]
         self.confidence_score = max(confidence_scores, default=0.0)
         return self
 

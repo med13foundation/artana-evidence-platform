@@ -420,9 +420,10 @@ def _normalize_onboarding_state_patch_payload(
 
     state_patch["thread_status"] = "your_turn"
     state_patch["onboarding_status"] = "awaiting_researcher_reply"
-    if not isinstance(state_patch.get("pending_questions"), list) or not [
+    raw_pending_questions = state_patch.get("pending_questions")
+    if not isinstance(raw_pending_questions, list) or not [
         value
-        for value in state_patch.get("pending_questions", [])
+        for value in raw_pending_questions
         if isinstance(value, str) and value.strip()
     ]:
         state_patch["pending_questions"] = pending_question_prompts

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.artifact_store import (
@@ -34,6 +35,9 @@ from artana_evidence_api.transparency import append_manual_review_decision
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from artana_evidence_api.harness_runtime import HarnessExecutionServices
 
 router = APIRouter(
     prefix="/v1/spaces",
@@ -221,7 +225,9 @@ def promote_proposal(  # noqa: PLR0913
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
-    execution_services=_HARNESS_EXECUTION_SERVICES_DEPENDENCY,
+    execution_services: HarnessExecutionServices = (
+        _HARNESS_EXECUTION_SERVICES_DEPENDENCY
+    ),
 ) -> HarnessProposalResponse:
     """Promote one proposal into the reviewed state."""
     decision_request = _resolve_decision_request(request)
@@ -368,7 +374,9 @@ def reject_proposal(  # noqa: PLR0913
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
-    execution_services=_HARNESS_EXECUTION_SERVICES_DEPENDENCY,
+    execution_services: HarnessExecutionServices = (
+        _HARNESS_EXECUTION_SERVICES_DEPENDENCY
+    ),
 ) -> HarnessProposalResponse:
     """Reject one proposal without touching the graph ledger."""
     decision_request = _resolve_decision_request(request)

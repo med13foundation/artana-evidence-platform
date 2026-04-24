@@ -230,19 +230,26 @@ def _record_list(
     keys: tuple[str, ...],
 ) -> list[dict[str, object]]:
     if isinstance(payload, list | tuple):
-        return [_dict_value(item) for item in payload if _dict_value(item) is not None]
+        return _dict_values(payload)
     mapping = _dict_value(payload)
     if mapping is None:
         return []
     for key in keys:
         value = mapping.get(key)
         if isinstance(value, list | tuple):
-            return [
-                _dict_value(item) for item in value if _dict_value(item) is not None
-            ]
+            return _dict_values(value)
     if _first_string(mapping, ("drugbank_id", "drugbank-id", "id")):
         return [mapping]
     return []
+
+
+def _dict_values(values: list[object] | tuple[object, ...]) -> list[dict[str, object]]:
+    records: list[dict[str, object]] = []
+    for item in values:
+        record = _dict_value(item)
+        if record is not None:
+            records.append(record)
+    return records
 
 
 def _target_names(value: object) -> list[str]:

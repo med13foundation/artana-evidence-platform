@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from artana_evidence_api.auth import (
@@ -41,7 +41,10 @@ from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.run_registry import HarnessRunRegistry
 from artana_evidence_api.schedule_store import HarnessScheduleStore
 from artana_evidence_api.space_acl import SpaceRole
-from artana_evidence_api.types.common import ResearchSpaceSettings
+from artana_evidence_api.types.common import (
+    ResearchSpaceSettings,
+    ResearchSpaceSourcePreferences,
+)
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -99,7 +102,9 @@ class HarnessResearchSpaceResponse(BaseModel):
     status: str
     role: str
     is_default: bool = False
-    settings: ResearchSpaceSettings = Field(default_factory=dict)
+    settings: ResearchSpaceSettings = Field(
+        default_factory=lambda: cast("ResearchSpaceSettings", {}),
+    )
 
     @classmethod
     def from_record(
@@ -115,7 +120,7 @@ class HarnessResearchSpaceResponse(BaseModel):
             status=record.status,
             role=record.role,
             is_default=record.is_default,
-            settings=dict(record.settings or {}),
+            settings=record.settings or {},
         )
 
 
@@ -285,7 +290,16 @@ def create_space(
             owner=_identity_from_user(current_user),
             name=request.name,
             description=request.description,
-            settings={"sources": request.sources} if request.sources else None,
+            settings=(
+                {
+                    "sources": cast(
+                        "ResearchSpaceSourcePreferences",
+                        request.sources,
+                    )
+                }
+                if request.sources
+                else None
+            ),
         )
     except IdentityUserConflictError as exc:
         raise HTTPException(
@@ -317,7 +331,7 @@ def update_space_settings(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Space not found",
         )
-    next_settings: ResearchSpaceSettings = dict(current.settings or {})
+    next_settings = cast("ResearchSpaceSettings", dict(current.settings or {}))
     if request.research_orchestration_mode is not None:
         mode = request.research_orchestration_mode
         if mode not in _RESEARCH_ORCHESTRATION_MODES:

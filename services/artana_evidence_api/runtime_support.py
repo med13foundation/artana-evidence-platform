@@ -80,7 +80,7 @@ def configure_litellm_runtime_logging() -> None:
         return
 
     with suppress(AttributeError):
-        litellm.suppress_debug_info = True
+        vars(litellm)["suppress_debug_info"] = True
 
     if os.getenv("LITELLM_LOG") is not None:
         return

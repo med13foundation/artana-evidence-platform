@@ -133,9 +133,9 @@ class GraphHarnessSkillRuntimeToolManager(RuntimeToolManager):
             query_event_history=query_event_history,
             record_intent_plan=record_intent_plan,
         )
-        self._skill_registry = skill_registry
+        self._graph_harness_skill_registry = skill_registry
         self._preloaded_skill_names = preloaded_skill_names
-        self._allowed_skill_names = allowed_skill_names
+        self._graph_harness_allowed_skill_names = allowed_skill_names
         self._loaded_skill_names_by_run: dict[str, set[str]] = {}
 
     def ensure_registered(self) -> None:  # noqa: C901
@@ -218,7 +218,24 @@ class GraphHarnessSkillRuntimeToolManager(RuntimeToolManager):
                     },
                     ensure_ascii=False,
                 )
-            events = await self._kernel.get_events(run_id=artana_context.run_id)
+            tenant_budget = artana_context.tenant_budget_usd_limit
+            if tenant_budget is None:
+                return json.dumps(
+                    {
+                        "ok": False,
+                        "error": "missing_tenant_budget",
+                        "detail": "tenant_budget_usd_limit missing in ToolExecutionContext",
+                    },
+                    ensure_ascii=False,
+                )
+            events = await self._kernel.get_events(
+                run_id=artana_context.run_id,
+                tenant=TenantContext(
+                    tenant_id=artana_context.tenant_id,
+                    capabilities=artana_context.tenant_capabilities,
+                    budget_usd_limit=tenant_budget,
+                ),
+            )
             normalized_event_type = event_type.strip().lower()
             if normalized_event_type in {"", "*", "all"}:
                 filtered_events = list(events)
@@ -328,7 +345,7 @@ class GraphHarnessSkillRuntimeToolManager(RuntimeToolManager):
             *(active_registry_skills or set()),
         }
         runtime_tools.update(
-            self._skill_registry.tool_names_for(
+            self._graph_harness_skill_registry.tool_names_for(
                 active_skill_names=active_skill_names,
                 tenant_capabilities=tenant_capabilities,
             ),
@@ -344,8 +361,8 @@ class GraphHarnessSkillRuntimeToolManager(RuntimeToolManager):
         *,
         tenant_capabilities: frozenset[str],
     ) -> dict[str, str]:
-        return self._skill_registry.summaries_for(
-            allowed_skill_names=self._allowed_skill_names,
+        return self._graph_harness_skill_registry.summaries_for(
+            allowed_skill_names=self._graph_harness_allowed_skill_names,
             active_skill_names=self._preloaded_skill_names,
             tenant_capabilities=tenant_capabilities,
         )
@@ -376,8 +393,8 @@ class GraphHarnessSkillRuntimeToolManager(RuntimeToolManager):
     ) -> str:
         normalized_name = skill_name.strip()
         available = sorted(
-            self._skill_registry.summaries_for(
-                allowed_skill_names=self._allowed_skill_names,
+            self._graph_harness_skill_registry.summaries_for(
+                allowed_skill_names=self._graph_harness_allowed_skill_names,
                 active_skill_names=self.active_skill_names(run_id=run_id),
                 tenant_capabilities=tenant_capabilities,
             ).keys(),
@@ -392,7 +409,7 @@ class GraphHarnessSkillRuntimeToolManager(RuntimeToolManager):
                 },
                 ensure_ascii=False,
             )
-        if normalized_name not in self._allowed_skill_names:
+        if normalized_name not in self._graph_harness_allowed_skill_names:
             return json.dumps(
                 {
                     "name": normalized_name,
@@ -402,7 +419,7 @@ class GraphHarnessSkillRuntimeToolManager(RuntimeToolManager):
                 },
                 ensure_ascii=False,
             )
-        skill = self._skill_registry.get(normalized_name)
+        skill = self._graph_harness_skill_registry.get(normalized_name)
         if skill is None:
             return json.dumps(
                 {

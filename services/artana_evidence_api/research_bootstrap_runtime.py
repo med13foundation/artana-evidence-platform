@@ -54,6 +54,7 @@ from artana_evidence_api.transparency import (
     append_skill_activity,
     ensure_run_transparency_seed,
 )
+from artana_evidence_api.types.common import json_int, json_object_or_empty
 from artana_evidence_api.types.graph_contracts import (
     HypothesisListResponse,
     KernelEntityEmbeddingRefreshRequest,
@@ -869,7 +870,7 @@ def _candidate_source_counts(
     counts: dict[str, int] = {}
     for candidate_source, _proposal in proposal_entries:
         counts[candidate_source] = counts.get(candidate_source, 0) + 1
-    return counts
+    return json_object_or_empty(counts)
 
 
 def _load_candidate_entity_display_labels(
@@ -1176,10 +1177,10 @@ def _research_brief_payload(  # noqa: PLR0913
         "graph_summary": graph_summary,
         "source_inventory": source_inventory,
         "proposal_count": len(proposal_entries),
-        "linked_proposal_count": int(
+        "linked_proposal_count": json_int(
             source_inventory.get("linked_proposal_count", 0),
         ),
-        "bootstrap_generated_proposal_count": int(
+        "bootstrap_generated_proposal_count": json_int(
             source_inventory.get("bootstrap_generated_proposal_count", 0),
         ),
         "top_candidate_claims": [
@@ -2016,10 +2017,10 @@ async def execute_research_bootstrap_run(  # noqa: PLR0912, PLR0913, PLR0915
                 "proposal_count": len(proposal_records),
                 "candidate_claim_count": len(proposal_records),
                 "error_count": len(errors),
-                "linked_proposal_count": int(
+                "linked_proposal_count": json_int(
                     source_inventory.get("linked_proposal_count", 0),
                 ),
-                "bootstrap_generated_proposal_count": int(
+                "bootstrap_generated_proposal_count": json_int(
                     source_inventory.get("bootstrap_generated_proposal_count", 0),
                 ),
                 **(
@@ -2054,10 +2055,10 @@ async def execute_research_bootstrap_run(  # noqa: PLR0912, PLR0913, PLR0915
             payload={
                 "proposal_count": len(proposal_records),
                 "artifact_key": "candidate_claim_pack",
-                "linked_proposal_count": int(
+                "linked_proposal_count": json_int(
                     source_inventory.get("linked_proposal_count", 0),
                 ),
-                "bootstrap_generated_proposal_count": int(
+                "bootstrap_generated_proposal_count": json_int(
                     source_inventory.get("bootstrap_generated_proposal_count", 0),
                 ),
             },
@@ -2074,13 +2075,13 @@ async def execute_research_bootstrap_run(  # noqa: PLR0912, PLR0913, PLR0915
                 "last_research_brief_key": "research_brief",
                 "last_source_inventory_key": "source_inventory",
                 "last_candidate_claim_pack_key": "candidate_claim_pack",
-                "linked_proposal_count": int(
+                "linked_proposal_count": json_int(
                     source_inventory.get("linked_proposal_count", 0),
                 ),
-                "bootstrap_generated_proposal_count": int(
+                "bootstrap_generated_proposal_count": json_int(
                     source_inventory.get("bootstrap_generated_proposal_count", 0),
                 ),
-                "graph_connection_timeout_count": int(
+                "graph_connection_timeout_count": json_int(
                     source_inventory.get("graph_connection_timeout_count", 0),
                 ),
                 "graph_connection_timeout_seed_ids": source_inventory.get(

@@ -9,6 +9,11 @@ from uuid import UUID
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from artana_evidence_db.claim_evidence_models import (
+        ClaimEvidenceSentenceConfidence,
+        ClaimEvidenceSentenceSource,
+    )
+    from artana_evidence_db.common_types import JSONObject
     from artana_evidence_db.graph_core_models import (
         KernelRelation,
         KernelRelationEvidence,
@@ -30,14 +35,14 @@ class ClaimEvidenceRepositoryLike(Protocol):
         source_document_id: str | None,
         agent_run_id: str | None,
         sentence: str | None,
-        sentence_source: str | None,
-        sentence_confidence: str | None,
+        sentence_source: ClaimEvidenceSentenceSource | None,
+        sentence_confidence: ClaimEvidenceSentenceConfidence | None,
         sentence_rationale: str | None,
         figure_reference: str | None,
         table_reference: str | None,
         confidence: float,
         source_document_ref: str | None = None,
-        metadata: dict[str, object] | None = None,
+        metadata: JSONObject | None = None,
     ) -> object: ...
 
 
@@ -70,7 +75,7 @@ class ProjectionEndpoints:
 
 
 def participant_for_role(
-    participants: list[KernelClaimParticipant],
+    participants: Sequence[KernelClaimParticipant],
     *,
     role: str,
 ) -> KernelClaimParticipant | None:
@@ -79,7 +84,7 @@ def participant_for_role(
 
 
 def participants_for_role(
-    participants: list[KernelClaimParticipant],
+    participants: Sequence[KernelClaimParticipant],
     *,
     role: str,
 ) -> list[KernelClaimParticipant]:
@@ -119,7 +124,7 @@ def _participant_anchor(participant: KernelClaimParticipant) -> str:
 
 
 def _endpoint_participant_sets(
-    participants: list[KernelClaimParticipant],
+    participants: Sequence[KernelClaimParticipant],
 ) -> dict[str, list[str]]:
     participant_sets: dict[str, list[str]] = {}
     for role in ("SUBJECT", "OBJECT"):
@@ -132,7 +137,7 @@ def _endpoint_participant_sets(
 
 
 def extract_scoping_qualifier_fingerprint(
-    participants: list[KernelClaimParticipant],
+    participants: Sequence[KernelClaimParticipant],
 ) -> dict[str, object]:
     """Extract scoping context from claim participants for canonicalization.
 

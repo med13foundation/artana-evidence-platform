@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -31,6 +32,10 @@ def _existing_table(table_name: str) -> Table | None:
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
 
 
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.orm import Mapped
 _entity_neighbors_table = _existing_table("entity_neighbors")
 _entity_relation_summary_table = _existing_table("entity_relation_summary")
 _entity_claim_summary_table = _existing_table("entity_claim_summary")
@@ -422,29 +427,89 @@ if _entity_mechanism_paths_table is None:
         ),
     )
 
+_entity_neighbors_table_model_table = require_table(_entity_neighbors_table)
 
 class GraphEntityNeighborModel(Base):
     """Derived one-hop adjacency row for one entity-visible relation."""
 
-    __table__ = _entity_neighbors_table
 
+    __table__ = _entity_neighbors_table_model_table
+
+    if TYPE_CHECKING:
+        entity_id: Mapped[UUID]
+        relation_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        neighbor_entity_id: Mapped[UUID]
+        relation_type: Mapped[str]
+        direction: Mapped[str]
+        relation_updated_at: Mapped[datetime]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_entity_claim_summary_table_model_table = require_table(_entity_claim_summary_table)
 
 class GraphEntityClaimSummaryModel(Base):
     """Derived claim summary row for one entity."""
 
-    __table__ = _entity_claim_summary_table
 
+    __table__ = _entity_claim_summary_table_model_table
+
+    if TYPE_CHECKING:
+        entity_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        total_claim_count: Mapped[int]
+        support_claim_count: Mapped[int]
+        resolved_claim_count: Mapped[int]
+        open_claim_count: Mapped[int]
+        linked_claim_count: Mapped[int]
+        projected_claim_count: Mapped[int]
+        last_claim_activity_at: Mapped[datetime | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_entity_relation_summary_table_model_table = require_table(_entity_relation_summary_table)
 
 class GraphEntityRelationSummaryModel(Base):
     """Derived relation summary row for one entity."""
 
-    __table__ = _entity_relation_summary_table
 
+    __table__ = _entity_relation_summary_table_model_table
+
+    if TYPE_CHECKING:
+        entity_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        outgoing_relation_count: Mapped[int]
+        incoming_relation_count: Mapped[int]
+        total_relation_count: Mapped[int]
+        distinct_relation_type_count: Mapped[int]
+        support_claim_count: Mapped[int]
+        last_projection_at: Mapped[datetime | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_entity_mechanism_paths_table_model_table = require_table(_entity_mechanism_paths_table)
 
 class GraphEntityMechanismPathModel(Base):
     """Derived mechanism-path candidate row for one seed entity."""
 
-    __table__ = _entity_mechanism_paths_table
+
+    __table__ = _entity_mechanism_paths_table_model_table
+
+    if TYPE_CHECKING:
+        path_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        seed_entity_id: Mapped[UUID]
+        end_entity_id: Mapped[UUID]
+        relation_type: Mapped[str]
+        path_length: Mapped[int]
+        confidence: Mapped[float]
+        supporting_claim_ids: Mapped[list[str]]
+        path_updated_at: Mapped[datetime]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 EntityClaimSummaryModel = GraphEntityClaimSummaryModel

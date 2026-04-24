@@ -89,7 +89,7 @@ async def create_graph_search_run(  # noqa: PLR0913
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
-) -> GraphSearchRunResponse:
+) -> GraphSearchRunResponse | JSONResponse:
     """Execute one AI-backed graph-search run from the harness service."""
     resolved_title = (
         request.title.strip() if isinstance(request.title, str) else ""

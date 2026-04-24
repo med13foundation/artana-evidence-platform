@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, cast
 from uuid import UUID
 
 from artana_evidence_api.mondo_runtime import (
     MondoGateway,
     MondoIngestionService,
+    MondoIngestionSummary,
+    OntologyEntityWriterProtocol,
     ServiceGraphOntologyEntityWriter,
 )
 
@@ -20,7 +22,7 @@ class MondoIngestionServiceProtocol(Protocol):
         *,
         source_id: str,
         research_space_id: str,
-    ) -> object: ...
+    ) -> MondoIngestionSummary: ...
 
 
 def build_mondo_writer(
@@ -45,7 +47,7 @@ def build_mondo_ingestion_service(
     del graph_api_gateway, space_id
     return MondoIngestionService(
         gateway=MondoGateway(),
-        entity_writer=entity_writer,
+        entity_writer=cast("OntologyEntityWriterProtocol | None", entity_writer),
     )
 
 

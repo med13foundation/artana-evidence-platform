@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import Protocol
 from uuid import UUID
 
@@ -27,24 +28,45 @@ from artana_evidence_db.relation_suggestion_models import (
 
 
 class _RelationLike(Protocol):
-    research_space_id: object
-    source_id: object
-    target_id: object
-    relation_type: str
+    @property
+    def research_space_id(self) -> UUID: ...
+
+    @property
+    def source_id(self) -> UUID: ...
+
+    @property
+    def target_id(self) -> UUID: ...
+
+    @property
+    def relation_type(self) -> str: ...
 
 
 class _ConstraintLike(Protocol):
-    is_allowed: bool
-    is_active: bool
-    review_status: str
-    relation_type: str
-    target_type: str
+    @property
+    def is_allowed(self) -> bool: ...
+
+    @property
+    def is_active(self) -> bool: ...
+
+    @property
+    def review_status(self) -> str: ...
+
+    @property
+    def relation_type(self) -> str: ...
+
+    @property
+    def target_type(self) -> str: ...
 
 
 class _EmbeddingCandidateLike(Protocol):
-    entity_id: object
-    entity_type: str
-    vector_score: float
+    @property
+    def entity_id(self) -> UUID: ...
+
+    @property
+    def entity_type(self) -> str: ...
+
+    @property
+    def vector_score(self) -> float: ...
 
 
 class EntityRepositoryLike(Protocol):
@@ -57,7 +79,7 @@ class EntityRepositoryLike(Protocol):
 class RelationRepositoryLike(Protocol):
     """Minimal relation repository contract required for relation suggestions."""
 
-    def find_by_source(self, source_id: str) -> list[_RelationLike]:
+    def find_by_source(self, source_id: str) -> Sequence[_RelationLike]:
         """List outgoing relations for one source entity."""
 
     def find_by_research_space(
@@ -66,14 +88,14 @@ class RelationRepositoryLike(Protocol):
         *,
         limit: int | None = None,
         offset: int | None = None,
-    ) -> list[_RelationLike]:
+    ) -> Sequence[_RelationLike]:
         """List relations in one research space."""
 
 
 class DictionaryRepositoryLike(Protocol):
     """Minimal dictionary repository contract required for relation suggestions."""
 
-    def get_constraints(self, *, source_type: str) -> list[_ConstraintLike]:
+    def get_constraints(self, *, source_type: str | None = None) -> Sequence[_ConstraintLike]:
         """Return active relation constraints for one source type."""
 
 
@@ -91,7 +113,7 @@ class EntityEmbeddingRepositoryLike(Protocol):
         limit: int,
         min_similarity: float,
         target_entity_types: list[str] | None = None,
-    ) -> list[_EmbeddingCandidateLike]:
+    ) -> Sequence[_EmbeddingCandidateLike]:
         """Return vector-nearest entities for constrained suggestion ranking."""
 
     def list_neighbor_ids_for_overlap(
@@ -106,7 +128,8 @@ class EntityEmbeddingRepositoryLike(Protocol):
 class EntityEmbeddingStatusLike(Protocol):
     """Minimal embedding-status shape required for readiness-aware suggestions."""
 
-    state: KernelEntityEmbeddingState
+    @property
+    def state(self) -> KernelEntityEmbeddingState: ...
 
 
 class EntityEmbeddingStatusRepositoryLike(Protocol):

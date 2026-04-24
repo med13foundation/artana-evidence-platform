@@ -4,22 +4,27 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TypeVar
-from uuid import uuid4
+from typing import TYPE_CHECKING, TypeVar
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
-from artana_evidence_db.schema_support import graph_table_options
+from artana_evidence_db.orm_base import Base, require_table
+from artana_evidence_db.schema_support import (
+    graph_table_options,
+    qualify_graph_table_name,
+)
 from sqlalchemy import Column, Index, Integer, String, Table, UniqueConstraint
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _E = TypeVar("_E", bound=Enum)
 
 
 def _enum_values(enum_cls: type[_E]) -> list[str]:
     return [str(member.value) for member in enum_cls]
-
 
 class GraphPackSeedStatusEnum(str, Enum):
     """Lifecycle status for one successful pack seed."""
@@ -34,7 +39,9 @@ class GraphPackSeedOperationEnum(str, Enum):
     REPAIR = "repair"
 
 
-_graph_pack_seed_status_table = Base.metadata.tables.get("graph_pack_seed_status")
+_graph_pack_seed_status_table = Base.metadata.tables.get(
+    qualify_graph_table_name("graph_pack_seed_status"),
+)
 if _graph_pack_seed_status_table is None:
     _graph_pack_seed_status_table = Table(
         "graph_pack_seed_status",
@@ -100,10 +107,28 @@ if _graph_pack_seed_status_table is None:
     )
 
 
+_graph_pack_seed_status_table_model_table = require_table(_graph_pack_seed_status_table)
+
 class GraphPackSeedStatusModel(Base):
     """Recorded successful seeding of one domain pack into one graph space."""
 
-    __table__ = _graph_pack_seed_status_table
+
+    __table__ = _graph_pack_seed_status_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        pack_name: Mapped[str]
+        pack_version: Mapped[str]
+        status: Mapped[GraphPackSeedStatusEnum]
+        last_operation: Mapped[GraphPackSeedOperationEnum]
+        seed_count: Mapped[int]
+        repair_count: Mapped[int]
+        metadata_payload: Mapped[JSONObject]
+        seeded_at: Mapped[datetime]
+        repaired_at: Mapped[datetime | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 __all__ = [

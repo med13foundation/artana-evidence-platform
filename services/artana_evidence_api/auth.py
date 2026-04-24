@@ -216,8 +216,6 @@ def _canonicalize_shared_harness_user(
     user: HarnessUser,
 ) -> HarnessUser:
     """Reuse the local identity row when claims describe an existing identity."""
-    if not isinstance(session, Session):
-        return user
     try:
         identity_user = LocalIdentityGateway(session=session).canonicalize_user_claims(
             _identity_record_from_harness_user(user),

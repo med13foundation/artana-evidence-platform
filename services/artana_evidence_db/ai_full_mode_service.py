@@ -1666,20 +1666,20 @@ class AIFullModeService:
         target_id: str,
     ) -> str:
         if target_type == "concept_proposal":
-            model = self._get_concept_model(target_id)
+            concept_model = self._get_concept_model(target_id)
             self._assert_model_in_space(
-                model,
+                concept_model,
                 research_space_id=research_space_id,
                 resource_name="AI decision target",
             )
-            return model.proposal_hash
-        model = self._get_graph_change_model(target_id)
+            return concept_model.proposal_hash
+        graph_model = self._get_graph_change_model(target_id)
         self._assert_model_in_space(
-            model,
+            graph_model,
             research_space_id=research_space_id,
             resource_name="AI decision target",
         )
-        return model.proposal_hash
+        return graph_model.proposal_hash
 
     def _apply_concept_ai_decision(
         self,
@@ -1834,7 +1834,7 @@ class AIFullModeService:
         *,
         actor: str,
     ) -> list[str]:
-        proposal_payload = cast("JSONObject", model.proposal_payload)
+        proposal_payload = model.proposal_payload
         concepts = self._parse_graph_change_concepts(proposal_payload)
         concept_member_ids: list[str] = []
         for concept in concepts:
@@ -1890,7 +1890,7 @@ class AIFullModeService:
     ) -> list[str]:
         if self._relation_claim_service is None:
             return []
-        proposal_payload = cast("JSONObject", model.proposal_payload)
+        proposal_payload = model.proposal_payload
         claims = self._parse_graph_change_claims(proposal_payload)
         claim_ids: list[str] = []
         for position, claim in enumerate(claims):
@@ -1922,7 +1922,7 @@ class AIFullModeService:
         if self._relation_claim_service is None:
             msg = "Relation claim service is required"
             raise ValueError(msg)
-        payload = cast("JSONObject", model.proposal_payload)
+        payload = model.proposal_payload
         concept_index = {
             _json_str(item.get("local_id"), field_name="concept.local_id"): item
             for item in self._parse_graph_change_concepts(payload)

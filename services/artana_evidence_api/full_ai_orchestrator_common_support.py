@@ -19,6 +19,7 @@ from artana_evidence_api.research_init_runtime import (
 )
 from artana_evidence_api.types.common import (
     JSONObject,
+    JSONValue,
     ResearchSpaceSourcePreferences,
 )
 from pydantic import ValidationError
@@ -327,7 +328,7 @@ def _planner_mode_value(mode: FullAIOrchestratorPlannerMode | str) -> str:
 def _workspace_list(
     workspace_snapshot: JSONObject,
     key: str,
-) -> list[object]:
+) -> list[JSONValue]:
     value = workspace_snapshot.get(key)
     return list(value) if isinstance(value, list) else []
 
@@ -586,4 +587,3 @@ def build_step_key(
         f"{_HARNESS_ID}.{_STEP_KEY_VERSION}.round_{round_number}."
         f"{source_segment}.{normalized_action}"
     )
-

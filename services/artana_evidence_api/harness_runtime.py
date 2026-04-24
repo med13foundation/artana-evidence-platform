@@ -77,6 +77,11 @@ from artana_evidence_api.supervisor_runtime import (
     execute_supervisor_run,
     resume_supervisor_run,
 )
+from artana_evidence_api.types.common import (
+    ResearchSpaceSourcePreferences,
+    json_array_or_empty,
+    json_object,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -319,7 +324,7 @@ class ResearchInitHarness(
             seed_terms=_string_list(payload.get("seed_terms")),
             max_depth=_int_value(payload, "max_depth", default=2),
             max_hypotheses=_int_value(payload, "max_hypotheses", default=20),
-            sources=sources,
+            sources=cast("ResearchSpaceSourcePreferences", sources),
             execution_services=self._services,
             existing_run=run,
         )
@@ -370,7 +375,7 @@ class FullAIOrchestratorHarness(
             seed_terms=_string_list(payload.get("seed_terms")),
             max_depth=_int_value(payload, "max_depth", default=2),
             max_hypotheses=_int_value(payload, "max_hypotheses", default=20),
-            sources=sources,
+            sources=cast("ResearchSpaceSourcePreferences", sources),
             execution_services=self._services,
             existing_run=run,
             planner_mode=FullAIOrchestratorPlannerMode(
@@ -444,16 +449,12 @@ class ResearchOnboardingHarness(
                 mode=_string_value(payload, "mode", default=""),
                 reply_text=_string_value(payload, "reply_text", default=""),
                 reply_html=_string_value(payload, "reply_html", default=""),
-                attachments=(
-                    list(payload.get("attachments"))
-                    if isinstance(payload.get("attachments"), list)
-                    else []
-                ),
-                contextual_anchor=(
-                    payload.get("contextual_anchor")
-                    if isinstance(payload.get("contextual_anchor"), dict)
-                    else None
-                ),
+                attachments=[
+                    item
+                    for item in json_array_or_empty(payload.get("attachments"))
+                    if isinstance(item, dict)
+                ],
+                contextual_anchor=json_object(payload.get("contextual_anchor")),
             ),
             run_registry=self._services.run_registry,
             artifact_store=self._services.artifact_store,

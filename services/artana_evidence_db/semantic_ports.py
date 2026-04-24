@@ -187,6 +187,15 @@ class DictionaryPort(Protocol):
 
     def get_variable(self, variable_id: str) -> VariableDefinition | None: ...
 
+    def get_transform(
+        self,
+        input_unit: str,
+        output_unit: str,
+        *,
+        include_inactive: bool = False,
+        require_production: bool = False,
+    ) -> TransformRegistry | None: ...
+
     def list_variables(
         self,
         *,
@@ -242,6 +251,8 @@ class DictionaryPort(Protocol):
         source_ref: str | None = None,
         research_space_settings: ResearchSpaceSettings | None = None,
     ) -> ValueSet: ...
+
+    def get_value_set(self, value_set_id: str) -> ValueSet | None: ...
 
     def list_value_sets(
         self,

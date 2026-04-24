@@ -1013,7 +1013,7 @@ def execute_research_onboarding_continuation(  # noqa: PLR0913
     normalized_contract = _normalize_plan_ready_contract(
         contract=runner_result.contract,
         research_title=normalized_research_title,
-        primary_objective=existing_state.objective if existing_state else "",
+        primary_objective=(existing_state.objective if existing_state else "") or "",
         reply_text=request.reply_text,
     )
     assistant_message = _assistant_message_from_contract(normalized_contract)

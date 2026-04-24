@@ -176,7 +176,7 @@ async def create_continuous_learning_run(  # noqa: PLR0913
     research_state_store: HarnessResearchStateStore = _RESEARCH_STATE_STORE_DEPENDENCY,
     schedule_store: HarnessScheduleStore = _SCHEDULE_STORE_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
-) -> ContinuousLearningRunResponse:
+) -> ContinuousLearningRunResponse | JSONResponse:
     """Run one continuous-learning cycle and stage net-new proposals."""
     seed_entity_ids, resolved_title = _resolve_continuous_learning_inputs(request)
     research_state = research_state_store.get_state(space_id=space_id)

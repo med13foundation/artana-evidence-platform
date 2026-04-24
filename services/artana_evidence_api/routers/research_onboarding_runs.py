@@ -240,7 +240,7 @@ async def create_research_onboarding_run(
     execution_services: HarnessExecutionServices = (
         _HARNESS_EXECUTION_SERVICES_DEPENDENCY
     ),
-) -> ResearchOnboardingRunResponse:
+) -> ResearchOnboardingRunResponse | JSONResponse:
     """Generate the first onboarding assistant message and persist typed artifacts."""
     try:
         if should_require_worker_ready(execution_services=execution_services):
@@ -336,7 +336,7 @@ async def continue_research_onboarding(
     execution_services: HarnessExecutionServices = (
         _HARNESS_EXECUTION_SERVICES_DEPENDENCY
     ),
-) -> ResearchOnboardingContinuationResponse:
+) -> ResearchOnboardingContinuationResponse | JSONResponse:
     """Generate the next structured onboarding assistant message."""
     existing_state = research_state_store.get_state(space_id=space_id)
     research_title = _resolve_research_title_from_state(research_state=existing_state)

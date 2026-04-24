@@ -248,7 +248,7 @@ def _resolved_worker_failure_payload(
     payload["retry_count"] = retry_count
     raw_status_code = payload.get("status_code")
     status_code = raw_status_code if isinstance(raw_status_code, int) else None
-    return payload, status_code
+    return cast("dict[str, object]", payload), status_code
 
 
 def _persist_worker_failure_metadata(
@@ -336,7 +336,8 @@ def _mark_failed_run_after_worker_exception(
     retry_count = 0
     is_scheduled_run = False
     if workspace and isinstance(workspace.snapshot, dict):
-        retry_count = workspace.snapshot.get("_retry_count", 0)
+        retry_count_value = workspace.snapshot.get("_retry_count", 0)
+        retry_count = retry_count_value if type(retry_count_value) is int else 0
         is_scheduled_run = bool(workspace.snapshot.get("schedule_id"))
     # Also check input_payload for schedule_id
     if not is_scheduled_run and isinstance(run.input_payload, dict):
@@ -670,7 +671,7 @@ async def run_service_worker_tick(
         ctx_manager.__enter__,
     )
     try:
-        return await run_worker_tick(
+        result = await run_worker_tick(
             candidate_runs=context.candidate_runs,
             runtime=context.runtime,
             services=context.services,
@@ -680,8 +681,8 @@ async def run_service_worker_tick(
     except BaseException:
         await asyncio.to_thread(ctx_manager.__exit__, *sys.exc_info())
         raise
-    else:
-        await asyncio.to_thread(ctx_manager.__exit__, None, None, None)
+    await asyncio.to_thread(ctx_manager.__exit__, None, None, None)
+    return result
 
 
 @contextmanager

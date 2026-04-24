@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Protocol
 
 from artana_evidence_db.claim_projection_readiness_support import (
@@ -22,17 +23,30 @@ from artana_evidence_db.claim_projection_readiness_support import (
 )
 
 if TYPE_CHECKING:
+    from artana_evidence_db.claim_participant_backfill_service import (
+        ClaimParticipantBackfillGlobalSummary,
+    )
     from artana_evidence_db.kernel_claim_models import (
         ClaimEvidenceModel,
         ClaimParticipantModel,
         RelationClaimModel,
         RelationProjectionSourceModel,
     )
+    from artana_evidence_db.relation_projection_materialization_service import (
+        RelationProjectionMaterializationResult,
+    )
+    from artana_evidence_db.relation_projection_source_model import (
+        RelationProjectionOrigin,
+    )
+    from sqlalchemy.orm import Session
 
 
 class _RelationLike(Protocol):
-    id: object
-    research_space_id: object
+    @property
+    def id(self) -> object: ...
+
+    @property
+    def research_space_id(self) -> object: ...
 
 
 class RelationProjectionInvariantServiceLike(Protocol):
@@ -44,7 +58,7 @@ class RelationProjectionInvariantServiceLike(Protocol):
         space_id: str | None,
         limit: int | None = None,
         offset: int | None = None,
-    ) -> list[_RelationLike]:
+    ) -> Sequence[_RelationLike]:
         """List canonical relations without projection lineage."""
 
     def count_orphan_relations(
@@ -60,20 +74,18 @@ class RelationProjectionMaterializationServiceLike(Protocol):
 
     def materialize_support_claim(
         self,
-        *,
         claim_id: str,
         research_space_id: str,
-        projection_origin: str,
-        reviewed_by: str | None,
-    ) -> object:
+        projection_origin: RelationProjectionOrigin,
+        reviewed_by: str | None = None,
+    ) -> RelationProjectionMaterializationResult:
         """Materialize one support claim into a canonical relation projection."""
 
     def detach_claim_projection(
         self,
-        *,
         claim_id: str,
         research_space_id: str,
-    ) -> None:
+    ) -> RelationProjectionMaterializationResult:
         """Detach one claim-backed projection from the canonical relation graph."""
 
 
@@ -86,7 +98,7 @@ class ClaimParticipantBackfillServiceLike(Protocol):
         dry_run: bool,
         limit: int,
         offset: int,
-    ) -> object:
+    ) -> ClaimParticipantBackfillGlobalSummary:
         """Backfill participants for projection-relevant claims."""
 
 
@@ -96,7 +108,7 @@ class KernelClaimProjectionReadinessService:
     def __init__(
         self,
         *,
-        session: object,
+        session: Session,
         relation_projection_invariant_service: RelationProjectionInvariantServiceLike,
         relation_projection_materialization_service: (
             RelationProjectionMaterializationServiceLike

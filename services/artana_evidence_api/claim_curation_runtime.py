@@ -957,7 +957,8 @@ def resume_claim_curation_run(  # noqa: PLR0913
         action_results=action_results,
         resume_reason=resume_reason,
     )
-    if curation_summary["promoted_count"] > 0:
+    promoted_count = curation_summary.get("promoted_count")
+    if isinstance(promoted_count, int) and promoted_count > 0:
         append_skill_activity(
             space_id=space_id,
             run_id=run.id,

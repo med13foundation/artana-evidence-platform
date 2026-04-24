@@ -87,7 +87,7 @@ async def create_full_ai_orchestrator_run(  # noqa: PLR0913
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
     current_user: HarnessUser = _CURRENT_USER_DEPENDENCY,
     identity_gateway: IdentityGateway = _IDENTITY_GATEWAY_DEPENDENCY,
-) -> FullAIOrchestratorRunResponse:
+) -> FullAIOrchestratorRunResponse | JSONResponse:
     """Queue and execute the deterministic Phase 1 orchestrator baseline."""
     objective = request.objective.strip()
     if objective == "":

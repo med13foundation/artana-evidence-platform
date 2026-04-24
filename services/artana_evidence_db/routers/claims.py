@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from artana_evidence_db._claim_paper_links import (
@@ -540,6 +540,7 @@ def create_claim(  # noqa: PLR0915
             if validation.persistability == "PERSISTABLE"
             else "NON_PERSISTABLE"
         )
+        persistability = cast("_ClaimPersistability", persistability)
         validation_reason = (
             validation.validation_reason
             or f"validation:{validation.code}"

@@ -43,7 +43,10 @@ from artana_evidence_api.transparency import (
     ensure_run_transparency_seed,
     sync_policy_decisions_artifact,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import (  # noqa: TC001
+    JSONObject,
+    json_object_or_empty,
+)
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -60,6 +63,10 @@ _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
 _GRAPH_API_GATEWAY_DEPENDENCY = Depends(get_graph_api_gateway)
 _APPROVAL_STORE_DEPENDENCY = Depends(get_approval_store)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
+
+
+def _content_string_list(value: object) -> list[str]:
+    return [str(item) for item in value] if isinstance(value, list) else []
 
 
 class HarnessRunCreateRequest(BaseModel):
@@ -256,33 +263,20 @@ class RunCapabilitiesResponse(BaseModel):
     def from_content(cls, content: JSONObject) -> RunCapabilitiesResponse:
         visible_raw = content.get("visible_tools")
         filtered_raw = content.get("filtered_tools")
+        policy_profile = content.get("policy_profile")
         return cls(
             run_id=str(content.get("run_id")),
             space_id=str(content.get("space_id")),
             harness_id=str(content.get("harness_id")),
-            tool_groups=(
-                [str(item) for item in content.get("tool_groups", [])]
-                if isinstance(content.get("tool_groups"), list)
-                else []
+            tool_groups=_content_string_list(content.get("tool_groups")),
+            preloaded_skill_names=_content_string_list(
+                content.get("preloaded_skill_names"),
             ),
-            preloaded_skill_names=(
-                [str(item) for item in content.get("preloaded_skill_names", [])]
-                if isinstance(content.get("preloaded_skill_names"), list)
-                else []
-            ),
-            allowed_skill_names=(
-                [str(item) for item in content.get("allowed_skill_names", [])]
-                if isinstance(content.get("allowed_skill_names"), list)
-                else []
-            ),
-            active_skill_names=(
-                [str(item) for item in content.get("active_skill_names", [])]
-                if isinstance(content.get("active_skill_names"), list)
-                else []
-            ),
+            allowed_skill_names=_content_string_list(content.get("allowed_skill_names")),
+            active_skill_names=_content_string_list(content.get("active_skill_names")),
             policy_profile=(
-                content.get("policy_profile")
-                if isinstance(content.get("policy_profile"), dict)
+                {str(key): value for key, value in policy_profile.items()}
+                if isinstance(policy_profile, dict)
                 else {}
             ),
             artifact_key=str(content.get("artifact_key", "run_capabilities")),
@@ -365,11 +359,7 @@ class RunPolicyDecisionsResponse(BaseModel):
                 if isinstance(records_raw, list)
                 else []
             ),
-            summary=(
-                content.get("summary")
-                if isinstance(content.get("summary"), dict)
-                else {}
-            ),
+            summary=json_object_or_empty(content.get("summary")),
             created_at=str(content.get("created_at")),
             updated_at=str(content.get("updated_at")),
         )

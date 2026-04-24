@@ -26,6 +26,7 @@ from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
     KernelRelationClaimCreateRequest,
     KernelRelationTripleValidationRequest,
 )
+from artana_evidence_db.graph_core_models import KernelProvenanceRecord
 from artana_evidence_db.kernel_domain_models import KernelEntity, RelationConstraint
 from artana_evidence_db.kernel_services import KernelEntityService
 from artana_evidence_db.observation_value_support import (
@@ -100,12 +101,8 @@ class _ResolvedClaimEntities:
     target: KernelEntity
 
 
-class _ProvenanceRecordLike(Protocol):
-    research_space_id: object
-
-
 class ProvenanceServiceLike(Protocol):
-    def get_provenance(self, provenance_id: str) -> _ProvenanceRecordLike | None:
+    def get_provenance(self, provenance_id: str) -> KernelProvenanceRecord | None:
         """Return one provenance record by ID."""
 
 
