@@ -268,6 +268,7 @@ graph-service-test: ## Run graph service tests against isolated Postgres
 graph-service-checks: ## Run graph service gates
 	@$(MAKE) -s graph-service-lint
 	@$(MAKE) -s graph-service-type-check
+	@$(MAKE) -s graph-service-type-check-strict-imports
 	@$(MAKE) -s graph-service-boundary-check
 	@$(MAKE) -s graph-service-contract-check
 	@$(MAKE) -s graph-phase6-release-check
@@ -299,6 +300,7 @@ artana-evidence-api-test: ## Run evidence API tests against isolated Postgres
 artana-evidence-api-service-checks: ## Run evidence API gates
 	@$(MAKE) -s artana-evidence-api-lint
 	@$(MAKE) -s artana-evidence-api-type-check
+	@$(MAKE) -s artana-evidence-api-type-check-strict-imports
 	@$(MAKE) -s artana-evidence-api-boundary-check
 	@$(MAKE) -s artana-evidence-api-contract-check
 	@$(MAKE) -s artana-evidence-api-test

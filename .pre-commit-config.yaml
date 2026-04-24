@@ -1,0 +1,61 @@
+default_language_version:
+  python: python3
+
+repos:
+  - repo: local
+    hooks:
+      - id: graph-service-lint
+        name: graph service lint
+        entry: make -s graph-service-lint
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: evidence-api-lint
+        name: evidence API lint
+        entry: make -s artana-evidence-api-lint
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: graph-service-type-check
+        name: graph service type check
+        entry: make -s graph-service-type-check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: evidence-api-type-check
+        name: evidence API type check
+        entry: make -s artana-evidence-api-type-check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: graph-service-strict-import-type-check
+        name: graph service strict-import type check
+        entry: make -s graph-service-type-check-strict-imports
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: evidence-api-strict-import-type-check
+        name: evidence API strict-import type check
+        entry: make -s artana-evidence-api-type-check-strict-imports
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: graph-service-checks-pre-push
+        name: graph service full checks
+        entry: make -s graph-service-checks
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: evidence-api-service-checks-pre-push
+        name: evidence API full checks
+        entry: make -s artana-evidence-api-service-checks
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
