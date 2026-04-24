@@ -64,6 +64,7 @@ from .routers.runs import router as runs_router
 from .routers.schedules import router as schedules_router
 from .routers.spaces import router as spaces_router
 from .routers.supervisor_runs import router as supervisor_runs_router
+from .routers.v2_public import router as v2_public_router
 from .runtime_skill_registry import validate_graph_harness_skill_configuration
 
 logger = logging.getLogger(__name__)
@@ -236,6 +237,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     app.include_router(schedules_router)
     app.include_router(spaces_router)
     app.include_router(supervisor_runs_router)
+    app.include_router(v2_public_router)
 
     return app
 

@@ -44,6 +44,39 @@ One important runtime rule:
 - or `202 Accepted` when the caller sends `Prefer: respond-async` or the sync
   wait budget expires
 
+## V2 Public Naming
+
+`/v2` is the user-facing naming layer. It keeps the same underlying workflow
+behavior, but uses product terms instead of runtime terms:
+
+| V1 term | V2 term | Why |
+| --- | --- | --- |
+| `runs` | `tasks` | A task is one piece of work the user asked Artana to do. |
+| `agents/*/runs` | `workflows/*/tasks` | Users choose workflows; the backend decides how to execute them. |
+| `review-queue` | `review-items` | The resource is the set of items needing human review. |
+| `graph-explorer` | `evidence-map` | The product surface is evidence-first, not graph-internal. |
+| `graph-write-candidates` | `suggested-updates` | Chat produces suggested evidence-map updates. |
+| `artifacts` | `outputs` | Users inspect outputs from a task. |
+| `policy-decisions` | `decisions` | Users and auditors inspect what the task decided to do. |
+
+Recommended v2 entry points:
+
+| Goal | Path |
+| --- | --- |
+| Start or list tasks | `/v2/spaces/{space_id}/tasks` |
+| Inspect a task | `/v2/spaces/{space_id}/tasks/{task_id}` |
+| Read task progress/events | `/v2/spaces/{space_id}/tasks/{task_id}/progress` and `/events` |
+| Read task outputs | `/v2/spaces/{space_id}/tasks/{task_id}/outputs` |
+| Review pending items | `/v2/spaces/{space_id}/review-items` |
+| Start topic setup | `/v2/spaces/{space_id}/workflows/topic-setup/tasks` |
+| Start evidence curation | `/v2/spaces/{space_id}/workflows/evidence-curation/tasks` |
+| Start full research | `/v2/spaces/{space_id}/workflows/full-research/tasks` |
+| Browse trusted evidence | `/v2/spaces/{space_id}/evidence-map/*` |
+| Stage chat-suggested updates | `/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates` |
+
+The v1 routes remain documented below because they still describe the current
+implementation names and payload models.
+
 ## 1. Health And Authentication
 
 | Method | Path | What it does |
