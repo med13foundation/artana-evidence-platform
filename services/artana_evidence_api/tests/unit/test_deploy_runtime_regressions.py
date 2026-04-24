@@ -38,6 +38,15 @@ def _workflow_job_block(workflow: str, job_name: str) -> str:
     return workflow[start : start + len(marker) + next_job.start()]
 
 
+def _workflow_step_block(workflow: str, step_name: str) -> str:
+    marker = f"      - name: {step_name}"
+    start = workflow.index(marker)
+    next_step = re.search(r"\n      - name:", workflow[start + len(marker) :])
+    if next_step is None:
+        return workflow[start:]
+    return workflow[start : start + len(marker) + next_step.start()]
+
+
 def test_artana_evidence_api_runtime_sync_wires_graph_jwt_secret() -> None:
     """Regression: deployed API must not silently use the dev graph JWT secret."""
     script = _read_text(API_SYNC_SCRIPT)
@@ -50,6 +59,16 @@ def test_artana_evidence_api_runtime_sync_wires_graph_jwt_secret() -> None:
     assert 'harness_secret_names+=("${GRAPH_JWT_SECRET_NAME}")' in script
     assert 'migration_job_secret_names+=("${GRAPH_JWT_SECRET_NAME}")' in script
     assert "grant_secret_access_for_job" in script
+
+
+def test_artana_evidence_api_runtime_sync_propagates_env_and_acl_defaults() -> None:
+    """Regression: staging/prod sync must set env-aware runtime defaults."""
+    script = _read_text(API_SYNC_SCRIPT)
+
+    assert 'harness_env_pairs+=("ARTANA_ENV=${ARTANA_ENV}")' in script
+    assert 'if [[ -n "${SPACE_ACL_MODE:-}" ]]; then' in script
+    assert 'elif [[ "${ARTANA_ENV:-}" == "production" || "${ARTANA_ENV:-}" == "staging" ]]; then' in script
+    assert 'harness_env_pairs+=("SPACE_ACL_MODE=enforce")' in script
 
 
 def test_artana_evidence_api_deploy_workflow_provisions_graph_jwt_secret() -> None:
@@ -74,6 +93,35 @@ def test_artana_evidence_api_deploy_workflow_provisions_graph_jwt_secret() -> No
     ]
     assert "ARTANA_ENV: staging" in staging_grant_block
     assert "ARTANA_ENV: production" in production_grant_block
+
+
+def test_artana_evidence_api_deploy_workflow_sets_expected_runtime_env_by_stage() -> (
+    None
+):
+    """Regression: each deploy stage must pass the intended ARTANA_ENV value."""
+    workflow = _read_text(API_DEPLOY_WORKFLOW)
+
+    dev_grant_block = _workflow_step_block(
+        workflow,
+        "Grant Artana Evidence API secret access (Dev)",
+    )
+    dev_sync_block = _workflow_step_block(
+        workflow,
+        "Sync Artana Evidence API runtime config (Dev)",
+    )
+    staging_sync_block = _workflow_step_block(
+        workflow,
+        "Sync Artana Evidence API runtime config (Staging)",
+    )
+    production_sync_block = _workflow_step_block(
+        workflow,
+        "Sync Artana Evidence API runtime config (Production)",
+    )
+
+    assert "ARTANA_ENV:" not in dev_grant_block
+    assert "ARTANA_ENV: development" in dev_sync_block
+    assert "ARTANA_ENV: staging" in staging_sync_block
+    assert "ARTANA_ENV: production" in production_sync_block
 
 
 def test_artana_evidence_api_deploy_jobs_depend_on_service_checks() -> None:

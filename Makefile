@@ -1,6 +1,7 @@
 # Extracted Artana Evidence Platform Makefile
 
-VENV ?= venv
+DEFAULT_VENV := $(if $(wildcard venv/bin/python3),venv,$(if $(wildcard .venv/bin/python3),.venv,venv))
+VENV ?= $(DEFAULT_VENV)
 PYTHON := $(VENV)/bin/python3
 PIP := $(VENV)/bin/pip3
 USE_PYTHON := $(if $(wildcard $(PYTHON)),$(PYTHON),python3)
