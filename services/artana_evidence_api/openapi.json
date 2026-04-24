@@ -24159,6 +24159,14 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List workflow templates",
         "tags": [
           "workflows"
@@ -24202,6 +24210,14 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get workflow template",
         "tags": [
           "workflows"
