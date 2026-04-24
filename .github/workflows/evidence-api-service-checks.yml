@@ -2,31 +2,9 @@ name: Evidence API Service Checks
 
 on:
   pull_request:
-    paths:
-      - ".github/workflows/**"
-      - "Makefile"
-      - "pyproject.toml"
-      - "pytest.ini"
-      - ".env.postgres.example"
-      - "docker-compose.postgres.yml"
-      - "scripts/**"
-      - "services/**"
-      - "src/**"
-      - "tests/**"
   push:
     branches:
       - main
-    paths:
-      - ".github/workflows/**"
-      - "Makefile"
-      - "pyproject.toml"
-      - "pytest.ini"
-      - ".env.postgres.example"
-      - "docker-compose.postgres.yml"
-      - "scripts/**"
-      - "services/**"
-      - "src/**"
-      - "tests/**"
   workflow_dispatch:
 
 permissions:
@@ -37,7 +15,98 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  evidence-api-service-checks:
+  plan_service_checks:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.plan.outputs.docs_only }}
+      evidence_api: ${{ steps.plan.outputs.evidence_api }}
+      graph_service: ${{ steps.plan.outputs.graph_service }}
+      repo_control: ${{ steps.plan.outputs.repo_control }}
+      full: ${{ steps.plan.outputs.full }}
+      targeted_tests: ${{ steps.plan.outputs.targeted_tests }}
+      targeted_test_paths: ${{ steps.plan.outputs.targeted_test_paths }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect changed files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            git diff --name-only "origin/${{ github.base_ref }}"...HEAD > /tmp/changed-files.txt
+          else
+            : > /tmp/changed-files.txt
+          fi
+
+      - name: Plan service checks
+        id: plan
+        run: |
+          python3 scripts/ci/plan_service_checks.py \
+            --changed-files /tmp/changed-files.txt \
+            --event-name "${{ github.event_name }}" \
+            --ref "${{ github.ref }}" \
+            >> "$GITHUB_OUTPUT"
+
+  evidence_api_targeted_tests:
+    needs: plan_service_checks
+    if: needs.plan_service_checks.outputs.targeted_tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: make install-dev
+
+      - name: Run changed unit tests
+        run: venv/bin/python3 -m pytest ${{ needs.plan_service_checks.outputs.targeted_test_paths }} -q
+
+  evidence_api_repo_control_checks:
+    needs: plan_service_checks
+    if: needs.plan_service_checks.outputs.repo_control == 'true' && needs.plan_service_checks.outputs.full != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: make install-dev
+
+      - name: Run repository control tests
+        run: |
+          venv/bin/python3 -m pytest \
+            tests/unit/test_ci_service_check_planner.py \
+            tests/unit/test_control_files.py \
+            tests/unit/test_coverage_enforcement_contract.py \
+            tests/unit/test_makefile_type_gate_contract.py \
+            services/artana_evidence_api/tests/unit/test_deploy_runtime_regressions.py \
+            -q
+
+  evidence_api_gate:
+    needs: plan_service_checks
+    if: needs.plan_service_checks.outputs.full == 'true' || needs.plan_service_checks.outputs.evidence_api == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     services:
@@ -90,5 +159,39 @@ jobs:
             'ARTANA_ADMIN_PASSWORD=change_me_locally1' \
             > .env.postgres
 
-      - name: Run service checks with coverage
-        run: make service-checks
+      - name: Run evidence API checks
+        run: |
+          if [ "${{ needs.plan_service_checks.outputs.full }}" = "true" ]; then
+            make service-checks
+          else
+            make artana-evidence-api-service-checks
+          fi
+
+  evidence-api-service-checks:
+    needs:
+      - plan_service_checks
+      - evidence_api_targeted_tests
+      - evidence_api_repo_control_checks
+      - evidence_api_gate
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize Evidence API service checks
+        run: |
+          echo "docs_only=${{ needs.plan_service_checks.outputs.docs_only }}"
+          echo "targeted_tests=${{ needs.plan_service_checks.outputs.targeted_tests }}"
+          echo "repo_control=${{ needs.plan_service_checks.outputs.repo_control }}"
+          echo "evidence_api=${{ needs.plan_service_checks.outputs.evidence_api }}"
+          echo "full=${{ needs.plan_service_checks.outputs.full }}"
+          case "${{ needs.evidence_api_targeted_tests.result }}" in
+            success|skipped) ;;
+            *) exit 1 ;;
+          esac
+          case "${{ needs.evidence_api_repo_control_checks.result }}" in
+            success|skipped) ;;
+            *) exit 1 ;;
+          esac
+          case "${{ needs.evidence_api_gate.result }}" in
+            success|skipped) ;;
+            *) exit 1 ;;
+          esac

@@ -51,7 +51,7 @@ def test_aggregate_service_checks_run_coverage_gate() -> None:
     assert "$(MAKE) -s coverage-check" in service_checks_target
 
 
-def test_standalone_ci_workflows_run_aggregate_coverage_gate() -> None:
+def test_standalone_ci_workflows_use_path_aware_service_gates() -> None:
     workflow_paths = (
         ".github/workflows/evidence-api-service-checks.yml",
         ".github/workflows/graph-service-checks.yml",
@@ -60,8 +60,21 @@ def test_standalone_ci_workflows_run_aggregate_coverage_gate() -> None:
     for relative_path in workflow_paths:
         workflow = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
 
-        assert "run: make service-checks" in workflow, relative_path
+        assert "scripts/ci/plan_service_checks.py" in workflow, relative_path
+        assert "targeted_test_paths" in workflow, relative_path
+        assert "tests/unit/test_ci_service_check_planner.py" in workflow, relative_path
         assert "run: make coverage-check" not in workflow, relative_path
+
+    evidence_workflow = (
+        REPO_ROOT / ".github/workflows/evidence-api-service-checks.yml"
+    ).read_text(encoding="utf-8")
+    graph_workflow = (
+        REPO_ROOT / ".github/workflows/graph-service-checks.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "make service-checks" in evidence_workflow
+    assert "make artana-evidence-api-service-checks" in evidence_workflow
+    assert "make graph-service-checks" in graph_workflow
 
 
 def _make_target_body(makefile: str, target_name: str) -> str:
