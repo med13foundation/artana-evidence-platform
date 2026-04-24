@@ -12,13 +12,17 @@ from uuid import UUID
 
 from artana_evidence_api.graph_client import (
     GraphDictionaryTransport,
+    GraphQueryTransport,
     GraphServiceClientError,
     GraphTransportBundle,
     GraphTransportConfig,
+    GraphValidationTransport,
 )
 from artana_evidence_api.graph_integration.context import GraphCallContext
 from artana_evidence_api.graph_integration.contracts import (
+    GovernedCommandKind,
     GovernedGraphCommand,
+    GraphIntentKind,
     RawGraphIntent,
     ResolvedGraphIntent,
 )
@@ -166,12 +170,15 @@ def _entity_cache_key(space_id: UUID | str, label: str) -> str:
     return f"{str(space_id).strip()}:{label.strip().casefold()}"
 
 
-def _query_client(graph_transport: object) -> object:
-    return getattr(graph_transport, "query", graph_transport)
+def _query_client(graph_transport: object) -> GraphQueryTransport:
+    return cast("GraphQueryTransport", getattr(graph_transport, "query", graph_transport))
 
 
-def _validation_client(graph_transport: object) -> object:
-    return getattr(graph_transport, "validation", graph_transport)
+def _validation_client(graph_transport: object) -> GraphValidationTransport:
+    return cast(
+        "GraphValidationTransport",
+        getattr(graph_transport, "validation", graph_transport),
+    )
 
 
 def _legacy_allowed_validation(
@@ -305,31 +312,31 @@ class GraphAIPreflightService:
                 display_label.casefold() == normalized_label
                 or normalized_label in exact_aliases
             ):
-                resolved = {
+                exact_resolved: JSONObject = {
                     "id": str(entity.id),
                     "display_label": display_label or str(entity.id),
                 }
                 self._resolution_cache.set_entity(
                     space_id=space_id,
                     label=label,
-                    value=resolved,
+                    value=exact_resolved,
                 )
-                return resolved
+                return exact_resolved
         for entity in response.entities:
             display_label = entity.display_label or ""
             if normalized_label in display_label.casefold() or any(
                 normalized_label in alias.casefold() for alias in entity.aliases
             ):
-                resolved = {
+                partial_resolved: JSONObject = {
                     "id": str(entity.id),
                     "display_label": display_label or str(entity.id),
                 }
                 self._resolution_cache.set_entity(
                     space_id=space_id,
                     label=label,
-                    value=resolved,
+                    value=partial_resolved,
                 )
-                return resolved
+                return partial_resolved
         if not response.entities:
             self._resolution_cache.set_entity(
                 space_id=space_id,
@@ -338,16 +345,16 @@ class GraphAIPreflightService:
             )
             return None
         first_entity = response.entities[0]
-        resolved = {
+        fallback_resolved: JSONObject = {
             "id": str(first_entity.id),
             "display_label": first_entity.display_label or str(first_entity.id),
         }
         self._resolution_cache.set_entity(
             space_id=space_id,
             label=label,
-            value=resolved,
+            value=fallback_resolved,
         )
-        return resolved
+        return fallback_resolved
 
     async def resolve_entity_label_with_ai(
         self,
@@ -673,7 +680,7 @@ class GraphAIPreflightService:
     def _relation_request_intent_kind(
         self,
         request: KernelRelationClaimCreateRequest | KernelRelationCreateRequest,
-    ) -> str:
+    ) -> GraphIntentKind:
         return (
             "claim_create"
             if isinstance(request, KernelRelationClaimCreateRequest)
@@ -713,7 +720,7 @@ class GraphAIPreflightService:
         request: KernelRelationClaimCreateRequest | KernelRelationCreateRequest,
         graph_transport: GraphTransportBundle,
         relation_payload: JSONObject,
-        create_command_kind: str,
+        create_command_kind: GovernedCommandKind,
         space_context: str,
         domain_context: str,
     ) -> ResolvedGraphIntent:

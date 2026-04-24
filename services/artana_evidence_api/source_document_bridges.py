@@ -221,7 +221,7 @@ def _json_object(value: object) -> JSONObject:
     return {}
 
 
-def _row_to_source_document(row: Mapping[str, object]) -> SourceDocument:
+def _row_to_source_document(row: Mapping[object, object]) -> SourceDocument:
     research_space_id = _uuid_or_none(row.get("research_space_id"))
     ingestion_job_id = _uuid_or_none(row.get("ingestion_job_id"))
     return SourceDocument(
@@ -308,14 +308,14 @@ class SqlAlchemySourceDocumentRepository(SourceDocumentRepositoryProtocol):
         self,
         statement: object,
         parameters: object | None = None,
-    ) -> Result[object]:
+    ) -> Result[tuple[object, ...]]:
         execute = getattr(self.session, "execute", None)
         if not callable(execute):
             msg = "Session does not expose execute()"
             raise TypeError(msg)
         if parameters is None:
-            return cast("Result[object]", execute(statement))
-        return cast("Result[object]", execute(statement, parameters))
+            return cast("Result[tuple[object, ...]]", execute(statement))
+        return cast("Result[tuple[object, ...]]", execute(statement, parameters))
 
     def _commit(self) -> None:
         commit = getattr(self.session, "commit", None)
@@ -327,7 +327,11 @@ class SqlAlchemySourceDocumentRepository(SourceDocumentRepositoryProtocol):
             _SOURCE_DOCUMENTS.c.id == str(document_id),
         )
         row = self._execute(stmt).mappings().first()
-        return _row_to_source_document(row) if row is not None else None
+        return (
+            _row_to_source_document(cast("Mapping[object, object]", row))
+            if row is not None
+            else None
+        )
 
     def upsert(self, document: object) -> SourceDocument:
         source_document = SourceDocument.model_validate(document)
@@ -414,7 +418,10 @@ class SqlAlchemySourceDocumentRepository(SourceDocumentRepositoryProtocol):
             .mappings()
             .all()
         )
-        return [_row_to_source_document(row) for row in rows]
+        return [
+            _row_to_source_document(cast("Mapping[object, object]", row))
+            for row in rows
+        ]
 
     def recover_stale_in_progress_extraction(
         self,

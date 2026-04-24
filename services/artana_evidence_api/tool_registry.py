@@ -5,13 +5,18 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from datetime import date
 from functools import lru_cache
 from typing import TYPE_CHECKING, Literal, cast
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-from artana.ports.tool import LocalToolRegistry, ToolExecutionContext
+from artana.ports.tool import (
+    LocalToolRegistry,
+    ToolExecutionContext,
+    ToolExecutionResult,
+)
 from artana_evidence_api.graph_client import (
     GraphServiceClientError,
     GraphTransportBundle,
@@ -58,13 +63,13 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationSuggestionRequest,
 )
 from artana_evidence_api.types.graph_fact_assessment import FactAssessment
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
     from artana.ports.tool import ToolPort
     from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryService
-    from pydantic import BaseModel
 
 
 _HTTP_NOT_FOUND = 404
@@ -746,7 +751,9 @@ async def create_graph_claim(  # noqa: PLR0913
             resolved_intent=resolved_intent,
             graph_transport=gateway,
         )
-        return _json_result(response.model_dump(mode="json"))
+        if isinstance(response, BaseModel):
+            return _json_result(response.model_dump(mode="json"))
+        return _json_result(response)
     finally:
         gateway.close()
 
@@ -760,6 +767,7 @@ async def create_manual_hypothesis(  # noqa: PLR0913
     artana_context: ToolExecutionContext,
 ) -> str:
     """Create one manual graph hypothesis through the graph-service path."""
+    _ = artana_context
     gateway = _scoped_graph_gateway()
     try:
         response = gateway.create_manual_hypothesis(
@@ -769,10 +777,6 @@ async def create_manual_hypothesis(  # noqa: PLR0913
                 rationale=rationale,
                 seed_entity_ids=seed_entity_ids,
                 source_type=source_type,
-                metadata={
-                    "artana_idempotency_key": artana_context.idempotency_key,
-                    "artana_run_id": artana_context.run_id,
-                },
             ),
         )
         return _json_result(response.model_dump(mode="json"))
@@ -998,7 +1002,7 @@ def build_graph_harness_tool_registry() -> ToolPort:
     for spec in list_graph_harness_tool_specs():
         function = _REGISTERED_FUNCTIONS[spec.name]
         registry.register(
-            function,
+            cast("Callable[..., Awaitable[str | ToolExecutionResult]]", function),
             requires_capability=spec.required_capability,
             side_effect=spec.side_effect,
             tool_version=spec.tool_version,

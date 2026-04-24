@@ -50,7 +50,7 @@ class MarrvelClient:
         )
         self._fallback_client = (
             self._build_client(
-                base_url=fallback_base_url,
+                base_url=fallback_base_url or "",
                 timeout_seconds=timeout_seconds,
                 transport=fallback_transport,
             )

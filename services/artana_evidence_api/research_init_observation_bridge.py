@@ -10,7 +10,7 @@ import json
 import os
 from collections.abc import Callable, Sequence
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from artana_evidence_api.db_schema import resolve_harness_db_schema
@@ -37,7 +37,7 @@ from artana_evidence_api.source_document_bridges import (
     source_document_metadata,
     source_document_model_copy,
 )
-from artana_evidence_api.types.common import JSONObject
+from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 
 if TYPE_CHECKING:
     from artana_evidence_api.document_store import (
@@ -54,6 +54,12 @@ from artana_evidence_api.research_init_models import (
     _ObservationBridgeBatchResult,
     _PubMedObservationSyncResult,
 )
+
+
+class _ObservationBridgeSummaryLike(Protocol):
+    derived_graph_seed_entity_ids: tuple[str, ...]
+    errors: tuple[str, ...]
+
 
 _TOTAL_PROGRESS_STEPS = 5
 _DOCUMENT_EXTRACTION_CONCURRENCY_LIMIT = 4
@@ -104,9 +110,7 @@ def _build_pubmed_raw_record_from_document(
 ) -> JSONObject:
     """Build the shared PubMed raw-record shape from one harness document."""
     metadata = document.metadata
-    pubmed_metadata = (
-        metadata.get("pubmed") if isinstance(metadata.get("pubmed"), dict) else {}
-    )
+    pubmed_metadata = json_object_or_empty(metadata.get("pubmed"))
     source_queries = metadata.get("source_queries")
     queries = (
         [item for item in source_queries if isinstance(item, str) and item.strip()]
@@ -628,10 +632,7 @@ async def _run_observation_bridge_batch(
     source_id: UUID,
     source_type: SourceType,
     pipeline_run_id: str | None,
-    build_source_document: Callable[
-        [HarnessDocumentRecord, UUID, UUID, UUID],
-        object,
-    ],
+    build_source_document: Callable[..., object],
 ) -> _ObservationBridgeBatchResult:
     """Run the shared observation-ingestion bridge with persisted SourceDocuments."""
     from artana_evidence_api.database import SessionLocal
@@ -646,7 +647,7 @@ async def _run_observation_bridge_batch(
 
     batch_ingestion_job_id = uuid4()
     source_documents = [
-        build_source_document(  # type: ignore[call-arg]
+        build_source_document(
             document=document,
             space_id=space_id,
             source_id=source_id,
@@ -676,16 +677,19 @@ async def _run_observation_bridge_batch(
             entity_recognition_service=entity_recognition_service,
         )
         try:
-            summary = await asyncio.wait_for(
-                entity_recognition_service.process_pending_documents(
-                    limit=len(documents),
-                    source_id=source_id,
-                    research_space_id=space_id,
-                    ingestion_job_id=batch_ingestion_job_id,
-                    source_type=source_type.value,
-                    pipeline_run_id=pipeline_run_id,
+            summary = cast(
+                "_ObservationBridgeSummaryLike",
+                await asyncio.wait_for(
+                    entity_recognition_service.process_pending_documents(
+                        limit=len(documents),
+                        source_id=source_id,
+                        research_space_id=space_id,
+                        ingestion_job_id=batch_ingestion_job_id,
+                        source_type=source_type.value,
+                        pipeline_run_id=pipeline_run_id,
+                    ),
+                    timeout=_OBSERVATION_BRIDGE_BATCH_TIMEOUT_SECONDS,
                 ),
-                timeout=_OBSERVATION_BRIDGE_BATCH_TIMEOUT_SECONDS,
             )
         except TimeoutError:
             timeout_error_message = (

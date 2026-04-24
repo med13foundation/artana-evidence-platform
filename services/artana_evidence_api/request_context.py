@@ -115,6 +115,7 @@ def build_audit_context(request: Request) -> AuditContext:
     """Build request metadata for audit logging."""
     request_id = resolve_request_id(request)
     forwarded_for = request.headers.get("x-forwarded-for")
+    ip_address: str | None
     if forwarded_for:
         ip_address = forwarded_for.split(",")[0].strip()
     else:

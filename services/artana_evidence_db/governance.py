@@ -18,16 +18,12 @@ from artana_evidence_db.kernel_services import (
 )
 
 if TYPE_CHECKING:
-    from typing import Protocol
-
+    from artana_evidence_db.dictionary_management_service import TextEmbeddingPort
     from artana_evidence_db.graph_domain_config import (
         GraphDictionaryLoadingExtension,
     )
     from artana_evidence_db.semantic_ports import ConceptPort, DictionaryPort
     from sqlalchemy.orm import Session
-
-    class HybridTextEmbeddingProvider(Protocol):
-        pass
 
 
 def build_dictionary_repository(
@@ -82,7 +78,7 @@ def build_dictionary_service(
     session: Session,
     *,
     dictionary_loading_extension: GraphDictionaryLoadingExtension,
-    embedding_provider: HybridTextEmbeddingProvider | None = None,
+    embedding_provider: TextEmbeddingPort | None = None,
 ) -> DictionaryPort:
     """Build the graph-service dictionary service from local governance adapters."""
     dictionary_repo = build_dictionary_repository(

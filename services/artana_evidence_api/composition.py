@@ -5,12 +5,13 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+from collections.abc import Callable
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from dataclasses import dataclass, replace
 from datetime import datetime
 from functools import lru_cache
 from threading import Event, Thread
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Literal, TypeVar, cast
 
 from artana_evidence_api.runtime_errors import (
     GraphHarnessToolReconciliationRequiredError,
@@ -191,7 +192,9 @@ class GraphHarnessKernelRuntime:
 
     def _kernel_method_accepts_tenant(self, method: object) -> bool:
         try:
-            return "tenant" in inspect.signature(method).parameters
+            return "tenant" in inspect.signature(
+                cast("Callable[..., object]", method)
+            ).parameters
         except (TypeError, ValueError):
             return False
 
@@ -295,12 +298,15 @@ class GraphHarnessKernelRuntime:
         timeout_seconds: float | None = None,
     ) -> RunSummaryPayload | None:
         tenant = self.tenant_context(tenant_id=tenant_id)
-        return self._call_kernel_method(
-            method_name="get_latest_run_summary",
-            run_id=run_id,
-            summary_type=summary_type,
-            tenant=tenant,
-            timeout_seconds=timeout_seconds,
+        return cast(
+            "RunSummaryPayload | None",
+            self._call_kernel_method(
+                method_name="get_latest_run_summary",
+                run_id=run_id,
+                summary_type=summary_type,
+                tenant=tenant,
+                timeout_seconds=timeout_seconds,
+            ),
         )
 
     def get_events(
@@ -356,11 +362,14 @@ class GraphHarnessKernelRuntime:
     ) -> RunProgress | None:
         tenant = self.tenant_context(tenant_id=tenant_id)
         try:
-            return self._call_kernel_method(
-                method_name="get_run_progress",
-                run_id=run_id,
-                tenant=tenant,
-                timeout_seconds=timeout_seconds,
+            return cast(
+                "RunProgress | None",
+                self._call_kernel_method(
+                    method_name="get_run_progress",
+                    run_id=run_id,
+                    tenant=tenant,
+                    timeout_seconds=timeout_seconds,
+                ),
             )
         except ValueError:
             return None
@@ -374,11 +383,14 @@ class GraphHarnessKernelRuntime:
     ) -> ResumePoint | None:
         tenant = self.tenant_context(tenant_id=tenant_id)
         try:
-            return self._call_kernel_method(
-                method_name="resume_point",
-                run_id=run_id,
-                tenant=tenant,
-                timeout_seconds=timeout_seconds,
+            return cast(
+                "ResumePoint | None",
+                self._call_kernel_method(
+                    method_name="resume_point",
+                    run_id=run_id,
+                    tenant=tenant,
+                    timeout_seconds=timeout_seconds,
+                ),
             )
         except ValueError:
             return None
@@ -578,7 +590,7 @@ def get_graph_harness_kernel_runtime() -> GraphHarnessKernelRuntime:
 
 def _terminal_status_from_summary(
     summary: object,
-) -> tuple[str | None, datetime | None]:
+) -> tuple[Literal["completed", "failed"] | None, datetime | None]:
     summary_json = getattr(summary, "summary_json", None)
     if not isinstance(summary_json, str):
         return None, None
@@ -597,7 +609,7 @@ def _terminal_status_from_summary(
     normalized_status = status_obj.strip().lower()
     if normalized_status not in {"completed", "failed"}:
         return None, updated_at
-    return normalized_status, updated_at
+    return cast("Literal['completed', 'failed']", normalized_status), updated_at
 
 
 def _coerce_summary_datetime(value: object) -> datetime | None:

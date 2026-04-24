@@ -9,7 +9,7 @@ from collections.abc import Coroutine, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from threading import Thread
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, cast
 from uuid import UUID, uuid4
 
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
@@ -220,7 +220,7 @@ def _build_marrvel_gene_inference_runtime(
     )
     return _MarrvelGeneInferenceRuntime(
         kernel=kernel,
-        client=SingleStepModelClient(kernel=kernel),
+        client=cast("StepClientLike", SingleStepModelClient(kernel=kernel)),
         model_id=model_id,
         tenant=TenantContext(
             tenant_id="marrvel-gene-inference",
@@ -474,7 +474,13 @@ async def fetch_marrvel_associations_via_service(
                 len(gene_associations),
                 result.status,
             )
-            associations.extend(gene_associations)
+            associations.extend(
+                MarrvelPhenotypeAssociation(
+                    gene_symbol=association.gene_symbol,
+                    phenotype_label=association.phenotype_label,
+                )
+                for association in gene_associations
+            )
         except Exception as exc:  # noqa: BLE001
             logger.warning("MARRVEL: gene %s error: %s", gene_symbol, exc)
 

@@ -6,7 +6,7 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
 from artana_evidence_api.full_ai_orchestrator_contracts import (
@@ -709,13 +709,17 @@ def _resolve_research_init_sources(
 ) -> ResearchSpaceSourcePreferences:
     request_preferences = _normalize_source_preferences(request_sources)
     if request_preferences:
-        request_resolved: ResearchSpaceSourcePreferences = dict.fromkeys(
-            _DEFAULT_RESEARCH_INIT_SOURCES, False
+        request_resolved = cast(
+            "ResearchSpaceSourcePreferences",
+            dict.fromkeys(_DEFAULT_RESEARCH_INIT_SOURCES, False),
         )
         request_resolved.update(request_preferences)
         return request_resolved
 
-    resolved: ResearchSpaceSourcePreferences = dict(_DEFAULT_RESEARCH_INIT_SOURCES)
+    resolved = cast(
+        "ResearchSpaceSourcePreferences",
+        dict(_DEFAULT_RESEARCH_INIT_SOURCES),
+    )
     if isinstance(space_settings, dict):
         resolved.update(_normalize_source_preferences(space_settings.get("sources")))
     return resolved

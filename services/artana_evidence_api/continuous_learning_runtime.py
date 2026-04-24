@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     )
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
+    from artana_evidence_api.document_store import HarnessDocumentStore
     from artana_evidence_api.graph_client import GraphTransportBundle
     from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
     from artana_evidence_api.research_state import (
@@ -797,9 +798,7 @@ async def execute_continuous_learning_run(  # noqa: C901, PLR0912, PLR0913, PLR0
     research_state_store: HarnessResearchStateStore,
     graph_snapshot_store: HarnessGraphSnapshotStore,
     schedule_store: HarnessScheduleStore | None = None,
-    document_store: (
-        object | None
-    ) = None,  # HarnessDocumentStore, optional for backward compat
+    document_store: HarnessDocumentStore | None = None,
     runtime: GraphHarnessKernelRuntime,
     existing_run: HarnessRunRecord | None = None,
 ) -> ContinuousLearningExecutionResult:
@@ -1096,12 +1095,13 @@ async def execute_continuous_learning_run(  # noqa: C901, PLR0912, PLR0913, PLR0
             enrichment_labels: list[str] = []
             for eid in seed_entity_ids[:5]:
                 try:
-                    entity = graph_api_gateway.get_entity(
+                    entity_list = graph_api_gateway.list_entities(
                         space_id=space_id,
-                        entity_id=UUID(eid),
+                        ids=[str(UUID(eid))],
+                        limit=1,
                     )
-                    if entity.display_label:
-                        enrichment_labels.append(entity.display_label)
+                    if entity_list.entities and entity_list.entities[0].display_label:
+                        enrichment_labels.append(entity_list.entities[0].display_label)
                 except Exception:  # noqa: BLE001, S112
                     continue
 

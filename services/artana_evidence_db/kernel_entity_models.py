@@ -3,18 +3,23 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
+    qualify_graph_table_name,
 )
 from sqlalchemy import Column, ForeignKey, Index, String, Table, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
-_entities_table = Base.metadata.tables.get("entities")
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
+_entities_table = Base.metadata.tables.get(qualify_graph_table_name("entities"))
 if _entities_table is None:
     _entities_table = Table(
         "entities",
@@ -90,11 +95,23 @@ if _entities_table is None:
         ),
     )
 
+_entities_table_model_table = require_table(_entities_table)
 
 class GraphEntityModel(Base):
     """A generic graph node."""
 
-    __table__ = _entities_table
+
+    __table__ = _entities_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        entity_type: Mapped[str]
+        display_label: Mapped[str | None]
+        display_label_normalized: Mapped[str | None]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
     def __repr__(self) -> str:
         return (

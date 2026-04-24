@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
 from artana.kernel import ArtanaKernel
@@ -198,7 +198,10 @@ class HarnessGraphSearchRunner:
                     ARTANA_EVIDENCE_API_SEARCH_CONFIG.system_prompt,
                 ),
                 prompt=self._request_prompt(request),
-                output_schema=_GraphSearchExecutionContract,
+                output_schema=cast(
+                    "type[GraphSearchContract]",
+                    _GraphSearchExecutionContract,
+                ),
                 max_iterations=_MAX_GRAPH_SEARCH_ITERATIONS,
             )
             stage = "post_agent"

@@ -81,28 +81,28 @@ def _is_research_init_pubmed_document(record: HarnessDocumentRecord) -> bool:
 def _collect_pubmed_candidates(
     *,
     query_executions: tuple[_PubMedQueryExecutionResult, ...],
-) -> dict[str, object]:
-
-    collected_candidates: dict[str, object] = {}
+) -> dict[str, _PubMedCandidate]:
+    collected_candidates: dict[str, _PubMedCandidate] = {}
     for query_execution in query_executions:
         for candidate in query_execution.candidates:
+            normalized_candidate = _clone_pubmed_candidate(candidate)
             candidate_key = _candidate_key(
-                pmid=getattr(candidate, "pmid", None),
-                title=str(getattr(candidate, "title", "")),
+                pmid=normalized_candidate.pmid,
+                title=normalized_candidate.title,
             )
             existing_candidate = collected_candidates.get(candidate_key)
             if existing_candidate is None:
-                collected_candidates[candidate_key] = candidate
+                collected_candidates[candidate_key] = normalized_candidate
             else:
                 collected_candidates[candidate_key] = (
                     _merge_candidate(
                         existing_candidate,
-                        candidate,
+                        normalized_candidate,
                     )
                 )
     return collected_candidates
 
-def _clone_pubmed_candidate(candidate: object) -> object:
+def _clone_pubmed_candidate(candidate: object) -> _PubMedCandidate:
 
     raw_queries = getattr(candidate, "queries", ())
     queries = [
@@ -192,10 +192,15 @@ def _deserialize_replay_proposal(  # noqa: PLR0911
     metadata = payload.get("metadata")
     source_document_id = payload.get("source_document_id")
     claim_fingerprint = payload.get("claim_fingerprint")
-    if not all(
-        isinstance(value, str)
-        for value in (proposal_type, source_kind, source_key, title, summary)
-    ):
+    if not isinstance(proposal_type, str):
+        return None
+    if not isinstance(source_kind, str):
+        return None
+    if not isinstance(source_key, str):
+        return None
+    if not isinstance(title, str):
+        return None
+    if not isinstance(summary, str):
         return None
     if not isinstance(confidence, int | float) or not isinstance(
         ranking_score,
@@ -394,7 +399,7 @@ def _deserialize_pubmed_candidate_review(payload: object) -> object | None:
         ),
     )
 
-def deserialize_pubmed_replay_bundle(  # noqa: PLR0911,PLR0912
+def deserialize_pubmed_replay_bundle(  # noqa: PLR0911,PLR0912,PLR0915
     payload: object,
 ) -> ResearchInitPubMedReplayBundle | None:
     """Deserialize one stored replay bundle back into runtime objects."""
@@ -484,10 +489,11 @@ def deserialize_pubmed_replay_bundle(  # noqa: PLR0911,PLR0912
         sha256 = document_payload.get("sha256")
         title = document_payload.get("title")
         raw_extraction_proposals = document_payload.get("extraction_proposals", [])
-        if not all(
-            isinstance(value, str) and value != ""
-            for value in (source_document_id, sha256, title)
-        ):
+        if not isinstance(source_document_id, str) or source_document_id == "":
+            return None
+        if not isinstance(sha256, str) or sha256 == "":
+            return None
+        if not isinstance(title, str) or title == "":
             return None
         if not isinstance(raw_extraction_proposals, list):
             return None

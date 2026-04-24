@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
 from artana.kernel import ArtanaKernel
@@ -234,7 +234,10 @@ class HarnessGraphConnectionRunner:
                     request=request,
                     source_type=resolved_source_type,
                 ),
-                output_schema=_GraphConnectionExecutionContract,
+                output_schema=cast(
+                    "type[GraphConnectionContract]",
+                    _GraphConnectionExecutionContract,
+                ),
                 max_iterations=_MAX_GRAPH_CONNECTION_ITERATIONS,
             )
             stage = "post_agent"
@@ -244,7 +247,7 @@ class HarnessGraphConnectionRunner:
                 step_key="graph_connection.active_skills",
             )
             normalized_contract = self._normalize_contract(
-                contract=contract,
+                contract=cast("_GraphConnectionExecutionContract", contract),
                 request=request,
                 source_type=resolved_source_type,
                 agent_run_id=run_id,
@@ -477,8 +480,8 @@ class HarnessGraphConnectionRunner:
         if not rationale and contract.decision is not None:
             rationale = "Graph connection returned without an explicit rationale."
         return GraphConnectionContract(
-            decision=contract.decision,
-            confidence_score=confidence_score,
+            decision=contract.decision or "fallback",
+            confidence_score=confidence_score or 0.0,
             rationale=rationale,
             evidence=contract.evidence,
             source_type=source_type,

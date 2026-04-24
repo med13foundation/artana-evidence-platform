@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Protocol
 
 from artana_evidence_db.graph_core_models import (
+    KernelEntity,
     KernelMechanisticGap,
     KernelReachabilityGap,
     KernelRelation,
@@ -16,12 +17,8 @@ _ALLOWED_CURATION_STATUSES = frozenset(
 )
 
 
-class _EntityLike(Protocol):
-    research_space_id: object
-
-
 class EntityRepositoryLike(Protocol):
-    def get_by_id(self, entity_id: str) -> _EntityLike | None:
+    def get_by_id(self, entity_id: str) -> KernelEntity | None:
         """Return one entity by ID."""
 
 

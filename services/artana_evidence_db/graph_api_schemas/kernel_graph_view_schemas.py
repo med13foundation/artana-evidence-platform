@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
@@ -37,28 +38,60 @@ if TYPE_CHECKING:
 class GraphDomainViewLike(Protocol):
     """Structural contract for graph-domain view serialization."""
 
-    view_type: str
-    resource_id: str | UUID
-    entity: KernelEntity | None
-    claim: KernelRelationClaim | None
-    paper: KernelSourceDocumentReference | None
-    canonical_relations: list[KernelRelation]
-    claims: list[KernelRelationClaim]
-    claim_relations: list[KernelClaimRelation]
-    participants: list[KernelClaimParticipant]
-    evidence: list[KernelClaimEvidence]
+    @property
+    def view_type(self) -> str: ...
+
+    @property
+    def resource_id(self) -> str | UUID: ...
+
+    @property
+    def entity(self) -> KernelEntity | None: ...
+
+    @property
+    def claim(self) -> KernelRelationClaim | None: ...
+
+    @property
+    def paper(self) -> KernelSourceDocumentReference | None: ...
+
+    @property
+    def canonical_relations(self) -> Sequence[KernelRelation]: ...
+
+    @property
+    def claims(self) -> Sequence[KernelRelationClaim]: ...
+
+    @property
+    def claim_relations(self) -> Sequence[KernelClaimRelation]: ...
+
+    @property
+    def participants(self) -> Sequence[KernelClaimParticipant]: ...
+
+    @property
+    def evidence(self) -> Sequence[KernelClaimEvidence]: ...
 
 
 class ClaimMechanismChainLike(Protocol):
     """Structural contract for mechanism-chain serialization."""
 
-    root_claim: KernelRelationClaim
-    max_depth: int
-    canonical_relations: list[KernelRelation]
-    claims: list[KernelRelationClaim]
-    claim_relations: list[KernelClaimRelation]
-    participants: list[KernelClaimParticipant]
-    evidence: list[KernelClaimEvidence]
+    @property
+    def root_claim(self) -> KernelRelationClaim: ...
+
+    @property
+    def max_depth(self) -> int: ...
+
+    @property
+    def canonical_relations(self) -> Sequence[KernelRelation]: ...
+
+    @property
+    def claims(self) -> Sequence[KernelRelationClaim]: ...
+
+    @property
+    def claim_relations(self) -> Sequence[KernelClaimRelation]: ...
+
+    @property
+    def participants(self) -> Sequence[KernelClaimParticipant]: ...
+
+    @property
+    def evidence(self) -> Sequence[KernelClaimEvidence]: ...
 
 
 class KernelSourceDocumentResponse(BaseModel):

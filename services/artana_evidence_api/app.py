@@ -5,10 +5,12 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import cast
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy import Table
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
@@ -110,8 +112,8 @@ def _validation_error_detail(error: RequestValidationError) -> str:
 async def _app_lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Keep lightweight SQLite test bootstraps working without production DDL."""
     if engine.dialect.name != "postgresql":
-        HarnessUserModel.__table__.create(bind=engine, checkfirst=True)
-        HarnessApiKeyModel.__table__.create(bind=engine, checkfirst=True)
+        cast("Table", HarnessUserModel.__table__).create(bind=engine, checkfirst=True)
+        cast("Table", HarnessApiKeyModel.__table__).create(bind=engine, checkfirst=True)
     yield
 
 

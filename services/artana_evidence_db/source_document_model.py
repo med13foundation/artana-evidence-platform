@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from sqlalchemy import (
     JSON,
     Column,
@@ -43,6 +44,11 @@ class DocumentExtractionStatusEnum(str, Enum):
     FAILED = "failed"
 
 
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _source_documents_table = Base.metadata.tables.get("source_documents")
 if _source_documents_table is None:
     _source_documents_table = Table(
@@ -177,10 +183,34 @@ if _source_documents_table is None:
     )
 
 
+_source_documents_table_model_table = require_table(_source_documents_table)
+
 class SourceDocumentModel(Base):
     """Persisted document lifecycle state between ingestion and extraction tiers."""
 
-    __table__ = _source_documents_table
+
+    __table__ = _source_documents_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[str]
+        research_space_id: Mapped[str | None]
+        source_id: Mapped[str]
+        ingestion_job_id: Mapped[str | None]
+        external_record_id: Mapped[str]
+        source_type: Mapped[str]
+        document_format: Mapped[str]
+        raw_storage_key: Mapped[str | None]
+        enriched_storage_key: Mapped[str | None]
+        content_hash: Mapped[str | None]
+        content_length_chars: Mapped[int | None]
+        enrichment_status: Mapped[str]
+        enrichment_method: Mapped[str | None]
+        enrichment_agent_run_id: Mapped[str | None]
+        extraction_status: Mapped[str]
+        extraction_agent_run_id: Mapped[str | None]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 __all__ = [

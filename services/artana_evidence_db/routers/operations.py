@@ -11,6 +11,9 @@ from artana_evidence_db.auth import (
     to_graph_principal,
     to_graph_rls_session_context,
 )
+from artana_evidence_db.claim_projection_readiness_support import (
+    ClaimProjectionReadinessIssue,
+)
 from artana_evidence_db.common_types import JSONObject
 from artana_evidence_db.database import (
     get_session,
@@ -37,9 +40,6 @@ from artana_evidence_db.operation_run_models import (
 )
 from artana_evidence_db.operation_runs import GraphOperationRunStore
 from artana_evidence_db.ports import SpaceAccessPort
-from artana_evidence_db.projection_readiness_support import (
-    ClaimProjectionReadinessIssue,
-)
 from artana_evidence_db.reasoning_path_support import ReasoningPathRebuildSummary
 from artana_evidence_db.space_membership import MembershipRole
 from artana_evidence_db.user_models import User

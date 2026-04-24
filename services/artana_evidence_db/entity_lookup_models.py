@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -27,6 +28,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.orm import Mapped
 _ACTIVE_VALIDITY_CHECK = (
     "((is_active AND valid_to IS NULL) OR ((NOT is_active) AND valid_to IS NOT NULL))"
 )
@@ -174,11 +179,26 @@ if _entity_identifiers_table is None:
         ),
     )
 
+_entity_identifiers_table_model_table = require_table(_entity_identifiers_table)
 
 class GraphEntityIdentifierModel(Base):
     """Entity identifiers isolated for PHI protection."""
 
-    __table__ = _entity_identifiers_table
+
+    __table__ = _entity_identifiers_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[int]
+        entity_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        namespace: Mapped[str]
+        identifier_value: Mapped[str]
+        identifier_blind_index: Mapped[str | None]
+        encryption_key_version: Mapped[str | None]
+        blind_index_version: Mapped[str | None]
+        identifier_normalized: Mapped[str | None]
+        sensitivity: Mapped[str]
+        created_at: Mapped[datetime]
 
 
 EntityIdentifierModel = GraphEntityIdentifierModel
@@ -293,10 +313,34 @@ if _entity_aliases_table is None:
     )
 
 
+_entity_aliases_table_model_table = require_table(_entity_aliases_table)
+
 class GraphEntityAliasModel(Base):
     """Normalized aliases attached to kernel entities."""
 
-    __table__ = _entity_aliases_table
+
+    __table__ = _entity_aliases_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[int]
+        entity_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        entity_type: Mapped[str]
+        alias_label: Mapped[str]
+        alias_normalized: Mapped[str]
+        source: Mapped[str | None]
+        created_by: Mapped[str]
+        source_ref: Mapped[str | None]
+        review_status: Mapped[str]
+        reviewed_by: Mapped[str | None]
+        reviewed_at: Mapped[datetime | None]
+        revocation_reason: Mapped[str | None]
+        is_active: Mapped[bool]
+        valid_from: Mapped[datetime]
+        valid_to: Mapped[datetime | None]
+        superseded_by: Mapped[int | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 EntityAliasModel = GraphEntityAliasModel

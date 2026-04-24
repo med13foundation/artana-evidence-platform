@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from artana_evidence_db.ai_full_mode_service import AIFullModeService
 from artana_evidence_db.common_types import JSONObject, JSONValue
+from artana_evidence_db.decision_confidence import DecisionConfidenceAssessment
 from artana_evidence_db.dictionary_proposal_service import DictionaryProposalService
 from artana_evidence_db.graph_workflow_support import (
     _BATCH_RESOURCE_ACTIONS,
@@ -22,6 +23,8 @@ from artana_evidence_db.graph_workflow_support import (
 from artana_evidence_db.kernel_services import KernelRelationClaimService
 from artana_evidence_db.workflow_models import (
     GraphWorkflow,
+    GraphWorkflowAction,
+    GraphWorkflowRiskTier,
     GraphWorkflowStatus,
 )
 from artana_evidence_db.workflow_persistence_models import (
@@ -45,7 +48,22 @@ class GraphWorkflowBatchMixin:
             workflow_id: str,
         ) -> GraphWorkflowModel: ...
 
-        def act_on_workflow(self, **kwargs: object) -> GraphWorkflow: ...
+        def act_on_workflow(
+            self,
+            *,
+            research_space_id: str,
+            workflow_id: str,
+            action: GraphWorkflowAction,
+            actor: str,
+            input_hash: str | None,
+            risk_tier: GraphWorkflowRiskTier,
+            confidence_assessment: DecisionConfidenceAssessment | None,
+            reason: str | None,
+            decision_payload: JSONObject,
+            generated_resources_payload: JSONObject,
+            ai_decision_payload: JSONObject | None,
+            authenticated_ai_principal: str | None,
+        ) -> GraphWorkflow: ...
 
     def _apply_batch_review_resources(
         self,
@@ -59,7 +77,7 @@ class GraphWorkflowBatchMixin:
         failed_refs: list[JSONValue] = []
         batch_results: list[JSONValue] = []
         if not items:
-            failed = {
+            failed: JSONObject = {
                 "resource_type": "batch_review",
                 "resource_id": str(workflow.id),
                 "status": "failed",

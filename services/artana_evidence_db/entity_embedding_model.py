@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -32,6 +33,8 @@ def _existing_table(table_name: str) -> Table | None:
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
 
 
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Mapped
 _entity_embeddings_table = _existing_table("entity_embeddings")
 if _entity_embeddings_table is None:
     _entity_embeddings_table = Table(
@@ -105,11 +108,24 @@ if _entity_embeddings_table is None:
         ),
     )
 
+_entity_embeddings_table_model_table = require_table(_entity_embeddings_table)
 
 class GraphEntityEmbeddingModel(Base):
     """Embedding vectors for graph entities used by hybrid retrieval."""
 
-    __table__ = _entity_embeddings_table
+
+    __table__ = _entity_embeddings_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        entity_id: Mapped[UUID]
+        embedding: Mapped[list[float]]
+        embedding_model: Mapped[str]
+        embedding_version: Mapped[int]
+        source_fingerprint: Mapped[str]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 EntityEmbeddingModel = GraphEntityEmbeddingModel

@@ -6,7 +6,7 @@ from typing import NoReturn, cast
 from uuid import uuid4
 
 from artana_evidence_db.ai_full_mode_service import AIFullModeService
-from artana_evidence_db.common_types import JSONObject, JSONValue
+from artana_evidence_db.common_types import JSONObject, JSONValue, ResearchSpaceSettings
 from artana_evidence_db.decision_confidence import (
     DecisionConfidenceAssessment,
     DecisionConfidenceResult,
@@ -53,9 +53,7 @@ from artana_evidence_db.kernel_services import (
     KernelEntityService,
     KernelRelationClaimService,
 )
-from artana_evidence_db.relation_claim_models import (
-    RelationClaimPersistability,
-)
+from artana_evidence_db.relation_claim_models import RelationClaimPersistability
 from artana_evidence_db.semantic_ports import DictionaryPort
 from artana_evidence_db.space_models import GraphSpaceModel
 from artana_evidence_db.workflow_models import (
@@ -75,6 +73,13 @@ from artana_evidence_db.workflow_persistence_models import (
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
+
+def _json_string_list(value: JSONValue | None) -> list[str]:
+    """Return string items from a JSON array-like value."""
+    if not isinstance(value, list | tuple):
+        return []
+    return [item for item in value if isinstance(item, str)]
 
 
 class GraphWorkflowService(GraphWorkflowBatchMixin):
@@ -126,13 +131,17 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
         config = GraphOperatingModeConfig.model_validate(
             {"mode": mode, "workflow_policy": workflow_policy},
         )
-        settings = dict(space.settings) if isinstance(space.settings, dict) else {}
+        settings = (
+            dict(space.settings)
+            if isinstance(space.settings, dict)
+            else {}
+        )
         settings["operating_mode"] = config.model_dump(mode="json")
         settings["ai_full_mode"] = self._compatible_ai_full_mode_settings(
             config=config,
             current=_json_object(cast("JSONValue", settings.get("ai_full_mode"))),
         )
-        space.settings = settings
+        space.settings = cast("ResearchSpaceSettings", settings)
         self._session.flush()
         return config
 
@@ -951,17 +960,13 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
             plan_payload["claim_plan"] = claim_plan_payload
             plan_payload["validation"] = claim_plan_payload.get("validation")
 
-            claim_dictionary_ids = [
-                str(item)
-                for item in claim_generated.get("dictionary_proposal_ids", [])
-                if isinstance(item, str)
-            ]
+            claim_dictionary_ids = _json_string_list(
+                claim_generated.get("dictionary_proposal_ids"),
+            )
             if claim_dictionary_ids:
-                existing_dictionary_ids = [
-                    str(item)
-                    for item in generated.get("dictionary_proposal_ids", [])
-                    if isinstance(item, str)
-                ]
+                existing_dictionary_ids = _json_string_list(
+                    generated.get("dictionary_proposal_ids"),
+                )
                 generated["dictionary_proposal_ids"] = list(
                     dict.fromkeys([*existing_dictionary_ids, *claim_dictionary_ids]),
                 )
@@ -1144,6 +1149,9 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
             ),
         )
         confidence_metadata = fact_assessment_metadata(request.assessment)
+        normalized_persistability: RelationClaimPersistability = (
+            "PERSISTABLE" if persistability == "PERSISTABLE" else "NON_PERSISTABLE"
+        )
         claim = self._relation_claim_service.create_claim(
             research_space_id=research_space_id,
             source_document_id=None,
@@ -1161,12 +1169,7 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
                 "UNDEFINED",
             ),
             validation_reason=validation_reason,
-            persistability=cast(
-                "RelationClaimPersistability",
-                "PERSISTABLE"
-                if persistability == "PERSISTABLE"
-                else "NON_PERSISTABLE",
-            ),
+            persistability=normalized_persistability,
             claim_status="OPEN",
             polarity="SUPPORT",
             claim_text=request.claim_text,
@@ -1409,14 +1412,9 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
         )
 
     def _workflow_graph_change_ids(self, workflow: GraphWorkflowModel) -> list[str]:
-        return [
-            str(item)
-            for item in workflow.generated_resources_payload.get(
-                "graph_change_proposal_ids",
-                [],
-            )
-            if isinstance(item, str)
-        ]
+        return _json_string_list(
+            workflow.generated_resources_payload.get("graph_change_proposal_ids"),
+        )
 
     def _apply_workflow_graph_change_proposals(  # noqa: PLR0913
         self,
@@ -1457,21 +1455,20 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
         self,
         workflow: GraphWorkflowModel,
     ) -> bool:
-        dictionary_ids = [
-            str(item)
-            for item in workflow.generated_resources_payload.get(
-                "dictionary_proposal_ids",
-                [],
-            )
-            if isinstance(item, str)
-        ]
+        dictionary_ids = _json_string_list(
+            workflow.generated_resources_payload.get("dictionary_proposal_ids"),
+        )
         for proposal_id in dictionary_ids:
-            proposal = self._dictionary_proposal_service.get_proposal(proposal_id)
-            if proposal.status not in {"APPROVED", "MERGED"}:
+            dictionary_proposal = self._dictionary_proposal_service.get_proposal(
+                proposal_id,
+            )
+            if dictionary_proposal.status not in {"APPROVED", "MERGED"}:
                 return False
         for proposal_id in self._workflow_graph_change_ids(workflow):
-            proposal = self._ai_full_mode_service.get_graph_change_proposal(proposal_id)
-            if proposal.status != "APPLIED":
+            graph_proposal = self._ai_full_mode_service.get_graph_change_proposal(
+                proposal_id,
+            )
+            if graph_proposal.status != "APPLIED":
                 return False
         return True
 
@@ -1512,41 +1509,37 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
         research_space_id: str,
         generated_resources_payload: JSONObject,
     ) -> None:
-        graph_change_ids = [
-            str(item)
-            for item in generated_resources_payload.get("graph_change_proposal_ids", [])
-            if isinstance(item, str)
-        ]
+        graph_change_ids = _json_string_list(
+            generated_resources_payload.get("graph_change_proposal_ids"),
+        )
         for proposal_id in graph_change_ids:
-            proposal = self._ai_full_mode_service.get_graph_change_proposal(proposal_id)
-            if proposal.research_space_id != str(research_space_id):
+            graph_proposal = self._ai_full_mode_service.get_graph_change_proposal(
+                proposal_id,
+            )
+            if graph_proposal.research_space_id != str(research_space_id):
                 msg = f"Generated graph-change proposal '{proposal_id}' is not in this space"
                 raise ValueError(msg)
-        concept_ids = [
-            str(item)
-            for item in generated_resources_payload.get("concept_proposal_ids", [])
-            if isinstance(item, str)
-        ]
+        concept_ids = _json_string_list(
+            generated_resources_payload.get("concept_proposal_ids"),
+        )
         for proposal_id in concept_ids:
-            proposal = self._ai_full_mode_service.get_concept_proposal(proposal_id)
-            if proposal.research_space_id != str(research_space_id):
+            concept_proposal = self._ai_full_mode_service.get_concept_proposal(
+                proposal_id,
+            )
+            if concept_proposal.research_space_id != str(research_space_id):
                 msg = f"Generated concept proposal '{proposal_id}' is not in this space"
                 raise ValueError(msg)
-        connector_ids = [
-            str(item)
-            for item in generated_resources_payload.get("connector_proposal_ids", [])
-            if isinstance(item, str)
-        ]
+        connector_ids = _json_string_list(
+            generated_resources_payload.get("connector_proposal_ids"),
+        )
         for proposal_id in connector_ids:
-            proposal = self._ai_full_mode_service.get_connector_proposal(proposal_id)
-            if proposal.research_space_id != str(research_space_id):
+            connector_proposal = self._ai_full_mode_service.get_connector_proposal(
+                proposal_id,
+            )
+            if connector_proposal.research_space_id != str(research_space_id):
                 msg = f"Generated connector proposal '{proposal_id}' is not in this space"
                 raise ValueError(msg)
-        claim_ids = [
-            str(item)
-            for item in generated_resources_payload.get("claim_ids", [])
-            if isinstance(item, str)
-        ]
+        claim_ids = _json_string_list(generated_resources_payload.get("claim_ids"))
         for claim_id in claim_ids:
             claim = self._relation_claim_service.get_claim(claim_id)
             if claim is None or str(claim.research_space_id) != str(research_space_id):
@@ -1739,11 +1732,9 @@ class GraphWorkflowService(GraphWorkflowBatchMixin):
         current: JSONObject | None,
     ) -> JSONObject:
         current_payload = current or {}
-        trusted = config.workflow_policy.trusted_ai_principals or [
-            str(item)
-            for item in current_payload.get("trusted_principals", [])
-            if isinstance(item, str)
-        ]
+        trusted = config.workflow_policy.trusted_ai_principals or _json_string_list(
+            current_payload.get("trusted_principals"),
+        )
         governance_mode = (
             "ai_full"
             if config.mode in {"ai_full_graph", "ai_full_evidence", "continuous_learning"}

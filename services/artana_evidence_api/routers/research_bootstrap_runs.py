@@ -127,7 +127,7 @@ class ResearchBootstrapRunResponse(BaseModel):
 
 def build_research_bootstrap_run_response(
     result: ResearchBootstrapExecutionResult,
-) -> ResearchBootstrapRunResponse:
+) -> ResearchBootstrapRunResponse | JSONResponse:
     """Serialize one research-bootstrap execution result for HTTP responses."""
     return ResearchBootstrapRunResponse(
         run=HarnessRunResponse.from_record(result.run),
@@ -196,7 +196,7 @@ async def create_research_bootstrap_run(  # noqa: PLR0913
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
-) -> ResearchBootstrapRunResponse:
+) -> ResearchBootstrapRunResponse | JSONResponse:
     """Bootstrap a research space into a durable harness memory state."""
     objective = (
         request.objective.strip() if isinstance(request.objective, str) else None

@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -25,6 +26,7 @@ from artana_evidence_api.source_enrichment_bridges import (
     build_uniprot_gateway,
     build_zfin_gateway,
 )
+from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
         HarnessDocumentRecord,
         HarnessDocumentStore,
     )
+    from artana_evidence_api.proposal_store import HarnessProposalDraft
     from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
 
 logger = logging.getLogger(__name__)
@@ -133,8 +136,8 @@ _UNREVIEWED_BOOTSTRAP_PROPOSAL_SCORE = 0.5
 def _bootstrap_proposal_metadata(
     *,
     source: str,
-    extra: dict[str, object] | None = None,
-) -> dict[str, object]:
+    extra: JSONObject | None = None,
+) -> JSONObject:
     """Return metadata for structured proposals awaiting qualitative review."""
     return {
         "source": source,
@@ -152,9 +155,7 @@ class SourceEnrichmentResult:
 
     source_key: str
     documents_created: list[HarnessDocumentRecord] = field(default_factory=list)
-    proposals_created: list[object] = field(
-        default_factory=list,
-    )  # HarnessProposalDraft list
+    proposals_created: list[HarnessProposalDraft] = field(default_factory=list)
     records_processed: int = 0
     errors: tuple[str, ...] = ()
 
@@ -237,7 +238,7 @@ def _create_clinvar_proposals(
     gene_symbols: list[str],  # noqa: ARG001
     documents: list[HarnessDocumentRecord],  # noqa: ARG001
     records_by_gene: dict[str, list[dict[str, object]]],
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Create unreviewed bootstrap drafts from ClinVar variant records.
 
     The drafts preserve deterministic source grounding. Research-init applies
@@ -248,11 +249,7 @@ def _create_clinvar_proposals(
     proposals: list[HarnessProposalDraft] = []
     for gene_symbol, records in records_by_gene.items():
         for rec in records:
-            parsed = (
-                rec.get("parsed_data", {})
-                if isinstance(rec.get("parsed_data"), dict)
-                else {}
-            )
+            parsed = json_object_or_empty(rec.get("parsed_data"))
             clin_sig = (
                 parsed.get("clinical_significance")
                 or rec.get("clinical_significance")
@@ -552,7 +549,7 @@ async def run_alphafold_enrichment(
                 all_errors.append(msg)
 
     # Create proposals directly from structured records
-    all_proposals: list[object] = []
+    all_proposals: list[HarnessProposalDraft] = []
     for term, uniprot_id, af_records in alphafold_record_groups:
         all_proposals.extend(
             _create_alphafold_proposals(term, uniprot_id, af_records),
@@ -571,7 +568,7 @@ def _create_alphafold_proposals(
     query_term: str,
     uniprot_id: str,
     records: list[dict[str, object]],
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Create unreviewed bootstrap drafts from AlphaFold structure predictions.
 
     Returns ``PART_OF`` proposal drafts for domains identified by AlphaFold.
@@ -753,7 +750,7 @@ def _create_enrichment_document(
     title: str,
     source_type: str,
     text_content: str,
-    metadata: dict[str, object],
+    metadata: JSONObject,
 ) -> HarnessDocumentRecord | None:
     """Create a harness document for enrichment results, skipping duplicates.
 
@@ -830,14 +827,15 @@ def _format_clinvar_results(
         "",
     ]
     for idx, rec in enumerate(records, 1):
-        parsed = (
-            rec.get("parsed_data", {})
-            if isinstance(rec.get("parsed_data"), dict)
-            else {}
+        parsed = json_object_or_empty(rec.get("parsed_data"))
+        hgvs_raw = parsed.get("hgvs_notations")
+        hgvs_notations = (
+            [item for item in hgvs_raw if isinstance(item, str)]
+            if isinstance(hgvs_raw, list)
+            else []
         )
-        hgvs_list = parsed.get("hgvs_notations") or []
         variant_name = (
-            (hgvs_list[0] if hgvs_list else None)
+            (hgvs_notations[0] if hgvs_notations else None)
             or rec.get("title")
             or rec.get("name")
             or rec.get("clinvar_id")
@@ -995,7 +993,7 @@ def _format_alphafold_results(
 
 def _format_marrvel_results(  # noqa: PLR0912, PLR0915
     gene_symbol: str,
-    panels: dict[str, object],
+    panels: Mapping[str, object],
 ) -> str:
     """Format MARRVEL panel data into readable text for LLM extraction."""
     lines: list[str] = [
@@ -1308,7 +1306,7 @@ def _build_drug_treats_proposal(
     drug_name: str,
     condition: str,
     term: str,
-):
+) -> HarnessProposalDraft:
     from artana_evidence_api.proposal_store import HarnessProposalDraft
 
     return HarnessProposalDraft(
@@ -1357,7 +1355,7 @@ def _build_trial_targets_proposal(
     title: str,
     condition: str,
     term: str,
-):
+) -> HarnessProposalDraft:
     from artana_evidence_api.proposal_store import HarnessProposalDraft
 
     return HarnessProposalDraft(
@@ -1400,7 +1398,7 @@ def _proposals_for_clinicaltrials_record(
     *,
     rec: dict[str, object],
     term: str,
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Build the proposals derived from one trial record."""
     nct_id = str(rec.get("nct_id") or "")
     if not nct_id:
@@ -1411,7 +1409,7 @@ def _proposals_for_clinicaltrials_record(
     conditions = _normalize_clinicaltrials_conditions(rec.get("conditions"))
     drug_interventions = _normalize_clinicaltrials_drugs(rec.get("interventions"))
 
-    proposals: list[object] = []
+    proposals: list[HarnessProposalDraft] = []
     if drug_interventions:
         condition_targets = conditions or ["unspecified condition"]
         proposals.extend(
@@ -1440,7 +1438,7 @@ def _proposals_for_clinicaltrials_record(
 
 def _create_clinicaltrials_proposals(
     records_by_term: dict[str, list[dict[str, object]]],
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Create unreviewed bootstrap drafts from clinical trial records.
 
     Heuristic: if any of the trial's interventions has type "DRUG", emit a
@@ -1448,7 +1446,7 @@ def _create_clinicaltrials_proposals(
     Otherwise emit a ``CLINICAL_TRIAL → TARGETS → DISEASE`` draft so the
     trial still becomes a graph entity downstream.
     """
-    proposals: list[object] = []
+    proposals: list[HarnessProposalDraft] = []
     for term, records in records_by_term.items():
         for rec in records:
             proposals.extend(_proposals_for_clinicaltrials_record(rec=rec, term=term))
@@ -1568,7 +1566,7 @@ def _build_gene_phenotype_proposal(
     gene_symbol: str,
     phenotype: str,
     term: str,
-):
+) -> HarnessProposalDraft:
     from artana_evidence_api.proposal_store import HarnessProposalDraft
 
     return HarnessProposalDraft(
@@ -1618,7 +1616,7 @@ def _build_gene_disease_proposal(
     disease_name: str,
     do_id: str | None,
     term: str,
-):
+) -> HarnessProposalDraft:
     from artana_evidence_api.proposal_store import HarnessProposalDraft
 
     locator = f"mgi:{mgi_id}:disease:{disease_name}"
@@ -1668,14 +1666,14 @@ def _proposals_for_mgi_record(
     *,
     rec: dict[str, object],
     term: str,
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Build proposals derived from one MGI mouse gene record."""
     mgi_id = str(rec.get("mgi_id") or "")
     gene_symbol = str(rec.get("gene_symbol") or "")
     if not mgi_id or not gene_symbol:
         return []
 
-    proposals: list[object] = []
+    proposals: list[HarnessProposalDraft] = []
 
     phenotypes_raw = rec.get("phenotype_statements") or []
     if isinstance(phenotypes_raw, list):
@@ -1719,9 +1717,9 @@ def _proposals_for_mgi_record(
 
 def _create_mgi_proposals(
     records_by_term: dict[str, list[dict[str, object]]],
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Create unreviewed bootstrap drafts from MGI mouse gene records."""
-    proposals: list[object] = []
+    proposals: list[HarnessProposalDraft] = []
     for term, records in records_by_term.items():
         for rec in records:
             proposals.extend(_proposals_for_mgi_record(rec=rec, term=term))
@@ -1846,7 +1844,7 @@ def _build_zfin_phenotype_proposal(
     gene_symbol: str,
     phenotype: str,
     term: str,
-):
+) -> HarnessProposalDraft:
     from artana_evidence_api.proposal_store import HarnessProposalDraft
 
     return HarnessProposalDraft(
@@ -1895,7 +1893,7 @@ def _build_zfin_expression_proposal(
     gene_symbol: str,
     tissue: str,
     term: str,
-):
+) -> HarnessProposalDraft:
     from artana_evidence_api.proposal_store import HarnessProposalDraft
 
     return HarnessProposalDraft(
@@ -1945,7 +1943,7 @@ def _build_zfin_disease_proposal(
     disease_name: str,
     do_id: str | None,
     term: str,
-):
+) -> HarnessProposalDraft:
     from artana_evidence_api.proposal_store import HarnessProposalDraft
 
     locator = f"zfin:{zfin_id}:disease:{disease_name}"
@@ -1995,14 +1993,14 @@ def _proposals_for_zfin_record(
     *,
     rec: dict[str, object],
     term: str,
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Build proposals derived from one ZFIN zebrafish gene record."""
     zfin_id = str(rec.get("zfin_id") or "")
     gene_symbol = str(rec.get("gene_symbol") or "")
     if not zfin_id or not gene_symbol:
         return []
 
-    proposals: list[object] = []
+    proposals: list[HarnessProposalDraft] = []
 
     phenotypes_raw = rec.get("phenotype_statements") or []
     if isinstance(phenotypes_raw, list):
@@ -2059,9 +2057,9 @@ def _proposals_for_zfin_record(
 
 def _create_zfin_proposals(
     records_by_term: dict[str, list[dict[str, object]]],
-) -> list[object]:
+) -> list[HarnessProposalDraft]:
     """Create unreviewed bootstrap drafts from ZFIN zebrafish gene records."""
-    proposals: list[object] = []
+    proposals: list[HarnessProposalDraft] = []
     for term, records in records_by_term.items():
         for rec in records:
             proposals.extend(_proposals_for_zfin_record(rec=rec, term=term))

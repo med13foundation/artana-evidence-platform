@@ -21,12 +21,23 @@ if TYPE_CHECKING:
 class ClaimParticipantBackfillGlobalSummaryLike(Protocol):
     """Minimal global backfill summary shape used by readiness repair output."""
 
-    scanned_claims: int
-    created_participants: int
-    skipped_existing: int
-    unresolved_endpoints: int
-    research_spaces: int
-    dry_run: bool
+    @property
+    def scanned_claims(self) -> int: ...
+
+    @property
+    def created_participants(self) -> int: ...
+
+    @property
+    def skipped_existing(self) -> int: ...
+
+    @property
+    def unresolved_endpoints(self) -> int: ...
+
+    @property
+    def research_spaces(self) -> int: ...
+
+    @property
+    def dry_run(self) -> bool: ...
 
 
 @dataclass(frozen=True)

@@ -60,13 +60,13 @@ class GraphReadModelProjector(Protocol):
     """Runtime contract for one rebuildable graph read-model projector."""
 
     @property
-    def definition(self) -> object:
+    def definition(self) -> GraphReadModelDefinition:
         """Return the read-model definition owned by this projector."""
 
     def rebuild(self, *, space_id: str | None = None) -> int:
         """Rebuild the whole read model and return the affected row count."""
 
-    def apply_update(self, update: object) -> int:
+    def apply_update(self, update: GraphReadModelUpdate) -> int:
         """Apply one incremental update and return the affected row count."""
 
 

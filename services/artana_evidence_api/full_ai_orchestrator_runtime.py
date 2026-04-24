@@ -107,12 +107,17 @@ from artana_evidence_api.transparency import ensure_run_transparency_seed
 from artana_evidence_api.types.common import (
     JSONObject,
     ResearchSpaceSourcePreferences,
+    json_object,
+    json_object_or_empty,
+    json_string_list,
 )
 
 from .run_registry import HarnessRunRecord
 
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
+    from artana_evidence_api.harness_runtime import HarnessExecutionServices
+    from artana_evidence_api.run_registry import HarnessRunRegistry
 
 _LOGGER = logging.getLogger(__name__)
 _PROGRESS_PERSISTENCE_BACKOFF_SECONDS = float(
@@ -460,11 +465,7 @@ def _build_live_pubmed_summary(
     *, workspace_snapshot: JSONObject, status: str
 ) -> JSONObject:
     source_results = _workspace_object(workspace_snapshot, "source_results")
-    pubmed_summary = (
-        dict(source_results.get("pubmed", {}))
-        if isinstance(source_results.get("pubmed"), dict)
-        else {}
-    )
+    pubmed_summary = json_object_or_empty(source_results.get("pubmed"))
     return {
         "status": status,
         "pubmed_results": _workspace_list(workspace_snapshot, "pubmed_results"),
@@ -500,7 +501,7 @@ def _build_live_source_execution_summary(
 ) -> JSONObject:
     return {
         "status": status,
-        "selected_sources": dict(selected_sources),
+        "selected_sources": json_object_or_empty(selected_sources),
         "source_results": _workspace_object(workspace_snapshot, "source_results"),
         "documents_ingested": workspace_snapshot.get("documents_ingested", 0),
         "proposal_count": workspace_snapshot.get("proposal_count", 0),
@@ -890,7 +891,7 @@ class _FullAIOrchestratorProgressObserver(ResearchInitProgressObserver):
                 merged_metadata = dict(decision.metadata)
                 if metadata is not None:
                     merged_metadata.update(metadata)
-                updated_fields = {
+                updated_fields: dict[str, object] = {
                     "status": status,
                     "metadata": merged_metadata,
                 }
@@ -1322,11 +1323,11 @@ class _FullAIOrchestratorProgressObserver(ResearchInitProgressObserver):
                         if isinstance(workspace_snapshot, dict)
                         else {}
                     ),
-                    prior_decisions=(
-                        list(record.get("decisions", []))
-                        if isinstance(record.get("decisions"), list)
-                        else []
-                    ),
+                    prior_decisions=[
+                        decision_payload
+                        for item in _workspace_list(record, "decisions")
+                        if (decision_payload := json_object(item)) is not None
+                    ],
                     action_registry=self.action_registry,
                 )
             await self._emit_shadow_checkpoint(
@@ -1724,8 +1725,12 @@ class _FullAIOrchestratorProgressObserver(ResearchInitProgressObserver):
                 },
             )
             return ResearchOrchestratorChaseSelection(
-                selected_entity_ids=list(guarded_action["selected_entity_ids"]),
-                selected_labels=list(guarded_action["selected_labels"]),
+                selected_entity_ids=json_string_list(
+                    guarded_action.get("selected_entity_ids")
+                ),
+                selected_labels=json_string_list(
+                    guarded_action.get("selected_labels")
+                ),
                 stop_instead=False,
                 stop_reason=None,
                 selection_basis=str(guarded_action["selection_basis"]),
@@ -1842,9 +1847,12 @@ class _FullAIOrchestratorProgressObserver(ResearchInitProgressObserver):
                 source_results=source_results,
                 action=action,
             )
+            guarded_strategy_value = (
+                guarded_strategy if isinstance(guarded_strategy, str) else None
+            )
             return self._update_guarded_action_verification(
                 action_type=ResearchOrchestratorActionType.RUN_STRUCTURED_ENRICHMENT,
-                guarded_strategy=guarded_strategy,
+                guarded_strategy=guarded_strategy_value,
                 verification_status=verification_status,
                 verification_reason=verification_reason,
                 verification_summary=verification_summary,
@@ -1966,7 +1974,11 @@ class _FullAIOrchestratorProgressObserver(ResearchInitProgressObserver):
             "after_bootstrap": 0,
             "after_chase_round_1": 1,
         }
-        expected_after_round = expected_after_round_by_checkpoint.get(checkpoint_key)
+        expected_after_round = (
+            expected_after_round_by_checkpoint.get(checkpoint_key)
+            if isinstance(checkpoint_key, str)
+            else None
+        )
 
         verification_status = "verified"
         verification_reason = "terminal_control_action_verified"
@@ -2344,7 +2356,7 @@ class _FullAIOrchestratorProgressObserver(ResearchInitProgressObserver):
 
 def _store_pending_action_output_artifacts(
     *,
-    artifact_store,
+    artifact_store: HarnessArtifactStore,
     space_id: UUID,
     run_id: str,
     objective: str,
@@ -2383,7 +2395,7 @@ def _store_pending_action_output_artifacts(
         media_type="application/json",
         content={
             "status": "pending",
-            "selected_sources": dict(sources),
+            "selected_sources": json_object_or_empty(sources),
         },
     )
     artifact_store.put_artifact(
@@ -2507,9 +2519,9 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
     max_hypotheses: int,
     graph_service_status: str,
     graph_service_version: str,
-    run_registry,
-    artifact_store,
-    execution_services,
+    run_registry: HarnessRunRegistry,
+    artifact_store: HarnessArtifactStore,
+    execution_services: HarnessExecutionServices,
     planner_mode: FullAIOrchestratorPlannerMode = (
         FullAIOrchestratorPlannerMode.SHADOW
     ),
@@ -2557,7 +2569,7 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
         input_payload={
             "objective": objective,
             "seed_terms": list(seed_terms),
-            "sources": dict(sources),
+            "sources": json_object_or_empty(sources),
             "planner_mode": _planner_mode_value(planner_mode),
             "guarded_rollout_profile": resolved_guarded_rollout_profile,
             "guarded_rollout_profile_source": resolved_guarded_rollout_profile_source,
@@ -2595,7 +2607,7 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
         content={
             "objective": objective,
             "seed_terms": list(seed_terms),
-            "sources": dict(sources),
+            "sources": json_object_or_empty(sources),
             "planner_mode": _planner_mode_value(planner_mode),
             "guarded_rollout_profile": resolved_guarded_rollout_profile,
             "guarded_rollout_profile_source": resolved_guarded_rollout_profile_source,
@@ -2673,8 +2685,8 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
             "status": "queued",
             "objective": objective,
             "seed_terms": list(seed_terms),
-            "enabled_sources": dict(sources),
-            "sources": dict(sources),
+            "enabled_sources": json_object_or_empty(sources),
+            "sources": json_object_or_empty(sources),
             "current_round": 0,
             "source_results": source_results,
             "documents_ingested": 0,
@@ -2747,7 +2759,7 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
     max_depth: int,
     max_hypotheses: int,
     sources: ResearchSpaceSourcePreferences,
-    execution_services,
+    execution_services: HarnessExecutionServices,
     existing_run: HarnessRunRecord,
     planner_mode: FullAIOrchestratorPlannerMode = (
         FullAIOrchestratorPlannerMode.SHADOW
@@ -2901,11 +2913,7 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
         workspace_snapshot=workspace_snapshot,
         research_init_result=research_init_result,
     )
-    bootstrap_summary = (
-        workspace_snapshot.get("bootstrap_summary")
-        if isinstance(workspace_snapshot.get("bootstrap_summary"), dict)
-        else None
-    )
+    bootstrap_summary = json_object(workspace_snapshot.get("bootstrap_summary"))
     brief_metadata = _build_brief_metadata(
         workspace_snapshot=workspace_snapshot,
         research_init_result=research_init_result,
@@ -3155,7 +3163,9 @@ def build_full_ai_orchestrator_run_response(
     """Serialize one completed orchestrator run for HTTP responses."""
     return FullAIOrchestratorRunResponse(
         planner_mode=result.planner_mode,
-        guarded_rollout_profile=result.guarded_rollout_profile,
+        guarded_rollout_profile=_guarded_rollout_profile_response_value(
+            result.guarded_rollout_profile,
+        ),
         run=serialize_run_record(run=result.run),
         action_history=list(result.action_history),
         workspace_summary=result.workspace_summary,
@@ -3167,6 +3177,17 @@ def build_full_ai_orchestrator_run_response(
         guarded_decision_proofs=result.guarded_decision_proofs,
         errors=list(result.errors),
     )
+
+
+def _guarded_rollout_profile_response_value(
+    value: str | None,
+) -> FullAIOrchestratorGuardedRolloutProfile | None:
+    if value is None:
+        return None
+    try:
+        return FullAIOrchestratorGuardedRolloutProfile(value)
+    except ValueError:
+        return None
 
 
 

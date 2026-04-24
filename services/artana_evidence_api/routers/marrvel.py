@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.auth import (
@@ -151,7 +151,7 @@ async def create_marrvel_search(
             variant_hgvs=request.variant_hgvs,
             protein_variant=request.protein_variant,
             taxon_id=request.taxon_id,
-            panels=request.panels,
+            panels=cast("list[str] | None", request.panels),
         )
         return MarrvelSearchResponse(
             id=result.id,

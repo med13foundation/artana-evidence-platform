@@ -67,9 +67,6 @@ def build_unique_space_slug(name: str, existing_slugs: set[str]) -> str:
 
 
 def _normalize_assignable_member_role(role: str) -> str:
-    if not isinstance(role, str):
-        msg = f"Invalid space member role: {role!r}"
-        raise TypeError(msg)
     normalized_role = role.strip().lower()
     if normalized_role == "":
         msg = f"Invalid space member role: {role!r}"
@@ -396,7 +393,7 @@ class HarnessResearchSpaceStore:
                 status=current.status,
                 role=current.role,
                 is_default=current.is_default,
-                settings=dict(settings),
+                settings=settings,
             )
             self._records[normalized_space_id] = updated
             return updated

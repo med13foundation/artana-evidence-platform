@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -34,6 +35,11 @@ def _existing_table(table_name: str) -> Table | None:
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
 
 
+if TYPE_CHECKING:
+    from decimal import Decimal
+
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _observations_table = _existing_table("observations")
 if _observations_table is None:
     _observations_table = Table(
@@ -165,11 +171,31 @@ if _observations_table is None:
         ),
     )
 
+_observations_table_model_table = require_table(_observations_table)
 
 class GraphObservationModel(Base):
     """A typed observation row."""
 
-    __table__ = _observations_table
+
+    __table__ = _observations_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        subject_id: Mapped[UUID]
+        variable_id: Mapped[str]
+        value_numeric: Mapped[Decimal | None]
+        value_text: Mapped[str | None]
+        value_date: Mapped[datetime | None]
+        value_coded: Mapped[str | None]
+        value_boolean: Mapped[bool | None]
+        value_json: Mapped[JSONObject | None]
+        unit: Mapped[str | None]
+        observed_at: Mapped[datetime | None]
+        provenance_id: Mapped[UUID | None]
+        confidence: Mapped[float]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 ObservationModel = GraphObservationModel

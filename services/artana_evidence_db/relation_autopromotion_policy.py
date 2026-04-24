@@ -39,14 +39,29 @@ RELATION_AUTOPROMOTION_SPACE_POLICY_CUSTOM_PREFIX = "relation_autopromote_"
 class RelationAutopromotionDefaultsLike(Protocol):
     """Protocol for pack-owned defaults consumed at runtime."""
 
-    enabled: bool
-    min_distinct_sources: int
-    min_aggregate_confidence: float
-    require_distinct_documents: bool
-    require_distinct_runs: bool
-    block_if_conflicting_evidence: bool
-    min_evidence_tier: str
-    conflicting_confidence_threshold: float
+    @property
+    def enabled(self) -> bool: ...
+
+    @property
+    def min_distinct_sources(self) -> int: ...
+
+    @property
+    def min_aggregate_confidence(self) -> float: ...
+
+    @property
+    def require_distinct_documents(self) -> bool: ...
+
+    @property
+    def require_distinct_runs(self) -> bool: ...
+
+    @property
+    def block_if_conflicting_evidence(self) -> bool: ...
+
+    @property
+    def min_evidence_tier(self) -> str: ...
+
+    @property
+    def conflicting_confidence_threshold(self) -> float: ...
 
 
 @dataclass(frozen=True)

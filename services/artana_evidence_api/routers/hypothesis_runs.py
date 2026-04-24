@@ -278,7 +278,7 @@ async def create_hypothesis_run(  # noqa: PLR0913
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
-) -> HypothesisRunResponse:
+) -> HypothesisRunResponse | JSONResponse:
     """Run hypothesis exploration in the harness layer and stage candidates."""
     try:
         seed_entity_ids = _normalize_seed_entity_ids(request.seed_entity_ids)

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -34,6 +35,9 @@ def _existing_table(table_name: str) -> Table | None:
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
 
 
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _reasoning_paths_table = _existing_table("reasoning_paths")
 if _reasoning_paths_table is None:
     _reasoning_paths_table = Table(
@@ -159,11 +163,30 @@ if _reasoning_paths_table is None:
         ),
     )
 
+_reasoning_paths_table_model_table = require_table(_reasoning_paths_table)
 
 class GraphReasoningPathModel(Base):
     """Derived reasoning path materialized from grounded claim chains."""
 
-    __table__ = _reasoning_paths_table
+
+    __table__ = _reasoning_paths_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        path_kind: Mapped[str]
+        status: Mapped[str]
+        start_entity_id: Mapped[UUID]
+        end_entity_id: Mapped[UUID]
+        root_claim_id: Mapped[UUID]
+        path_length: Mapped[int]
+        confidence: Mapped[float]
+        path_signature_hash: Mapped[str]
+        generated_by: Mapped[str | None]
+        generated_at: Mapped[datetime]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 ReasoningPathModel = GraphReasoningPathModel
@@ -263,10 +286,25 @@ if _reasoning_path_steps_table is None:
     )
 
 
+_reasoning_path_steps_table_model_table = require_table(_reasoning_path_steps_table)
+
 class GraphReasoningPathStepModel(Base):
     """Ordered step rows explaining one derived reasoning path."""
 
-    __table__ = _reasoning_path_steps_table
+
+    __table__ = _reasoning_path_steps_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        path_id: Mapped[UUID]
+        step_index: Mapped[int]
+        source_claim_id: Mapped[UUID]
+        target_claim_id: Mapped[UUID]
+        claim_relation_id: Mapped[UUID]
+        canonical_relation_id: Mapped[UUID | None]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 ReasoningPathStepModel = GraphReasoningPathStepModel

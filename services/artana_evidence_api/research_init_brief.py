@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from artana_evidence_api.alias_yield_reporting import build_alias_yield_rollup
+from artana_evidence_api.types.common import json_object_or_empty
 
 if TYPE_CHECKING:
     from .artifact_store import HarnessArtifactStore
@@ -106,10 +107,12 @@ def _int(value: object, default: int = 0) -> int:
     """Safely coerce a value to int."""
     if isinstance(value, int):
         return value
-    try:
-        return int(value)  # type: ignore[call-overload]
-    except (TypeError, ValueError):
-        return default
+    if isinstance(value, float | str):
+        try:
+            return int(value)
+        except ValueError:
+            return default
+    return default
 
 
 _MIN_SOURCES_FOR_OVERLAP = 2
@@ -684,9 +687,7 @@ def generate_research_brief(
         ("alphafold", _build_alphafold_section),
     ]
     for source_key, builder in section_builders:
-        source_data = source_results.get(source_key, {})
-        if not isinstance(source_data, dict):
-            continue
+        source_data = json_object_or_empty(source_results.get(source_key))
         section = builder(source_data)
         if section is not None:
             sections.append(section)

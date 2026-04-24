@@ -35,6 +35,7 @@ from artana_evidence_api.graph_connection_runtime import (
 )
 from artana_evidence_api.graph_integration.context import (
     GraphCallContext,
+    GraphCallRole,
     make_graph_raw_mutation_transport_factory,
     make_graph_transport_bundle_factory,
 )
@@ -236,6 +237,7 @@ _SPACE_WRITE_ROLES = frozenset({"owner", "admin", "curator", "researcher"})
 
 
 def _graph_call_context_for_harness_user(current_user: HarnessUser) -> GraphCallContext:
+    role: GraphCallRole
     if current_user.role == HarnessUserRole.ADMIN:
         role = "admin"
     elif current_user.role == HarnessUserRole.CURATOR:

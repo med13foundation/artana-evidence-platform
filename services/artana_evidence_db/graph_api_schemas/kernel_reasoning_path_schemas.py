@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
@@ -39,13 +40,26 @@ if TYPE_CHECKING:
 class ReasoningPathDetailLike(Protocol):
     """Structural contract for reasoning-path detail serialization."""
 
-    path: KernelReasoningPath
-    steps: list[KernelReasoningPathStep]
-    canonical_relations: list[KernelRelation]
-    claims: list[KernelRelationClaim]
-    claim_relations: list[KernelClaimRelation]
-    participants: list[KernelClaimParticipant]
-    evidence: list[KernelClaimEvidence]
+    @property
+    def path(self) -> KernelReasoningPath: ...
+
+    @property
+    def steps(self) -> Sequence[KernelReasoningPathStep]: ...
+
+    @property
+    def canonical_relations(self) -> Sequence[KernelRelation]: ...
+
+    @property
+    def claims(self) -> Sequence[KernelRelationClaim]: ...
+
+    @property
+    def claim_relations(self) -> Sequence[KernelClaimRelation]: ...
+
+    @property
+    def participants(self) -> Sequence[KernelClaimParticipant]: ...
+
+    @property
+    def evidence(self) -> Sequence[KernelClaimEvidence]: ...
 
 
 def _to_uuid(value: str | UUID) -> UUID:

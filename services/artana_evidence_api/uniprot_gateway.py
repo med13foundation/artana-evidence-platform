@@ -151,16 +151,25 @@ def _normalize_uniprot_payload(payload: object) -> list[dict[str, object]]:
 
 def _entry_list(payload: object) -> list[dict[str, object]]:
     if isinstance(payload, list | tuple):
-        return [_dict_value(item) for item in payload if _dict_value(item) is not None]
+        return _dict_values(payload)
     mapping = _dict_value(payload)
     if mapping is None:
         return []
     results = mapping.get("results")
     if isinstance(results, list | tuple):
-        return [_dict_value(item) for item in results if _dict_value(item) is not None]
+        return _dict_values(results)
     if _first_string(mapping, ("primaryAccession", "uniprot_id", "accession", "id")):
         return [mapping]
     return []
+
+
+def _dict_values(values: list[object] | tuple[object, ...]) -> list[dict[str, object]]:
+    records: list[dict[str, object]] = []
+    for item in values:
+        record = _dict_value(item)
+        if record is not None:
+            records.append(record)
+    return records
 
 
 def _extract_gene_name(entry: Mapping[str, object]) -> str:

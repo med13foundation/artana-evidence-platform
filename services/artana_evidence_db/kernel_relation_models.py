@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
+    qualify_graph_table_name,
 )
 from sqlalchemy import (
     Column,
@@ -26,7 +28,9 @@ from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
 
-_relations_table = Base.metadata.tables.get("relations")
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Mapped
+_relations_table = Base.metadata.tables.get(qualify_graph_table_name("relations"))
 if _relations_table is None:
     _relations_table = Table(
         "relations",
@@ -205,7 +209,9 @@ if _relations_table is None:
         ),
     )
 
-_relation_evidence_table = Base.metadata.tables.get("relation_evidence")
+_relation_evidence_table = Base.metadata.tables.get(
+    qualify_graph_table_name("relation_evidence"),
+)
 if _relation_evidence_table is None:
     _relation_evidence_table = Table(
         "relation_evidence",
@@ -311,11 +317,33 @@ if _relation_evidence_table is None:
         ),
     )
 
+_relations_table_model_table = require_table(_relations_table)
 
 class GraphRelationModel(Base):
     """A canonical graph edge with evidence accumulation and curation lifecycle."""
 
-    __table__ = _relations_table
+
+    __table__ = _relations_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        source_id: Mapped[UUID]
+        relation_type: Mapped[str]
+        target_id: Mapped[UUID]
+        aggregate_confidence: Mapped[float]
+        source_count: Mapped[int]
+        highest_evidence_tier: Mapped[str | None]
+        support_confidence: Mapped[float]
+        refute_confidence: Mapped[float]
+        distinct_source_family_count: Mapped[int]
+        canonicalization_fingerprint: Mapped[str]
+        curation_status: Mapped[str]
+        provenance_id: Mapped[UUID | None]
+        reviewed_by: Mapped[UUID | None]
+        reviewed_at: Mapped[datetime | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
     evidences = relationship(
         "artana_evidence_db.kernel_relation_models.GraphRelationEvidenceModel",
@@ -332,10 +360,29 @@ class GraphRelationModel(Base):
         )
 
 
+_relation_evidence_table_model_table = require_table(_relation_evidence_table)
+
 class GraphRelationEvidenceModel(Base):
     """Supporting evidence rows for canonical graph edges."""
 
-    __table__ = _relation_evidence_table
+
+    __table__ = _relation_evidence_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        relation_id: Mapped[UUID]
+        confidence: Mapped[float]
+        evidence_summary: Mapped[str | None]
+        evidence_sentence: Mapped[str | None]
+        evidence_sentence_source: Mapped[str | None]
+        evidence_sentence_confidence: Mapped[str | None]
+        evidence_sentence_rationale: Mapped[str | None]
+        evidence_tier: Mapped[str]
+        provenance_id: Mapped[UUID | None]
+        source_document_id: Mapped[UUID | None]
+        source_document_ref: Mapped[str | None]
+        agent_run_id: Mapped[str | None]
+        created_at: Mapped[datetime]
 
     relation = relationship(
         "artana_evidence_db.kernel_relation_models.GraphRelationModel",

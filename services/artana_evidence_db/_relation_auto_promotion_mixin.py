@@ -34,15 +34,16 @@ from artana_evidence_db.space_registry_repository import (
 from sqlalchemy import select
 
 if TYPE_CHECKING:
-    from artana_evidence_db.relation_repository import (
-        SqlAlchemyKernelRelationRepository,
-    )
+    from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 
 class _KernelRelationAutoPromotionMixin:
     """Mixins for relation auto-promotion policy resolution and evaluation."""
+
+    _session: Session
+    _auto_promotion_policy: AutoPromotionPolicy
 
     @staticmethod
     def _log_auto_promotion_decision(
@@ -75,7 +76,7 @@ class _KernelRelationAutoPromotionMixin:
         )
 
     def _resolve_auto_promotion_policy(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         research_space_id: UUID,
     ) -> AutoPromotionPolicy:
@@ -123,7 +124,7 @@ class _KernelRelationAutoPromotionMixin:
         )
 
     def _extract_space_policy_settings(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         research_space_id: UUID,
     ) -> dict[str, object]:
@@ -157,7 +158,7 @@ class _KernelRelationAutoPromotionMixin:
         return settings_payload
 
     def _apply_auto_promotion(  # noqa: C901, PLR0911, PLR0912
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_id: UUID,
     ) -> AutoPromotionDecision:
         relation_model = self._session.get(RelationModel, relation_id)
@@ -394,7 +395,7 @@ class _KernelRelationAutoPromotionMixin:
         )
 
     def _list_relation_evidences(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_id: UUID,
     ) -> list[RelationEvidenceModel]:
         stmt = select(RelationEvidenceModel).where(
@@ -448,7 +449,7 @@ class _KernelRelationAutoPromotionMixin:
         )
 
     def _is_review_only_constraint(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_model: RelationModel,
     ) -> bool:
         """Check if the relation's triple matches a REVIEW_ONLY constraint."""
@@ -469,7 +470,7 @@ class _KernelRelationAutoPromotionMixin:
         return getattr(constraint, "profile", "ALLOWED") == "REVIEW_ONLY"
 
     def _has_linked_refute_claim(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_model: RelationModel,
     ) -> bool:
         refute_claim_id = self._session.scalar(

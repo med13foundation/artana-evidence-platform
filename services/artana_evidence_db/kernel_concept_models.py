@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from artana_evidence_db.orm_base import Base
+from typing import TYPE_CHECKING
+
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
+    qualify_graph_table_name,
 )
 from sqlalchemy import (
     Boolean,
@@ -27,12 +30,20 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
+if TYPE_CHECKING:
+    from datetime import datetime
+    from uuid import UUID
+
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _ACTIVE_VALIDITY_CHECK = (
     "((is_active AND valid_to IS NULL) OR ((NOT is_active) AND valid_to IS NOT NULL))"
 )
 _REVIEW_STATUS_CHECK = "review_status IN ('ACTIVE', 'PENDING_REVIEW', 'REVOKED')"
 
-_concept_sets_table = Base.metadata.tables.get("concept_sets")
+_concept_sets_table = Base.metadata.tables.get(
+    qualify_graph_table_name("concept_sets"),
+)
 if _concept_sets_table is None:
     _concept_sets_table = Table(
         "concept_sets",
@@ -119,7 +130,9 @@ if _concept_sets_table is None:
         ),
     )
 
-_concept_members_table = Base.metadata.tables.get("concept_members")
+_concept_members_table = Base.metadata.tables.get(
+    qualify_graph_table_name("concept_members"),
+)
 if _concept_members_table is None:
     _concept_members_table = Table(
         "concept_members",
@@ -267,7 +280,9 @@ if _concept_members_table is None:
         ),
     )
 
-_concept_aliases_table = Base.metadata.tables.get("concept_aliases")
+_concept_aliases_table = Base.metadata.tables.get(
+    qualify_graph_table_name("concept_aliases"),
+)
 if _concept_aliases_table is None:
     _concept_aliases_table = Table(
         "concept_aliases",
@@ -376,7 +391,9 @@ if _concept_aliases_table is None:
         ),
     )
 
-_concept_links_table = Base.metadata.tables.get("concept_links")
+_concept_links_table = Base.metadata.tables.get(
+    qualify_graph_table_name("concept_links"),
+)
 if _concept_links_table is None:
     _concept_links_table = Table(
         "concept_links",
@@ -516,7 +533,9 @@ if _concept_links_table is None:
         ),
     )
 
-_concept_policies_table = Base.metadata.tables.get("concept_policies")
+_concept_policies_table = Base.metadata.tables.get(
+    qualify_graph_table_name("concept_policies"),
+)
 if _concept_policies_table is None:
     _concept_policies_table = Table(
         "concept_policies",
@@ -617,7 +636,9 @@ if _concept_policies_table is None:
         ),
     )
 
-_concept_decisions_table = Base.metadata.tables.get("concept_decisions")
+_concept_decisions_table = Base.metadata.tables.get(
+    qualify_graph_table_name("concept_decisions"),
+)
 if _concept_decisions_table is None:
     _concept_decisions_table = Table(
         "concept_decisions",
@@ -750,7 +771,9 @@ if _concept_decisions_table is None:
         ),
     )
 
-_concept_harness_results_table = Base.metadata.tables.get("concept_harness_results")
+_concept_harness_results_table = Base.metadata.tables.get(
+    qualify_graph_table_name("concept_harness_results"),
+)
 if _concept_harness_results_table is None:
     _concept_harness_results_table = Table(
         "concept_harness_results",
@@ -827,47 +850,203 @@ if _concept_harness_results_table is None:
         ),
     )
 
+_concept_sets_table_model_table = require_table(_concept_sets_table)
 
 class GraphConceptSetModel(Base):
     """Research-space scoped container for concept members."""
 
-    __table__ = _concept_sets_table
 
+    __table__ = _concept_sets_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        name: Mapped[str]
+        slug: Mapped[str]
+        description: Mapped[str | None]
+        domain_context: Mapped[str]
+        created_by: Mapped[str]
+        source_ref: Mapped[str | None]
+        review_status: Mapped[str]
+        reviewed_by: Mapped[str | None]
+        reviewed_at: Mapped[datetime | None]
+        revocation_reason: Mapped[str | None]
+        is_active: Mapped[bool]
+        valid_from: Mapped[datetime]
+        valid_to: Mapped[datetime | None]
+        superseded_by: Mapped[UUID | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_concept_members_table_model_table = require_table(_concept_members_table)
 
 class GraphConceptMemberModel(Base):
     """Canonical or provisional concept in a concept set."""
 
-    __table__ = _concept_members_table
 
+    __table__ = _concept_members_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        concept_set_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        domain_context: Mapped[str]
+        dictionary_dimension: Mapped[str | None]
+        dictionary_entry_id: Mapped[str | None]
+        canonical_label: Mapped[str]
+        normalized_label: Mapped[str]
+        sense_key: Mapped[str]
+        is_provisional: Mapped[bool]
+        metadata_payload: Mapped[JSONObject]
+        created_by: Mapped[str]
+        source_ref: Mapped[str | None]
+        review_status: Mapped[str]
+        reviewed_by: Mapped[str | None]
+        reviewed_at: Mapped[datetime | None]
+        revocation_reason: Mapped[str | None]
+        is_active: Mapped[bool]
+        valid_from: Mapped[datetime]
+        valid_to: Mapped[datetime | None]
+        superseded_by: Mapped[UUID | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_concept_aliases_table_model_table = require_table(_concept_aliases_table)
 
 class GraphConceptAliasModel(Base):
     """Normalized alias labels for concept members."""
 
-    __table__ = _concept_aliases_table
 
+    __table__ = _concept_aliases_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[int]
+        concept_member_id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        domain_context: Mapped[str]
+        alias_label: Mapped[str]
+        alias_normalized: Mapped[str]
+        source: Mapped[str | None]
+        created_by: Mapped[str]
+        source_ref: Mapped[str | None]
+        review_status: Mapped[str]
+        reviewed_by: Mapped[str | None]
+        reviewed_at: Mapped[datetime | None]
+        revocation_reason: Mapped[str | None]
+        is_active: Mapped[bool]
+        valid_from: Mapped[datetime]
+        valid_to: Mapped[datetime | None]
+        superseded_by: Mapped[int | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_concept_links_table_model_table = require_table(_concept_links_table)
 
 class GraphConceptLinkModel(Base):
     """Typed relation between two concept members inside a research space."""
 
-    __table__ = _concept_links_table
 
+    __table__ = _concept_links_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        source_member_id: Mapped[UUID]
+        target_member_id: Mapped[UUID]
+        link_type: Mapped[str]
+        confidence: Mapped[float]
+        metadata_payload: Mapped[JSONObject]
+        created_by: Mapped[str]
+        source_ref: Mapped[str | None]
+        review_status: Mapped[str]
+        reviewed_by: Mapped[str | None]
+        reviewed_at: Mapped[datetime | None]
+        revocation_reason: Mapped[str | None]
+        is_active: Mapped[bool]
+        valid_from: Mapped[datetime]
+        valid_to: Mapped[datetime | None]
+        superseded_by: Mapped[UUID | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_concept_policies_table_model_table = require_table(_concept_policies_table)
 
 class GraphConceptPolicyModel(Base):
     """One active policy profile per research space."""
 
-    __table__ = _concept_policies_table
 
+    __table__ = _concept_policies_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        profile_name: Mapped[str]
+        mode: Mapped[str]
+        minimum_edge_confidence: Mapped[float]
+        minimum_distinct_documents: Mapped[int]
+        allow_generic_relations: Mapped[bool]
+        max_edges_per_document: Mapped[int | None]
+        policy_payload: Mapped[JSONObject]
+        created_by: Mapped[str]
+        source_ref: Mapped[str | None]
+        is_active: Mapped[bool]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_concept_decisions_table_model_table = require_table(_concept_decisions_table)
 
 class GraphConceptDecisionModel(Base):
     """Decision ledger rows for concept operations and governance actions."""
 
-    __table__ = _concept_decisions_table
 
+    __table__ = _concept_decisions_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        concept_set_id: Mapped[UUID | None]
+        concept_member_id: Mapped[UUID | None]
+        concept_link_id: Mapped[UUID | None]
+        decision_type: Mapped[str]
+        decision_status: Mapped[str]
+        proposed_by: Mapped[str]
+        decided_by: Mapped[str | None]
+        confidence: Mapped[float | None]
+        rationale: Mapped[str | None]
+        evidence_payload: Mapped[JSONObject]
+        decision_payload: Mapped[JSONObject]
+        harness_outcome: Mapped[str | None]
+        decided_at: Mapped[datetime | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
+
+
+_concept_harness_results_table_model_table = require_table(_concept_harness_results_table)
 
 class GraphConceptHarnessResultModel(Base):
     """Audit trail for AI harness checks on concept decisions."""
 
-    __table__ = _concept_harness_results_table
+
+    __table__ = _concept_harness_results_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        research_space_id: Mapped[UUID]
+        decision_id: Mapped[UUID | None]
+        harness_name: Mapped[str]
+        harness_version: Mapped[str | None]
+        run_id: Mapped[str | None]
+        outcome: Mapped[str]
+        checks_payload: Mapped[JSONObject]
+        errors_payload: Mapped[list[str]]
+        metadata_payload: Mapped[JSONObject]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 ConceptAliasModel = GraphConceptAliasModel

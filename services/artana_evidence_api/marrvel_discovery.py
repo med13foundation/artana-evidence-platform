@@ -151,8 +151,7 @@ class MarrvelDiscoveryService:
                 if normalized_symbol is not None and entrez_id is not None:
                     gene_panel_tasks: dict[
                         str,
-                        asyncio.Future[JSONValue | None]
-                        | asyncio.Task[JSONValue | None]
+                        asyncio.Task[JSONValue | None]
                         | asyncio.Task[JSONObject | None]
                         | asyncio.Task[list[JSONObject]],
                     ] = {}

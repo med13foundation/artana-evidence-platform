@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TypeVar
-from uuid import uuid4
+from typing import TYPE_CHECKING, TypeVar
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
+from artana_evidence_db.orm_base import Base, require_table
 from artana_evidence_db.schema_support import (
     graph_table_options,
     qualify_graph_foreign_key_target,
@@ -27,6 +27,9 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import ResearchSpaceSettings
+    from sqlalchemy.orm import Mapped
 _E = TypeVar("_E", bound=Enum)
 
 
@@ -39,7 +42,6 @@ def _existing_table(table_name: str) -> Table | None:
     if table is not None:
         return table
     return Base.metadata.tables.get(qualify_graph_table_name(table_name))
-
 
 class GraphSpaceStatusEnum(str, Enum):
     """Lifecycle status for one graph-owned space."""
@@ -152,10 +154,28 @@ if _graph_spaces_table is None:
     )
 
 
+_graph_spaces_table_model_table = require_table(_graph_spaces_table)
+
 class ServiceGraphSpaceModel(Base):
     """Service-local registry entry for one tenant space."""
 
-    __table__ = _graph_spaces_table
+
+    __table__ = _graph_spaces_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        slug: Mapped[str]
+        name: Mapped[str]
+        description: Mapped[str | None]
+        owner_id: Mapped[UUID]
+        status: Mapped[GraphSpaceStatusEnum]
+        settings: Mapped[ResearchSpaceSettings]
+        sync_source: Mapped[str | None]
+        sync_fingerprint: Mapped[str | None]
+        source_updated_at: Mapped[datetime | None]
+        last_synced_at: Mapped[datetime | None]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 GraphSpaceModel = ServiceGraphSpaceModel
@@ -255,10 +275,25 @@ if _graph_space_memberships_table is None:
     )
 
 
+_graph_space_memberships_table_model_table = require_table(_graph_space_memberships_table)
+
 class ServiceGraphSpaceMembershipModel(Base):
     """Service-local user membership inside one graph space."""
 
-    __table__ = _graph_space_memberships_table
+
+    __table__ = _graph_space_memberships_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        space_id: Mapped[UUID]
+        user_id: Mapped[UUID]
+        role: Mapped[GraphSpaceMembershipRoleEnum]
+        invited_by: Mapped[UUID | None]
+        invited_at: Mapped[datetime | None]
+        joined_at: Mapped[datetime | None]
+        is_active: Mapped[bool]
+        created_at: Mapped[datetime]
+        updated_at: Mapped[datetime]
 
 
 GraphSpaceMembershipModel = ServiceGraphSpaceMembershipModel

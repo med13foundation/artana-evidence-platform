@@ -4,9 +4,17 @@ from __future__ import annotations
 
 import os
 import re
+from typing import NotRequired, TypedDict
 
 _DEFAULT_GRAPH_DB_SCHEMA = "graph_runtime"
 _SCHEMA_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+class GraphTableOptions(TypedDict):
+    """Typed SQLAlchemy table keyword arguments for graph-owned tables."""
+
+    comment: str
+    schema: NotRequired[str]
 
 
 def resolve_graph_db_schema(raw_value: str | None = None) -> str:
@@ -61,9 +69,9 @@ def qualify_graph_foreign_key_target(
     return f"{qualify_graph_table_name(table_name, schema=schema)}.{column_name}"
 
 
-def graph_table_options(*, comment: str) -> dict[str, str]:
+def graph_table_options(*, comment: str) -> GraphTableOptions:
     """Build shared table options for graph-owned standalone-service tables."""
-    options: dict[str, str] = {"comment": comment}
+    options = GraphTableOptions(comment=comment)
     schema = graph_schema_name()
     if schema is not None:
         options["schema"] = schema
@@ -82,6 +90,7 @@ __all__ = [
     "graph_postgres_search_path",
     "graph_schema_name",
     "graph_table_options",
+    "GraphTableOptions",
     "is_default_graph_db_schema",
     "qualify_graph_foreign_key_target",
     "qualify_graph_table_name",

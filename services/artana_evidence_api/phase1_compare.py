@@ -12,7 +12,7 @@ from collections.abc import Awaitable, Iterator
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final, Literal, TypeVar
+from typing import TYPE_CHECKING, Final, Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
 from artana_evidence_api.database import SessionLocal, set_session_rls_context
@@ -76,7 +76,13 @@ from artana_evidence_api.research_init_runtime import (
 )
 from artana_evidence_api.research_init_source_results import build_source_results
 from artana_evidence_api.runtime_support import create_artana_postgres_store
-from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
+from artana_evidence_api.types.common import (
+    JSONObject,
+    ResearchSpaceSettings,
+    ResearchSpaceSourcePreferences,
+    json_object,
+    json_object_or_empty,
+)
 from pydantic import ValidationError
 
 if TYPE_CHECKING:
@@ -104,6 +110,14 @@ _ALL_SOURCE_KEYS: Final[tuple[str, ...]] = (
     "mgi",
     "zfin",
 )
+
+
+def _source_settings(sources: ResearchSpaceSourcePreferences) -> ResearchSpaceSettings:
+    return {"sources": sources}
+
+
+def _source_payload(sources: ResearchSpaceSourcePreferences) -> JSONObject:
+    return json_object_or_empty(sources)
 _UUID_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b",
     re.IGNORECASE,
@@ -319,7 +333,10 @@ def build_phase1_source_preferences(
     if unknown:
         msg = f"Unknown source keys: {', '.join(unknown)}"
         raise ValueError(msg)
-    return {source: source in selected for source in _ALL_SOURCE_KEYS}
+    return cast(
+        "ResearchSpaceSourcePreferences",
+        {source: source in selected for source in _ALL_SOURCE_KEYS},
+    )
 
 
 def _normalize_seed_terms(seed_terms: list[str] | tuple[str, ...]) -> tuple[str, ...]:
@@ -476,21 +493,11 @@ def summarize_workspace(snapshot: JSONObject | None) -> JSONObject:
         "brief_present": isinstance(snapshot.get("research_brief"), dict),
         "planner_execution_mode": snapshot.get("planner_execution_mode"),
         "guarded_rollout_profile": snapshot.get("guarded_rollout_profile"),
-        "guarded_rollout_policy": (
-            dict(snapshot.get("guarded_rollout_policy"))
-            if isinstance(snapshot.get("guarded_rollout_policy"), dict)
-            else None
+        "guarded_rollout_policy": json_object(
+            snapshot.get("guarded_rollout_policy")
         ),
-        "guarded_readiness": (
-            dict(snapshot.get("guarded_readiness"))
-            if isinstance(snapshot.get("guarded_readiness"), dict)
-            else None
-        ),
-        "guarded_execution": (
-            dict(snapshot.get("guarded_execution"))
-            if isinstance(snapshot.get("guarded_execution"), dict)
-            else None
-        ),
+        "guarded_readiness": json_object(snapshot.get("guarded_readiness")),
+        "guarded_execution": json_object(snapshot.get("guarded_execution")),
         "guarded_decision_proofs_key": snapshot.get("guarded_decision_proofs_key"),
         "guarded_decision_proofs": _workspace_guarded_decision_proofs_summary(
             snapshot.get("guarded_decision_proofs"),
@@ -650,35 +657,19 @@ def build_guarded_evaluation(
     guarded_summary = summarize_guarded_execution(
         orchestrator_workspace.get("guarded_execution"),
     )
-    verification_failed_count = (
-        guarded_summary.get("verification_failed_count")
-        if isinstance(guarded_summary.get("verification_failed_count"), int)
-        else 0
+    verification_failed_count = _int_value(
+        guarded_summary.get("verification_failed_count"),
     )
-    pending_verification_count = (
-        guarded_summary.get("pending_verification_count")
-        if isinstance(guarded_summary.get("pending_verification_count"), int)
-        else 0
+    pending_verification_count = _int_value(
+        guarded_summary.get("pending_verification_count"),
     )
-    applied_count = (
-        guarded_summary.get("applied_count")
-        if isinstance(guarded_summary.get("applied_count"), int)
-        else 0
-    )
-    verified_count = (
-        guarded_summary.get("verified_count")
-        if isinstance(guarded_summary.get("verified_count"), int)
-        else 0
-    )
+    applied_count = _int_value(guarded_summary.get("applied_count"))
+    verified_count = _int_value(guarded_summary.get("verified_count"))
     candidate_summary = summarize_guarded_candidates(
         orchestrator_workspace=orchestrator_workspace,
         shadow_planner_summary=shadow_planner_summary,
     )
-    candidate_count = (
-        candidate_summary.get("candidate_count")
-        if isinstance(candidate_summary.get("candidate_count"), int)
-        else 0
-    )
+    candidate_count = _int_value(candidate_summary.get("candidate_count"))
     status = "clean"
     if verification_failed_count > 0:
         status = "verification_failed"
@@ -821,11 +812,7 @@ def _summarize_guarded_candidate_for_checkpoint(
     comparison = entry.get("comparison")
     if not isinstance(recommendation, dict) or not isinstance(comparison, dict):
         return None
-    workspace_summary = (
-        dict(entry.get("workspace_summary"))
-        if isinstance(entry.get("workspace_summary"), dict)
-        else {}
-    )
+    workspace_summary = json_object_or_empty(entry.get("workspace_summary"))
     if checkpoint_key == "after_driven_terms_ready":
         candidate_action = _accepted_guarded_structured_source_action(
             recommendation_payload=recommendation,
@@ -1569,14 +1556,14 @@ async def run_phase1_comparison(  # noqa: PLR0915
                 owner_email=_COMPARE_OWNER_EMAIL,
                 name=f"{request.title} baseline {uuid4().hex[:8]}",
                 description="Phase 1 live guarded compare baseline space",
-                settings={"sources": dict(request.sources)},
+                settings=_source_settings(request.sources),
             )
             orchestrator_space = research_space_store.create_space(
                 owner_id=_COMPARE_OWNER_ID,
                 owner_email=_COMPARE_OWNER_EMAIL,
                 name=f"{request.title} guarded {uuid4().hex[:8]}",
                 description="Phase 1 live guarded compare orchestrator space",
-                settings={"sources": dict(request.sources)},
+                settings=_source_settings(request.sources),
             )
             baseline_run = queue_research_init_run(
                 space_id=UUID(baseline_space.id),
@@ -1604,21 +1591,20 @@ async def run_phase1_comparison(  # noqa: PLR0915
                     "mode": _DUAL_LIVE_GUARDED_MODE,
                 },
             )
-            baseline_result = execute_research_init_run(
-                space_id=UUID(baseline_space.id),
-                title=request.title,
-                objective=request.objective,
-                seed_terms=list(request.seed_terms),
-                max_depth=request.max_depth,
-                max_hypotheses=request.max_hypotheses,
-                sources=request.sources,
-                execution_services=services,
-                existing_run=baseline_run,
-                progress_observer=_CompareProgressObserver(flow="baseline"),
-                pubmed_replay_bundle=pubmed_replay_bundle,
-            )
             baseline_result = await _await_compare_phase(
-                awaitable=baseline_result,
+                awaitable=execute_research_init_run(
+                    space_id=UUID(baseline_space.id),
+                    title=request.title,
+                    objective=request.objective,
+                    seed_terms=list(request.seed_terms),
+                    max_depth=request.max_depth,
+                    max_hypotheses=request.max_hypotheses,
+                    sources=request.sources,
+                    execution_services=services,
+                    existing_run=baseline_run,
+                    progress_observer=_CompareProgressObserver(flow="baseline"),
+                    pubmed_replay_bundle=pubmed_replay_bundle,
+                ),
                 timeout_seconds=request.compare_timeout_seconds,
                 flow="baseline",
                 phase="research_init_execution",
@@ -1695,22 +1681,23 @@ async def run_phase1_comparison(  # noqa: PLR0915
                     "planner_mode": request.planner_mode.value,
                 },
             )
-            orchestrator_result = execute_full_ai_orchestrator_run(
-                space_id=UUID(orchestrator_space.id),
-                title=request.title,
-                objective=request.objective,
-                seed_terms=list(request.seed_terms),
-                max_depth=request.max_depth,
-                max_hypotheses=request.max_hypotheses,
-                sources=request.sources,
-                execution_services=services,
-                existing_run=orchestrator_run,
-                planner_mode=request.planner_mode,
-                pubmed_replay_bundle=pubmed_replay_bundle,
-                structured_enrichment_replay_bundle=structured_enrichment_replay_bundle,
-            )
             orchestrator_result = await _await_compare_phase(
-                awaitable=orchestrator_result,
+                awaitable=execute_full_ai_orchestrator_run(
+                    space_id=UUID(orchestrator_space.id),
+                    title=request.title,
+                    objective=request.objective,
+                    seed_terms=list(request.seed_terms),
+                    max_depth=request.max_depth,
+                    max_hypotheses=request.max_hypotheses,
+                    sources=request.sources,
+                    execution_services=services,
+                    existing_run=orchestrator_run,
+                    planner_mode=request.planner_mode,
+                    pubmed_replay_bundle=pubmed_replay_bundle,
+                    structured_enrichment_replay_bundle=(
+                        structured_enrichment_replay_bundle
+                    ),
+                ),
                 timeout_seconds=request.compare_timeout_seconds,
                 flow="orchestrator",
                 phase="full_ai_orchestrator_execution",
@@ -1745,7 +1732,7 @@ async def run_phase1_comparison(  # noqa: PLR0915
                 owner_email=_COMPARE_OWNER_EMAIL,
                 name=f"{request.title} compare {uuid4().hex[:8]}",
                 description="Phase 1 shared compare space",
-                settings={"sources": dict(request.sources)},
+                settings=_source_settings(request.sources),
             )
 
             baseline_run = queue_research_init_run(
@@ -1801,26 +1788,25 @@ async def run_phase1_comparison(  # noqa: PLR0915
                     request=request,
                 )
             )
-            baseline_result = execute_research_init_run(
-                space_id=UUID(compare_space.id),
-                title=request.title,
-                objective=request.objective,
-                seed_terms=list(request.seed_terms),
-                max_depth=request.max_depth,
-                max_hypotheses=request.max_hypotheses,
-                sources=request.sources,
-                execution_services=services,
-                existing_run=baseline_run,
-                progress_observer=_CompositeProgressObserver(
-                    observers=(
-                        _CompareProgressObserver(flow="baseline"),
-                        orchestrator_progress_observer,
-                    ),
-                ),
-                pubmed_replay_bundle=pubmed_replay_bundle,
-            )
             baseline_result = await _await_compare_phase(
-                awaitable=baseline_result,
+                awaitable=execute_research_init_run(
+                    space_id=UUID(compare_space.id),
+                    title=request.title,
+                    objective=request.objective,
+                    seed_terms=list(request.seed_terms),
+                    max_depth=request.max_depth,
+                    max_hypotheses=request.max_hypotheses,
+                    sources=request.sources,
+                    execution_services=services,
+                    existing_run=baseline_run,
+                    progress_observer=_CompositeProgressObserver(
+                        observers=(
+                            _CompareProgressObserver(flow="baseline"),
+                            orchestrator_progress_observer,
+                        ),
+                    ),
+                    pubmed_replay_bundle=pubmed_replay_bundle,
+                ),
                 timeout_seconds=request.compare_timeout_seconds,
                 flow="baseline",
                 phase="research_init_execution",
@@ -1873,28 +1859,29 @@ async def run_phase1_comparison(  # noqa: PLR0915
                 space_id=compare_space.id,
                 run_id=baseline_run.id,
             )
-            orchestrator_result = execute_full_ai_orchestrator_run(
-                space_id=UUID(compare_space.id),
-                title=request.title,
-                objective=request.objective,
-                seed_terms=list(request.seed_terms),
-                max_depth=request.max_depth,
-                max_hypotheses=request.max_hypotheses,
-                sources=request.sources,
-                execution_services=services,
-                existing_run=orchestrator_run,
-                planner_mode=request.planner_mode,
-                pubmed_replay_bundle=pubmed_replay_bundle,
-                replayed_research_init_result=baseline_result,
-                replayed_workspace_snapshot=(
-                    None if baseline_workspace is None else baseline_workspace.snapshot
-                ),
-                replayed_phase_records=deepcopy(
-                    orchestrator_progress_observer.phase_records
-                ),
-            )
             orchestrator_result = await _await_compare_phase(
-                awaitable=orchestrator_result,
+                awaitable=execute_full_ai_orchestrator_run(
+                    space_id=UUID(compare_space.id),
+                    title=request.title,
+                    objective=request.objective,
+                    seed_terms=list(request.seed_terms),
+                    max_depth=request.max_depth,
+                    max_hypotheses=request.max_hypotheses,
+                    sources=request.sources,
+                    execution_services=services,
+                    existing_run=orchestrator_run,
+                    planner_mode=request.planner_mode,
+                    pubmed_replay_bundle=pubmed_replay_bundle,
+                    replayed_research_init_result=baseline_result,
+                    replayed_workspace_snapshot=(
+                        None
+                        if baseline_workspace is None
+                        else baseline_workspace.snapshot
+                    ),
+                    replayed_phase_records=deepcopy(
+                        orchestrator_progress_observer.phase_records
+                    ),
+                ),
                 timeout_seconds=request.compare_timeout_seconds,
                 flow="orchestrator",
                 phase="full_ai_orchestrator_replay",
@@ -2026,7 +2013,7 @@ async def run_phase1_comparison(  # noqa: PLR0915
                 "objective": request.objective,
                 "seed_terms": list(request.seed_terms),
                 "title": request.title,
-                "sources": dict(request.sources),
+                "sources": _source_payload(request.sources),
                 "max_depth": request.max_depth,
                 "max_hypotheses": request.max_hypotheses,
                 "planner_mode": request.planner_mode.value,
@@ -2179,12 +2166,11 @@ async def _probe_guarded_structured_rollout_seam(
             ),
             "guarded_execution_count": len(observer.guarded_execution_log),
             "persisted_guarded_structured_enrichment_selection": (
-                dict(persisted_snapshot.get("guarded_structured_enrichment_selection"))
-                if isinstance(
-                    persisted_snapshot.get("guarded_structured_enrichment_selection"),
-                    dict,
+                json_object(
+                    persisted_snapshot.get(
+                        "guarded_structured_enrichment_selection"
+                    )
                 )
-                else None
             ),
         },
     ]
@@ -2248,7 +2234,7 @@ async def _probe_guarded_chase_rollout_seam(
                 ),
                 "guarded_execution_count": len(observer.guarded_execution_log),
                 "persisted_guarded_chase_round": (
-                    dict(
+                    json_object(
                         persisted_snapshot.get(
                             f"guarded_chase_round_{round_number}",
                             {},
@@ -2313,7 +2299,7 @@ async def run_guarded_chase_rollout_proof(
             owner_email=_COMPARE_OWNER_EMAIL,
             name=f"{request.title} rollout proof {uuid4().hex[:8]}",
             description="Guarded chase rollout proof space",
-            settings={"sources": dict(request.sources)},
+            settings=_source_settings(request.sources),
         )
         pubmed_replay_bundle = (
             await prepare_pubmed_replay_bundle(
@@ -2523,7 +2509,7 @@ async def run_guarded_chase_rollout_proof(
             _int_value(off_report.get("selection_returned_count")) == 0
             and _int_value(on_report.get("selection_returned_count")) > 0
         )
-        profile_comparison: JSONObject = {
+        profile_comparison: dict[str, int | bool] = {
             "dry_run_applied_count": _int_value(
                 _dict_value(off_report.get("guarded_evaluation")).get(
                     "applied_count",
@@ -2563,7 +2549,7 @@ async def run_guarded_chase_rollout_proof(
                 "objective": request.objective,
                 "seed_terms": list(request.seed_terms),
                 "title": request.title,
-                "sources": dict(request.sources),
+                "sources": _source_payload(request.sources),
                 "max_depth": request.max_depth,
                 "max_hypotheses": request.max_hypotheses,
                 "planner_mode": request.planner_mode.value,

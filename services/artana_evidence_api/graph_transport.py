@@ -6,7 +6,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Protocol, TypeAlias, TypeVar
+from typing import Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 import httpx
@@ -16,7 +16,7 @@ from .config import get_settings
 from .graph_integration.context import GraphCallContext
 from .request_context import REQUEST_ID_HEADER, build_request_id_headers
 from .space_sync_types import GraphSyncMembership, GraphSyncSpace
-from .types.common import JSONObject
+from .types.common import JSONObject, json_object_or_empty
 from .types.graph_contracts import (
     AIDecisionResponse,
     AIDecisionSubmitRequest,
@@ -300,7 +300,7 @@ class _GraphTransportBase:
     def close(self) -> None:
         self._runtime.close()
 
-    def __enter__(self) -> _GraphTransportBase:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
@@ -970,7 +970,7 @@ class GraphRawMutationTransport(_GraphTransportBase):
             description=space.description,
             owner_id=space.owner_id,
             status=space.status.value,
-            settings=space.settings,
+            settings=json_object_or_empty(space.settings),
             source_updated_at=space.updated_at,
             memberships=[
                 GraphSpaceSyncMembershipRequest(
@@ -989,7 +989,7 @@ class GraphRawMutationTransport(_GraphTransportBase):
             f"/v1/admin/spaces/{_normalize_uuid(space.id)}/sync",
             content=payload.model_dump_json(),
         )
-        return response.json()
+        return json_object_or_empty(response.json())
 
     def upsert_entity_direct(
         self,
@@ -1016,7 +1016,7 @@ class GraphRawMutationTransport(_GraphTransportBase):
             f"/v1/spaces/{_normalize_uuid(space_id)}/entities",
             content=_json_content(payload),
         )
-        return response.json()
+        return json_object_or_empty(response.json())
 
     def update_entity_direct(
         self,
@@ -1043,7 +1043,7 @@ class GraphRawMutationTransport(_GraphTransportBase):
             f"{_normalize_uuid(entity_id)}",
             content=_json_content(payload),
         )
-        return response.json()
+        return json_object_or_empty(response.json())
 
     def create_entities_batch_direct(
         self,
@@ -1056,7 +1056,7 @@ class GraphRawMutationTransport(_GraphTransportBase):
             f"/v1/spaces/{_normalize_uuid(space_id)}/entities/batch",
             content=_json_content({"entities": entities}),
         )
-        return response.json()
+        return json_object_or_empty(response.json())
 
     def create_unresolved_claim_direct(
         self,

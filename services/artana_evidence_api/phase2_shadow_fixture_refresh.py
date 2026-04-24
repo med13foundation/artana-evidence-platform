@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
 from artana_evidence_api.phase1_compare import (
     Phase1CompareRequest,
@@ -39,7 +38,7 @@ class Phase2ShadowFixtureSpec:
         return f"{self.fixture_name.casefold()}.json"
 
 
-Phase2ShadowFixtureSet = Literal["objective", "supplemental", "all"]
+Phase2ShadowFixtureSet = str
 
 
 DEFAULT_PHASE2_SHADOW_OBJECTIVE_FIXTURE_SPECS: tuple[Phase2ShadowFixtureSpec, ...] = (

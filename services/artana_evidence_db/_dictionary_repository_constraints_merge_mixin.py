@@ -213,7 +213,8 @@ class GraphDictionaryRepositoryConstraintsMergeMixin:
         wildcard_constraints = getattr(self, "_wildcard_constraints", None)
         if wildcard_constraints is None:
             return None
-        return wildcard_constraints.get((source_type, relation_type))
+        profile = wildcard_constraints.get((source_type, relation_type))
+        return profile if isinstance(profile, str) else None
 
     def get_triple_profile(
         self,
@@ -247,7 +248,7 @@ class GraphDictionaryRepositoryConstraintsMergeMixin:
                 "REVIEW_ONLY",
                 "FORBIDDEN",
             ):
-                return profile
+                return str(profile)
             return "ALLOWED" if constraint.is_allowed else "FORBIDDEN"
         # 2. Fallback to in-memory wildcard
         wildcard_profile = self._check_wildcard_profile(source_type, relation_type)

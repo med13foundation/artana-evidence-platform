@@ -8,6 +8,7 @@ import re
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 from artana_evidence_api.full_ai_orchestrator_contracts import (
     ResearchOrchestratorActionType,
@@ -17,13 +18,19 @@ from artana_evidence_api.full_ai_orchestrator_runtime import (
     orchestrator_action_registry,
 )
 from artana_evidence_api.full_ai_orchestrator_shadow_planner import (
+    ShadowPlannerRecommendationResult,
     _planner_source_taxonomy,
     build_shadow_planner_comparison,
     recommend_shadow_planner_action,
     shadow_planner_prompt_version,
     shadow_planner_synthesis_readiness,
 )
-from artana_evidence_api.types.common import JSONObject
+from artana_evidence_api.types.common import (
+    JSONObject,
+    ResearchSpaceSourcePreferences,
+    json_object,
+    json_object_or_empty,
+)
 
 PlannerCallable = Callable[[str, JSONObject, dict[str, bool]], Awaitable[JSONObject]]
 
@@ -81,7 +88,7 @@ class Phase2MalformedFixtureError(TypeError):
 def load_phase2_shadow_fixture(path: str | Path) -> JSONObject:
     """Load one serialized Phase 2 shadow-evaluation fixture bundle."""
 
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    return json_object_or_empty(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
 def load_phase2_shadow_fixture_paths(
@@ -97,7 +104,7 @@ def load_phase2_shadow_fixture_paths(
 
 
 async def evaluate_phase2_shadow_fixture_bundle(
-    fixture_bundle: JSONObject,
+    fixture_bundle: object,
     *,
     planner_callable: PlannerCallable | None = None,
 ) -> JSONObject:
@@ -146,8 +153,6 @@ async def evaluate_phase2_shadow_fixture_bundle(
                 or _extract_deterministic_baseline_telemetry(fixture_bundle)
             ),
         )
-        if run_report is None:
-            continue
         reports.append(run_report)
         _accumulate_phase2_totals(
             totals=totals,
@@ -223,7 +228,7 @@ async def evaluate_phase2_shadow_fixture_directory(
         fixture_reports.append(fixture_report)
         fixture_name = str(fixture_report.get("fixture_name", fixture_path.stem))
         fixture_names.append(fixture_name)
-        run_count += int(fixture_report.get("run_count", 0))
+        run_count += _json_int(fixture_report.get("run_count"))
         _accumulate_phase2_totals(
             totals=totals,
             checkpoint_reports=_checkpoint_reports_from_fixture(fixture_report),
@@ -587,7 +592,7 @@ def write_phase2_shadow_evaluation_report(
         )
         fixture_report_paths[fixture_name] = str(fixture_path)
 
-    manifest = {
+    manifest: JSONObject = {
         "output_dir": str(output_dir_path),
         "summary_json": str(summary_json_path),
         "summary_markdown": str(summary_markdown_path),
@@ -600,7 +605,7 @@ def write_phase2_shadow_evaluation_report(
     return manifest
 
 
-def _validate_phase2_shadow_report_payload(report: JSONObject) -> None:
+def _validate_phase2_shadow_report_payload(report: object) -> None:
     if not isinstance(report, dict):
         msg = (
             "Phase 2 shadow evaluation report must be a JSON object, got "
@@ -641,7 +646,7 @@ async def _default_phase2_planner(
         checkpoint_key=checkpoint_key,
         objective=str(workspace_summary.get("objective", "")),
         workspace_summary=workspace_summary,
-        sources=sources,
+        sources=cast("ResearchSpaceSourcePreferences", sources),
         action_registry=orchestrator_action_registry(),
         harness_id="full-ai-orchestrator",
         step_key_version="v1",
@@ -919,7 +924,7 @@ async def _evaluate_fixture_run(
     run_payload: JSONObject,
     planner_callable: PlannerCallable,
     deterministic_baseline_telemetry: JSONObject | None = None,
-) -> JSONObject | None:
+) -> JSONObject:
     objective = str(run_payload.get("objective", ""))
     sources = {
         key: value
@@ -1282,11 +1287,7 @@ def _synthetic_planner_result(
     *,
     planner_payload: JSONObject,
     decision_payload: JSONObject,
-) -> object:
-    from artana_evidence_api.full_ai_orchestrator_shadow_planner import (
-        ShadowPlannerRecommendationResult,
-    )
-
+) -> ShadowPlannerRecommendationResult:
     normalized_payload = dict(decision_payload)
     action_type = normalized_payload.get("action_type")
     if isinstance(action_type, str):
@@ -1337,7 +1338,7 @@ def _synthetic_target_decision(
         return None
     return ResearchOrchestratorDecision(
         decision_id=f"fixture-target:{checkpoint_key}",
-        round_number=int(target_payload.get("round_number", 0)),
+        round_number=_json_int(target_payload.get("round_number")),
         action_type=ResearchOrchestratorActionType(action_type),
         action_input=_dict_value(target_payload.get("action_input")),
         source_key=(
@@ -1356,13 +1357,17 @@ def _synthetic_target_decision(
 
 
 def _dict_value(value: object) -> JSONObject:
-    return dict(value) if isinstance(value, dict) else {}
+    return json_object_or_empty(value)
 
 
 def _list_of_dicts(value: object) -> list[JSONObject]:
     if not isinstance(value, list):
         return []
-    return [dict(item) for item in value if isinstance(item, dict)]
+    return [
+        item_payload
+        for item in value
+        if (item_payload := json_object(item)) is not None
+    ]
 
 
 def _extract_deterministic_baseline_telemetry(
@@ -1404,6 +1409,32 @@ def _optional_float(value: object) -> float | None:
     if isinstance(value, int):
         return float(value)
     return value if isinstance(value, float) else None
+
+
+def _json_int(value: object, default: int = 0) -> int:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float | str):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+    return default
+
+
+def _json_float(value: object, default: float = 0.0) -> float:
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+    return default
 
 
 def _empty_phase2_totals() -> JSONObject:
@@ -1473,7 +1504,8 @@ def _accumulate_filtered_chase_totals(
     if filtered_chase_candidate_count is None:
         return
     totals["filtered_chase_candidate_total"] = (
-        int(totals["filtered_chase_candidate_total"]) + filtered_chase_candidate_count
+        _json_int(totals["filtered_chase_candidate_total"])
+        + filtered_chase_candidate_count
     )
     if filtered_chase_candidate_count > 0:
         _increment_total(
@@ -1505,7 +1537,7 @@ def _accumulate_phase2_totals(
         )
         if selected_entity_overlap_count is not None:
             totals["selected_entity_overlap_total"] = (
-                int(totals["selected_entity_overlap_total"])
+                _json_int(totals["selected_entity_overlap_total"])
                 + selected_entity_overlap_count
             )
         _accumulate_filtered_chase_totals(
@@ -1536,10 +1568,11 @@ def _accumulate_phase2_totals(
         if prompt_tokens is not None and completion_tokens is not None:
             _increment_total(totals, "token_available_checkpoints")
             totals["planner_total_prompt_tokens"] = (
-                int(totals["planner_total_prompt_tokens"]) + prompt_tokens
+                _json_int(totals["planner_total_prompt_tokens"]) + prompt_tokens
             )
             totals["planner_total_completion_tokens"] = (
-                int(totals["planner_total_completion_tokens"]) + completion_tokens
+                _json_int(totals["planner_total_completion_tokens"])
+                + completion_tokens
             )
         if (
             cost_usd is not None
@@ -1551,12 +1584,13 @@ def _accumulate_phase2_totals(
         if cost_usd is not None and cost_usd > 0.0:
             _increment_total(totals, "cost_available_checkpoints")
             totals["planner_total_cost_usd"] = (
-                float(totals["planner_total_cost_usd"]) + cost_usd
+                _json_float(totals["planner_total_cost_usd"]) + cost_usd
             )
         if latency_seconds is not None:
             _increment_total(totals, "latency_available_checkpoints")
             totals["planner_total_latency_seconds"] = (
-                float(totals["planner_total_latency_seconds"]) + latency_seconds
+                _json_float(totals["planner_total_latency_seconds"])
+                + latency_seconds
             )
 
 
@@ -1674,7 +1708,7 @@ def _deterministic_baseline_expected_count_met(summary: JSONObject) -> bool:
     )
     if expected_run_count is None:
         return True
-    return int(summary.get("deterministic_baseline_run_count", 0)) == expected_run_count
+    return _json_int(summary.get("deterministic_baseline_run_count")) == expected_run_count
 
 
 def _build_phase2_summary(
@@ -1686,41 +1720,41 @@ def _build_phase2_summary(
     deterministic_baseline_telemetry_payloads: list[JSONObject] | None = None,
     deterministic_baseline_expected_run_count: int | None = None,
 ) -> JSONObject:
-    total_checkpoints = int(totals["total_checkpoints"])
-    chase_checkpoint_count = int(totals["chase_checkpoint_count"])
-    checkpoints_with_filtered_chase_candidates = int(
+    total_checkpoints = _json_int(totals["total_checkpoints"])
+    chase_checkpoint_count = _json_int(totals["chase_checkpoint_count"])
+    checkpoints_with_filtered_chase_candidates = _json_int(
         totals["checkpoints_with_filtered_chase_candidates"],
     )
-    filtered_chase_candidate_total = int(totals["filtered_chase_candidate_total"])
-    action_matches = int(totals["action_matches"])
-    chase_action_matches = int(totals["chase_action_matches"])
-    source_matches = int(totals["source_matches"])
-    stop_matches = int(totals["stop_matches"])
-    chase_selection_available_count = int(totals["chase_selection_available_count"])
-    exact_chase_selection_matches = int(totals["exact_chase_selection_matches"])
-    exact_match_expected_checkpoints = int(totals["exact_match_expected_checkpoints"])
-    exact_match_expected_action_matches = int(
+    filtered_chase_candidate_total = _json_int(totals["filtered_chase_candidate_total"])
+    action_matches = _json_int(totals["action_matches"])
+    chase_action_matches = _json_int(totals["chase_action_matches"])
+    source_matches = _json_int(totals["source_matches"])
+    stop_matches = _json_int(totals["stop_matches"])
+    chase_selection_available_count = _json_int(totals["chase_selection_available_count"])
+    exact_chase_selection_matches = _json_int(totals["exact_chase_selection_matches"])
+    exact_match_expected_checkpoints = _json_int(totals["exact_match_expected_checkpoints"])
+    exact_match_expected_action_matches = _json_int(
         totals["exact_match_expected_action_matches"],
     )
-    exact_match_expected_source_matches = int(
+    exact_match_expected_source_matches = _json_int(
         totals["exact_match_expected_source_matches"],
     )
-    qualitative_rationale_present_count = int(
+    qualitative_rationale_present_count = _json_int(
         totals["qualitative_rationale_present_count"],
     )
-    token_available_checkpoints = int(totals["token_available_checkpoints"])
-    cost_available_checkpoints = int(totals["cost_available_checkpoints"])
-    zero_cost_with_tokens_checkpoints = int(
+    token_available_checkpoints = _json_int(totals["token_available_checkpoints"])
+    cost_available_checkpoints = _json_int(totals["cost_available_checkpoints"])
+    zero_cost_with_tokens_checkpoints = _json_int(
         totals["zero_cost_with_tokens_checkpoints"],
     )
-    latency_available_checkpoints = int(totals["latency_available_checkpoints"])
+    latency_available_checkpoints = _json_int(totals["latency_available_checkpoints"])
     planner_total_prompt_tokens = (
-        int(totals["planner_total_prompt_tokens"])
+        _json_int(totals["planner_total_prompt_tokens"])
         if token_available_checkpoints > 0
         else None
     )
     planner_total_completion_tokens = (
-        int(totals["planner_total_completion_tokens"])
+        _json_int(totals["planner_total_completion_tokens"])
         if token_available_checkpoints > 0
         else None
     )
@@ -1778,30 +1812,30 @@ def _build_phase2_summary(
             exact_match_expected_source_matches,
             exact_match_expected_checkpoints,
         ),
-        "boundary_mismatches": int(totals["boundary_mismatches"]),
-        "source_improvement_candidates": int(
+        "boundary_mismatches": _json_int(totals["boundary_mismatches"]),
+        "source_improvement_candidates": _json_int(
             totals["source_improvement_candidates"],
         ),
-        "closure_improvement_candidates": int(
+        "closure_improvement_candidates": _json_int(
             totals["closure_improvement_candidates"],
         ),
-        "disabled_source_violations": int(totals["disabled_source_violations"]),
-        "budget_violations": int(totals["budget_violations"]),
-        "planner_failures": int(totals["planner_failures"]),
-        "invalid_recommendations": int(totals["invalid_recommendations"]),
-        "fallback_recommendations": int(totals["fallback_recommendations"]),
-        "unavailable_recommendations": int(totals["unavailable_recommendations"]),
-        "malformed_fixture_errors": int(totals["malformed_fixture_errors"]),
-        "selected_entity_overlap_total": int(totals["selected_entity_overlap_total"]),
-        "planner_only_noisy_expansions": int(totals["planner_only_noisy_expansions"]),
-        "planner_conservative_stops": int(totals["planner_conservative_stops"]),
-        "planner_stopped_while_deterministic_continue_count": int(
+        "disabled_source_violations": _json_int(totals["disabled_source_violations"]),
+        "budget_violations": _json_int(totals["budget_violations"]),
+        "planner_failures": _json_int(totals["planner_failures"]),
+        "invalid_recommendations": _json_int(totals["invalid_recommendations"]),
+        "fallback_recommendations": _json_int(totals["fallback_recommendations"]),
+        "unavailable_recommendations": _json_int(totals["unavailable_recommendations"]),
+        "malformed_fixture_errors": _json_int(totals["malformed_fixture_errors"]),
+        "selected_entity_overlap_total": _json_int(totals["selected_entity_overlap_total"]),
+        "planner_only_noisy_expansions": _json_int(totals["planner_only_noisy_expansions"]),
+        "planner_conservative_stops": _json_int(totals["planner_conservative_stops"]),
+        "planner_stopped_while_deterministic_continue_count": _json_int(
             totals["planner_stopped_while_deterministic_continue_count"]
         ),
-        "planner_continued_when_threshold_stop_count": int(
+        "planner_continued_when_threshold_stop_count": _json_int(
             totals["planner_continued_when_threshold_stop_count"]
         ),
-        "planner_continued_while_deterministic_stop_count": int(
+        "planner_continued_while_deterministic_stop_count": _json_int(
             totals["planner_continued_while_deterministic_stop_count"]
         ),
         "qualitative_rationale_present_count": qualitative_rationale_present_count,
@@ -1809,7 +1843,7 @@ def _build_phase2_summary(
             qualitative_rationale_present_count,
             total_checkpoints,
         ),
-        "telemetry_available_checkpoints": int(
+        "telemetry_available_checkpoints": _json_int(
             totals["telemetry_available_checkpoints"],
         ),
         "cost_available_checkpoints": cost_available_checkpoints,
@@ -1820,12 +1854,12 @@ def _build_phase2_summary(
         "planner_total_completion_tokens": planner_total_completion_tokens,
         "planner_total_tokens": planner_total_tokens,
         "planner_total_cost_usd": (
-            round(float(totals["planner_total_cost_usd"]), 8)
+            round(_json_float(totals["planner_total_cost_usd"]), 8)
             if cost_available_checkpoints > 0
             else None
         ),
         "planner_total_latency_seconds": (
-            round(float(totals["planner_total_latency_seconds"]), 6)
+            round(_json_float(totals["planner_total_latency_seconds"]), 6)
             if latency_available_checkpoints > 0
             else None
         ),
@@ -1854,45 +1888,45 @@ def _build_phase2_summary(
             "deterministic_total_tokens"
         ],
         "deterministic_total_cost_usd": (
-            round(float(deterministic_summary["deterministic_total_cost_usd"]), 8)
-            if int(deterministic_summary["deterministic_baseline_run_count"]) > 0
-            and int(deterministic_summary["deterministic_baseline_runs_with_cost"])
-            == int(deterministic_summary["deterministic_baseline_run_count"])
+            round(_json_float(deterministic_summary["deterministic_total_cost_usd"]), 8)
+            if _json_int(deterministic_summary["deterministic_baseline_run_count"]) > 0
+            and _json_int(deterministic_summary["deterministic_baseline_runs_with_cost"])
+            == _json_int(deterministic_summary["deterministic_baseline_run_count"])
             else None
         ),
         "deterministic_total_latency_seconds": (
             round(
-                float(deterministic_summary["deterministic_total_latency_seconds"]),
+                _json_float(deterministic_summary["deterministic_total_latency_seconds"]),
                 6,
             )
-            if int(deterministic_summary["deterministic_baseline_run_count"]) > 0
-            and int(deterministic_summary["deterministic_baseline_runs_with_latency"])
-            == int(deterministic_summary["deterministic_baseline_run_count"])
+            if _json_int(deterministic_summary["deterministic_baseline_run_count"]) > 0
+            and _json_int(deterministic_summary["deterministic_baseline_runs_with_latency"])
+            == _json_int(deterministic_summary["deterministic_baseline_run_count"])
             else None
         ),
     }
 
 
 def _build_fixture_automated_gates(*, summary: JSONObject) -> JSONObject:
-    total_checkpoints = int(summary["total_checkpoints"])
-    gates = {
+    total_checkpoints = _json_int(summary["total_checkpoints"])
+    gates: JSONObject = {
         "has_checkpoints": total_checkpoints > 0,
         "no_disabled_source_violations": (
-            int(summary["disabled_source_violations"]) == 0
+            _json_int(summary["disabled_source_violations"]) == 0
         ),
-        "no_budget_violations": int(summary["budget_violations"]) == 0,
-        "no_invalid_recommendations": int(summary["invalid_recommendations"]) == 0,
-        "no_malformed_fixture_entries": (int(summary["malformed_fixture_errors"]) == 0),
+        "no_budget_violations": _json_int(summary["budget_violations"]) == 0,
+        "no_invalid_recommendations": _json_int(summary["invalid_recommendations"]) == 0,
+        "no_malformed_fixture_entries": (_json_int(summary["malformed_fixture_errors"]) == 0),
         "deterministic_baseline_expected_count_met": (
             _deterministic_baseline_expected_count_met(summary)
         ),
         "no_fallback_or_unavailable_recommendations": (
-            int(summary["fallback_recommendations"]) == 0
-            and int(summary["unavailable_recommendations"]) == 0
+            _json_int(summary["fallback_recommendations"]) == 0
+            and _json_int(summary["unavailable_recommendations"]) == 0
         ),
         "qualitative_rationale_present_everywhere": (
             total_checkpoints > 0
-            and int(summary["qualitative_rationale_present_count"]) == total_checkpoints
+            and _json_int(summary["qualitative_rationale_present_count"]) == total_checkpoints
         ),
     }
     gates["all_passed"] = all(bool(value) for value in gates.values())
@@ -1900,27 +1934,27 @@ def _build_fixture_automated_gates(*, summary: JSONObject) -> JSONObject:
 
 
 def _build_directory_automated_gates(*, summary: JSONObject) -> JSONObject:
-    total_checkpoints = int(summary["total_checkpoints"])
-    gates = {
-        "minimum_fixture_coverage_met": int(summary["fixture_count"])
+    total_checkpoints = _json_int(summary["total_checkpoints"])
+    gates: JSONObject = {
+        "minimum_fixture_coverage_met": _json_int(summary["fixture_count"])
         >= _MIN_FIXTURE_COUNT,
-        "minimum_run_coverage_met": int(summary["run_count"]) >= _MIN_RUN_COUNT,
+        "minimum_run_coverage_met": _json_int(summary["run_count"]) >= _MIN_RUN_COUNT,
         "no_disabled_source_violations": (
-            int(summary["disabled_source_violations"]) == 0
+            _json_int(summary["disabled_source_violations"]) == 0
         ),
-        "no_budget_violations": int(summary["budget_violations"]) == 0,
-        "no_invalid_recommendations": int(summary["invalid_recommendations"]) == 0,
-        "no_malformed_fixture_entries": (int(summary["malformed_fixture_errors"]) == 0),
+        "no_budget_violations": _json_int(summary["budget_violations"]) == 0,
+        "no_invalid_recommendations": _json_int(summary["invalid_recommendations"]) == 0,
+        "no_malformed_fixture_entries": (_json_int(summary["malformed_fixture_errors"]) == 0),
         "deterministic_baseline_expected_count_met": (
             _deterministic_baseline_expected_count_met(summary)
         ),
         "no_fallback_or_unavailable_recommendations": (
-            int(summary["fallback_recommendations"]) == 0
-            and int(summary["unavailable_recommendations"]) == 0
+            _json_int(summary["fallback_recommendations"]) == 0
+            and _json_int(summary["unavailable_recommendations"]) == 0
         ),
         "qualitative_rationale_present_everywhere": (
             total_checkpoints > 0
-            and int(summary["qualitative_rationale_present_count"]) == total_checkpoints
+            and _json_int(summary["qualitative_rationale_present_count"]) == total_checkpoints
         ),
     }
     gates["all_passed"] = all(bool(value) for value in gates.values())
@@ -2006,28 +2040,28 @@ def _planner_telemetry_dict(
 
 
 def _build_phase2_cost_tracking(*, summary: JSONObject) -> JSONObject:
-    total_checkpoints = int(summary.get("total_checkpoints", 0))
-    cost_available_checkpoints = int(summary.get("cost_available_checkpoints", 0))
-    zero_cost_with_tokens_checkpoints = int(
+    total_checkpoints = _json_int(summary.get("total_checkpoints"))
+    cost_available_checkpoints = _json_int(summary.get("cost_available_checkpoints"))
+    zero_cost_with_tokens_checkpoints = _json_int(
         summary.get("zero_cost_with_tokens_checkpoints", 0),
     )
-    token_available_checkpoints = int(summary.get("token_available_checkpoints", 0))
-    latency_available_checkpoints = int(
+    token_available_checkpoints = _json_int(summary.get("token_available_checkpoints"))
+    latency_available_checkpoints = _json_int(
         summary.get("latency_available_checkpoints", 0),
     )
-    telemetry_available_checkpoints = int(
+    telemetry_available_checkpoints = _json_int(
         summary.get("telemetry_available_checkpoints", 0),
     )
-    deterministic_baseline_run_count = int(
+    deterministic_baseline_run_count = _json_int(
         summary.get("deterministic_baseline_run_count", 0),
     )
-    deterministic_baseline_expected_run_count = int(
+    deterministic_baseline_expected_run_count = _json_int(
         summary.get(
             "deterministic_baseline_expected_run_count",
             deterministic_baseline_run_count,
         ),
     )
-    deterministic_baseline_runs_with_cost = int(
+    deterministic_baseline_runs_with_cost = _json_int(
         summary.get("deterministic_baseline_runs_with_cost", 0),
     )
     planner_total_cost_usd = _optional_float(summary.get("planner_total_cost_usd"))
@@ -2215,7 +2249,7 @@ def _fixture_name_from_malformed_path(fixture_path: Path) -> str:
 
 
 def _increment_total(totals: JSONObject, total_key: str) -> None:
-    totals[total_key] = int(totals[total_key]) + 1
+    totals[total_key] = _json_int(totals[total_key]) + 1
 
 
 def _increment_total_if_true(

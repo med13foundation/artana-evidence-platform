@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import NoReturn
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.dependencies import (
@@ -56,7 +57,7 @@ def _graph_api_error_detail(error: GraphServiceClientError) -> str:
     return str(error)
 
 
-def _raise_graph_api_error(error: GraphServiceClientError) -> None:
+def _raise_graph_api_error(error: GraphServiceClientError) -> NoReturn:
     raise HTTPException(
         status_code=_graph_api_error_status(error),
         detail=_graph_api_error_detail(error),

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from artana_evidence_api.full_ai_orchestrator_common_support import _planner_mode_value
@@ -22,7 +22,12 @@ from artana_evidence_api.full_ai_orchestrator_guarded_rollout import (
 )
 from artana_evidence_api.types.common import (
     JSONObject,
+    json_int,
+    json_object_or_empty,
 )
+
+if TYPE_CHECKING:
+    from artana_evidence_api.artifact_store import HarnessArtifactStore
 
 _LOGGER = logging.getLogger(__name__)
 _PROGRESS_PERSISTENCE_BACKOFF_SECONDS = float(
@@ -263,7 +268,7 @@ _ACTION_REGISTRY: tuple[ResearchOrchestratorActionSpec, ...] = (
 
 def _put_decision_history_artifact(
     *,
-    artifact_store,
+    artifact_store: HarnessArtifactStore,
     space_id: UUID,
     run_id: str,
     decisions: list[ResearchOrchestratorDecision],
@@ -281,7 +286,7 @@ def _put_decision_history_artifact(
 
 def _put_shadow_planner_artifacts(
     *,
-    artifact_store,
+    artifact_store: HarnessArtifactStore,
     space_id: UUID,
     run_id: str,
     timeline: list[JSONObject],
@@ -329,7 +334,7 @@ def _put_shadow_planner_artifacts(
 
 def _put_guarded_execution_artifact(
     *,
-    artifact_store,
+    artifact_store: HarnessArtifactStore,
     space_id: UUID,
     run_id: str,
     planner_mode: FullAIOrchestratorPlannerMode,
@@ -532,7 +537,7 @@ def _guarded_decision_proof_summary(
 
 def _put_guarded_decision_proof_artifacts(
     *,
-    artifact_store,
+    artifact_store: HarnessArtifactStore,
     space_id: UUID,
     run_id: str,
     planner_mode: FullAIOrchestratorPlannerMode,
@@ -655,19 +660,27 @@ def _guarded_readiness_summary(
         planner_mode=planner_mode,
         actions=actions,
     )
-    verification_failed_count = int(execution_summary["verification_failed_count"])
-    pending_verification_count = int(execution_summary["pending_verification_count"])
-    applied_count = int(execution_summary["applied_count"])
+    verification_failed_count = json_int(
+        execution_summary["verification_failed_count"]
+    )
+    pending_verification_count = json_int(
+        execution_summary["pending_verification_count"]
+    )
+    applied_count = json_int(execution_summary["applied_count"])
     proof_summary = _guarded_decision_proof_summary(
         planner_mode=planner_mode,
         guarded_rollout_profile=guarded_rollout_profile,
         guarded_rollout_profile_source=guarded_rollout_profile_source,
         proofs=proofs or [],
     )
-    proof_blocked_count = int(proof_summary["blocked_count"])
-    proof_ignored_count = int(proof_summary["ignored_count"])
-    proof_verification_failed_count = int(proof_summary["verification_failed_count"])
-    proof_pending_verification_count = int(proof_summary["pending_verification_count"])
+    proof_blocked_count = json_int(proof_summary["blocked_count"])
+    proof_ignored_count = json_int(proof_summary["ignored_count"])
+    proof_verification_failed_count = json_int(
+        proof_summary["verification_failed_count"]
+    )
+    proof_pending_verification_count = json_int(
+        proof_summary["pending_verification_count"]
+    )
     blocked_or_ignored_count = proof_blocked_count + proof_ignored_count
     if planner_mode is not FullAIOrchestratorPlannerMode.GUARDED:
         status = "not_applicable"
@@ -735,7 +748,7 @@ def _guarded_readiness_summary(
     }
 
 def _applied_strategy_counts(actions: list[JSONObject]) -> JSONObject:
-    counts = {
+    counts: dict[str, int] = {
         _GUARDED_STRATEGY_STRUCTURED_SOURCE: 0,
         _GUARDED_STRATEGY_CHASE_SELECTION: 0,
         _GUARDED_STRATEGY_TERMINAL_CONTROL: 0,
@@ -745,7 +758,7 @@ def _applied_strategy_counts(actions: list[JSONObject]) -> JSONObject:
         strategy = action.get("guarded_strategy")
         if isinstance(strategy, str) and strategy in counts:
             counts[strategy] += 1
-    return counts
+    return json_object_or_empty(counts)
 
 def _intervention_counts(
     actions: list[JSONObject],
@@ -759,14 +772,14 @@ def _intervention_counts(
         == ResearchOrchestratorActionType.STOP.value
     )
     return {
-        "source_selection": int(
+        "source_selection": json_int(
             applied_strategy_counts[_GUARDED_STRATEGY_STRUCTURED_SOURCE],
         ),
-        "chase_or_stop": int(
+        "chase_or_stop": json_int(
             applied_strategy_counts[_GUARDED_STRATEGY_CHASE_SELECTION],
         )
         + terminal_stop_count,
-        "brief_generation": int(
+        "brief_generation": json_int(
             applied_strategy_counts[_GUARDED_STRATEGY_BRIEF_GENERATION],
         ),
     }
@@ -781,9 +794,9 @@ def _profile_authority_exercised(
         _GUARDED_PROFILE_DRY_RUN,
     }:
         return None
-    source = int(intervention_counts["source_selection"])
-    chase_or_stop = int(intervention_counts["chase_or_stop"])
-    brief = int(intervention_counts["brief_generation"])
+    source = json_int(intervention_counts["source_selection"])
+    chase_or_stop = json_int(intervention_counts["chase_or_stop"])
+    brief = json_int(intervention_counts["brief_generation"])
     if guarded_rollout_profile == _GUARDED_PROFILE_CHASE_ONLY:
         return chase_or_stop > 0 or brief > 0
     if guarded_rollout_profile == _GUARDED_PROFILE_SOURCE_CHASE:
@@ -794,7 +807,7 @@ def _profile_authority_exercised(
 
 def _put_guarded_readiness_artifact(
     *,
-    artifact_store,
+    artifact_store: HarnessArtifactStore,
     space_id: UUID,
     run_id: str,
     planner_mode: FullAIOrchestratorPlannerMode,

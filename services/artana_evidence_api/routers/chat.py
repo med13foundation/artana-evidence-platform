@@ -101,7 +101,10 @@ from artana_evidence_api.transparency import (
     append_manual_review_decision,
     ensure_run_transparency_seed,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import (  # noqa: TC001
+    JSONObject,
+    json_array_or_empty,
+)
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -351,7 +354,7 @@ class ChatGraphWriteCandidateDecisionResponse(BaseModel):
 
 def build_chat_message_run_response(
     execution: GraphChatMessageExecution,
-) -> ChatMessageRunResponse:
+) -> ChatMessageRunResponse | JSONResponse:
     """Serialize one graph-chat execution into the public route response."""
     return ChatMessageRunResponse(
         run=HarnessRunResponse.from_record(execution.run),
@@ -723,11 +726,11 @@ def _prepare_chat_message_run(  # noqa: PLR0913
         include_evidence_chains=request.include_evidence_chains,
         memory_context=memory_context,
         document_ids=[str(document_id) for document_id in request.document_ids],
-        document_context=(
-            list(memory_context["referenced_documents"])
-            if isinstance(memory_context.get("referenced_documents"), list)
-            else []
-        ),
+        document_context=[
+            item
+            for item in json_array_or_empty(memory_context.get("referenced_documents"))
+            if isinstance(item, dict)
+        ],
         refresh_pubmed_if_needed=request.refresh_pubmed_if_needed,
         graph_service_status=graph_health.status,
         graph_service_version=graph_health.version,
@@ -835,7 +838,7 @@ async def send_chat_message(  # noqa: C901, PLR0912, PLR0913, PLR0915
     graph_snapshot_store: HarnessGraphSnapshotStore = _GRAPH_SNAPSHOT_STORE_DEPENDENCY,
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_DEPENDENCY,
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
-) -> ChatMessageRunResponse:
+) -> ChatMessageRunResponse | JSONResponse:
     session = _require_session(
         space_id=space_id,
         session_id=session_id,
@@ -918,7 +921,7 @@ async def send_chat_message(  # noqa: C901, PLR0912, PLR0913, PLR0915
     finally:
         graph_api_gateway.close()
     if wait_outcome.timed_out:
-        accepted = build_accepted_run_response(
+        accepted_run_response = build_accepted_run_response(
             run=prepared_run.queued_run,
             run_registry=run_registry,
             stream_url=_chat_message_stream_url(
@@ -930,7 +933,7 @@ async def send_chat_message(  # noqa: C901, PLR0912, PLR0913, PLR0915
         )
         return JSONResponse(
             status_code=status.HTTP_202_ACCEPTED,
-            content=accepted.model_dump(mode="json"),
+            content=accepted_run_response.model_dump(mode="json"),
         )
     if wait_outcome.run is None:
         raise HTTPException(

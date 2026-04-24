@@ -1223,6 +1223,7 @@ class DictionaryProposalService:
         model = self._get_model(proposal_id)
         self._require_reviewable_status(model)
         before_snapshot = _snapshot_proposal_model(model)
+        applied: AppliedDictionaryObject
 
         if model.proposal_type == "DOMAIN_CONTEXT":
             applied = self._approve_domain_context(model, reviewed_by=reviewed_by)

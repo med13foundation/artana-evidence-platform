@@ -16,7 +16,7 @@ from artana_evidence_api.shared_fact_assessment_helpers import (
     fact_evidence_weight,
     to_json_value,
 )
-from artana_evidence_api.types.common import JSONObject, JSONValue
+from artana_evidence_api.types.common import JSONObject, JSONValue, json_object_or_empty
 from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     GroundingLevel,
@@ -226,7 +226,7 @@ async def extract_variant_aware_document(
         proposal_drafts=proposal_drafts,
         review_item_drafts=review_item_drafts,
         skipped_items=skipped_items,
-        candidate_discovery=candidate_discovery,
+        candidate_discovery=json_object_or_empty(candidate_discovery),
         extraction_diagnostics=extraction_diagnostics,
     )
 
@@ -235,10 +235,7 @@ def _build_raw_record(
     *,
     document: HarnessDocumentRecord,
 ) -> JSONObject:
-    metadata = {
-        str(key): cast("JSONValue", to_json_value(value))
-        for key, value in document.metadata.items()
-    }
+    metadata = {str(key): to_json_value(value) for key, value in document.metadata.items()}
     text_content = document.text_content.strip()
     raw_record: JSONObject = {
         **metadata,
@@ -345,14 +342,12 @@ def _merge_variant_candidate_with_signal(
     )
     if signal_match is None:
         return candidate
-    merged_anchors = {
-        **signal_match["anchors"],
-        **candidate.anchors,
-    }
-    merged_metadata = {
-        **signal_match["metadata"],
-        **candidate.metadata,
-    }
+    signal_anchors = _json_object_value(signal_match.get("anchors"))
+    signal_metadata = _json_object_value(signal_match.get("metadata"))
+    if signal_anchors is None or signal_metadata is None:
+        return candidate
+    merged_anchors = {**signal_anchors, **candidate.anchors}
+    merged_metadata = {**signal_metadata, **candidate.metadata}
     return candidate.model_copy(
         update={
             "anchors": merged_anchors,
@@ -391,13 +386,9 @@ def _fallback_variant_candidates_from_signals(
             ExtractedEntityCandidate(
                 entity_type="VARIANT",
                 label=hgvs_notation.strip(),
-                anchors={
-                    str(key): cast("JSONValue", to_json_value(value))
-                    for key, value in anchors.items()
-                },
+                anchors={str(key): to_json_value(value) for key, value in anchors.items()},
                 metadata={
-                    str(key): cast("JSONValue", to_json_value(value))
-                    for key, value in metadata.items()
+                    str(key): to_json_value(value) for key, value in metadata.items()
                 },
                 evidence_excerpt=evidence_excerpt.strip(),
                 evidence_locator=evidence_locator.strip(),
@@ -804,8 +795,7 @@ def _build_incomplete_variant_review_item(
             "missing_anchors": [
                 anchor_name
                 for anchor_name in _REQUIRED_VARIANT_ANCHORS
-                if not isinstance(candidate.anchors.get(anchor_name), str)
-                or candidate.anchors.get(anchor_name, "").strip() == ""
+                if not _clean_text(candidate.anchors.get(anchor_name))
             ],
             "evidence_excerpt": candidate.evidence_excerpt,
             "evidence_locator": candidate.evidence_locator,
@@ -943,8 +933,7 @@ def _build_review_item_from_rejected_fact(
     if rejected_fact.assessment.support_band not in _REVIEWABLE_REJECTED_SUPPORT_BANDS:
         return None
     rejected_payload = {
-        str(key): cast("JSONValue", to_json_value(value))
-        for key, value in rejected_fact.payload.items()
+        str(key): to_json_value(value) for key, value in rejected_fact.payload.items()
     }
     relation_type = _clean_text(
         rejected_payload.get("relation_type")
@@ -1353,12 +1342,10 @@ def _entity_candidate_payload(
         "display_label": candidate.label.strip(),
         "aliases": _entity_candidate_aliases(candidate),
         "anchors": {
-            str(key): cast("JSONValue", to_json_value(value))
-            for key, value in candidate.anchors.items()
+            str(key): to_json_value(value) for key, value in candidate.anchors.items()
         },
         "metadata": {
-            str(key): cast("JSONValue", to_json_value(value))
-            for key, value in candidate.metadata.items()
+            str(key): to_json_value(value) for key, value in candidate.metadata.items()
         },
         "identifiers": identifiers,
         "evidence_excerpt": candidate.evidence_excerpt,
@@ -1426,7 +1413,7 @@ def _variant_candidate_is_persistable(
     candidate: ExtractedEntityCandidate,
 ) -> bool:
     return all(
-        isinstance(candidate.anchors.get(key), str) and candidate.anchors[key].strip()
+        _clean_text(candidate.anchors.get(key)) is not None
         for key in _REQUIRED_VARIANT_ANCHORS
     )
 
@@ -1448,10 +1435,7 @@ def _clean_text(raw_value: object) -> str | None:
 def _json_object_value(raw_value: object) -> JSONObject | None:
     if not isinstance(raw_value, dict):
         return None
-    return {
-        str(key): cast("JSONValue", to_json_value(value))
-        for key, value in raw_value.items()
-    }
+    return {str(key): to_json_value(value) for key, value in raw_value.items()}
 
 
 def _normalized_metadata_value(raw_value: object) -> JSONValue | None:
@@ -1462,12 +1446,12 @@ def _normalized_metadata_value(raw_value: object) -> JSONValue | None:
         return normalized if normalized else None
     if isinstance(raw_value, list):
         normalized_list = [
-            cast("JSONValue", to_json_value(item))
+            to_json_value(item)
             for item in raw_value
             if item is not None and (not isinstance(item, str) or item.strip())
         ]
         return normalized_list if normalized_list else None
-    return cast("JSONValue", to_json_value(raw_value))
+    return to_json_value(raw_value)
 
 
 def _protein_aliases(raw_value: object) -> tuple[str, ...]:

@@ -7,7 +7,11 @@ from datetime import date, datetime
 from typing import Protocol
 
 from artana_evidence_db.common_types import JSONValue
-from artana_evidence_db.graph_core_models import KernelObservation
+from artana_evidence_db.graph_core_models import KernelEntity, KernelObservation
+from artana_evidence_db.kernel_domain_models import (
+    TransformRegistry,
+    VariableDefinition,
+)
 from artana_evidence_db.observation_value_support import (
     ObservationSlotKwargs,
     coerce_observation_value_for_data_type,
@@ -17,23 +21,13 @@ from artana_evidence_db.observation_value_support import (
 logger = logging.getLogger(__name__)
 
 
-class _SubjectEntityLike(Protocol):
-    research_space_id: object
-
-
-class _VariableLike(Protocol):
-    id: str
-    data_type: str
-    preferred_unit: str | None
-
-
 class EntityRepositoryLike(Protocol):
-    def get_by_id(self, entity_id: str) -> _SubjectEntityLike | None:
+    def get_by_id(self, entity_id: str) -> KernelEntity | None:
         """Return one entity by ID."""
 
 
 class DictionaryRepositoryLike(Protocol):
-    def get_variable(self, variable_id: str) -> _VariableLike | None:
+    def get_variable(self, variable_id: str) -> VariableDefinition | None:
         """Return one variable definition by ID."""
 
     def get_transform(
@@ -42,7 +36,7 @@ class DictionaryRepositoryLike(Protocol):
         output_unit: str,
         *,
         require_production: bool,
-    ) -> object | None:
+    ) -> TransformRegistry | None:
         """Return one unit transform when available."""
 
 

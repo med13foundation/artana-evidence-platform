@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from artana_evidence_db.claim_metrics import increment_metric
 from artana_evidence_db.claim_participant_backfill_support import (
@@ -16,6 +16,9 @@ from artana_evidence_db.claim_participant_backfill_support import (
 from artana_evidence_db.claim_participant_service import KernelClaimParticipantService
 from artana_evidence_db.relation_claim_service import KernelRelationClaimService
 from artana_evidence_db.semantic_ports import ConceptPort
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 
 class ReasoningPathServiceLike(Protocol):
@@ -35,7 +38,7 @@ class KernelClaimParticipantBackfillService:
     def __init__(  # noqa: PLR0913
         self,
         *,
-        session: object,
+        session: Session,
         relation_claim_service: KernelRelationClaimService,
         claim_participant_service: KernelClaimParticipantService,
         entity_repository: EntityRepositoryLike,

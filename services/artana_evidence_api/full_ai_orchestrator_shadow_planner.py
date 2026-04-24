@@ -25,7 +25,15 @@ from artana_evidence_api.runtime_support import (
     normalize_litellm_model_id,
     stable_sha256_digest,
 )
-from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
+from artana_evidence_api.types.common import (
+    JSONObject,
+    ResearchSpaceSourcePreferences,
+    json_array_or_empty,
+    json_int,
+    json_object_or_empty,
+    json_string_list,
+    json_value,
+)
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
 
 _PROMPT_PATH = (
@@ -317,14 +325,15 @@ def _workspace_chase_selection(
     *,
     workspace_summary: JSONObject,
 ) -> ResearchOrchestratorChaseSelection | None:
-    selection = (
-        workspace_summary.get("pending_chase_round", {}).get("deterministic_selection")
-        if isinstance(workspace_summary.get("pending_chase_round"), dict)
-        else None
+    pending_chase_round = json_object_or_empty(
+        workspace_summary.get("pending_chase_round"),
     )
-    if not isinstance(selection, dict):
-        selection = workspace_summary.get("deterministic_selection")
-    if not isinstance(selection, dict):
+    selection = json_object_or_empty(
+        pending_chase_round.get("deterministic_selection"),
+    )
+    if not selection:
+        selection = json_object_or_empty(workspace_summary.get("deterministic_selection"))
+    if not selection:
         return None
     try:
         return ResearchOrchestratorChaseSelection.model_validate(selection)
@@ -539,7 +548,7 @@ def _structured_enrichment_source_keys(
     structured_source_set = set(structured_source_keys)
     remaining_sources = sorted(
         source_key
-        for source_key in source_taxonomy["live_evidence"]
+        for source_key in json_string_list(source_taxonomy.get("live_evidence"))
         if source_key != "pubmed" and source_key not in structured_source_set
     )
     return [*structured_source_keys, *remaining_sources]
@@ -872,11 +881,7 @@ def shadow_planner_synthesis_readiness(
 ) -> _SynthesisReadinessSummary:
     """Summarize whether the workspace is ready to move to synthesis."""
 
-    counts = (
-        workspace_summary.get("counts")
-        if isinstance(workspace_summary.get("counts"), dict)
-        else {}
-    )
+    counts = json_object_or_empty(workspace_summary.get("counts"))
     documents_ingested = _int_or_zero(counts.get("documents_ingested"))
     proposal_count = _int_or_zero(counts.get("proposal_count"))
     pending_question_count = _int_or_zero(counts.get("pending_question_count"))
@@ -1029,55 +1034,39 @@ def build_shadow_planner_workspace_summary(  # noqa: PLR0913
         pending_structured_sources=pending_structured_enrichment_source_keys,
         pubmed_ingest_pending=pubmed_ingest_pending,
     )
-    pending_chase_round = (
-        workspace_snapshot.get("pending_chase_round")
-        if isinstance(workspace_snapshot.get("pending_chase_round"), dict)
-        else {}
+    pending_chase_round = json_object_or_empty(
+        workspace_snapshot.get("pending_chase_round"),
     )
-    chase_candidates = (
-        list(pending_chase_round.get("chase_candidates"))
-        if isinstance(pending_chase_round.get("chase_candidates"), list)
-        else []
-    )
-    filtered_chase_candidates = (
-        list(pending_chase_round.get("filtered_chase_candidates"))
-        if isinstance(pending_chase_round.get("filtered_chase_candidates"), list)
-        else []
+    chase_candidates = json_array_or_empty(pending_chase_round.get("chase_candidates"))
+    filtered_chase_candidates = json_array_or_empty(
+        pending_chase_round.get("filtered_chase_candidates"),
     )
     deterministic_chase_threshold = (
-        int(pending_chase_round.get("deterministic_chase_threshold", 0))
+        json_int(pending_chase_round.get("deterministic_chase_threshold"))
         if isinstance(pending_chase_round.get("deterministic_chase_threshold"), int)
         else 0
     )
     deterministic_candidate_count = (
-        int(pending_chase_round.get("deterministic_candidate_count", 0))
+        json_int(pending_chase_round.get("deterministic_candidate_count"))
         if isinstance(pending_chase_round.get("deterministic_candidate_count"), int)
         else 0
     )
     deterministic_threshold_met = bool(
         pending_chase_round.get("deterministic_threshold_met"),
     )
-    available_chase_source_keys = (
-        list(pending_chase_round.get("available_chase_source_keys"))
-        if isinstance(pending_chase_round.get("available_chase_source_keys"), list)
-        else []
+    available_chase_source_keys = json_string_list(
+        pending_chase_round.get("available_chase_source_keys"),
     )
     filtered_chase_candidate_count = (
-        int(pending_chase_round.get("filtered_chase_candidate_count", 0))
+        json_int(pending_chase_round.get("filtered_chase_candidate_count"))
         if isinstance(pending_chase_round.get("filtered_chase_candidate_count"), int)
         else 0
     )
-    filtered_chase_filter_reason_counts = (
-        dict(pending_chase_round.get("filtered_chase_filter_reason_counts"))
-        if isinstance(
-            pending_chase_round.get("filtered_chase_filter_reason_counts"), dict
-        )
-        else {}
+    filtered_chase_filter_reason_counts = json_object_or_empty(
+        pending_chase_round.get("filtered_chase_filter_reason_counts"),
     )
-    deterministic_selection = (
-        dict(pending_chase_round.get("deterministic_selection"))
-        if isinstance(pending_chase_round.get("deterministic_selection"), dict)
-        else {}
+    deterministic_selection = json_object_or_empty(
+        pending_chase_round.get("deterministic_selection"),
     )
 
     summary: JSONObject = {
@@ -1139,13 +1128,15 @@ def build_shadow_planner_workspace_summary(  # noqa: PLR0913
                 pending_structured_enrichment_source_keys
             ),
         },
-        "objective_routing_hints": objective_routing_hints,
+        "objective_routing_hints": json_value(objective_routing_hints),
     }
     summary["chase_decision_posture"] = _chase_decision_posture(
         workspace_summary=summary,
     )
-    summary["synthesis_readiness"] = shadow_planner_synthesis_readiness(
-        workspace_summary=summary,
+    summary["synthesis_readiness"] = json_value(
+        shadow_planner_synthesis_readiness(
+            workspace_summary=summary,
+        ),
     )
     return summary
 
@@ -2791,33 +2782,37 @@ def _normalize_shadow_planner_workspace_summary(
     )
     normalized.setdefault(
         "planner_constraints",
-        _planner_constraints_from_action_registry(
-            action_registry=action_registry,
-            enabled_sources=enabled_sources,
+        json_object_or_empty(
+            _planner_constraints_from_action_registry(
+                action_registry=action_registry,
+                enabled_sources=enabled_sources,
+            )
         ),
     )
-    normalized["objective_routing_hints"] = _checkpoint_objective_routing_hints(
-        checkpoint_key=checkpoint_key,
-        objective=str(normalized.get("objective", objective)),
-        structured_enrichment_sources=_structured_enrichment_source_keys(
-            enabled_sources=enabled_sources,
-        ),
-        pending_structured_sources=_structured_enrichment_pending_source_keys(
-            workspace_summary=normalized,
+    normalized["objective_routing_hints"] = json_value(
+        _checkpoint_objective_routing_hints(
+            checkpoint_key=checkpoint_key,
+            objective=str(normalized.get("objective", objective)),
             structured_enrichment_sources=_structured_enrichment_source_keys(
                 enabled_sources=enabled_sources,
             ),
-        ),
-        pubmed_ingest_pending=_pubmed_ingest_pending(
-            source_status_summary=(
-                normalized["source_status_summary"]
-                if isinstance(normalized["source_status_summary"], dict)
-                else {}
+            pending_structured_sources=_structured_enrichment_pending_source_keys(
+                workspace_summary=normalized,
+                structured_enrichment_sources=_structured_enrichment_source_keys(
+                    enabled_sources=enabled_sources,
+                ),
             ),
-        ),
+            pubmed_ingest_pending=_pubmed_ingest_pending(
+                source_status_summary=(
+                    normalized["source_status_summary"]
+                    if isinstance(normalized["source_status_summary"], dict)
+                    else {}
+                ),
+            ),
+        )
     )
     normalized["planner_constraints"] = {
-        **_workspace_planner_constraints(workspace_summary=normalized),
+        **json_object_or_empty(_workspace_planner_constraints(workspace_summary=normalized)),
         "source_taxonomy": source_taxonomy,
         "pubmed_ingest_pending": _pubmed_ingest_pending(
             source_status_summary=(
@@ -2835,8 +2830,10 @@ def _normalize_shadow_planner_workspace_summary(
             )
         ),
     }
-    normalized["synthesis_readiness"] = shadow_planner_synthesis_readiness(
-        workspace_summary=normalized,
+    normalized["synthesis_readiness"] = json_value(
+        shadow_planner_synthesis_readiness(
+            workspace_summary=normalized,
+        ),
     )
     return normalized
 
@@ -2896,7 +2893,7 @@ def _workspace_planner_constraints(
         "pubmed_ingest_pending": bool(
             raw_constraints.get("pubmed_ingest_pending", False)
         ),
-        "source_taxonomy": source_taxonomy,
+        "source_taxonomy": json_object_or_empty(source_taxonomy),
         "structured_enrichment_source_keys": _string_list(
             raw_constraints.get("structured_enrichment_source_keys"),
         ),

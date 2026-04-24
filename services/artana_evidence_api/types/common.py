@@ -10,6 +10,81 @@ type JSONValue = JSONPrimitive | Mapping[str, "JSONValue"] | Sequence["JSONValue
 JSONObject = dict[str, JSONValue]
 
 
+def json_object(value: object) -> JSONObject | None:
+    """Return a JSON object when the runtime value has string keys."""
+    if not isinstance(value, Mapping):
+        return None
+    payload: JSONObject = {}
+    for raw_key, raw_value in value.items():
+        if not isinstance(raw_key, str):
+            return None
+        payload[raw_key] = json_value(raw_value)
+    return payload
+
+
+def json_object_or_empty(value: object) -> JSONObject:
+    """Return a JSON object, or an empty object for non-object values."""
+    return json_object(value) or {}
+
+
+def json_array(value: object) -> list[JSONValue] | None:
+    """Return a JSON array for non-string sequence values."""
+    if isinstance(value, str) or not isinstance(value, Sequence):
+        return None
+    return [json_value(item) for item in value]
+
+
+def json_array_or_empty(value: object) -> list[JSONValue]:
+    """Return a JSON array, or an empty array for non-array values."""
+    return json_array(value) or []
+
+
+def json_string_list(value: object) -> list[str]:
+    """Return only string items from a JSON-ish sequence."""
+    return [item for item in json_array_or_empty(value) if isinstance(item, str)]
+
+
+def json_value(value: object) -> JSONValue:
+    """Normalize an arbitrary runtime value into the service JSON type."""
+    if isinstance(value, str | int | float | bool) or value is None:
+        return value
+    object_value = json_object(value)
+    if object_value is not None:
+        return object_value
+    array_value = json_array(value)
+    if array_value is not None:
+        return array_value
+    return str(value)
+
+
+def json_int(value: object, default: int = 0) -> int:
+    """Read an integer from a JSON-ish scalar without accepting containers."""
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float | str):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+    return default
+
+
+def json_float(value: object, default: float = 0.0) -> float:
+    """Read a float from a JSON-ish scalar without accepting containers."""
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+    return default
+
+
 class RelationAutoPromotionSettings(TypedDict, total=False):
     """Relation auto-promotion policy controls."""
 
@@ -86,4 +161,12 @@ __all__ = [
     "RelationAutoPromotionSettings",
     "ResearchSpaceSourcePreferences",
     "ResearchSpaceSettings",
+    "json_array",
+    "json_array_or_empty",
+    "json_float",
+    "json_int",
+    "json_object",
+    "json_object_or_empty",
+    "json_string_list",
+    "json_value",
 ]

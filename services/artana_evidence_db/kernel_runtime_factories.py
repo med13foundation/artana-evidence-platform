@@ -80,12 +80,9 @@ def _build_entity_embedding_status_repository(
     return SqlAlchemyEntityEmbeddingStatusRepository(session)
 
 
-def _build_embedding_provider() -> object:
+def _build_embedding_provider() -> DefaultHybridTextEmbeddingProvider:
     """Resolve the graph-owned embedding provider."""
-    if callable(HybridTextEmbeddingProvider):
-        return HybridTextEmbeddingProvider()
-    message = "HybridTextEmbeddingProvider is not configured as a callable provider"
-    raise RuntimeError(message)
+    return HybridTextEmbeddingProvider()
 
 
 def create_kernel_entity_embedding_status_service(

@@ -4,18 +4,23 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TypeVar
-from uuid import uuid4
+from typing import TYPE_CHECKING, TypeVar
+from uuid import UUID, uuid4
 
-from artana_evidence_db.orm_base import Base
-from artana_evidence_db.schema_support import graph_table_options
+from artana_evidence_db.orm_base import Base, require_table
+from artana_evidence_db.schema_support import (
+    graph_table_options,
+    qualify_graph_table_name,
+)
 from sqlalchemy import Boolean, Column, Index, String, Table, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
+if TYPE_CHECKING:
+    from artana_evidence_db.common_types import JSONObject
+    from sqlalchemy.orm import Mapped
 _E = TypeVar("_E", bound=Enum)
-
 
 class GraphOperationRunTypeEnum(str, Enum):
     """Supported standalone graph-service operation types."""
@@ -37,7 +42,9 @@ def _enum_values(enum_cls: type[_E]) -> list[str]:
     return [str(member.value) for member in enum_cls]
 
 
-_graph_operation_runs_table = Base.metadata.tables.get("graph_operation_runs")
+_graph_operation_runs_table = Base.metadata.tables.get(
+    qualify_graph_table_name("graph_operation_runs"),
+)
 if _graph_operation_runs_table is None:
     _graph_operation_runs_table = Table(
         "graph_operation_runs",
@@ -126,10 +133,27 @@ if _graph_operation_runs_table is None:
     )
 
 
+_graph_operation_runs_table_model_table = require_table(_graph_operation_runs_table)
+
 class GraphOperationRunModel(Base):
     """Recorded execution of one graph maintenance or audit operation."""
 
-    __table__ = _graph_operation_runs_table
+
+    __table__ = _graph_operation_runs_table_model_table
+
+    if TYPE_CHECKING:
+        id: Mapped[UUID]
+        operation_type: Mapped[GraphOperationRunTypeEnum]
+        status: Mapped[GraphOperationRunStatusEnum]
+        research_space_id: Mapped[UUID | None]
+        actor_user_id: Mapped[UUID | None]
+        actor_email: Mapped[str | None]
+        dry_run: Mapped[bool]
+        request_payload: Mapped[JSONObject]
+        summary_payload: Mapped[JSONObject]
+        failure_detail: Mapped[str | None]
+        started_at: Mapped[datetime]
+        completed_at: Mapped[datetime]
 
 
 __all__ = [

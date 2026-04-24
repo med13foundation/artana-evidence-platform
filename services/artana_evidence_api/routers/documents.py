@@ -553,7 +553,7 @@ def submit_text_document(  # noqa: PLR0913
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
-) -> HarnessDocumentIngestionResponse:
+) -> HarnessDocumentIngestionResponse | JSONResponse:
     normalized_text = normalize_text_document(request.text)
     if normalized_text == "":
         raise HTTPException(
@@ -664,7 +664,7 @@ async def upload_pdf_document(  # noqa: PLR0913
     binary_store: HarnessDocumentBinaryStore = _DOCUMENT_BINARY_STORE_DEPENDENCY,
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
-) -> HarnessDocumentIngestionResponse:
+) -> HarnessDocumentIngestionResponse | JSONResponse:
     payload = await file.read()
     if not payload:
         raise HTTPException(

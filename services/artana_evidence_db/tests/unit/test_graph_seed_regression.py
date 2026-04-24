@@ -176,3 +176,20 @@ class TestOpenWorldConstraintDefault:
         assert (
             result is False
         ), "Explicit is_allowed=False constraint should return FORBIDDEN"
+
+    def test_invalid_wildcard_profile_falls_back_to_allowed(self) -> None:
+        """Wildcard profile lookups must return only recognized profile strings."""
+        from artana_evidence_db._dictionary_repository_constraints_merge_mixin import (
+            GraphDictionaryRepositoryConstraintsMergeMixin,
+        )
+
+        mock_session = MagicMock()
+        mock_session.scalars.return_value.first.return_value = None
+
+        mixin = GraphDictionaryRepositoryConstraintsMergeMixin.__new__(
+            GraphDictionaryRepositoryConstraintsMergeMixin,
+        )
+        mixin._session = mock_session
+        mixin._wildcard_constraints = {("GENE", "ACTIVATES"): object()}
+
+        assert mixin.get_triple_profile("GENE", "ACTIVATES", "GENE") == "ALLOWED"

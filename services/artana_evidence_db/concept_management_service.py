@@ -13,6 +13,7 @@ from artana_evidence_db.concept_models import (
     ConceptDecisionProposal,
     ConceptDecisionStatus,
     ConceptDecisionType,
+    ConceptHarnessOutcome,
     ConceptHarnessResult,
     ConceptMember,
     ConceptPolicy,
@@ -205,8 +206,8 @@ class ConceptRepositoryLike(Protocol):
         decision_id: str,
         research_space_id: str,
         decision_type: ConceptDecisionType,
+        decision_status: ConceptDecisionStatus,
         proposed_by: str,
-        decision_status: ConceptDecisionStatus = "PROPOSED",
         concept_set_id: str | None = None,
         concept_member_id: str | None = None,
         concept_link_id: str | None = None,
@@ -214,6 +215,8 @@ class ConceptRepositoryLike(Protocol):
         rationale: str | None = None,
         evidence_payload: JSONObject | None = None,
         decision_payload: JSONObject | None = None,
+        harness_outcome: ConceptHarnessOutcome | None = None,
+        decided_by: str | None = None,
     ) -> ConceptDecision: ...
 
     def set_decision_status(
@@ -222,7 +225,7 @@ class ConceptRepositoryLike(Protocol):
         *,
         decision_status: ConceptDecisionStatus,
         decided_by: str,
-        harness_outcome: str | None = None,
+        harness_outcome: ConceptHarnessOutcome | None = None,
     ) -> ConceptDecision: ...
 
     def create_harness_result(  # noqa: PLR0913
@@ -231,11 +234,12 @@ class ConceptRepositoryLike(Protocol):
         result_id: str,
         research_space_id: str,
         harness_name: str,
-        outcome: str,
+        outcome: ConceptHarnessOutcome,
         checks_payload: JSONObject | None = None,
         errors_payload: list[str] | None = None,
         metadata_payload: JSONObject | None = None,
         decision_id: str | None = None,
+        harness_version: str | None = None,
         run_id: str | None = None,
     ) -> ConceptHarnessResult: ...
 

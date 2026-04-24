@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from artana_evidence_api.full_ai_orchestrator_contracts import (
@@ -23,10 +23,17 @@ from artana_evidence_api.objective_label_filters import (
     looks_like_taxonomic_name,
     text_tokens,
 )
-from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
+from artana_evidence_api.types.common import (
+    JSONObject,
+    ResearchSpaceSourcePreferences,
+    json_object_or_empty,
+)
 
 if TYPE_CHECKING:
     from artana_evidence_api.graph_client import GraphTransportBundle
+    from artana_evidence_api.research_init_source_enrichment import (
+        SourceEnrichmentResult,
+    )
 
 
 from artana_evidence_api.research_init_models import (
@@ -85,11 +92,20 @@ def _enabled_chase_source_keys(
         chase_source_keys.append("marrvel")
     return chase_source_keys
 
+_FilteredChaseReason = Literal[
+    "generic_result_label",
+    "clinical_significance_bucket",
+    "accession_like_placeholder",
+    "taxonomic_spillover",
+    "underanchored_fragment_label",
+]
+
+
 def _filtered_chase_reason(
     *,
     display_label: str,
     objective: str | None,
-) -> str | None:
+) -> _FilteredChaseReason | None:
     """Return the low-signal filter reason for one chase label, when present."""
     low_signal_reason = filtered_low_signal_label_reason(display_label)
     if low_signal_reason is not None:
@@ -111,7 +127,7 @@ def _filtered_chase_reason_counts(
     counts: dict[str, int] = {}
     for candidate in filtered_candidates:
         counts[candidate.filter_reason] = counts.get(candidate.filter_reason, 0) + 1
-    return counts
+    return json_object_or_empty(counts)
 
 def _focus_token_matches(candidate_token: str, focus_token: str) -> bool:
     if candidate_token == focus_token:
@@ -396,7 +412,7 @@ def _prepare_chase_round(
         errors=[],
     )
 
-async def _execute_entity_chase_round_terms(
+async def _execute_entity_chase_round_terms(  # noqa: PLR0915
     *,
     space_id: UUID,
     round_number: int,
@@ -418,19 +434,30 @@ async def _execute_entity_chase_round_terms(
     alphafold_enabled = sources.get("alphafold", False)
     marrvel_chase_enabled = sources.get("marrvel", True)
 
+    run_clinvar_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+    run_drugbank_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+    run_alphafold_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+    run_marrvel_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
     try:
         from artana_evidence_api.research_init_source_enrichment import (
-            run_alphafold_enrichment,
-            run_clinvar_enrichment,
-            run_drugbank_enrichment,
-            run_marrvel_enrichment,
+            run_alphafold_enrichment as imported_run_alphafold_enrichment,
+        )
+        from artana_evidence_api.research_init_source_enrichment import (
+            run_clinvar_enrichment as imported_run_clinvar_enrichment,
+        )
+        from artana_evidence_api.research_init_source_enrichment import (
+            run_drugbank_enrichment as imported_run_drugbank_enrichment,
+        )
+        from artana_evidence_api.research_init_source_enrichment import (
+            run_marrvel_enrichment as imported_run_marrvel_enrichment,
         )
     except ImportError:
-        run_clinvar_enrichment = None
-        run_drugbank_enrichment = None
-        run_alphafold_enrichment = None
-        run_marrvel_enrichment = None
         errors.append("Chase round: structured enrichment modules not available")
+    else:
+        run_clinvar_enrichment = imported_run_clinvar_enrichment
+        run_drugbank_enrichment = imported_run_drugbank_enrichment
+        run_alphafold_enrichment = imported_run_alphafold_enrichment
+        run_marrvel_enrichment = imported_run_marrvel_enrichment
 
     if run_clinvar_enrichment is not None:
         if clinvar_enabled:
