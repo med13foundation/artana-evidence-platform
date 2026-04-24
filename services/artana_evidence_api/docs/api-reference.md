@@ -44,17 +44,49 @@ One important runtime rule:
 - or `202 Accepted` when the caller sends `Prefer: respond-async` or the sync
   wait budget expires
 
+## V2 Public Naming
+
+`/v2` is the user-facing naming layer. It keeps the same underlying workflow
+behavior, but uses product terms instead of runtime terms:
+
+| V1 term | V2 term | Why |
+| --- | --- | --- |
+| `runs` | `tasks` | A task is one piece of work the user asked Artana to do. |
+| `agents/*/runs` | `workflows/*/tasks` | Users choose workflows; the backend decides how to execute them. |
+| `review-queue` | `review-items` | The resource is the set of items needing human review. |
+| `graph-explorer` | `evidence-map` | The product surface is evidence-first, not graph-internal. |
+| `graph-write-candidates` | `suggested-updates` | Chat produces suggested evidence-map updates. |
+| `artifacts` | `outputs` | Users inspect outputs from a task. |
+| `policy-decisions` | `decisions` | Users and auditors inspect what the task decided to do. |
+
+Recommended v2 entry points:
+
+| Goal | Path |
+| --- | --- |
+| Start or list tasks | `/v2/spaces/{space_id}/tasks` |
+| Inspect a task | `/v2/spaces/{space_id}/tasks/{task_id}` |
+| Read task progress/events | `/v2/spaces/{space_id}/tasks/{task_id}/progress` and `/events` |
+| Read task outputs | `/v2/spaces/{space_id}/tasks/{task_id}/outputs` |
+| Review pending items | `/v2/spaces/{space_id}/review-items` |
+| Start topic setup | `/v2/spaces/{space_id}/workflows/topic-setup/tasks` |
+| Start evidence curation | `/v2/spaces/{space_id}/workflows/evidence-curation/tasks` |
+| Start full research | `/v2/spaces/{space_id}/workflows/full-research/tasks` |
+| Browse trusted evidence | `/v2/spaces/{space_id}/evidence-map/*` |
+| Stage chat-suggested updates | `/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates` |
+
+The sections below are v2-first and use the public task/workflow naming.
+
 ## 1. Health And Authentication
 
 | Method | Path | What it does |
 | --- | --- | --- |
 | `GET` | `/health` | Returns service health. |
-| `POST` | `/v1/auth/bootstrap` | Creates the first self-hosted user and initial API key. |
-| `GET` | `/v1/auth/me` | Returns the current authenticated identity plus default space when present. |
-| `GET` | `/v1/auth/api-keys` | Lists API keys for the authenticated user. |
-| `POST` | `/v1/auth/api-keys` | Creates an additional API key for the authenticated user. |
-| `DELETE` | `/v1/auth/api-keys/{key_id}` | Revokes one API key. |
-| `POST` | `/v1/auth/api-keys/{key_id}/rotate` | Rotates one API key and returns the new secret once. |
+| `POST` | `/v2/auth/bootstrap` | Creates the first self-hosted user and initial API key. |
+| `GET` | `/v2/auth/me` | Returns the current authenticated identity plus default space when present. |
+| `GET` | `/v2/auth/api-keys` | Lists API keys for the authenticated user. |
+| `POST` | `/v2/auth/api-keys` | Creates an additional API key for the authenticated user. |
+| `DELETE` | `/v2/auth/api-keys/{key_id}` | Revokes one API key. |
+| `POST` | `/v2/auth/api-keys/{key_id}/rotate` | Rotates one API key and returns the new secret once. |
 
 Bootstrap request body:
 
@@ -82,7 +114,7 @@ Create extra API key body:
 Useful first check:
 
 ```bash
-curl -s "$HARNESS_URL/v1/auth/me" \
+curl -s "$HARNESS_URL/v2/auth/me" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -90,15 +122,15 @@ curl -s "$HARNESS_URL/v1/auth/me" \
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/spaces` | Lists spaces visible to the caller. |
-| `POST` | `/v1/spaces` | Creates a space. |
-| `PUT` | `/v1/spaces/default` | Gets or creates the caller's personal default space. |
-| `DELETE` | `/v1/spaces/{space_id}` | Archives a space. |
-| `GET` | `/v1/spaces/{space_id}/members` | Lists space members. |
-| `POST` | `/v1/spaces/{space_id}/members` | Adds one member to the space. |
-| `DELETE` | `/v1/spaces/{space_id}/members/{user_id}` | Removes one member from the space. |
-| `PATCH` | `/v1/spaces/{space_id}/settings` | Updates owner-managed space settings. |
-| `GET` | `/v1/spaces/{space_id}/research-state` | Returns the current long-lived research state snapshot. |
+| `GET` | `/v2/spaces` | Lists spaces visible to the caller. |
+| `POST` | `/v2/spaces` | Creates a space. |
+| `PUT` | `/v2/spaces/default` | Gets or creates the caller's personal default space. |
+| `DELETE` | `/v2/spaces/{space_id}` | Archives a space. |
+| `GET` | `/v2/spaces/{space_id}/members` | Lists space members. |
+| `POST` | `/v2/spaces/{space_id}/members` | Adds one member to the space. |
+| `DELETE` | `/v2/spaces/{space_id}/members/{user_id}` | Removes one member from the space. |
+| `PATCH` | `/v2/spaces/{space_id}/settings` | Updates owner-managed space settings. |
+| `GET` | `/v2/spaces/{space_id}/research-state` | Returns the current long-lived research state snapshot. |
 
 Create space body:
 
@@ -133,34 +165,34 @@ Settings update body:
 }
 ```
 
-Use `PUT /v1/spaces/default` when you just want one working space without
+Use `PUT /v2/spaces/default` when you just want one working space without
 choosing a slug or creating space metadata manually.
 
-## 3. Harness Discovery
+## 3. Workflow Templates
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/harnesses` | Lists available harness templates. |
-| `GET` | `/v1/harnesses/{harness_id}` | Returns one harness template. |
+| `GET` | `/v2/workflow-templates` | Lists available workflow templates. |
+| `GET` | `/v2/workflow-templates/{template_id}` | Returns one workflow template. |
 
-## 4. Generic Run Lifecycle And Transparency
+## 4. Generic Task Lifecycle And Transparency
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `POST` | `/v1/spaces/{space_id}/runs` | Starts one generic harness run by `harness_id`. |
-| `GET` | `/v1/spaces/{space_id}/runs` | Lists runs in a space. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}` | Returns one run. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/progress` | Returns the latest progress snapshot. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/events` | Returns lifecycle events. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/capabilities` | Returns the frozen tool and policy snapshot for the run. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/policy-decisions` | Returns ordered tool and review decisions for the run. |
-| `POST` | `/v1/spaces/{space_id}/runs/{run_id}/resume` | Resumes a paused run. |
+| `POST` | `/v2/spaces/{space_id}/tasks` | Starts one generic task by `workflow_template_id`. |
+| `GET` | `/v2/spaces/{space_id}/tasks` | Lists tasks in a space. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}` | Returns one task. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/progress` | Returns the latest progress snapshot. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/events` | Returns lifecycle events. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/capabilities` | Returns the frozen tool and policy snapshot for the task. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/decisions` | Returns ordered tool and review decisions for the task. |
+| `POST` | `/v2/spaces/{space_id}/tasks/{task_id}/resume` | Resumes a paused task. |
 
 Generic run creation body:
 
 ```json
 {
-  "harness_id": "research-bootstrap",
+  "workflow_template_id": "research-bootstrap",
   "title": "Bootstrap MED13 evidence map",
   "input_payload": {
     "objective": "Find the strongest evidence for MED13 in congenital heart disease",
@@ -172,20 +204,20 @@ Generic run creation body:
 
 Transparency endpoints answer:
 
-- what tools the run could use
+- what tools the task could use
 - what tools it actually used
 - whether later manual review changed the final story
 
-## 5. Artifacts, Workspace, Intent, And Approvals
+## 5. Outputs, Working State, Plans, And Approvals
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/artifacts` | Lists artifact keys for one run. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/artifacts/{artifact_key}` | Returns one artifact. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/workspace` | Returns the latest workspace snapshot. |
-| `POST` | `/v1/spaces/{space_id}/runs/{run_id}/intent` | Records a run intent plan with proposed actions. |
-| `GET` | `/v1/spaces/{space_id}/runs/{run_id}/approvals` | Lists approvals for a run. |
-| `POST` | `/v1/spaces/{space_id}/runs/{run_id}/approvals/{approval_key}` | Approves or rejects one gated action. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/outputs` | Lists output keys for one task. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/outputs/{output_key}` | Returns one output. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/working-state` | Returns the latest working-state snapshot. |
+| `POST` | `/v2/spaces/{space_id}/tasks/{task_id}/planned-actions` | Records a task plan with proposed actions. |
+| `GET` | `/v2/spaces/{space_id}/tasks/{task_id}/approvals` | Lists approvals for a task. |
+| `POST` | `/v2/spaces/{space_id}/tasks/{task_id}/approvals/{approval_key}` | Approves or rejects one gated action. |
 
 Intent request body:
 
@@ -220,13 +252,13 @@ Approval request body:
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/spaces/{space_id}/chat-sessions` | Lists chat sessions. |
-| `POST` | `/v1/spaces/{space_id}/chat-sessions` | Creates a chat session. |
-| `GET` | `/v1/spaces/{space_id}/chat-sessions/{session_id}` | Returns one session with message history. |
-| `POST` | `/v1/spaces/{space_id}/chat-sessions/{session_id}/messages` | Sends one chat message and runs grounded chat. |
-| `GET` | `/v1/spaces/{space_id}/chat-sessions/{session_id}/messages/{run_id}/stream` | Streams chat run events for the given message run. |
-| `POST` | `/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write` | Converts reviewed chat findings into staged graph proposals. |
-| `POST` | `/v1/spaces/{space_id}/chat-sessions/{session_id}/graph-write-candidates/{candidate_index}/review` | Promotes or rejects one inline chat candidate. |
+| `GET` | `/v2/spaces/{space_id}/chat-sessions` | Lists chat sessions. |
+| `POST` | `/v2/spaces/{space_id}/chat-sessions` | Creates a chat session. |
+| `GET` | `/v2/spaces/{space_id}/chat-sessions/{session_id}` | Returns one session with message history. |
+| `POST` | `/v2/spaces/{space_id}/chat-sessions/{session_id}/messages` | Sends one chat message and runs grounded chat. |
+| `GET` | `/v2/spaces/{space_id}/chat-sessions/{session_id}/messages/{task_id}/stream` | Streams chat run events for the given message run. |
+| `POST` | `/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates` | Converts reviewed chat findings into staged graph proposals. |
+| `POST` | `/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates/{candidate_index}/decision` | Promotes or rejects one inline chat candidate. |
 
 Create session body:
 
@@ -255,8 +287,8 @@ Send message body:
 The default governed path is:
 
 1. send the chat message
-2. stage generic proposals with `/proposals/graph-write`
-3. review those items through `/review-queue`
+2. stage generic proposals with `/suggested-updates`
+3. review those items through `/review-items`
 
 Inline chat-candidate review still exists, but it is the advanced path.
 
@@ -264,11 +296,11 @@ Inline chat-candidate review still exists, but it is the advanced path.
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/spaces/{space_id}/documents` | Lists tracked documents. |
-| `GET` | `/v1/spaces/{space_id}/documents/{document_id}` | Returns one tracked document. |
-| `POST` | `/v1/spaces/{space_id}/documents/text` | Submits raw text as a tracked document. |
-| `POST` | `/v1/spaces/{space_id}/documents/pdf` | Uploads a PDF and stores the raw binary for later enrichment. |
-| `POST` | `/v1/spaces/{space_id}/documents/{document_id}/extract` | Runs extraction and returns staged proposals, review-only items, and skipped diagnostics. |
+| `GET` | `/v2/spaces/{space_id}/documents` | Lists tracked documents. |
+| `GET` | `/v2/spaces/{space_id}/documents/{document_id}` | Returns one tracked document. |
+| `POST` | `/v2/spaces/{space_id}/documents/text` | Submits raw text as a tracked document. |
+| `POST` | `/v2/spaces/{space_id}/documents/pdf` | Uploads a PDF and stores the raw binary for later enrichment. |
+| `POST` | `/v2/spaces/{space_id}/documents/{document_id}/extraction` | Runs extraction and returns staged proposals, review-only items, and skipped diagnostics. |
 
 Text submission body:
 
@@ -313,26 +345,26 @@ Important promotion nuance:
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/spaces/{space_id}/review-queue` | Lists the unified review queue across proposals, review-only items, and approvals. |
-| `GET` | `/v1/spaces/{space_id}/review-queue/{item_id}` | Returns one review queue item. |
-| `POST` | `/v1/spaces/{space_id}/review-queue/{item_id}/actions` | Applies one review action through the unified queue surface. |
-| `GET` | `/v1/spaces/{space_id}/proposals` | Lists proposal records directly. |
-| `GET` | `/v1/spaces/{space_id}/proposals/{proposal_id}` | Returns one proposal. |
-| `POST` | `/v1/spaces/{space_id}/proposals/{proposal_id}/promote` | Promotes one proposal directly. |
-| `POST` | `/v1/spaces/{space_id}/proposals/{proposal_id}/reject` | Rejects one proposal directly. |
+| `GET` | `/v2/spaces/{space_id}/review-items` | Lists the unified review queue across proposals, review-only items, and approvals. |
+| `GET` | `/v2/spaces/{space_id}/review-items/{item_id}` | Returns one review queue item. |
+| `POST` | `/v2/spaces/{space_id}/review-items/{item_id}/actions` | Applies one review action through the unified queue surface. |
+| `GET` | `/v2/spaces/{space_id}/proposals` | Lists proposal records directly. |
+| `GET` | `/v2/spaces/{space_id}/proposals/{proposal_id}` | Returns one proposal. |
+| `POST` | `/v2/spaces/{space_id}/proposals/{proposal_id}/promote` | Promotes one proposal directly. |
+| `POST` | `/v2/spaces/{space_id}/proposals/{proposal_id}/reject` | Rejects one proposal directly. |
 
-Use `/review-queue` as the default human review API.
+Use `/review-items` as the default human review API.
 
-Useful review-queue filters:
+Useful review-items filters:
 
 - `status`
 - `item_type`
 - `kind`
-- `run_id`
+- `task_id`
 - `document_id`
 - `source_family`
 
-Common review-queue actions:
+Common review-item actions:
 
 - proposals: `promote`, `reject`
 - review-only items: `convert_to_proposal`, `mark_resolved`, `dismiss`
@@ -357,7 +389,7 @@ Proposal list filters:
 
 - `status`
 - `proposal_type`
-- `run_id`
+- `task_id`
 - `document_id`
 
 Think of `/proposals` as the lower-level primitive behind the unified review
@@ -367,11 +399,11 @@ queue.
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/spaces/{space_id}/graph-explorer/entities` | Lists graph entities with optional search or type filters. |
-| `GET` | `/v1/spaces/{space_id}/graph-explorer/entities/{entity_id}/claims` | Lists claims linked to one entity. |
-| `GET` | `/v1/spaces/{space_id}/graph-explorer/claims` | Lists graph claims. |
-| `GET` | `/v1/spaces/{space_id}/graph-explorer/claims/{claim_id}/evidence` | Lists evidence rows for one claim. |
-| `POST` | `/v1/spaces/{space_id}/graph-explorer/document` | Returns a unified graph document with claim and evidence overlays. |
+| `GET` | `/v2/spaces/{space_id}/evidence-map/entities` | Lists graph entities with optional search or type filters. |
+| `GET` | `/v2/spaces/{space_id}/evidence-map/entities/{entity_id}/claims` | Lists claims linked to one entity. |
+| `GET` | `/v2/spaces/{space_id}/evidence-map/claims` | Lists graph claims. |
+| `GET` | `/v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence` | Lists evidence rows for one claim. |
+| `POST` | `/v2/spaces/{space_id}/evidence-map/document` | Returns a unified graph document with claim and evidence overlays. |
 
 Entity list query parameters:
 
@@ -409,8 +441,8 @@ new AI run.
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `POST` | `/v1/spaces/{space_id}/pubmed/searches` | Runs one saved PubMed search. |
-| `GET` | `/v1/spaces/{space_id}/pubmed/searches/{job_id}` | Returns one saved PubMed job. |
+| `POST` | `/v2/spaces/{space_id}/sources/pubmed/searches` | Runs one saved PubMed search. |
+| `GET` | `/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}` | Returns one saved PubMed job. |
 
 PubMed search body:
 
@@ -434,9 +466,9 @@ PubMed search body:
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `POST` | `/v1/spaces/{space_id}/marrvel/searches` | Runs one MARRVEL discovery search. |
-| `GET` | `/v1/spaces/{space_id}/marrvel/searches/{result_id}` | Returns one saved MARRVEL result. |
-| `POST` | `/v1/spaces/{space_id}/marrvel/ingest` | Fetches MARRVEL gene data and seeds graph entities directly. |
+| `POST` | `/v2/spaces/{space_id}/sources/marrvel/searches` | Runs one MARRVEL discovery search. |
+| `GET` | `/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}` | Returns one saved MARRVEL result. |
+| `POST` | `/v2/spaces/{space_id}/sources/marrvel/ingestion` | Fetches MARRVEL gene data and seeds graph entities directly. |
 
 MARRVEL search body:
 
@@ -466,16 +498,16 @@ MARRVEL ingest body:
 }
 ```
 
-`/marrvel/ingest` is the advanced direct-write path. Normal researcher workflows
+`/sources/marrvel/ingestion` is the advanced direct-write path. Normal researcher workflows
 should prefer search plus governed follow-up review.
 
 ## 11. Research Init And Onboarding
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `POST` | `/v1/spaces/{space_id}/research-init` | Initializes a space from natural language and selected sources. |
-| `POST` | `/v1/spaces/{space_id}/agents/research-onboarding/runs` | Creates the first onboarding assistant message for a space. |
-| `POST` | `/v1/spaces/{space_id}/agents/research-onboarding/turns` | Continues one onboarding thread after a researcher reply. |
+| `POST` | `/v2/spaces/{space_id}/research-plan` | Initializes a space from natural language and selected sources. |
+| `POST` | `/v2/spaces/{space_id}/workflows/research-onboarding/tasks` | Creates the first onboarding assistant message for a space. |
+| `POST` | `/v2/spaces/{space_id}/workflows/research-onboarding/turns` | Continues one onboarding thread after a researcher reply. |
 
 Research-init body:
 
@@ -533,20 +565,20 @@ Research onboarding continuation body:
 ```
 
 Use onboarding when you want the service to guide setup conversationally.
-Use `research-init` when you already know the research objective and source mix.
+Use `research-plan` when you already know the research objective and source mix.
 
 ## 12. Analysis And Research Workflow Runs
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `POST` | `/v1/spaces/{space_id}/agents/graph-search/runs` | Starts one graph-search run. |
-| `POST` | `/v1/spaces/{space_id}/agents/graph-connections/runs` | Starts one graph-connection run. |
-| `POST` | `/v1/spaces/{space_id}/agents/hypotheses/runs` | Starts one hypothesis exploration run. |
-| `POST` | `/v1/spaces/{space_id}/agents/research-bootstrap/runs` | Starts one research bootstrap run. |
-| `POST` | `/v1/spaces/{space_id}/agents/continuous-learning/runs` | Starts one continuous-learning cycle. |
-| `POST` | `/v1/spaces/{space_id}/agents/mechanism-discovery/runs` | Starts one mechanism-discovery run. |
-| `POST` | `/v1/spaces/{space_id}/agents/graph-curation/runs` | Starts one governed claim-curation run. |
-| `POST` | `/v1/spaces/{space_id}/agents/full-ai-orchestrator/runs` | Starts one deterministic full AI orchestrator run. |
+| `POST` | `/v2/spaces/{space_id}/workflows/evidence-search/tasks` | Starts one graph-search run. |
+| `POST` | `/v2/spaces/{space_id}/workflows/connection-discovery/tasks` | Starts one graph-connection run. |
+| `POST` | `/v2/spaces/{space_id}/workflows/hypothesis-discovery/tasks` | Starts one hypothesis exploration run. |
+| `POST` | `/v2/spaces/{space_id}/workflows/topic-setup/tasks` | Starts one research bootstrap run. |
+| `POST` | `/v2/spaces/{space_id}/workflows/continuous-review/tasks` | Starts one continuous-learning cycle. |
+| `POST` | `/v2/spaces/{space_id}/workflows/mechanism-discovery/tasks` | Starts one mechanism-discovery run. |
+| `POST` | `/v2/spaces/{space_id}/workflows/evidence-curation/tasks` | Starts one governed claim-curation run. |
+| `POST` | `/v2/spaces/{space_id}/workflows/autopilot/tasks` | Starts one deterministic full AI orchestrator run. |
 
 Graph search body:
 
@@ -650,13 +682,13 @@ immediately instead of waiting for the inline completion window.
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | `/v1/spaces/{space_id}/schedules` | Lists saved schedules. |
-| `POST` | `/v1/spaces/{space_id}/schedules` | Creates one schedule. |
-| `GET` | `/v1/spaces/{space_id}/schedules/{schedule_id}` | Returns one schedule plus recent runs. |
-| `PATCH` | `/v1/spaces/{space_id}/schedules/{schedule_id}` | Updates one schedule. |
-| `POST` | `/v1/spaces/{space_id}/schedules/{schedule_id}/pause` | Pauses one schedule. |
-| `POST` | `/v1/spaces/{space_id}/schedules/{schedule_id}/resume` | Resumes one schedule. |
-| `POST` | `/v1/spaces/{space_id}/schedules/{schedule_id}/run-now` | Triggers an immediate run from the stored schedule. |
+| `GET` | `/v2/spaces/{space_id}/schedules` | Lists saved schedules. |
+| `POST` | `/v2/spaces/{space_id}/schedules` | Creates one schedule. |
+| `GET` | `/v2/spaces/{space_id}/schedules/{schedule_id}` | Returns one schedule plus recent runs. |
+| `PATCH` | `/v2/spaces/{space_id}/schedules/{schedule_id}` | Updates one schedule. |
+| `POST` | `/v2/spaces/{space_id}/schedules/{schedule_id}/pause` | Pauses one schedule. |
+| `POST` | `/v2/spaces/{space_id}/schedules/{schedule_id}/resume` | Resumes one schedule. |
+| `POST` | `/v2/spaces/{space_id}/schedules/{schedule_id}/start-now` | Triggers an immediate run from the stored schedule. |
 
 Create schedule body:
 
@@ -690,11 +722,11 @@ Create schedule body:
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `POST` | `/v1/spaces/{space_id}/agents/supervisor/runs` | Starts one composed supervisor workflow. |
-| `GET` | `/v1/spaces/{space_id}/agents/supervisor/runs` | Lists typed supervisor runs. |
-| `GET` | `/v1/spaces/{space_id}/agents/supervisor/runs/{run_id}` | Returns typed supervisor detail. |
-| `GET` | `/v1/spaces/{space_id}/agents/supervisor/dashboard` | Returns typed dashboard summary. |
-| `POST` | `/v1/spaces/{space_id}/agents/supervisor/runs/{run_id}/chat-graph-write-candidates/{candidate_index}/review` | Promotes or rejects one supervisor briefing-chat candidate. |
+| `POST` | `/v2/spaces/{space_id}/workflows/full-research/tasks` | Starts one composed supervisor workflow. |
+| `GET` | `/v2/spaces/{space_id}/workflows/full-research/tasks` | Lists typed supervisor runs. |
+| `GET` | `/v2/spaces/{space_id}/workflows/full-research/tasks/{task_id}` | Returns typed supervisor detail. |
+| `GET` | `/v2/spaces/{space_id}/workflows/full-research/dashboard` | Returns typed dashboard summary. |
+| `POST` | `/v2/spaces/{space_id}/workflows/full-research/tasks/{task_id}/suggested-updates/{candidate_index}/decision` | Promotes or rejects one supervisor briefing-chat candidate. |
 
 Supervisor create body:
 
@@ -741,22 +773,22 @@ Supervisor list filters:
 
 Most users should start with:
 
-- `/v1/spaces/default`
-- `/v1/spaces/{space_id}/documents/*`
-- `/v1/spaces/{space_id}/review-queue`
-- `/v1/spaces/{space_id}/chat-sessions/*`
-- `/v1/spaces/{space_id}/pubmed/searches`
-- `/v1/spaces/{space_id}/research-init`
+- `/v2/spaces/default`
+- `/v2/spaces/{space_id}/documents/*`
+- `/v2/spaces/{space_id}/review-items`
+- `/v2/spaces/{space_id}/chat-sessions/*`
+- `/v2/spaces/{space_id}/sources/pubmed/searches`
+- `/v2/spaces/{space_id}/research-plan`
 
 Advanced or lower-level surfaces:
 
-- `/v1/spaces/{space_id}/proposals/*`
+- `/v2/spaces/{space_id}/proposals/*`
 - inline chat candidate review
-- `/v1/spaces/{space_id}/marrvel/ingest`
+- `/v2/spaces/{space_id}/sources/marrvel/ingestion`
 - graph explorer entity, claim, evidence, and unified-document routes
-- `/v1/spaces/{space_id}/members/*`
-- `/v1/spaces/{space_id}/settings`
-- direct generic `/runs` creation
+- `/v2/spaces/{space_id}/members/*`
+- `/v2/spaces/{space_id}/settings`
+- direct generic `/tasks` creation
 
 ## Read Versus Write Access
 
@@ -766,7 +798,7 @@ Read endpoints include:
 - auth identity
 - harness discovery
 - space list
-- run list/detail/progress/events/artifacts/workspace
+- run list/detail/progress/events/outputs/working-state
 - chat session list/detail
 - document list/detail
 - review queue list/detail

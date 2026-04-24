@@ -13,6 +13,8 @@ overbuilding too early.
 - Keep both generated OpenAPI artifacts current.
 - Keep `services/artana_evidence_db/artana-evidence-db.generated.ts` current.
 - Do not reintroduce the removed top-level `src` runtime package.
+- Keep the v2 public API migration moving according to
+  [V2 API Migration Plan](./v2_api_migration_plan.md).
 
 ## P1 - Finish Evidence API Layering Cleanup
 
@@ -49,6 +51,14 @@ overbuilding too early.
   tester creation, graph space sync, and one review-queue flow.
 - Keep live external API tests opt-in. They depend on network and third-party
   service availability.
+
+## P1 - Move The Public Surface To V2
+
+- Move public docs, examples, and user guides to `/v2` first.
+- Move smoke suites, user-flow tests, and helper scripts to `/v2` first.
+- Rename v2 request and response fields that still leak `run` or `harness`
+  nouns.
+- Keep v1 as a compatibility layer only while the v2 cutover finishes.
 
 ## P3 - Product Surfaces Outside This Repo
 

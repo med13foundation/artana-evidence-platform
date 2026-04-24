@@ -1,15 +1,15 @@
 # Runtime, Debugging, And Transparency
 
 This page is for developers, operators, and power users who need to understand
-what happened during a run.
+what happened during a task.
 
 ## Queue-First Runtime Behavior
 
-Many run-start endpoints are queue-first.
+Many task-start endpoints are queue-first.
 
 They may return:
 
-- `201 Created` when the run completes within the inline wait window
+- `201 Created` when the task completes within the inline wait window
 - `202 Accepted` when you ask for async behavior or the wait budget expires
 
 To prefer async behavior, send:
@@ -18,31 +18,31 @@ To prefer async behavior, send:
 Prefer: respond-async
 ```
 
-## Run Lifecycle
+## Task Lifecycle
 
 Useful endpoints:
 
-- `POST /v1/spaces/{space_id}/runs`
-- `GET /v1/spaces/{space_id}/runs`
-- `GET /v1/spaces/{space_id}/runs/{run_id}`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/progress`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/events`
-- `POST /v1/spaces/{space_id}/runs/{run_id}/resume`
+- `POST /v2/spaces/{space_id}/tasks`
+- `GET /v2/spaces/{space_id}/tasks`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/progress`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/events`
+- `POST /v2/spaces/{space_id}/tasks/{task_id}/resume`
 
-Use these when you need to know whether a run is queued, running, completed,
+Use these when you need to know whether a task is queued, running, completed,
 failed, or paused.
 
-## Artifacts
+## Outputs
 
-Artifacts are saved outputs from a run.
+Outputs are saved materials from a task.
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts/{artifact_key}`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/workspace`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs/{output_key}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/working-state`
 
-Examples of artifacts:
+Examples of outputs:
 
 - research brief
 - source inventory
@@ -54,15 +54,15 @@ Examples of artifacts:
 
 Transparency endpoints help answer:
 
-- what was the run allowed to do?
-- what did the run actually do?
+- what was the task allowed to do?
+- what did the task actually do?
 - did a human later approve or reject anything?
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/capabilities`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/policy-decisions`
-- `POST /v1/spaces/{space_id}/runs/{run_id}/intent`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/capabilities`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/decisions`
+- `POST /v2/spaces/{space_id}/tasks/{task_id}/planned-actions`
 
 ## Approvals
 
@@ -70,8 +70,8 @@ Some workflows pause for approval before continuing.
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/approvals`
-- `POST /v1/spaces/{space_id}/runs/{run_id}/approvals/{approval_key}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/approvals`
+- `POST /v2/spaces/{space_id}/tasks/{task_id}/approvals/{approval_key}/decision`
 
 Approval body:
 
@@ -86,12 +86,11 @@ Use approvals when a workflow needs permission before applying a gated action.
 
 ## Workflow Template Discovery
 
-Harnesses are the internal workflow-template objects exposed by the Evidence
-API.
+Workflow templates are the public template objects exposed by the Evidence API.
 
 Useful endpoints:
 
-- `GET /v1/harnesses`
-- `GET /v1/harnesses/{harness_id}`
+- `GET /v2/workflow-templates`
+- `GET /v2/workflow-templates/{template_id}`
 
 If you are unsure what workflow ids exist, start here.

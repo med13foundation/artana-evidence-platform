@@ -118,17 +118,17 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--bootstrap-key",
         default=_env_first("ARTANA_EVIDENCE_API_BOOTSTRAP_KEY", "ARTANA_BOOTSTRAP_KEY"),
-        help="Bootstrap secret for /v1/auth/bootstrap.",
+        help="Bootstrap secret for /v2/auth/bootstrap.",
     )
     parser.add_argument(
         "--api-key",
         default=_env_first("ARTANA_API_KEY", "ARTANA_EVIDENCE_API_KEY"),
-        help="Existing Artana API key for /v1/auth/api-keys.",
+        help="Existing Artana API key for /v2/auth/api-keys.",
     )
     parser.add_argument(
         "--access-token",
         default=_env_first("ARTANA_ACCESS_TOKEN", "TOKEN"),
-        help="Existing bearer token for /v1/auth/api-keys.",
+        help="Existing bearer token for /v2/auth/api-keys.",
     )
     parser.add_argument(
         "--email",
@@ -323,7 +323,7 @@ def _bootstrap_one_key(
     config: IssueApiKeyConfig,
 ) -> IssuedKeyResult:
     response = client.post(
-        "/v1/auth/bootstrap",
+        "/v2/auth/bootstrap",
         headers=_bootstrap_headers(config),
         json=_bootstrap_payload(config),
     )
@@ -336,7 +336,7 @@ def _create_one_key(
     config: IssueApiKeyConfig,
 ) -> IssuedKeyResult:
     response = client.post(
-        "/v1/auth/api-keys",
+        "/v2/auth/api-keys",
         headers=_auth_headers(config),
         json=_create_key_payload(config),
     )
