@@ -578,7 +578,7 @@ def _create_research_space(
     _, response_payload = _request_json_with_status(
         client=client,
         method="POST",
-        path="/v1/spaces",
+        path="/v2/spaces",
         headers=auth_headers,
         json_body=payload,
         acceptable_statuses=(_HTTP_CREATED,),

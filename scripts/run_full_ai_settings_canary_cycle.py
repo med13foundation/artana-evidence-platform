@@ -49,6 +49,9 @@ from scripts.run_full_ai_real_space_canary import (  # noqa: E402
     _round_float,
     _run_runtime_seconds,
     _safe_filename,
+    _output_list,
+    _task_payload,
+    _working_state_snapshot,
 )
 
 if TYPE_CHECKING:
@@ -250,13 +253,13 @@ def _execute_settings_path_run(
             queued_response = _request_json(
                 client=client,
                 method="POST",
-                path=f"/v1/spaces/{space_id}/research-init",
+                path=f"/v2/spaces/{space_id}/research-plan",
                 headers=config.auth_headers,
                 json_body=request_payload,
                 acceptable_statuses=(_HTTP_CREATED,),
                 timeout_seconds=request_timeout_seconds,
             )
-            run_info = _dict_value(queued_response.get("run"))
+            run_info = _task_payload(queued_response)
             run_id = _required_string(run_info, "id", "queued response run")
         except httpx.TimeoutException:
             recovered_run = _recover_queued_run_by_title(
@@ -273,7 +276,7 @@ def _execute_settings_path_run(
             if recovered_run is None:
                 raise
             run_id = _required_string(recovered_run, "id", "recovered queued run")
-            queued_response = {"run": recovered_run}
+            queued_response = {"task": recovered_run}
 
         run_payload, progress_payload, timed_out, completed_during_timeout_grace = (
             _poll_terminal_run(
@@ -382,9 +385,9 @@ def _guarded_payloads_have_pending_proofs(
     workspace_payload: JSONObject,
     artifacts_payload: JSONObject,
 ) -> bool:
-    workspace_snapshot = _dict_value(_dict_value(workspace_payload).get("snapshot"))
+    workspace_snapshot = _working_state_snapshot(workspace_payload)
     artifacts = _artifact_contents_by_key(
-        _list_of_dicts(_dict_value(artifacts_payload).get("artifacts")),
+        _output_list(artifacts_payload),
     )
     guarded_proofs = _dict_value(workspace_snapshot.get("guarded_decision_proofs"))
     if not guarded_proofs:
@@ -409,8 +412,8 @@ def _summarize_settings_run(  # noqa: PLR0913
     completed_during_timeout_grace: bool,
     errors: list[str],
 ) -> JSONObject:
-    workspace_snapshot = _dict_value(_dict_value(workspace_payload).get("snapshot"))
-    artifact_list = _list_of_dicts(_dict_value(artifacts_payload).get("artifacts"))
+    workspace_snapshot = _working_state_snapshot(workspace_payload)
+    artifact_list = _output_list(artifacts_payload)
     artifacts_by_key = _artifact_contents_by_key(artifact_list)
     payload_errors = _payload_errors(
         run_payload=run_payload,

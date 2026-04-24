@@ -126,6 +126,26 @@ _MODE_SEQUENCE: tuple[LiveCanaryMode, ...] = (
 )
 
 
+def _task_payload(payload: JSONObject | None) -> JSONObject:
+    payload_dict = _dict_value(payload)
+    return _dict_value(payload_dict.get("task") or payload_dict.get("run"))
+
+
+def _working_state_snapshot(payload: JSONObject | None) -> JSONObject:
+    payload_dict = _dict_value(payload)
+    return _dict_value(
+        payload_dict.get("working_state") or payload_dict.get("snapshot"),
+    )
+
+
+def _output_list(payload: JSONObject | None) -> list[JSONObject]:
+    payload_dict = _dict_value(payload)
+    outputs = payload_dict.get("outputs")
+    if isinstance(outputs, list):
+        return _list_of_dicts(outputs)
+    return _list_of_dicts(payload_dict.get("artifacts"))
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse CLI arguments for the live canary runner."""
 
@@ -408,13 +428,13 @@ def _execute_live_run(
             queued_response = _request_json(
                 client=client,
                 method="POST",
-                path=f"/v1/spaces/{space_id}/research-init",
+                path=f"/v2/spaces/{space_id}/research-plan",
                 headers=config.auth_headers,
                 json_body=request_payload,
                 acceptable_statuses=(_HTTP_CREATED,),
                 timeout_seconds=request_timeout_seconds,
             )
-            run_info = _dict_value(queued_response.get("run"))
+            run_info = _task_payload(queued_response)
             run_id = _required_string(run_info, "id", "queued response run")
         except httpx.TimeoutException:
             recovered_run = _recover_queued_run_by_title(
@@ -431,7 +451,7 @@ def _execute_live_run(
             if recovered_run is None:
                 raise
             run_id = _required_string(recovered_run, "id", "recovered queued run")
-            queued_response = {"run": recovered_run}
+            queued_response = {"task": recovered_run}
         (
             run_payload,
             progress_payload,
@@ -552,7 +572,7 @@ def _poll_terminal_run_with_grace(  # noqa: PLR0913
             latest_run = _request_json(
                 client=client,
                 method="GET",
-                path=f"/v1/spaces/{space_id}/runs/{run_id}",
+                path=f"/v2/spaces/{space_id}/tasks/{run_id}",
                 headers=headers,
                 timeout_seconds=request_timeout_seconds,
             )
@@ -565,7 +585,7 @@ def _poll_terminal_run_with_grace(  # noqa: PLR0913
             latest_progress = _optional_json_request(
                 client=client,
                 method="GET",
-                path=f"/v1/spaces/{space_id}/runs/{run_id}/progress",
+                path=f"/v2/spaces/{space_id}/tasks/{run_id}/progress",
                 headers=headers,
                 timeout_seconds=request_timeout_seconds,
             )
@@ -618,7 +638,7 @@ def _terminal_grace_reconciliation(  # noqa: PLR0913
             reconciled_run = _request_json(
                 client=client,
                 method="GET",
-                path=f"/v1/spaces/{space_id}/runs/{run_id}",
+                path=f"/v2/spaces/{space_id}/tasks/{run_id}",
                 headers=headers,
                 timeout_seconds=request_timeout_seconds,
             )
@@ -631,7 +651,7 @@ def _terminal_grace_reconciliation(  # noqa: PLR0913
             reconciled_progress = _optional_json_request(
                 client=client,
                 method="GET",
-                path=f"/v1/spaces/{space_id}/runs/{run_id}/progress",
+                path=f"/v2/spaces/{space_id}/tasks/{run_id}/progress",
                 headers=headers,
                 timeout_seconds=request_timeout_seconds,
             )
@@ -695,8 +715,8 @@ def _guarded_payloads_need_stabilization(
     workspace_payload: JSONObject | None,
     artifacts_payload: JSONObject | None,
 ) -> bool:
-    workspace_snapshot = _dict_value(_dict_value(workspace_payload).get("snapshot"))
-    artifact_list = _list_of_dicts(_dict_value(artifacts_payload).get("artifacts"))
+    workspace_snapshot = _working_state_snapshot(workspace_payload)
+    artifact_list = _output_list(artifacts_payload)
     artifacts_by_key = _artifact_contents_by_key(artifact_list)
     guarded_proofs = _dict_value(workspace_snapshot.get("guarded_decision_proofs"))
     if not guarded_proofs:
@@ -722,7 +742,7 @@ def _recover_queued_run_by_title(  # noqa: PLR0913
             runs_payload = _request_json(
                 client=client,
                 method="GET",
-                path=f"/v1/spaces/{space_id}/runs?limit=200",
+                path=f"/v2/spaces/{space_id}/tasks?limit=200",
                 headers=headers,
                 timeout_seconds=timeout_seconds,
             )
@@ -731,8 +751,8 @@ def _recover_queued_run_by_title(  # noqa: PLR0913
                 raise
             time.sleep(interval_seconds)
             continue
-        runs = _list_of_dicts(runs_payload.get("runs"))
-        for run in runs:
+        tasks = _list_of_dicts(runs_payload.get("tasks") or runs_payload.get("runs"))
+        for run in tasks:
             if _maybe_string(run.get("title")) != title:
                 continue
             created_at = _parse_datetime(run.get("created_at"))
@@ -759,14 +779,14 @@ def _fetch_terminal_run_payloads(  # noqa: PLR0913
             workspace_payload = _request_json(
                 client=client,
                 method="GET",
-                path=f"/v1/spaces/{space_id}/runs/{run_id}/workspace",
+                path=f"/v2/spaces/{space_id}/tasks/{run_id}/working-state",
                 headers=headers,
                 timeout_seconds=request_timeout_seconds,
             )
             artifacts_payload = _request_json(
                 client=client,
                 method="GET",
-                path=f"/v1/spaces/{space_id}/runs/{run_id}/artifacts",
+                path=f"/v2/spaces/{space_id}/tasks/{run_id}/outputs",
                 headers=headers,
                 timeout_seconds=request_timeout_seconds,
             )
@@ -801,8 +821,8 @@ def _summarize_live_run(  # noqa: PLR0913
     errors: list[str],
     run_id: str | None,
 ) -> JSONObject:
-    workspace_snapshot = _dict_value(_dict_value(workspace_payload).get("snapshot"))
-    artifact_list = _list_of_dicts(_dict_value(artifacts_payload).get("artifacts"))
+    workspace_snapshot = _working_state_snapshot(workspace_payload)
+    artifact_list = _output_list(artifacts_payload)
     artifacts_by_key = _artifact_contents_by_key(artifact_list)
     payload_errors: list[str] = []
     if run_payload is None:

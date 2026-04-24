@@ -8,28 +8,28 @@ you can inspect it directly or ask AI-assisted questions over it.
 List entities:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/graph-explorer/entities?q=MED13" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/entities?q=MED13" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
 List claims:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/graph-explorer/claims" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/claims" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
 List evidence for one claim:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/graph-explorer/claims/<claim_id>/evidence" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/claims/<claim_id>/evidence" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
-Build a graph document around seed entities:
+Export an evidence-map document around seed entities:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/graph-explorer/document" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/evidence-map/export" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -40,13 +40,13 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/graph-explorer/document" \
   }'
 ```
 
-Use graph explorer when you want read-only inspection without starting a new AI
-run.
+Use the evidence map when you want read-only inspection without starting a new AI
+task.
 
 ## Ask A Graph Search Question
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/agents/graph-search/runs" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/workflows/evidence-search/tasks" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -67,7 +67,7 @@ state.
 Create a chat session:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/chat-sessions" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/chat-sessions" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"title": "MED13 briefing"}'
@@ -76,7 +76,7 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/chat-sessions" \
 Send a message:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -94,7 +94,7 @@ If chat finds possible graph changes, stage them as proposals and review them
 before trusting them:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/proposals/graph-write" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/suggested-updates" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -X POST
 ```
