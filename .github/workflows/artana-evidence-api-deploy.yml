@@ -49,11 +49,69 @@ env:
   GCP_DEPLOYER_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
 
 jobs:
+  evidence-api-service-checks:
+    name: Evidence API Service Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: artana_dev
+          POSTGRES_USER: artana_dev
+          POSTGRES_PASSWORD: artana_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U artana_dev -d artana_dev"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: make install-dev
+
+      - name: Write Postgres env file
+        run: |
+          printf '%s\n' \
+            'ARTANA_POSTGRES_DB=artana_dev' \
+            'ARTANA_POSTGRES_USER=artana_dev' \
+            'ARTANA_POSTGRES_PASSWORD=artana_dev_password' \
+            'ARTANA_POSTGRES_PORT=5432' \
+            'ARTANA_POSTGRES_HOST=127.0.0.1' \
+            'DATABASE_URL=postgresql+psycopg2://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev' \
+            'ASYNC_DATABASE_URL=postgresql+asyncpg://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev' \
+            'ALEMBIC_DATABASE_URL=postgresql+psycopg2://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev' \
+            'FLUJO_STATE_URI=postgresql://artana_dev:artana_dev_password@127.0.0.1:5432/artana_dev?options=-c%20search_path=flujo,public' \
+            'ARTANA_ENABLE_ENTITY_EMBEDDINGS=0' \
+            'ARTANA_ENABLE_RELATION_SUGGESTIONS=0' \
+            'NCBI_API_KEY=' \
+            'NCBI_EMAIL=' \
+            'NCBI_TOOL=artana-resource-library' \
+            'ARTANA_ADMIN_PASSWORD=change_me_locally1' \
+            > .env.postgres
+
+      - name: Run evidence API service checks
+        run: make artana-evidence-api-service-checks
+
   deploy-dev:
     name: Deploy Artana Evidence API to Dev
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    needs: evidence-api-service-checks
     runs-on: ubuntu-latest
     environment:
       name: dev
@@ -108,6 +166,7 @@ jobs:
           ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api-dev
           ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_DEV }}
           AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_DEV }}
+          GRAPH_JWT_SECRET_NAME: ${{ vars.GRAPH_JWT_SECRET_NAME_DEV }}
           OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_DEV }}
           ARTANA_EVIDENCE_API_GRANT_SECRET_ACCESS_ONLY: "true"
         run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
@@ -130,6 +189,7 @@ jobs:
           ARTANA_EVIDENCE_API_CLOUDSQL_CONNECTION_NAME: ${{ vars.GRAPH_HARNESS_CLOUDSQL_CONNECTION_NAME_DEV }}
           ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_DEV }}
           AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_DEV }}
+          GRAPH_JWT_SECRET_NAME: ${{ vars.GRAPH_JWT_SECRET_NAME_DEV }}
           OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_DEV }}
           GRAPH_API_URL: ${{ vars.GRAPH_PUBLIC_URL_DEV }}
           ARTANA_EVIDENCE_API_MIN_INSTANCES: ${{ vars.GRAPH_HARNESS_MIN_INSTANCES_DEV }}
@@ -152,6 +212,7 @@ jobs:
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    needs: evidence-api-service-checks
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -203,9 +264,11 @@ jobs:
         env:
           PROJECT_ID: ${{ env.PROJECT_ID }}
           REGION: ${{ env.REGION }}
+          ARTANA_ENV: staging
           ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api-staging
           ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_STAGING }}
           AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_STAGING }}
+          GRAPH_JWT_SECRET_NAME: ${{ vars.GRAPH_JWT_SECRET_NAME_STAGING }}
           OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_STAGING }}
           ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME: ${{ vars.ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME_STAGING }}
           ARTANA_EVIDENCE_API_GRANT_SECRET_ACCESS_ONLY: "true"
@@ -229,6 +292,7 @@ jobs:
           ARTANA_EVIDENCE_API_CLOUDSQL_CONNECTION_NAME: ${{ vars.GRAPH_HARNESS_CLOUDSQL_CONNECTION_NAME_STAGING }}
           ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_STAGING }}
           AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_STAGING }}
+          GRAPH_JWT_SECRET_NAME: ${{ vars.GRAPH_JWT_SECRET_NAME_STAGING }}
           OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_STAGING }}
           ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME: ${{ vars.ARTANA_EVIDENCE_API_BOOTSTRAP_KEY_SECRET_NAME_STAGING }}
           ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY: ${{ vars.ARTANA_EVIDENCE_API_REMOVE_BOOTSTRAP_KEY_STAGING }}
@@ -253,6 +317,7 @@ jobs:
     if: >
       (github.event_name == 'release' && github.event.action == 'published') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    needs: evidence-api-service-checks
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -304,9 +369,11 @@ jobs:
         env:
           PROJECT_ID: ${{ env.PROJECT_ID }}
           REGION: ${{ env.REGION }}
+          ARTANA_ENV: production
           ARTANA_EVIDENCE_API_SERVICE: artana-evidence-api
           ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_PROD }}
           AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_PROD }}
+          GRAPH_JWT_SECRET_NAME: ${{ vars.GRAPH_JWT_SECRET_NAME_PROD }}
           OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_PROD }}
           ARTANA_EVIDENCE_API_GRANT_SECRET_ACCESS_ONLY: "true"
         run: bash scripts/deploy/sync_artana_evidence_api_cloud_run_runtime_config.sh
@@ -329,6 +396,7 @@ jobs:
           ARTANA_EVIDENCE_API_CLOUDSQL_CONNECTION_NAME: ${{ vars.GRAPH_HARNESS_CLOUDSQL_CONNECTION_NAME_PROD }}
           ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME: ${{ vars.GRAPH_HARNESS_DATABASE_URL_SECRET_NAME_PROD }}
           AUTH_JWT_SECRET_NAME: ${{ vars.ARTANA_JWT_SECRET_NAME_PROD }}
+          GRAPH_JWT_SECRET_NAME: ${{ vars.GRAPH_JWT_SECRET_NAME_PROD }}
           OPENAI_API_KEY_SECRET_NAME: ${{ vars.OPENAI_API_KEY_SECRET_NAME_PROD }}
           GRAPH_API_URL: ${{ vars.GRAPH_PUBLIC_URL_PROD }}
           ARTANA_EVIDENCE_API_MIN_INSTANCES: ${{ vars.GRAPH_HARNESS_MIN_INSTANCES_PROD }}

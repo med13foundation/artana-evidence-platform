@@ -27,6 +27,9 @@ from artana_evidence_api.document_extraction import (
 )
 from artana_evidence_api.document_ingestion_support import _enrich_pdf_document
 from artana_evidence_api.full_ai_orchestrator_contracts import (
+    ResearchOrchestratorChaseCandidate as _ResearchOrchestratorChaseCandidate,
+)
+from artana_evidence_api.full_ai_orchestrator_contracts import (
     ResearchOrchestratorChaseSelection,
 )
 from artana_evidence_api.ontology_runtime_bridges import (
@@ -49,6 +52,18 @@ from artana_evidence_api.research_init_chase import (
     _prepare_chase_round,
     _run_entity_chase_round,
     _serialize_chase_preparation,
+)
+from artana_evidence_api.research_init_document_selection import (
+    classify_document_source as _classify_document_source,
+)
+from artana_evidence_api.research_init_document_selection import (
+    existing_documents_for_selected_sources as _existing_documents_for_selected_sources,
+)
+from artana_evidence_api.research_init_document_selection import (
+    is_research_init_pubmed_document as _is_research_init_pubmed_document,
+)
+from artana_evidence_api.research_init_document_selection import (
+    resolve_bootstrap_source_type as _resolve_bootstrap_source_type,
 )
 from artana_evidence_api.research_init_helpers import (
     _HTTP_OK,
@@ -118,6 +133,8 @@ from artana_evidence_api.types.graph_contracts import (
 )
 from pydantic import ValidationError
 
+ResearchOrchestratorChaseCandidate = _ResearchOrchestratorChaseCandidate
+
 if TYPE_CHECKING:
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
@@ -169,134 +186,6 @@ _STRUCTURED_REPLAY_SOURCE_KIND_TO_KEY = {
     "marrvel_enrichment": "marrvel",
 }
 _MIN_GENE_FAMILY_TOKEN_LENGTH = 4
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def _classify_document_source(record: HarnessDocumentRecord) -> str:
-    """Return the logical source bucket for one stored document."""
-    if record.source_type == "pubmed":
-        return "pubmed"
-    metadata_source = record.metadata.get("source")
-    if metadata_source == "research-init-pubmed" or isinstance(
-        record.metadata.get("pubmed"),
-        dict,
-    ):
-        return "pubmed"
-    if record.source_type == "pdf":
-        return "pdf"
-    if record.source_type == "text":
-        return "text"
-    return record.source_type
-
-
-def _is_research_init_pubmed_document(record: HarnessDocumentRecord) -> bool:
-    """Return whether this document came from the research-init PubMed flow."""
-    return record.metadata.get("source") == "research-init-pubmed"
-
-
-def _existing_documents_for_selected_sources(
-    *,
-    documents: list[HarnessDocumentRecord],
-    sources: ResearchSpaceSourcePreferences,
-) -> list[HarnessDocumentRecord]:
-    """Select existing pending documents that belong to this run's sources."""
-    selected: list[HarnessDocumentRecord] = []
-    for document in documents:
-        if document.extraction_status != "not_started":
-            continue
-        source_key = _classify_document_source(document)
-        if (
-            (
-                source_key == "pubmed"
-                and sources.get("pubmed", True)
-                and _is_research_init_pubmed_document(document)
-            )
-            or (source_key == "text" and sources.get("text", True))
-            or (source_key == "pdf" and sources.get("pdf", True))
-        ):
-            selected.append(document)
-    return selected
 
 
 def _store_reviewed_enrichment_proposals(
@@ -707,23 +596,6 @@ def _store_replayed_pubmed_document_extraction_proposals(
 
 
 _build_source_results = build_source_results
-
-
-def _resolve_bootstrap_source_type(
-    *,
-    sources: ResearchSpaceSourcePreferences,
-    document_workset: list[HarnessDocumentRecord],
-) -> str | None:
-    """Pick the bootstrap source type for the current document-driven run."""
-    available_source_types = {
-        _classify_document_source(document) for document in document_workset
-    }
-    for source_key in ("pubmed", "text", "pdf"):
-        if source_key in available_source_types and sources.get(source_key, True):
-            return source_key
-    if sources.get("pubmed", True):
-        return "pubmed"
-    return None
 
 
 def _require_research_init_binary_store(
@@ -1367,42 +1239,11 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
         pubmed_service.close()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async def _run_pubmed_query_executions(
     *,
     objective: str,
     seed_terms: list[str],
 ) -> tuple[_PubMedQueryExecutionResult, ...]:
-
     queries = _build_pubmed_queries(objective, seed_terms)
     if not queries:
         return ()
@@ -1819,42 +1660,6 @@ async def prepare_pubmed_replay_bundle(
         selected_candidates=tuple(selected_candidates),
         selection_errors=tuple(selection_errors),
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 async def execute_research_init_run(  # noqa: PLR0912, PLR0915

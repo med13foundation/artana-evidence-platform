@@ -30,6 +30,26 @@ get_service_account_for_service() {
   printf '%s-compute@developer.gserviceaccount.com\n' "${project_number}"
 }
 
+get_service_account_for_job() {
+  local job_name="$1"
+  local service_account
+
+  service_account="$(gcloud run jobs describe "${job_name}" \
+    --project "${PROJECT_ID}" \
+    --region "${REGION}" \
+    --format='value(spec.template.spec.template.spec.serviceAccountName)' \
+    2>/dev/null || true)"
+
+  if [[ -n "${service_account}" ]]; then
+    printf '%s\n' "${service_account}"
+    return 0
+  fi
+
+  local project_number
+  project_number="$(get_project_number)"
+  printf '%s-compute@developer.gserviceaccount.com\n' "${project_number}"
+}
+
 grant_secret_accessor_if_needed() {
   local secret_name="$1"
   local service_account="$2"
@@ -59,6 +79,23 @@ grant_secret_access_for_service() {
 
   local service_account
   service_account="$(get_service_account_for_service "${service_name}")"
+
+  local secret_name
+  for secret_name in "$@"; do
+    grant_secret_accessor_if_needed "${secret_name}" "${service_account}"
+  done
+}
+
+grant_secret_access_for_job() {
+  local job_name="$1"
+  shift
+
+  if (($# == 0)); then
+    return 0
+  fi
+
+  local service_account
+  service_account="$(get_service_account_for_job "${job_name}")"
 
   local secret_name
   for secret_name in "$@"; do
@@ -175,6 +212,9 @@ require_var "PROJECT_ID"
 require_var "REGION"
 require_var "ARTANA_EVIDENCE_API_SERVICE"
 require_var "ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME"
+if [[ "${ARTANA_ENV:-}" == "production" || "${ARTANA_ENV:-}" == "staging" ]]; then
+  require_var "GRAPH_JWT_SECRET_NAME"
+fi
 
 log "Syncing Artana Evidence API runtime config for project=${PROJECT_ID} region=${REGION}"
 
@@ -196,6 +236,10 @@ declare -a harness_secret_names=("${ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME
 if [[ -n "${AUTH_JWT_SECRET_NAME:-}" ]]; then
   harness_secret_pairs+=("AUTH_JWT_SECRET=${AUTH_JWT_SECRET_NAME}:latest")
   harness_secret_names+=("${AUTH_JWT_SECRET_NAME}")
+fi
+if [[ -n "${GRAPH_JWT_SECRET_NAME:-}" ]]; then
+  harness_secret_pairs+=("GRAPH_JWT_SECRET=${GRAPH_JWT_SECRET_NAME}:latest")
+  harness_secret_names+=("${GRAPH_JWT_SECRET_NAME}")
 fi
 if [[ -n "${OPENAI_API_KEY_SECRET_NAME:-}" ]]; then
   harness_secret_pairs+=("OPENAI_API_KEY=${OPENAI_API_KEY_SECRET_NAME}:latest")
@@ -314,10 +358,22 @@ if [[ -n "${ARTANA_EVIDENCE_API_MIGRATION_JOB_NAME:-}" ]]; then
       "${ARTANA_EVIDENCE_API_CLOUDSQL_CONNECTION_NAME}"
     )
   fi
-  migration_job_update_args+=(
-    --update-secrets
+  declare -a migration_job_secret_pairs=(
     "ARTANA_EVIDENCE_API_DATABASE_URL=${ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME}:latest"
   )
+  declare -a migration_job_secret_names=(
+    "${ARTANA_EVIDENCE_API_DATABASE_URL_SECRET_NAME}"
+  )
+  if [[ -n "${GRAPH_JWT_SECRET_NAME:-}" ]]; then
+    migration_job_secret_pairs+=("GRAPH_JWT_SECRET=${GRAPH_JWT_SECRET_NAME}:latest")
+    migration_job_secret_names+=("${GRAPH_JWT_SECRET_NAME}")
+  fi
+  migration_job_update_secrets="$(IFS=,; echo "${migration_job_secret_pairs[*]}")"
+  migration_job_update_args+=(--update-secrets "${migration_job_update_secrets}")
+
+  grant_secret_access_for_job \
+    "${ARTANA_EVIDENCE_API_MIGRATION_JOB_NAME}" \
+    "${migration_job_secret_names[@]}"
 
   update_job_if_needed \
     "${ARTANA_EVIDENCE_API_MIGRATION_JOB_NAME}" \

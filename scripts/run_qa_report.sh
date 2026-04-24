@@ -17,7 +17,7 @@ mkdir -p "$REPORT_DIR"
 : > "$QA_REPORT"
 
 echo "=========================================" > "$QA_REPORT"
-echo "Artana Resource Library - QA Report" >> "$QA_REPORT"
+echo "Artana Evidence Platform - QA Report" >> "$QA_REPORT"
 echo "Generated: $(date)" >> "$QA_REPORT"
 echo "=========================================" >> "$QA_REPORT"
 
@@ -132,33 +132,7 @@ print_issue_block() {
 
 run_all_steps() {
     local -a steps=(
-        "Environment|venv-check|${MAKE_BIN} venv-check"
-        "Environment|check-env|${MAKE_BIN} check-env"
-        "Backend|format|${MAKE_BIN} format"
-        "Backend|lint-strict|${MAKE_BIN} lint-strict"
-        "Backend|type-check-strict|${MAKE_BIN} type-check-strict"
-        "Backend|validate-architecture|${MAKE_BIN} validate-architecture"
-        "Backend|validate-dependencies|${MAKE_BIN} validate-dependencies"
-        "Backend|graph-service-contract-check|${MAKE_BIN} graph-service-contract-check"
-        "Backend|graph-service-lint|${MAKE_BIN} graph-service-lint"
-        "Backend|graph-service-type-check|${MAKE_BIN} graph-service-type-check"
-        "Backend|graph-phase6-release-check|${MAKE_BIN} graph-phase6-release-check"
-        "Backend|artana-evidence-api-lint|${MAKE_BIN} artana-evidence-api-lint"
-        "Backend|artana-evidence-api-type-check|${MAKE_BIN} artana-evidence-api-type-check"
-        "Backend|artana-evidence-api-boundary-check|${MAKE_BIN} artana-evidence-api-boundary-check"
-        "Backend|artana-evidence-api-contract-check|${MAKE_BIN} artana-evidence-api-contract-check"
-        "Backend|research-inbox-runtime-lint|${MAKE_BIN} research-inbox-runtime-lint"
-        "Backend|research-inbox-runtime-type-check|${MAKE_BIN} research-inbox-runtime-type-check"
-        "Backend|research-inbox-runtime-test|${MAKE_BIN} research-inbox-runtime-test"
-        "Frontend|research-inbox-build|${MAKE_BIN} research-inbox-build"
-        "Frontend|research-inbox-type-check|${MAKE_BIN} research-inbox-type-check"
-        "Frontend|research-inbox-test|${MAKE_BIN} research-inbox-test"
-        "Frontend|frontdoor-build|${MAKE_BIN} frontdoor-build"
-        "Frontend|frontdoor-test|${MAKE_BIN} frontdoor-test"
-        "Backend|test|${MAKE_BIN} test"
-        "Backend|test-architecture|${MAKE_BIN} test-architecture"
-        "Security|security-audit|${MAKE_BIN} security-audit"
-        "GitHub|github-pr-checks|${MAKE_BIN} github-pr-checks"
+        "Backend|service-checks|${MAKE_BIN} service-checks"
     )
 
     local entry
@@ -203,7 +177,7 @@ echo "Warnings detected: $overall_warnings" | tee -a "$QA_REPORT"
 echo "Errors detected: $overall_errors" | tee -a "$QA_REPORT"
 
 echo "" | tee -a "$QA_REPORT"
-for section in "Environment" "Backend" "Frontend" "Security" "GitHub"; do
+for section in "Backend"; do
     echo "### $section" | tee -a "$QA_REPORT"
     for idx in "${!STEP_NAMES[@]}"; do
         if [ "${STEP_SECTIONS[idx]}" != "$section" ]; then
@@ -215,7 +189,7 @@ for section in "Environment" "Backend" "Frontend" "Security" "GitHub"; do
 done
 
 echo "" | tee -a "$QA_REPORT"
-echo "Detailed issue extract (backend/frontend/security summary):" | tee -a "$QA_REPORT"
+echo "Detailed issue extract (backend summary):" | tee -a "$QA_REPORT"
 
 for idx in "${!STEP_NAMES[@]}"; do
     step_name="${STEP_NAMES[idx]}"

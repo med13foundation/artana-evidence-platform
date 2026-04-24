@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 from collections.abc import Generator
+from datetime import date, datetime
 from pathlib import Path
 
 _TEST_DB_PATH = (
@@ -32,6 +34,9 @@ os.environ.setdefault("AUTH_JWT_SECRET", _TEST_SECRET)
 os.environ.setdefault("GRAPH_JWT_SECRET", _TEST_SECRET)
 os.environ.setdefault("GRAPH_SERVICE_RELOAD", "0")
 os.environ.setdefault("ARTANA_EVIDENCE_API_SERVICE_RELOAD", "0")
+
+sqlite3.register_adapter(datetime, lambda value: value.isoformat(" "))
+sqlite3.register_adapter(date, lambda value: value.isoformat())
 
 import artana_evidence_api.models.api_key  # noqa: E402, F401
 import artana_evidence_api.models.discovery  # noqa: E402, F401
@@ -104,3 +109,4 @@ def db_session() -> Generator[Session]:
         session.rollback()
         session.close()
         _drop_schema()
+        engine.dispose()

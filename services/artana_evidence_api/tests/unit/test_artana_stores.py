@@ -538,6 +538,7 @@ def session() -> Iterator[Session]:
         yield db_session
     finally:
         db_session.close()
+        engine.dispose()
 
 
 def test_artana_backed_run_registry_persists_catalog_and_kernel_lifecycle(

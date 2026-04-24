@@ -59,9 +59,16 @@ work, but promoted graph state should flow through review/governance.
 Run these before merging backend changes:
 
 ```bash
+make all
+make service-checks
 make graph-service-checks
 make artana-evidence-api-service-checks
 ```
+
+`make all` is an alias for `make service-checks`, the normal CI gate. It runs lint, type checks,
+architecture checks, contract checks, isolated Postgres tests, and coverage.
+Live/external tests are not required for normal CI; they skip with explicit
+messages unless their environment variables or local services are available.
 
 Useful focused checks:
 
@@ -71,6 +78,35 @@ make artana-evidence-api-contract-check
 make graph-service-boundary-check
 make artana-evidence-api-boundary-check
 make graph-phase6-release-check
+```
+
+## Live Checks
+
+Run these only when you intentionally want to hit running local services or
+public external APIs.
+
+For the live local endpoint contract, start the stack in one terminal:
+
+```bash
+make run-all
+```
+
+Then run:
+
+```bash
+make live-endpoint-contract-check
+```
+
+For live PubMed, ClinVar, AlphaFold, MONDO, and related integration checks:
+
+```bash
+make live-external-api-check
+```
+
+To run both live groups, keep `make run-all` running and execute:
+
+```bash
+make live-service-checks
 ```
 
 ## Generated Contracts
