@@ -190,6 +190,16 @@ def test_readme_includes_first_run_prerequisites_and_smoke_test() -> None:
     assert "/health" in openapi["paths"]
 
 
+def test_makefile_detects_dot_venv_before_failing_pre_commit_gates() -> None:
+    """Regression: local hooks should reuse an existing .venv in worktrees."""
+    makefile = _read_text("Makefile")
+
+    assert "DEFAULT_VENV :=" in makefile
+    assert "$(wildcard venv/bin/python3)" in makefile
+    assert "$(wildcard .venv/bin/python3)" in makefile
+    assert "VENV ?= $(DEFAULT_VENV)" in makefile
+
+
 def test_live_checks_are_explicit_opt_in_targets() -> None:
     """Regression: live/external checks must stay separate from normal CI."""
     makefile = _read_text("Makefile")
