@@ -1,6 +1,6 @@
 # Pending Boundary Issues
 
-Status date: April 23, 2026.
+Status date: April 24, 2026.
 
 The repo is now an extracted two-service backend, but a few architecture issues
 remain too large for a narrow patch.
@@ -46,13 +46,19 @@ Remaining cleanup:
 
 ## Large Runtime Modules
 
-Status: open.
+Status: partially addressed; first decomposition slice landed.
 
 The largest modules still mix several responsibilities:
 
 - `services/artana_evidence_api/research_init_runtime.py`
 - `services/artana_evidence_api/full_ai_orchestrator_runtime.py`
 - `services/artana_evidence_db/graph_workflow_service.py`
+
+First slice completed:
+
+- research-init document source classification and selected-source workset
+  selection now live in
+  `services/artana_evidence_api/research_init_document_selection.py`.
 
 Target split:
 

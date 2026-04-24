@@ -17,6 +17,7 @@ POSTGRES_ACTIVE_FLAG := .postgres-active
 
 GRAPH_SERVICE_PORT ?= 8090
 ARTANA_EVIDENCE_API_PORT ?= 8091
+COVERAGE_MIN ?= 86
 
 BACKEND_DEV_JWT_SECRET ?= artana-platform-backend-jwt-secret-for-development-2026-01
 BACKEND_DEV_JWT_ISSUER ?= artana-platform
@@ -72,20 +73,6 @@ ARTANA_EVIDENCE_API_LINT_PATHS := \
  scripts/validate_artana_evidence_api_service_boundary.py \
  tests/e2e/artana_evidence_api
 
-ARTANA_EVIDENCE_API_MYPY_FLAGS := \
- --show-error-codes \
- --follow-imports=skip \
- --disable-error-code no-any-unimported \
- --disable-error-code no-any-return \
- --disable-error-code misc \
- --disable-error-code untyped-decorator \
- --disable-error-code no-untyped-def \
- --disable-error-code arg-type \
- --disable-error-code attr-defined \
- --disable-error-code assignment \
- --disable-error-code unreachable \
- --disable-error-code has-type
-
 ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS := \
  --show-error-codes
 
@@ -98,9 +85,16 @@ GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS := \
  --disable-error-code untyped-decorator
 
 ARTANA_EVIDENCE_API_TEST_PATHS := \
- tests/e2e/artana_evidence_api \
- services/artana_evidence_api/tests/integration \
- services/artana_evidence_api/tests/unit
+	 tests/e2e/artana_evidence_api \
+	 services/artana_evidence_api/tests/integration \
+	 services/artana_evidence_api/tests/unit
+
+LIVE_ENDPOINT_CONTRACT_TEST_PATH := tests/e2e/artana_evidence_api/test_live_endpoint_contract.py
+LIVE_EXTERNAL_API_TEST_PATH := services/artana_evidence_api/tests/integration/test_research_init_live_pipeline.py
+
+COVERAGE_TEST_PATHS := \
+	 $(GRAPH_SERVICE_TEST_PATHS) \
+	 $(ARTANA_EVIDENCE_API_TEST_PATHS)
 
 GRAPH_ALEMBIC_CONFIG := services/artana_evidence_db/alembic.ini
 GRAPH_SERVICE_OPENAPI_OUTPUT := services/artana_evidence_db/openapi.json
@@ -134,10 +128,12 @@ define check_venv
 fi
 endef
 
-.PHONY: help venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test artana-evidence-api-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-all
+.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test coverage-check artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
+
+all: service-checks ## Run the full CI-safe quality gate
 
 venv: ## Create the local virtual environment
 	@if [ -x "$(PYTHON)" ]; then echo "Virtual environment already exists at $(VENV)"; exit 0; fi
@@ -278,13 +274,13 @@ artana-evidence-api-lint: ## Run ruff on evidence API paths
 	$(call check_venv)
 	$(USE_PYTHON) -m ruff check $(ARTANA_EVIDENCE_API_LINT_PATHS)
 
-artana-evidence-api-type-check: ## Run mypy on evidence API
-	$(call check_venv)
-	cd services && $(USE_PYTHON_ABS) -m mypy artana_evidence_api --no-warn-unused-configs $(ARTANA_EVIDENCE_API_MYPY_FLAGS)
-
-artana-evidence-api-type-check-strict-imports: ## Exploratory evidence API runtime mypy check without skipped imports
+artana-evidence-api-type-check: ## Run strict mypy on evidence API package
 	$(call check_venv)
 	cd services && $(USE_PYTHON_ABS) -m mypy -p artana_evidence_api --exclude '$(ARTANA_EVIDENCE_API_TYPE_EXCLUDE)' --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+
+artana-evidence-api-type-check-strict-imports: ## Explicit strict-import evidence API mypy gate
+	$(call check_venv)
+	@$(MAKE) -s artana-evidence-api-type-check
 
 type-hardening-baseline: ## Capture strict-import mypy baselines under tmp/type-hardening
 	$(call check_venv)
@@ -297,13 +293,39 @@ artana-evidence-api-test: ## Run evidence API tests against isolated Postgres
 	@$(MAKE) -s postgres-wait
 	$(call run_with_postgres_env,$(USE_PYTHON) scripts/run_isolated_postgres_tests.py $(ARTANA_EVIDENCE_API_TEST_PATHS) -q)
 
+coverage-check: ## Enforce service coverage threshold
+	$(call check_venv)
+	@$(MAKE) -s postgres-wait
+	$(call run_with_postgres_env,$(USE_PYTHON) scripts/run_isolated_postgres_tests.py $(COVERAGE_TEST_PATHS) -W "ignore:unclosed database in <sqlite3.Connection object:ResourceWarning" --cov=services --cov-report=term-missing --cov-report=xml --cov-fail-under=$(COVERAGE_MIN) -q)
+
 artana-evidence-api-service-checks: ## Run evidence API gates
 	@$(MAKE) -s artana-evidence-api-lint
 	@$(MAKE) -s artana-evidence-api-type-check
-	@$(MAKE) -s artana-evidence-api-type-check-strict-imports
 	@$(MAKE) -s artana-evidence-api-boundary-check
 	@$(MAKE) -s artana-evidence-api-contract-check
 	@$(MAKE) -s artana-evidence-api-test
+
+service-checks: ## Run all service gates including coverage enforcement
+	@$(MAKE) -s graph-service-checks
+	@$(MAKE) -s artana-evidence-api-service-checks
+	@$(MAKE) -s coverage-check
+
+live-endpoint-contract-check: ## Run opt-in live endpoint contract against make run-all
+	$(call check_venv)
+	@if ! curl -fsS "http://127.0.0.1:$(ARTANA_EVIDENCE_API_PORT)/health" >/dev/null; then \
+	 echo "Evidence API is not reachable at http://127.0.0.1:$(ARTANA_EVIDENCE_API_PORT)."; \
+	 echo "Start the local stack first with: make run-all"; \
+	 exit 1; \
+	fi
+	ARTANA_EVIDENCE_API_BOOTSTRAP_KEY="$(ARTANA_EVIDENCE_API_BOOTSTRAP_KEY)" PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) -m pytest $(LIVE_ENDPOINT_CONTRACT_TEST_PATH) -q -s
+
+live-external-api-check: ## Run opt-in live tests against public external APIs
+	$(call check_venv)
+	$(call run_with_postgres_env,RUN_LIVE_EXTERNAL_API_TESTS=1 PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) -m pytest $(LIVE_EXTERNAL_API_TEST_PATH) -q -s)
+
+live-service-checks: ## Run opt-in live checks; start make run-all separately first
+	@$(MAKE) -s live-endpoint-contract-check
+	@$(MAKE) -s live-external-api-check
 
 run-graph-service: ## Run the standalone graph API service locally
 	$(call check_venv)
@@ -315,7 +337,12 @@ run-artana-evidence-api-service: ## Run the standalone evidence API locally
 	@$(MAKE) -s setup-postgres
 	$(call run_with_postgres_env,$(BACKEND_DEV_ENV) PYTHONPATH="$(CURDIR)/services" DATABASE_URL="$$DATABASE_URL" ARTANA_EVIDENCE_API_DATABASE_URL="$$DATABASE_URL" GRAPH_API_URL="http://127.0.0.1:$(GRAPH_SERVICE_PORT)" ARTANA_EVIDENCE_API_SERVICE_HOST=0.0.0.0 ARTANA_EVIDENCE_API_SERVICE_PORT=$(ARTANA_EVIDENCE_API_PORT) ARTANA_EVIDENCE_API_SERVICE_RELOAD=1 $(USE_PYTHON) -m artana_evidence_api)
 
-run-all: ## Run Postgres, graph service, and evidence API locally
+run-artana-evidence-api-worker: ## Run the standalone evidence API queued-run worker locally
+	$(call check_venv)
+	@$(MAKE) -s setup-postgres
+	$(call run_with_postgres_env,$(BACKEND_DEV_ENV) PYTHONPATH="$(CURDIR)/services" DATABASE_URL="$$DATABASE_URL" ARTANA_EVIDENCE_API_DATABASE_URL="$$DATABASE_URL" GRAPH_API_URL="http://127.0.0.1:$(GRAPH_SERVICE_PORT)" AUTH_JWT_SECRET="$(BACKEND_DEV_JWT_SECRET)" GRAPH_JWT_SECRET="$(BACKEND_DEV_JWT_SECRET)" GRAPH_JWT_ISSUER="$(BACKEND_DEV_JWT_ISSUER)" $(USE_PYTHON) -m artana_evidence_api.worker)
+
+run-all: ## Run Postgres, graph service, evidence API, and queued-run worker locally
 	$(call check_venv)
 	@$(MAKE) -s setup-postgres
 	$(call ensure_postgres_env)
@@ -338,20 +365,26 @@ run-all: ## Run Postgres, graph service, and evidence API locally
 		export ARTANA_EVIDENCE_API_SERVICE_HOST="0.0.0.0"; \
 		export ARTANA_EVIDENCE_API_SERVICE_PORT="$(ARTANA_EVIDENCE_API_PORT)"; \
 		export ARTANA_EVIDENCE_API_SERVICE_RELOAD="1"; \
+		export ARTANA_EVIDENCE_API_WORKER_POLL_SECONDS="$${ARTANA_EVIDENCE_API_WORKER_POLL_SECONDS:-1}"; \
 		cleanup() { \
 			trap - INT TERM EXIT; \
 			[ -n "$${graph_pid:-}" ] && kill "$$graph_pid" 2>/dev/null || true; \
 			[ -n "$${api_pid:-}" ] && kill "$$api_pid" 2>/dev/null || true; \
+			[ -n "$${worker_pid:-}" ] && kill "$$worker_pid" 2>/dev/null || true; \
 			wait 2>/dev/null || true; \
 		}; \
-		trap cleanup INT TERM EXIT; \
+		trap "cleanup; exit 0" INT TERM; \
+		trap cleanup EXIT; \
 		echo "Starting graph service on http://127.0.0.1:$(GRAPH_SERVICE_PORT)"; \
 		$(USE_PYTHON) -m artana_evidence_db & graph_pid=$$!; \
 		echo "Starting evidence API on http://127.0.0.1:$(ARTANA_EVIDENCE_API_PORT)"; \
 		$(USE_PYTHON) -m artana_evidence_api & api_pid=$$!; \
-		while kill -0 "$$graph_pid" 2>/dev/null && kill -0 "$$api_pid" 2>/dev/null; do sleep 1; done; \
+		echo "Starting evidence API queued-run worker"; \
+		$(USE_PYTHON) -m artana_evidence_api.worker & worker_pid=$$!; \
+		while kill -0 "$$graph_pid" 2>/dev/null && kill -0 "$$api_pid" 2>/dev/null && kill -0 "$$worker_pid" 2>/dev/null; do sleep 1; done; \
 		status=0; \
 		if ! kill -0 "$$graph_pid" 2>/dev/null; then wait "$$graph_pid" || status=$$?; echo "Graph service exited."; fi; \
 		if ! kill -0 "$$api_pid" 2>/dev/null; then wait "$$api_pid" || status=$$?; echo "Evidence API exited."; fi; \
+		if ! kill -0 "$$worker_pid" 2>/dev/null; then wait "$$worker_pid" || status=$$?; echo "Evidence API worker exited."; fi; \
 		exit "$$status"; \
 	'

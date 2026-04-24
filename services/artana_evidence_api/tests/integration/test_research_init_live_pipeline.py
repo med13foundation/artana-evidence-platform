@@ -29,7 +29,7 @@ _EVIDENCE_API_HEALTH_TIMEOUT_SECONDS = 15.0
 _LIVE_EXTERNAL_API_FLAG = "RUN_LIVE_EXTERNAL_API_TESTS"
 _LIVE_EXTERNAL_API_TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.live, pytest.mark.external]
 
 
 def _live_external_api_tests_enabled() -> bool:
@@ -573,7 +573,7 @@ class TestResearchInitComponentIntegration:
 
         assert clinvar_result.source_key == "clinvar"
         # ClinVar may or may not have MED13 variants, but should not error
-        assert clinvar_result.errors == []
+        assert not clinvar_result.errors
 
         # If records were processed, verify documents were created
         if clinvar_result.records_processed > 0:

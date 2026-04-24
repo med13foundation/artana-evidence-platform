@@ -90,5 +90,5 @@ jobs:
             'ARTANA_ADMIN_PASSWORD=change_me_locally1' \
             > .env.postgres
 
-      - name: Run evidence API service checks
-        run: make artana-evidence-api-service-checks
+      - name: Run service checks with coverage
+        run: make service-checks

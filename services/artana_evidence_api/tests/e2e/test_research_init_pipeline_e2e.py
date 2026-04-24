@@ -414,7 +414,7 @@ async def test_research_init_full_pipeline_e2e(
         return [(c, review) for c in candidates]
 
     monkeypatch.setattr(
-        research_init,
+        research_init_runtime,
         "_select_candidates_for_ingestion",
         _fake_select_candidates,
     )

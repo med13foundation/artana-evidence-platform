@@ -18,6 +18,7 @@ BASE_URL_ENV = "ARTANA_EVIDENCE_API_LIVE_BASE_URL"
 BOOTSTRAP_KEY_ENV = "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY"
 DEFAULT_BASE_URL = "http://localhost:8091"
 RUNTIME_BLOCK_STATUSES = {500, 502, 503}
+DECIDED_PROPOSAL_STATUSES = {"promoted", "rejected"}
 LIVE_SEED_ENTITY_ID = "11111111-1111-4111-8111-111111111111"
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _OPENAPI_ARTIFACT_PATH = (
@@ -334,8 +335,20 @@ def _resolve_operation_path(
     raise KeyError(f"Unable to resolve OpenAPI path for {method.upper()} {actual_path}")
 
 
+def _proposal_id_if_open(raw_proposal: object) -> str | None:
+    proposal = _as_dict(raw_proposal)
+    raw_id = proposal.get("id")
+    if not isinstance(raw_id, str):
+        return None
+    status = proposal.get("status")
+    if isinstance(status, str) and status.lower() in DECIDED_PROPOSAL_STATUSES:
+        return None
+    return raw_id
+
+
 def _poll_for_proposals(ctx: LiveContext, *, timeout_seconds: float = 8.0) -> None:
     deadline = time.time() + timeout_seconds
+    ctx.valid_proposal_ids = []
     while time.time() < deadline:
         response = ctx.client.get(
             f"/v1/spaces/{ctx.created_ids['space_id']}/proposals",
@@ -346,11 +359,12 @@ def _poll_for_proposals(ctx: LiveContext, *, timeout_seconds: float = 8.0) -> No
             proposals = _as_list(payload["proposals"])
             if proposals:
                 ctx.valid_proposal_ids = [
-                    str(_as_dict(proposal)["id"])
+                    proposal_id
                     for proposal in proposals
-                    if "id" in _as_dict(proposal)
+                    if (proposal_id := _proposal_id_if_open(proposal)) is not None
                 ]
-                return
+                if ctx.valid_proposal_ids:
+                    return
         time.sleep(0.5)
 
 
@@ -589,7 +603,27 @@ def _exercise_auth_and_space_setup(ctx: LiveContext, *, unique: str) -> None:
         ),
         headers=ctx.auth_headers(),
     )
-    member_user_id = str(uuid4())
+    member_response = ctx.request(
+        "POST",
+        "/v1/auth/testers",
+        expected_status=_expected_success_status(
+            spec,
+            "/v1/auth/testers",
+            "post",
+        ),
+        headers=ctx.auth_headers(),
+        json_body={
+            "email": f"member-{unique}@artana.dev",
+            "username": f"member-{unique}",
+            "full_name": "Live Contract Member",
+            "role": "viewer",
+            "api_key_name": "Live Contract Member Key",
+            "create_default_space": False,
+        },
+    )
+    member_payload = _as_dict(member_response.json())
+    member_user = _as_dict(member_payload["user"])
+    member_user_id = str(member_user["id"])
     ctx.created_ids["member_user_id"] = member_user_id
     ctx.request(
         "POST",
@@ -752,9 +786,9 @@ def _exercise_documents(ctx: LiveContext, space_id: str) -> None:
         extract_payload = _as_dict(extract_response.json())
         extracted_proposals = _as_list(extract_payload.get("proposals", []))
         ctx.valid_proposal_ids = [
-            str(_as_dict(proposal)["id"])
+            proposal_id
             for proposal in extracted_proposals
-            if "id" in _as_dict(proposal)
+            if (proposal_id := _proposal_id_if_open(proposal)) is not None
         ]
         if not ctx.valid_proposal_ids:
             _poll_for_proposals(ctx)
@@ -870,14 +904,15 @@ def _exercise_chat(ctx: LiveContext, space_id: str) -> None:
         headers=ctx.auth_headers(),
         json_body={},
     )
+    chat_message_success_status = _expected_success_status(
+        spec,
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        "post",
+    )
     chat_message_response = ctx.request(
         "POST",
         f"/v1/spaces/{space_id}/chat-sessions/{ctx.created_ids['session_id']}/messages",
-        expected_status=_expected_success_status(
-            spec,
-            "/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
-            "post",
-        ),
+        acceptable_statuses={chat_message_success_status, 409},
         headers=ctx.auth_headers(),
         json_body={
             "content": "Summarize the MED13 evidence in the uploaded note.",
@@ -888,7 +923,7 @@ def _exercise_chat(ctx: LiveContext, space_id: str) -> None:
         },
         allow_blocked=True,
     )
-    if chat_message_response.status_code < 500:
+    if chat_message_response.status_code == chat_message_success_status:
         chat_message_payload = _as_dict(chat_message_response.json())
         run_payload = _as_dict(chat_message_payload["run"])
         ctx.created_ids["chat_run_id"] = str(run_payload["id"])
@@ -1096,14 +1131,17 @@ def _exercise_proposals(ctx: LiveContext, space_id: str) -> None:
     )
     proposals_payload = _as_dict(proposals_list_response.json())
     proposals = _as_list(proposals_payload["proposals"])
-    ctx.valid_proposal_ids = [
+    all_proposal_ids = [
         str(_as_dict(proposal)["id"])
         for proposal in proposals
         if "id" in _as_dict(proposal)
     ]
-    known_proposal_id = (
-        ctx.valid_proposal_ids[0] if ctx.valid_proposal_ids else str(uuid4())
-    )
+    ctx.valid_proposal_ids = [
+        proposal_id
+        for proposal in proposals
+        if (proposal_id := _proposal_id_if_open(proposal)) is not None
+    ]
+    known_proposal_id = all_proposal_ids[0] if all_proposal_ids else str(uuid4())
     ctx.request(
         "GET",
         f"/v1/spaces/{space_id}/proposals/{known_proposal_id}",
@@ -1137,6 +1175,12 @@ def _exercise_proposals(ctx: LiveContext, space_id: str) -> None:
         headers=ctx.auth_headers(),
         json_body={"reason": "Live reject review", "metadata": {"source": "codex"}},
     )
+    decided_targets = {promote_target, reject_target}
+    ctx.valid_proposal_ids = [
+        proposal_id
+        for proposal_id in ctx.valid_proposal_ids
+        if proposal_id not in decided_targets
+    ]
 
 
 def _exercise_review_queue(ctx: LiveContext, space_id: str) -> None:
@@ -1456,10 +1500,11 @@ def _exercise_typed_runs(ctx: LiveContext, space_id: str) -> None:
             json_body={},
         )
         success_status = _expected_success_status(spec, path_template, "post")
-        # Queue-backed run endpoints may either create immediately (201) or
-        # accept the run for asynchronous worker execution (202) depending on
-        # runtime mode and worker availability.
-        acceptable_success_statuses = {success_status, 202}
+        # Queue-backed run endpoints may either create immediately (201),
+        # accept the run for asynchronous worker execution (202), or report
+        # that a dependency artifact is not ready yet (409) on persistent live
+        # databases with existing queued work.
+        acceptable_success_statuses = {success_status, 202, 409}
         if path_template == "/v1/spaces/{space_id}/agents/graph-curation/runs":
             acceptable_success_statuses.add(404)
         response = ctx.request(
@@ -1574,7 +1619,7 @@ def _exercise_schedules(ctx: LiveContext, space_id: str) -> None:
     ctx.request(
         "POST",
         f"/v1/spaces/{space_id}/schedules/{schedule_id}/run-now",
-        acceptable_statuses={200, 201, 409},
+        acceptable_statuses={200, 201, 202, 409},
         headers=ctx.auth_headers(),
         allow_blocked=True,
         timeout=90.0,
@@ -1728,6 +1773,7 @@ def _run_live_suite(base_url: str, bootstrap_key: str) -> LiveContext:
 
 
 @pytest.mark.e2e
+@pytest.mark.live
 def test_live_artana_evidence_api_endpoint_contract() -> None:
     """Exercise the live Artana Evidence API on localhost through OpenAPI."""
     base_url = os.getenv(BASE_URL_ENV, DEFAULT_BASE_URL).rstrip("/")

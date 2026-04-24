@@ -97,6 +97,7 @@ def _bridge_session() -> Iterator[object]:
         yield session
     finally:
         session.close()
+        engine.dispose()
 
 
 @pytest.mark.asyncio

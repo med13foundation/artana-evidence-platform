@@ -98,6 +98,16 @@ source = [ "services",]
 omit = [ "*/tests/*", "*/test_*.py",]
 
 [tool.coverage.report]
+fail_under = 86
+include = [
+  "services/artana_evidence_api/*policy.py",
+  "services/artana_evidence_api/*review*.py",
+  "services/artana_evidence_api/*selection.py",
+  "services/artana_evidence_api/*source_results.py",
+  "services/artana_evidence_db/*policy.py",
+  "services/artana_evidence_db/*governance*.py",
+  "services/artana_evidence_db/decision_confidence.py",
+]
 exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
 
 [tool.ruff.lint.per-file-ignores]

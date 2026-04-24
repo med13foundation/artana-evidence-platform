@@ -88,5 +88,5 @@ jobs:
             'ARTANA_ADMIN_PASSWORD=change_me_locally1' \
             > .env.postgres
 
-      - name: Run graph service checks
-        run: make graph-service-checks
+      - name: Run service checks with coverage
+        run: make service-checks

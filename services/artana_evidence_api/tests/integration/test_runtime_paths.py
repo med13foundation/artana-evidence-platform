@@ -1513,92 +1513,94 @@ def test_transparency_endpoints_return_capabilities_and_policy_history(
     services = _build_services(session=db_session, runtime=runtime)
     client = _build_client(session=db_session, runtime=runtime, services=services)
     space_id = str(uuid4())
-
-    create_response = client.post(
-        f"/v1/spaces/{space_id}/runs",
-        headers=auth_headers(),
-        json={
-            "harness_id": "graph-chat",
-            "title": "Transparency chat run",
-            "input_payload": {
-                "session_id": str(uuid4()),
-                "question": "What is known about MED13?",
+    try:
+        create_response = client.post(
+            f"/v1/spaces/{space_id}/runs",
+            headers=auth_headers(),
+            json={
+                "harness_id": "graph-chat",
+                "title": "Transparency chat run",
+                "input_payload": {
+                    "session_id": str(uuid4()),
+                    "question": "What is known about MED13?",
+                },
             },
-        },
-    )
-    assert create_response.status_code == 201
-    run_id = create_response.json()["id"]
+        )
+        assert create_response.status_code == 201
+        run_id = create_response.json()["id"]
 
-    runtime.step_tool(
-        run_id=run_id,
-        tenant_id=space_id,
-        tool_name="run_pubmed_search",
-        arguments=RunPubMedSearchToolArgs(
-            search_term="MED13 congenital heart disease",
-            max_results=5,
-        ),
-        step_key="integration.pubmed_search",
-    )
-    append_manual_review_decision(
-        space_id=UUID(space_id),
-        run_id=run_id,
-        tool_name="create_graph_claim",
-        decision="promote",
-        reason="Approved after integration review",
-        artifact_key="graph_write_candidate_suggestions",
-        metadata={"proposal_id": "proposal-integration-1"},
-        artifact_store=services.artifact_store,
-        run_registry=services.run_registry,
-        runtime=runtime,
-    )
-    append_skill_activity(
-        space_id=UUID(space_id),
-        run_id=run_id,
-        skill_names=(
+        runtime.step_tool(
+            run_id=run_id,
+            tenant_id=space_id,
+            tool_name="run_pubmed_search",
+            arguments=RunPubMedSearchToolArgs(
+                search_term="MED13 congenital heart disease",
+                max_results=5,
+            ),
+            step_key="integration.pubmed_search",
+        )
+        append_manual_review_decision(
+            space_id=UUID(space_id),
+            run_id=run_id,
+            tool_name="create_graph_claim",
+            decision="promote",
+            reason="Approved after integration review",
+            artifact_key="graph_write_candidate_suggestions",
+            metadata={"proposal_id": "proposal-integration-1"},
+            artifact_store=services.artifact_store,
+            run_registry=services.run_registry,
+            runtime=runtime,
+        )
+        append_skill_activity(
+            space_id=UUID(space_id),
+            run_id=run_id,
+            skill_names=(
+                "graph_harness.graph_grounding",
+                "graph_harness.literature_refresh",
+            ),
+            source_run_id="integration:graph-chat-search",
+            source_kind="graph_chat",
+            artifact_store=services.artifact_store,
+            run_registry=services.run_registry,
+            runtime=runtime,
+        )
+
+        capabilities_response = client.get(
+            f"/v1/spaces/{space_id}/runs/{run_id}/capabilities",
+            headers=auth_headers(role="viewer"),
+        )
+        assert capabilities_response.status_code == 200
+        capabilities_payload = capabilities_response.json()
+        assert capabilities_payload["artifact_key"] == "run_capabilities"
+        assert capabilities_payload["preloaded_skill_names"] == [
+            "graph_harness.graph_grounding",
+            "graph_harness.graph_write_review",
+        ]
+        assert capabilities_payload["active_skill_names"] == [
             "graph_harness.graph_grounding",
             "graph_harness.literature_refresh",
-        ),
-        source_run_id="integration:graph-chat-search",
-        source_kind="graph_chat",
-        artifact_store=services.artifact_store,
-        run_registry=services.run_registry,
-        runtime=runtime,
-    )
+        ]
+        visible_tool_names = {
+            tool["tool_name"] for tool in capabilities_payload["visible_tools"]
+        }
+        assert "run_pubmed_search" in visible_tool_names
 
-    capabilities_response = client.get(
-        f"/v1/spaces/{space_id}/runs/{run_id}/capabilities",
-        headers=auth_headers(role="viewer"),
-    )
-    assert capabilities_response.status_code == 200
-    capabilities_payload = capabilities_response.json()
-    assert capabilities_payload["artifact_key"] == "run_capabilities"
-    assert capabilities_payload["preloaded_skill_names"] == [
-        "graph_harness.graph_grounding",
-        "graph_harness.graph_write_review",
-    ]
-    assert capabilities_payload["active_skill_names"] == [
-        "graph_harness.graph_grounding",
-        "graph_harness.literature_refresh",
-    ]
-    visible_tool_names = {
-        tool["tool_name"] for tool in capabilities_payload["visible_tools"]
-    }
-    assert "run_pubmed_search" in visible_tool_names
-
-    policy_response = client.get(
-        f"/v1/spaces/{space_id}/runs/{run_id}/policy-decisions",
-        headers=auth_headers(role="viewer"),
-    )
-    assert policy_response.status_code == 200
-    policy_payload = policy_response.json()
-    assert policy_payload["summary"]["tool_record_count"] == 1
-    assert policy_payload["summary"]["manual_review_count"] == 1
-    assert policy_payload["summary"]["skill_record_count"] == 2
-    assert {record["decision_source"] for record in policy_payload["records"]} == {
-        "tool",
-        "manual_review",
-        "skill",
-    }
+        policy_response = client.get(
+            f"/v1/spaces/{space_id}/runs/{run_id}/policy-decisions",
+            headers=auth_headers(role="viewer"),
+        )
+        assert policy_response.status_code == 200
+        policy_payload = policy_response.json()
+        assert policy_payload["summary"]["tool_record_count"] == 1
+        assert policy_payload["summary"]["manual_review_count"] == 1
+        assert policy_payload["summary"]["skill_record_count"] == 2
+        assert {record["decision_source"] for record in policy_payload["records"]} == {
+            "tool",
+            "manual_review",
+            "skill",
+        }
+    finally:
+        client.close()
 
 
 @pytest.mark.integration

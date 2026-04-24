@@ -69,6 +69,7 @@ def session() -> Iterator[Session]:
         yield db_session
     finally:
         db_session.close()
+        engine.dispose()
 
 
 @pytest.fixture

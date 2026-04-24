@@ -370,6 +370,20 @@ class _OnboardingTestBundle:
     artifact_store: HarnessArtifactStore
     research_state_store: HarnessResearchStateStore
 
+    def close(self) -> None:
+        self.client.close()
+
+    def __enter__(self) -> _OnboardingTestBundle:
+        return self
+
+    def __exit__(
+        self,
+        _exc_type: object,
+        _exc: object,
+        _traceback: object,
+    ) -> None:
+        self.close()
+
 
 def _auth_headers(*, role: str = "researcher") -> dict[str, str]:
     return {
@@ -548,17 +562,16 @@ def test_create_research_onboarding_run_returns_structured_assistant_message() -
         name="Onboarding Space",
         description="Research onboarding test space.",
     )
-    client = _build_client_with_space_store(research_space_store)
-
-    response = client.post(
-        f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
-        headers=_auth_headers(),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
+    with _build_client_with_space_store(research_space_store) as client:
+        response = client.post(
+            f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
+            headers=_auth_headers(),
+            json={
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
+            },
+        )
 
     assert response.status_code == 201
     payload = response.json()
@@ -581,34 +594,33 @@ def test_continue_research_onboarding_returns_plan_ready_when_questions_are_answ
         name="Onboarding Space",
         description="Research onboarding test space.",
     )
-    client = _build_client_with_space_store(research_space_store)
-
-    seed_response = client.post(
-        f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
-        headers=_auth_headers(),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
-
-    seed_questions = seed_response.json()["assistant_message"]["questions"]
-    for index, _question in enumerate(seed_questions, start=1):
-        response = client.post(
-            f"/v1/spaces/{space.id}/agents/research-onboarding/turns",
+    with _build_client_with_space_store(research_space_store) as client:
+        seed_response = client.post(
+            f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
             headers=_auth_headers(),
             json={
-                "thread_id": "thread-1",
-                "message_id": f"message-{index}",
-                "intent": "reply",
-                "mode": "answer_question",
-                "reply_text": f"Answer {index}",
-                "reply_html": f"<p>Answer {index}</p>",
-                "attachments": [],
-                "contextual_anchor": None,
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
             },
         )
+
+        seed_questions = seed_response.json()["assistant_message"]["questions"]
+        for index, _question in enumerate(seed_questions, start=1):
+            response = client.post(
+                f"/v1/spaces/{space.id}/agents/research-onboarding/turns",
+                headers=_auth_headers(),
+                json={
+                    "thread_id": "thread-1",
+                    "message_id": f"message-{index}",
+                    "intent": "reply",
+                    "mode": "answer_question",
+                    "reply_text": f"Answer {index}",
+                    "reply_html": f"<p>Answer {index}</p>",
+                    "attachments": [],
+                    "contextual_anchor": None,
+                },
+            )
 
     assert response.status_code == 201
     payload = response.json()
@@ -624,32 +636,31 @@ def test_continue_research_onboarding_returns_clarification_for_revision_request
         name="Onboarding Space",
         description="Research onboarding test space.",
     )
-    client = _build_client_with_space_store(research_space_store)
+    with _build_client_with_space_store(research_space_store) as client:
+        client.post(
+            f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
+            headers=_auth_headers(),
+            json={
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
+            },
+        )
 
-    client.post(
-        f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
-        headers=_auth_headers(),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
-
-    response = client.post(
-        f"/v1/spaces/{space.id}/agents/research-onboarding/turns",
-        headers=_auth_headers(),
-        json={
-            "thread_id": "thread-1",
-            "message_id": "message-1",
-            "intent": "ask_ai",
-            "mode": "request_revision",
-            "reply_text": "Revise the plan so it emphasizes contradictory evidence.",
-            "reply_html": "<p>Revise the plan so it emphasizes contradictory evidence.</p>",
-            "attachments": [],
-            "contextual_anchor": None,
-        },
-    )
+        response = client.post(
+            f"/v1/spaces/{space.id}/agents/research-onboarding/turns",
+            headers=_auth_headers(),
+            json={
+                "thread_id": "thread-1",
+                "message_id": "message-1",
+                "intent": "ask_ai",
+                "mode": "request_revision",
+                "reply_text": "Revise the plan so it emphasizes contradictory evidence.",
+                "reply_html": "<p>Revise the plan so it emphasizes contradictory evidence.</p>",
+                "attachments": [],
+                "contextual_anchor": None,
+            },
+        )
 
     assert response.status_code == 201
     payload = response.json()
@@ -668,20 +679,19 @@ def test_research_onboarding_run_returns_503_and_persists_failed_state_when_agen
         name="Onboarding Space",
         description="Research onboarding test space.",
     )
-    bundle = _build_client_bundle(
+    with _build_client_bundle(
         research_space_store,
         onboarding_runner_dependency=_FailingInitialResearchOnboardingRunner,
-    )
-
-    response = bundle.client.post(
-        f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
-        headers=_auth_headers(),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
+    ) as bundle:
+        response = bundle.client.post(
+            f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
+            headers=_auth_headers(),
+            json={
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
+            },
+        )
 
     assert response.status_code == 503
     assert "Synthetic onboarding agent initial failure." in response.text
@@ -727,40 +737,39 @@ def test_research_onboarding_turn_returns_503_and_preserves_prior_state_when_age
         name="Onboarding Space",
         description="Research onboarding test space.",
     )
-    bundle = _build_client_bundle(
+    with _build_client_bundle(
         research_space_store,
         onboarding_runner_dependency=_FailingContinuationResearchOnboardingRunner,
-    )
+    ) as bundle:
+        seed_response = bundle.client.post(
+            f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
+            headers=_auth_headers(),
+            json={
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
+            },
+        )
+        assert seed_response.status_code == 201
+        seed_run_id = seed_response.json()["run"]["id"]
 
-    seed_response = bundle.client.post(
-        f"/v1/spaces/{space.id}/agents/research-onboarding/runs",
-        headers=_auth_headers(),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
-    assert seed_response.status_code == 201
-    seed_run_id = seed_response.json()["run"]["id"]
+        state_before = bundle.research_state_store.get_state(space_id=space.id)
+        assert state_before is not None
 
-    state_before = bundle.research_state_store.get_state(space_id=space.id)
-    assert state_before is not None
-
-    response = bundle.client.post(
-        f"/v1/spaces/{space.id}/agents/research-onboarding/turns",
-        headers=_auth_headers(),
-        json={
-            "thread_id": "thread-1",
-            "message_id": "message-1",
-            "intent": "reply",
-            "mode": "answer_question",
-            "reply_text": "Start with contradictory evidence.",
-            "reply_html": "<p>Start with contradictory evidence.</p>",
-            "attachments": [],
-            "contextual_anchor": None,
-        },
-    )
+        response = bundle.client.post(
+            f"/v1/spaces/{space.id}/agents/research-onboarding/turns",
+            headers=_auth_headers(),
+            json={
+                "thread_id": "thread-1",
+                "message_id": "message-1",
+                "intent": "reply",
+                "mode": "answer_question",
+                "reply_text": "Start with contradictory evidence.",
+                "reply_html": "<p>Start with contradictory evidence.</p>",
+                "attachments": [],
+                "contextual_anchor": None,
+            },
+        )
 
     assert response.status_code == 503
     assert "Synthetic onboarding continuation failure." in response.text
@@ -809,17 +818,16 @@ def test_research_onboarding_rejects_access_to_another_users_space() -> None:
         name="Other User Space",
         description="Not visible to the authenticated caller.",
     )
-    client = _build_client_with_space_store(research_space_store)
-
-    response = client.post(
-        f"/v1/spaces/{other_space.id}/agents/research-onboarding/runs",
-        headers=_auth_headers(),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
+    with _build_client_with_space_store(research_space_store) as client:
+        response = client.post(
+            f"/v1/spaces/{other_space.id}/agents/research-onboarding/runs",
+            headers=_auth_headers(),
+            json={
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
+            },
+        )
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Space not found"
@@ -832,23 +840,22 @@ def test_runtime_style_researcher_token_cannot_access_another_users_space() -> N
         name="Other User Space",
         description="Not visible to the runtime service user.",
     )
-    client = _build_client_with_space_store(research_space_store)
-
-    response = client.post(
-        f"/v1/spaces/{other_space.id}/agents/research-onboarding/runs",
-        headers=_jwt_auth_headers(
-            user_id="00000000-0000-0000-0000-000000000101",
-            email="research-inbox-runtime@artana.dev",
-            username="research_inbox_runtime",
-            full_name="Research Inbox Runtime",
-            role="researcher",
-        ),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
+    with _build_client_with_space_store(research_space_store) as client:
+        response = client.post(
+            f"/v1/spaces/{other_space.id}/agents/research-onboarding/runs",
+            headers=_jwt_auth_headers(
+                user_id="00000000-0000-0000-0000-000000000101",
+                email="research-inbox-runtime@artana.dev",
+                username="research_inbox_runtime",
+                full_name="Research Inbox Runtime",
+                role="researcher",
+            ),
+            json={
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
+            },
+        )
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Space not found"
@@ -861,23 +868,22 @@ def test_runtime_style_admin_token_can_access_another_users_space() -> None:
         name="Other User Space",
         description="Visible to an admin runtime service user.",
     )
-    client = _build_client_with_space_store(research_space_store)
-
-    response = client.post(
-        f"/v1/spaces/{other_space.id}/agents/research-onboarding/runs",
-        headers=_jwt_auth_headers(
-            user_id="00000000-0000-0000-0000-000000000101",
-            email="research-inbox-runtime@artana.dev",
-            username="research_inbox_runtime",
-            full_name="Research Inbox Runtime",
-            role="admin",
-        ),
-        json={
-            "research_title": "Variant Resistance Review",
-            "primary_objective": "Identify evidence for resistance biomarkers.",
-            "space_description": "Review precision medicine evidence.",
-        },
-    )
+    with _build_client_with_space_store(research_space_store) as client:
+        response = client.post(
+            f"/v1/spaces/{other_space.id}/agents/research-onboarding/runs",
+            headers=_jwt_auth_headers(
+                user_id="00000000-0000-0000-0000-000000000101",
+                email="research-inbox-runtime@artana.dev",
+                username="research_inbox_runtime",
+                full_name="Research Inbox Runtime",
+                role="admin",
+            ),
+            json={
+                "research_title": "Variant Resistance Review",
+                "primary_objective": "Identify evidence for resistance biomarkers.",
+                "space_description": "Review precision medicine evidence.",
+            },
+        )
 
     assert response.status_code == 201
     assert (
