@@ -6,7 +6,7 @@ knowledge.
 ## List The Review Queue
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -15,14 +15,14 @@ Useful filters include:
 - `status`
 - `item_type`
 - `kind`
-- `run_id`
+- `task_id`
 - `document_id`
 - `source_family`
 
 For example, list items from one document:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items?document_id=<document_id>" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -31,7 +31,7 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<docu
 Promote means: "I reviewed this and want it to become trusted graph knowledge."
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -44,7 +44,7 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions
 ## Reject A Weak Item
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -80,9 +80,9 @@ That keeps the graph clean: observations should attach to known entities.
 The review queue is the preferred surface, but lower-level proposal endpoints
 exist:
 
-- `GET /v1/spaces/{space_id}/proposals`
-- `GET /v1/spaces/{space_id}/proposals/{proposal_id}`
-- `POST /v1/spaces/{space_id}/proposals/{proposal_id}/promote`
-- `POST /v1/spaces/{space_id}/proposals/{proposal_id}/reject`
+- `GET /v2/spaces/{space_id}/proposals`
+- `GET /v2/spaces/{space_id}/proposals/{proposal_id}`
+- `POST /v2/spaces/{space_id}/proposals/{proposal_id}/promote`
+- `POST /v2/spaces/{space_id}/proposals/{proposal_id}/reject`
 
 Use those when building advanced tools or debugging proposal records directly.

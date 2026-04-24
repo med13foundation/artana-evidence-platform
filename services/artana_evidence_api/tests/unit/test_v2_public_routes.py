@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 from collections.abc import Iterable
 from typing import cast
 
 from artana_evidence_api.app import create_app
+from artana_evidence_api.auth import require_harness_read_access
 from artana_evidence_api.routers import (
     approvals,
     artifacts,
@@ -42,6 +44,10 @@ from fastapi.testclient import TestClient
 RouteKey = tuple[str, str]
 
 _CUSTOM_V2_ROUTE_ENDPOINTS = {
+    ("/v2/workflow-templates", "GET"): v2_public.list_workflow_templates,
+    ("/v2/spaces/{space_id}/research-plan", "POST"): v2_public.create_research_plan,
+    ("/v2/spaces/{space_id}/tasks", "POST"): v2_public.create_task,
+    ("/v2/spaces/{space_id}/tasks", "GET"): v2_public.list_tasks,
     ("/v2/spaces/{space_id}/tasks/{task_id}", "GET"): v2_public.get_task,
     (
         "/v2/spaces/{space_id}/tasks/{task_id}/progress",
@@ -92,6 +98,18 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
         "GET",
     ): v2_public.get_workflow_template,
     (
+        "/v2/spaces/{space_id}/workflows/topic-setup/tasks",
+        "POST",
+    ): v2_public.create_topic_setup_task,
+    (
+        "/v2/spaces/{space_id}/workflows/evidence-curation/tasks",
+        "POST",
+    ): v2_public.create_evidence_curation_task,
+    (
+        "/v2/spaces/{space_id}/workflows/full-research/tasks",
+        "POST",
+    ): v2_public.create_full_research_task,
+    (
         "/v2/spaces/{space_id}/chat-sessions/{session_id}/messages/{task_id}/stream",
         "GET",
     ): v2_public.stream_chat_task_message,
@@ -105,6 +123,10 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
     ): v2_public.decide_full_research_suggested_update,
 }
 _CUSTOM_V1_ROUTE_EQUIVALENTS = {
+    ("/v1/harnesses", "GET"),
+    ("/v1/spaces/{space_id}/research-init", "POST"),
+    ("/v1/spaces/{space_id}/runs", "POST"),
+    ("/v1/spaces/{space_id}/runs", "GET"),
     ("/v1/spaces/{space_id}/runs/{run_id}", "GET"),
     ("/v1/spaces/{space_id}/runs/{run_id}/progress", "GET"),
     ("/v1/spaces/{space_id}/runs/{run_id}/events", "GET"),
@@ -118,10 +140,13 @@ _CUSTOM_V1_ROUTE_EQUIVALENTS = {
     ("/v1/spaces/{space_id}/runs/{run_id}/approvals", "GET"),
     ("/v1/spaces/{space_id}/runs/{run_id}/approvals/{approval_key}", "POST"),
     ("/v1/harnesses/{harness_id}", "GET"),
+    ("/v1/spaces/{space_id}/agents/research-bootstrap/runs", "POST"),
+    ("/v1/spaces/{space_id}/agents/graph-curation/runs", "POST"),
     (
         "/v1/spaces/{space_id}/chat-sessions/{session_id}/messages/{run_id}/stream",
         "GET",
     ),
+    ("/v1/spaces/{space_id}/agents/supervisor/runs", "POST"),
     ("/v1/spaces/{space_id}/agents/supervisor/runs/{run_id}", "GET"),
     (
         "/v1/spaces/{space_id}/agents/supervisor/runs/{run_id}/chat-graph-write-candidates/{candidate_index}/review",
@@ -322,6 +347,134 @@ def test_custom_v2_wrappers_delegate_to_expected_task_handlers() -> None:
 
     for key, endpoint in _CUSTOM_V2_ROUTE_ENDPOINTS.items():
         assert routes[key].endpoint is endpoint
+
+
+def test_core_v2_openapi_schemas_use_public_task_and_workflow_fields() -> None:
+    """The primary v2 task surface should stop leaking harness/run field names."""
+    document = create_app().openapi()
+    schemas = cast(
+        "dict[str, dict[str, object]]",
+        cast("dict[str, object]", document["components"])["schemas"],
+    )
+
+    task_request = json.dumps(schemas["TaskCreateRequest"])
+    task_progress = json.dumps(schemas["TaskProgressResponse"])
+    research_plan = json.dumps(schemas["ResearchPlanResponse"])
+    workflow_templates = json.dumps(schemas["WorkflowTemplateListResponse"])
+
+    assert "workflow_template_id" in task_request
+    assert "harness_id" not in task_request
+    assert "task_id" in task_progress
+    assert "run_id" not in task_progress
+    assert "task_progress_url" in research_plan
+    assert "poll_url" not in research_plan
+    assert "workflow_templates" in workflow_templates
+    assert "harnesses" not in workflow_templates
+
+
+def test_publicize_json_keeps_generic_user_payload_keys_intact() -> None:
+    """Generic words like run or intent should only rename when they match system shapes."""
+    payload = {
+        "task": {
+            "input_payload": {
+                "run": "keep-user-string",
+                "runs": ["keep-user-list"],
+                "run_id": "keep-user-run-id",
+                "harness_id": "keep-user-template-id",
+                "artifact_key": "keep-user-output-key",
+                "intent": {"note": "keep-user-object"},
+                "artifacts": [{"name": "keep-user-artifact"}],
+                "workspace": {"note": "keep-user-workspace"},
+            }
+        }
+    }
+
+    publicized = cast("dict[str, object]", v2_public._publicize_json(payload))
+    input_payload = cast(
+        "dict[str, object]",
+        cast("dict[str, object]", cast("dict[str, object]", publicized["task"])["input_payload"]),
+    )
+
+    assert "run" in input_payload
+    assert "runs" in input_payload
+    assert "run_id" in input_payload
+    assert "harness_id" in input_payload
+    assert "artifact_key" in input_payload
+    assert "intent" in input_payload
+    assert "artifacts" in input_payload
+    assert "workspace" in input_payload
+    assert "task" not in input_payload
+    assert "tasks" not in input_payload
+    assert "task_id" not in input_payload
+    assert "workflow_template_id" not in input_payload
+    assert "output_key" not in input_payload
+    assert "plan" not in input_payload
+    assert "outputs" not in input_payload
+    assert "working_state" not in input_payload
+
+
+def test_publicize_json_still_renames_known_system_scalar_fields() -> None:
+    """System-owned nested payloads should still expose task/workflow names."""
+    payload = {
+        "run": {
+            "id": _UUID,
+            "space_id": _UUID,
+            "harness_id": "research-bootstrap",
+            "title": "Topic setup",
+            "status": "completed",
+            "input_payload": {},
+            "graph_service_status": "ok",
+            "graph_service_version": "test",
+            "created_at": "2026-04-24T00:00:00Z",
+            "updated_at": "2026-04-24T00:00:01Z",
+        },
+        "graph_snapshot": {
+            "id": "snapshot-1",
+            "space_id": _UUID,
+            "source_run_id": _UUID,
+            "claim_ids": [],
+            "relation_ids": [],
+            "graph_document_hash": "hash",
+            "summary": {},
+            "metadata": {},
+            "created_at": "2026-04-24T00:00:00Z",
+            "updated_at": "2026-04-24T00:00:01Z",
+        },
+        "claim_curation": {
+            "status": "queued",
+            "run_id": _UUID,
+            "proposal_ids": [],
+            "proposal_count": 0,
+            "blocked_proposal_count": 0,
+            "pending_approval_count": 0,
+            "reason": None,
+        },
+    }
+
+    publicized = cast("dict[str, object]", v2_public._publicize_json(payload))
+    task = cast("dict[str, object]", publicized["task"])
+    graph_snapshot = cast("dict[str, object]", publicized["graph_snapshot"])
+    claim_curation = cast("dict[str, object]", publicized["claim_curation"])
+
+    assert "workflow_template_id" in task
+    assert "harness_id" not in task
+    assert "source_task_id" in graph_snapshot
+    assert "source_run_id" not in graph_snapshot
+    assert "task_id" in claim_curation
+    assert "run_id" not in claim_curation
+
+
+def test_workflow_template_routes_require_read_access() -> None:
+    """Public workflow template catalog should preserve the v1 auth guard."""
+    routes = _routes_by_path_method()
+
+    for key in (
+        ("/v2/workflow-templates", "GET"),
+        ("/v2/workflow-templates/{template_id}", "GET"),
+    ):
+        route = routes[key]
+        dependencies = {dependency.dependency for dependency in route.dependencies}
+        assert require_harness_read_access in dependencies
 
 
 def test_v2_paths_use_product_nouns_and_public_path_params() -> None:

@@ -47,6 +47,9 @@ from scripts.run_full_ai_real_space_canary import (  # noqa: E402
     _resolve_path,
     _round_float,
     _safe_filename,
+    _output_list,
+    _task_payload,
+    _working_state_snapshot,
 )
 
 if TYPE_CHECKING:
@@ -573,7 +576,7 @@ def _execute_research_init_run(
         client=client,
         space_id=space_id,
         step_key=_DEFAULT_RESEARCH_INIT_PHASE,
-        path=f"/v1/spaces/{space_id}/research-init",
+        path=f"/v2/spaces/{space_id}/research-plan",
         request_payload=request_payload,
         started_at=datetime.now(UTC),
     )
@@ -602,7 +605,7 @@ def _execute_bootstrap_run(
         client=client,
         space_id=space_id,
         step_key=_DEFAULT_BOOTSTRAP_PHASE,
-        path=f"/v1/spaces/{space_id}/agents/research-bootstrap/runs",
+        path=f"/v2/spaces/{space_id}/workflows/topic-setup/tasks",
         request_payload=request_payload,
         started_at=datetime.now(UTC),
     )
@@ -643,7 +646,7 @@ def _execute_queue_only_step(  # noqa: PLR0913
                 timeout_seconds=request_timeout_seconds,
             )
             run_id = _required_string(
-                _dict_value(queued_response.get("run")),
+                _task_payload(queued_response),
                 "id",
                 f"{step_key} queued response run",
             )
@@ -660,7 +663,7 @@ def _execute_queue_only_step(  # noqa: PLR0913
             if recovered_run is None:
                 raise
             run_id = _required_string(recovered_run, "id", f"{step_key} recovered run")
-            queued_response = {"run": recovered_run}
+            queued_response = {"task": recovered_run}
         (
             run_payload,
             progress_payload,
@@ -774,7 +777,7 @@ def _execute_step_with_optional_sync_result(  # noqa: PLR0913
             if recovered_run is None:
                 raise
             status_code = _HTTP_ACCEPTED
-            response_payload = {"run": recovered_run}
+            response_payload = {"task": recovered_run}
 
         run_id = _required_string(
             _dict_value(response_payload.get("run")),
@@ -864,7 +867,7 @@ def _promote_first_bootstrap_proposal(
         response_payload = _request_json(
             client=client,
             method="POST",
-            path=f"/v1/spaces/{space_id}/proposals/{proposal_id}/promote",
+            path=f"/v2/spaces/{space_id}/proposed-updates/{proposal_id}/promote",
             headers=config.auth_headers,
             json_body={"reason": config.promotion_reason},
             acceptable_statuses=(_HTTP_OK,),
@@ -903,7 +906,7 @@ def _resolve_bootstrap_proposal_id(
         query_param_sets.append({"status": "pending_review", "run_id": run_id})
     query_param_sets.append({"status": "pending_review"})
     for query_params in query_param_sets:
-        path = f"/v1/spaces/{space_id}/proposals?{urlencode(query_params)}"
+        path = f"/v2/spaces/{space_id}/proposed-updates?{urlencode(query_params)}"
         try:
             response_payload = _request_json(
                 client=client,
@@ -1009,7 +1012,7 @@ def _wait_for_graph_claim_audit(  # noqa: PLR0913
                         client=client,
                         method="GET",
                         path=(
-                            f"/v1/spaces/{space_id}/graph-explorer/claims/{claim_id}/evidence"
+                            f"/v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence"
                         ),
                         headers=config.auth_headers,
                         timeout_seconds=_request_timeout_seconds(config),
@@ -1231,7 +1234,7 @@ def _fetch_run_diagnostics(  # noqa: PLR0913
     events_payload = _optional_json_request(
         client=client,
         method="GET",
-        path=f"/v1/spaces/{space_id}/runs/{run_id}/events",
+        path=f"/v2/spaces/{space_id}/tasks/{run_id}/events",
         headers=headers,
         timeout_seconds=request_timeout_seconds,
     )
@@ -1243,11 +1246,11 @@ def _primary_payload_from_workspace_artifacts(
     workspace_payload: JSONObject | None,
     artifacts_payload: JSONObject | None,
 ) -> JSONObject | None:
-    workspace_snapshot = _dict_value(_dict_value(workspace_payload).get("snapshot"))
+    workspace_snapshot = _working_state_snapshot(workspace_payload)
     primary_result_key = _maybe_string(workspace_snapshot.get("primary_result_key"))
     if primary_result_key is None:
         return None
-    artifact_list = _list_of_dicts(_dict_value(artifacts_payload).get("artifacts"))
+    artifact_list = _output_list(artifacts_payload)
     artifacts_by_key = _artifact_contents_by_key(artifact_list)
     payload = _dict_value(artifacts_by_key.get(primary_result_key))
     return payload or None
@@ -1281,7 +1284,7 @@ def _step_report(  # noqa: PLR0913
         key
         for key in (
             _maybe_string(artifact.get("key"))
-            for artifact in _list_of_dicts(_dict_value(artifacts_payload).get("artifacts"))
+            for artifact in _output_list(artifacts_payload)
         )
         if key is not None
     ]
@@ -1349,7 +1352,7 @@ def _graph_claim_total(
     payload = _request_json(
         client=client,
         method="GET",
-        path=f"/v1/spaces/{space_id}/graph-explorer/claims?offset=0&limit=1",
+        path=f"/v2/spaces/{space_id}/evidence-map/claims?offset=0&limit=1",
         headers=headers,
         timeout_seconds=request_timeout_seconds,
     )
@@ -1372,7 +1375,7 @@ def _list_all_graph_claims(
             client=client,
             method="GET",
             path=(
-                f"/v1/spaces/{space_id}/graph-explorer/claims?"
+                f"/v2/spaces/{space_id}/evidence-map/claims?"
                 f"offset={offset}&limit={limit}"
             ),
             headers=headers,

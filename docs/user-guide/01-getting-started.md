@@ -68,7 +68,7 @@ Admins can create additional tester accounts without adding an external
 identity service:
 
 ```bash
-curl -s -X POST "$ARTANA_API_BASE_URL/v1/auth/testers" \
+curl -s -X POST "$ARTANA_API_BASE_URL/v2/auth/testers" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -88,7 +88,7 @@ The response includes the tester's API key once. Save it for that tester.
 Check that the API key works:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/auth/me" \
+curl -s "$ARTANA_API_BASE_URL/v2/auth/me" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -99,7 +99,7 @@ If this returns your user identity, you are ready.
 A space is your research workspace. Create or retrieve your default space:
 
 ```bash
-curl -s -X PUT "$ARTANA_API_BASE_URL/v1/spaces/default" \
+curl -s -X PUT "$ARTANA_API_BASE_URL/v2/spaces/default" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 

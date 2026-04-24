@@ -10,7 +10,7 @@ source.
 Submit text:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/text" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/documents/text" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -25,7 +25,7 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/text" \
 Upload a PDF:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/pdf" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/documents/pdf" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -F "file=@./med13-paper.pdf" \
   -F "title=MED13 paper"
@@ -34,7 +34,7 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/pdf" \
 Then extract reviewable findings:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/documents/<document_id>/extraction" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -X POST
 ```
@@ -48,7 +48,7 @@ Use this when you want discovery before review.
 Search PubMed:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/pubmed/searches" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -63,7 +63,7 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
 Search MARRVEL:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/marrvel/searches" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/marrvel/searches" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -74,15 +74,15 @@ curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/marrvel/searches" \
 ```
 
 Normal researcher workflows should prefer search plus governed follow-up review.
-`POST /v1/spaces/{space_id}/marrvel/ingest` exists, but it is an advanced
+`POST /v2/spaces/{space_id}/sources/marrvel/ingestion` exists, but it is an advanced
 direct-write path.
 
 ## 3. Run A Multi-Source Setup
 
-Use `research-init` when you already know the topic and source mix:
+Use `research-plan` when you already know the topic and source mix:
 
 ```bash
-curl -s "$ARTANA_API_BASE_URL/v1/spaces/$SPACE_ID/research-init" \
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/research-plan" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -119,5 +119,5 @@ When a genomics-capable document is extracted, the system can stage:
 - `candidate_claim` proposals for phenotype or mechanism claims
 - review-only items when the variant is incomplete and needs human cleanup
 
-For structured sources, `research-init` can also create variant-related
+For structured sources, `research-plan` can also create variant-related
 candidate claims from sources such as ClinVar.

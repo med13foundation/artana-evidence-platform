@@ -22,12 +22,12 @@ Prefer: respond-async
 
 Useful endpoints:
 
-- `POST /v1/spaces/{space_id}/runs`
-- `GET /v1/spaces/{space_id}/runs`
-- `GET /v1/spaces/{space_id}/runs/{run_id}`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/progress`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/events`
-- `POST /v1/spaces/{space_id}/runs/{run_id}/resume`
+- `POST /v2/spaces/{space_id}/tasks`
+- `GET /v2/spaces/{space_id}/tasks`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/progress`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/events`
+- `POST /v2/spaces/{space_id}/tasks/{task_id}/resume`
 
 Use these when you need to know whether a run is queued, running, completed,
 failed, or paused.
@@ -38,9 +38,9 @@ Artifacts are saved outputs from a run.
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts/{artifact_key}`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/workspace`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs/{output_key}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/working-state`
 
 Examples of artifacts:
 
@@ -60,9 +60,9 @@ Transparency endpoints help answer:
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/capabilities`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/policy-decisions`
-- `POST /v1/spaces/{space_id}/runs/{run_id}/intent`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/capabilities`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/decisions`
+- `POST /v2/spaces/{space_id}/tasks/{task_id}/planned-actions`
 
 ## Approvals
 
@@ -70,8 +70,8 @@ Some workflows pause for approval before continuing.
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/approvals`
-- `POST /v1/spaces/{space_id}/runs/{run_id}/approvals/{approval_key}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/approvals`
+- `POST /v2/spaces/{space_id}/tasks/{task_id}/approvals/{approval_key}`
 
 Approval body:
 
@@ -91,7 +91,7 @@ API.
 
 Useful endpoints:
 
-- `GET /v1/harnesses`
-- `GET /v1/harnesses/{harness_id}`
+- `GET /v2/workflow-templates`
+- `GET /v2/workflow-templates/{template_id}`
 
 If you are unsure what workflow ids exist, start here.

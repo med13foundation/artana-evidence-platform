@@ -1,6 +1,64 @@
 {
   "components": {
     "schemas": {
+      "AcceptedTaskResponse": {
+        "description": "Accepted async response for one queued public task.",
+        "properties": {
+          "events_url": {
+            "title": "Events Url",
+            "type": "string"
+          },
+          "outputs_url": {
+            "title": "Outputs Url",
+            "type": "string"
+          },
+          "progress_url": {
+            "title": "Progress Url",
+            "type": "string"
+          },
+          "session": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session"
+          },
+          "stream_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stream Url"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskResponse"
+          },
+          "working_state_url": {
+            "title": "Working State Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "progress_url",
+          "events_url",
+          "working_state_url",
+          "outputs_url"
+        ],
+        "title": "AcceptedTaskResponse",
+        "type": "object"
+      },
       "AddSpaceMemberRequest": {
         "description": "Request to add or invite a member to a space.",
         "properties": {
@@ -8811,6 +8869,74 @@
         "title": "ResearchOrchestratorDecision",
         "type": "object"
       },
+      "ResearchPlanResponse": {
+        "description": "Response from public research planning kickoff.",
+        "properties": {
+          "documents_ingested": {
+            "title": "Documents Ingested",
+            "type": "integer"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "pending_questions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pending Questions",
+            "type": "array"
+          },
+          "proposal_count": {
+            "title": "Proposal Count",
+            "type": "integer"
+          },
+          "pubmed_results": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchInitPubMedResult"
+            },
+            "title": "Pubmed Results",
+            "type": "array"
+          },
+          "research_state": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research State"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskResponse"
+          },
+          "task_progress_url": {
+            "minLength": 1,
+            "title": "Task Progress Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "task_progress_url",
+          "pubmed_results",
+          "documents_ingested",
+          "proposal_count",
+          "research_state",
+          "pending_questions",
+          "errors"
+        ],
+        "title": "ResearchPlanResponse",
+        "type": "object"
+      },
       "ResearchSpaceSettings": {
         "description": "Type-safe research space settings for harness workflows.",
         "properties": {
@@ -10599,6 +10725,483 @@
         "title": "SupportBand",
         "type": "string"
       },
+      "TaskCapabilitiesResponse": {
+        "description": "Serialized public task capability snapshot.",
+        "properties": {
+          "active_skill_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Active Skill Names",
+            "type": "array"
+          },
+          "allowed_skill_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Skill Names",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "filtered_tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCapabilityDescriptor"
+            },
+            "title": "Filtered Tools",
+            "type": "array"
+          },
+          "output_key": {
+            "title": "Output Key",
+            "type": "string"
+          },
+          "policy_profile": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Policy Profile",
+            "type": "object"
+          },
+          "preloaded_skill_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preloaded Skill Names",
+            "type": "array"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "tool_groups": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tool Groups",
+            "type": "array"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "visible_tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCapabilityDescriptor"
+            },
+            "title": "Visible Tools",
+            "type": "array"
+          },
+          "workflow_template_id": {
+            "title": "Workflow Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "space_id",
+          "workflow_template_id",
+          "policy_profile",
+          "output_key",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskCapabilitiesResponse",
+        "type": "object"
+      },
+      "TaskCreateRequest": {
+        "description": "Create one generic task from a public workflow template.",
+        "properties": {
+          "input_payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Input"
+            },
+            "title": "Input Payload",
+            "type": "object"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "workflow_template_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Workflow Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_template_id"
+        ],
+        "title": "TaskCreateRequest",
+        "type": "object"
+      },
+      "TaskDecisionsResponse": {
+        "description": "Serialized public task decision log.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "declared_policy": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Declared Policy",
+            "type": "array"
+          },
+          "output_key": {
+            "title": "Output Key",
+            "type": "string"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/ToolDecisionRecord"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "summary": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Summary",
+            "type": "object"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "workflow_template_id": {
+            "title": "Workflow Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "space_id",
+          "workflow_template_id",
+          "output_key",
+          "summary",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskDecisionsResponse",
+        "type": "object"
+      },
+      "TaskListResponse": {
+        "description": "List response for public tasks.",
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tasks",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "TaskListResponse",
+        "type": "object"
+      },
+      "TaskOutputListResponse": {
+        "description": "List response for public task outputs.",
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/TaskOutputResponse"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "outputs",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "TaskOutputListResponse",
+        "type": "object"
+      },
+      "TaskOutputResponse": {
+        "description": "Serialized public task output payload.",
+        "properties": {
+          "content": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Content",
+            "type": "object"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "media_type",
+          "content",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskOutputResponse",
+        "type": "object"
+      },
+      "TaskProgressResponse": {
+        "description": "Serialized task progress snapshot.",
+        "properties": {
+          "completed_steps": {
+            "title": "Completed Steps",
+            "type": "integer"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "string"
+          },
+          "progress_percent": {
+            "title": "Progress Percent",
+            "type": "number"
+          },
+          "resume_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resume Point"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "total_steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Steps"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "status",
+          "phase",
+          "message",
+          "progress_percent",
+          "completed_steps",
+          "total_steps",
+          "resume_point",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskProgressResponse",
+        "type": "object"
+      },
+      "TaskResponse": {
+        "description": "Serialized public task record.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "graph_service_status": {
+            "title": "Graph Service Status",
+            "type": "string"
+          },
+          "graph_service_version": {
+            "title": "Graph Service Version",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Input Payload",
+            "type": "object"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "workflow_template_id": {
+            "title": "Workflow Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "workflow_template_id",
+          "title",
+          "status",
+          "input_payload",
+          "graph_service_status",
+          "graph_service_version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskResponse",
+        "type": "object"
+      },
+      "TaskResumeResponse": {
+        "description": "Combined task summary and progress after a resume request.",
+        "properties": {
+          "progress": {
+            "$ref": "#/components/schemas/TaskProgressResponse"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskResponse"
+          }
+        },
+        "required": [
+          "task",
+          "progress"
+        ],
+        "title": "TaskResumeResponse",
+        "type": "object"
+      },
+      "TaskWorkingStateResponse": {
+        "description": "Serialized task working state snapshot.",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "working_state": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Working State",
+            "type": "object"
+          }
+        },
+        "required": [
+          "working_state",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskWorkingStateResponse",
+        "type": "object"
+      },
       "TextDocumentSubmitRequest": {
         "description": "Request payload for raw text document submission.",
         "properties": {
@@ -10897,6 +11500,98 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkflowTemplateListResponse": {
+        "description": "List response for public workflow templates.",
+        "properties": {
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "workflow_templates": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowTemplateResponse"
+            },
+            "title": "Workflow Templates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "workflow_templates",
+          "total"
+        ],
+        "title": "WorkflowTemplateListResponse",
+        "type": "object"
+      },
+      "WorkflowTemplateResponse": {
+        "description": "Serialized public workflow template.",
+        "properties": {
+          "allowed_skill_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Skill Names",
+            "type": "array"
+          },
+          "default_task_budget": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Task Budget"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "outputs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "preloaded_skill_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preloaded Skill Names",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "tool_groups": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tool Groups",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "summary",
+          "tool_groups",
+          "outputs",
+          "preloaded_skill_names",
+          "allowed_skill_names"
+        ],
+        "title": "WorkflowTemplateResponse",
         "type": "object"
       },
       "artana_evidence_api__routers__research_bootstrap_runs__HarnessResearchStateResponse": {
@@ -19684,8 +20379,8 @@
     },
     "/v2/spaces/{space_id}/research-plan": {
       "post": {
-        "description": "Queues research-init work and returns immediately. The response includes a `poll_url` for the run progress endpoint, which callers should poll to observe async completion.",
-        "operationId": "v2_create_research_init_v2_spaces__space_id__research_plan_post",
+        "description": "Queue research planning work using public task language.",
+        "operationId": "create_research_plan_v2_spaces__space_id__research_plan_post",
         "parameters": [
           {
             "in": "path",
@@ -19713,7 +20408,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ResearchInitResponse"
+                  "$ref": "#/components/schemas/ResearchPlanResponse"
                 }
               }
             },
@@ -20935,8 +21630,8 @@
     },
     "/v2/spaces/{space_id}/tasks": {
       "get": {
-        "description": "Return harness runs for one research space.",
-        "operationId": "v2_list_runs_v2_spaces__space_id__tasks_get",
+        "description": "Return tracked tasks for one research space.",
+        "operationId": "list_tasks_v2_spaces__space_id__tasks_get",
         "parameters": [
           {
             "in": "path",
@@ -20977,7 +21672,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessRunListResponse"
+                  "$ref": "#/components/schemas/TaskListResponse"
                 }
               }
             },
@@ -21008,8 +21703,8 @@
         ]
       },
       "post": {
-        "description": "Queue one harness run after validating graph service availability.",
-        "operationId": "v2_create_run_v2_spaces__space_id__tasks_post",
+        "description": "Create one public task from a workflow template.",
+        "operationId": "create_task_v2_spaces__space_id__tasks_post",
         "parameters": [
           {
             "in": "path",
@@ -21026,7 +21721,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/HarnessRunCreateRequest"
+                "$ref": "#/components/schemas/TaskCreateRequest"
               }
             }
           },
@@ -21037,7 +21732,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessRunResponse"
+                  "$ref": "#/components/schemas/TaskResponse"
                 }
               }
             },
@@ -21099,7 +21794,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessRunResponse"
+                  "$ref": "#/components/schemas/TaskResponse"
                 }
               }
             },
@@ -21327,7 +22022,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RunCapabilitiesResponse"
+                  "$ref": "#/components/schemas/TaskCapabilitiesResponse"
                 }
               }
             },
@@ -21389,7 +22084,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RunPolicyDecisionsResponse"
+                  "$ref": "#/components/schemas/TaskDecisionsResponse"
                 }
               }
             },
@@ -21559,7 +22254,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessArtifactListResponse"
+                  "$ref": "#/components/schemas/TaskOutputListResponse"
                 }
               }
             },
@@ -21630,7 +22325,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessArtifactResponse"
+                  "$ref": "#/components/schemas/TaskOutputResponse"
                 }
               }
             },
@@ -21764,7 +22459,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessRunProgressResponse"
+                  "$ref": "#/components/schemas/TaskProgressResponse"
                 }
               }
             },
@@ -21836,7 +22531,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessRunResumeResponse"
+                  "$ref": "#/components/schemas/TaskResumeResponse"
                 }
               }
             },
@@ -21898,7 +22593,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessWorkspaceResponse"
+                  "$ref": "#/components/schemas/TaskWorkingStateResponse"
                 }
               }
             },
@@ -22195,8 +22890,8 @@
     },
     "/v2/spaces/{space_id}/workflows/evidence-curation/tasks": {
       "post": {
-        "description": "Create a governed curation run that pauses for explicit approval.",
-        "operationId": "v2_create_claim_curation_run_v2_spaces__space_id__workflows_evidence_curation_tasks_post",
+        "description": "Start one evidence-curation task with public payload naming.",
+        "operationId": "create_evidence_curation_task_v2_spaces__space_id__workflows_evidence_curation_tasks_post",
         "parameters": [
           {
             "in": "path",
@@ -22236,11 +22931,15 @@
           "required": true
         },
         "responses": {
-          "201": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimCurationRunResponse"
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/JSONValue-Output"
+                  },
+                  "title": "Response Create Evidence Curation Task V2 Spaces  Space Id  Workflows Evidence Curation Tasks Post",
+                  "type": "object"
                 }
               }
             },
@@ -22250,7 +22949,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessAcceptedRunResponse"
+                  "$ref": "#/components/schemas/AcceptedTaskResponse"
                 }
               }
             },
@@ -22759,8 +23458,8 @@
         ]
       },
       "post": {
-        "description": "Run the forward-only supervisor composition across bootstrap, chat, and curation.",
-        "operationId": "v2_create_supervisor_run_v2_spaces__space_id__workflows_full_research_tasks_post",
+        "description": "Start one full-research task with public payload naming.",
+        "operationId": "create_full_research_task_v2_spaces__space_id__workflows_full_research_tasks_post",
         "parameters": [
           {
             "in": "path",
@@ -22800,11 +23499,15 @@
           "required": true
         },
         "responses": {
-          "201": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SupervisorRunResponse"
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/JSONValue-Output"
+                  },
+                  "title": "Response Create Full Research Task V2 Spaces  Space Id  Workflows Full Research Tasks Post",
+                  "type": "object"
                 }
               }
             },
@@ -22814,7 +23517,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessAcceptedRunResponse"
+                  "$ref": "#/components/schemas/AcceptedTaskResponse"
                 }
               }
             },
@@ -22876,7 +23579,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SupervisorRunDetailResponse"
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/JSONValue-Output"
+                  },
+                  "title": "Response Get Full Research Task V2 Spaces  Space Id  Workflows Full Research Tasks  Task Id  Get",
+                  "type": "object"
                 }
               }
             },
@@ -22957,7 +23664,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SupervisorChatGraphWriteCandidateDecisionResponse"
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/JSONValue-Output"
+                  },
+                  "title": "Response Decide Full Research Suggested Update V2 Spaces  Space Id  Workflows Full Research Tasks  Task Id  Suggested Updates  Candidate Index  Decision Post",
+                  "type": "object"
                 }
               }
             },
@@ -23342,8 +24053,8 @@
     },
     "/v2/spaces/{space_id}/workflows/topic-setup/tasks": {
       "post": {
-        "description": "Bootstrap a research space into a durable harness memory state.",
-        "operationId": "v2_create_research_bootstrap_run_v2_spaces__space_id__workflows_topic_setup_tasks_post",
+        "description": "Start one topic-setup task with public payload naming.",
+        "operationId": "create_topic_setup_task_v2_spaces__space_id__workflows_topic_setup_tasks_post",
         "parameters": [
           {
             "in": "path",
@@ -23383,11 +24094,15 @@
           "required": true
         },
         "responses": {
-          "201": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ResearchBootstrapRunResponse"
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/JSONValue-Output"
+                  },
+                  "title": "Response Create Topic Setup Task V2 Spaces  Space Id  Workflows Topic Setup Tasks Post",
+                  "type": "object"
                 }
               }
             },
@@ -23397,7 +24112,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessAcceptedRunResponse"
+                  "$ref": "#/components/schemas/AcceptedTaskResponse"
                 }
               }
             },
@@ -23430,28 +24145,20 @@
     },
     "/v2/workflow-templates": {
       "get": {
-        "description": "Return registered harness templates.",
-        "operationId": "v2_list_harnesses_v2_workflow_templates_get",
+        "description": "Return the public workflow template catalog.",
+        "operationId": "list_workflow_templates_v2_workflow_templates_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessTemplateListResponse"
+                  "$ref": "#/components/schemas/WorkflowTemplateListResponse"
                 }
               }
             },
             "description": "Successful Response"
           }
         },
-        "security": [
-          {
-            "APIKeyHeader": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
         "summary": "List workflow templates",
         "tags": [
           "workflows"
@@ -23478,7 +24185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HarnessTemplateResponse"
+                  "$ref": "#/components/schemas/WorkflowTemplateResponse"
                 }
               }
             },

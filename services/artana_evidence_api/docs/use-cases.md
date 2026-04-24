@@ -37,7 +37,7 @@ Goal:
 Submit one text note:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/text" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -50,7 +50,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
 Or upload one PDF:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/pdf" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/pdf" \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@./med13.pdf" \
   -F "title=MED13 paper"
@@ -59,7 +59,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/pdf" \
 Run extraction:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/<document_id>/extraction" \
   -H "Authorization: Bearer $TOKEN" \
   -X POST
 ```
@@ -67,14 +67,14 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
 List the staged review queue for that document:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items?document_id=<document_id>" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 Promote one staged queue item:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -87,7 +87,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
 Reject one instead:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -101,7 +101,7 @@ What to look for:
 
 - the uploaded or submitted document has a stable `document_id`
 - extraction returns a `proposal_count`
-- queue items include the originating `document_id` and `run_id`
+- queue items include the originating `document_id` and `task_id`
 
 ## Use Case 2: Ask A Grounded Question With One Document
 
@@ -114,7 +114,7 @@ Goal:
 Create a chat session:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -125,7 +125,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
 Send a message:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -149,7 +149,7 @@ Read the result:
 The default review path is to stage generic proposals:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/proposals/graph-write" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/suggested-updates" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -157,7 +157,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/proposals/g
   }'
 ```
 
-Then review those staged items through `/review-queue/<item_id>/actions`.
+Then review those staged items through `/review-items/<item_id>/actions`.
 
 Inline candidate review still exists, but generic proposal staging plus the
 review queue is the easier default to explain and operate.
@@ -165,7 +165,7 @@ review queue is the easier default to explain and operate.
 Inspect the transparency snapshot for the chat run:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/capabilities" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/capabilities" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -177,7 +177,7 @@ This tells you:
 Then inspect the ordered decision log:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/policy-decisions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/decisions" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -208,7 +208,7 @@ Goal:
 Start the search:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/sources/pubmed/searches" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -223,7 +223,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
 Fetch the saved job:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches/<job_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/sources/pubmed/searches/<job_id>" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -244,7 +244,7 @@ Goal:
 Start the bootstrap run:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/research-bootstrap/runs" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/topic-setup/tasks" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
@@ -266,7 +266,7 @@ What to look for in the response:
 List the artifacts for the run:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/artifacts" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -281,7 +281,7 @@ Goal:
 Create a schedule:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/schedules" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/schedules" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
@@ -306,7 +306,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/schedules" \
 Trigger an immediate run:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/schedules/<schedule_id>/run-now" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/schedules/<schedule_id>/start-now" \
   -H "Authorization: Bearer $TOKEN" \
   -X POST
 ```
@@ -314,7 +314,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/schedules/<schedule_id>/run-now" \
 Open the delta report artifact:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/artifacts/delta_report" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs/delta_report" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -329,7 +329,7 @@ Goal:
 Start the run:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/mechanism-discovery/runs" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/mechanism-discovery/tasks" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
@@ -350,7 +350,7 @@ What to inspect:
 List the staged mechanism proposals:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/proposals?proposal_type=mechanism_candidate" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/proposals?proposal_type=mechanism_candidate" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -365,7 +365,7 @@ Goal:
 Start claim curation:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/graph-curation/runs" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/evidence-curation/tasks" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -378,14 +378,14 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/graph-curation/runs" \
 The run will usually pause. Check approvals:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/approvals" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/approvals" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 Approve one action:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/approvals/<approval_key>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/approvals/<approval_key>" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -397,7 +397,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/approvals/<approval_key>
 Resume the paused run:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/resume" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/resume" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -409,7 +409,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/resume" \
 Inspect final curation artifacts:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/artifacts/curation_summary" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs/curation_summary" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -425,7 +425,7 @@ Goal:
 Start the supervisor:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/supervisor/runs" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/tasks" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
@@ -444,7 +444,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/supervisor/runs" \
 Read typed supervisor detail:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/supervisor/runs/<run_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/tasks/<task_id>" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -459,11 +459,11 @@ What to inspect:
 
 If the parent paused on child curation approval:
 
-1. read `curation_run_id` from supervisor detail
+1. read `curation_task_id` from supervisor detail
 2. list child approvals:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<curation_run_id>/approvals" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<curation_task_id>/approvals" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -471,7 +471,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<curation_run_id>/approvals" \
 4. resume the parent:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/resume" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/resume" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -493,7 +493,7 @@ Goal:
 Fetch the dashboard summary:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/supervisor/dashboard" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/dashboard" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -502,21 +502,21 @@ Useful query examples:
 Only paused runs:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/supervisor/dashboard?status=paused" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/dashboard?status=paused" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 Only chat-derived curation:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/supervisor/dashboard?curation_source=chat_graph_write" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/dashboard?curation_source=chat_graph_write" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 You can also page through typed supervisor rows:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/supervisor/runs?limit=20&offset=0&sort_by=updated_at&sort_direction=desc" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/tasks?limit=20&offset=0&sort_by=updated_at&sort_direction=desc" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -542,13 +542,13 @@ Start with the run id you want to inspect.
 Read the capability snapshot:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/capabilities" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/capabilities" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 Start with these fields:
 
-- `harness_id`
+- `workflow_template_id`
 - `policy_profile`
 - `visible_tools`
 - `filtered_tools`
@@ -556,7 +556,7 @@ Start with these fields:
 Then read the decision timeline:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/policy-decisions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/decisions" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -577,14 +577,14 @@ How to read the result:
 If you need the lower-level trace after that, open the raw event stream:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/events" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/events" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 If you need the actual output content, open the artifacts:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/artifacts" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

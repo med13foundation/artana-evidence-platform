@@ -14,11 +14,11 @@ Use these first.
 | Create a named space | `POST /v2/spaces` |
 | Upload text evidence | `POST /v2/spaces/{space_id}/documents/text` |
 | Upload PDF evidence | `POST /v2/spaces/{space_id}/documents/pdf` |
-| Extract reviewable findings | `POST /v2/spaces/{space_id}/documents/{document_id}/extraction` |
+| Extract reviewable findings | `POST /v2/spaces/{space_id}/documents/{document_id}/extractionion` |
 | Review suggestions | `GET /v2/spaces/{space_id}/review-items` |
 | Promote or reject suggestions | `POST /v2/spaces/{space_id}/review-items/{item_id}/decision` |
-| Search PubMed | `POST /v2/spaces/{space_id}/sources/pubmed/searches` |
-| Search MARRVEL | `POST /v2/spaces/{space_id}/sources/marrvel/searches` |
+| Search PubMed | `POST /v2/spaces/{space_id}/sources/sources/pubmed/searches` |
+| Search MARRVEL | `POST /v2/spaces/{space_id}/sources/sources/marrvel/searches` |
 | Create research plan | `POST /v2/spaces/{space_id}/research-plan` |
 | Ask an evidence-map question | `POST /v2/spaces/{space_id}/workflows/evidence-search/tasks` |
 | Chat over documents and evidence | `/v2/spaces/{space_id}/chat-sessions/*` |
@@ -77,7 +77,7 @@ Use these for identity, API keys, and membership management.
 
 ## Advanced Direct-Write Warning
 
-`POST /v2/spaces/{space_id}/sources/marrvel/ingestion` exists, but normal researcher
+`POST /v2/spaces/{space_id}/sources/sources/marrvel/ingestionion` exists, but normal researcher
 workflows should prefer MARRVEL search plus governed review. Direct-write paths
 are useful for system-owned or advanced operations, but they are not the best
 first API to learn.

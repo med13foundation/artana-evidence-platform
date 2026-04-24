@@ -11,9 +11,9 @@ topic, permissions, evidence, graph context, and research state together.
 
 Useful endpoints:
 
-- `POST /v1/spaces`
-- `PUT /v1/spaces/default`
-- `GET /v1/spaces/{space_id}/research-state`
+- `POST /v2/spaces`
+- `PUT /v2/spaces/default`
+- `GET /v2/spaces/{space_id}/research-state`
 
 ## Evidence Item
 
@@ -29,10 +29,10 @@ Examples:
 
 Useful endpoints:
 
-- `POST /v1/spaces/{space_id}/documents/text`
-- `POST /v1/spaces/{space_id}/documents/pdf`
-- `POST /v1/spaces/{space_id}/pubmed/searches`
-- `POST /v1/spaces/{space_id}/marrvel/searches`
+- `POST /v2/spaces/{space_id}/documents/text`
+- `POST /v2/spaces/{space_id}/documents/pdf`
+- `POST /v2/spaces/{space_id}/sources/pubmed/searches`
+- `POST /v2/spaces/{space_id}/sources/marrvel/searches`
 
 ## Run
 
@@ -41,15 +41,15 @@ A run is one job the system performs.
 Examples:
 
 - extract findings from one document
-- run a multi-source research-init workflow
+- run a multi-source research-plan workflow
 - answer a graph-search question
 - run continuous learning
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs`
-- `GET /v1/spaces/{space_id}/runs/{run_id}`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/events`
+- `GET /v2/spaces/{space_id}/tasks`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/events`
 
 ## Proposal
 
@@ -60,8 +60,8 @@ human should check it first."
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/proposals`
-- `GET /v1/spaces/{space_id}/review-queue`
+- `GET /v2/spaces/{space_id}/proposals`
+- `GET /v2/spaces/{space_id}/review-items`
 
 ## Review Queue
 
@@ -77,8 +77,8 @@ This is the gate between AI suggestion and trusted graph knowledge.
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/review-queue`
-- `POST /v1/spaces/{space_id}/review-queue/{item_id}/actions`
+- `GET /v2/spaces/{space_id}/review-items`
+- `POST /v2/spaces/{space_id}/review-items/{item_id}/actions`
 
 ## Graph
 
@@ -90,9 +90,9 @@ low-level writes.
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/graph-explorer/entities`
-- `GET /v1/spaces/{space_id}/graph-explorer/claims`
-- `GET /v1/spaces/{space_id}/graph-explorer/claims/{claim_id}/evidence`
+- `GET /v2/spaces/{space_id}/evidence-map/entities`
+- `GET /v2/spaces/{space_id}/evidence-map/claims`
+- `GET /v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence`
 
 ## Artifact
 
@@ -107,5 +107,5 @@ Examples:
 
 Useful endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts/{artifact_key}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs/{output_key}`

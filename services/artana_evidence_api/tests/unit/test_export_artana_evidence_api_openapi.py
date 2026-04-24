@@ -96,7 +96,7 @@ def test_export_artana_evidence_api_openapi_writes_and_checks_schema(
     _assert_accepted_post_contract(
         document,
         path="/v2/spaces/{space_id}/workflows/topic-setup/tasks",
-        accepted_schema_ref="#/components/schemas/HarnessAcceptedRunResponse",
+        accepted_schema_ref="#/components/schemas/AcceptedTaskResponse",
     )
     _assert_accepted_post_contract(
         document,
@@ -120,8 +120,18 @@ def test_export_artana_evidence_api_openapi_writes_and_checks_schema(
     )
     _assert_accepted_post_contract(
         document,
+        path="/v2/spaces/{space_id}/workflows/evidence-curation/tasks",
+        accepted_schema_ref="#/components/schemas/AcceptedTaskResponse",
+    )
+    _assert_accepted_post_contract(
+        document,
         path="/v1/spaces/{space_id}/agents/supervisor/runs",
         accepted_schema_ref="#/components/schemas/HarnessAcceptedRunResponse",
+    )
+    _assert_accepted_post_contract(
+        document,
+        path="/v2/spaces/{space_id}/workflows/full-research/tasks",
+        accepted_schema_ref="#/components/schemas/AcceptedTaskResponse",
     )
     _assert_accepted_post_contract(
         document,
