@@ -21,7 +21,25 @@ This checkout does not contain:
 - `packages/artana_api`;
 - unrelated monorepo services.
 
+## Surfaces Outside This Repo
+
+This repository is intentionally backend-only. Product clients should integrate
+through the Evidence API OpenAPI contract while the frontend and public SDK
+decision remains outside this checkout.
+
+- Current backend contracts live in the generated OpenAPI files listed below.
+- If a frontend or SDK repository is created, link it here rather than
+  reintroducing UI or SDK packages into this backend repo.
+- Until then, use the [User Guide](docs/user-guide/README.md) and
+  [Endpoint Index](docs/user-guide/09-endpoint-index.md) for API onboarding.
+
 ## Start Locally
+
+Prerequisites:
+
+- Python 3.13 or newer.
+- Docker with Compose support for the local Postgres container.
+- A shell that can run the repo `Makefile` targets.
 
 ```bash
 make install-dev
@@ -30,6 +48,24 @@ make run-all
 
 `make run-all` starts local Postgres, the graph service on
 `http://127.0.0.1:8090`, and the Evidence API on `http://127.0.0.1:8091`.
+It also applies the required schemas and service migrations through
+`make setup-postgres`.
+
+On first run, the Makefile creates `.env.postgres` from
+`.env.postgres.example` if needed. Keep production secrets out of this local
+file; deployed environments must provide their own JWT and database settings.
+
+Container note: `docker-compose.postgres.yml` starts Postgres for local
+development, and each service has its own Dockerfile for runtime/test images.
+There is not currently a root full-stack `docker-compose.yml` for Postgres plus
+both Python services.
+
+After `make run-all` is ready, verify the local Evidence API from another
+terminal:
+
+```bash
+curl http://127.0.0.1:8091/health
+```
 
 ## Docs
 
@@ -42,13 +78,15 @@ make run-all
 
 ## Main Workflow
 
-```text
-Create or get a space
-  -> add or discover evidence
-  -> extract reviewable proposals
-  -> review or reject proposals
-  -> promote trusted items into the graph
-  -> explore, ask, and repeat
+```mermaid
+flowchart LR
+    A["Create or get a space"] --> B["Add or discover evidence"]
+    B --> C["Extract reviewable proposals"]
+    C --> D{"Human review"}
+    D -->|Approve| E["Promote trusted items into the graph"]
+    D -->|Reject| F["Keep graph state unchanged"]
+    E --> G["Explore, ask, and repeat"]
+    F --> G
 ```
 
 The review queue is the trust gate. AI workflows can search, extract, and stage

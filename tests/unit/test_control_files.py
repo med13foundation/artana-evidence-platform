@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import tomllib
 from pathlib import Path
 
 
@@ -37,6 +38,21 @@ STALE_ROOT_PATH_REFERENCES = (
 
 def _read_text(relative_path: str) -> str:
     return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+
+
+def _normalize(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _section(text: str, heading: str) -> str:
+    pattern = re.compile(
+        rf"^## {re.escape(heading)}\n(?P<body>.*?)(?=^## |\Z)",
+        flags=re.DOTALL | re.MULTILINE,
+    )
+    match = pattern.search(text)
+
+    assert match is not None, f"missing README section: {heading}"
+    return match.group("body")
 
 
 def _make_targets() -> set[str]:
@@ -95,6 +111,83 @@ def test_make_all_aliases_normal_service_gate() -> None:
     assert re.search(r"^all:\s+service-checks\s+##", makefile, flags=re.MULTILINE)
     assert "make all" in readme
     assert "`make all` is an alias for `make service-checks`" in readme
+
+
+def test_readme_visualizes_backend_review_workflow() -> None:
+    """Regression: README should show the human review gate at a glance."""
+    readme = _read_text("README.md")
+    workflow_section = _section(readme, "Main Workflow")
+
+    assert "```mermaid" in workflow_section
+    assert "flowchart LR" in workflow_section
+    assert re.search(r"\bHuman review\b", workflow_section)
+    assert re.search(
+        r"\bApprove\b.*\bPromote trusted items\b",
+        workflow_section,
+        flags=re.DOTALL,
+    )
+    assert re.search(
+        r"\bReject\b.*\bgraph state unchanged\b",
+        workflow_section,
+        flags=re.DOTALL,
+    )
+    assert "The review queue is the trust gate." in readme
+
+
+def test_readme_names_backend_only_external_surfaces() -> None:
+    """Regression: newcomers should not hunt for frontend or SDK packages here."""
+    readme = _read_text("README.md")
+    surface_section = _section(readme, "Surfaces Outside This Repo")
+    normalized_section = _normalize(surface_section)
+
+    assert "This repository is intentionally backend-only." in surface_section
+    assert (
+        "frontend and public SDK decision remains outside this checkout"
+        in normalized_section
+    )
+    assert "reintroducing UI or SDK packages into this backend repo" in normalized_section
+    assert "[User Guide](docs/user-guide/README.md)" in surface_section
+    assert "[Endpoint Index](docs/user-guide/09-endpoint-index.md)" in surface_section
+    assert (REPO_ROOT / "docs" / "user-guide" / "README.md").exists()
+    assert (REPO_ROOT / "docs" / "user-guide" / "09-endpoint-index.md").exists()
+
+
+def test_readme_documents_containerization_boundary() -> None:
+    """Regression: README should be clear about Docker support and its limits."""
+    readme = _read_text("README.md")
+    start_section = _section(readme, "Start Locally")
+
+    assert "Container note:" in start_section
+    assert "`docker-compose.postgres.yml` starts Postgres" in start_section
+    assert "each service has its own Dockerfile" in start_section
+    assert (
+        "There is not currently a root full-stack `docker-compose.yml`"
+        in start_section
+    )
+    assert (REPO_ROOT / "docker-compose.postgres.yml").exists()
+    assert not (REPO_ROOT / "docker-compose.yml").exists()
+    assert (REPO_ROOT / "services" / "artana_evidence_api" / "Dockerfile").exists()
+    assert (REPO_ROOT / "services" / "artana_evidence_db" / "Dockerfile").exists()
+
+
+def test_readme_includes_first_run_prerequisites_and_smoke_test() -> None:
+    """Regression: README should name first-run dependencies and verification."""
+    makefile = _read_text("Makefile")
+    openapi = json.loads(_read_text("services/artana_evidence_api/openapi.json"))
+    pyproject = tomllib.loads(_read_text("pyproject.toml"))
+    readme = _read_text("README.md")
+    start_section = _section(readme, "Start Locally")
+
+    assert "Python 3.13 or newer." in start_section
+    assert "Docker with Compose support" in start_section
+    assert "make setup-postgres" in start_section
+    assert ".env.postgres.example" in start_section
+    assert "curl http://127.0.0.1:8091/health" in start_section
+    assert pyproject["project"]["requires-python"] == ">=3.13"
+    assert "$(MAKE) -s setup-postgres" in _make_target_body(makefile, "run-all")
+    assert "POSTGRES_ENV_TEMPLATE := .env.postgres.example" in makefile
+    assert (REPO_ROOT / ".env.postgres.example").exists()
+    assert "/health" in openapi["paths"]
 
 
 def test_makefile_detects_dot_venv_before_failing_pre_commit_gates() -> None:
