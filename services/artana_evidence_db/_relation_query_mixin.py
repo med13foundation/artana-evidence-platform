@@ -25,9 +25,7 @@ from sqlalchemy import String, and_, func, or_, select
 from sqlalchemy.orm import aliased
 
 if TYPE_CHECKING:
-    from artana_evidence_db.relation_repository import (
-        SqlAlchemyKernelRelationRepository,
-    )
+    from sqlalchemy.orm import Session
     from sqlalchemy.sql import Select
     from sqlalchemy.sql.elements import ColumnElement
 
@@ -35,11 +33,12 @@ if TYPE_CHECKING:
 class _KernelRelationQueryMixin:
     """Read and graph-traversal query helpers."""
 
+    _session: Session
     _HIGH_CONFIDENCE_THRESHOLD = 0.8
     _MEDIUM_CONFIDENCE_THRESHOLD = 0.6
 
     def get_by_id(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_id: str,
         *,
         claim_backed_only: bool = True,
@@ -51,7 +50,7 @@ class _KernelRelationQueryMixin:
         return KernelRelation.model_validate(model) if model is not None else None
 
     def find_by_triple(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         research_space_id: str,
         source_id: str,
@@ -73,7 +72,7 @@ class _KernelRelationQueryMixin:
         return KernelRelation.model_validate(model) if model is not None else None
 
     def find_by_source(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         source_id: str,
         *,
         relation_type: str | None = None,
@@ -99,7 +98,7 @@ class _KernelRelationQueryMixin:
         ]
 
     def find_by_target(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         target_id: str,
         *,
         relation_type: str | None = None,
@@ -125,7 +124,7 @@ class _KernelRelationQueryMixin:
         ]
 
     def find_neighborhood(  # noqa: C901
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         entity_id: str,
         *,
         depth: int = 1,
@@ -188,7 +187,7 @@ class _KernelRelationQueryMixin:
         return [KernelRelation.model_validate(model) for model in unique]
 
     def find_reachability_gaps(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         seed_entity_id: str,
         *,
         max_path_length: int = 2,
@@ -294,7 +293,7 @@ class _KernelRelationQueryMixin:
     _DEFAULT_MECHANISTIC_MAX_VISITED = 5000
 
     def find_mechanistic_gaps(  # noqa: C901, PLR0912, PLR0913, PLR0915
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         research_space_id: str,
         *,
         relation_types: list[str] | None = None,
@@ -443,7 +442,7 @@ class _KernelRelationQueryMixin:
         return gaps[start:]
 
     def _find_mechanistic_bridge_path(  # noqa: C901, PLR0913
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         research_space_id: str,
         source_entity_id: UUID,
@@ -574,7 +573,7 @@ class _KernelRelationQueryMixin:
         return None
 
     def _has_edge_between(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         research_space_id: str,
         left_entity_id: UUID,
@@ -600,7 +599,7 @@ class _KernelRelationQueryMixin:
         return self._session.scalars(stmt.limit(1)).first() is not None
 
     def _typed_neighbors(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         entity_id: UUID,
         research_space_id: str,
@@ -641,7 +640,7 @@ class _KernelRelationQueryMixin:
         return set(self._session.scalars(stmt).all())
 
     def _find_neighborhood_from_read_model(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         entity_id: str,
         relation_types: list[str] | None,
@@ -667,7 +666,7 @@ class _KernelRelationQueryMixin:
         return [KernelRelation.model_validate(model) for model in models]
 
     def find_by_research_space(  # noqa: C901, PLR0913
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         research_space_id: str,
         *,
         relation_type: str | None = None,
@@ -707,7 +706,7 @@ class _KernelRelationQueryMixin:
         ]
 
     def search_by_text(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         research_space_id: str,
         query: str,
         *,
@@ -744,7 +743,7 @@ class _KernelRelationQueryMixin:
         return [KernelRelation.model_validate(model) for model in unique_models]
 
     def count_by_research_space(  # noqa: PLR0913
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         research_space_id: str,
         *,
         relation_type: str | None = None,
@@ -780,7 +779,7 @@ class _KernelRelationQueryMixin:
         return int(result.scalar_one())
 
     def _build_research_space_stmt(  # noqa: C901, PLR0912, PLR0913
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         *,
         research_space_id: str,
         relation_type: str | None,

@@ -30,9 +30,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import CursorResult
 
 if TYPE_CHECKING:
-    from artana_evidence_db.relation_repository import (
-        SqlAlchemyKernelRelationRepository,
-    )
+    from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +38,10 @@ logger = logging.getLogger(__name__)
 class _KernelRelationCurationMixin:
     """Curation lifecycle, delete, and aggregate helper methods."""
 
+    _session: Session
+
     def update_curation(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_id: str,
         *,
         curation_status: str,
@@ -59,7 +59,7 @@ class _KernelRelationCurationMixin:
         return KernelRelation.model_validate(relation_model)
 
     def delete(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_id: str,
     ) -> bool:
         relation_model = self._session.get(RelationModel, _as_uuid(relation_id))
@@ -70,7 +70,7 @@ class _KernelRelationCurationMixin:
         return True
 
     def delete_by_provenance(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         provenance_id: str,
     ) -> int:
         target_provenance_id = _as_uuid(provenance_id)
@@ -118,7 +118,7 @@ class _KernelRelationCurationMixin:
         return count
 
     def _recompute_relation_aggregate(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_id: UUID,
     ) -> None:
         relation_model = self._session.get(RelationModel, relation_id)
@@ -191,7 +191,7 @@ class _KernelRelationCurationMixin:
         relation_model.updated_at = datetime.now(UTC)
 
     def _linked_refute_claim_units(
-        self: SqlAlchemyKernelRelationRepository,
+        self,
         relation_model: RelationModel,
     ) -> dict[str, float]:
         """Return REFUTE confidence units linked to a canonical relation."""
