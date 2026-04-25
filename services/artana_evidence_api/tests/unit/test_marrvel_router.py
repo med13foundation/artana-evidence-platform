@@ -12,9 +12,11 @@ from uuid import UUID, uuid4
 from artana_evidence_api import marrvel_enrichment, runtime_support
 from artana_evidence_api.app import create_app
 from artana_evidence_api.dependencies import (
+    get_direct_source_search_store,
     get_graph_api_gateway,
     get_research_space_store,
 )
+from artana_evidence_api.direct_source_search import InMemoryDirectSourceSearchStore
 from artana_evidence_api.graph_client import GraphServiceClientError
 from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryResult
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
@@ -244,6 +246,7 @@ def _build_client(
 ]:
     app = create_app()
     discovery_service = _StubMarrvelDiscoveryService()
+    direct_source_search_store = InMemoryDirectSourceSearchStore()
     research_space_store = HarnessResearchSpaceStore()
     space = research_space_store.create_space(
         owner_id=_TEST_USER_ID,
@@ -251,6 +254,9 @@ def _build_client(
         description="Owned test space for MARRVEL routes.",
     )
     app.dependency_overrides[get_marrvel_discovery_service] = lambda: discovery_service
+    app.dependency_overrides[get_direct_source_search_store] = (
+        lambda: direct_source_search_store
+    )
     app.dependency_overrides[get_research_space_store] = lambda: research_space_store
     if graph_api_gateway_dependency is not None:
         app.dependency_overrides[get_graph_api_gateway] = graph_api_gateway_dependency
@@ -306,8 +312,11 @@ def test_create_marrvel_search_through_generic_v2_source_route() -> None:
     assert created_payload["source_capture"]["capture_stage"] == "search_result"
     assert created_payload["source_capture"]["capture_method"] == "direct_source_search"
     assert created_payload["source_capture"]["query"] == "BRCA1"
+    assert created_payload["source_capture"].get("external_id") is None
+    assert created_payload["record_count"] == 1
 
     result_id = created_payload["id"]
+    discovery_service.results.clear()
     get_response = client.get(
         f"/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}",
         headers=_auth_headers(),
@@ -316,7 +325,7 @@ def test_create_marrvel_search_through_generic_v2_source_route() -> None:
     assert get_response.status_code == 200
     assert get_response.json()["id"] == result_id
     assert get_response.json()["source_capture"]["search_id"] == result_id
-    assert result_id in discovery_service.results
+    assert get_response.json()["record_count"] == 1
 
 
 def test_create_marrvel_search_accepts_protein_variant_queries() -> None:

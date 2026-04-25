@@ -8299,7 +8299,7 @@
         "type": "object"
       },
       "MarrvelSourceSearchResponse": {
-        "description": "Typed v2 MARRVEL source-search response with capture metadata.",
+        "description": "Typed v2 MARRVEL source-search response with durable capture metadata.",
         "properties": {
           "available_panels": {
             "items": {
@@ -8307,6 +8307,16 @@
             },
             "title": "Available Panels",
             "type": "array"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
           },
           "gene_found": {
             "title": "Gene Found",
@@ -8360,6 +8370,10 @@
             "title": "Panels",
             "type": "object"
           },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
           "query_mode": {
             "enum": [
               "gene",
@@ -8372,6 +8386,20 @@
           "query_value": {
             "title": "Query Value",
             "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
           },
           "resolved_gene_symbol": {
             "anyOf": [
@@ -8398,12 +8426,20 @@
           "source_capture": {
             "$ref": "#/components/schemas/SourceResultCapture"
           },
+          "source_key": {
+            "const": "marrvel",
+            "default": "marrvel",
+            "title": "Source Key",
+            "type": "string"
+          },
           "space_id": {
             "format": "uuid",
             "title": "Space Id",
             "type": "string"
           },
           "status": {
+            "const": "completed",
+            "default": "completed",
             "title": "Status",
             "type": "string"
           },
@@ -8419,14 +8455,17 @@
         "required": [
           "id",
           "space_id",
+          "query",
           "query_mode",
           "query_value",
           "gene_symbol",
           "taxon_id",
-          "status",
           "gene_found",
           "omim_count",
           "variant_count",
+          "record_count",
+          "created_at",
+          "completed_at",
           "source_capture"
         ],
         "title": "MarrvelSourceSearchResponse",
@@ -10609,6 +10648,224 @@
           "retrieved_at"
         ],
         "title": "SourceResultCapture",
+        "type": "object"
+      },
+      "SourceSearchHandoffRequest": {
+        "description": "Request to hand one captured source-search record downstream.",
+        "properties": {
+          "external_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Provider identifier for the selected record when known.",
+            "title": "External Id"
+          },
+          "extract_now": {
+            "default": false,
+            "description": "When true, run the existing document extraction route after handoff.",
+            "title": "Extract Now",
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client-supplied idempotency key for safe retries.",
+            "title": "Idempotency Key"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Input"
+            },
+            "description": "Optional client metadata to attach to the handoff document.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "record_hash": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SHA-256 hash of the canonical selected source record JSON.",
+            "title": "Record Hash"
+          },
+          "record_index": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Zero-based record index from the captured source-search response.",
+            "title": "Record Index"
+          },
+          "target_kind": {
+            "const": "source_document",
+            "default": "source_document",
+            "description": "Downstream target to create from the selected source record.",
+            "title": "Target Kind",
+            "type": "string"
+          }
+        },
+        "title": "SourceSearchHandoffRequest",
+        "type": "object"
+      },
+      "SourceSearchHandoffResponse": {
+        "description": "Response for a durable source-search handoff.",
+        "properties": {
+          "extraction": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction"
+          },
+          "handoff_payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Handoff Payload",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "search_id": {
+            "format": "uuid",
+            "title": "Search Id",
+            "type": "string"
+          },
+          "selected_external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected External Id"
+          },
+          "selected_record_index": {
+            "title": "Selected Record Index",
+            "type": "integer"
+          },
+          "source_capture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceResultCapture"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "completed",
+              "not_extractable",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Document Id"
+          },
+          "target_kind": {
+            "enum": [
+              "source_document",
+              "not_extractable"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Run Id"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "source_key",
+          "search_id",
+          "status",
+          "target_kind",
+          "idempotency_key",
+          "selected_record_index",
+          "handoff_payload"
+        ],
+        "title": "SourceSearchHandoffResponse",
         "type": "object"
       },
       "SourceSearchResponse": {
@@ -24164,6 +24421,89 @@
           }
         ],
         "summary": "Get evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs": {
+      "post": {
+        "description": "Create an idempotent handoff from a saved source-search result.",
+        "operationId": "create_source_search_handoff_v2_spaces__space_id__sources__source_key__searches__search_id__handoffs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "source_key",
+            "required": true,
+            "schema": {
+              "title": "Source Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceSearchHandoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceSearchHandoffResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Source is not registered."
+          },
+          "409": {
+            "description": "Idempotency key was reused with different input."
+          },
+          "422": {
+            "description": "The request did not select exactly one source record."
+          },
+          "501": {
+            "description": "Source does not support direct search yet."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Hand off a captured source search",
         "tags": [
           "sources"
         ]

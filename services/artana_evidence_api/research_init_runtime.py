@@ -137,6 +137,10 @@ from artana_evidence_api.types.common import (
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityEmbeddingRefreshRequest,
 )
+from artana_evidence_api.variant_aware_document_extraction import (
+    document_supports_variant_aware_extraction,
+    extract_variant_aware_document,
+)
 from pydantic import ValidationError
 
 ResearchOrchestratorChaseCandidate = _ResearchOrchestratorChaseCandidate
@@ -2743,6 +2747,63 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                             _require_extractable_document_text(
                                 document=current_document,
                             )
+
+                            if document_supports_variant_aware_extraction(
+                                document=current_document,
+                            ):
+                                variant_result = await extract_variant_aware_document(
+                                    space_id=space_id,
+                                    document=current_document,
+                                    graph_api_gateway=doc_gateway,
+                                    review_context=review_context,
+                                )
+                                updated_document = document_store.update_document(
+                                    space_id=space_id,
+                                    document_id=current_document.id,
+                                    metadata_patch={
+                                        "candidate_count": (
+                                            len(variant_result.contract.entities)
+                                            + len(
+                                                variant_result.contract.observations,
+                                            )
+                                            + len(variant_result.contract.relations)
+                                        ),
+                                        "proposal_count": len(
+                                            variant_result.proposal_drafts,
+                                        ),
+                                        "review_item_count": len(
+                                            variant_result.review_item_drafts,
+                                        ),
+                                        "skipped_candidate_count": len(
+                                            variant_result.skipped_items,
+                                        ),
+                                        "candidate_discovery": (
+                                            variant_result.candidate_discovery
+                                        ),
+                                        "extraction_diagnostics": (
+                                            variant_result.extraction_diagnostics
+                                        ),
+                                        "variant_aware_extraction": True,
+                                    },
+                                )
+                                if updated_document is None:
+                                    return _PreparedDocumentExtraction(
+                                        document=current_document,
+                                        drafts=(),
+                                        errors=(
+                                            *doc_errors,
+                                            "Document disappeared before "
+                                            "variant-aware research-init extraction "
+                                            "metadata could be stored.",
+                                        ),
+                                        failed=True,
+                                    )
+                                current_document = updated_document
+                                return _PreparedDocumentExtraction(
+                                    document=current_document,
+                                    drafts=variant_result.proposal_drafts,
+                                    errors=tuple(doc_errors),
+                                )
 
                             (
                                 candidates,

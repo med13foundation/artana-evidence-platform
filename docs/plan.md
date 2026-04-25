@@ -166,7 +166,7 @@ Goal:
 Create one canonical source registry used by docs, v2 source endpoints, direct
 source searches, and research-plan orchestration.
 
-Tasks:
+Completed design:
 
 - Add service-local source capability models in `services/artana_evidence_api`.
 - Register PubMed, MARRVEL, ClinVar, DrugBank, AlphaFold, UniProt, HGNC,
@@ -301,6 +301,236 @@ Exit criteria:
 - Product docs, OpenAPI, and behavior tell the same story.
 - External users can understand which source action to call next.
 
+### 7. Direct Source Capture-To-Extraction Handoff
+
+Goal:
+Close the remaining production-readiness gap after durable direct search:
+selected direct source-search records should be explicitly handed off into
+durable extraction or normalization inputs without silently promoting graph
+facts.
+
+Current status:
+
+- Structured direct source-search runs are durably persisted in Evidence API
+  storage.
+- Search responses include source provenance and can be fetched after a fresh
+  app/store instance.
+- Variant-aware extraction already supports PubMed, text, PDF, ClinVar, and
+  MARRVEL document source types.
+- The durable bridge now exists for `source_search_runs`-backed structured
+  sources through
+  `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs`.
+- ClinVar handoff creates a durable `clinvar` source document with source
+  capture metadata and variant-aware extraction eligibility. Non-variant
+  structured sources return a durable `not_extractable` handoff instead of
+  silently no-oping.
+- PubMed compatibility searches still use a different discovery store, so
+  PubMed handoff returns clear not-yet-supported behavior. MARRVEL is
+  adapter-wrapped into durable `source_search_runs` and supports panel-aware
+  handoff.
+
+Tasks:
+
+- Add an explicit handoff command or endpoint for durable direct source-search
+  results.
+- Prefer per-record handoff so a user can extract selected search results
+  instead of every record in a response.
+- Define the idempotency key, using `space_id`, `source_key`, `search_id`, and
+  either a provider `external_id` or stable record hash.
+- Add a separate `source_search_handoffs` ledger instead of overloading
+  `source_search_runs`; one search run may hand off multiple selected records
+  to different downstream targets.
+- Store a request hash with each handoff idempotency key. Replays with the same
+  key and same request should return the existing handoff; replays with the
+  same key and a different request should fail clearly.
+- Preserve provider IDs, locators, citations, `source_capture`, original
+  payload, and source-search run linkage during handoff.
+- Convert selected ClinVar records with variant signals into durable inputs
+  for the existing variant-aware extraction path.
+- Convert selected MARRVEL records through the same durable
+  `source_search_runs` store used by the other structured direct sources.
+- Treat MARRVEL as panel-aware: route ClinVar/variant panels through
+  variant-aware normalization, and route OMIM, ortholog, expression,
+  constraint, and target panels through deterministic or deferred
+  source-specific normalization.
+- Avoid duplicate ClinVar proposal paths. If ClinVar handoff uses
+  variant-aware extraction, deterministic ClinVar bootstrap proposals must be
+  deduplicated, demoted, or made lower precedence.
+- Keep PubMed, text, and PDF behavior on the existing variant-aware document
+  extraction path when variant signals are detected.
+- Keep the first implementation slice focused on `source_search_runs`-backed
+  structured sources. PubMed remains on its compatibility discovery store for
+  this handoff endpoint; MARRVEL is now adapter-wrapped into durable
+  `source_search_runs`.
+- Define explicit behavior for ClinicalTrials.gov, UniProt, AlphaFold,
+  DrugBank, MGI, and ZFIN: source-specific normalization, deferred extraction,
+  or a clear "captured but not extractable yet" response.
+- Make research-plan enrichment documents use the variant-aware branch when
+  their source type and signals qualify, so direct-source handoff and
+  research-plan enrichment do not diverge.
+- Harden the durable direct-source store before composing it with handoff
+  writes: clarify transaction ownership, add payload schema-version handling or
+  controlled degraded reads, validate `created_by` as a UUID, and mark the
+  in-memory store as test-only.
+- Decide whether `source_search_runs` intentionally has no foreign-key cascade
+  because it is an audit/capture ledger.
+
+Exit criteria:
+
+- A selected durable direct source-search record can be handed off
+  idempotently into a durable source document or normalized source record.
+- Repeated handoff of the same selected record does not create duplicate
+  documents, proposals, or review items.
+- ClinVar and MARRVEL variant handoff records enter the variant-aware
+  extraction document path.
+- Variant-aware extraction creates candidates, proposals, or review items only;
+  it does not directly promote trusted graph facts.
+- Non-variant structured sources have explicit product behavior rather than a
+  silent no-op.
+- OpenAPI and tests cover the new handoff contract.
+
+Subagent implementation plan:
+
+Use one lead integrator plus focused subagents with disjoint ownership. The
+lead keeps API semantics, migrations, OpenAPI, and final verification coherent;
+subagents work on bounded slices and do not revert each other's edits.
+
+1. Store/API contract subagent
+   - Ownership: `services/artana_evidence_api/direct_source_search.py`,
+     `services/artana_evidence_api/models/harness.py`, Evidence API Alembic
+     migration files, a new handoff store/helper module, and durable-store unit
+     tests.
+   - Tasks:
+     - Add a `source_search_handoffs` model and migration with fields for
+       `id`, `space_id`, `source_key`, `search_id`, `target_kind`,
+       `idempotency_key`, `request_hash`, `status`, `created_by`,
+       `search_snapshot_payload`, `source_capture_snapshot`, `handoff_payload`,
+       target ids, error message, and timestamps.
+     - Add a uniqueness constraint on `space_id`, `source_key`, `search_id`,
+       `target_kind`, and `idempotency_key`.
+     - Define a stable per-record selector and idempotency key.
+     - Freeze the selected search response and source-capture snapshot into the
+       handoff row so later search-row changes do not alter handoff semantics.
+     - Clarify transaction ownership so direct-search save and handoff writes
+       can compose safely.
+     - Validate `created_by` as a UUID at the service boundary.
+     - Mark the in-memory direct-source store as test-only.
+   - Output:
+     - Durable model/migration patch.
+     - Store methods for reading selected records and recording handoff state.
+     - Unit tests for idempotency, wrong-space access, payload-version
+       handling, and malformed selected-record requests.
+
+2. Public API subagent
+   - Ownership: `services/artana_evidence_api/routers/v2_public.py`,
+     dependency wiring, OpenAPI artifacts, and route tests.
+   - Tasks:
+     - Add an explicit handoff endpoint or command, for example
+       `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs`.
+     - Keep the existing direct-search `POST` and `GET` behavior unchanged.
+     - Return clear statuses for idempotent replay, unsupported sources,
+       missing records, wrong space, and non-extractable source behavior.
+     - Return conflict when the same idempotency key is replayed with a
+       different request body.
+     - In the first slice, support `source_search_runs`-backed structured
+       sources and return clear not-yet-supported behavior for PubMed/MARRVEL
+       unless their stores are adapter-wrapped.
+     - Ensure DrugBank credential behavior remains unchanged.
+   - Output:
+     - Request/response models and OpenAPI updates.
+     - Route regression tests covering 200/201 success, idempotent replay,
+       `404`, `501` or capability responses, and `503` credential behavior.
+
+3. Variant handoff subagent
+   - Ownership:
+     `services/artana_evidence_api/variant_aware_document_extraction.py`,
+     `services/artana_evidence_api/research_init_source_enrichment.py`,
+     direct-source handoff helper modules, and variant extraction tests.
+   - Tasks:
+     - Convert selected ClinVar and MARRVEL direct-search records into durable
+       extraction inputs with `source_type` set to `clinvar` or `marrvel`.
+     - Make MARRVEL panel routing explicit so variant panels do not get mixed
+       with OMIM, ortholog, expression, constraint, and target panels.
+     - Prevent duplicate ClinVar proposals between deterministic structured
+       drafts and variant-aware extraction output.
+     - Preserve original record payload, provider ID, locator, citation,
+       `source_capture`, and source-search run linkage.
+     - Route variant-signal records into the existing variant-aware extraction
+       path.
+     - Convert incomplete variant anchors into review items or deferred
+       extraction state instead of trusted graph facts.
+     - Ensure research-plan enrichment documents can take the same
+       variant-aware extraction branch when their source type and signals
+       qualify.
+   - Output:
+     - Handoff-to-document/record builder.
+     - Tests proving ClinVar and MARRVEL selected records can produce
+       variant-aware candidates or review items.
+
+4. Non-variant source policy subagent
+   - Ownership: source registry metadata, handoff policy helpers, route tests,
+     and user-facing capability messages.
+   - Tasks:
+     - Define explicit behavior for ClinicalTrials.gov, UniProt, AlphaFold,
+       DrugBank, MGI, and ZFIN.
+     - Choose one of: normalized source-specific proposal path, deferred
+       extraction state, or clear "captured but not extractable yet" response.
+     - Keep UniProt/protein, AlphaFold/structure, DrugBank/drug,
+       ClinicalTrials.gov/clinical, and MGI/ZFIN/model-organism sources off the
+       variant-aware path by default unless explicit variant text is detected.
+     - Keep MONDO, HGNC, text, and PDF aligned with existing non-direct
+       capability behavior.
+   - Output:
+     - Handoff policy table keyed by source.
+     - Tests for each structured source family so no source silently no-ops.
+
+5. Review-gating and graph-boundary subagent
+   - Ownership: proposal/review-item integration tests and graph-boundary
+     assertions.
+   - Tasks:
+     - Verify handoff-created extraction output creates candidates, proposals,
+       or review items only.
+     - Assert no direct trusted graph writes happen from direct source handoff.
+     - Add tests around proposal/review queue behavior for accepted and
+       incomplete variant records.
+   - Output:
+     - Regression tests proving graph promotion remains review-gated.
+
+6. Documentation and final QA subagent
+   - Ownership: `docs/plan.md`, user guide source sections,
+     `docs/research_init_architecture.md`, and final verification notes.
+   - Tasks:
+     - Update docs after contracts settle.
+     - Keep GitHub issue #10 aligned with final behavior.
+     - Run focused tests, OpenAPI check, `git diff --check`, and
+       `make artana-evidence-api-service-checks`.
+   - Output:
+     - Docs patch and QA summary.
+
+Execution order:
+
+1. Lead integrator freezes the endpoint shape, idempotency key, and persistence
+   model before implementation begins.
+2. Store/API contract and non-variant policy subagents work in parallel because
+   their write sets can remain separate.
+3. Public API subagent starts after the persistence contract is available.
+4. Variant handoff subagent starts after selected-record access is available.
+5. Review-gating subagent runs against the integrated handoff path.
+6. Documentation/final QA runs last and resolves OpenAPI/docs drift.
+
+Integration gates:
+
+- No source-search response shape regressions.
+- Durable search retrieval continues to work across fresh store/app instances.
+- Handoff is idempotent under repeated calls.
+- Wrong-space access returns not found or forbidden without leaking records.
+- ClinVar handoff path produces review-gated extraction inputs; MARRVEL
+  variant panels now use the same durable handoff path while context panels
+  remain captured but not extractable.
+- Non-variant sources return explicit, documented behavior.
+- Live external API tests remain opt-in.
+- `make artana-evidence-api-service-checks` passes before merge.
+
 ## Progress Checklist
 
 Use this checklist to track implementation progress.
@@ -373,6 +603,48 @@ Use this checklist to track implementation progress.
 - [x] `make artana-evidence-api-service-checks` passes.
 - [x] `make graph-service-checks` not required; graph contracts were untouched.
 - [x] Evidence API migration added for durable direct source-search runs.
+
+### Direct Source Handoff Follow-Up
+
+- [x] Freeze endpoint shape, selected-record selector, and idempotency contract.
+- [x] Assign subagent ownership for store/API, public routes, variant handoff,
+  non-variant policy, review-gating, and docs/QA.
+- [x] Design handoff request/response models for selected direct source-search
+  records.
+- [x] Add `source_search_handoffs` model and migration with uniqueness for the
+  per-record idempotency key.
+- [x] Add an idempotent handoff endpoint or command for durable direct
+  source-search results.
+- [x] Use a stable per-record idempotency key based on search id plus provider
+  id or record hash.
+- [x] Store handoff request hashes and reject conflicting replays.
+- [x] Convert selected ClinVar records into durable variant-aware extraction
+  inputs.
+- [x] Convert selected MARRVEL records into durable variant-aware extraction
+  inputs.
+- [x] Add panel-aware routing for MARRVEL handoff records.
+- [x] Prevent duplicate ClinVar proposals between deterministic and
+  variant-aware paths.
+- [x] Make research-plan enrichment documents use the variant-aware extraction
+  branch when source type and signals qualify.
+- [x] Preserve source-search run linkage and `source_capture` metadata on
+  generated documents or normalized records.
+- [x] Define explicit behavior for ClinicalTrials.gov, UniProt, AlphaFold,
+  DrugBank, MGI, and ZFIN handoff attempts.
+- [x] Define first-slice behavior for PubMed compatibility searches that are
+  not yet backed by `source_search_runs`; MARRVEL is now durable.
+- [x] Ensure handoff-created extraction output stays review-gated and does not
+  directly promote graph facts.
+- [x] Add tests for wrong-space handoff rejection.
+- [x] Add tests for handoff idempotency and duplicate prevention.
+- [x] Add tests for ClinVar handoff into variant-aware extraction input.
+- [x] Add tests for MARRVEL handoff into variant-aware extraction after
+  durable MARRVEL search storage exists.
+- [x] Add tests for incomplete variant anchors creating review items or
+  deferred extraction state.
+- [x] Add OpenAPI coverage for the handoff contract.
+- [x] Complete documentation and GitHub issue alignment after implementation.
+- [x] Re-run `make artana-evidence-api-service-checks`.
 
 ### Docs
 

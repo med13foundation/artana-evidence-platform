@@ -13,6 +13,7 @@ from artana_evidence_api.direct_source_search import (
     ClinVarSourceSearchResponse,
     DirectSourceSearchRecord,
     DrugBankSourceSearchResponse,
+    InMemoryDirectSourceSearchStore,
     MGISourceSearchResponse,
     SqlAlchemyDirectSourceSearchStore,
     UniProtSourceSearchResponse,
@@ -209,6 +210,13 @@ def test_sqlalchemy_direct_source_search_store_persists_all_record_shapes(
         records = _records()
         for record in records:
             assert writer.save(record, created_by=_CREATED_BY) == record
+            stored_model = write_session.get(SourceSearchRunModel, str(record.id))
+            assert stored_model is not None
+            assert (
+                stored_model.response_payload["_payload_schema_version"]
+                == "direct_source_search.v1"
+            )
+            assert stored_model.response_payload["payload"]["id"] == str(record.id)
 
     with session_factory() as read_session:
         reader = SqlAlchemyDirectSourceSearchStore(read_session)
@@ -277,4 +285,68 @@ def test_sqlalchemy_direct_source_search_store_rejects_malformed_payload(
                 space_id=space_id,
                 source_key="clinvar",
                 search_id=search_id,
+            )
+
+
+def test_sqlalchemy_direct_source_search_store_rejects_invalid_created_by(
+    session_factory: sessionmaker[Session],
+) -> None:
+    record = _records()[0]
+    with session_factory() as db_session:
+        store = SqlAlchemyDirectSourceSearchStore(db_session)
+
+        with pytest.raises(ValueError, match="created_by must be a UUID"):
+            store.save(record, created_by="not-a-uuid")
+
+
+def test_in_memory_direct_source_search_store_rejects_invalid_created_by() -> None:
+    store = InMemoryDirectSourceSearchStore()
+
+    with pytest.raises(ValueError, match="created_by must be a UUID"):
+        store.save(_records()[0], created_by="not-a-uuid")
+
+
+def test_sqlalchemy_direct_source_search_store_rejects_unknown_schema_version(
+    session_factory: sessionmaker[Session],
+) -> None:
+    record = _records()[0]
+    with session_factory() as db_session:
+        store = SqlAlchemyDirectSourceSearchStore(db_session)
+        store.save(record, created_by=_CREATED_BY)
+        stored_model = db_session.get(SourceSearchRunModel, str(record.id))
+        assert stored_model is not None
+        stored_model.response_payload = {
+            **stored_model.response_payload,
+            "_payload_schema_version": "future.v99",
+        }
+        db_session.commit()
+
+        with pytest.raises(ValueError, match="unsupported payload schema_version"):
+            store.get(
+                space_id=record.space_id,
+                source_key=record.source_key,
+                search_id=record.id,
+            )
+
+
+def test_sqlalchemy_direct_source_search_store_rejects_invalid_payload_envelope(
+    session_factory: sessionmaker[Session],
+) -> None:
+    record = _records()[0]
+    with session_factory() as db_session:
+        store = SqlAlchemyDirectSourceSearchStore(db_session)
+        store.save(record, created_by=_CREATED_BY)
+        stored_model = db_session.get(SourceSearchRunModel, str(record.id))
+        assert stored_model is not None
+        stored_model.response_payload = {
+            "_payload_schema_version": "direct_source_search.v1",
+            "payload": "not an object",
+        }
+        db_session.commit()
+
+        with pytest.raises(TypeError, match="invalid payload envelope"):
+            store.get(
+                space_id=record.space_id,
+                source_key=record.source_key,
+                search_id=record.id,
             )

@@ -25,7 +25,7 @@ from artana_evidence_api.source_result_capture import (
     compact_provenance,
     source_result_capture_metadata,
 )
-from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+from artana_evidence_api.types.common import JSONObject, JSONValue, json_object_or_empty
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -36,6 +36,9 @@ from pydantic import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+_DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_VERSION = "direct_source_search.v1"
+_DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_KEY = "_payload_schema_version"
 
 
 class ClinVarSourceSearchRequest(BaseModel):
@@ -351,6 +354,34 @@ class ZFINSourceSearchResponse(BaseModel):
     source_capture: SourceResultCapture
 
 
+class MarrvelSourceSearchResponse(BaseModel):
+    """Response payload for one captured MARRVEL direct search."""
+
+    id: UUID
+    space_id: UUID
+    source_key: Literal["marrvel"] = "marrvel"
+    status: Literal["completed"] = "completed"
+    query: str
+    query_mode: Literal["gene", "variant_hgvs", "protein_variant"]
+    query_value: str
+    gene_symbol: str | None
+    resolved_gene_symbol: str | None = None
+    resolved_variant: str | None = None
+    taxon_id: int
+    gene_found: bool
+    gene_info: JSONObject | None = None
+    omim_count: int
+    variant_count: int
+    panel_counts: dict[str, int] = Field(default_factory=dict)
+    panels: dict[str, JSONValue] = Field(default_factory=dict)
+    available_panels: list[str] = Field(default_factory=list)
+    record_count: int
+    records: list[JSONObject] = Field(default_factory=list)
+    created_at: datetime
+    completed_at: datetime
+    source_capture: SourceResultCapture
+
+
 class ClinicalTrialsSourceSearchResponse(BaseModel):
     """Response payload for one captured ClinicalTrials.gov direct search."""
 
@@ -377,6 +408,7 @@ DirectSourceSearchRecord = (
     | ClinicalTrialsSourceSearchResponse
     | MGISourceSearchResponse
     | ZFINSourceSearchResponse
+    | MarrvelSourceSearchResponse
 )
 _DirectSourceSearchRecordT = TypeVar(
     "_DirectSourceSearchRecordT",
@@ -408,7 +440,7 @@ class DirectSourceSearchStore(Protocol):
 
 
 class InMemoryDirectSourceSearchStore:
-    """Small process-local store for source searches that lack durable jobs."""
+    """Test-only process-local store for direct source-search route tests."""
 
     def __init__(self) -> None:
         self._records: dict[UUID, DirectSourceSearchRecord] = {}
@@ -422,7 +454,7 @@ class InMemoryDirectSourceSearchStore:
     ) -> _DirectSourceSearchRecordT:
         """Store one direct source-search result."""
 
-        del created_by
+        _validated_uuid_string(created_by)
         with self._lock:
             self._records[record.id] = record
         return record
@@ -459,13 +491,14 @@ class SqlAlchemyDirectSourceSearchStore:
     ) -> _DirectSourceSearchRecordT:
         """Store one direct source-search result."""
 
-        response_payload = json_object_or_empty(record.model_dump(mode="json"))
+        created_by_id = _validated_uuid_string(created_by)
+        response_payload = _versioned_response_payload(record)
         source_capture = record.source_capture.to_metadata()
         query_payload = json_object_or_empty(source_capture.get("query_payload"))
         model = SourceSearchRunModel(
             id=str(record.id),
             space_id=str(record.space_id),
-            created_by=str(created_by),
+            created_by=created_by_id,
             source_key=record.source_key,
             status=record.status,
             query=record.query,
@@ -501,10 +534,15 @@ class SqlAlchemyDirectSourceSearchStore:
         response_model = _response_model_for_source_key(source_key)
         if response_model is None:
             return None
+        payload = _stored_response_payload(
+            search_id=search_id,
+            source_key=source_key,
+            response_payload=json_object_or_empty(model.response_payload),
+        )
         try:
             return cast(
                 "DirectSourceSearchRecord",
-                response_model.model_validate(model.response_payload),
+                response_model.model_validate(payload),
             )
         except ValidationError as exc:
             msg = (
@@ -512,6 +550,49 @@ class SqlAlchemyDirectSourceSearchStore:
                 f"'{source_key}' has an invalid payload"
             )
             raise ValueError(msg) from exc
+
+
+def _validated_uuid_string(value: UUID | str) -> str:
+    try:
+        return str(UUID(str(value)))
+    except ValueError as exc:
+        msg = "created_by must be a UUID"
+        raise ValueError(msg) from exc
+
+
+def _versioned_response_payload(record: DirectSourceSearchRecord) -> JSONObject:
+    return {
+        _DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_KEY: (
+            _DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_VERSION
+        ),
+        "payload": json_object_or_empty(record.model_dump(mode="json")),
+    }
+
+
+def _stored_response_payload(
+    *,
+    search_id: UUID,
+    source_key: str,
+    response_payload: JSONObject,
+) -> JSONObject:
+    if _DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_KEY not in response_payload:
+        return response_payload
+    schema_version = response_payload.get(_DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_KEY)
+    if schema_version != _DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_VERSION:
+        msg = (
+            f"Stored direct source search '{search_id}' for source "
+            f"'{source_key}' has unsupported payload schema_version "
+            f"'{schema_version}'"
+        )
+        raise ValueError(msg)
+    payload = response_payload.get("payload")
+    if not isinstance(payload, dict):
+        msg = (
+            f"Stored direct source search '{search_id}' for source "
+            f"'{source_key}' has an invalid payload envelope"
+        )
+        raise TypeError(msg)
+    return json_object_or_empty(payload)
 
 
 async def run_clinvar_direct_search(
@@ -942,6 +1023,7 @@ def _response_model_for_source_key(
         "drugbank": DrugBankSourceSearchResponse,
         "mgi": MGISourceSearchResponse,
         "zfin": ZFINSourceSearchResponse,
+        "marrvel": MarrvelSourceSearchResponse,
     }
     return response_models.get(source_key)
 
@@ -959,6 +1041,7 @@ __all__ = [
     "DrugBankSourceSearchRequest",
     "DrugBankSourceSearchResponse",
     "InMemoryDirectSourceSearchStore",
+    "MarrvelSourceSearchResponse",
     "MGISourceSearchRequest",
     "MGISourceSearchResponse",
     "SqlAlchemyDirectSourceSearchStore",

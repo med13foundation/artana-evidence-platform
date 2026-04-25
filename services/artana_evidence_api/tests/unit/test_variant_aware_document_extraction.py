@@ -626,6 +626,71 @@ def test_extract_variant_aware_document_falls_back_to_deterministic_signals(
     assert result.extraction_diagnostics["fallback_from_signals"] is True
 
 
+def test_extract_variant_aware_document_defers_incomplete_variant_anchors(
+    monkeypatch,
+) -> None:
+    document = _document(
+        text="MARRVEL ClinVar panel mentions a MED13 variant without complete HGVS.",
+        source_type="marrvel",
+    )
+    contract = ExtractionContract(
+        decision="generated",
+        confidence_score=0.82,
+        rationale="Variant mention needs human review before graph promotion.",
+        evidence=[],
+        source_type="marrvel",
+        document_id=document.id,
+        entities=[
+            ExtractedEntityCandidate(
+                entity_type="VARIANT",
+                label="MED13 variant",
+                anchors={"gene_symbol": "MED13"},
+                metadata={},
+                evidence_excerpt="MED13 variant",
+                evidence_locator="marrvel:clinvar:0",
+                assessment=_assessment(
+                    support_band=SupportBand.TENTATIVE,
+                    rationale="Missing HGVS notation.",
+                ),
+            ),
+        ],
+        observations=[],
+        relations=[],
+        rejected_facts=[],
+        pipeline_payloads=[],
+        shadow_mode=True,
+        agent_run_id="variant-aware-incomplete-anchor-test",
+    )
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    assert result.proposal_drafts[0].metadata["review_required"] is True
+    assert result.review_item_drafts
+    assert result.review_item_drafts[0].review_type == "variant_anchor_review"
+
+
 def test_extract_variant_aware_document_preserves_decomposed_mechanism_claims(
     monkeypatch,
 ) -> None:

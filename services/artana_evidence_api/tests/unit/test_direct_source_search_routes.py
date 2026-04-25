@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Final
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from artana_evidence_api.alliance_gene_gateways import AllianceGeneGatewayFetchResult
@@ -16,9 +17,12 @@ from artana_evidence_api.dependencies import (
     get_clinicaltrials_source_gateway,
     get_clinvar_source_gateway,
     get_direct_source_search_store,
+    get_document_store,
     get_drugbank_source_gateway,
     get_mgi_source_gateway,
     get_research_space_store,
+    get_run_registry,
+    get_source_search_handoff_store,
     get_uniprot_source_gateway,
     get_zfin_source_gateway,
 )
@@ -27,11 +31,22 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
     SqlAlchemyDirectSourceSearchStore,
 )
+from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.drugbank_gateway import DrugBankGatewayFetchResult
+from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryResult
 from artana_evidence_api.models import Base
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
+from artana_evidence_api.routers import marrvel
+from artana_evidence_api.run_registry import HarnessRunRegistry
 from artana_evidence_api.source_enrichment_bridges import ClinVarQueryConfig
+from artana_evidence_api.source_search_handoff import (
+    InMemorySourceSearchHandoffStore,
+    SourceSearchHandoffStore,
+)
 from artana_evidence_api.uniprot_gateway import UniProtGatewayFetchResult
+from artana_evidence_api.variant_aware_document_extraction import (
+    document_supports_variant_aware_extraction,
+)
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -54,6 +69,8 @@ class _BuiltClient:
     client: TestClient
     space_id: str
     store: DirectSourceSearchStore
+    handoff_store: SourceSearchHandoffStore
+    document_store: HarnessDocumentStore
 
 
 class _StubClinVarGateway:
@@ -217,6 +234,85 @@ class _StubAllianceGeneGateway:
         )
 
 
+class _StubMarrvelDiscoveryService:
+    def __init__(self) -> None:
+        self.results: dict[UUID, MarrvelDiscoveryResult] = {}
+
+    async def search(
+        self,
+        *,
+        owner_id: UUID,
+        space_id: UUID,
+        gene_symbol: str | None = None,
+        variant_hgvs: str | None = None,
+        protein_variant: str | None = None,
+        taxon_id: int = 9606,
+        panels: tuple[str, ...] | list[str] | None = None,
+    ) -> MarrvelDiscoveryResult:
+        query_value = variant_hgvs or protein_variant or gene_symbol or "BRCA1"
+        query_mode = (
+            "variant_hgvs"
+            if variant_hgvs is not None
+            else "protein_variant"
+            if protein_variant is not None
+            else "gene"
+        )
+        selected_panels = list(panels or ["clinvar", "omim"])
+        panel_payloads: dict[str, object] = {}
+        if "clinvar" in selected_panels:
+            panel_payloads["clinvar"] = [
+                {
+                    "accession": "VCV000012345",
+                    "variation_id": "12345",
+                    "clinical_significance": "Pathogenic",
+                    "variant": "c.5266dupC",
+                    "condition": "Breast-ovarian cancer, familial 1",
+                },
+            ]
+        if "omim" in selected_panels:
+            panel_payloads["omim"] = [
+                {
+                    "phenotype": "Breast-ovarian cancer, familial 1",
+                    "mim_number": "604370",
+                },
+            ]
+        result = MarrvelDiscoveryResult(
+            id=uuid4(),
+            space_id=space_id,
+            owner_id=owner_id,
+            query_mode=query_mode,
+            query_value=query_value,
+            gene_symbol=gene_symbol or "BRCA1",
+            resolved_gene_symbol=gene_symbol or "BRCA1",
+            resolved_variant=variant_hgvs or "c.5266dupC",
+            taxon_id=taxon_id,
+            status="completed",
+            gene_found=True,
+            gene_info={"symbol": gene_symbol or "BRCA1"},
+            omim_count=1 if "omim" in panel_payloads else 0,
+            variant_count=1 if "clinvar" in panel_payloads else 0,
+            panel_counts={
+                panel_name: len(panel_payload)
+                for panel_name, panel_payload in panel_payloads.items()
+                if isinstance(panel_payload, list)
+            },
+            panels=panel_payloads,
+            available_panels=selected_panels,
+            created_at=datetime.now(UTC),
+        )
+        self.results[result.id] = result
+        return result
+
+    def get_result(
+        self,
+        *,
+        owner_id: UUID,
+        result_id: UUID,
+    ) -> MarrvelDiscoveryResult | None:
+        del owner_id
+        return self.results.get(result_id)
+
+
 def _build_client(
     *,
     clinvar_gateway: object | None = None,
@@ -226,6 +322,7 @@ def _build_client(
     drugbank_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
+    marrvel_discovery_service: object | None = None,
 ) -> _BuiltClient:
     research_space_store = HarnessResearchSpaceStore()
     space = research_space_store.create_space(
@@ -234,9 +331,14 @@ def _build_client(
         description="Owned test space for direct structured source routes.",
     )
     direct_source_search_store = InMemoryDirectSourceSearchStore()
+    handoff_store = InMemorySourceSearchHandoffStore()
+    document_store = HarnessDocumentStore()
     client = _build_client_for_space(
         research_space_store=research_space_store,
         direct_source_search_store=direct_source_search_store,
+        source_search_handoff_store=handoff_store,
+        document_store=document_store,
+        run_registry=HarnessRunRegistry(),
         clinvar_gateway=clinvar_gateway,
         clinicaltrials_gateway=clinicaltrials_gateway,
         uniprot_gateway=uniprot_gateway,
@@ -244,11 +346,14 @@ def _build_client(
         drugbank_gateway=drugbank_gateway,
         mgi_gateway=mgi_gateway,
         zfin_gateway=zfin_gateway,
+        marrvel_discovery_service=marrvel_discovery_service,
     )
     return _BuiltClient(
         client=client,
         space_id=space.id,
         store=direct_source_search_store,
+        handoff_store=handoff_store,
+        document_store=document_store,
     )
 
 
@@ -256,6 +361,9 @@ def _build_client_for_space(
     *,
     research_space_store: HarnessResearchSpaceStore,
     direct_source_search_store: DirectSourceSearchStore,
+    source_search_handoff_store: SourceSearchHandoffStore | None = None,
+    document_store: HarnessDocumentStore | None = None,
+    run_registry: HarnessRunRegistry | None = None,
     clinvar_gateway: object | None = None,
     clinicaltrials_gateway: object | None = None,
     uniprot_gateway: object | None = None,
@@ -263,12 +371,21 @@ def _build_client_for_space(
     drugbank_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
+    marrvel_discovery_service: object | None = None,
 ) -> TestClient:
     app = create_app()
     app.dependency_overrides[get_research_space_store] = lambda: research_space_store
     app.dependency_overrides[get_direct_source_search_store] = (
         lambda: direct_source_search_store
     )
+    if source_search_handoff_store is not None:
+        app.dependency_overrides[get_source_search_handoff_store] = (
+            lambda: source_search_handoff_store
+        )
+    if document_store is not None:
+        app.dependency_overrides[get_document_store] = lambda: document_store
+    if run_registry is not None:
+        app.dependency_overrides[get_run_registry] = lambda: run_registry
     app.dependency_overrides[get_clinvar_source_gateway] = lambda: clinvar_gateway
     app.dependency_overrides[get_clinicaltrials_source_gateway] = (
         lambda: clinicaltrials_gateway
@@ -278,6 +395,10 @@ def _build_client_for_space(
     app.dependency_overrides[get_drugbank_source_gateway] = lambda: drugbank_gateway
     app.dependency_overrides[get_mgi_source_gateway] = lambda: mgi_gateway
     app.dependency_overrides[get_zfin_source_gateway] = lambda: zfin_gateway
+    if marrvel_discovery_service is not None:
+        app.dependency_overrides[marrvel.get_marrvel_discovery_service] = (
+            lambda: marrvel_discovery_service
+        )
     return TestClient(app)
 
 
@@ -320,6 +441,240 @@ def test_create_clinvar_source_search_returns_records_and_capture_metadata() -> 
     assert get_response.status_code == 200
     assert get_response.json()["id"] == search_id
     assert get_response.json()["source_capture"]["search_id"] == search_id
+
+
+def test_clinvar_source_search_handoff_creates_variant_aware_document() -> None:
+    built = _build_client(clinvar_gateway=_StubClinVarGateway())
+    search_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/clinvar/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "BRCA1"},
+    )
+    assert search_response.status_code == 201
+    search_id = search_response.json()["id"]
+
+    handoff_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/clinvar/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert handoff_response.status_code == 201
+    payload = handoff_response.json()
+    assert payload["status"] == "completed"
+    assert payload["target_kind"] == "source_document"
+    assert payload["selected_record_index"] == 0
+    assert payload["selected_external_id"] == "VCV000012345"
+    assert payload["source_capture"]["capture_stage"] == "source_document"
+    assert payload["source_capture"]["capture_method"] == "direct_source_handoff"
+    assert payload["source_capture"]["search_id"] == search_id
+    assert payload["source_capture"]["document_id"] == payload["target_document_id"]
+
+    document = built.document_store.get_document(
+        space_id=built.space_id,
+        document_id=payload["target_document_id"],
+    )
+    assert document is not None
+    assert document.source_type == "clinvar"
+    assert document.extraction_status == "pending"
+    assert document.metadata["source_search_handoff"] is True
+    assert document.metadata["variant_aware_recommended"] is True
+    assert document.metadata["source_capture"]["search_id"] == search_id
+    assert document_supports_variant_aware_extraction(document=document)
+
+    replay_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/clinvar/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={},
+    )
+    assert replay_response.status_code == 201
+    replay_payload = replay_response.json()
+    assert replay_payload["id"] == payload["id"]
+    assert replay_payload["target_document_id"] == payload["target_document_id"]
+    assert replay_payload["replayed"] is True
+
+
+def test_marrvel_source_search_is_retrieved_from_durable_direct_store() -> None:
+    marrvel_service = _StubMarrvelDiscoveryService()
+    built = _build_client(marrvel_discovery_service=marrvel_service)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/marrvel/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "BRCA1", "panels": ["clinvar", "omim"]},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "marrvel"
+    assert payload["record_count"] == 2
+    assert payload["source_capture"]["source_key"] == "marrvel"
+    assert payload["source_capture"].get("external_id") is None
+    assert payload["records"][0]["panel_name"] == "clinvar"
+    assert payload["records"][0]["panel_family"] == "variant"
+    assert payload["records"][1]["panel_name"] == "omim"
+    assert payload["records"][1]["panel_family"] == "context"
+
+    search_id = payload["id"]
+    marrvel_service.results.clear()
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/marrvel/searches/{search_id}",
+        headers=_auth_headers(),
+    )
+
+    assert get_response.status_code == 200
+    fetched = get_response.json()
+    assert fetched["id"] == search_id
+    assert fetched["records"][0]["marrvel_record_id"].endswith(":clinvar:0")
+
+
+def test_marrvel_variant_panel_handoff_creates_variant_aware_document() -> None:
+    built = _build_client(marrvel_discovery_service=_StubMarrvelDiscoveryService())
+    search_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/marrvel/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "BRCA1", "panels": ["clinvar", "omim"]},
+    )
+    assert search_response.status_code == 201
+    search_id = search_response.json()["id"]
+
+    handoff_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/marrvel/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={"record_index": 0},
+    )
+
+    assert handoff_response.status_code == 201
+    payload = handoff_response.json()
+    assert payload["status"] == "completed"
+    assert payload["target_kind"] == "source_document"
+    assert payload["selected_external_id"].endswith(":clinvar:0")
+
+    document = built.document_store.get_document(
+        space_id=built.space_id,
+        document_id=payload["target_document_id"],
+    )
+    assert document is not None
+    assert document.source_type == "marrvel"
+    assert document.metadata["selected_record"]["panel_name"] == "clinvar"
+    assert document.metadata["selected_record"]["panel_family"] == "variant"
+    assert document.metadata["variant_aware_recommended"] is True
+    assert document_supports_variant_aware_extraction(document=document)
+
+
+def test_marrvel_context_panel_handoff_is_not_extractable() -> None:
+    built = _build_client(marrvel_discovery_service=_StubMarrvelDiscoveryService())
+    search_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/marrvel/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "BRCA1", "panels": ["omim"]},
+    )
+    assert search_response.status_code == 201
+    search_id = search_response.json()["id"]
+
+    handoff_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/marrvel/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert handoff_response.status_code == 201
+    payload = handoff_response.json()
+    assert payload["status"] == "not_extractable"
+    assert payload["target_kind"] == "not_extractable"
+    assert payload["target_document_id"] is None
+    assert payload["handoff_payload"]["selected_record"]["panel_name"] == "omim"
+
+
+def test_source_search_handoff_marks_non_variant_source_not_extractable() -> None:
+    built = _build_client(uniprot_gateway=_StubUniProtGateway())
+    search_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/uniprot/searches",
+        headers=_auth_headers(),
+        json={"uniprot_id": "P38398"},
+    )
+    assert search_response.status_code == 201
+    search_id = search_response.json()["id"]
+
+    handoff_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/uniprot/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={"external_id": "P38398"},
+    )
+
+    assert handoff_response.status_code == 201
+    payload = handoff_response.json()
+    assert payload["status"] == "not_extractable"
+    assert payload["target_kind"] == "not_extractable"
+    assert payload["target_document_id"] is None
+    assert "not routed into variant-aware document extraction" in (
+        payload["handoff_payload"]["reason"]
+    )
+
+
+def test_source_search_handoff_conflicts_on_idempotency_key_reuse() -> None:
+    built = _build_client(clinvar_gateway=_StubClinVarGateway())
+    search_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/clinvar/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "BRCA1"},
+    )
+    assert search_response.status_code == 201
+    search_id = search_response.json()["id"]
+
+    first_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/clinvar/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={"idempotency_key": "same-key", "metadata": {"purpose": "first"}},
+    )
+    second_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/clinvar/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={"idempotency_key": "same-key", "metadata": {"purpose": "second"}},
+    )
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 409
+    assert "Idempotency key" in second_response.json()["detail"]
+
+
+def test_source_search_handoff_returns_404_for_wrong_space() -> None:
+    built = _build_client(clinvar_gateway=_StubClinVarGateway())
+    search_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/clinvar/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "BRCA1"},
+    )
+    assert search_response.status_code == 201
+    search_id = search_response.json()["id"]
+    other_space = "22222222-2222-2222-2222-222222222222"
+
+    handoff_response = built.client.post(
+        f"/v2/spaces/{other_space}/sources/clinvar/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert handoff_response.status_code == 404
+    assert handoff_response.json()["detail"] in {
+        "Space not found",
+        "Source search was not found for this space and source.",
+    }
+
+
+def test_source_search_handoff_returns_501_for_compatibility_sources() -> None:
+    built = _build_client()
+
+    pubmed_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/pubmed/searches/{_TEST_USER_ID}/handoffs",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert pubmed_response.status_code == 501
+    assert "not yet backed by durable source_search_runs" in (
+        pubmed_response.json()["detail"]
+    )
 
 
 def test_generic_source_search_returns_501_for_registered_non_direct_source() -> None:

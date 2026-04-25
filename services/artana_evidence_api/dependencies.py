@@ -71,6 +71,10 @@ from artana_evidence_api.source_enrichment_bridges import (
     build_uniprot_gateway,
     build_zfin_gateway,
 )
+from artana_evidence_api.source_search_handoff import (
+    SourceSearchHandoffStore,
+    SqlAlchemySourceSearchHandoffStore,
+)
 from artana_evidence_api.space_lifecycle_sync import (
     HarnessGraphServiceSpaceLifecycleSync,
 )
@@ -430,6 +434,14 @@ def get_direct_source_search_store(
     """Return the durable direct source-search result store."""
 
     return SqlAlchemyDirectSourceSearchStore(session)
+
+
+def get_source_search_handoff_store(
+    session: Session = _SESSION_DEPENDENCY,
+) -> SourceSearchHandoffStore:
+    """Return the durable source-search handoff store."""
+
+    return SqlAlchemySourceSearchHandoffStore(session)
 
 
 def get_clinvar_source_gateway() -> ClinVarGatewayProtocol | None:

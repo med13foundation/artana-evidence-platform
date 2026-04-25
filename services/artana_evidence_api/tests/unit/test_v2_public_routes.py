@@ -60,6 +60,10 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
         "GET",
     ): v2_public.get_source_search,
     (
+        "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs",
+        "POST",
+    ): v2_public.create_source_search_handoff,
+    (
         "/v2/spaces/{space_id}/sources/pubmed/searches",
         "POST",
     ): v2_public.create_pubmed_source_search,

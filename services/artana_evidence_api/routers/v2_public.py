@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -23,6 +24,8 @@ from artana_evidence_api.dependencies import (
     get_clinicaltrials_source_gateway,
     get_clinvar_source_gateway,
     get_direct_source_search_store,
+    get_document_binary_store,
+    get_document_store,
     get_drugbank_source_gateway,
     get_graph_api_gateway,
     get_harness_execution_services,
@@ -30,7 +33,10 @@ from artana_evidence_api.dependencies import (
     get_mgi_source_gateway,
     get_proposal_store,
     get_pubmed_discovery_service,
+    get_research_state_store,
+    get_review_item_store,
     get_run_registry,
+    get_source_search_handoff_store,
     get_uniprot_source_gateway,
     get_zfin_source_gateway,
     require_harness_space_read_access,
@@ -60,11 +66,18 @@ from artana_evidence_api.direct_source_search import (
     run_uniprot_direct_search,
     run_zfin_direct_search,
 )
+from artana_evidence_api.direct_source_search import (
+    MarrvelSourceSearchResponse as DurableMarrvelSourceSearchResponse,
+)
+from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
+from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.graph_client import GraphTransportBundle
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
 from artana_evidence_api.identity.contracts import IdentityGateway
 from artana_evidence_api.proposal_store import HarnessProposalStore
 from artana_evidence_api.queued_run_support import HarnessAcceptedRunResponse
+from artana_evidence_api.research_state import HarnessResearchStateStore
+from artana_evidence_api.review_item_store import HarnessReviewItemStore
 from artana_evidence_api.run_registry import HarnessRunRegistry
 from artana_evidence_api.source_enrichment_bridges import (
     AllianceGeneGatewayProtocol,
@@ -87,6 +100,16 @@ from artana_evidence_api.source_result_capture import (
     SourceSearchResponse,
     compact_provenance,
     source_result_capture_metadata,
+)
+from artana_evidence_api.source_search_handoff import (
+    SourceSearchHandoffConflictError,
+    SourceSearchHandoffNotFoundError,
+    SourceSearchHandoffRequest,
+    SourceSearchHandoffResponse,
+    SourceSearchHandoffSelectionError,
+    SourceSearchHandoffService,
+    SourceSearchHandoffStore,
+    SourceSearchHandoffUnsupportedError,
 )
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 from fastapi import (
@@ -181,6 +204,12 @@ _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
 _PUBMED_DISCOVERY_SERVICE_DEPENDENCY = Depends(get_pubmed_discovery_service)
 _MARRVEL_DISCOVERY_SERVICE_DEPENDENCY = Depends(marrvel.get_marrvel_discovery_service)
 _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY = Depends(get_direct_source_search_store)
+_SOURCE_SEARCH_HANDOFF_STORE_DEPENDENCY = Depends(get_source_search_handoff_store)
+_DOCUMENT_STORE_DEPENDENCY = Depends(get_document_store)
+_DOCUMENT_BINARY_STORE_DEPENDENCY = Depends(get_document_binary_store)
+_PROPOSAL_STORE_DEPENDENCY = Depends(get_proposal_store)
+_REVIEW_ITEM_STORE_DEPENDENCY = Depends(get_review_item_store)
+_RESEARCH_STATE_STORE_DEPENDENCY = Depends(get_research_state_store)
 _CLINVAR_SOURCE_GATEWAY_DEPENDENCY = Depends(get_clinvar_source_gateway)
 _CLINICALTRIALS_SOURCE_GATEWAY_DEPENDENCY = Depends(
     get_clinicaltrials_source_gateway,
@@ -208,10 +237,8 @@ class PubMedSourceSearchResponse(pubmed.DiscoverySearchJob):
     source_capture: SourceResultCapture
 
 
-class MarrvelSourceSearchResponse(marrvel.MarrvelSearchResponse):
-    """Typed v2 MARRVEL source-search response with capture metadata."""
-
-    source_capture: SourceResultCapture
+class MarrvelSourceSearchResponse(DurableMarrvelSourceSearchResponse):
+    """Typed v2 MARRVEL source-search response with durable capture metadata."""
 
 
 _SCALAR_PUBLIC_KEY_RENAMES = {
@@ -986,7 +1013,6 @@ def _marrvel_source_capture(result: marrvel.MarrvelSearchResponse) -> JSONObject
         capture_stage=SourceCaptureStage.SEARCH_RESULT,
         capture_method="direct_source_search",
         locator=f"marrvel:search:{result.id}",
-        external_id=str(result.id),
         search_id=str(result.id),
         query=result.query_value,
         query_payload={
@@ -1004,6 +1030,101 @@ def _marrvel_source_capture(result: marrvel.MarrvelSearchResponse) -> JSONObject
             resolved_variant=result.resolved_variant,
             panel_counts=result.panel_counts,
         ),
+    )
+
+
+_MARRVEL_VARIANT_PANEL_KEYS = frozenset(
+    {
+        "clinvar",
+        "mutalyzer",
+        "transvar",
+        "gnomad_variant",
+        "geno2mp_variant",
+        "dgv_variant",
+        "decipher_variant",
+    },
+)
+
+
+def _marrvel_panel_records(result: marrvel.MarrvelSearchResponse) -> list[JSONObject]:
+    records: list[JSONObject] = []
+    for panel_name, payload in result.panels.items():
+        panel_items = payload if isinstance(payload, list) else [payload]
+        if not panel_items:
+            continue
+        for item_index, item in enumerate(panel_items):
+            panel_payload = json_object_or_empty(item)
+            variant_panel = panel_name in _MARRVEL_VARIANT_PANEL_KEYS
+            record: JSONObject = {
+                **panel_payload,
+                "marrvel_record_id": f"{result.id}:{panel_name}:{item_index}",
+                "panel_name": panel_name,
+                "panel_family": "variant" if variant_panel else "context",
+                "variant_aware_recommended": variant_panel,
+                "query_mode": result.query_mode,
+                "query_value": result.query_value,
+                "gene_symbol": result.resolved_gene_symbol or result.gene_symbol,
+                "resolved_gene_symbol": result.resolved_gene_symbol,
+                "resolved_variant": result.resolved_variant,
+                "taxon_id": result.taxon_id,
+                "panel_payload": panel_payload,
+            }
+            hgvs_notation = _marrvel_hgvs_notation(result=result, record=panel_payload)
+            if hgvs_notation is not None:
+                record["hgvs_notation"] = hgvs_notation
+            records.append(record)
+    return records
+
+
+def _marrvel_hgvs_notation(
+    *,
+    result: marrvel.MarrvelSearchResponse,
+    record: JSONObject,
+) -> str | None:
+    for value in (
+        record.get("hgvs_notation"),
+        record.get("hgvs"),
+        record.get("variant"),
+        record.get("cdna_change"),
+        record.get("protein_change"),
+        result.resolved_variant,
+        result.query_value if result.query_mode != "gene" else None,
+    ):
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def _durable_marrvel_source_search_response(
+    *,
+    result: marrvel.MarrvelSearchResponse,
+    source_capture: SourceResultCapture,
+    created_at: datetime,
+    completed_at: datetime,
+) -> DurableMarrvelSourceSearchResponse:
+    records = _marrvel_panel_records(result)
+    return DurableMarrvelSourceSearchResponse(
+        id=result.id,
+        space_id=result.space_id,
+        query=result.query_value,
+        query_mode=result.query_mode,
+        query_value=result.query_value,
+        gene_symbol=result.gene_symbol,
+        resolved_gene_symbol=result.resolved_gene_symbol,
+        resolved_variant=result.resolved_variant,
+        taxon_id=result.taxon_id,
+        gene_found=result.gene_found,
+        gene_info=result.gene_info,
+        omim_count=result.omim_count,
+        variant_count=result.variant_count,
+        panel_counts=result.panel_counts,
+        panels=result.panels,
+        available_panels=result.available_panels,
+        record_count=len(records),
+        records=records,
+        created_at=created_at,
+        completed_at=completed_at,
+        source_capture=source_capture,
     )
 
 
@@ -1143,16 +1264,32 @@ async def _create_marrvel_source_search_payload(
     request: marrvel.MarrvelSearchRequest,
     current_user: HarnessUser,
     marrvel_discovery_service: marrvel.MarrvelDiscoveryService,
+    direct_source_search_store: DirectSourceSearchStore,
 ) -> JSONObject:
+    created_at = datetime.now(UTC)
     marrvel_result = await marrvel.create_marrvel_search(
         space_id=space_id,
         request=request,
         current_user=current_user,
         marrvel_discovery_service=marrvel_discovery_service,
     )
+    completed_at = datetime.now(UTC)
+    source_capture = SourceResultCapture.model_validate(
+        _marrvel_source_capture(marrvel_result),
+    )
+    durable_result = _durable_marrvel_source_search_response(
+        result=marrvel_result,
+        source_capture=source_capture,
+        created_at=created_at,
+        completed_at=completed_at,
+    )
+    saved_result = direct_source_search_store.save(
+        durable_result,
+        created_by=current_user.id,
+    )
     return _source_result_payload(
-        marrvel_result,
-        source_capture=_marrvel_source_capture(marrvel_result),
+        saved_result,
+        source_capture=saved_result.source_capture.to_metadata(),
     )
 
 
@@ -1162,16 +1299,38 @@ def _get_marrvel_source_search_payload(
     search_id: UUID,
     current_user: HarnessUser,
     marrvel_discovery_service: marrvel.MarrvelDiscoveryService,
+    direct_source_search_store: DirectSourceSearchStore,
 ) -> JSONObject:
+    stored_result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="marrvel",
+        search_id=search_id,
+    )
+    if stored_result is not None:
+        return _source_result_payload(
+            stored_result,
+            source_capture=stored_result.source_capture.to_metadata(),
+        )
+
     marrvel_result = marrvel.get_marrvel_search(
         space_id=space_id,
         result_id=search_id,
         current_user=current_user,
         marrvel_discovery_service=marrvel_discovery_service,
     )
+    completed_at = datetime.now(UTC)
+    source_capture = SourceResultCapture.model_validate(
+        _marrvel_source_capture(marrvel_result),
+    )
+    durable_result = _durable_marrvel_source_search_response(
+        result=marrvel_result,
+        source_capture=source_capture,
+        created_at=completed_at,
+        completed_at=completed_at,
+    )
     return _source_result_payload(
-        marrvel_result,
-        source_capture=_marrvel_source_capture(marrvel_result),
+        durable_result,
+        source_capture=durable_result.source_capture.to_metadata(),
     )
 
 
@@ -2146,6 +2305,9 @@ async def create_marrvel_source_search(
     marrvel_discovery_service: marrvel.MarrvelDiscoveryService = (
         _MARRVEL_DISCOVERY_SERVICE_DEPENDENCY
     ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
 ) -> JSONObject:
     """Typed v2 compatibility route for MARRVEL source search."""
 
@@ -2154,6 +2316,7 @@ async def create_marrvel_source_search(
         request=request,
         current_user=current_user,
         marrvel_discovery_service=marrvel_discovery_service,
+        direct_source_search_store=direct_source_search_store,
     )
 
 
@@ -2172,6 +2335,9 @@ def get_marrvel_source_search(
     marrvel_discovery_service: marrvel.MarrvelDiscoveryService = (
         _MARRVEL_DISCOVERY_SERVICE_DEPENDENCY
     ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
 ) -> JSONObject:
     """Typed v2 compatibility route for MARRVEL source-search lookup."""
 
@@ -2180,6 +2346,7 @@ def get_marrvel_source_search(
         search_id=result_id,
         current_user=current_user,
         marrvel_discovery_service=marrvel_discovery_service,
+        direct_source_search_store=direct_source_search_store,
     )
 
 
@@ -2622,6 +2789,7 @@ async def create_source_search(  # noqa: PLR0911
             request=_parse_marrvel_source_search(request_payload),
             current_user=current_user,
             marrvel_discovery_service=marrvel_discovery_service,
+            direct_source_search_store=direct_source_search_store,
         )
     if source.source_key == "clinvar":
         return await _create_clinvar_source_search_payload(
@@ -2725,6 +2893,7 @@ def get_source_search(  # noqa: PLR0911
             search_id=search_id,
             current_user=current_user,
             marrvel_discovery_service=marrvel_discovery_service,
+            direct_source_search_store=direct_source_search_store,
         )
     if source.source_key == "clinvar":
         return _get_clinvar_source_search_payload(
@@ -2772,6 +2941,110 @@ def get_source_search(  # noqa: PLR0911
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail=f"Source '{source.source_key}' does not support direct search.",
     )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs",
+    response_model=SourceSearchHandoffResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Hand off a captured source search",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+    responses={
+        **_DIRECT_SOURCE_SEARCH_RESPONSES,
+        status.HTTP_409_CONFLICT: {
+            "description": "Idempotency key was reused with different input.",
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "The request did not select exactly one source record.",
+        },
+    },
+)
+async def create_source_search_handoff(
+    space_id: UUID,
+    source_key: str,
+    search_id: UUID,
+    request: SourceSearchHandoffRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+    source_search_handoff_store: SourceSearchHandoffStore = (
+        _SOURCE_SEARCH_HANDOFF_STORE_DEPENDENCY
+    ),
+    document_store: HarnessDocumentStore = _DOCUMENT_STORE_DEPENDENCY,
+    run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
+    artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
+    proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
+    review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_DEPENDENCY,
+    binary_store: HarnessDocumentBinaryStore = _DOCUMENT_BINARY_STORE_DEPENDENCY,
+    graph_api_gateway: GraphTransportBundle = Depends(get_graph_api_gateway),
+    research_state_store: HarnessResearchStateStore = _RESEARCH_STATE_STORE_DEPENDENCY,
+) -> SourceSearchHandoffResponse:
+    """Create an idempotent handoff from a saved source-search result."""
+
+    source = _require_direct_search_source(source_key)
+    service = SourceSearchHandoffService(
+        search_store=direct_source_search_store,
+        handoff_store=source_search_handoff_store,
+        document_store=document_store,
+        run_registry=run_registry,
+    )
+    try:
+        response = service.create_handoff(
+            space_id=space_id,
+            source_key=source.source_key,
+            search_id=search_id,
+            created_by=current_user.id,
+            request=request,
+        )
+    except SourceSearchHandoffNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except SourceSearchHandoffUnsupportedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(exc),
+        ) from exc
+    except SourceSearchHandoffConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except SourceSearchHandoffSelectionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    target_document = (
+        document_store.get_document(
+            space_id=space_id,
+            document_id=response.target_document_id,
+        )
+        if response.target_document_id is not None
+        else None
+    )
+    if (
+        request.extract_now
+        and response.target_document_id is not None
+        and target_document is not None
+        and target_document.extraction_status != "completed"
+    ):
+        extraction = await documents.extract_document(
+            space_id=space_id,
+            document_id=response.target_document_id,
+            use_llm=False,
+            document_store=document_store,
+            proposal_store=proposal_store,
+            review_item_store=review_item_store,
+            run_registry=run_registry,
+            artifact_store=artifact_store,
+            binary_store=binary_store,
+            graph_api_gateway=graph_api_gateway,
+            research_state_store=research_state_store,
+        )
+        response = response.model_copy(
+            update={"extraction": json_object_or_empty(jsonable_encoder(extraction))},
+        )
+    return response
 
 
 @router.get(
