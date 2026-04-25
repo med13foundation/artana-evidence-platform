@@ -18,6 +18,7 @@ from .harness import (
     HarnessReviewItemModel,
     HarnessRunModel,
     HarnessScheduleModel,
+    SourceSearchRunModel,
 )
 from .research_space import (
     MembershipRoleEnum,
@@ -43,6 +44,7 @@ __all__ = [
     "HarnessResearchStateModel",
     "HarnessRunModel",
     "HarnessScheduleModel",
+    "SourceSearchRunModel",
     "MembershipRoleEnum",
     "ResearchSpaceMembershipModel",
     "ResearchSpaceModel",

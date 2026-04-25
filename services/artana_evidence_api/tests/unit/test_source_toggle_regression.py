@@ -20,6 +20,7 @@ from artana_evidence_api.routers.research_init import (
     _build_scope_refinement_questions,
     _resolve_research_init_sources,
     _resolve_research_orchestration_mode,
+    _unknown_source_preference_keys,
 )
 
 
@@ -158,6 +159,17 @@ class TestSourcesConfigParsing:
             "mgi": False,
             "zfin": False,
         }
+
+    def test_unknown_source_keys_are_reported_for_request_validation(self) -> None:
+        unknown = _unknown_source_preference_keys(
+            {
+                "pubmed": True,
+                "clinical-trials": True,
+                "not_a_source": True,
+            },
+        )
+
+        assert unknown == ("not_a_source",)
 
 
 class TestResearchOrchestrationModeParsing:

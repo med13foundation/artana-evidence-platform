@@ -52,7 +52,9 @@ class _StubMarrvelDiscoveryService:
         query_mode = (
             "protein_variant"
             if protein_variant
-            else "variant_hgvs" if variant_hgvs else "gene"
+            else "variant_hgvs"
+            if variant_hgvs
+            else "gene"
         )
         result = MarrvelDiscoveryResult(
             id=uuid4(),
@@ -281,6 +283,39 @@ def test_create_marrvel_search_and_get_result() -> None:
 
     assert get_response.status_code == 200
     assert get_response.json()["id"] == result_id
+    assert result_id in discovery_service.results
+
+
+def test_create_marrvel_search_through_generic_v2_source_route() -> None:
+    client, discovery_service, space_id = _build_client()
+
+    create_response = client.post(
+        f"/v2/spaces/{space_id}/sources/marrvel/searches",
+        headers=_auth_headers(),
+        json={
+            "gene_symbol": "BRCA1",
+            "panels": ["omim", "gnomad"],
+        },
+    )
+
+    assert create_response.status_code == 201
+    created_payload = create_response.json()
+    assert created_payload["query_mode"] == "gene"
+    assert created_payload["gene_symbol"] == "BRCA1"
+    assert created_payload["source_capture"]["source_key"] == "marrvel"
+    assert created_payload["source_capture"]["capture_stage"] == "search_result"
+    assert created_payload["source_capture"]["capture_method"] == "direct_source_search"
+    assert created_payload["source_capture"]["query"] == "BRCA1"
+
+    result_id = created_payload["id"]
+    get_response = client.get(
+        f"/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}",
+        headers=_auth_headers(),
+    )
+
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == result_id
+    assert get_response.json()["source_capture"]["search_id"] == result_id
     assert result_id in discovery_service.results
 
 

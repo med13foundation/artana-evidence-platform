@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import TYPE_CHECKING
@@ -23,6 +24,10 @@ from artana_evidence_api.composition import (
 )
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.database import get_session
+from artana_evidence_api.direct_source_search import (
+    DirectSourceSearchStore,
+    SqlAlchemyDirectSourceSearchStore,
+)
 from artana_evidence_api.document_binary_store import (
     HarnessDocumentBinaryStore,
     LocalFilesystemHarnessDocumentBinaryStore,
@@ -57,6 +62,15 @@ from artana_evidence_api.research_onboarding_agent_runtime import (
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.review_item_store import HarnessReviewItemStore
+from artana_evidence_api.source_enrichment_bridges import (
+    build_alphafold_gateway,
+    build_clinicaltrials_gateway,
+    build_clinvar_gateway,
+    build_drugbank_gateway,
+    build_mgi_gateway,
+    build_uniprot_gateway,
+    build_zfin_gateway,
+)
 from artana_evidence_api.space_lifecycle_sync import (
     HarnessGraphServiceSpaceLifecycleSync,
 )
@@ -94,6 +108,14 @@ if TYPE_CHECKING:
     from artana_evidence_api.review_item_store import HarnessReviewItemStore
     from artana_evidence_api.run_registry import HarnessRunRegistry
     from artana_evidence_api.schedule_store import HarnessScheduleStore
+    from artana_evidence_api.source_enrichment_bridges import (
+        AllianceGeneGatewayProtocol,
+        AlphaFoldGatewayProtocol,
+        ClinicalTrialsGatewayProtocol,
+        ClinVarGatewayProtocol,
+        DrugBankGatewayProtocol,
+        UniProtGatewayProtocol,
+    )
     from sqlalchemy.orm import Session
 
 _SESSION_DEPENDENCY = Depends(get_session)
@@ -402,6 +424,58 @@ def get_pubmed_discovery_service_factory() -> Callable[
     return _pubmed_discovery_service_context
 
 
+def get_direct_source_search_store(
+    session: Session = _SESSION_DEPENDENCY,
+) -> DirectSourceSearchStore:
+    """Return the durable direct source-search result store."""
+
+    return SqlAlchemyDirectSourceSearchStore(session)
+
+
+def get_clinvar_source_gateway() -> ClinVarGatewayProtocol | None:
+    """Return the ClinVar gateway used by direct source search."""
+
+    return build_clinvar_gateway()
+
+
+def get_clinicaltrials_source_gateway() -> ClinicalTrialsGatewayProtocol | None:
+    """Return the ClinicalTrials.gov gateway used by direct source search."""
+
+    return build_clinicaltrials_gateway()
+
+
+def get_uniprot_source_gateway() -> UniProtGatewayProtocol | None:
+    """Return the UniProt gateway used by direct source search."""
+
+    return build_uniprot_gateway()
+
+
+def get_alphafold_source_gateway() -> AlphaFoldGatewayProtocol | None:
+    """Return the AlphaFold gateway used by direct source search."""
+
+    return build_alphafold_gateway()
+
+
+def get_drugbank_source_gateway() -> DrugBankGatewayProtocol | None:
+    """Return the DrugBank gateway when direct-search credentials are configured."""
+
+    if not os.getenv("DRUGBANK_API_KEY"):
+        return None
+    return build_drugbank_gateway()
+
+
+def get_mgi_source_gateway() -> AllianceGeneGatewayProtocol | None:
+    """Return the MGI gateway used by direct source search."""
+
+    return build_mgi_gateway()
+
+
+def get_zfin_source_gateway() -> AllianceGeneGatewayProtocol | None:
+    """Return the ZFIN gateway used by direct source search."""
+
+    return build_zfin_gateway()
+
+
 def get_graph_search_runner() -> HarnessGraphSearchRunner:
     """Return the harness-owned graph-search runner."""
     return HarnessGraphSearchRunner()
@@ -495,7 +569,12 @@ __all__ = [
     "get_artifact_store",
     "get_document_binary_store",
     "get_chat_session_store",
+    "get_clinicaltrials_source_gateway",
+    "get_clinvar_source_gateway",
+    "get_direct_source_search_store",
     "get_document_store",
+    "get_alphafold_source_gateway",
+    "get_drugbank_source_gateway",
     "get_graph_api_gateway_factory",
     "get_graph_chat_runner",
     "get_graph_connection_runner",
@@ -504,6 +583,7 @@ __all__ = [
     "get_graph_search_runner",
     "get_harness_execution_services",
     "get_identity_gateway",
+    "get_mgi_source_gateway",
     "get_pubmed_discovery_service",
     "get_pubmed_discovery_service_factory",
     "get_proposal_store",
@@ -511,6 +591,8 @@ __all__ = [
     "get_research_state_store",
     "get_run_registry",
     "get_schedule_store",
+    "get_uniprot_source_gateway",
+    "get_zfin_source_gateway",
     "require_harness_space_read_access",
     "require_harness_space_write_access",
     "require_harness_space_owner_access",

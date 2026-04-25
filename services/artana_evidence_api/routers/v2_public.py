@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from typing import Any
 from uuid import UUID
 
 from artana_evidence_api.approval_store import HarnessApprovalStore
@@ -15,16 +16,49 @@ from artana_evidence_api.auth import (
 )
 from artana_evidence_api.chat_sessions import HarnessChatSessionStore
 from artana_evidence_api.dependencies import (
+    get_alphafold_source_gateway,
     get_approval_store,
     get_artifact_store,
     get_chat_session_store,
+    get_clinicaltrials_source_gateway,
+    get_clinvar_source_gateway,
+    get_direct_source_search_store,
+    get_drugbank_source_gateway,
     get_graph_api_gateway,
     get_harness_execution_services,
     get_identity_gateway,
+    get_mgi_source_gateway,
     get_proposal_store,
+    get_pubmed_discovery_service,
     get_run_registry,
+    get_uniprot_source_gateway,
+    get_zfin_source_gateway,
     require_harness_space_read_access,
     require_harness_space_write_access,
+)
+from artana_evidence_api.direct_source_search import (
+    AlphaFoldSourceSearchRequest,
+    AlphaFoldSourceSearchResponse,
+    ClinicalTrialsSourceSearchRequest,
+    ClinicalTrialsSourceSearchResponse,
+    ClinVarSourceSearchRequest,
+    ClinVarSourceSearchResponse,
+    DirectSourceSearchStore,
+    DrugBankSourceSearchRequest,
+    DrugBankSourceSearchResponse,
+    MGISourceSearchRequest,
+    MGISourceSearchResponse,
+    UniProtSourceSearchRequest,
+    UniProtSourceSearchResponse,
+    ZFINSourceSearchRequest,
+    ZFINSourceSearchResponse,
+    run_alphafold_direct_search,
+    run_clinicaltrials_direct_search,
+    run_clinvar_direct_search,
+    run_drugbank_direct_search,
+    run_mgi_direct_search,
+    run_uniprot_direct_search,
+    run_zfin_direct_search,
 )
 from artana_evidence_api.graph_client import GraphTransportBundle
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
@@ -32,10 +66,42 @@ from artana_evidence_api.identity.contracts import IdentityGateway
 from artana_evidence_api.proposal_store import HarnessProposalStore
 from artana_evidence_api.queued_run_support import HarnessAcceptedRunResponse
 from artana_evidence_api.run_registry import HarnessRunRegistry
-from artana_evidence_api.types.common import JSONObject
-from fastapi import APIRouter, Depends, Header, Query, Request
+from artana_evidence_api.source_enrichment_bridges import (
+    AllianceGeneGatewayProtocol,
+    AlphaFoldGatewayProtocol,
+    ClinicalTrialsGatewayProtocol,
+    ClinVarGatewayProtocol,
+    DrugBankGatewayProtocol,
+    UniProtGatewayProtocol,
+)
+from artana_evidence_api.source_registry import (
+    SourceDefinition,
+    SourceListResponse,
+    direct_search_source_keys,
+    get_source_definition,
+    list_source_definitions,
+)
+from artana_evidence_api.source_result_capture import (
+    SourceCaptureStage,
+    SourceResultCapture,
+    SourceSearchResponse,
+    compact_provenance,
+    source_result_capture_metadata,
+)
+from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    status,
+)
+from fastapi.encoders import jsonable_encoder
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.responses import JSONResponse, StreamingResponse
 
 from . import (
@@ -112,6 +178,41 @@ _APPROVAL_STORE_DEPENDENCY = Depends(get_approval_store)
 _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
 _CHAT_SESSION_STORE_DEPENDENCY = Depends(get_chat_session_store)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
+_PUBMED_DISCOVERY_SERVICE_DEPENDENCY = Depends(get_pubmed_discovery_service)
+_MARRVEL_DISCOVERY_SERVICE_DEPENDENCY = Depends(marrvel.get_marrvel_discovery_service)
+_DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY = Depends(get_direct_source_search_store)
+_CLINVAR_SOURCE_GATEWAY_DEPENDENCY = Depends(get_clinvar_source_gateway)
+_CLINICALTRIALS_SOURCE_GATEWAY_DEPENDENCY = Depends(
+    get_clinicaltrials_source_gateway,
+)
+_UNIPROT_SOURCE_GATEWAY_DEPENDENCY = Depends(get_uniprot_source_gateway)
+_ALPHAFOLD_SOURCE_GATEWAY_DEPENDENCY = Depends(get_alphafold_source_gateway)
+_DRUGBANK_SOURCE_GATEWAY_DEPENDENCY = Depends(get_drugbank_source_gateway)
+_MGI_SOURCE_GATEWAY_DEPENDENCY = Depends(get_mgi_source_gateway)
+_ZFIN_SOURCE_GATEWAY_DEPENDENCY = Depends(get_zfin_source_gateway)
+_OpenAPIResponses = dict[int | str, dict[str, Any]]
+_SOURCE_NOT_FOUND_RESPONSE: _OpenAPIResponses = {
+    status.HTTP_404_NOT_FOUND: {"description": "Source is not registered."},
+}
+_DIRECT_SOURCE_SEARCH_RESPONSES: _OpenAPIResponses = {
+    status.HTTP_404_NOT_FOUND: {"description": "Source is not registered."},
+    status.HTTP_501_NOT_IMPLEMENTED: {
+        "description": "Source does not support direct search yet.",
+    },
+}
+
+
+class PubMedSourceSearchResponse(pubmed.DiscoverySearchJob):
+    """Typed v2 PubMed source-search response with capture metadata."""
+
+    source_capture: SourceResultCapture
+
+
+class MarrvelSourceSearchResponse(marrvel.MarrvelSearchResponse):
+    """Typed v2 MARRVEL source-search response with capture metadata."""
+
+    source_capture: SourceResultCapture
+
 
 _SCALAR_PUBLIC_KEY_RENAMES = {
     "approval_intent": "planned_actions",
@@ -555,8 +656,7 @@ def _looks_like_output_list(value: object) -> bool:
     return (
         isinstance(value, list)
         and all(
-            isinstance(item, dict)
-            and {"key", "media_type", "content"}.issubset(item)
+            isinstance(item, dict) and {"key", "media_type", "content"}.issubset(item)
             for item in value
         )
         and bool(value)
@@ -564,9 +664,7 @@ def _looks_like_output_list(value: object) -> bool:
 
 
 def _looks_like_working_state(value: object) -> bool:
-    return isinstance(value, dict) and (
-        "snapshot" in value or "working_state" in value
-    )
+    return isinstance(value, dict) and ("snapshot" in value or "working_state" in value)
 
 
 def _looks_like_accepted_task_response(value: object) -> bool:
@@ -581,9 +679,7 @@ def _looks_like_accepted_task_response(value: object) -> bool:
 
 def _looks_like_plan(value: object) -> bool:
     return (
-        isinstance(value, dict)
-        and "summary" in value
-        and "proposed_actions" in value
+        isinstance(value, dict) and "summary" in value and "proposed_actions" in value
     )
 
 
@@ -646,11 +742,15 @@ def _looks_like_claim_curation_summary(value: object) -> bool:
 
 
 def _looks_like_supervisor_step(value: object) -> bool:
-    return isinstance(value, dict) and {
-        "name",
-        "status",
-        "detail",
-    }.issubset(value) and ("run_id" in value or "harness_id" in value)
+    return (
+        isinstance(value, dict)
+        and {
+            "name",
+            "status",
+            "detail",
+        }.issubset(value)
+        and ("run_id" in value or "harness_id" in value)
+    )
 
 
 def _looks_like_supervisor_detail(value: object) -> bool:
@@ -735,10 +835,9 @@ def _should_rename_scalar_key(*, mapping: dict[object, object], key: str) -> boo
     elif key == "artifact_keys":
         match = _looks_like_supervisor_detail(mapping)
     elif key in {"approval_intent", "approval_intent_key"}:
-        match = (
-            _looks_like_supervisor_curation_artifact_keys(mapping)
-            or _looks_like_supervisor_dashboard_approval_pointer(mapping)
-        )
+        match = _looks_like_supervisor_curation_artifact_keys(
+            mapping
+        ) or _looks_like_supervisor_dashboard_approval_pointer(mapping)
     elif key == "policy_decisions":
         match = _looks_like_task_decisions(mapping)
     else:
@@ -809,6 +908,615 @@ def _publicized_json_response(result: JSONResponse) -> JSONResponse:
     )
 
 
+def _validation_error_text(error: ValidationError) -> str:
+    messages: list[str] = []
+    for validation_error in error.errors():
+        raw_location = validation_error.get("loc")
+        message = str(validation_error.get("msg", "Validation error")).strip()
+        if message.startswith("Value error, "):
+            message = message.removeprefix("Value error, ").strip()
+        if isinstance(raw_location, tuple | list) and raw_location:
+            location = " -> ".join(str(part) for part in raw_location)
+            messages.append(f"{location}: {message}")
+        else:
+            messages.append(message or "Validation error")
+    return "; ".join(dict.fromkeys(messages)) or "Validation error"
+
+
+def _require_source(source_key: str) -> SourceDefinition:
+    source = get_source_definition(source_key)
+    if source is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Source '{source_key}' is not registered.",
+        )
+    return source
+
+
+def _require_direct_search_source(source_key: str) -> SourceDefinition:
+    source = _require_source(source_key)
+    if not source.direct_search_enabled:
+        direct_sources = ", ".join(direct_search_source_keys())
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=(
+                f"Source '{source.source_key}' is available through research-plan "
+                "or enrichment, but direct source search is not enabled yet. "
+                f"Direct search sources: {direct_sources}."
+            ),
+        )
+    return source
+
+
+def _source_result_payload(
+    result: object,
+    *,
+    source_capture: JSONObject | None = None,
+) -> JSONObject:
+    payload = json_object_or_empty(jsonable_encoder(result))
+    if source_capture is not None:
+        payload["source_capture"] = source_capture
+    return payload
+
+
+def _pubmed_source_capture(result: pubmed.DiscoverySearchJob) -> JSONObject:
+    return source_result_capture_metadata(
+        source_key="pubmed",
+        capture_stage=SourceCaptureStage.SEARCH_RESULT,
+        capture_method="direct_source_search",
+        locator=f"pubmed:search:{result.id}",
+        external_id=str(result.id),
+        retrieved_at=result.completed_at or result.updated_at or result.created_at,
+        search_id=str(result.id),
+        query=result.query_preview,
+        query_payload=result.parameters.model_dump(mode="json"),
+        result_count=result.total_results,
+        provenance=compact_provenance(
+            provider=result.provider.value,
+            status=result.status.value,
+            storage_key=result.storage_key,
+        ),
+    )
+
+
+def _marrvel_source_capture(result: marrvel.MarrvelSearchResponse) -> JSONObject:
+    result_count = sum(result.panel_counts.values()) if result.panel_counts else 0
+    return source_result_capture_metadata(
+        source_key="marrvel",
+        capture_stage=SourceCaptureStage.SEARCH_RESULT,
+        capture_method="direct_source_search",
+        locator=f"marrvel:search:{result.id}",
+        external_id=str(result.id),
+        search_id=str(result.id),
+        query=result.query_value,
+        query_payload={
+            "query_mode": result.query_mode,
+            "query_value": result.query_value,
+            "gene_symbol": result.gene_symbol,
+            "taxon_id": result.taxon_id,
+            "available_panels": list(result.available_panels),
+        },
+        result_count=result_count,
+        provenance=compact_provenance(
+            status=result.status,
+            gene_found=result.gene_found,
+            resolved_gene_symbol=result.resolved_gene_symbol,
+            resolved_variant=result.resolved_variant,
+            panel_counts=result.panel_counts,
+        ),
+    )
+
+
+def _parse_pubmed_source_search(payload: JSONObject) -> pubmed.PubMedSearchRequest:
+    try:
+        return pubmed.PubMedSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_marrvel_source_search(payload: JSONObject) -> marrvel.MarrvelSearchRequest:
+    try:
+        return marrvel.MarrvelSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_clinvar_source_search(payload: JSONObject) -> ClinVarSourceSearchRequest:
+    try:
+        return ClinVarSourceSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_clinicaltrials_source_search(
+    payload: JSONObject,
+) -> ClinicalTrialsSourceSearchRequest:
+    try:
+        return ClinicalTrialsSourceSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_uniprot_source_search(payload: JSONObject) -> UniProtSourceSearchRequest:
+    try:
+        return UniProtSourceSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_alphafold_source_search(payload: JSONObject) -> AlphaFoldSourceSearchRequest:
+    try:
+        return AlphaFoldSourceSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_drugbank_source_search(payload: JSONObject) -> DrugBankSourceSearchRequest:
+    try:
+        return DrugBankSourceSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_mgi_source_search(payload: JSONObject) -> MGISourceSearchRequest:
+    try:
+        return MGISourceSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+def _parse_zfin_source_search(payload: JSONObject) -> ZFINSourceSearchRequest:
+    try:
+        return ZFINSourceSearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=_validation_error_text(exc),
+        ) from exc
+
+
+async def _create_pubmed_source_search_payload(
+    *,
+    space_id: UUID,
+    request: pubmed.PubMedSearchRequest,
+    current_user: HarnessUser,
+    pubmed_discovery_service: pubmed.PubMedDiscoveryService,
+) -> JSONObject:
+    pubmed_result = await pubmed.create_pubmed_search(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        pubmed_discovery_service=pubmed_discovery_service,
+    )
+    return _source_result_payload(
+        pubmed_result,
+        source_capture=_pubmed_source_capture(pubmed_result),
+    )
+
+
+def _get_pubmed_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    current_user: HarnessUser,
+    pubmed_discovery_service: pubmed.PubMedDiscoveryService,
+) -> JSONObject:
+    pubmed_result = pubmed.get_pubmed_search(
+        space_id=space_id,
+        job_id=search_id,
+        current_user=current_user,
+        pubmed_discovery_service=pubmed_discovery_service,
+    )
+    return _source_result_payload(
+        pubmed_result,
+        source_capture=_pubmed_source_capture(pubmed_result),
+    )
+
+
+async def _create_marrvel_source_search_payload(
+    *,
+    space_id: UUID,
+    request: marrvel.MarrvelSearchRequest,
+    current_user: HarnessUser,
+    marrvel_discovery_service: marrvel.MarrvelDiscoveryService,
+) -> JSONObject:
+    marrvel_result = await marrvel.create_marrvel_search(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        marrvel_discovery_service=marrvel_discovery_service,
+    )
+    return _source_result_payload(
+        marrvel_result,
+        source_capture=_marrvel_source_capture(marrvel_result),
+    )
+
+
+def _get_marrvel_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    current_user: HarnessUser,
+    marrvel_discovery_service: marrvel.MarrvelDiscoveryService,
+) -> JSONObject:
+    marrvel_result = marrvel.get_marrvel_search(
+        space_id=space_id,
+        result_id=search_id,
+        current_user=current_user,
+        marrvel_discovery_service=marrvel_discovery_service,
+    )
+    return _source_result_payload(
+        marrvel_result,
+        source_capture=_marrvel_source_capture(marrvel_result),
+    )
+
+
+async def _create_clinvar_source_search_payload(
+    *,
+    space_id: UUID,
+    request: ClinVarSourceSearchRequest,
+    current_user: HarnessUser,
+    clinvar_gateway: ClinVarGatewayProtocol | None,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    if clinvar_gateway is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ClinVar gateway is not available.",
+        )
+    try:
+        result = await run_clinvar_direct_search(
+            space_id=space_id,
+            created_by=current_user.id,
+            request=request,
+            gateway=clinvar_gateway,
+            store=direct_source_search_store,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"ClinVar source search unavailable: {exc}",
+        ) from exc
+    return _source_result_payload(result)
+
+
+def _get_clinvar_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="clinvar",
+        search_id=search_id,
+    )
+    if not isinstance(result, ClinVarSourceSearchResponse):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ClinVar source search '{search_id}' not found in space '{space_id}'",
+        )
+    return _source_result_payload(result)
+
+
+async def _create_clinicaltrials_source_search_payload(
+    *,
+    space_id: UUID,
+    request: ClinicalTrialsSourceSearchRequest,
+    current_user: HarnessUser,
+    clinicaltrials_gateway: ClinicalTrialsGatewayProtocol | None,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    if clinicaltrials_gateway is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ClinicalTrials.gov gateway is not available.",
+        )
+    try:
+        result = await run_clinicaltrials_direct_search(
+            space_id=space_id,
+            created_by=current_user.id,
+            request=request,
+            gateway=clinicaltrials_gateway,
+            store=direct_source_search_store,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"ClinicalTrials.gov source search unavailable: {exc}",
+        ) from exc
+    return _source_result_payload(result)
+
+
+def _get_clinicaltrials_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="clinical_trials",
+        search_id=search_id,
+    )
+    if not isinstance(result, ClinicalTrialsSourceSearchResponse):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"ClinicalTrials.gov source search '{search_id}' not found "
+                f"in space '{space_id}'"
+            ),
+        )
+    return _source_result_payload(result)
+
+
+async def _create_uniprot_source_search_payload(
+    *,
+    space_id: UUID,
+    request: UniProtSourceSearchRequest,
+    current_user: HarnessUser,
+    uniprot_gateway: UniProtGatewayProtocol | None,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    if uniprot_gateway is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="UniProt gateway is not available.",
+        )
+    try:
+        result = await run_uniprot_direct_search(
+            space_id=space_id,
+            created_by=current_user.id,
+            request=request,
+            gateway=uniprot_gateway,
+            store=direct_source_search_store,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"UniProt source search unavailable: {exc}",
+        ) from exc
+    return _source_result_payload(result)
+
+
+def _get_uniprot_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="uniprot",
+        search_id=search_id,
+    )
+    if not isinstance(result, UniProtSourceSearchResponse):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"UniProt source search '{search_id}' not found in space '{space_id}'",
+        )
+    return _source_result_payload(result)
+
+
+async def _create_alphafold_source_search_payload(
+    *,
+    space_id: UUID,
+    request: AlphaFoldSourceSearchRequest,
+    current_user: HarnessUser,
+    alphafold_gateway: AlphaFoldGatewayProtocol | None,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    if alphafold_gateway is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AlphaFold gateway is not available.",
+        )
+    try:
+        result = await run_alphafold_direct_search(
+            space_id=space_id,
+            created_by=current_user.id,
+            request=request,
+            gateway=alphafold_gateway,
+            store=direct_source_search_store,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"AlphaFold source search unavailable: {exc}",
+        ) from exc
+    return _source_result_payload(result)
+
+
+def _get_alphafold_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="alphafold",
+        search_id=search_id,
+    )
+    if not isinstance(result, AlphaFoldSourceSearchResponse):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"AlphaFold source search '{search_id}' not found "
+                f"in space '{space_id}'"
+            ),
+        )
+    return _source_result_payload(result)
+
+
+async def _create_drugbank_source_search_payload(
+    *,
+    space_id: UUID,
+    request: DrugBankSourceSearchRequest,
+    current_user: HarnessUser,
+    drugbank_gateway: DrugBankGatewayProtocol | None,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    if drugbank_gateway is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="DrugBank credentials are not configured.",
+        )
+    try:
+        result = await run_drugbank_direct_search(
+            space_id=space_id,
+            created_by=current_user.id,
+            request=request,
+            gateway=drugbank_gateway,
+            store=direct_source_search_store,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"DrugBank source search unavailable: {exc}",
+        ) from exc
+    return _source_result_payload(result)
+
+
+def _get_drugbank_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="drugbank",
+        search_id=search_id,
+    )
+    if not isinstance(result, DrugBankSourceSearchResponse):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"DrugBank source search '{search_id}' not found in space '{space_id}'",
+        )
+    return _source_result_payload(result)
+
+
+async def _create_mgi_source_search_payload(
+    *,
+    space_id: UUID,
+    request: MGISourceSearchRequest,
+    current_user: HarnessUser,
+    mgi_gateway: AllianceGeneGatewayProtocol | None,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    if mgi_gateway is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="MGI gateway is not available.",
+        )
+    try:
+        result = await run_mgi_direct_search(
+            space_id=space_id,
+            created_by=current_user.id,
+            request=request,
+            gateway=mgi_gateway,
+            store=direct_source_search_store,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"MGI source search unavailable: {exc}",
+        ) from exc
+    return _source_result_payload(result)
+
+
+def _get_mgi_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="mgi",
+        search_id=search_id,
+    )
+    if not isinstance(result, MGISourceSearchResponse):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"MGI source search '{search_id}' not found in space '{space_id}'",
+        )
+    return _source_result_payload(result)
+
+
+async def _create_zfin_source_search_payload(
+    *,
+    space_id: UUID,
+    request: ZFINSourceSearchRequest,
+    current_user: HarnessUser,
+    zfin_gateway: AllianceGeneGatewayProtocol | None,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    if zfin_gateway is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ZFIN gateway is not available.",
+        )
+    try:
+        result = await run_zfin_direct_search(
+            space_id=space_id,
+            created_by=current_user.id,
+            request=request,
+            gateway=zfin_gateway,
+            store=direct_source_search_store,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"ZFIN source search unavailable: {exc}",
+        ) from exc
+    return _source_result_payload(result)
+
+
+def _get_zfin_source_search_payload(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    direct_source_search_store: DirectSourceSearchStore,
+) -> JSONObject:
+    result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="zfin",
+        search_id=search_id,
+    )
+    if not isinstance(result, ZFINSourceSearchResponse):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ZFIN source search '{search_id}' not found in space '{space_id}'",
+        )
+    return _source_result_payload(result)
+
+
 def _find_route(source_router: APIRouter, *, path: str, method: str) -> APIRoute:
     for route in source_router.routes:
         if (
@@ -860,72 +1568,467 @@ def _add_alias(
 
 _ALIASES = (
     # Account and space setup.
-    (authentication.router, "POST", "/v1/auth/bootstrap", "/v2/auth/bootstrap", "Bootstrap self-hosted access", ("auth",)),
-    (authentication.router, "POST", "/v1/auth/testers", "/v2/auth/testers", "Create tester access", ("auth",)),
-    (authentication.router, "GET", "/v1/auth/me", "/v2/auth/me", "Get current identity", ("auth",)),
-    (authentication.router, "POST", "/v1/auth/api-keys", "/v2/auth/api-keys", "Create API key", ("auth",)),
-    (authentication.router, "GET", "/v1/auth/api-keys", "/v2/auth/api-keys", "List API keys", ("auth",)),
-    (authentication.router, "DELETE", "/v1/auth/api-keys/{key_id}", "/v2/auth/api-keys/{key_id}", "Revoke API key", ("auth",)),
-    (authentication.router, "POST", "/v1/auth/api-keys/{key_id}/rotate", "/v2/auth/api-keys/{key_id}/rotate", "Rotate API key", ("auth",)),
-    (spaces.router, "GET", "/v1/spaces", "/v2/spaces", "List research spaces", ("spaces",)),
-    (spaces.router, "POST", "/v1/spaces", "/v2/spaces", "Create research space", ("spaces",)),
-    (spaces.router, "PATCH", "/v1/spaces/{space_id}/settings", "/v2/spaces/{space_id}/settings", "Update research-space settings", ("spaces",)),
-    (spaces.router, "PUT", "/v1/spaces/default", "/v2/spaces/default", "Get or create default research space", ("spaces",)),
-    (spaces.router, "DELETE", "/v1/spaces/{space_id}", "/v2/spaces/{space_id}", "Archive research space", ("spaces",)),
-    (spaces.router, "GET", "/v1/spaces/{space_id}/members", "/v2/spaces/{space_id}/members", "List research-space members", ("spaces",)),
-    (spaces.router, "POST", "/v1/spaces/{space_id}/members", "/v2/spaces/{space_id}/members", "Add research-space member", ("spaces",)),
-    (spaces.router, "DELETE", "/v1/spaces/{space_id}/members/{user_id}", "/v2/spaces/{space_id}/members/{user_id}", "Remove research-space member", ("spaces",)),
+    (
+        authentication.router,
+        "POST",
+        "/v1/auth/bootstrap",
+        "/v2/auth/bootstrap",
+        "Bootstrap self-hosted access",
+        ("auth",),
+    ),
+    (
+        authentication.router,
+        "POST",
+        "/v1/auth/testers",
+        "/v2/auth/testers",
+        "Create tester access",
+        ("auth",),
+    ),
+    (
+        authentication.router,
+        "GET",
+        "/v1/auth/me",
+        "/v2/auth/me",
+        "Get current identity",
+        ("auth",),
+    ),
+    (
+        authentication.router,
+        "POST",
+        "/v1/auth/api-keys",
+        "/v2/auth/api-keys",
+        "Create API key",
+        ("auth",),
+    ),
+    (
+        authentication.router,
+        "GET",
+        "/v1/auth/api-keys",
+        "/v2/auth/api-keys",
+        "List API keys",
+        ("auth",),
+    ),
+    (
+        authentication.router,
+        "DELETE",
+        "/v1/auth/api-keys/{key_id}",
+        "/v2/auth/api-keys/{key_id}",
+        "Revoke API key",
+        ("auth",),
+    ),
+    (
+        authentication.router,
+        "POST",
+        "/v1/auth/api-keys/{key_id}/rotate",
+        "/v2/auth/api-keys/{key_id}/rotate",
+        "Rotate API key",
+        ("auth",),
+    ),
+    (
+        spaces.router,
+        "GET",
+        "/v1/spaces",
+        "/v2/spaces",
+        "List research spaces",
+        ("spaces",),
+    ),
+    (
+        spaces.router,
+        "POST",
+        "/v1/spaces",
+        "/v2/spaces",
+        "Create research space",
+        ("spaces",),
+    ),
+    (
+        spaces.router,
+        "PATCH",
+        "/v1/spaces/{space_id}/settings",
+        "/v2/spaces/{space_id}/settings",
+        "Update research-space settings",
+        ("spaces",),
+    ),
+    (
+        spaces.router,
+        "PUT",
+        "/v1/spaces/default",
+        "/v2/spaces/default",
+        "Get or create default research space",
+        ("spaces",),
+    ),
+    (
+        spaces.router,
+        "DELETE",
+        "/v1/spaces/{space_id}",
+        "/v2/spaces/{space_id}",
+        "Archive research space",
+        ("spaces",),
+    ),
+    (
+        spaces.router,
+        "GET",
+        "/v1/spaces/{space_id}/members",
+        "/v2/spaces/{space_id}/members",
+        "List research-space members",
+        ("spaces",),
+    ),
+    (
+        spaces.router,
+        "POST",
+        "/v1/spaces/{space_id}/members",
+        "/v2/spaces/{space_id}/members",
+        "Add research-space member",
+        ("spaces",),
+    ),
+    (
+        spaces.router,
+        "DELETE",
+        "/v1/spaces/{space_id}/members/{user_id}",
+        "/v2/spaces/{space_id}/members/{user_id}",
+        "Remove research-space member",
+        ("spaces",),
+    ),
     # Evidence input and source discovery.
-    (documents.router, "GET", "/v1/spaces/{space_id}/documents", "/v2/spaces/{space_id}/documents", "List documents", ("documents",)),
-    (documents.router, "GET", "/v1/spaces/{space_id}/documents/{document_id}", "/v2/spaces/{space_id}/documents/{document_id}", "Get document", ("documents",)),
-    (documents.router, "POST", "/v1/spaces/{space_id}/documents/text", "/v2/spaces/{space_id}/documents/text", "Add text document", ("documents",)),
-    (documents.router, "POST", "/v1/spaces/{space_id}/documents/pdf", "/v2/spaces/{space_id}/documents/pdf", "Upload PDF document", ("documents",)),
-    (documents.router, "POST", "/v1/spaces/{space_id}/documents/{document_id}/extract", "/v2/spaces/{space_id}/documents/{document_id}/extraction", "Extract evidence from document", ("documents",)),
-    (pubmed.router, "POST", "/v1/spaces/{space_id}/pubmed/searches", "/v2/spaces/{space_id}/sources/pubmed/searches", "Search PubMed", ("sources",)),
-    (pubmed.router, "GET", "/v1/spaces/{space_id}/pubmed/searches/{job_id}", "/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}", "Get PubMed search", ("sources",)),
-    (marrvel.router, "POST", "/v1/spaces/{space_id}/marrvel/searches", "/v2/spaces/{space_id}/sources/marrvel/searches", "Search MARRVEL", ("sources",)),
-    (marrvel.router, "GET", "/v1/spaces/{space_id}/marrvel/searches/{result_id}", "/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}", "Get MARRVEL search", ("sources",)),
-    (marrvel.router, "POST", "/v1/spaces/{space_id}/marrvel/ingest", "/v2/spaces/{space_id}/sources/marrvel/ingestion", "Ingest MARRVEL evidence", ("sources",)),
+    (
+        documents.router,
+        "GET",
+        "/v1/spaces/{space_id}/documents",
+        "/v2/spaces/{space_id}/documents",
+        "List documents",
+        ("documents",),
+    ),
+    (
+        documents.router,
+        "GET",
+        "/v1/spaces/{space_id}/documents/{document_id}",
+        "/v2/spaces/{space_id}/documents/{document_id}",
+        "Get document",
+        ("documents",),
+    ),
+    (
+        documents.router,
+        "POST",
+        "/v1/spaces/{space_id}/documents/text",
+        "/v2/spaces/{space_id}/documents/text",
+        "Add text document",
+        ("documents",),
+    ),
+    (
+        documents.router,
+        "POST",
+        "/v1/spaces/{space_id}/documents/pdf",
+        "/v2/spaces/{space_id}/documents/pdf",
+        "Upload PDF document",
+        ("documents",),
+    ),
+    (
+        documents.router,
+        "POST",
+        "/v1/spaces/{space_id}/documents/{document_id}/extract",
+        "/v2/spaces/{space_id}/documents/{document_id}/extraction",
+        "Extract evidence from document",
+        ("documents",),
+    ),
+    (
+        marrvel.router,
+        "POST",
+        "/v1/spaces/{space_id}/marrvel/ingest",
+        "/v2/spaces/{space_id}/sources/marrvel/ingestion",
+        "Ingest MARRVEL evidence",
+        ("sources",),
+    ),
     # Product workflow surfaces.
-    (research_state.router, "GET", "/v1/spaces/{space_id}/research-state", "/v2/spaces/{space_id}/research-state", "Get research state", ("research",)),
-    (review_queue.router, "GET", "/v1/spaces/{space_id}/review-queue", "/v2/spaces/{space_id}/review-items", "List items needing review", ("review",)),
-    (review_queue.router, "GET", "/v1/spaces/{space_id}/review-queue/{item_id}", "/v2/spaces/{space_id}/review-items/{item_id}", "Get review item", ("review",)),
-    (review_queue.router, "POST", "/v1/spaces/{space_id}/review-queue/{item_id}/actions", "/v2/spaces/{space_id}/review-items/{item_id}/decision", "Decide review item", ("review",)),
-    (proposals.router, "GET", "/v1/spaces/{space_id}/proposals", "/v2/spaces/{space_id}/proposed-updates", "List proposed updates", ("review",)),
-    (proposals.router, "GET", "/v1/spaces/{space_id}/proposals/{proposal_id}", "/v2/spaces/{space_id}/proposed-updates/{proposal_id}", "Get proposed update", ("review",)),
-    (proposals.router, "POST", "/v1/spaces/{space_id}/proposals/{proposal_id}/promote", "/v2/spaces/{space_id}/proposed-updates/{proposal_id}/promote", "Promote proposed update", ("review",)),
-    (proposals.router, "POST", "/v1/spaces/{space_id}/proposals/{proposal_id}/reject", "/v2/spaces/{space_id}/proposed-updates/{proposal_id}/reject", "Reject proposed update", ("review",)),
+    (
+        research_state.router,
+        "GET",
+        "/v1/spaces/{space_id}/research-state",
+        "/v2/spaces/{space_id}/research-state",
+        "Get research state",
+        ("research",),
+    ),
+    (
+        review_queue.router,
+        "GET",
+        "/v1/spaces/{space_id}/review-queue",
+        "/v2/spaces/{space_id}/review-items",
+        "List items needing review",
+        ("review",),
+    ),
+    (
+        review_queue.router,
+        "GET",
+        "/v1/spaces/{space_id}/review-queue/{item_id}",
+        "/v2/spaces/{space_id}/review-items/{item_id}",
+        "Get review item",
+        ("review",),
+    ),
+    (
+        review_queue.router,
+        "POST",
+        "/v1/spaces/{space_id}/review-queue/{item_id}/actions",
+        "/v2/spaces/{space_id}/review-items/{item_id}/decision",
+        "Decide review item",
+        ("review",),
+    ),
+    (
+        proposals.router,
+        "GET",
+        "/v1/spaces/{space_id}/proposals",
+        "/v2/spaces/{space_id}/proposed-updates",
+        "List proposed updates",
+        ("review",),
+    ),
+    (
+        proposals.router,
+        "GET",
+        "/v1/spaces/{space_id}/proposals/{proposal_id}",
+        "/v2/spaces/{space_id}/proposed-updates/{proposal_id}",
+        "Get proposed update",
+        ("review",),
+    ),
+    (
+        proposals.router,
+        "POST",
+        "/v1/spaces/{space_id}/proposals/{proposal_id}/promote",
+        "/v2/spaces/{space_id}/proposed-updates/{proposal_id}/promote",
+        "Promote proposed update",
+        ("review",),
+    ),
+    (
+        proposals.router,
+        "POST",
+        "/v1/spaces/{space_id}/proposals/{proposal_id}/reject",
+        "/v2/spaces/{space_id}/proposed-updates/{proposal_id}/reject",
+        "Reject proposed update",
+        ("review",),
+    ),
     # Generic task lifecycle.
-    (graph_explorer.router, "GET", "/v1/spaces/{space_id}/graph-explorer/claims", "/v2/spaces/{space_id}/evidence-map/claims", "List evidence-map claims", ("evidence-map",)),
-    (graph_explorer.router, "GET", "/v1/spaces/{space_id}/graph-explorer/entities", "/v2/spaces/{space_id}/evidence-map/entities", "List evidence-map entities", ("evidence-map",)),
-    (graph_explorer.router, "GET", "/v1/spaces/{space_id}/graph-explorer/entities/{entity_id}/claims", "/v2/spaces/{space_id}/evidence-map/entities/{entity_id}/claims", "List claims for entity", ("evidence-map",)),
-    (graph_explorer.router, "GET", "/v1/spaces/{space_id}/graph-explorer/claims/{claim_id}/evidence", "/v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence", "List claim evidence", ("evidence-map",)),
-    (graph_explorer.router, "POST", "/v1/spaces/{space_id}/graph-explorer/document", "/v2/spaces/{space_id}/evidence-map/export", "Export evidence map", ("evidence-map",)),
-    (chat.router, "GET", "/v1/spaces/{space_id}/chat-sessions", "/v2/spaces/{space_id}/chat-sessions", "List chat sessions", ("chat",)),
-    (chat.router, "POST", "/v1/spaces/{space_id}/chat-sessions", "/v2/spaces/{space_id}/chat-sessions", "Create chat session", ("chat",)),
-    (chat.router, "GET", "/v1/spaces/{space_id}/chat-sessions/{session_id}", "/v2/spaces/{space_id}/chat-sessions/{session_id}", "Get chat session", ("chat",)),
-    (chat.router, "POST", "/v1/spaces/{space_id}/chat-sessions/{session_id}/messages", "/v2/spaces/{space_id}/chat-sessions/{session_id}/messages", "Send chat message", ("chat",)),
-    (chat.router, "POST", "/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write", "/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates", "Stage suggested updates from chat", ("chat",)),
-    (chat.router, "POST", "/v1/spaces/{space_id}/chat-sessions/{session_id}/graph-write-candidates/{candidate_index}/review", "/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates/{candidate_index}/decision", "Decide suggested chat update", ("chat",)),
+    (
+        graph_explorer.router,
+        "GET",
+        "/v1/spaces/{space_id}/graph-explorer/claims",
+        "/v2/spaces/{space_id}/evidence-map/claims",
+        "List evidence-map claims",
+        ("evidence-map",),
+    ),
+    (
+        graph_explorer.router,
+        "GET",
+        "/v1/spaces/{space_id}/graph-explorer/entities",
+        "/v2/spaces/{space_id}/evidence-map/entities",
+        "List evidence-map entities",
+        ("evidence-map",),
+    ),
+    (
+        graph_explorer.router,
+        "GET",
+        "/v1/spaces/{space_id}/graph-explorer/entities/{entity_id}/claims",
+        "/v2/spaces/{space_id}/evidence-map/entities/{entity_id}/claims",
+        "List claims for entity",
+        ("evidence-map",),
+    ),
+    (
+        graph_explorer.router,
+        "GET",
+        "/v1/spaces/{space_id}/graph-explorer/claims/{claim_id}/evidence",
+        "/v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence",
+        "List claim evidence",
+        ("evidence-map",),
+    ),
+    (
+        graph_explorer.router,
+        "POST",
+        "/v1/spaces/{space_id}/graph-explorer/document",
+        "/v2/spaces/{space_id}/evidence-map/export",
+        "Export evidence map",
+        ("evidence-map",),
+    ),
+    (
+        chat.router,
+        "GET",
+        "/v1/spaces/{space_id}/chat-sessions",
+        "/v2/spaces/{space_id}/chat-sessions",
+        "List chat sessions",
+        ("chat",),
+    ),
+    (
+        chat.router,
+        "POST",
+        "/v1/spaces/{space_id}/chat-sessions",
+        "/v2/spaces/{space_id}/chat-sessions",
+        "Create chat session",
+        ("chat",),
+    ),
+    (
+        chat.router,
+        "GET",
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}",
+        "/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        "Get chat session",
+        ("chat",),
+    ),
+    (
+        chat.router,
+        "POST",
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        "/v2/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        "Send chat message",
+        ("chat",),
+    ),
+    (
+        chat.router,
+        "POST",
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write",
+        "/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates",
+        "Stage suggested updates from chat",
+        ("chat",),
+    ),
+    (
+        chat.router,
+        "POST",
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}/graph-write-candidates/{candidate_index}/review",
+        "/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates/{candidate_index}/decision",
+        "Decide suggested chat update",
+        ("chat",),
+    ),
     # Workflow-specific task creation.
-    (graph_search_runs.router, "POST", "/v1/spaces/{space_id}/agents/graph-search/runs", "/v2/spaces/{space_id}/workflows/evidence-search/tasks", "Start evidence search task", ("workflows",)),
-    (graph_connection_runs.router, "POST", "/v1/spaces/{space_id}/agents/graph-connections/runs", "/v2/spaces/{space_id}/workflows/connection-discovery/tasks", "Start connection discovery task", ("workflows",)),
-    (hypothesis_runs.router, "POST", "/v1/spaces/{space_id}/agents/hypotheses/runs", "/v2/spaces/{space_id}/workflows/hypothesis-discovery/tasks", "Start hypothesis discovery task", ("workflows",)),
-    (mechanism_discovery_runs.router, "POST", "/v1/spaces/{space_id}/agents/mechanism-discovery/runs", "/v2/spaces/{space_id}/workflows/mechanism-discovery/tasks", "Start mechanism discovery task", ("workflows",)),
-    (continuous_learning_runs.router, "POST", "/v1/spaces/{space_id}/agents/continuous-learning/runs", "/v2/spaces/{space_id}/workflows/continuous-review/tasks", "Start continuous review task", ("workflows",)),
-    (full_ai_orchestrator_runs.router, "POST", "/v1/spaces/{space_id}/agents/full-ai-orchestrator/runs", "/v2/spaces/{space_id}/workflows/autopilot/tasks", "Start autopilot task", ("workflows",)),
-    (research_onboarding_runs.router, "POST", "/v1/spaces/{space_id}/agents/research-onboarding/runs", "/v2/spaces/{space_id}/workflows/research-onboarding/tasks", "Start research onboarding task", ("workflows",)),
-    (research_onboarding_runs.router, "POST", "/v1/spaces/{space_id}/agents/research-onboarding/turns", "/v2/spaces/{space_id}/workflows/research-onboarding/turns", "Continue research onboarding", ("workflows",)),
-    (supervisor_runs.router, "GET", "/v1/spaces/{space_id}/agents/supervisor/dashboard", "/v2/spaces/{space_id}/workflows/full-research/dashboard", "Get full research dashboard", ("workflows",)),
-    (supervisor_runs.router, "GET", "/v1/spaces/{space_id}/agents/supervisor/runs", "/v2/spaces/{space_id}/workflows/full-research/tasks", "List full research tasks", ("workflows",)),
+    (
+        graph_search_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/graph-search/runs",
+        "/v2/spaces/{space_id}/workflows/evidence-search/tasks",
+        "Start evidence search task",
+        ("workflows",),
+    ),
+    (
+        graph_connection_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/graph-connections/runs",
+        "/v2/spaces/{space_id}/workflows/connection-discovery/tasks",
+        "Start connection discovery task",
+        ("workflows",),
+    ),
+    (
+        hypothesis_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/hypotheses/runs",
+        "/v2/spaces/{space_id}/workflows/hypothesis-discovery/tasks",
+        "Start hypothesis discovery task",
+        ("workflows",),
+    ),
+    (
+        mechanism_discovery_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/mechanism-discovery/runs",
+        "/v2/spaces/{space_id}/workflows/mechanism-discovery/tasks",
+        "Start mechanism discovery task",
+        ("workflows",),
+    ),
+    (
+        continuous_learning_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/continuous-learning/runs",
+        "/v2/spaces/{space_id}/workflows/continuous-review/tasks",
+        "Start continuous review task",
+        ("workflows",),
+    ),
+    (
+        full_ai_orchestrator_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/full-ai-orchestrator/runs",
+        "/v2/spaces/{space_id}/workflows/autopilot/tasks",
+        "Start autopilot task",
+        ("workflows",),
+    ),
+    (
+        research_onboarding_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/research-onboarding/runs",
+        "/v2/spaces/{space_id}/workflows/research-onboarding/tasks",
+        "Start research onboarding task",
+        ("workflows",),
+    ),
+    (
+        research_onboarding_runs.router,
+        "POST",
+        "/v1/spaces/{space_id}/agents/research-onboarding/turns",
+        "/v2/spaces/{space_id}/workflows/research-onboarding/turns",
+        "Continue research onboarding",
+        ("workflows",),
+    ),
+    (
+        supervisor_runs.router,
+        "GET",
+        "/v1/spaces/{space_id}/agents/supervisor/dashboard",
+        "/v2/spaces/{space_id}/workflows/full-research/dashboard",
+        "Get full research dashboard",
+        ("workflows",),
+    ),
+    (
+        supervisor_runs.router,
+        "GET",
+        "/v1/spaces/{space_id}/agents/supervisor/runs",
+        "/v2/spaces/{space_id}/workflows/full-research/tasks",
+        "List full research tasks",
+        ("workflows",),
+    ),
     # Automation and templates.
-    (schedules.router, "GET", "/v1/spaces/{space_id}/schedules", "/v2/spaces/{space_id}/schedules", "List schedules", ("schedules",)),
-    (schedules.router, "POST", "/v1/spaces/{space_id}/schedules", "/v2/spaces/{space_id}/schedules", "Create schedule", ("schedules",)),
-    (schedules.router, "GET", "/v1/spaces/{space_id}/schedules/{schedule_id}", "/v2/spaces/{space_id}/schedules/{schedule_id}", "Get schedule", ("schedules",)),
-    (schedules.router, "PATCH", "/v1/spaces/{space_id}/schedules/{schedule_id}", "/v2/spaces/{space_id}/schedules/{schedule_id}", "Update schedule", ("schedules",)),
-    (schedules.router, "POST", "/v1/spaces/{space_id}/schedules/{schedule_id}/pause", "/v2/spaces/{space_id}/schedules/{schedule_id}/pause", "Pause schedule", ("schedules",)),
-    (schedules.router, "POST", "/v1/spaces/{space_id}/schedules/{schedule_id}/resume", "/v2/spaces/{space_id}/schedules/{schedule_id}/resume", "Resume schedule", ("schedules",)),
-    (schedules.router, "POST", "/v1/spaces/{space_id}/schedules/{schedule_id}/run-now", "/v2/spaces/{space_id}/schedules/{schedule_id}/start-now", "Start scheduled task now", ("schedules",)),
+    (
+        schedules.router,
+        "GET",
+        "/v1/spaces/{space_id}/schedules",
+        "/v2/spaces/{space_id}/schedules",
+        "List schedules",
+        ("schedules",),
+    ),
+    (
+        schedules.router,
+        "POST",
+        "/v1/spaces/{space_id}/schedules",
+        "/v2/spaces/{space_id}/schedules",
+        "Create schedule",
+        ("schedules",),
+    ),
+    (
+        schedules.router,
+        "GET",
+        "/v1/spaces/{space_id}/schedules/{schedule_id}",
+        "/v2/spaces/{space_id}/schedules/{schedule_id}",
+        "Get schedule",
+        ("schedules",),
+    ),
+    (
+        schedules.router,
+        "PATCH",
+        "/v1/spaces/{space_id}/schedules/{schedule_id}",
+        "/v2/spaces/{space_id}/schedules/{schedule_id}",
+        "Update schedule",
+        ("schedules",),
+    ),
+    (
+        schedules.router,
+        "POST",
+        "/v1/spaces/{space_id}/schedules/{schedule_id}/pause",
+        "/v2/spaces/{space_id}/schedules/{schedule_id}/pause",
+        "Pause schedule",
+        ("schedules",),
+    ),
+    (
+        schedules.router,
+        "POST",
+        "/v1/spaces/{space_id}/schedules/{schedule_id}/resume",
+        "/v2/spaces/{space_id}/schedules/{schedule_id}/resume",
+        "Resume schedule",
+        ("schedules",),
+    ),
+    (
+        schedules.router,
+        "POST",
+        "/v1/spaces/{space_id}/schedules/{schedule_id}/run-now",
+        "/v2/spaces/{space_id}/schedules/{schedule_id}/start-now",
+        "Start scheduled task now",
+        ("schedules",),
+    ),
 )
 
 for (
@@ -943,6 +2046,731 @@ for (
         method=_method,
         summary=_summary,
         tags=_tags,
+    )
+
+
+@router.get(
+    "/v2/sources",
+    response_model=SourceListResponse,
+    summary="List evidence sources",
+    dependencies=[Depends(require_harness_read_access)],
+    tags=["sources"],
+)
+def list_sources() -> SourceListResponse:
+    """Return public evidence source capabilities."""
+
+    sources = list(list_source_definitions())
+    return SourceListResponse(sources=sources, total=len(sources))
+
+
+@router.get(
+    "/v2/sources/{source_key}",
+    response_model=SourceDefinition,
+    summary="Get evidence source",
+    dependencies=[Depends(require_harness_read_access)],
+    tags=["sources"],
+    responses=_SOURCE_NOT_FOUND_RESPONSE,
+)
+def get_source(source_key: str) -> SourceDefinition:
+    """Return one public evidence source capability definition."""
+
+    return _require_source(source_key)
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/pubmed/searches",
+    response_model=PubMedSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search PubMed evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_pubmed_source_search(
+    space_id: UUID,
+    request: pubmed.PubMedSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    pubmed_discovery_service: pubmed.PubMedDiscoveryService = (
+        _PUBMED_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 compatibility route for PubMed source search."""
+
+    return await _create_pubmed_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        pubmed_discovery_service=pubmed_discovery_service,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}",
+    response_model=PubMedSourceSearchResponse,
+    summary="Get PubMed evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_pubmed_source_search(
+    space_id: UUID,
+    job_id: UUID,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    pubmed_discovery_service: pubmed.PubMedDiscoveryService = (
+        _PUBMED_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 compatibility route for PubMed source-search lookup."""
+
+    return _get_pubmed_source_search_payload(
+        space_id=space_id,
+        search_id=job_id,
+        current_user=current_user,
+        pubmed_discovery_service=pubmed_discovery_service,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/marrvel/searches",
+    response_model=MarrvelSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search MARRVEL evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_marrvel_source_search(
+    space_id: UUID,
+    request: marrvel.MarrvelSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    marrvel_discovery_service: marrvel.MarrvelDiscoveryService = (
+        _MARRVEL_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 compatibility route for MARRVEL source search."""
+
+    return await _create_marrvel_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        marrvel_discovery_service=marrvel_discovery_service,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}",
+    response_model=MarrvelSourceSearchResponse,
+    summary="Get MARRVEL evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_marrvel_source_search(
+    space_id: UUID,
+    result_id: UUID,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    marrvel_discovery_service: marrvel.MarrvelDiscoveryService = (
+        _MARRVEL_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 compatibility route for MARRVEL source-search lookup."""
+
+    return _get_marrvel_source_search_payload(
+        space_id=space_id,
+        search_id=result_id,
+        current_user=current_user,
+        marrvel_discovery_service=marrvel_discovery_service,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/clinvar/searches",
+    response_model=ClinVarSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search ClinVar evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_clinvar_source_search(
+    space_id: UUID,
+    request: ClinVarSourceSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    clinvar_gateway: ClinVarGatewayProtocol | None = (
+        _CLINVAR_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for ClinVar source search."""
+
+    return await _create_clinvar_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        clinvar_gateway=clinvar_gateway,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/clinvar/searches/{search_id}",
+    response_model=ClinVarSourceSearchResponse,
+    summary="Get ClinVar evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_clinvar_source_search(
+    space_id: UUID,
+    search_id: UUID,
+    *,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for ClinVar source-search lookup."""
+
+    return _get_clinvar_source_search_payload(
+        space_id=space_id,
+        search_id=search_id,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/clinical_trials/searches",
+    response_model=ClinicalTrialsSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search ClinicalTrials.gov evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_clinicaltrials_source_search(
+    space_id: UUID,
+    request: ClinicalTrialsSourceSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    clinicaltrials_gateway: ClinicalTrialsGatewayProtocol | None = (
+        _CLINICALTRIALS_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for ClinicalTrials.gov source search."""
+
+    return await _create_clinicaltrials_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        clinicaltrials_gateway=clinicaltrials_gateway,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/clinical_trials/searches/{search_id}",
+    response_model=ClinicalTrialsSourceSearchResponse,
+    summary="Get ClinicalTrials.gov evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_clinicaltrials_source_search(
+    space_id: UUID,
+    search_id: UUID,
+    *,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for ClinicalTrials.gov source-search lookup."""
+
+    return _get_clinicaltrials_source_search_payload(
+        space_id=space_id,
+        search_id=search_id,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/uniprot/searches",
+    response_model=UniProtSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search UniProt evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_uniprot_source_search(
+    space_id: UUID,
+    request: UniProtSourceSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    uniprot_gateway: UniProtGatewayProtocol | None = (
+        _UNIPROT_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for UniProt source search."""
+
+    return await _create_uniprot_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        uniprot_gateway=uniprot_gateway,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/uniprot/searches/{search_id}",
+    response_model=UniProtSourceSearchResponse,
+    summary="Get UniProt evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_uniprot_source_search(
+    space_id: UUID,
+    search_id: UUID,
+    *,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for UniProt source-search lookup."""
+
+    return _get_uniprot_source_search_payload(
+        space_id=space_id,
+        search_id=search_id,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/alphafold/searches",
+    response_model=AlphaFoldSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search AlphaFold evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_alphafold_source_search(
+    space_id: UUID,
+    request: AlphaFoldSourceSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    alphafold_gateway: AlphaFoldGatewayProtocol | None = (
+        _ALPHAFOLD_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for AlphaFold source search."""
+
+    return await _create_alphafold_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        alphafold_gateway=alphafold_gateway,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/alphafold/searches/{search_id}",
+    response_model=AlphaFoldSourceSearchResponse,
+    summary="Get AlphaFold evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_alphafold_source_search(
+    space_id: UUID,
+    search_id: UUID,
+    *,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for AlphaFold source-search lookup."""
+
+    return _get_alphafold_source_search_payload(
+        space_id=space_id,
+        search_id=search_id,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/drugbank/searches",
+    response_model=DrugBankSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search DrugBank evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_drugbank_source_search(
+    space_id: UUID,
+    request: DrugBankSourceSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    drugbank_gateway: DrugBankGatewayProtocol | None = (
+        _DRUGBANK_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for DrugBank source search."""
+
+    return await _create_drugbank_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        drugbank_gateway=drugbank_gateway,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/drugbank/searches/{search_id}",
+    response_model=DrugBankSourceSearchResponse,
+    summary="Get DrugBank evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_drugbank_source_search(
+    space_id: UUID,
+    search_id: UUID,
+    *,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for DrugBank source-search lookup."""
+
+    return _get_drugbank_source_search_payload(
+        space_id=space_id,
+        search_id=search_id,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/mgi/searches",
+    response_model=MGISourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search MGI evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_mgi_source_search(
+    space_id: UUID,
+    request: MGISourceSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    mgi_gateway: AllianceGeneGatewayProtocol | None = _MGI_SOURCE_GATEWAY_DEPENDENCY,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for MGI source search."""
+
+    return await _create_mgi_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        mgi_gateway=mgi_gateway,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/mgi/searches/{search_id}",
+    response_model=MGISourceSearchResponse,
+    summary="Get MGI evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_mgi_source_search(
+    space_id: UUID,
+    search_id: UUID,
+    *,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for MGI source-search lookup."""
+
+    return _get_mgi_source_search_payload(
+        space_id=space_id,
+        search_id=search_id,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/zfin/searches",
+    response_model=ZFINSourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search ZFIN evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+)
+async def create_zfin_source_search(
+    space_id: UUID,
+    request: ZFINSourceSearchRequest,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    zfin_gateway: AllianceGeneGatewayProtocol | None = _ZFIN_SOURCE_GATEWAY_DEPENDENCY,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for ZFIN source search."""
+
+    return await _create_zfin_source_search_payload(
+        space_id=space_id,
+        request=request,
+        current_user=current_user,
+        zfin_gateway=zfin_gateway,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/zfin/searches/{search_id}",
+    response_model=ZFINSourceSearchResponse,
+    summary="Get ZFIN evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+)
+def get_zfin_source_search(
+    space_id: UUID,
+    search_id: UUID,
+    *,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Typed v2 route for ZFIN source-search lookup."""
+
+    return _get_zfin_source_search_payload(
+        space_id=space_id,
+        search_id=search_id,
+        direct_source_search_store=direct_source_search_store,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/sources/{source_key}/searches",
+    response_model=SourceSearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Search evidence source",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["sources"],
+    responses=_DIRECT_SOURCE_SEARCH_RESPONSES,
+)
+async def create_source_search(  # noqa: PLR0911
+    space_id: UUID,
+    source_key: str,
+    request_payload: JSONObject = Body(...),
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    pubmed_discovery_service: pubmed.PubMedDiscoveryService = (
+        _PUBMED_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+    marrvel_discovery_service: marrvel.MarrvelDiscoveryService = (
+        _MARRVEL_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+    clinvar_gateway: ClinVarGatewayProtocol | None = (
+        _CLINVAR_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    clinicaltrials_gateway: ClinicalTrialsGatewayProtocol | None = (
+        _CLINICALTRIALS_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    uniprot_gateway: UniProtGatewayProtocol | None = (
+        _UNIPROT_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    alphafold_gateway: AlphaFoldGatewayProtocol | None = (
+        _ALPHAFOLD_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    drugbank_gateway: DrugBankGatewayProtocol | None = (
+        _DRUGBANK_SOURCE_GATEWAY_DEPENDENCY
+    ),
+    mgi_gateway: AllianceGeneGatewayProtocol | None = _MGI_SOURCE_GATEWAY_DEPENDENCY,
+    zfin_gateway: AllianceGeneGatewayProtocol | None = _ZFIN_SOURCE_GATEWAY_DEPENDENCY,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Run a direct source search through the source registry."""
+
+    source = _require_direct_search_source(source_key)
+    if source.source_key == "pubmed":
+        return await _create_pubmed_source_search_payload(
+            space_id=space_id,
+            request=_parse_pubmed_source_search(request_payload),
+            current_user=current_user,
+            pubmed_discovery_service=pubmed_discovery_service,
+        )
+    if source.source_key == "marrvel":
+        return await _create_marrvel_source_search_payload(
+            space_id=space_id,
+            request=_parse_marrvel_source_search(request_payload),
+            current_user=current_user,
+            marrvel_discovery_service=marrvel_discovery_service,
+        )
+    if source.source_key == "clinvar":
+        return await _create_clinvar_source_search_payload(
+            space_id=space_id,
+            request=_parse_clinvar_source_search(request_payload),
+            current_user=current_user,
+            clinvar_gateway=clinvar_gateway,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "clinical_trials":
+        return await _create_clinicaltrials_source_search_payload(
+            space_id=space_id,
+            request=_parse_clinicaltrials_source_search(request_payload),
+            current_user=current_user,
+            clinicaltrials_gateway=clinicaltrials_gateway,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "uniprot":
+        return await _create_uniprot_source_search_payload(
+            space_id=space_id,
+            request=_parse_uniprot_source_search(request_payload),
+            current_user=current_user,
+            uniprot_gateway=uniprot_gateway,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "alphafold":
+        return await _create_alphafold_source_search_payload(
+            space_id=space_id,
+            request=_parse_alphafold_source_search(request_payload),
+            current_user=current_user,
+            alphafold_gateway=alphafold_gateway,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "drugbank":
+        return await _create_drugbank_source_search_payload(
+            space_id=space_id,
+            request=_parse_drugbank_source_search(request_payload),
+            current_user=current_user,
+            drugbank_gateway=drugbank_gateway,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "mgi":
+        return await _create_mgi_source_search_payload(
+            space_id=space_id,
+            request=_parse_mgi_source_search(request_payload),
+            current_user=current_user,
+            mgi_gateway=mgi_gateway,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "zfin":
+        return await _create_zfin_source_search_payload(
+            space_id=space_id,
+            request=_parse_zfin_source_search(request_payload),
+            current_user=current_user,
+            zfin_gateway=zfin_gateway,
+            direct_source_search_store=direct_source_search_store,
+        )
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=f"Source '{source.source_key}' does not support direct search.",
+    )
+
+
+@router.get(
+    "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}",
+    response_model=SourceSearchResponse,
+    summary="Get evidence source search",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["sources"],
+    responses=_DIRECT_SOURCE_SEARCH_RESPONSES,
+)
+def get_source_search(  # noqa: PLR0911
+    space_id: UUID,
+    source_key: str,
+    search_id: UUID,
+    *,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+    pubmed_discovery_service: pubmed.PubMedDiscoveryService = (
+        _PUBMED_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+    marrvel_discovery_service: marrvel.MarrvelDiscoveryService = (
+        _MARRVEL_DISCOVERY_SERVICE_DEPENDENCY
+    ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
+) -> JSONObject:
+    """Return one direct source search result through the source registry."""
+
+    source = _require_direct_search_source(source_key)
+    if source.source_key == "pubmed":
+        return _get_pubmed_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            current_user=current_user,
+            pubmed_discovery_service=pubmed_discovery_service,
+        )
+    if source.source_key == "marrvel":
+        return _get_marrvel_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            current_user=current_user,
+            marrvel_discovery_service=marrvel_discovery_service,
+        )
+    if source.source_key == "clinvar":
+        return _get_clinvar_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "clinical_trials":
+        return _get_clinicaltrials_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "uniprot":
+        return _get_uniprot_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "alphafold":
+        return _get_alphafold_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "drugbank":
+        return _get_drugbank_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "mgi":
+        return _get_mgi_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            direct_source_search_store=direct_source_search_store,
+        )
+    if source.source_key == "zfin":
+        return _get_zfin_source_search_payload(
+            space_id=space_id,
+            search_id=search_id,
+            direct_source_search_store=direct_source_search_store,
+        )
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=f"Source '{source.source_key}' does not support direct search.",
     )
 
 
@@ -1113,7 +2941,9 @@ async def create_full_research_task(
     current_user: HarnessUser = Depends(get_current_harness_user),
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
-    parent_graph_api_gateway: GraphTransportBundle = Depends(get_graph_api_gateway, use_cache=False),
+    parent_graph_api_gateway: GraphTransportBundle = Depends(
+        get_graph_api_gateway, use_cache=False
+    ),
     execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
 ) -> JSONObject | JSONResponse:
     """Start one full-research task with public payload naming."""
