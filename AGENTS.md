@@ -1,6 +1,6 @@
 # Artana Evidence Platform - AGENTS.md
 
-Guidance for coding agents working in this extracted backend repo.
+Guidance for coding agents working in this independent backend repo.
 
 ## Project Shape
 
@@ -11,14 +11,14 @@ This repository contains two Python backend services:
 
 The services are intentionally separated. Keep orchestration and user workflow concerns in `services/artana_evidence_api`; keep graph persistence, dictionary governance, and graph validation concerns in `services/artana_evidence_db`.
 
-There is no active frontend package in this extracted repo. Do not add UI work here unless explicitly asked; this repo is for backend services, contracts, scripts, tests, docs, and migrations.
+There is no active frontend package in this repository. Do not add UI work here unless explicitly asked; this repo is for backend services, contracts, scripts, tests, docs, and migrations.
 
 ## Working Rules
 
 - Keep changes scoped to the requested service and files.
 - Do not revert edits made by other people in the working tree.
 - Prefer existing service patterns over new abstractions.
-- Use forward-only implementation for new extracted-repo work unless compatibility is explicitly requested.
+- Use forward-only implementation for new repository work unless compatibility is explicitly requested.
 - Write relevant tests after code changes. First check whether tests already exist and whether they are current and robust, then add focused unit, regression, integration, or service tests as appropriate.
 - Avoid `Any` in new Python code. Use concrete types, protocols, dataclasses, Pydantic models, or service-local typed contracts.
 - Never commit PHI, secrets, API keys, or real patient data.
@@ -127,10 +127,10 @@ When API schemas change, run the matching contract generation/check target and i
 
 ## QA Report
 
-`scripts/run_qa_report.sh` is the repository-level QA wrapper. It should call only targets that exist in this extracted repo's `Makefile`, especially the aggregate service gate:
+`scripts/run_qa_report.sh` is the repository-level QA wrapper. It should call only targets that exist in this repo's `Makefile`, especially the aggregate service gate:
 
 ```bash
 make service-checks
 ```
 
-Do not add removed monorepo or frontend targets to the QA report script.
+Do not add removed external or frontend targets to the QA report script.
