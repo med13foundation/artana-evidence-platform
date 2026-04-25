@@ -1,37 +1,65 @@
 # Artana Evidence Platform
 
-Status date: April 23, 2026.
+`artana-evidence-platform` is the backend home for Artana's evidence workflow:
+an Evidence API plus a governed graph/evidence service. It is designed to run
+as an independent project with its own local setup, service contracts,
+migrations, tests, and operational checks.
 
-`artana-evidence-platform` is the extracted backend repo for the Artana
-evidence services.
+The platform is intentionally backend-only. Product apps, notebooks, SDKs, and
+other clients integrate through the generated OpenAPI contracts instead of
+living inside this repository.
 
-This checkout currently contains:
+## Repository Layout
 
-- `services/artana_evidence_api`: Evidence API, local identity gateway,
-  documents, proposals, review queue, research-init, chat, and AI workflow
-  runtimes.
-- `services/artana_evidence_db`: governed graph service, dictionary, claims,
-  relations, observations, provenance, graph views, workflows, and graph admin
-  sync.
+- `services/artana_evidence_api`: the Evidence API for research spaces, local
+  identity, document ingestion, PubMed/MARRVEL discovery, review queues,
+  proposals, graph chat/search orchestration, guarded AI runs, and user-facing
+  workflow state.
+- `services/artana_evidence_db`: the graph/evidence service for entities,
+  relations, observations, provenance, relation evidence, dictionary
+  governance, validation, graph views, and graph service API contracts.
+- `docs/`: architecture notes, user guides, project status, remaining work, and
+  operating guidance.
+- `scripts/`: repository checks, contract helpers, and local automation.
+- `tests/`: repository-level regression and boundary tests that do not belong
+  to one service tree. Service-specific tests live under each service.
 
-This checkout does not contain:
+Keep workflow orchestration in `services/artana_evidence_api`. Keep graph
+persistence, dictionary governance, graph validation, and evidence/provenance
+contracts in `services/artana_evidence_db`.
 
-- a frontend app;
-- the old top-level `src` runtime package;
-- `packages/artana_api`;
-- unrelated monorepo services.
+## System Shape
 
-## Surfaces Outside This Repo
+```mermaid
+flowchart LR
+    Client["Client or workflow user"] --> API["Evidence API<br/>services/artana_evidence_api<br/>:8091"]
+    API --> DB["Graph service<br/>services/artana_evidence_db<br/>:8090"]
+    API --> PG[("Postgres")]
+    DB --> PG
+```
 
-This repository is intentionally backend-only. Product clients should integrate
-through the Evidence API OpenAPI contract while the frontend and public SDK
-decision remains outside this checkout.
+The Evidence API is the public workflow surface. It handles authentication,
+spaces, ingestion, review queues, proposals, run state, and AI orchestration.
+The graph service is the governed evidence system. It handles graph entities,
+relations, dictionary rules, provenance, validation, and graph contracts.
 
-- Current backend contracts live in the generated OpenAPI files listed below.
-- If a frontend or SDK repository is created, link it here rather than
-  reintroducing UI or SDK packages into this backend repo.
-- Until then, use the [User Guide](docs/user-guide/README.md) and
-  [Endpoint Index](docs/user-guide/09-endpoint-index.md) for API onboarding.
+## Client Integration
+
+Current backend contracts live in the generated OpenAPI and TypeScript contract
+files listed below. New clients should treat those files, plus the user guide
+and endpoint index, as the integration surface.
+
+- [User Guide](docs/user-guide/README.md)
+- [Endpoint Index](docs/user-guide/09-endpoint-index.md)
+- `services/artana_evidence_api/openapi.json`
+- `services/artana_evidence_db/openapi.json`
+- `services/artana_evidence_db/artana-evidence-db.generated.ts`
+
+The Evidence API currently publishes OpenAPI only. TypeScript clients should
+generate from `services/artana_evidence_api/openapi.json`; the checked-in
+TypeScript artifact is specific to the graph service. If dedicated product,
+SDK, or notebook repositories are created, link them here as client projects
+rather than adding them to this backend repository.
 
 ## Start Locally
 
@@ -56,9 +84,8 @@ On first run, the Makefile creates `.env.postgres` from
 file; deployed environments must provide their own JWT and database settings.
 
 Container note: `docker-compose.postgres.yml` starts Postgres for local
-development, and each service has its own Dockerfile for runtime/test images.
-There is not currently a root full-stack `docker-compose.yml` for Postgres plus
-both Python services.
+development. Each service also has its own Dockerfile for runtime/test images.
+Use `make run-all` for the local two-service development stack.
 
 After `make run-all` is ready, verify the local Evidence API from another
 terminal:
@@ -103,10 +130,16 @@ make graph-service-checks
 make artana-evidence-api-service-checks
 ```
 
-`make all` is an alias for `make service-checks`, the normal CI gate. It runs lint, type checks,
-architecture checks, contract checks, isolated Postgres tests, and coverage.
+`make all` is an alias for `make service-checks`, the normal CI gate. It runs
+lint, type checks, architecture checks, contract checks, isolated Postgres
+tests, and coverage.
 Live/external tests are not required for normal CI; they skip with explicit
 messages unless their environment variables or local services are available.
+
+The graph service lives in `services/artana_evidence_db`; its Makefile targets
+use the `graph-service-*` prefix. The Evidence API lives in
+`services/artana_evidence_api`; its Makefile targets use the
+`artana-evidence-api-*` prefix.
 
 Useful focused checks:
 
