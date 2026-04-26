@@ -9,9 +9,11 @@ from uuid import UUID, uuid4
 import pytest
 from artana_evidence_api.app import create_app
 from artana_evidence_api.dependencies import (
+    get_direct_source_search_store,
     get_pubmed_discovery_service,
     get_research_space_store,
 )
+from artana_evidence_api.direct_source_search import InMemoryDirectSourceSearchStore
 from artana_evidence_api.pubmed_discovery import (
     AdvancedQueryParameters,
     DiscoveryProvider,
@@ -123,6 +125,7 @@ class _RateLimitedPubMedDiscoveryService:
 def _build_client() -> tuple[TestClient, _StubPubMedDiscoveryService, str]:
     app = create_app()
     pubmed_service = _StubPubMedDiscoveryService()
+    direct_source_search_store = InMemoryDirectSourceSearchStore()
     research_space_store = HarnessResearchSpaceStore()
     space = research_space_store.create_space(
         owner_id=_TEST_USER_ID,
@@ -130,6 +133,9 @@ def _build_client() -> tuple[TestClient, _StubPubMedDiscoveryService, str]:
         description="Owned test space for pubmed routes.",
     )
     app.dependency_overrides[get_pubmed_discovery_service] = lambda: pubmed_service
+    app.dependency_overrides[get_direct_source_search_store] = (
+        lambda: direct_source_search_store
+    )
     app.dependency_overrides[get_research_space_store] = lambda: research_space_store
     return TestClient(app), pubmed_service, space.id
 

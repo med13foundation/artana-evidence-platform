@@ -54,6 +54,7 @@ from artana_evidence_api.direct_source_search import (
     DrugBankSourceSearchResponse,
     MGISourceSearchRequest,
     MGISourceSearchResponse,
+    PubMedSourceSearchResponse,
     UniProtSourceSearchRequest,
     UniProtSourceSearchResponse,
     ZFINSourceSearchRequest,
@@ -111,7 +112,11 @@ from artana_evidence_api.source_search_handoff import (
     SourceSearchHandoffStore,
     SourceSearchHandoffUnsupportedError,
 )
-from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+from artana_evidence_api.types.common import (
+    JSONObject,
+    json_array_or_empty,
+    json_object_or_empty,
+)
 from fastapi import (
     APIRouter,
     Body,
@@ -229,12 +234,6 @@ _DIRECT_SOURCE_SEARCH_RESPONSES: _OpenAPIResponses = {
         "description": "Source does not support direct search yet.",
     },
 }
-
-
-class PubMedSourceSearchResponse(pubmed.DiscoverySearchJob):
-    """Typed v2 PubMed source-search response with capture metadata."""
-
-    source_capture: SourceResultCapture
 
 
 class MarrvelSourceSearchResponse(DurableMarrvelSourceSearchResponse):
@@ -1006,6 +1005,53 @@ def _pubmed_source_capture(result: pubmed.DiscoverySearchJob) -> JSONObject:
     )
 
 
+def _pubmed_preview_records(result: pubmed.DiscoverySearchJob) -> list[JSONObject]:
+    records = json_array_or_empty(result.result_metadata.get("preview_records"))
+    return [json_object_or_empty(record) for record in records]
+
+
+def _require_completed_pubmed_result(result: pubmed.DiscoverySearchJob) -> None:
+    if result.status.value == "completed":
+        return
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=(
+            "PubMed search job is not completed; durable direct-source handoff "
+            "requires a completed PubMed result."
+        ),
+    )
+
+
+def _pubmed_direct_source_record(
+    *,
+    space_id: UUID,
+    result: pubmed.DiscoverySearchJob,
+) -> PubMedSourceSearchResponse:
+    _require_completed_pubmed_result(result)
+    records = _pubmed_preview_records(result)
+    completed_at = result.completed_at or result.updated_at or result.created_at
+    source_capture = SourceResultCapture.model_validate(_pubmed_source_capture(result))
+    return PubMedSourceSearchResponse(
+        id=result.id,
+        space_id=space_id,
+        owner_id=result.owner_id,
+        session_id=result.session_id,
+        query=result.query_preview,
+        query_preview=result.query_preview,
+        parameters=result.parameters,
+        total_results=result.total_results,
+        result_metadata=result.result_metadata,
+        record_count=len(records),
+        records=records,
+        error_message=result.error_message,
+        storage_key=result.storage_key,
+        created_at=result.created_at,
+        updated_at=result.updated_at,
+        completed_at=completed_at,
+        source_capture=source_capture,
+    )
+
+
 def _marrvel_source_capture(result: marrvel.MarrvelSearchResponse) -> JSONObject:
     result_count = sum(result.panel_counts.values()) if result.panel_counts else 0
     return source_result_capture_metadata(
@@ -1226,6 +1272,7 @@ async def _create_pubmed_source_search_payload(
     request: pubmed.PubMedSearchRequest,
     current_user: HarnessUser,
     pubmed_discovery_service: pubmed.PubMedDiscoveryService,
+    direct_source_search_store: DirectSourceSearchStore,
 ) -> JSONObject:
     pubmed_result = await pubmed.create_pubmed_search(
         space_id=space_id,
@@ -1233,9 +1280,19 @@ async def _create_pubmed_source_search_payload(
         current_user=current_user,
         pubmed_discovery_service=pubmed_discovery_service,
     )
-    return _source_result_payload(
-        pubmed_result,
-        source_capture=_pubmed_source_capture(pubmed_result),
+    if pubmed_result.status.value != "completed":
+        return json_object_or_empty(jsonable_encoder(pubmed_result))
+    durable_result = _pubmed_direct_source_record(
+        space_id=space_id,
+        result=pubmed_result,
+    )
+    return json_object_or_empty(
+        jsonable_encoder(
+            direct_source_search_store.save(
+                durable_result,
+                created_by=current_user.id,
+            ),
+        ),
     )
 
 
@@ -1245,17 +1302,32 @@ def _get_pubmed_source_search_payload(
     search_id: UUID,
     current_user: HarnessUser,
     pubmed_discovery_service: pubmed.PubMedDiscoveryService,
+    direct_source_search_store: DirectSourceSearchStore,
 ) -> JSONObject:
+    stored_result = direct_source_search_store.get(
+        space_id=space_id,
+        source_key="pubmed",
+        search_id=search_id,
+    )
+    if isinstance(stored_result, PubMedSourceSearchResponse):
+        return json_object_or_empty(jsonable_encoder(stored_result))
     pubmed_result = pubmed.get_pubmed_search(
         space_id=space_id,
         job_id=search_id,
         current_user=current_user,
         pubmed_discovery_service=pubmed_discovery_service,
     )
-    return _source_result_payload(
-        pubmed_result,
-        source_capture=_pubmed_source_capture(pubmed_result),
+    if pubmed_result.status.value != "completed":
+        return json_object_or_empty(jsonable_encoder(pubmed_result))
+    durable_result = _pubmed_direct_source_record(
+        space_id=space_id,
+        result=pubmed_result,
     )
+    saved_result = direct_source_search_store.save(
+        durable_result,
+        created_by=current_user.id,
+    )
+    return json_object_or_empty(jsonable_encoder(saved_result))
 
 
 async def _create_marrvel_source_search_payload(
@@ -2238,7 +2310,7 @@ def get_source(source_key: str) -> SourceDefinition:
 
 @router.post(
     "/v2/spaces/{space_id}/sources/pubmed/searches",
-    response_model=PubMedSourceSearchResponse,
+    response_model=PubMedSourceSearchResponse | pubmed.DiscoverySearchJob,
     status_code=status.HTTP_201_CREATED,
     summary="Search PubMed evidence source",
     dependencies=[Depends(require_harness_space_write_access)],
@@ -2252,6 +2324,9 @@ async def create_pubmed_source_search(
     pubmed_discovery_service: pubmed.PubMedDiscoveryService = (
         _PUBMED_DISCOVERY_SERVICE_DEPENDENCY
     ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
 ) -> JSONObject:
     """Typed v2 compatibility route for PubMed source search."""
 
@@ -2260,12 +2335,13 @@ async def create_pubmed_source_search(
         request=request,
         current_user=current_user,
         pubmed_discovery_service=pubmed_discovery_service,
+        direct_source_search_store=direct_source_search_store,
     )
 
 
 @router.get(
     "/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}",
-    response_model=PubMedSourceSearchResponse,
+    response_model=PubMedSourceSearchResponse | pubmed.DiscoverySearchJob,
     summary="Get PubMed evidence source search",
     dependencies=[Depends(require_harness_space_read_access)],
     tags=["sources"],
@@ -2278,6 +2354,9 @@ def get_pubmed_source_search(
     pubmed_discovery_service: pubmed.PubMedDiscoveryService = (
         _PUBMED_DISCOVERY_SERVICE_DEPENDENCY
     ),
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_DEPENDENCY
+    ),
 ) -> JSONObject:
     """Typed v2 compatibility route for PubMed source-search lookup."""
 
@@ -2286,6 +2365,7 @@ def get_pubmed_source_search(
         search_id=job_id,
         current_user=current_user,
         pubmed_discovery_service=pubmed_discovery_service,
+        direct_source_search_store=direct_source_search_store,
     )
 
 
@@ -2782,6 +2862,7 @@ async def create_source_search(  # noqa: PLR0911
             request=_parse_pubmed_source_search(request_payload),
             current_user=current_user,
             pubmed_discovery_service=pubmed_discovery_service,
+            direct_source_search_store=direct_source_search_store,
         )
     if source.source_key == "marrvel":
         return await _create_marrvel_source_search_payload(
@@ -2886,6 +2967,7 @@ def get_source_search(  # noqa: PLR0911
             search_id=search_id,
             current_user=current_user,
             pubmed_discovery_service=pubmed_discovery_service,
+            direct_source_search_store=direct_source_search_store,
         )
     if source.source_key == "marrvel":
         return _get_marrvel_source_search_payload(

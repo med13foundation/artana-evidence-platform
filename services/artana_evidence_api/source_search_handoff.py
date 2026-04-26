@@ -6,6 +6,8 @@ import hashlib
 import json
 import logging
 import re
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal, Protocol, cast
@@ -27,16 +29,39 @@ from artana_evidence_api.source_result_capture import (
     SourceResultCapture,
     source_result_capture_metadata,
 )
-from artana_evidence_api.types.common import JSONObject, JSONValue, json_object_or_empty
+from artana_evidence_api.sqlalchemy_unit_of_work import (
+    commit_or_flush,
+    in_unit_of_work,
+    session_unit_of_work,
+)
+from artana_evidence_api.types.common import (
+    JSONObject,
+    JSONValue,
+    json_array_or_empty,
+    json_object_or_empty,
+    json_value,
+)
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-SourceSearchHandoffStatus = Literal["pending", "completed", "not_extractable", "failed"]
-SourceSearchHandoffTargetKind = Literal["source_document", "not_extractable"]
+SourceSearchHandoffStatus = Literal["pending", "completed", "failed"]
+SourceSearchHandoffTargetKind = Literal["source_document"]
 
-_VARIANT_DOCUMENT_SOURCE_KEYS = frozenset({"clinvar", "marrvel"})
+_DURABLE_RUN_BACKED_SOURCE_KEYS = frozenset(
+    {
+        "clinvar",
+        "pubmed",
+        "marrvel",
+        "clinical_trials",
+        "uniprot",
+        "alphafold",
+        "drugbank",
+        "mgi",
+        "zfin",
+    },
+)
 _MARRVEL_VARIANT_PANEL_KEYS = frozenset(
     {
         "clinvar",
@@ -54,20 +79,9 @@ _CLINVAR_ACCESSION_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _LOGGER = logging.getLogger(__name__)
-_DURABLE_RUN_BACKED_SOURCE_KEYS = frozenset(
-    {
-        "clinvar",
-        "marrvel",
-        "clinical_trials",
-        "uniprot",
-        "alphafold",
-        "drugbank",
-        "mgi",
-        "zfin",
-    },
-)
 _PROVIDER_ID_KEYS_BY_SOURCE: dict[str, tuple[str, ...]] = {
     "clinvar": ("accession", "clinvar_id", "variation_id"),
+    "pubmed": ("pmid", "pubmed_id", "uid"),
     "clinical_trials": ("nct_id",),
     "uniprot": ("uniprot_id", "primary_accession", "accession"),
     "alphafold": ("uniprot_id", "primary_accession", "accession"),
@@ -75,6 +89,17 @@ _PROVIDER_ID_KEYS_BY_SOURCE: dict[str, tuple[str, ...]] = {
     "marrvel": ("marrvel_record_id",),
     "mgi": ("mgi_id", "primary_id", "id"),
     "zfin": ("zfin_id", "primary_id", "id"),
+}
+_SOURCE_FAMILIES_BY_SOURCE: dict[str, str] = {
+    "pubmed": "literature",
+    "clinvar": "variant",
+    "marrvel": "model_organism",
+    "clinical_trials": "clinical",
+    "uniprot": "protein",
+    "alphafold": "structure",
+    "drugbank": "drug",
+    "mgi": "model_organism",
+    "zfin": "model_organism",
 }
 
 
@@ -283,6 +308,18 @@ class SqlAlchemySourceSearchHandoffStore:
     def __init__(self, session: Session) -> None:
         self._session = session
 
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        """Group handoff writes under one explicit SQLAlchemy transaction."""
+
+        with session_unit_of_work(self._session):
+            yield
+
+    def _finish_write(self, model: SourceSearchHandoffModel) -> SourceSearchHandoffRecord:
+        commit_or_flush(self._session)
+        self._session.refresh(model)
+        return _handoff_record_from_model(model)
+
     def find(
         self,
         *,
@@ -324,10 +361,33 @@ class SqlAlchemySourceSearchHandoffStore:
             error_message=record.error_message,
             completed_at=record.completed_at,
         )
-        self._session.add(model)
+        existing = self.find(
+            space_id=UUID(record.space_id),
+            source_key=record.source_key,
+            search_id=UUID(record.search_id),
+            target_kind=record.target_kind,
+            idempotency_key=record.idempotency_key,
+        )
+        if existing is not None:
+            if existing.request_hash != record.request_hash:
+                message = (
+                    "Idempotency key was already used for a different handoff "
+                    "request."
+                )
+                raise SourceSearchHandoffConflictError(message)
+            return existing
+
         try:
-            self._session.commit()
+            if in_unit_of_work(self._session):
+                self._session.add(model)
+                self._session.flush()
+                self._session.refresh(model)
+                return _handoff_record_from_model(model)
+            self._session.add(model)
+            return self._finish_write(model)
         except IntegrityError as exc:
+            if in_unit_of_work(self._session):
+                raise
             self._session.rollback()
             existing = self.find(
                 space_id=UUID(record.space_id),
@@ -345,8 +405,6 @@ class SqlAlchemySourceSearchHandoffStore:
                 )
                 raise SourceSearchHandoffConflictError(message) from exc
             return existing
-        self._session.refresh(model)
-        return _handoff_record_from_model(model)
 
     def update(self, record: SourceSearchHandoffRecord) -> SourceSearchHandoffRecord:
         model = self._session.get(SourceSearchHandoffModel, record.id)
@@ -362,9 +420,16 @@ class SqlAlchemySourceSearchHandoffStore:
         model.target_document_id = record.target_document_id
         model.error_message = record.error_message
         model.completed_at = record.completed_at
-        self._session.commit()
-        self._session.refresh(model)
-        return _handoff_record_from_model(model)
+        return self._finish_write(model)
+
+
+def _handoff_transaction(
+    store: SourceSearchHandoffStore,
+) -> AbstractContextManager[None]:
+    transaction = getattr(store, "transaction", None)
+    if callable(transaction):
+        return cast("Callable[[], AbstractContextManager[None]]", transaction)()
+    return nullcontext()
 
 
 class SourceSearchHandoffService:
@@ -418,10 +483,7 @@ class SourceSearchHandoffService:
             external_id=request.external_id,
             record_hash=request.record_hash,
         )
-        target_kind = _target_kind_for_selection(
-            source_key=source_key,
-            selected=selected,
-        )
+        target_kind: SourceSearchHandoffTargetKind = "source_document"
         request_hash = _request_hash(request=request, target_kind=target_kind)
         idempotency_key = request.idempotency_key or _default_idempotency_key(
             selected=selected,
@@ -443,6 +505,7 @@ class SourceSearchHandoffService:
             if existing.status == "pending" and target_kind == "source_document":
                 return self._complete_pending_document_handoff(
                     pending=existing,
+                    persist_pending=False,
                     space_id=space_id,
                     source_key=source_key,
                     search_id=search_id,
@@ -451,20 +514,6 @@ class SourceSearchHandoffService:
                     selected=selected,
                 )
             return _response_from_record(existing, replayed=True)
-
-        if target_kind == "not_extractable":
-            record = _not_extractable_record(
-                space_id=space_id,
-                source_key=source_key,
-                search_id=search_id,
-                created_by=created_by_id,
-                source_search=source_search,
-                selected=selected,
-                idempotency_key=idempotency_key,
-                request_hash=request_hash,
-                request_metadata=request.metadata,
-            )
-            return _response_from_record(self._handoff_store.save(record), replayed=False)
 
         document_id = _deterministic_document_id(
             space_id=space_id,
@@ -485,9 +534,9 @@ class SourceSearchHandoffService:
             document_id=document_id,
             request_metadata=request.metadata,
         )
-        pending = self._handoff_store.save(pending)
         return self._complete_pending_document_handoff(
             pending=pending,
+            persist_pending=True,
             space_id=space_id,
             source_key=source_key,
             search_id=search_id,
@@ -500,6 +549,7 @@ class SourceSearchHandoffService:
         self,
         *,
         pending: SourceSearchHandoffRecord,
+        persist_pending: bool,
         space_id: UUID,
         source_key: str,
         search_id: UUID,
@@ -507,124 +557,149 @@ class SourceSearchHandoffService:
         source_search: DirectSourceSearchRecord,
         selected: _SelectedSourceRecord,
     ) -> SourceSearchHandoffResponse:
-        document_id = (
-            UUID(pending.target_document_id)
-            if pending.target_document_id is not None
-            else uuid4()
-        )
-        existing_document = self._document_store.get_document(
-            space_id=space_id,
-            document_id=document_id,
-        )
-        if existing_document is not None:
-            raw_capture = existing_document.metadata.get("source_capture")
-            source_capture = SourceResultCapture.model_validate(raw_capture)
-            completed = _completed_record(
-                space_id=space_id,
-                source_key=source_key,
-                search_id=search_id,
-                created_by=created_by,
-                source_search=source_search,
-                selected=selected,
-                idempotency_key=pending.idempotency_key,
-                request_hash=pending.request_hash,
-                run_id=existing_document.ingestion_run_id,
-                document=existing_document,
-                source_capture=source_capture,
-                handoff_id=pending.id,
-            )
-            return _response_from_record(
-                self._handoff_store.update(completed),
-                replayed=True,
-            )
         ingestion_run_id: str | None = None
         try:
-            ingestion_run = self._run_registry.create_run(
-                space_id=space_id,
-                harness_id="source-search-handoff",
-                title=f"Source Handoff: {source_key} search {search_id}",
-                input_payload={
-                    "source_key": source_key,
-                    "search_id": str(search_id),
-                    "record_index": selected.index,
-                    "external_id": selected.external_id,
-                    "target_kind": pending.target_kind,
-                },
-                graph_service_status="not_checked",
-                graph_service_version="not_checked",
-            )
-            ingestion_run_id = ingestion_run.id
-            source_capture = _document_capture(
-                source_key=source_key,
-                search_id=search_id,
-                document_id=document_id,
-                run_id=ingestion_run.id,
-                source_search=source_search,
-                selected=selected,
-            )
-            document = _create_handoff_document(
-                document_store=self._document_store,
-                source_key=source_key,
-                space_id=space_id,
-                created_by=created_by,
-                document_id=document_id,
-                ingestion_run_id=ingestion_run.id,
-                source_search=source_search,
-                selected=selected,
-                source_capture=source_capture,
-                request_metadata=json_object_or_empty(
-                    pending.handoff_payload.get("client_metadata"),
-                ),
-            )
-            self._run_registry.set_run_status(
-                space_id=space_id,
-                run_id=ingestion_run.id,
-                status="completed",
-            )
-            record = _completed_record(
-                space_id=space_id,
-                source_key=source_key,
-                search_id=search_id,
-                created_by=created_by,
-                source_search=source_search,
-                selected=selected,
-                idempotency_key=pending.idempotency_key,
-                request_hash=pending.request_hash,
-                run_id=ingestion_run.id,
-                document=document,
-                source_capture=source_capture,
-                handoff_id=pending.id,
-            )
-            return _response_from_record(self._handoff_store.update(record), replayed=False)
-        except Exception as exc:
-            if ingestion_run_id is not None:
-                try:
-                    self._run_registry.set_run_status(
+            with _handoff_transaction(self._handoff_store):
+                if persist_pending:
+                    pending = self._handoff_store.save(pending)
+                document_id = (
+                    UUID(pending.target_document_id)
+                    if pending.target_document_id is not None
+                    else uuid4()
+                )
+                existing_document = self._document_store.get_document(
+                    space_id=space_id,
+                    document_id=document_id,
+                )
+                if existing_document is not None:
+                    raw_capture = existing_document.metadata.get("source_capture")
+                    source_capture = SourceResultCapture.model_validate(raw_capture)
+                    completed = _completed_record(
                         space_id=space_id,
-                        run_id=ingestion_run_id,
-                        status="failed",
+                        source_key=source_key,
+                        search_id=search_id,
+                        created_by=created_by,
+                        source_search=source_search,
+                        selected=selected,
+                        idempotency_key=pending.idempotency_key,
+                        request_hash=pending.request_hash,
+                        run_id=existing_document.ingestion_run_id,
+                        document=existing_document,
+                        source_capture=source_capture,
+                        handoff_id=pending.id,
                     )
-                except Exception:
-                    _LOGGER.exception(
-                        "Failed to mark source-search handoff run '%s' failed.",
-                        ingestion_run_id,
+                    return _response_from_record(
+                        self._handoff_store.update(completed),
+                        replayed=True,
                     )
-            try:
-                latest = self._handoff_store.find(
+                ingestion_run = self._run_registry.create_run(
+                    space_id=space_id,
+                    harness_id="source-search-handoff",
+                    title=f"Source Handoff: {source_key} search {search_id}",
+                    input_payload=_handoff_run_input(
+                        source_key=source_key,
+                        search_id=search_id,
+                        selected=selected,
+                        target_kind=pending.target_kind,
+                    ),
+                    graph_service_status="not_checked",
+                    graph_service_version="not_checked",
+                )
+                ingestion_run_id = ingestion_run.id
+                source_capture = _document_capture(
+                    source_key=source_key,
+                    search_id=search_id,
+                    document_id=document_id,
+                    run_id=ingestion_run.id,
+                    source_search=source_search,
+                    selected=selected,
+                )
+                document = _create_handoff_document(
+                    document_store=self._document_store,
+                    source_key=source_key,
+                    space_id=space_id,
+                    created_by=created_by,
+                    document_id=document_id,
+                    ingestion_run_id=ingestion_run.id,
+                    source_search=source_search,
+                    selected=selected,
+                    source_capture=source_capture,
+                    request_metadata=json_object_or_empty(
+                        pending.handoff_payload.get("client_metadata"),
+                    ),
+                )
+                self._run_registry.set_run_status(
+                    space_id=space_id,
+                    run_id=ingestion_run.id,
+                    status="completed",
+                )
+                record = _completed_record(
                     space_id=space_id,
                     source_key=source_key,
                     search_id=search_id,
-                    target_kind=pending.target_kind,
+                    created_by=created_by,
+                    source_search=source_search,
+                    selected=selected,
                     idempotency_key=pending.idempotency_key,
+                    request_hash=pending.request_hash,
+                    run_id=ingestion_run.id,
+                    document=document,
+                    source_capture=source_capture,
+                    handoff_id=pending.id,
                 )
-                if latest is None or latest.status == "pending":
-                    self._handoff_store.update(
-                        _failed_record(
-                            pending=latest or pending,
+                return _response_from_record(
+                    self._handoff_store.update(record),
+                    replayed=False,
+                )
+        except Exception as exc:
+            try:
+                with _handoff_transaction(self._handoff_store):
+                    failed_run_id = ingestion_run_id
+                    if ingestion_run_id is not None:
+                        failed_run = self._run_registry.set_run_status(
+                            space_id=space_id,
                             run_id=ingestion_run_id,
-                            error_message=str(exc),
-                        ),
+                            status="failed",
+                        )
+                        if failed_run is None:
+                            failed_run = self._run_registry.create_run(
+                                space_id=space_id,
+                                harness_id="source-search-handoff",
+                                title=(
+                                    f"Source Handoff Failed: {source_key} "
+                                    f"search {search_id}"
+                                ),
+                                input_payload=_handoff_run_input(
+                                    source_key=source_key,
+                                    search_id=search_id,
+                                    selected=selected,
+                                    target_kind=pending.target_kind,
+                                ),
+                                graph_service_status="not_checked",
+                                graph_service_version="not_checked",
+                            )
+                            failed_run = self._run_registry.set_run_status(
+                                space_id=space_id,
+                                run_id=failed_run.id,
+                                status="failed",
+                            )
+                        if failed_run is not None:
+                            failed_run_id = failed_run.id
+                    latest = self._handoff_store.find(
+                        space_id=space_id,
+                        source_key=source_key,
+                        search_id=search_id,
+                        target_kind=pending.target_kind,
+                        idempotency_key=pending.idempotency_key,
                     )
+                    if latest is None or latest.status == "pending":
+                        self._handoff_store.update(
+                            _failed_record(
+                                pending=latest or pending,
+                                run_id=failed_run_id,
+                                error_message=str(exc),
+                            ),
+                        )
             except Exception:
                 _LOGGER.exception(
                     "Failed to persist failed source-search handoff '%s'.",
@@ -759,22 +834,32 @@ def _provider_external_id(*, source_key: str, record: JSONObject) -> str | None:
     return None
 
 
-def _target_kind_for_selection(
+def _record_supports_variant_aware(
     *,
     source_key: str,
     selected: _SelectedSourceRecord,
-) -> SourceSearchHandoffTargetKind:
-    if source_key == "marrvel" and not _marrvel_record_is_variant_panel(
-        selected.record,
-    ):
-        return "not_extractable"
-    if source_key == "clinvar" and not _clinvar_record_has_variant_signal(
-        selected.record,
-    ):
-        return "not_extractable"
-    if source_key in _VARIANT_DOCUMENT_SOURCE_KEYS:
-        return "source_document"
-    return "not_extractable"
+) -> bool:
+    if source_key == "marrvel":
+        return _marrvel_record_is_variant_panel(selected.record)
+    if source_key == "clinvar":
+        return _clinvar_record_has_variant_signal(selected.record)
+    return False
+
+
+def _handoff_run_input(
+    *,
+    source_key: str,
+    search_id: UUID,
+    selected: _SelectedSourceRecord,
+    target_kind: SourceSearchHandoffTargetKind,
+) -> JSONObject:
+    return {
+        "source_key": source_key,
+        "search_id": str(search_id),
+        "record_index": selected.index,
+        "external_id": selected.external_id,
+        "target_kind": target_kind,
+    }
 
 
 def _marrvel_record_is_variant_panel(record: JSONObject) -> bool:
@@ -950,18 +1035,24 @@ def _create_handoff_document(
         source_search=source_search,
         selected=selected,
     )
+    normalized_record = _normalized_source_record(
+        source_key=source_key,
+        selected=selected,
+    )
     metadata: JSONObject = {
         "source_capture": source_capture.to_metadata(),
+        "source_family": _source_family(source_key),
+        "normalization_profile": f"{source_key}_source_document_v1",
         "source_search_id": str(source_search.id),
         "source_search_handoff": True,
         "selected_record_index": selected.index,
         "selected_record": selected.record,
+        "normalized_record": normalized_record,
         "client_metadata": request_metadata,
-        "variant_aware_recommended": _target_kind_for_selection(
+        "variant_aware_recommended": _record_supports_variant_aware(
             source_key=source_key,
             selected=selected,
-        )
-        == "source_document",
+        ),
     }
     return document_store.create_document(
         document_id=document_id,
@@ -1032,6 +1123,39 @@ def _source_record_text(
     source_search: DirectSourceSearchRecord,
     selected: _SelectedSourceRecord,
 ) -> str:
+    normalized_record = _normalized_source_record(
+        source_key=source_key,
+        selected=selected,
+    )
+    if normalized_record:
+        lines = [
+            f"# {_source_family(source_key).replace('_', ' ').title()} Source Record",
+            "",
+            f"Source: {source_key}",
+            f"Search ID: {source_search.id}",
+            f"Query: {source_search.query}",
+            f"Record index: {selected.index}",
+        ]
+        if selected.external_id is not None:
+            lines.append(f"External ID: {selected.external_id}")
+        lines.extend(["", "## Normalized Fields"])
+        for key, value in normalized_record.items():
+            if _is_empty_json_value(value):
+                continue
+            lines.append(f"- {key}: {_display_json_value(value)}")
+        lines.extend(
+            [
+                "",
+                "## Raw Record JSON",
+                json.dumps(
+                    selected.record,
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                ),
+            ],
+        )
+        return "\n".join(lines)
     return json.dumps(
         {
             "source_key": source_key,
@@ -1066,6 +1190,222 @@ def _source_record_title(
     if selected.external_id is not None:
         return f"{source_key}: {selected.external_id}"
     return f"{source_key}: {source_search.query}"
+
+
+def _source_family(source_key: str) -> str:
+    return _SOURCE_FAMILIES_BY_SOURCE.get(source_key, "document")
+
+
+def _normalized_source_record(  # noqa: PLR0911
+    *,
+    source_key: str,
+    selected: _SelectedSourceRecord,
+) -> JSONObject:
+    record = selected.record
+    if source_key == "pubmed":
+        return _compact_json_object(
+            {
+                "pmid": _string_field(record, "pmid", "pubmed_id", "uid"),
+                "title": _string_field(record, "title"),
+                "abstract": _string_field(record, "abstract"),
+                "journal": _string_field(record, "journal", "source"),
+                "publication_year": _string_field(
+                    record,
+                    "publication_year",
+                    "year",
+                ),
+            },
+        )
+    if source_key == "clinical_trials":
+        return _compact_json_object(
+            {
+                "nct_id": _string_field(record, "nct_id"),
+                "title": _string_field(record, "brief_title", "official_title"),
+                "status": _string_field(record, "overall_status", "status"),
+                "phase": _string_list_field(record, "phases"),
+                "conditions": _string_list_field(record, "conditions"),
+                "interventions": _intervention_names(record.get("interventions")),
+                "study_type": _string_field(record, "study_type"),
+            },
+        )
+    if source_key == "uniprot":
+        return _compact_json_object(
+            {
+                "uniprot_id": _string_field(
+                    record,
+                    "uniprot_id",
+                    "primary_accession",
+                    "accession",
+                ),
+                "gene_symbol": _string_field(record, "gene_name", "gene_symbol"),
+                "protein_name": _string_field(record, "protein_name", "name"),
+                "organism": _string_field(record, "organism"),
+                "function": _string_field(record, "function", "description"),
+                "sequence_length": _json_value_field(record, "sequence_length"),
+            },
+        )
+    if source_key == "alphafold":
+        return _compact_json_object(
+            {
+                "uniprot_id": _string_field(
+                    record,
+                    "uniprot_id",
+                    "primary_accession",
+                    "accession",
+                ),
+                "protein_name": _string_field(record, "protein_name", "name"),
+                "gene_symbol": _string_field(record, "gene_name", "gene_symbol"),
+                "organism": _string_field(record, "organism"),
+                "confidence": _json_value_field(
+                    record,
+                    "predicted_structure_confidence",
+                    "confidence_avg",
+                ),
+                "model_url": _string_field(record, "model_url", "cifUrl"),
+                "pdb_url": _string_field(record, "pdb_url", "pdbUrl"),
+                "domains": _json_value_field(record, "domains"),
+            },
+        )
+    if source_key == "drugbank":
+        return _compact_json_object(
+            {
+                "drugbank_id": _string_field(
+                    record,
+                    "drugbank_id",
+                    "drug_id",
+                    "drugbank-id",
+                ),
+                "drug_name": _string_field(record, "drug_name", "name"),
+                "target_name": _string_field(record, "target_name"),
+                "targets": _json_value_field(record, "targets", "target_names"),
+                "mechanism": _string_field(
+                    record,
+                    "mechanism_of_action",
+                    "mechanism",
+                ),
+                "categories": _json_value_field(record, "categories"),
+            },
+        )
+    if source_key in {"mgi", "zfin"}:
+        return _compact_json_object(
+            {
+                "provider_id": _provider_external_id(
+                    source_key=source_key,
+                    record=record,
+                ),
+                "gene_symbol": _string_field(record, "gene_symbol", "symbol"),
+                "gene_name": _string_field(record, "gene_name", "name"),
+                "species": _string_field(record, "species"),
+                "phenotypes": _json_value_field(record, "phenotype_statements"),
+                "disease_associations": _json_value_field(
+                    record,
+                    "disease_associations",
+                ),
+                "expression_terms": _json_value_field(record, "expression_terms"),
+            },
+        )
+    if source_key == "clinvar":
+        return _compact_json_object(
+            {
+                "accession": _string_field(record, "accession"),
+                "variation_id": _json_value_field(record, "variation_id"),
+                "gene_symbol": _string_field(record, "gene_symbol"),
+                "title": _string_field(record, "title"),
+                "clinical_significance": _json_value_field(
+                    record,
+                    "clinical_significance",
+                ),
+                "conditions": _json_value_field(record, "conditions"),
+                "hgvs": _string_field(record, "hgvs", "hgvs_notation"),
+            },
+        )
+    if source_key == "marrvel":
+        return _compact_json_object(
+            {
+                "marrvel_record_id": _string_field(record, "marrvel_record_id"),
+                "panel_name": _string_field(record, "panel_name"),
+                "panel_family": _string_field(record, "panel_family"),
+                "gene_symbol": _string_field(record, "gene_symbol"),
+                "resolved_gene_symbol": _string_field(
+                    record,
+                    "resolved_gene_symbol",
+                ),
+                "hgvs": _string_field(record, "hgvs", "hgvs_notation"),
+                "query_mode": _string_field(record, "query_mode"),
+                "query_value": _string_field(record, "query_value"),
+            },
+        )
+    return {}
+
+
+def _compact_json_object(payload: dict[str, JSONValue | None]) -> JSONObject:
+    return {
+        key: value
+        for key, value in payload.items()
+        if not _is_empty_json_value(value)
+    }
+
+
+def _string_field(record: JSONObject, *keys: str) -> str | None:
+    for key in keys:
+        value = record.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, int | float) and not isinstance(value, bool):
+            return str(value)
+    return None
+
+
+def _json_value_field(record: JSONObject, *keys: str) -> JSONValue | None:
+    for key in keys:
+        if key not in record:
+            continue
+        value = json_value(record[key])
+        if _is_empty_json_value(value):
+            continue
+        return value
+    return None
+
+
+def _string_list_field(record: JSONObject, *keys: str) -> list[str]:
+    for key in keys:
+        values = [
+            item.strip()
+            for item in json_array_or_empty(record.get(key))
+            if isinstance(item, str) and item.strip()
+        ]
+        if values:
+            return values
+    return []
+
+
+def _intervention_names(value: object) -> list[str]:
+    names: list[str] = []
+    for item in json_array_or_empty(value):
+        if isinstance(item, str) and item.strip():
+            names.append(item.strip())
+            continue
+        item_payload = json_object_or_empty(item)
+        name = item_payload.get("name")
+        if isinstance(name, str) and name.strip():
+            names.append(name.strip())
+    return names
+
+
+def _display_json_value(value: JSONValue) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, int | float | bool) or value is None:
+        return str(value)
+    return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+
+def _is_empty_json_value(value: JSONValue | None) -> bool:
+    if value is None:
+        return True
+    if value == "":
+        return True
+    return value == []
 
 
 def _completed_record(
@@ -1107,49 +1447,6 @@ def _completed_record(
         handoff_payload=handoff_payload,
         target_run_id=run_id,
         target_document_id=document.id,
-        error_message=None,
-        completed_at=datetime.now(UTC),
-    )
-
-
-def _not_extractable_record(
-    *,
-    space_id: UUID,
-    source_key: str,
-    search_id: UUID,
-    created_by: UUID | str,
-    source_search: DirectSourceSearchRecord,
-    selected: _SelectedSourceRecord,
-    idempotency_key: str,
-    request_hash: str,
-    request_metadata: JSONObject,
-) -> SourceSearchHandoffRecord:
-    handoff_payload: JSONObject = {
-        "selected_record_index": selected.index,
-        "selected_record": selected.record,
-        "selected_external_id": selected.external_id,
-        "reason": (
-            "This source is captured durably, but it is not routed into "
-            "variant-aware document extraction by the current policy."
-        ),
-        "client_metadata": request_metadata,
-    }
-    return SourceSearchHandoffRecord(
-        id=str(uuid4()),
-        space_id=str(space_id),
-        source_key=source_key,
-        search_id=str(search_id),
-        status="not_extractable",
-        target_kind="not_extractable",
-        idempotency_key=idempotency_key,
-        request_hash=request_hash,
-        created_by=str(created_by),
-        record_selector_payload=_record_selector(selected),
-        search_snapshot_payload=_search_snapshot(source_search),
-        source_capture_snapshot={},
-        handoff_payload=handoff_payload,
-        target_run_id=None,
-        target_document_id=None,
         error_message=None,
         completed_at=datetime.now(UTC),
     )

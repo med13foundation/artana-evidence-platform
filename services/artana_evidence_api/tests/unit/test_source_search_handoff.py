@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 import pytest
+from artana_evidence_api.artana_stores import ArtanaBackedHarnessRunRegistry
 from artana_evidence_api.direct_source_search import (
     ClinVarSourceSearchResponse,
     MarrvelSourceSearchResponse,
@@ -20,7 +21,7 @@ from artana_evidence_api.document_store import (
     HarnessDocumentRecord,
     HarnessDocumentStore,
 )
-from artana_evidence_api.models import Base
+from artana_evidence_api.models import Base, HarnessDocumentModel, HarnessRunModel
 from artana_evidence_api.run_registry import HarnessRunRegistry
 from artana_evidence_api.source_result_capture import (
     SourceCaptureStage,
@@ -35,8 +36,9 @@ from artana_evidence_api.source_search_handoff import (
     SourceSearchHandoffService,
     SqlAlchemySourceSearchHandoffStore,
 )
+from artana_evidence_api.sqlalchemy_stores import SqlAlchemyHarnessDocumentStore
 from artana_evidence_api.types.common import JSONObject
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -44,6 +46,51 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 _CREATED_BY = UUID("11111111-1111-1111-1111-111111111111")
+
+
+@dataclass(frozen=True, slots=True)
+class _FakeSummary:
+    summary_json: str
+
+
+class _FakeKernelRuntime:
+    def __init__(self) -> None:
+        self.runs: set[tuple[str, str]] = set()
+        self.summaries: dict[tuple[str, str, str], _FakeSummary] = {}
+
+    def ensure_run(self, *, run_id: str, tenant_id: str) -> bool:
+        key = (tenant_id, run_id)
+        if key in self.runs:
+            return False
+        self.runs.add(key)
+        return True
+
+    def append_run_summary(
+        self,
+        *,
+        run_id: str,
+        tenant_id: str,
+        summary_type: str,
+        summary_json: str,
+        step_key: str,
+        parent_step_key: str | None = None,
+    ) -> int:
+        del step_key, parent_step_key
+        self.summaries[(tenant_id, run_id, summary_type)] = _FakeSummary(
+            summary_json=summary_json,
+        )
+        return len(self.summaries)
+
+    def get_latest_run_summary(
+        self,
+        *,
+        run_id: str,
+        tenant_id: str,
+        summary_type: str,
+        timeout_seconds: float | None = None,
+    ) -> _FakeSummary | None:
+        del timeout_seconds
+        return self.summaries.get((tenant_id, run_id, summary_type))
 
 
 class FailingDocumentStore(HarnessDocumentStore):
@@ -361,10 +408,11 @@ def test_sqlalchemy_handoff_store_replays_duplicate_unique_save(
     assert replayed.id == str(response.id)
 
 
-def test_source_search_handoff_marks_uniprot_as_not_extractable(
+def test_source_search_handoff_creates_uniprot_source_document(
     session_factory: sessionmaker[Session],
 ) -> None:
     source_search = _uniprot_search()
+    document_store = HarnessDocumentStore()
     with session_factory() as db_session:
         search_store = SqlAlchemyDirectSourceSearchStore(db_session)
         handoff_store = SqlAlchemySourceSearchHandoffStore(db_session)
@@ -372,7 +420,7 @@ def test_source_search_handoff_marks_uniprot_as_not_extractable(
         service = SourceSearchHandoffService(
             search_store=search_store,
             handoff_store=handoff_store,
-            document_store=HarnessDocumentStore(),
+            document_store=document_store,
             run_registry=HarnessRunRegistry(),
         )
 
@@ -384,10 +432,17 @@ def test_source_search_handoff_marks_uniprot_as_not_extractable(
             request=SourceSearchHandoffRequest(),
         )
 
-    assert response.status == "not_extractable"
-    assert response.target_kind == "not_extractable"
-    assert response.target_document_id is None
-    assert response.source_capture is None
+    assert response.status == "completed"
+    assert response.target_kind == "source_document"
+    assert response.target_document_id is not None
+    assert response.source_capture is not None
+    document = document_store.get_document(
+        space_id=source_search.space_id,
+        document_id=response.target_document_id,
+    )
+    assert document is not None
+    assert document.source_type == "uniprot"
+    assert document.metadata["selected_record"]["uniprot_id"] == "P38398"
 
 
 def test_source_search_handoff_routes_marrvel_variant_panel_to_document(
@@ -427,10 +482,11 @@ def test_source_search_handoff_routes_marrvel_variant_panel_to_document(
     assert document.metadata["variant_aware_recommended"] is True
 
 
-def test_source_search_handoff_marks_marrvel_context_panel_not_extractable(
+def test_source_search_handoff_creates_marrvel_context_panel_document(
     session_factory: sessionmaker[Session],
 ) -> None:
     source_search = _marrvel_search()
+    document_store = HarnessDocumentStore()
     with session_factory() as db_session:
         search_store = SqlAlchemyDirectSourceSearchStore(db_session)
         handoff_store = SqlAlchemySourceSearchHandoffStore(db_session)
@@ -438,7 +494,7 @@ def test_source_search_handoff_marks_marrvel_context_panel_not_extractable(
         service = SourceSearchHandoffService(
             search_store=search_store,
             handoff_store=handoff_store,
-            document_store=HarnessDocumentStore(),
+            document_store=document_store,
             run_registry=HarnessRunRegistry(),
         )
 
@@ -450,10 +506,16 @@ def test_source_search_handoff_marks_marrvel_context_panel_not_extractable(
             request=SourceSearchHandoffRequest(record_index=1),
         )
 
-    assert response.status == "not_extractable"
-    assert response.target_kind == "not_extractable"
-    assert response.target_document_id is None
+    assert response.status == "completed"
+    assert response.target_kind == "source_document"
+    assert response.target_document_id is not None
     assert response.handoff_payload["selected_record"]["panel_name"] == "omim"
+    document = document_store.get_document(
+        space_id=source_search.space_id,
+        document_id=response.target_document_id,
+    )
+    assert document is not None
+    assert document.metadata["variant_aware_recommended"] is False
 
 
 def test_source_search_handoff_uses_record_hash_when_provider_id_missing(
@@ -490,8 +552,8 @@ def test_source_search_handoff_uses_record_hash_when_provider_id_missing(
             request=SourceSearchHandoffRequest(),
         )
 
-    assert response.status == "not_extractable"
-    assert response.idempotency_key == f"not_extractable:record_hash:{expected_hash}"
+    assert response.status == "completed"
+    assert response.idempotency_key == f"source_document:record_hash:{expected_hash}"
 
 
 def test_source_search_handoff_can_select_by_record_hash(
@@ -616,7 +678,7 @@ def test_source_search_handoff_namespaces_client_metadata(
     }
 
 
-def test_source_search_handoff_marks_clinvar_without_variant_signal_not_extractable(
+def test_source_search_handoff_creates_generic_clinvar_document_without_variant_signal(
     session_factory: sessionmaker[Session],
 ) -> None:
     source_search = _clinvar_search().model_copy(
@@ -624,6 +686,7 @@ def test_source_search_handoff_marks_clinvar_without_variant_signal_not_extracta
             "records": [{"gene_symbol": "BRCA1", "title": "BRCA1 gene overview"}],
         },
     )
+    document_store = HarnessDocumentStore()
     with session_factory() as db_session:
         search_store = SqlAlchemyDirectSourceSearchStore(db_session)
         handoff_store = SqlAlchemySourceSearchHandoffStore(db_session)
@@ -631,7 +694,7 @@ def test_source_search_handoff_marks_clinvar_without_variant_signal_not_extracta
         service = SourceSearchHandoffService(
             search_store=search_store,
             handoff_store=handoff_store,
-            document_store=HarnessDocumentStore(),
+            document_store=document_store,
             run_registry=HarnessRunRegistry(),
         )
 
@@ -643,11 +706,17 @@ def test_source_search_handoff_marks_clinvar_without_variant_signal_not_extracta
             request=SourceSearchHandoffRequest(),
         )
 
-    assert response.status == "not_extractable"
-    assert response.target_document_id is None
+    assert response.status == "completed"
+    assert response.target_document_id is not None
+    document = document_store.get_document(
+        space_id=source_search.space_id,
+        document_id=response.target_document_id,
+    )
+    assert document is not None
+    assert document.metadata["variant_aware_recommended"] is False
 
 
-def test_source_search_handoff_marks_clinvar_variation_id_only_not_extractable(
+def test_source_search_handoff_creates_generic_clinvar_document_for_variation_id_only(
     session_factory: sessionmaker[Session],
 ) -> None:
     source_search = _clinvar_search().model_copy(
@@ -662,6 +731,7 @@ def test_source_search_handoff_marks_clinvar_variation_id_only_not_extractable(
             ],
         },
     )
+    document_store = HarnessDocumentStore()
     with session_factory() as db_session:
         search_store = SqlAlchemyDirectSourceSearchStore(db_session)
         handoff_store = SqlAlchemySourceSearchHandoffStore(db_session)
@@ -669,7 +739,7 @@ def test_source_search_handoff_marks_clinvar_variation_id_only_not_extractable(
         service = SourceSearchHandoffService(
             search_store=search_store,
             handoff_store=handoff_store,
-            document_store=HarnessDocumentStore(),
+            document_store=document_store,
             run_registry=HarnessRunRegistry(),
         )
 
@@ -681,8 +751,14 @@ def test_source_search_handoff_marks_clinvar_variation_id_only_not_extractable(
             request=SourceSearchHandoffRequest(),
         )
 
-    assert response.status == "not_extractable"
-    assert response.target_document_id is None
+    assert response.status == "completed"
+    assert response.target_document_id is not None
+    document = document_store.get_document(
+        space_id=source_search.space_id,
+        document_id=response.target_document_id,
+    )
+    assert document is not None
+    assert document.metadata["variant_aware_recommended"] is False
 
 
 def test_source_search_handoff_rejects_duplicate_external_id(
@@ -828,3 +904,169 @@ def test_source_search_handoff_marks_failed_completion_and_replays(
     assert replayed.status == "failed"
     assert replayed.target_run_id == UUID(failed.target_run_id)
     assert run_registry.count_runs(space_id=source_search.space_id) == 1
+
+
+def test_handoff_transaction_rolls_back_sql_document_writes(
+    session_factory: sessionmaker[Session],
+) -> None:
+    space_id = uuid4()
+    document_id = uuid4()
+    with session_factory() as db_session:
+        handoff_store = SqlAlchemySourceSearchHandoffStore(db_session)
+        document_store = SqlAlchemyHarnessDocumentStore(db_session)
+
+        def create_document_and_rollback() -> None:
+            with handoff_store.transaction():
+                document_store.create_document(
+                    document_id=document_id,
+                    space_id=space_id,
+                    created_by=_CREATED_BY,
+                    title="Transient source document",
+                    source_type="uniprot",
+                    filename=None,
+                    media_type="application/json",
+                    sha256="0" * 64,
+                    byte_size=2,
+                    page_count=None,
+                    text_content="{}",
+                    ingestion_run_id=uuid4(),
+                    enrichment_status="completed",
+                    extraction_status="pending",
+                    metadata={"source_search_handoff": True},
+                )
+                raise RuntimeError("rollback handoff")
+
+        with pytest.raises(RuntimeError, match="rollback handoff"):
+            create_document_and_rollback()
+
+        assert document_store.get_document(
+            space_id=space_id,
+            document_id=document_id,
+        ) is None
+        assert db_session.get(HarnessDocumentModel, str(document_id)) is None
+
+
+def test_handoff_transaction_defers_run_registry_side_effects_until_commit(
+    session_factory: sessionmaker[Session],
+) -> None:
+    space_id = uuid4()
+    runtime = _FakeKernelRuntime()
+    with session_factory() as db_session:
+        handoff_store = SqlAlchemySourceSearchHandoffStore(db_session)
+        run_registry = ArtanaBackedHarnessRunRegistry(
+            session=db_session,
+            runtime=runtime,
+        )
+        rolled_back_run_id: str | None = None
+
+        def create_run_and_rollback() -> None:
+            nonlocal rolled_back_run_id
+            with handoff_store.transaction():
+                rolled_back = run_registry.create_run(
+                    space_id=space_id,
+                    harness_id="source-search-handoff",
+                    title="Rolled back handoff",
+                    input_payload={"source_key": "clinvar"},
+                    graph_service_status="not_checked",
+                    graph_service_version="not_checked",
+                )
+                rolled_back_run_id = rolled_back.id
+                assert db_session.get(HarnessRunModel, rolled_back.id) is not None
+                assert runtime.runs == set()
+                raise RuntimeError("rollback handoff")
+
+        with pytest.raises(RuntimeError, match="rollback handoff"):
+            create_run_and_rollback()
+
+        assert rolled_back_run_id is not None
+        assert db_session.get(HarnessRunModel, rolled_back_run_id) is None
+        assert runtime.runs == set()
+
+        with handoff_store.transaction():
+            committed = run_registry.create_run(
+                space_id=space_id,
+                harness_id="source-search-handoff",
+                title="Committed handoff",
+                input_payload={"source_key": "clinvar"},
+                graph_service_status="not_checked",
+                graph_service_version="not_checked",
+            )
+            run_registry.set_run_status(
+                space_id=space_id,
+                run_id=committed.id,
+                status="completed",
+            )
+
+        assert db_session.get(HarnessRunModel, committed.id) is not None
+        assert (str(space_id), committed.id) in runtime.runs
+
+
+def test_source_search_handoff_sql_failure_persists_failed_run_and_handoff(
+    session_factory: sessionmaker[Session],
+) -> None:
+    source_search = _clinvar_search()
+    runtime = _FakeKernelRuntime()
+    with session_factory() as db_session:
+        search_store = SqlAlchemyDirectSourceSearchStore(db_session)
+        handoff_store = SqlAlchemySourceSearchHandoffStore(db_session)
+        search_store.save(source_search, created_by=_CREATED_BY)
+        run_registry = ArtanaBackedHarnessRunRegistry(
+            session=db_session,
+            runtime=runtime,
+        )
+        service = SourceSearchHandoffService(
+            search_store=search_store,
+            handoff_store=handoff_store,
+            document_store=FailingDocumentStore(),
+            run_registry=run_registry,
+        )
+
+        with pytest.raises(RuntimeError, match="document store unavailable"):
+            service.create_handoff(
+                space_id=source_search.space_id,
+                source_key="clinvar",
+                search_id=source_search.id,
+                created_by=_CREATED_BY,
+                request=SourceSearchHandoffRequest(),
+            )
+
+        failed = handoff_store.find(
+            space_id=source_search.space_id,
+            source_key="clinvar",
+            search_id=source_search.id,
+            target_kind="source_document",
+            idempotency_key="source_document:external:VCV000012345",
+        )
+        assert failed is not None
+        assert failed.status == "failed"
+        assert failed.target_run_id is not None
+        failed_run = run_registry.get_run(
+            space_id=source_search.space_id,
+            run_id=failed.target_run_id,
+        )
+        assert failed_run is not None
+        assert failed_run.status == "failed"
+        assert "failed_recovery_for_run_id" not in failed_run.input_payload
+        run_count = db_session.execute(
+            select(func.count())
+            .select_from(HarnessRunModel)
+            .where(HarnessRunModel.space_id == str(source_search.space_id)),
+        ).scalar_one()
+        assert run_count == 1
+
+        replayed = service.create_handoff(
+            space_id=source_search.space_id,
+            source_key="clinvar",
+            search_id=source_search.id,
+            created_by=_CREATED_BY,
+            request=SourceSearchHandoffRequest(),
+        )
+        replay_count = db_session.execute(
+            select(func.count())
+            .select_from(HarnessRunModel)
+            .where(HarnessRunModel.space_id == str(source_search.space_id)),
+        ).scalar_one()
+
+    assert replayed.replayed is True
+    assert replayed.status == "failed"
+    assert replay_count == 1

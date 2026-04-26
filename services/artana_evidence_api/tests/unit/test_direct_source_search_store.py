@@ -15,17 +15,21 @@ from artana_evidence_api.direct_source_search import (
     DrugBankSourceSearchResponse,
     InMemoryDirectSourceSearchStore,
     MGISourceSearchResponse,
+    PubMedSourceSearchResponse,
     SqlAlchemyDirectSourceSearchStore,
     UniProtSourceSearchResponse,
     ZFINSourceSearchResponse,
 )
 from artana_evidence_api.models import Base, SourceSearchRunModel
+from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
 from artana_evidence_api.source_result_capture import (
     SourceCaptureStage,
     SourceResultCapture,
     source_result_capture_metadata,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import session_unit_of_work
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -81,6 +85,7 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
     created_at = datetime(2026, 4, 25, 12, 0, tzinfo=UTC)
     completed_at = datetime(2026, 4, 25, 12, 1, tzinfo=UTC)
     clinvar_id = uuid4()
+    pubmed_id = uuid4()
     clinical_trials_id = uuid4()
     uniprot_id = uuid4()
     alphafold_id = uuid4()
@@ -104,6 +109,33 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
                 source_key="clinvar",
                 search_id=clinvar_id,
                 query="BRCA1",
+            ),
+        ),
+        PubMedSourceSearchResponse(
+            id=pubmed_id,
+            space_id=space_id,
+            owner_id=_CREATED_BY,
+            session_id=space_id,
+            query="MED13 cardiomyopathy",
+            query_preview="MED13 cardiomyopathy",
+            parameters=AdvancedQueryParameters(
+                search_term="MED13 cardiomyopathy",
+                max_results=1,
+            ),
+            total_results=1,
+            result_metadata={
+                "article_ids": ["12345678"],
+                "preview_records": [{"pmid": "12345678"}],
+            },
+            record_count=1,
+            records=[{"pmid": "12345678"}],
+            created_at=created_at,
+            updated_at=completed_at,
+            completed_at=completed_at,
+            source_capture=_capture(
+                source_key="pubmed",
+                search_id=pubmed_id,
+                query="MED13 cardiomyopathy",
             ),
         ),
         ClinicalTrialsSourceSearchResponse(
@@ -250,6 +282,75 @@ def test_sqlalchemy_direct_source_search_store_scopes_by_space_and_source(
                 space_id=record.space_id,
                 source_key="uniprot",
                 search_id=record.id,
+            )
+            is None
+        )
+
+
+def test_sqlalchemy_direct_source_search_store_replays_duplicate_save(
+    session_factory: sessionmaker[Session],
+) -> None:
+    record = _records()[1]
+    with session_factory() as db_session:
+        store = SqlAlchemyDirectSourceSearchStore(db_session)
+
+        first = store.save(record, created_by=_CREATED_BY)
+        second = store.save(record, created_by=_CREATED_BY)
+
+        assert first == record
+        assert second == record
+
+
+def test_sqlalchemy_direct_source_search_store_participates_in_unit_of_work(
+    session_factory: sessionmaker[Session],
+) -> None:
+    record = _records()[1]
+    with session_factory() as db_session:
+        store = SqlAlchemyDirectSourceSearchStore(db_session)
+
+        def save_and_rollback() -> None:
+            with session_unit_of_work(db_session):
+                store.save(record, created_by=_CREATED_BY)
+                assert db_session.get(SourceSearchRunModel, str(record.id)) is not None
+                raise RuntimeError("rollback source search")
+
+        with pytest.raises(RuntimeError, match="rollback source search"):
+            save_and_rollback()
+
+        assert db_session.get(SourceSearchRunModel, str(record.id)) is None
+
+
+def test_sqlalchemy_direct_source_search_store_rolls_back_unit_of_work_conflict(
+    session_factory: sessionmaker[Session],
+) -> None:
+    clinvar_record = _records()[0]
+    pubmed_record = _records()[1].model_copy(
+        update={"id": clinvar_record.id, "space_id": clinvar_record.space_id},
+    )
+    with session_factory() as db_session:
+        store = SqlAlchemyDirectSourceSearchStore(db_session)
+        store.save(clinvar_record, created_by=_CREATED_BY)
+
+        def save_conflicting_record() -> None:
+            with session_unit_of_work(db_session):
+                store.save(pubmed_record, created_by=_CREATED_BY)
+
+        with pytest.raises(IntegrityError):
+            save_conflicting_record()
+
+        assert (
+            store.get(
+                space_id=clinvar_record.space_id,
+                source_key="clinvar",
+                search_id=clinvar_record.id,
+            )
+            == clinvar_record
+        )
+        assert (
+            store.get(
+                space_id=pubmed_record.space_id,
+                source_key="pubmed",
+                search_id=pubmed_record.id,
             )
             is None
         )

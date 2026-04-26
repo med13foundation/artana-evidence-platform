@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 
 from artana_evidence_api.clinicaltrials_gateway import ClinicalTrialsGatewayFetchResult
 from artana_evidence_api.models import SourceSearchRunModel
+from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
 from artana_evidence_api.source_enrichment_bridges import (
     AllianceGeneGatewayProtocol,
     AlphaFoldGatewayProtocol,
@@ -25,6 +26,10 @@ from artana_evidence_api.source_result_capture import (
     compact_provenance,
     source_result_capture_metadata,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import (
+    commit_or_flush,
+    in_unit_of_work,
+)
 from artana_evidence_api.types.common import JSONObject, JSONValue, json_object_or_empty
 from pydantic import (
     BaseModel,
@@ -35,6 +40,7 @@ from pydantic import (
     model_validator,
 )
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 _DIRECT_SOURCE_SEARCH_PAYLOAD_SCHEMA_VERSION = "direct_source_search.v1"
@@ -265,6 +271,31 @@ class ClinVarSourceSearchResponse(BaseModel):
     source_capture: SourceResultCapture
 
 
+class PubMedSourceSearchResponse(BaseModel):
+    """Response payload for one captured PubMed direct search."""
+
+    id: UUID
+    space_id: UUID
+    source_key: Literal["pubmed"] = "pubmed"
+    status: Literal["completed"] = "completed"
+    owner_id: UUID
+    session_id: UUID | None = None
+    provider: Literal["pubmed"] = "pubmed"
+    query: str
+    query_preview: str
+    parameters: AdvancedQueryParameters
+    total_results: int = Field(default=0, ge=0)
+    result_metadata: JSONObject = Field(default_factory=dict)
+    record_count: int
+    records: list[JSONObject] = Field(default_factory=list)
+    error_message: str | None = None
+    storage_key: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime
+    source_capture: SourceResultCapture
+
+
 class UniProtSourceSearchResponse(BaseModel):
     """Response payload for one captured UniProt direct search."""
 
@@ -402,6 +433,7 @@ class ClinicalTrialsSourceSearchResponse(BaseModel):
 
 DirectSourceSearchRecord = (
     ClinVarSourceSearchResponse
+    | PubMedSourceSearchResponse
     | UniProtSourceSearchResponse
     | AlphaFoldSourceSearchResponse
     | DrugBankSourceSearchResponse
@@ -495,6 +527,14 @@ class SqlAlchemyDirectSourceSearchStore:
         response_payload = _versioned_response_payload(record)
         source_capture = record.source_capture.to_metadata()
         query_payload = json_object_or_empty(source_capture.get("query_payload"))
+        existing = self.get(
+            space_id=record.space_id,
+            source_key=record.source_key,
+            search_id=record.id,
+        )
+        if existing is not None:
+            return cast("_DirectSourceSearchRecordT", existing)
+
         model = SourceSearchRunModel(
             id=str(record.id),
             space_id=str(record.space_id),
@@ -509,9 +549,27 @@ class SqlAlchemyDirectSourceSearchStore:
             error_message=None,
             completed_at=record.completed_at,
         )
-        self._session.add(model)
-        self._session.commit()
-        self._session.refresh(model)
+        try:
+            if in_unit_of_work(self._session):
+                self._session.add(model)
+                self._session.flush()
+                self._session.refresh(model)
+                return record
+            self._session.add(model)
+            commit_or_flush(self._session)
+            self._session.refresh(model)
+        except IntegrityError:
+            if in_unit_of_work(self._session):
+                raise
+            self._session.rollback()
+            existing = self.get(
+                space_id=record.space_id,
+                source_key=record.source_key,
+                search_id=record.id,
+            )
+            if existing is None:
+                raise
+            return cast("_DirectSourceSearchRecordT", existing)
         return record
 
     def get(
@@ -1017,6 +1075,7 @@ def _response_model_for_source_key(
 ) -> type[BaseModel] | None:
     response_models: dict[str, type[BaseModel]] = {
         "clinvar": ClinVarSourceSearchResponse,
+        "pubmed": PubMedSourceSearchResponse,
         "clinical_trials": ClinicalTrialsSourceSearchResponse,
         "uniprot": UniProtSourceSearchResponse,
         "alphafold": AlphaFoldSourceSearchResponse,
@@ -1044,6 +1103,7 @@ __all__ = [
     "MarrvelSourceSearchResponse",
     "MGISourceSearchRequest",
     "MGISourceSearchResponse",
+    "PubMedSourceSearchResponse",
     "SqlAlchemyDirectSourceSearchStore",
     "UniProtSourceSearchRequest",
     "UniProtSourceSearchResponse",

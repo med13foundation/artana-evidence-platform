@@ -320,14 +320,29 @@ Current status:
 - The durable bridge now exists for `source_search_runs`-backed structured
   sources through
   `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs`.
-- ClinVar handoff creates a durable `clinvar` source document with source
-  capture metadata and variant-aware extraction eligibility. Non-variant
-  structured sources return a durable `not_extractable` handoff instead of
-  silently no-oping.
-- PubMed compatibility searches still use a different discovery store, so
-  PubMed handoff returns clear not-yet-supported behavior. MARRVEL is
-  adapter-wrapped into durable `source_search_runs` and supports panel-aware
-  handoff.
+- PubMed, ClinVar, MARRVEL, ClinicalTrials.gov, UniProt, AlphaFold, DrugBank,
+  MGI, and ZFIN handoff creates durable source documents with source-capture
+  metadata. Variant-signal ClinVar and MARRVEL records enter the variant-aware
+  extraction branch; non-variant records stay as source documents for generic or
+  future source-specific extraction instead of stopping at `not_extractable`.
+- Handoff-created source documents include source-family metadata, a
+  source-specific normalized record profile, readable extraction text, and the
+  raw selected record for auditability.
+- PubMed and MARRVEL compatibility searches are adapter-wrapped into durable
+  `source_search_runs`, so both can use the same handoff endpoint as the other
+  structured direct sources.
+- The typed v2 PubMed POST and GET keep legacy job-status compatibility for
+  incomplete jobs: queued, running, or failed legacy jobs return the legacy job
+  payload without creating a durable handoff row; completed jobs are captured in
+  `source_search_runs`.
+- Handoff persistence now owns an explicit SQLAlchemy unit-of-work boundary.
+  The normal path commits the pending handoff, run, document, run status, and
+  completed handoff together. If document creation fails, the normal transaction
+  rolls back and a deliberate failed run plus failed handoff are persisted in a
+  separate failure transaction for safe replay.
+- Idempotent replay means the same idempotency key returns the same completed
+  or failed handoff outcome. A deliberate retry after a failed handoff should
+  use a new idempotency key.
 
 Tasks:
 
@@ -358,20 +373,21 @@ Tasks:
   deduplicated, demoted, or made lower precedence.
 - Keep PubMed, text, and PDF behavior on the existing variant-aware document
   extraction path when variant signals are detected.
-- Keep the first implementation slice focused on `source_search_runs`-backed
-  structured sources. PubMed remains on its compatibility discovery store for
-  this handoff endpoint; MARRVEL is now adapter-wrapped into durable
-  `source_search_runs`.
+- Keep the implementation focused on `source_search_runs`-backed structured
+  sources. PubMed and MARRVEL compatibility routes are adapter-wrapped into
+  durable `source_search_runs`.
 - Define explicit behavior for ClinicalTrials.gov, UniProt, AlphaFold,
-  DrugBank, MGI, and ZFIN: source-specific normalization, deferred extraction,
-  or a clear "captured but not extractable yet" response.
+  DrugBank, MGI, and ZFIN: create durable source documents that preserve the
+  selected record, source-capture metadata, source family, normalized fields,
+  and readable extraction text.
 - Make research-plan enrichment documents use the variant-aware branch when
   their source type and signals qualify, so direct-source handoff and
   research-plan enrichment do not diverge.
 - Harden the durable direct-source store before composing it with handoff
-  writes: clarify transaction ownership, add payload schema-version handling or
-  controlled degraded reads, validate `created_by` as a UUID, and mark the
-  in-memory store as test-only.
+  writes: transaction ownership is now explicit for the handoff path,
+  direct-source store writes participate in the shared unit-of-work helper,
+  and the in-memory store is kept test-only. Controlled degraded reads are a
+  future resilience option, not a blocker for this plan.
 - Decide whether `source_search_runs` intentionally has no foreign-key cascade
   because it is an audit/capture ledger.
 
@@ -411,8 +427,8 @@ subagents work on bounded slices and do not revert each other's edits.
      - Define a stable per-record selector and idempotency key.
      - Freeze the selected search response and source-capture snapshot into the
        handoff row so later search-row changes do not alter handoff semantics.
-     - Clarify transaction ownership so direct-search save and handoff writes
-       can compose safely.
+     - Clarify transaction ownership so handoff writes compose safely across
+       the handoff ledger, run registry, and document store.
      - Validate `created_by` as a UUID at the service boundary.
      - Mark the in-memory direct-source store as test-only.
    - Output:
@@ -432,9 +448,9 @@ subagents work on bounded slices and do not revert each other's edits.
        missing records, wrong space, and non-extractable source behavior.
      - Return conflict when the same idempotency key is replayed with a
        different request body.
-     - In the first slice, support `source_search_runs`-backed structured
-       sources and return clear not-yet-supported behavior for PubMed/MARRVEL
-       unless their stores are adapter-wrapped.
+     - Support `source_search_runs`-backed structured sources. PubMed and
+       MARRVEL compatibility routes are adapter-wrapped into the same durable
+       store, so their handoffs use the same endpoint.
      - Ensure DrugBank credential behavior remains unchanged.
    - Output:
      - Request/response models and OpenAPI updates.
@@ -629,10 +645,19 @@ Use this checklist to track implementation progress.
   branch when source type and signals qualify.
 - [x] Preserve source-search run linkage and `source_capture` metadata on
   generated documents or normalized records.
-- [x] Define explicit behavior for ClinicalTrials.gov, UniProt, AlphaFold,
-  DrugBank, MGI, and ZFIN handoff attempts.
-- [x] Define first-slice behavior for PubMed compatibility searches that are
-  not yet backed by `source_search_runs`; MARRVEL is now durable.
+- [x] Define source-document behavior for ClinicalTrials.gov, UniProt,
+  AlphaFold, DrugBank, MGI, and ZFIN handoff attempts.
+- [x] Add source-family metadata and normalized record profiles for PubMed,
+  ClinicalTrials.gov, UniProt, AlphaFold, DrugBank, MGI, and ZFIN handoff
+  documents.
+- [x] Back PubMed and MARRVEL compatibility searches with durable
+  `source_search_runs` so handoff retrieval survives process restart.
+- [x] Add an explicit handoff unit-of-work boundary for SQL-backed handoff,
+  document, and run writes.
+- [x] Make durable direct-source SQL saves participate in the shared
+  unit-of-work helper and replay duplicate saves.
+- [x] Add failure/replay tests proving a rolled-back handoff persists a
+  deliberate failed run plus failed handoff without creating repeated runs.
 - [x] Ensure handoff-created extraction output stays review-gated and does not
   directly promote graph facts.
 - [x] Add tests for wrong-space handoff rejection.

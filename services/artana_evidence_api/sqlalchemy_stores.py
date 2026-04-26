@@ -43,6 +43,7 @@ from artana_evidence_api.research_space_store import (
     HarnessUserIdentityConflictError,
     build_unique_space_slug,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import json_object_or_empty
 from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
@@ -1175,7 +1176,7 @@ class SqlAlchemyHarnessDocumentStore(HarnessDocumentStore, _SessionBackedStore):
             model_kwargs["id"] = str(document_id)
         model = HarnessDocumentModel(**model_kwargs)
         self.session.add(model)
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _document_record_from_model(model)
 

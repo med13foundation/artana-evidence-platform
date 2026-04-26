@@ -8845,19 +8845,12 @@
         "type": "string"
       },
       "PubMedSourceSearchResponse": {
-        "description": "Typed v2 PubMed source-search response with capture metadata.",
+        "description": "Response payload for one captured PubMed direct search.",
         "properties": {
           "completed_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completed At"
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
           },
           "created_at": {
             "format": "date-time",
@@ -8889,12 +8882,32 @@
             "$ref": "#/components/schemas/AdvancedQueryParameters"
           },
           "provider": {
-            "$ref": "#/components/schemas/DiscoveryProvider"
+            "const": "pubmed",
+            "default": "pubmed",
+            "title": "Provider",
+            "type": "string"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
           },
           "query_preview": {
-            "minLength": 1,
             "title": "Query Preview",
             "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
           },
           "result_metadata": {
             "additionalProperties": {
@@ -8918,9 +8931,22 @@
           "source_capture": {
             "$ref": "#/components/schemas/SourceResultCapture"
           },
+          "source_key": {
+            "const": "pubmed",
+            "default": "pubmed",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
           "status": {
-            "$ref": "#/components/schemas/DiscoverySearchStatus",
-            "default": "queued"
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
           },
           "storage_key": {
             "anyOf": [
@@ -8947,10 +8973,15 @@
         },
         "required": [
           "id",
+          "space_id",
           "owner_id",
-          "provider",
+          "query",
           "query_preview",
           "parameters",
+          "record_count",
+          "created_at",
+          "updated_at",
+          "completed_at",
           "source_capture"
         ],
         "title": "PubMedSourceSearchResponse",
@@ -10815,7 +10846,6 @@
             "enum": [
               "pending",
               "completed",
-              "not_extractable",
               "failed"
             ],
             "title": "Status",
@@ -10834,10 +10864,7 @@
             "title": "Target Document Id"
           },
           "target_kind": {
-            "enum": [
-              "source_document",
-              "not_extractable"
-            ],
+            "const": "source_document",
             "title": "Target Kind",
             "type": "string"
           },
@@ -23927,7 +23954,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PubMedSourceSearchResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PubMedSourceSearchResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DiscoverySearchJob"
+                    }
+                  ],
+                  "title": "Response Create Pubmed Source Search V2 Spaces  Space Id  Sources Pubmed Searches Post"
                 }
               }
             },
@@ -23989,7 +24024,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PubMedSourceSearchResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PubMedSourceSearchResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DiscoverySearchJob"
+                    }
+                  ],
+                  "title": "Response Get Pubmed Source Search V2 Spaces  Space Id  Sources Pubmed Searches  Job Id  Get"
                 }
               }
             },

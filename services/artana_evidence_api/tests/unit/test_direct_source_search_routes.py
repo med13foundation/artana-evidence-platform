@@ -20,6 +20,7 @@ from artana_evidence_api.dependencies import (
     get_document_store,
     get_drugbank_source_gateway,
     get_mgi_source_gateway,
+    get_pubmed_discovery_service,
     get_research_space_store,
     get_run_registry,
     get_source_search_handoff_store,
@@ -35,6 +36,12 @@ from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.drugbank_gateway import DrugBankGatewayFetchResult
 from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryResult
 from artana_evidence_api.models import Base
+from artana_evidence_api.pubmed_discovery import (
+    AdvancedQueryParameters,
+    DiscoveryProvider,
+    DiscoverySearchJob,
+    DiscoverySearchStatus,
+)
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.routers import marrvel
 from artana_evidence_api.run_registry import HarnessRunRegistry
@@ -98,6 +105,81 @@ class _FailingClinVarGateway:
     async def fetch_records(self, config: ClinVarQueryConfig) -> list[dict[str, object]]:
         del config
         raise RuntimeError("clinvar offline")
+
+
+class _StubPubMedDiscoveryService:
+    def __init__(self) -> None:
+        self.jobs: dict[str, DiscoverySearchJob] = {}
+
+    async def run_pubmed_search(
+        self,
+        owner_id: UUID,
+        request,
+    ) -> DiscoverySearchJob:
+        now = datetime.now(UTC)
+        job = DiscoverySearchJob(
+            id=uuid4(),
+            owner_id=owner_id,
+            session_id=request.session_id,
+            provider=DiscoveryProvider.PUBMED,
+            status=DiscoverySearchStatus.COMPLETED,
+            query_preview=request.parameters.search_term or "MED13",
+            parameters=request.parameters,
+            total_results=1,
+            result_metadata={
+                "article_ids": ["12345678"],
+                "preview_records": [
+                    {
+                        "pmid": "12345678",
+                        "title": "MED13 variants in congenital heart disease",
+                        "abstract": "MED13 c.123A>G was reported in one family.",
+                    },
+                ],
+            },
+            created_at=now,
+            updated_at=now,
+            completed_at=now,
+        )
+        self.jobs[str(job.id)] = job
+        return job
+
+    def get_search_job(
+        self,
+        owner_id: UUID,
+        job_id: UUID,
+    ) -> DiscoverySearchJob | None:
+        job = self.jobs.get(str(job_id))
+        if job is None or job.owner_id != owner_id:
+            return None
+        return job
+
+    def close(self) -> None:
+        return None
+
+
+class _QueuedPubMedDiscoveryService(_StubPubMedDiscoveryService):
+    async def run_pubmed_search(
+        self,
+        owner_id: UUID,
+        request,
+    ) -> DiscoverySearchJob:
+        now = datetime.now(UTC)
+        job = DiscoverySearchJob(
+            id=uuid4(),
+            owner_id=owner_id,
+            session_id=request.session_id,
+            provider=DiscoveryProvider.PUBMED,
+            status=DiscoverySearchStatus.QUEUED,
+            query_preview=request.parameters.search_term or "MED13",
+            parameters=request.parameters,
+            total_results=0,
+            result_metadata={},
+            created_at=now,
+            updated_at=now,
+            completed_at=None,
+        )
+        self.jobs[str(job.id)] = job
+        return job
 
 
 class _StubClinicalTrialsGateway:
@@ -323,6 +405,7 @@ def _build_client(
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
+    pubmed_discovery_service: object | None = None,
 ) -> _BuiltClient:
     research_space_store = HarnessResearchSpaceStore()
     space = research_space_store.create_space(
@@ -347,6 +430,7 @@ def _build_client(
         mgi_gateway=mgi_gateway,
         zfin_gateway=zfin_gateway,
         marrvel_discovery_service=marrvel_discovery_service,
+        pubmed_discovery_service=pubmed_discovery_service,
     )
     return _BuiltClient(
         client=client,
@@ -372,6 +456,7 @@ def _build_client_for_space(
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
+    pubmed_discovery_service: object | None = None,
 ) -> TestClient:
     app = create_app()
     app.dependency_overrides[get_research_space_store] = lambda: research_space_store
@@ -398,6 +483,10 @@ def _build_client_for_space(
     if marrvel_discovery_service is not None:
         app.dependency_overrides[marrvel.get_marrvel_discovery_service] = (
             lambda: marrvel_discovery_service
+        )
+    if pubmed_discovery_service is not None:
+        app.dependency_overrides[get_pubmed_discovery_service] = (
+            lambda: pubmed_discovery_service
         )
     return TestClient(app)
 
@@ -562,7 +651,7 @@ def test_marrvel_variant_panel_handoff_creates_variant_aware_document() -> None:
     assert document_supports_variant_aware_extraction(document=document)
 
 
-def test_marrvel_context_panel_handoff_is_not_extractable() -> None:
+def test_marrvel_context_panel_handoff_creates_generic_document() -> None:
     built = _build_client(marrvel_discovery_service=_StubMarrvelDiscoveryService())
     search_response = built.client.post(
         f"/v2/spaces/{built.space_id}/sources/marrvel/searches",
@@ -580,13 +669,19 @@ def test_marrvel_context_panel_handoff_is_not_extractable() -> None:
 
     assert handoff_response.status_code == 201
     payload = handoff_response.json()
-    assert payload["status"] == "not_extractable"
-    assert payload["target_kind"] == "not_extractable"
-    assert payload["target_document_id"] is None
+    assert payload["status"] == "completed"
+    assert payload["target_kind"] == "source_document"
+    assert payload["target_document_id"] is not None
     assert payload["handoff_payload"]["selected_record"]["panel_name"] == "omim"
+    document = built.document_store.get_document(
+        space_id=built.space_id,
+        document_id=payload["target_document_id"],
+    )
+    assert document is not None
+    assert document.metadata["variant_aware_recommended"] is False
 
 
-def test_source_search_handoff_marks_non_variant_source_not_extractable() -> None:
+def test_source_search_handoff_creates_non_variant_source_document() -> None:
     built = _build_client(uniprot_gateway=_StubUniProtGateway())
     search_response = built.client.post(
         f"/v2/spaces/{built.space_id}/sources/uniprot/searches",
@@ -604,12 +699,122 @@ def test_source_search_handoff_marks_non_variant_source_not_extractable() -> Non
 
     assert handoff_response.status_code == 201
     payload = handoff_response.json()
-    assert payload["status"] == "not_extractable"
-    assert payload["target_kind"] == "not_extractable"
-    assert payload["target_document_id"] is None
-    assert "not routed into variant-aware document extraction" in (
-        payload["handoff_payload"]["reason"]
+    assert payload["status"] == "completed"
+    assert payload["target_kind"] == "source_document"
+    assert payload["target_document_id"] is not None
+    document = built.document_store.get_document(
+        space_id=built.space_id,
+        document_id=payload["target_document_id"],
     )
+    assert document is not None
+    assert document.source_type == "uniprot"
+    assert document.metadata["selected_record"]["uniprot_id"] == "P38398"
+    assert document.metadata["source_family"] == "protein"
+    assert document.metadata["normalization_profile"] == "uniprot_source_document_v1"
+    assert document.metadata["normalized_record"]["uniprot_id"] == "P38398"
+    assert "Protein Source Record" in document.text_content
+
+
+@pytest.mark.parametrize(
+    (
+        "source_key",
+        "client_kwargs",
+        "request_payload",
+        "expected_family",
+        "normalized_field",
+        "expected_value",
+    ),
+    [
+        (
+            "clinical_trials",
+            {"clinicaltrials_gateway": _StubClinicalTrialsGateway()},
+            {"query": "BRCA1 breast cancer", "max_results": 1},
+            "clinical",
+            "nct_id",
+            "NCT00000001",
+        ),
+        (
+            "uniprot",
+            {"uniprot_gateway": _StubUniProtGateway()},
+            {"uniprot_id": "P38398"},
+            "protein",
+            "uniprot_id",
+            "P38398",
+        ),
+        (
+            "alphafold",
+            {"alphafold_gateway": _StubAlphaFoldGateway()},
+            {"uniprot_id": "P38398"},
+            "structure",
+            "model_url",
+            "https://alphafold.example/P38398.pdb",
+        ),
+        (
+            "drugbank",
+            {"drugbank_gateway": _StubDrugBankGateway()},
+            {"drug_name": "Olaparib"},
+            "drug",
+            "drugbank_id",
+            "DB01234",
+        ),
+        (
+            "mgi",
+            {"mgi_gateway": _StubAllianceGeneGateway(source_key="mgi")},
+            {"query": "Brca1"},
+            "model_organism",
+            "provider_id",
+            "MGI:1",
+        ),
+        (
+            "zfin",
+            {"zfin_gateway": _StubAllianceGeneGateway(source_key="zfin")},
+            {"query": "brca1"},
+            "model_organism",
+            "provider_id",
+            "ZFIN:1",
+        ),
+    ],
+)
+def test_non_variant_source_handoffs_create_normalized_source_documents(
+    source_key: str,
+    client_kwargs: dict[str, object],
+    request_payload: dict[str, object],
+    expected_family: str,
+    normalized_field: str,
+    expected_value: str,
+) -> None:
+    built = _build_client(**client_kwargs)
+    search_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/{source_key}/searches",
+        headers=_auth_headers(),
+        json=request_payload,
+    )
+    assert search_response.status_code == 201
+    search_id = search_response.json()["id"]
+
+    handoff_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/{source_key}/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert handoff_response.status_code == 201
+    payload = handoff_response.json()
+    assert payload["target_kind"] == "source_document"
+    document = built.document_store.get_document(
+        space_id=built.space_id,
+        document_id=payload["target_document_id"],
+    )
+    assert document is not None
+    assert document.source_type == source_key
+    assert document.metadata["source_family"] == expected_family
+    assert (
+        document.metadata["normalization_profile"]
+        == f"{source_key}_source_document_v1"
+    )
+    assert document.metadata["normalized_record"][normalized_field] == expected_value
+    assert "Normalized Fields" in document.text_content
+    assert "Raw Record JSON" in document.text_content
 
 
 def test_source_search_handoff_conflicts_on_idempotency_key_reuse() -> None:
@@ -662,18 +867,155 @@ def test_source_search_handoff_returns_404_for_wrong_space() -> None:
     }
 
 
-def test_source_search_handoff_returns_501_for_compatibility_sources() -> None:
-    built = _build_client()
-
-    pubmed_response = built.client.post(
-        f"/v2/spaces/{built.space_id}/sources/pubmed/searches/{_TEST_USER_ID}/handoffs",
+def test_pubmed_source_search_handoff_creates_literature_document() -> None:
+    built = _build_client(pubmed_discovery_service=_StubPubMedDiscoveryService())
+    create_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/pubmed/searches",
         headers=_auth_headers(),
-        json={},
+        json={
+            "parameters": {
+                "search_term": "MED13 cardiomyopathy",
+                "max_results": 10,
+            },
+        },
+    )
+    assert create_response.status_code == 201
+    search_id = create_response.json()["id"]
+
+    handoff_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/pubmed/searches/{search_id}/handoffs",
+        headers=_auth_headers(),
+        json={"record_index": 0},
     )
 
-    assert pubmed_response.status_code == 501
-    assert "not yet backed by durable source_search_runs" in (
-        pubmed_response.json()["detail"]
+    assert handoff_response.status_code == 201
+    payload = handoff_response.json()
+    assert payload["status"] == "completed"
+    assert payload["target_kind"] == "source_document"
+    assert payload["selected_external_id"] == "12345678"
+    assert payload["target_document_id"] is not None
+    document = built.document_store.get_document(
+        space_id=built.space_id,
+        document_id=payload["target_document_id"],
+    )
+    assert document is not None
+    assert document.source_type == "pubmed"
+    assert document.metadata["selected_record"]["pmid"] == "12345678"
+    assert document.metadata["source_family"] == "literature"
+    assert document.metadata["normalized_record"]["pmid"] == "12345678"
+
+
+def test_pubmed_get_fallback_persists_search_for_handoff() -> None:
+    pubmed_service = _StubPubMedDiscoveryService()
+    built = _build_client(pubmed_discovery_service=pubmed_service)
+    now = datetime.now(UTC)
+    job = DiscoverySearchJob(
+        id=uuid4(),
+        owner_id=UUID(_TEST_USER_ID),
+        session_id=UUID(built.space_id),
+        provider=DiscoveryProvider.PUBMED,
+        status=DiscoverySearchStatus.COMPLETED,
+        query_preview="MED13",
+        parameters=AdvancedQueryParameters(search_term="MED13", max_results=10),
+        total_results=1,
+        result_metadata={
+            "article_ids": ["12345678"],
+            "preview_records": [
+                {
+                    "pmid": "12345678",
+                    "title": "MED13 variants in congenital heart disease",
+                    "abstract": "MED13 c.123A>G was reported in one family.",
+                },
+            ],
+        },
+        created_at=now,
+        updated_at=now,
+        completed_at=now,
+    )
+    pubmed_service.jobs[str(job.id)] = job
+
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/pubmed/searches/{job.id}",
+        headers=_auth_headers(),
+    )
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == str(job.id)
+
+    pubmed_service.jobs.clear()
+    handoff_response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/pubmed/searches/{job.id}/handoffs",
+        headers=_auth_headers(),
+        json={"record_index": 0},
+    )
+
+    assert handoff_response.status_code == 201
+    payload = handoff_response.json()
+    assert payload["status"] == "completed"
+    assert payload["target_kind"] == "source_document"
+    assert payload["selected_external_id"] == "12345678"
+
+
+def test_pubmed_get_fallback_returns_incomplete_job_without_persisting() -> None:
+    pubmed_service = _StubPubMedDiscoveryService()
+    built = _build_client(pubmed_discovery_service=pubmed_service)
+    now = datetime.now(UTC)
+    job = DiscoverySearchJob(
+        id=uuid4(),
+        owner_id=UUID(_TEST_USER_ID),
+        session_id=UUID(built.space_id),
+        provider=DiscoveryProvider.PUBMED,
+        status=DiscoverySearchStatus.QUEUED,
+        query_preview="MED13",
+        parameters=AdvancedQueryParameters(search_term="MED13", max_results=10),
+        total_results=0,
+        result_metadata={},
+        created_at=now,
+        updated_at=now,
+        completed_at=None,
+    )
+    pubmed_service.jobs[str(job.id)] = job
+
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/pubmed/searches/{job.id}",
+        headers=_auth_headers(),
+    )
+
+    assert get_response.status_code == 200
+    assert get_response.json()["status"] == "queued"
+    assert (
+        built.store.get(
+            space_id=UUID(built.space_id),
+            source_key="pubmed",
+            search_id=job.id,
+        )
+        is None
+    )
+
+
+def test_pubmed_post_returns_incomplete_job_without_persisting() -> None:
+    built = _build_client(pubmed_discovery_service=_QueuedPubMedDiscoveryService())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/pubmed/searches",
+        headers=_auth_headers(),
+        json={
+            "parameters": {
+                "search_term": "MED13 cardiomyopathy",
+                "max_results": 10,
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["status"] == "queued"
+    assert (
+        built.store.get(
+            space_id=UUID(built.space_id),
+            source_key="pubmed",
+            search_id=UUID(payload["id"]),
+        )
+        is None
     )
 
 
