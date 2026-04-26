@@ -1,6 +1,6 @@
 # V2 API Migration Plan
 
-Status date: April 24, 2026.
+Status date: April 26, 2026.
 
 This plan covers the work required to move the Evidence API from a
 runtime-shaped v1 surface to a product-shaped v2 surface. Source-registry and
@@ -23,6 +23,10 @@ Current status:
   metadata.
 - Structured direct source-search responses are persisted as durable Evidence
   API source-search runs; direct search does not promote graph facts.
+- Selected durable source-search records can be handed off with
+  `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs`.
+  Handoff creates review-gated extraction input or durable source documents and
+  is idempotent by request hash and idempotency key.
 - v1 remains the dominant surface in docs, scripts, tests, and payload names.
 
 Target outcome:
@@ -66,6 +70,7 @@ Source-specific endpoints should use the generic source shape when possible:
 | `pubmed/searches` | `sources/{source_key}/searches` |
 | `marrvel/searches` | `sources/{source_key}/searches` |
 | source flags hidden in settings | `GET /v2/sources` capability discovery |
+| ad hoc source-result extraction | `sources/{source_key}/searches/{search_id}/handoffs` |
 
 ## Workstreams
 

@@ -1,6 +1,6 @@
 # Remaining Work Priorities
 
-Status date: April 23, 2026.
+Status date: April 26, 2026.
 
 The backend scaffold is in place. The remaining work is about hardening the
 boundaries, making testing easier, and preparing for external users without
@@ -13,6 +13,8 @@ overbuilding too early.
 - Keep both generated OpenAPI artifacts current.
 - Keep `services/artana_evidence_db/artana-evidence-db.generated.ts` current.
 - Do not reintroduce the removed top-level `src` runtime package.
+- Keep durable direct source-search and selected-record handoff covered in
+  OpenAPI, route tests, and user-facing docs.
 - Keep the v2 public API migration moving according to
   [V2 API Migration Plan](./v2_api_migration_plan.md).
 

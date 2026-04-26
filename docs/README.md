@@ -1,12 +1,13 @@
 # Docs Index
 
-Status date: April 23, 2026.
+Status date: April 26, 2026.
 
 This directory describes the current extracted backend repo. The source of
 truth in this checkout is two Python services:
 
 - `services/artana_evidence_api`: evidence workflows, identity/API keys,
-  documents, proposals, review queue, research-init, chat, and AI runs.
+  documents, durable direct source-search capture and handoff, proposals,
+  review queue, research-init, chat, and AI runs.
 - `services/artana_evidence_db`: governed graph, dictionary, claims,
   relations, provenance, graph views, workflows, and graph admin sync.
 

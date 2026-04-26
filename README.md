@@ -12,9 +12,9 @@ living inside this repository.
 ## Repository Layout
 
 - `services/artana_evidence_api`: the Evidence API for research spaces, local
-  identity, document ingestion, PubMed/MARRVEL discovery, review queues,
-  proposals, graph chat/search orchestration, guarded AI runs, and user-facing
-  workflow state.
+  identity, document ingestion, source discovery, durable direct source-search
+  handoff, review queues, proposals, graph chat/search orchestration, guarded
+  AI runs, and user-facing workflow state.
 - `services/artana_evidence_db`: the graph/evidence service for entities,
   relations, observations, provenance, relation evidence, dictionary
   governance, validation, graph views, and graph service API contracts.
@@ -60,6 +60,14 @@ generate from `services/artana_evidence_api/openapi.json`; the checked-in
 TypeScript artifact is specific to the graph service. If dedicated product,
 SDK, or notebook repositories are created, link them here as client projects
 rather than adding them to this backend repository.
+
+Direct source search is durable in the Evidence API. Clients can search enabled
+sources such as PubMed, MARRVEL, ClinVar, ClinicalTrials.gov, UniProt,
+AlphaFold, DrugBank, MGI, and ZFIN, fetch the captured search result later by
+id, and hand off a selected record through
+`POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs`.
+That handoff creates review-gated extraction input or a durable source document;
+it does not automatically promote graph facts.
 
 ## Start Locally
 
