@@ -21,6 +21,7 @@ Use these first.
 | Inspect one evidence source | `GET /v2/sources/{source_key}` |
 | Search a direct-search source | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` |
 | Get a source search result | `GET /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}` |
+| Hand off a selected source result | `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs` |
 | Create research plan | `POST /v2/spaces/{space_id}/research-plan` |
 | Ask an evidence-map question | `POST /v2/spaces/{space_id}/workflows/evidence-search/tasks` |
 | Chat over documents and evidence | `/v2/spaces/{space_id}/chat-sessions/*` |
@@ -96,3 +97,12 @@ trace a result to its source, family, query, locator, and provenance. Structured
 direct source-search results are stored durably in the Evidence API database and
 can be fetched later by id; they are still not trusted graph facts until the
 review workflow promotes them.
+
+Use the handoff endpoint when a user selects one captured source-search record
+for downstream extraction or normalization. ClinVar and MARRVEL variant records
+enter the variant-aware extraction path. PubMed, ClinicalTrials.gov, UniProt,
+AlphaFold, DrugBank, MGI, and ZFIN handoffs create durable source documents with
+source-capture metadata, normalized record fields, and the original selected
+record for auditability. Handoff is idempotent: replaying the same request with
+the same idempotency key returns the existing outcome instead of creating
+duplicates.
