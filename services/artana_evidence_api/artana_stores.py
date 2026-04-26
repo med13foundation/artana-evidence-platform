@@ -27,6 +27,7 @@ from .run_registry import (
     _default_phase_for_status,
     _default_progress_percent,
 )
+from .sqlalchemy_unit_of_work import commit_or_flush, run_after_commit_or_now
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -816,51 +817,58 @@ class ArtanaBackedHarnessRunRegistry(HarnessRunRegistry):
             graph_service_version=graph_service_version,
         )
         self._session.add(model)
-        self._session.commit()
+        commit_or_flush(self._session)
         self._session.refresh(model)
-        self._runtime.ensure_run(run_id=model.id, tenant_id=normalized_space_id)
         record = _run_record_from_model(
             model=model,
             status="queued",
             updated_at=model.created_at,
         )
-        self._write_summary(
-            run_id=model.id,
-            space_id=normalized_space_id,
-            summary_type=_RUN_STATE_SUMMARY,
-            payload={
-                "status": "queued",
-                "updated_at": model.created_at.isoformat(),
-            },
-            step_prefix="run_state",
-        )
         progress = _default_progress_record(record)
-        self._write_summary(
-            run_id=model.id,
-            space_id=normalized_space_id,
-            summary_type=_PROGRESS_SUMMARY,
-            payload={
-                "status": progress.status,
-                "phase": progress.phase,
-                "message": progress.message,
-                "progress_percent": progress.progress_percent,
-                "completed_steps": progress.completed_steps,
-                "total_steps": progress.total_steps,
-                "resume_point": progress.resume_point,
-                "metadata": progress.metadata,
-                "created_at": progress.created_at.isoformat(),
-                "updated_at": progress.updated_at.isoformat(),
-            },
-            step_prefix="progress",
-        )
-        self._write_event_summary(
-            space_id=normalized_space_id,
-            run_id=model.id,
-            event_type="run.created",
-            status="queued",
-            message="Run created and queued.",
-            payload={"harness_id": harness_id, "title": title},
-            progress_percent=0.0,
+
+        def write_runtime_state() -> None:
+            self._runtime.ensure_run(run_id=record.id, tenant_id=normalized_space_id)
+            self._write_summary(
+                run_id=record.id,
+                space_id=normalized_space_id,
+                summary_type=_RUN_STATE_SUMMARY,
+                payload={
+                    "status": "queued",
+                    "updated_at": record.created_at.isoformat(),
+                },
+                step_prefix="run_state",
+            )
+            self._write_summary(
+                run_id=record.id,
+                space_id=normalized_space_id,
+                summary_type=_PROGRESS_SUMMARY,
+                payload={
+                    "status": progress.status,
+                    "phase": progress.phase,
+                    "message": progress.message,
+                    "progress_percent": progress.progress_percent,
+                    "completed_steps": progress.completed_steps,
+                    "total_steps": progress.total_steps,
+                    "resume_point": progress.resume_point,
+                    "metadata": progress.metadata,
+                    "created_at": progress.created_at.isoformat(),
+                    "updated_at": progress.updated_at.isoformat(),
+                },
+                step_prefix="progress",
+            )
+            self._write_event_summary(
+                space_id=normalized_space_id,
+                run_id=record.id,
+                event_type="run.created",
+                status="queued",
+                message="Run created and queued.",
+                payload={"harness_id": harness_id, "title": title},
+                progress_percent=0.0,
+            )
+
+        run_after_commit_or_now(
+            self._session,
+            write_runtime_state,
         )
         return record
 
@@ -990,7 +998,7 @@ class ArtanaBackedHarnessRunRegistry(HarnessRunRegistry):
             model.status = status
             model.updated_at = now
             self._session.add(model)
-            self._session.commit()
+            commit_or_flush(self._session)
         updated_run = HarnessRunRecord(
             id=run.id,
             space_id=run.space_id,
@@ -1013,71 +1021,78 @@ class ArtanaBackedHarnessRunRegistry(HarnessRunRegistry):
             current=existing_progress,
             updated_at=now,
         )
-        run_status_write_timed_out = False
-        try:
-            self._write_summary(
-                run_id=run.id,
-                space_id=run.space_id,
-                summary_type=_RUN_STATE_SUMMARY,
-                payload={
-                    "status": status,
-                    "updated_at": now.isoformat(),
-                },
-                step_prefix="run_state",
-            )
-        except TimeoutError:
-            run_status_write_timed_out = True
-        progress_write_timed_out = False
-        try:
-            self._write_summary(
-                run_id=run.id,
-                space_id=run.space_id,
-                summary_type=_PROGRESS_SUMMARY,
-                payload={
-                    "status": progress_record.status,
-                    "phase": progress_record.phase,
-                    "message": progress_record.message,
-                    "progress_percent": progress_record.progress_percent,
-                    "completed_steps": progress_record.completed_steps,
-                    "total_steps": progress_record.total_steps,
-                    "resume_point": progress_record.resume_point,
-                    "metadata": progress_record.metadata,
-                    "created_at": progress_record.created_at.isoformat(),
-                    "updated_at": progress_record.updated_at.isoformat(),
-                },
-                step_prefix="progress",
-            )
-        except TimeoutError:
-            progress_write_timed_out = True
-        event_write_timed_out = False
-        try:
-            self._write_event_summary(
-                space_id=run.space_id,
-                run_id=run.id,
-                event_type="run.status_changed",
-                status=status,
-                message=progress_record.message,
-                payload={"phase": progress_record.phase},
-                progress_percent=progress_record.progress_percent,
-            )
-        except TimeoutError:
-            event_write_timed_out = True
-        if (
-            run_status_write_timed_out
-            or progress_write_timed_out
-            or event_write_timed_out
-        ):
-            _LOGGER.warning(
-                "Artana run status persistence timed out; catalog state remains authoritative.",
-                extra={
-                    "run_id": run.id,
-                    "space_id": run.space_id,
-                    "status": status,
-                    "run_state_write_timed_out": run_status_write_timed_out,
-                    "progress_write_timed_out": progress_write_timed_out,
-                    "event_write_timed_out": event_write_timed_out,
-                },
-            )
+
+        def write_runtime_state() -> None:
+            run_status_write_timed_out = False
+            try:
+                self._write_summary(
+                    run_id=run.id,
+                    space_id=run.space_id,
+                    summary_type=_RUN_STATE_SUMMARY,
+                    payload={
+                        "status": status,
+                        "updated_at": now.isoformat(),
+                    },
+                    step_prefix="run_state",
+                )
+            except TimeoutError:
+                run_status_write_timed_out = True
+            progress_write_timed_out = False
+            try:
+                self._write_summary(
+                    run_id=run.id,
+                    space_id=run.space_id,
+                    summary_type=_PROGRESS_SUMMARY,
+                    payload={
+                        "status": progress_record.status,
+                        "phase": progress_record.phase,
+                        "message": progress_record.message,
+                        "progress_percent": progress_record.progress_percent,
+                        "completed_steps": progress_record.completed_steps,
+                        "total_steps": progress_record.total_steps,
+                        "resume_point": progress_record.resume_point,
+                        "metadata": progress_record.metadata,
+                        "created_at": progress_record.created_at.isoformat(),
+                        "updated_at": progress_record.updated_at.isoformat(),
+                    },
+                    step_prefix="progress",
+                )
+            except TimeoutError:
+                progress_write_timed_out = True
+            event_write_timed_out = False
+            try:
+                self._write_event_summary(
+                    space_id=run.space_id,
+                    run_id=run.id,
+                    event_type="run.status_changed",
+                    status=status,
+                    message=progress_record.message,
+                    payload={"phase": progress_record.phase},
+                    progress_percent=progress_record.progress_percent,
+                )
+            except TimeoutError:
+                event_write_timed_out = True
+            if (
+                run_status_write_timed_out
+                or progress_write_timed_out
+                or event_write_timed_out
+            ):
+                _LOGGER.warning(
+                    "Artana run status persistence timed out; catalog state remains authoritative.",
+                    extra={
+                        "run_id": run.id,
+                        "space_id": run.space_id,
+                        "status": status,
+                        "run_state_write_timed_out": run_status_write_timed_out,
+                        "progress_write_timed_out": progress_write_timed_out,
+                        "event_write_timed_out": event_write_timed_out,
+                    },
+                )
+
+        run_after_commit_or_now(
+            self._session,
+            write_runtime_state,
+        )
         return updated_run
 
     def set_progress(  # noqa: PLR0913

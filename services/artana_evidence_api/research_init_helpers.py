@@ -16,6 +16,12 @@ from artana_evidence_api.marrvel_enrichment import (
     prioritize_marrvel_gene_labels as _shared_prioritize_marrvel_gene_labels,
 )
 from artana_evidence_api.process_health import read_heartbeat
+from artana_evidence_api.source_registry import (
+    default_research_plan_source_preferences,
+    normalize_source_key,
+    research_plan_source_keys,
+    unknown_source_preference_keys,
+)
 from artana_evidence_api.types.common import (
     ResearchSpaceSettings,
     ResearchSpaceSourcePreferences,
@@ -30,21 +36,9 @@ _SYSTEM_OWNER_ID = UUID("00000000-0000-0000-0000-000000000000")
 LOGGER = logging.getLogger(__name__)
 _TOKEN_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]*")
 _GENE_SYMBOL_PATTERN = re.compile(r"[A-Za-z]{2,10}[0-9]{1,5}[A-Za-z]{0,3}")
-_DEFAULT_RESEARCH_INIT_SOURCES: ResearchSpaceSourcePreferences = {
-    "pubmed": True,
-    "marrvel": True,
-    "clinvar": True,
-    "mondo": True,
-    "pdf": True,
-    "text": True,
-    "drugbank": False,  # requires API key
-    "alphafold": False,  # specialized, off by default
-    "uniprot": False,  # specialized, off by default
-    "hgnc": False,  # deterministic gene nomenclature alias source
-    "clinical_trials": False,  # translational enrichment, opt-in
-    "mgi": False,  # mouse model enrichment, opt-in
-    "zfin": False,  # zebrafish model enrichment, opt-in
-}
+_DEFAULT_RESEARCH_INIT_SOURCES: ResearchSpaceSourcePreferences = (
+    default_research_plan_source_preferences()
+)
 _QUERY_STOPWORDS = {
     "a",
     "an",
@@ -678,28 +672,23 @@ def _run_marrvel_enrichment(
 def _normalize_source_preferences(
     raw_sources: object,
 ) -> ResearchSpaceSourcePreferences:
-    normalized: ResearchSpaceSourcePreferences = {}
+    normalized: dict[str, bool] = {}
     if not isinstance(raw_sources, dict):
-        return normalized
-    for key in (
-        "pubmed",
-        "marrvel",
-        "clinvar",
-        "mondo",
-        "pdf",
-        "text",
-        "drugbank",
-        "alphafold",
-        "uniprot",
-        "hgnc",
-        "clinical_trials",
-        "mgi",
-        "zfin",
-    ):
-        value = raw_sources.get(key)
+        return cast("ResearchSpaceSourcePreferences", normalized)
+    allowed_keys = frozenset(research_plan_source_keys())
+    for raw_key, value in raw_sources.items():
+        if not isinstance(raw_key, str):
+            continue
+        key = normalize_source_key(raw_key)
+        if key not in allowed_keys:
+            continue
         if isinstance(value, bool):
             normalized[key] = value
-    return normalized
+    return cast("ResearchSpaceSourcePreferences", normalized)
+
+
+def _unknown_source_preference_keys(raw_sources: object) -> tuple[str, ...]:
+    return unknown_source_preference_keys(raw_sources)
 
 
 def _resolve_research_init_sources(
@@ -1164,4 +1153,5 @@ __all__ = [
     "_run_marrvel_enrichment",
     "_select_candidates_for_ingestion",
     "_shortlist_candidates_for_llm_review",
+    "_unknown_source_preference_keys",
 ]

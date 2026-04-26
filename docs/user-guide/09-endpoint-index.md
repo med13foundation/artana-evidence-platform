@@ -17,8 +17,10 @@ Use these first.
 | Extract reviewable findings | `POST /v2/spaces/{space_id}/documents/{document_id}/extraction` |
 | Review suggestions | `GET /v2/spaces/{space_id}/review-items` |
 | Promote or reject suggestions | `POST /v2/spaces/{space_id}/review-items/{item_id}/decision` |
-| Search PubMed | `POST /v2/spaces/{space_id}/sources/pubmed/searches` |
-| Search MARRVEL | `POST /v2/spaces/{space_id}/sources/marrvel/searches` |
+| List evidence sources | `GET /v2/sources` |
+| Inspect one evidence source | `GET /v2/sources/{source_key}` |
+| Search a direct-search source | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` |
+| Get a source search result | `GET /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}` |
 | Create research plan | `POST /v2/spaces/{space_id}/research-plan` |
 | Ask an evidence-map question | `POST /v2/spaces/{space_id}/workflows/evidence-search/tasks` |
 | Chat over documents and evidence | `/v2/spaces/{space_id}/chat-sessions/*` |
@@ -81,3 +83,16 @@ Use these for identity, API keys, and membership management.
 workflows should prefer MARRVEL search plus governed review. Direct-write paths
 are useful for system-owned or advanced operations, but they are not the best
 first API to learn.
+
+## Source Capability Note
+
+`GET /v2/sources` is the source of truth for which sources can be searched
+directly. PubMed, MARRVEL, ClinVar, AlphaFold, UniProt, ClinicalTrials.gov,
+MGI, and ZFIN support direct search. DrugBank supports direct search when
+`DRUGBANK_API_KEY` is configured. MONDO is a background ontology-grounding
+source, while text and PDF are document-capture sources.
+Generic source-search responses include `source_capture` metadata so clients can
+trace a result to its source, family, query, locator, and provenance. Structured
+direct source-search results are stored durably in the Evidence API database and
+can be fetched later by id; they are still not trusted graph facts until the
+review workflow promotes them.

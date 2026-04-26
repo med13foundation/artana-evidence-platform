@@ -176,6 +176,113 @@
         "title": "AdvancedQueryParameters",
         "type": "object"
       },
+      "AlphaFoldSourceSearchRequest": {
+        "description": "Request payload for a direct AlphaFold structure search.",
+        "properties": {
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "uniprot_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Uniprot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uniprot_id"
+        ],
+        "title": "AlphaFoldSourceSearchRequest",
+        "type": "object"
+      },
+      "AlphaFoldSourceSearchResponse": {
+        "description": "Response payload for one captured AlphaFold direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "alphafold",
+            "default": "alphafold",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "uniprot_id": {
+            "title": "Uniprot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "uniprot_id",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "AlphaFoldSourceSearchResponse",
+        "type": "object"
+      },
       "ApiKeyListResponse": {
         "description": "Paginated list of API key summaries.",
         "properties": {
@@ -1543,6 +1650,285 @@
         "title": "ClaimCurationSelectedProposalResponse",
         "type": "object"
       },
+      "ClinVarSourceSearchRequest": {
+        "description": "Request payload for a direct ClinVar variant search.",
+        "properties": {
+          "clinical_significance": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional clinical-significance filters.",
+            "title": "Clinical Significance"
+          },
+          "gene_symbol": {
+            "description": "Gene symbol to search in ClinVar.",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Gene Symbol",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 20,
+            "description": "Maximum ClinVar records to fetch.",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "variation_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional ClinVar variant-type filters.",
+            "title": "Variation Types"
+          }
+        },
+        "required": [
+          "gene_symbol"
+        ],
+        "title": "ClinVarSourceSearchRequest",
+        "type": "object"
+      },
+      "ClinVarSourceSearchResponse": {
+        "description": "Response payload for one captured ClinVar direct search.",
+        "properties": {
+          "clinical_significance": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Significance"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "gene_symbol": {
+            "title": "Gene Symbol",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "clinvar",
+            "default": "clinvar",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "variation_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variation Types"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "gene_symbol",
+          "max_results",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "ClinVarSourceSearchResponse",
+        "type": "object"
+      },
+      "ClinicalTrialsSourceSearchRequest": {
+        "description": "Request payload for a direct ClinicalTrials.gov search.",
+        "properties": {
+          "max_results": {
+            "default": 20,
+            "description": "Maximum trial records to fetch.",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "description": "Free-text query for ClinicalTrials.gov.",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "ClinicalTrialsSourceSearchRequest",
+        "type": "object"
+      },
+      "ClinicalTrialsSourceSearchResponse": {
+        "description": "Response payload for one captured ClinicalTrials.gov direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "next_page_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Token"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "clinical_trials",
+            "default": "clinical_trials",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "ClinicalTrialsSourceSearchResponse",
+        "type": "object"
+      },
       "ContinuousLearningCandidateResponse": {
         "description": "One candidate relation observed during a learning cycle.",
         "properties": {
@@ -2033,6 +2419,147 @@
         ],
         "title": "DiscoverySearchStatus",
         "type": "string"
+      },
+      "DrugBankSourceSearchRequest": {
+        "description": "Request payload for a direct DrugBank drug/target search.",
+        "properties": {
+          "drug_name": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name"
+          },
+          "drugbank_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugbank Id"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          }
+        },
+        "title": "DrugBankSourceSearchRequest",
+        "type": "object"
+      },
+      "DrugBankSourceSearchResponse": {
+        "description": "Response payload for one captured DrugBank direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name"
+          },
+          "drugbank_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugbank Id"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "drugbank",
+            "default": "drugbank",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "DrugBankSourceSearchResponse",
+        "type": "object"
       },
       "EvidenceChainItem": {
         "description": "One provenance-linked evidence reference backing a search result.",
@@ -7379,6 +7906,108 @@
         "title": "KernelRelationPaperLinkResponse",
         "type": "object"
       },
+      "MGISourceSearchRequest": {
+        "description": "Request payload for a direct MGI gene search.",
+        "properties": {
+          "max_results": {
+            "default": 20,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "MGISourceSearchRequest",
+        "type": "object"
+      },
+      "MGISourceSearchResponse": {
+        "description": "Response payload for one captured MGI direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "mgi",
+            "default": "mgi",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "MGISourceSearchResponse",
+        "type": "object"
+      },
       "MappingStatus": {
         "description": "Whether the fact endpoints were resolved cleanly.",
         "enum": [
@@ -7667,6 +8296,179 @@
           "variant_count"
         ],
         "title": "MarrvelSearchResponse",
+        "type": "object"
+      },
+      "MarrvelSourceSearchResponse": {
+        "description": "Typed v2 MARRVEL source-search response with durable capture metadata.",
+        "properties": {
+          "available_panels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Panels",
+            "type": "array"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "gene_found": {
+            "title": "Gene Found",
+            "type": "boolean"
+          },
+          "gene_info": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gene Info"
+          },
+          "gene_symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gene Symbol"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "omim_count": {
+            "title": "Omim Count",
+            "type": "integer"
+          },
+          "panel_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Panel Counts",
+            "type": "object"
+          },
+          "panels": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Panels",
+            "type": "object"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "query_mode": {
+            "enum": [
+              "gene",
+              "variant_hgvs",
+              "protein_variant"
+            ],
+            "title": "Query Mode",
+            "type": "string"
+          },
+          "query_value": {
+            "title": "Query Value",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "resolved_gene_symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved Gene Symbol"
+          },
+          "resolved_variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved Variant"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "marrvel",
+            "default": "marrvel",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "taxon_id": {
+            "title": "Taxon Id",
+            "type": "integer"
+          },
+          "variant_count": {
+            "title": "Variant Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "query_mode",
+          "query_value",
+          "gene_symbol",
+          "taxon_id",
+          "gene_found",
+          "omim_count",
+          "variant_count",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "MarrvelSourceSearchResponse",
         "type": "object"
       },
       "MechanismCandidateResponse": {
@@ -8041,6 +8843,149 @@
         ],
         "title": "PubMedSortOption",
         "type": "string"
+      },
+      "PubMedSourceSearchResponse": {
+        "description": "Response payload for one captured PubMed direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "owner_id": {
+            "format": "uuid",
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/AdvancedQueryParameters"
+          },
+          "provider": {
+            "const": "pubmed",
+            "default": "pubmed",
+            "title": "Provider",
+            "type": "string"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "query_preview": {
+            "title": "Query Preview",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "result_metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Result Metadata",
+            "type": "object"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "pubmed",
+            "default": "pubmed",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "storage_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Key"
+          },
+          "total_results": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Total Results",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "owner_id",
+          "query",
+          "query_preview",
+          "parameters",
+          "record_count",
+          "created_at",
+          "updated_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "PubMedSourceSearchResponse",
+        "type": "object"
       },
       "RejectedCandidate": {
         "additionalProperties": false,
@@ -9430,6 +10375,538 @@
           "updated_at"
         ],
         "title": "RunPolicyDecisionsResponse",
+        "type": "object"
+      },
+      "SourceCapability": {
+        "description": "Capability flags exposed to public source clients.",
+        "enum": [
+          "search",
+          "ingestion",
+          "enrichment",
+          "document_capture",
+          "proposal_generation",
+          "research_plan"
+        ],
+        "title": "SourceCapability",
+        "type": "string"
+      },
+      "SourceCaptureStage": {
+        "description": "Lifecycle stage for one source result.",
+        "enum": [
+          "search_result",
+          "source_document",
+          "proposal_candidate"
+        ],
+        "title": "SourceCaptureStage",
+        "type": "string"
+      },
+      "SourceDefinition": {
+        "description": "One public source capability definition.",
+        "properties": {
+          "capabilities": {
+            "description": "Stable capability flags supported by this source.",
+            "items": {
+              "$ref": "#/components/schemas/SourceCapability"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "credential_names": {
+            "default": [],
+            "description": "Environment variable names or credential keys required by this source.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Credential Names",
+            "type": "array"
+          },
+          "default_research_plan_enabled": {
+            "description": "True when research-plan enables this source unless the caller opts out.",
+            "title": "Default Research Plan Enabled",
+            "type": "boolean"
+          },
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "direct_search_enabled": {
+            "description": "True when the generic source-search endpoint can call this source directly.",
+            "title": "Direct Search Enabled",
+            "type": "boolean"
+          },
+          "display_name": {
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "live_network_required": {
+            "description": "True when using this source normally calls an external service.",
+            "title": "Live Network Required",
+            "type": "boolean"
+          },
+          "proposal_flow": {
+            "description": "How captured source results become reviewable proposals.",
+            "minLength": 1,
+            "title": "Proposal Flow",
+            "type": "string"
+          },
+          "request_schema_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Named request schema for direct source search or document capture.",
+            "title": "Request Schema Ref"
+          },
+          "requires_credentials": {
+            "description": "True when the source needs configured credentials.",
+            "title": "Requires Credentials",
+            "type": "boolean"
+          },
+          "research_plan_enabled": {
+            "description": "True when research-plan accepts this source in source preferences.",
+            "title": "Research Plan Enabled",
+            "type": "boolean"
+          },
+          "result_capture": {
+            "description": "How raw source results become captured evidence.",
+            "minLength": 1,
+            "title": "Result Capture",
+            "type": "string"
+          },
+          "result_schema_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Named result schema for direct source search.",
+            "title": "Result Schema Ref"
+          },
+          "source_family": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Source Family",
+            "type": "string"
+          },
+          "source_key": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Source Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_key",
+          "display_name",
+          "description",
+          "source_family",
+          "capabilities",
+          "direct_search_enabled",
+          "research_plan_enabled",
+          "default_research_plan_enabled",
+          "live_network_required",
+          "requires_credentials",
+          "result_capture",
+          "proposal_flow"
+        ],
+        "title": "SourceDefinition",
+        "type": "object"
+      },
+      "SourceListResponse": {
+        "description": "Public list response for source capabilities.",
+        "properties": {
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceDefinition"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sources",
+          "total"
+        ],
+        "title": "SourceListResponse",
+        "type": "object"
+      },
+      "SourceResultCapture": {
+        "description": "Normalized capture/provenance envelope for one source result.",
+        "properties": {
+          "capture_method": {
+            "minLength": 1,
+            "title": "Capture Method",
+            "type": "string"
+          },
+          "capture_stage": {
+            "$ref": "#/components/schemas/SourceCaptureStage"
+          },
+          "citation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "locator": {
+            "minLength": 1,
+            "title": "Locator",
+            "type": "string"
+          },
+          "provenance": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Provenance",
+            "type": "object"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "query_payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Query Payload",
+            "type": "object"
+          },
+          "result_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Count"
+          },
+          "retrieved_at": {
+            "minLength": 1,
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "search_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search Id"
+          },
+          "source_family": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Source Family",
+            "type": "string"
+          },
+          "source_key": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Source Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_key",
+          "source_family",
+          "capture_stage",
+          "capture_method",
+          "locator",
+          "retrieved_at"
+        ],
+        "title": "SourceResultCapture",
+        "type": "object"
+      },
+      "SourceSearchHandoffRequest": {
+        "description": "Request to hand one captured source-search record downstream.",
+        "properties": {
+          "external_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Provider identifier for the selected record when known.",
+            "title": "External Id"
+          },
+          "extract_now": {
+            "default": false,
+            "description": "When true, run the existing document extraction route after handoff.",
+            "title": "Extract Now",
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client-supplied idempotency key for safe retries.",
+            "title": "Idempotency Key"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Input"
+            },
+            "description": "Optional client metadata to attach to the handoff document.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "record_hash": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SHA-256 hash of the canonical selected source record JSON.",
+            "title": "Record Hash"
+          },
+          "record_index": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Zero-based record index from the captured source-search response.",
+            "title": "Record Index"
+          },
+          "target_kind": {
+            "const": "source_document",
+            "default": "source_document",
+            "description": "Downstream target to create from the selected source record.",
+            "title": "Target Kind",
+            "type": "string"
+          }
+        },
+        "title": "SourceSearchHandoffRequest",
+        "type": "object"
+      },
+      "SourceSearchHandoffResponse": {
+        "description": "Response for a durable source-search handoff.",
+        "properties": {
+          "extraction": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Output"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction"
+          },
+          "handoff_payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Handoff Payload",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "search_id": {
+            "format": "uuid",
+            "title": "Search Id",
+            "type": "string"
+          },
+          "selected_external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected External Id"
+          },
+          "selected_record_index": {
+            "title": "Selected Record Index",
+            "type": "integer"
+          },
+          "source_capture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceResultCapture"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "completed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Document Id"
+          },
+          "target_kind": {
+            "const": "source_document",
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Run Id"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "source_key",
+          "search_id",
+          "status",
+          "target_kind",
+          "idempotency_key",
+          "selected_record_index",
+          "handoff_payload"
+        ],
+        "title": "SourceSearchHandoffResponse",
+        "type": "object"
+      },
+      "SourceSearchResponse": {
+        "additionalProperties": true,
+        "description": "Generic direct-search response with a required source-capture envelope.\n\nSource-specific result fields stay at the response root for compatibility\nwith existing concrete source-search payloads.",
+        "properties": {
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          }
+        },
+        "required": [
+          "source_capture"
+        ],
+        "title": "SourceSearchResponse",
         "type": "object"
       },
       "SpeculationLevel": {
@@ -11420,6 +12897,138 @@
         "title": "ToolDecisionRecord",
         "type": "object"
       },
+      "UniProtSourceSearchRequest": {
+        "description": "Request payload for a direct UniProt protein search.",
+        "properties": {
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Gene or protein query to search in UniProtKB.",
+            "title": "Query"
+          },
+          "uniprot_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exact UniProt accession to fetch.",
+            "title": "Uniprot Id"
+          }
+        },
+        "title": "UniProtSourceSearchRequest",
+        "type": "object"
+      },
+      "UniProtSourceSearchResponse": {
+        "description": "Response payload for one captured UniProt direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "uniprot",
+            "default": "uniprot",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "uniprot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uniprot Id"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "UniProtSourceSearchResponse",
+        "type": "object"
+      },
       "UpdateHarnessResearchSpaceSettingsRequest": {
         "description": "Update request for supported owner-managed research-space settings.",
         "properties": {
@@ -11592,6 +13201,108 @@
           "allowed_skill_names"
         ],
         "title": "WorkflowTemplateResponse",
+        "type": "object"
+      },
+      "ZFINSourceSearchRequest": {
+        "description": "Request payload for a direct ZFIN gene search.",
+        "properties": {
+          "max_results": {
+            "default": 20,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "ZFINSourceSearchRequest",
+        "type": "object"
+      },
+      "ZFINSourceSearchResponse": {
+        "description": "Response payload for one captured ZFIN direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "zfin",
+            "default": "zfin",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "ZFINSourceSearchResponse",
         "type": "object"
       },
       "artana_evidence_api__routers__research_bootstrap_runs__HarnessResearchStateResponse": {
@@ -18342,6 +20053,90 @@
         ]
       }
     },
+    "/v2/sources": {
+      "get": {
+        "description": "Return public evidence source capabilities.",
+        "operationId": "list_sources_v2_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List evidence sources",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/sources/{source_key}": {
+      "get": {
+        "description": "Return one public evidence source capability definition.",
+        "operationId": "get_source_v2_sources__source_key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_key",
+            "required": true,
+            "schema": {
+              "title": "Source Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceDefinition"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Source is not registered."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
     "/v2/spaces": {
       "get": {
         "description": "Return research spaces visible to the authenticated caller.",
@@ -21322,6 +23117,502 @@
         ]
       }
     },
+    "/v2/spaces/{space_id}/sources/alphafold/searches": {
+      "post": {
+        "description": "Typed v2 route for AlphaFold source search.",
+        "operationId": "create_alphafold_source_search_v2_spaces__space_id__sources_alphafold_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlphaFoldSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlphaFoldSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search AlphaFold evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/alphafold/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for AlphaFold source-search lookup.",
+        "operationId": "get_alphafold_source_search_v2_spaces__space_id__sources_alphafold_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlphaFoldSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get AlphaFold evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/clinical_trials/searches": {
+      "post": {
+        "description": "Typed v2 route for ClinicalTrials.gov source search.",
+        "operationId": "create_clinicaltrials_source_search_v2_spaces__space_id__sources_clinical_trials_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClinicalTrialsSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalTrialsSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search ClinicalTrials.gov evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/clinical_trials/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for ClinicalTrials.gov source-search lookup.",
+        "operationId": "get_clinicaltrials_source_search_v2_spaces__space_id__sources_clinical_trials_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalTrialsSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get ClinicalTrials.gov evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/clinvar/searches": {
+      "post": {
+        "description": "Typed v2 route for ClinVar source search.",
+        "operationId": "create_clinvar_source_search_v2_spaces__space_id__sources_clinvar_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClinVarSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinVarSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search ClinVar evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/clinvar/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for ClinVar source-search lookup.",
+        "operationId": "get_clinvar_source_search_v2_spaces__space_id__sources_clinvar_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinVarSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get ClinVar evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/drugbank/searches": {
+      "post": {
+        "description": "Typed v2 route for DrugBank source search.",
+        "operationId": "create_drugbank_source_search_v2_spaces__space_id__sources_drugbank_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DrugBankSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrugBankSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search DrugBank evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/drugbank/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for DrugBank source-search lookup.",
+        "operationId": "get_drugbank_source_search_v2_spaces__space_id__sources_drugbank_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrugBankSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get DrugBank evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
     "/v2/spaces/{space_id}/sources/marrvel/ingestion": {
       "post": {
         "description": "Retired: MARRVEL entity seeding now flows through the shared pipeline.\n\nDirect entity creation via ``gateway.create_entity()`` has been removed.\nMARRVEL records are ingested as source documents with Tier 1 grounding\nattached, then flow through entity recognition \u2192 extraction \u2192 governed\nclaims like all other connector families.",
@@ -21386,7 +23677,8 @@
     },
     "/v2/spaces/{space_id}/sources/marrvel/searches": {
       "post": {
-        "operationId": "v2_create_marrvel_search_v2_spaces__space_id__sources_marrvel_searches_post",
+        "description": "Typed v2 compatibility route for MARRVEL source search.",
+        "operationId": "create_marrvel_source_search_v2_spaces__space_id__sources_marrvel_searches_post",
         "parameters": [
           {
             "in": "path",
@@ -21414,7 +23706,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MarrvelSearchResponse"
+                  "$ref": "#/components/schemas/MarrvelSourceSearchResponse"
                 }
               }
             },
@@ -21439,7 +23731,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Search MARRVEL",
+        "summary": "Search MARRVEL evidence source",
         "tags": [
           "sources"
         ]
@@ -21447,7 +23739,8 @@
     },
     "/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}": {
       "get": {
-        "operationId": "v2_get_marrvel_search_v2_spaces__space_id__sources_marrvel_searches__result_id__get",
+        "description": "Typed v2 compatibility route for MARRVEL source-search lookup.",
+        "operationId": "get_marrvel_source_search_v2_spaces__space_id__sources_marrvel_searches__result_id__get",
         "parameters": [
           {
             "in": "path",
@@ -21475,7 +23768,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MarrvelSearchResponse"
+                  "$ref": "#/components/schemas/MarrvelSourceSearchResponse"
                 }
               }
             },
@@ -21500,7 +23793,131 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Get MARRVEL search",
+        "summary": "Get MARRVEL evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/mgi/searches": {
+      "post": {
+        "description": "Typed v2 route for MGI source search.",
+        "operationId": "create_mgi_source_search_v2_spaces__space_id__sources_mgi_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MGISourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MGISourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search MGI evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/mgi/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for MGI source-search lookup.",
+        "operationId": "get_mgi_source_search_v2_spaces__space_id__sources_mgi_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MGISourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get MGI evidence source search",
         "tags": [
           "sources"
         ]
@@ -21508,7 +23925,8 @@
     },
     "/v2/spaces/{space_id}/sources/pubmed/searches": {
       "post": {
-        "operationId": "v2_create_pubmed_search_v2_spaces__space_id__sources_pubmed_searches_post",
+        "description": "Typed v2 compatibility route for PubMed source search.",
+        "operationId": "create_pubmed_source_search_v2_spaces__space_id__sources_pubmed_searches_post",
         "parameters": [
           {
             "in": "path",
@@ -21536,7 +23954,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiscoverySearchJob"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PubMedSourceSearchResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DiscoverySearchJob"
+                    }
+                  ],
+                  "title": "Response Create Pubmed Source Search V2 Spaces  Space Id  Sources Pubmed Searches Post"
                 }
               }
             },
@@ -21561,7 +23987,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Search PubMed",
+        "summary": "Search PubMed evidence source",
         "tags": [
           "sources"
         ]
@@ -21569,7 +23995,8 @@
     },
     "/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}": {
       "get": {
-        "operationId": "v2_get_pubmed_search_v2_spaces__space_id__sources_pubmed_searches__job_id__get",
+        "description": "Typed v2 compatibility route for PubMed source-search lookup.",
+        "operationId": "get_pubmed_source_search_v2_spaces__space_id__sources_pubmed_searches__job_id__get",
         "parameters": [
           {
             "in": "path",
@@ -21597,7 +24024,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiscoverySearchJob"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PubMedSourceSearchResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DiscoverySearchJob"
+                    }
+                  ],
+                  "title": "Response Get Pubmed Source Search V2 Spaces  Space Id  Sources Pubmed Searches  Job Id  Get"
                 }
               }
             },
@@ -21622,7 +24057,496 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Get PubMed search",
+        "summary": "Get PubMed evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/uniprot/searches": {
+      "post": {
+        "description": "Typed v2 route for UniProt source search.",
+        "operationId": "create_uniprot_source_search_v2_spaces__space_id__sources_uniprot_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UniProtSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UniProtSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search UniProt evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/uniprot/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for UniProt source-search lookup.",
+        "operationId": "get_uniprot_source_search_v2_spaces__space_id__sources_uniprot_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UniProtSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get UniProt evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/zfin/searches": {
+      "post": {
+        "description": "Typed v2 route for ZFIN source search.",
+        "operationId": "create_zfin_source_search_v2_spaces__space_id__sources_zfin_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZFINSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZFINSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search ZFIN evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/zfin/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for ZFIN source-search lookup.",
+        "operationId": "get_zfin_source_search_v2_spaces__space_id__sources_zfin_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZFINSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get ZFIN evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/{source_key}/searches": {
+      "post": {
+        "description": "Run a direct source search through the source registry.",
+        "operationId": "create_source_search_v2_spaces__space_id__sources__source_key__searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "source_key",
+            "required": true,
+            "schema": {
+              "title": "Source Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Input"
+                },
+                "title": "Request Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Source is not registered."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "501": {
+            "description": "Source does not support direct search yet."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}": {
+      "get": {
+        "description": "Return one direct source search result through the source registry.",
+        "operationId": "get_source_search_v2_spaces__space_id__sources__source_key__searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "source_key",
+            "required": true,
+            "schema": {
+              "title": "Source Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Source is not registered."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "501": {
+            "description": "Source does not support direct search yet."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs": {
+      "post": {
+        "description": "Create an idempotent handoff from a saved source-search result.",
+        "operationId": "create_source_search_handoff_v2_spaces__space_id__sources__source_key__searches__search_id__handoffs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "source_key",
+            "required": true,
+            "schema": {
+              "title": "Source Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceSearchHandoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceSearchHandoffResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Source is not registered."
+          },
+          "409": {
+            "description": "Idempotency key was reused with different input."
+          },
+          "422": {
+            "description": "The request did not select exactly one source record."
+          },
+          "501": {
+            "description": "Source does not support direct search yet."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Hand off a captured source search",
         "tags": [
           "sources"
         ]

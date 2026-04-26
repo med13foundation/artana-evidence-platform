@@ -9,9 +9,11 @@ from uuid import UUID, uuid4
 import pytest
 from artana_evidence_api.app import create_app
 from artana_evidence_api.dependencies import (
+    get_direct_source_search_store,
     get_pubmed_discovery_service,
     get_research_space_store,
 )
+from artana_evidence_api.direct_source_search import InMemoryDirectSourceSearchStore
 from artana_evidence_api.pubmed_discovery import (
     AdvancedQueryParameters,
     DiscoveryProvider,
@@ -123,6 +125,7 @@ class _RateLimitedPubMedDiscoveryService:
 def _build_client() -> tuple[TestClient, _StubPubMedDiscoveryService, str]:
     app = create_app()
     pubmed_service = _StubPubMedDiscoveryService()
+    direct_source_search_store = InMemoryDirectSourceSearchStore()
     research_space_store = HarnessResearchSpaceStore()
     space = research_space_store.create_space(
         owner_id=_TEST_USER_ID,
@@ -130,6 +133,9 @@ def _build_client() -> tuple[TestClient, _StubPubMedDiscoveryService, str]:
         description="Owned test space for pubmed routes.",
     )
     app.dependency_overrides[get_pubmed_discovery_service] = lambda: pubmed_service
+    app.dependency_overrides[get_direct_source_search_store] = (
+        lambda: direct_source_search_store
+    )
     app.dependency_overrides[get_research_space_store] = lambda: research_space_store
     return TestClient(app), pubmed_service, space.id
 
@@ -170,6 +176,74 @@ def test_create_pubmed_search_and_get_job() -> None:
     assert get_response.status_code == 200
     assert get_response.json()["id"] == job_id
     assert str(job_id) in pubmed_service.jobs
+
+
+def test_create_pubmed_search_through_generic_v2_source_route() -> None:
+    client, pubmed_service, space_id = _build_client()
+
+    create_response = client.post(
+        f"/v2/spaces/{space_id}/sources/pubmed/searches",
+        headers=_auth_headers(),
+        json={
+            "parameters": {
+                "gene_symbol": "MED13",
+                "search_term": "MED13 cardiomyopathy",
+                "date_from": None,
+                "date_to": None,
+                "publication_types": [],
+                "languages": [],
+                "sort_by": "relevance",
+                "max_results": 25,
+                "additional_terms": None,
+            },
+        },
+    )
+
+    assert create_response.status_code == 201
+    created_payload = create_response.json()
+    assert created_payload["status"] == "completed"
+    assert created_payload["session_id"] == space_id
+    assert created_payload["source_capture"]["source_key"] == "pubmed"
+    assert created_payload["source_capture"]["capture_stage"] == "search_result"
+    assert created_payload["source_capture"]["capture_method"] == "direct_source_search"
+    assert created_payload["source_capture"]["locator"].startswith("pubmed:search:")
+
+    job_id = created_payload["id"]
+    get_response = client.get(
+        f"/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}",
+        headers=_auth_headers(),
+    )
+
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == job_id
+    assert get_response.json()["source_capture"]["search_id"] == job_id
+    assert str(job_id) in pubmed_service.jobs
+
+
+def test_generic_v2_source_search_rejects_research_plan_only_source() -> None:
+    client, _, space_id = _build_client()
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/sources/text/searches",
+        headers=_auth_headers(),
+        json={"text": "MED13"},
+    )
+
+    assert response.status_code == 501
+    assert "direct source search is not enabled yet" in response.json()["detail"]
+
+
+def test_generic_v2_source_search_rejects_unknown_source() -> None:
+    client, _, space_id = _build_client()
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/sources/not_a_source/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "MED13"},
+    )
+
+    assert response.status_code == 404
+    assert "not registered" in response.json()["detail"]
 
 
 @pytest.mark.parametrize("search_term", ["", "   ", None])

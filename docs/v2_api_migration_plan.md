@@ -3,12 +3,26 @@
 Status date: April 24, 2026.
 
 This plan covers the work required to move the Evidence API from a
-runtime-shaped v1 surface to a product-shaped v2 surface.
+runtime-shaped v1 surface to a product-shaped v2 surface. Source-registry and
+direct source-search work is tracked in `docs/plan.md`.
 
 Current status:
 
 - v2 route aliases exist and are mounted.
 - v2 route coverage is tested at the router and OpenAPI level.
+- v2 source capability endpoints exist for public source discovery.
+- PubMed and MARRVEL direct search flow through the generic v2 source-search
+  route shape.
+- ClinVar, ClinicalTrials.gov, UniProt, AlphaFold, DrugBank, MGI, and ZFIN
+  also flow through the generic v2 source-search route shape when their
+  gateways are available. DrugBank requires `DRUGBANK_API_KEY`.
+- Typed v2 source-search routes remain available for generated-client schemas
+  and for PubMed, MARRVEL, ClinVar, ClinicalTrials.gov, UniProt, AlphaFold,
+  DrugBank, MGI, and ZFIN.
+- Generic source-search responses carry normalized `source_capture` provenance
+  metadata.
+- Structured direct source-search responses are persisted as durable Evidence
+  API source-search runs; direct search does not promote graph facts.
 - v1 remains the dominant surface in docs, scripts, tests, and payload names.
 
 Target outcome:
@@ -44,6 +58,14 @@ The public contract should use these v2 terms consistently:
 | `graph-curation` | `evidence-curation` |
 | `full-ai-orchestrator` | `autopilot` |
 | `harnesses` | `workflow-templates` |
+
+Source-specific endpoints should use the generic source shape when possible:
+
+| Older shape | v2 direction |
+| --- | --- |
+| `pubmed/searches` | `sources/{source_key}/searches` |
+| `marrvel/searches` | `sources/{source_key}/searches` |
+| source flags hidden in settings | `GET /v2/sources` capability discovery |
 
 ## Workstreams
 

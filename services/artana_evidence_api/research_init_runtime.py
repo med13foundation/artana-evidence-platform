@@ -119,6 +119,12 @@ from artana_evidence_api.research_init_source_results import (
 from artana_evidence_api.research_question_policy import (
     has_prior_research_guidance,
 )
+from artana_evidence_api.source_result_capture import (
+    SourceCaptureStage,
+    attach_source_capture_metadata,
+    compact_provenance,
+    source_result_capture_metadata,
+)
 from artana_evidence_api.transparency import ensure_run_transparency_seed
 from artana_evidence_api.types.common import (
     JSONObject,
@@ -130,6 +136,10 @@ from artana_evidence_api.types.common import (
 )
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityEmbeddingRefreshRequest,
+)
+from artana_evidence_api.variant_aware_document_extraction import (
+    document_supports_variant_aware_extraction,
+    extract_variant_aware_document,
 )
 from pydantic import ValidationError
 
@@ -727,6 +737,53 @@ def _research_init_result_payload(
     return result
 
 
+def _pubmed_document_source_capture(
+    *,
+    candidate: _PubMedCandidate,
+    review: _PubMedCandidateReview,
+    sha256: str,
+    ingestion_run_id: str,
+) -> JSONObject:
+    locator = (
+        f"pubmed:{candidate.pmid}"
+        if candidate.pmid
+        else f"pubmed:document:{sha256[:16]}"
+    )
+    citation = _pubmed_candidate_citation(candidate)
+    return source_result_capture_metadata(
+        source_key="pubmed",
+        capture_stage=SourceCaptureStage.SOURCE_DOCUMENT,
+        capture_method="research_plan",
+        locator=locator,
+        external_id=candidate.pmid,
+        citation=citation,
+        run_id=ingestion_run_id,
+        query=", ".join(candidate.queries),
+        query_payload={
+            "queries": list(candidate.queries),
+            "pmid": candidate.pmid,
+            "doi": candidate.doi,
+            "pmc_id": candidate.pmc_id,
+        },
+        result_count=1,
+        provenance=compact_provenance(
+            source="research-init-pubmed",
+            review_method=review.method,
+            review_label=review.label,
+            review_confidence=review.confidence,
+            sha256=sha256,
+        ),
+    )
+
+
+def _pubmed_candidate_citation(candidate: _PubMedCandidate) -> str | None:
+    citation_parts: list[str] = [candidate.title.strip()]
+    if candidate.journal:
+        citation_parts.append(candidate.journal.strip())
+    citation = ". ".join(part for part in citation_parts if part)
+    return citation or None
+
+
 def _serialize_claim_curation_summary(
     summary: ResearchBootstrapClaimCurationSummary | None,
 ) -> JSONObject | None:
@@ -1203,9 +1260,7 @@ async def _execute_pubmed_query(  # noqa: PLR0912, PLR0915
                 pmid=pmid,
                 doi=doi_value if isinstance(doi_value, str) else None,
                 pmc_id=pmc_id if isinstance(pmc_id, str) else None,
-                journal=(
-                    journal_value if isinstance(journal_value, str) else None
-                ),
+                journal=(journal_value if isinstance(journal_value, str) else None),
             )
             key = _candidate_key(
                 pmid=candidate.pmid,
@@ -1687,6 +1742,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
         pre_resolve_entities_with_ai,
         review_document_extraction_drafts,
     )
+
     effective_pubmed_replay_bundle = pubmed_replay_bundle
     if effective_pubmed_replay_bundle is None:
         effective_pubmed_replay_bundle = load_pubmed_replay_bundle_artifact(
@@ -1820,13 +1876,11 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 collected_candidates = _collect_pubmed_candidates(
                     query_executions=query_executions,
                 )
-                selected_candidates = (
-                    await _select_candidates_for_ingestion(
-                        list(collected_candidates.values()),
-                        objective=objective,
-                        seed_terms=seed_terms,
-                        errors=errors,
-                    )
+                selected_candidates = await _select_candidates_for_ingestion(
+                    list(collected_candidates.values()),
+                    objective=objective,
+                    seed_terms=seed_terms,
+                    errors=errors,
                 )
             except Exception as exc:  # noqa: BLE001
                 errors.append(f"PubMed service unavailable: {exc}")
@@ -1938,6 +1992,15 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                             "agent_run_id": review.agent_run_id,
                         },
                     }
+                    document_metadata = attach_source_capture_metadata(
+                        metadata=document_metadata,
+                        source_capture=_pubmed_document_source_capture(
+                            candidate=candidate,
+                            review=review,
+                            sha256=normalized_sha256,
+                            ingestion_run_id=ingestion_run.id,
+                        ),
+                    )
                     if replay_document is not None:
                         document_metadata["replayed_source_document_id"] = (
                             replay_document.source_document_id
@@ -2088,13 +2151,27 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
         if marrvel_enrichment_enabled:
             enrichment_sources.append("marrvel")
 
-        run_clinvar_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
-        run_drugbank_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
-        run_alphafold_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
-        run_clinicaltrials_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
-        run_mgi_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
-        run_zfin_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
-        run_marrvel_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = None
+        run_clinvar_enrichment: (
+            Callable[..., Awaitable[SourceEnrichmentResult]] | None
+        ) = None
+        run_drugbank_enrichment: (
+            Callable[..., Awaitable[SourceEnrichmentResult]] | None
+        ) = None
+        run_alphafold_enrichment: (
+            Callable[..., Awaitable[SourceEnrichmentResult]] | None
+        ) = None
+        run_clinicaltrials_enrichment: (
+            Callable[..., Awaitable[SourceEnrichmentResult]] | None
+        ) = None
+        run_mgi_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = (
+            None
+        )
+        run_zfin_enrichment: Callable[..., Awaitable[SourceEnrichmentResult]] | None = (
+            None
+        )
+        run_marrvel_enrichment: (
+            Callable[..., Awaitable[SourceEnrichmentResult]] | None
+        ) = None
         if enrichment_sources:
             try:
                 from artana_evidence_api.research_init_source_enrichment import (
@@ -2124,9 +2201,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 run_clinvar_enrichment = imported_run_clinvar_enrichment
                 run_drugbank_enrichment = imported_run_drugbank_enrichment
                 run_alphafold_enrichment = imported_run_alphafold_enrichment
-                run_clinicaltrials_enrichment = (
-                    imported_run_clinicaltrials_enrichment
-                )
+                run_clinicaltrials_enrichment = imported_run_clinicaltrials_enrichment
                 run_mgi_enrichment = imported_run_mgi_enrichment
                 run_zfin_enrichment = imported_run_zfin_enrichment
                 run_marrvel_enrichment = imported_run_marrvel_enrichment
@@ -2659,21 +2734,76 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                                         services,
                                     ).document_binary_store,
                                 )
-                                current_document = (
-                                    await _enrich_pdf_document(
-                                        space_id=space_id,
-                                        document=current_document,
-                                        run_registry=run_registry,
-                                        artifact_store=artifact_store,
-                                        binary_store=binary_store,
-                                        document_store=document_store,
-                                        graph_api_gateway=doc_gateway,
-                                    )
+                                current_document = await _enrich_pdf_document(
+                                    space_id=space_id,
+                                    document=current_document,
+                                    run_registry=run_registry,
+                                    artifact_store=artifact_store,
+                                    binary_store=binary_store,
+                                    document_store=document_store,
+                                    graph_api_gateway=doc_gateway,
                                 )
 
                             _require_extractable_document_text(
                                 document=current_document,
                             )
+
+                            if document_supports_variant_aware_extraction(
+                                document=current_document,
+                            ):
+                                variant_result = await extract_variant_aware_document(
+                                    space_id=space_id,
+                                    document=current_document,
+                                    graph_api_gateway=doc_gateway,
+                                    review_context=review_context,
+                                )
+                                updated_document = document_store.update_document(
+                                    space_id=space_id,
+                                    document_id=current_document.id,
+                                    metadata_patch={
+                                        "candidate_count": (
+                                            len(variant_result.contract.entities)
+                                            + len(
+                                                variant_result.contract.observations,
+                                            )
+                                            + len(variant_result.contract.relations)
+                                        ),
+                                        "proposal_count": len(
+                                            variant_result.proposal_drafts,
+                                        ),
+                                        "review_item_count": len(
+                                            variant_result.review_item_drafts,
+                                        ),
+                                        "skipped_candidate_count": len(
+                                            variant_result.skipped_items,
+                                        ),
+                                        "candidate_discovery": (
+                                            variant_result.candidate_discovery
+                                        ),
+                                        "extraction_diagnostics": (
+                                            variant_result.extraction_diagnostics
+                                        ),
+                                        "variant_aware_extraction": True,
+                                    },
+                                )
+                                if updated_document is None:
+                                    return _PreparedDocumentExtraction(
+                                        document=current_document,
+                                        drafts=(),
+                                        errors=(
+                                            *doc_errors,
+                                            "Document disappeared before "
+                                            "variant-aware research-init extraction "
+                                            "metadata could be stored.",
+                                        ),
+                                        failed=True,
+                                    )
+                                current_document = updated_document
+                                return _PreparedDocumentExtraction(
+                                    document=current_document,
+                                    drafts=variant_result.proposal_drafts,
+                                    errors=tuple(doc_errors),
+                                )
 
                             (
                                 candidates,

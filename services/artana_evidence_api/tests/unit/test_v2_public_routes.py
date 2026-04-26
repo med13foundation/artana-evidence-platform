@@ -38,13 +38,103 @@ from artana_evidence_api.routers import (
     supervisor_runs,
     v2_public,
 )
+from artana_evidence_api.source_registry import (
+    direct_search_source_keys,
+    list_source_definitions,
+)
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 RouteKey = tuple[str, str]
 
 _CUSTOM_V2_ROUTE_ENDPOINTS = {
+    ("/v2/sources", "GET"): v2_public.list_sources,
+    ("/v2/sources/{source_key}", "GET"): v2_public.get_source,
     ("/v2/workflow-templates", "GET"): v2_public.list_workflow_templates,
+    (
+        "/v2/spaces/{space_id}/sources/{source_key}/searches",
+        "POST",
+    ): v2_public.create_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}",
+        "GET",
+    ): v2_public.get_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs",
+        "POST",
+    ): v2_public.create_source_search_handoff,
+    (
+        "/v2/spaces/{space_id}/sources/pubmed/searches",
+        "POST",
+    ): v2_public.create_pubmed_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}",
+        "GET",
+    ): v2_public.get_pubmed_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/marrvel/searches",
+        "POST",
+    ): v2_public.create_marrvel_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}",
+        "GET",
+    ): v2_public.get_marrvel_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/clinvar/searches",
+        "POST",
+    ): v2_public.create_clinvar_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/clinvar/searches/{search_id}",
+        "GET",
+    ): v2_public.get_clinvar_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/clinical_trials/searches",
+        "POST",
+    ): v2_public.create_clinicaltrials_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/clinical_trials/searches/{search_id}",
+        "GET",
+    ): v2_public.get_clinicaltrials_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/uniprot/searches",
+        "POST",
+    ): v2_public.create_uniprot_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/uniprot/searches/{search_id}",
+        "GET",
+    ): v2_public.get_uniprot_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/alphafold/searches",
+        "POST",
+    ): v2_public.create_alphafold_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/alphafold/searches/{search_id}",
+        "GET",
+    ): v2_public.get_alphafold_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/drugbank/searches",
+        "POST",
+    ): v2_public.create_drugbank_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/drugbank/searches/{search_id}",
+        "GET",
+    ): v2_public.get_drugbank_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/mgi/searches",
+        "POST",
+    ): v2_public.create_mgi_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/mgi/searches/{search_id}",
+        "GET",
+    ): v2_public.get_mgi_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/zfin/searches",
+        "POST",
+    ): v2_public.create_zfin_source_search,
+    (
+        "/v2/spaces/{space_id}/sources/zfin/searches/{search_id}",
+        "GET",
+    ): v2_public.get_zfin_source_search,
     ("/v2/spaces/{space_id}/research-plan", "POST"): v2_public.create_research_plan,
     ("/v2/spaces/{space_id}/tasks", "POST"): v2_public.create_task,
     ("/v2/spaces/{space_id}/tasks", "GET"): v2_public.list_tasks,
@@ -140,6 +230,10 @@ _CUSTOM_V1_ROUTE_EQUIVALENTS = {
     ("/v1/spaces/{space_id}/runs/{run_id}/approvals", "GET"),
     ("/v1/spaces/{space_id}/runs/{run_id}/approvals/{approval_key}", "POST"),
     ("/v1/harnesses/{harness_id}", "GET"),
+    ("/v1/spaces/{space_id}/pubmed/searches", "POST"),
+    ("/v1/spaces/{space_id}/pubmed/searches/{job_id}", "GET"),
+    ("/v1/spaces/{space_id}/marrvel/searches", "POST"),
+    ("/v1/spaces/{space_id}/marrvel/searches/{result_id}", "GET"),
     ("/v1/spaces/{space_id}/agents/research-bootstrap/runs", "POST"),
     ("/v1/spaces/{space_id}/agents/graph-curation/runs", "POST"),
     (
@@ -182,6 +276,11 @@ _USER_FACING_V1_ROUTERS = (
     harnesses.router,
 )
 _UUID = "11111111-1111-1111-1111-111111111111"
+_AUTH_HEADERS = {
+    "X-TEST-USER-ID": _UUID,
+    "X-TEST-USER-EMAIL": "v2-routes@example.com",
+    "X-TEST-USER-ROLE": "researcher",
+}
 
 
 def _routes_by_path_method() -> dict[RouteKey, APIRoute]:
@@ -195,7 +294,9 @@ def _routes_by_path_method() -> dict[RouteKey, APIRoute]:
 
 
 def _v2_alias_keys() -> set[RouteKey]:
-    return {(target_path, method) for _, method, _, target_path, _, _ in v2_public._ALIASES}
+    return {
+        (target_path, method) for _, method, _, target_path, _, _ in v2_public._ALIASES
+    }
 
 
 def _expected_v2_keys() -> set[RouteKey]:
@@ -258,6 +359,8 @@ def _concrete_v2_path(path: str) -> str:
         "{candidate_index}": "0",
         "{item_id}": "proposal:11111111-1111-1111-1111-111111111111",
         "{template_id}": "research-bootstrap",
+        "{source_key}": "pubmed",
+        "{search_id}": _UUID,
     }
     concrete = path
     for parameter, value in replacements.items():
@@ -271,7 +374,8 @@ def test_every_v2_route_is_covered_by_the_route_contract() -> None:
     actual_v2_keys = {
         (path, method)
         for path, method in routes
-        if path.startswith("/v2/") and method in {"GET", "POST", "PATCH", "DELETE", "PUT"}
+        if path.startswith("/v2/")
+        and method in {"GET", "POST", "PATCH", "DELETE", "PUT"}
     }
 
     assert actual_v2_keys == _expected_v2_keys()
@@ -280,8 +384,7 @@ def test_every_v2_route_is_covered_by_the_route_contract() -> None:
 def test_every_user_facing_v1_route_has_v2_coverage() -> None:
     """Every intended public v1 endpoint should have a v2 alias or wrapper."""
     alias_sources = {
-        (source_path, method)
-        for _, method, source_path, _, _, _ in v2_public._ALIASES
+        (source_path, method) for _, method, source_path, _, _, _ in v2_public._ALIASES
     }
     covered_sources = alias_sources | _CUSTOM_V1_ROUTE_EQUIVALENTS
 
@@ -291,12 +394,10 @@ def test_every_user_facing_v1_route_has_v2_coverage() -> None:
 def test_v2_alias_table_has_no_duplicate_source_or_target_routes() -> None:
     """Duplicate route pairs can hide missing coverage or ambiguous dispatch."""
     sources = [
-        (source_path, method)
-        for _, method, source_path, _, _, _ in v2_public._ALIASES
+        (source_path, method) for _, method, source_path, _, _, _ in v2_public._ALIASES
     ]
     targets = [
-        (target_path, method)
-        for _, method, _, target_path, _, _ in v2_public._ALIASES
+        (target_path, method) for _, method, _, target_path, _, _ in v2_public._ALIASES
     ]
 
     assert len(set(sources)) == len(sources)
@@ -306,6 +407,115 @@ def test_v2_alias_table_has_no_duplicate_source_or_target_routes() -> None:
 def test_every_v2_route_is_exposed_in_openapi() -> None:
     """Generated OpenAPI should expose the same v2 paths that the app serves."""
     assert _openapi_v2_keys() == _expected_v2_keys()
+
+
+def test_source_search_openapi_keeps_typed_routes_and_capture_contract() -> None:
+    """Source-search OpenAPI keeps typed compatibility plus generic capture metadata."""
+    document = create_app().openapi()
+    paths = cast("dict[str, dict[str, object]]", document["paths"])
+
+    generic_post = cast(
+        "dict[str, object]",
+        paths["/v2/spaces/{space_id}/sources/{source_key}/searches"]["post"],
+    )
+    assert "404" in generic_post["responses"]
+    assert "501" in generic_post["responses"]
+    generic_response = cast(
+        "dict[str, object]",
+        cast("dict[str, object]", generic_post["responses"])["201"],
+    )
+    generic_schema = cast(
+        "dict[str, object]",
+        cast("dict[str, object]", generic_response["content"])["application/json"],
+    )["schema"]
+    assert generic_schema == {"$ref": "#/components/schemas/SourceSearchResponse"}
+
+    typed_pubmed_post = cast(
+        "dict[str, object]",
+        paths["/v2/spaces/{space_id}/sources/pubmed/searches"]["post"],
+    )
+    pubmed_request = cast(
+        "dict[str, object]",
+        cast("dict[str, object]", typed_pubmed_post["requestBody"])["content"],
+    )["application/json"]
+    pubmed_request_schema = cast("dict[str, object]", pubmed_request)["schema"]
+    assert pubmed_request_schema == {"$ref": "#/components/schemas/PubMedSearchRequest"}
+
+    schemas = cast(
+        "dict[str, dict[str, object]]",
+        cast("dict[str, object]", document["components"])["schemas"],
+    )
+    source_search_schema = schemas["SourceSearchResponse"]
+    assert source_search_schema["required"] == ["source_capture"]
+    assert "source_capture" in source_search_schema["properties"]
+    assert "PubMedSourceSearchResponse" in schemas
+    assert "MarrvelSourceSearchResponse" in schemas
+    assert "ClinVarSourceSearchRequest" in schemas
+    assert "ClinVarSourceSearchResponse" in schemas
+    assert "ClinicalTrialsSourceSearchRequest" in schemas
+    assert "ClinicalTrialsSourceSearchResponse" in schemas
+    assert "UniProtSourceSearchRequest" in schemas
+    assert "UniProtSourceSearchResponse" in schemas
+    assert "AlphaFoldSourceSearchRequest" in schemas
+    assert "AlphaFoldSourceSearchResponse" in schemas
+    assert "DrugBankSourceSearchRequest" in schemas
+    assert "DrugBankSourceSearchResponse" in schemas
+    assert "MGISourceSearchRequest" in schemas
+    assert "MGISourceSearchResponse" in schemas
+    assert "ZFINSourceSearchRequest" in schemas
+    assert "ZFINSourceSearchResponse" in schemas
+
+    clinvar_post = cast(
+        "dict[str, object]",
+        paths["/v2/spaces/{space_id}/sources/clinvar/searches"]["post"],
+    )
+    clinvar_request = cast(
+        "dict[str, object]",
+        cast("dict[str, object]", clinvar_post["requestBody"])["content"],
+    )["application/json"]
+    assert cast("dict[str, object]", clinvar_request)["schema"] == {
+        "$ref": "#/components/schemas/ClinVarSourceSearchRequest",
+    }
+
+    clinical_trials_post = cast(
+        "dict[str, object]",
+        paths["/v2/spaces/{space_id}/sources/clinical_trials/searches"]["post"],
+    )
+    clinical_trials_request = cast(
+        "dict[str, object]",
+        cast("dict[str, object]", clinical_trials_post["requestBody"])["content"],
+    )["application/json"]
+    assert cast("dict[str, object]", clinical_trials_request)["schema"] == {
+        "$ref": "#/components/schemas/ClinicalTrialsSourceSearchRequest",
+    }
+
+
+def test_v2_source_endpoints_return_registry_entries_over_http() -> None:
+    client = TestClient(create_app())
+
+    list_response = client.get("/v2/sources", headers=_AUTH_HEADERS)
+
+    assert list_response.status_code == 200
+    payload = list_response.json()
+    expected_sources = list_source_definitions()
+    assert payload["total"] == len(expected_sources)
+    assert [source["source_key"] for source in payload["sources"]] == [
+        source.source_key for source in expected_sources
+    ]
+    direct_sources = {
+        source["source_key"]
+        for source in payload["sources"]
+        if source["direct_search_enabled"]
+    }
+    assert direct_sources == set(direct_search_source_keys())
+
+    get_response = client.get("/v2/sources/clinical-trials", headers=_AUTH_HEADERS)
+
+    assert get_response.status_code == 200
+    source_payload = get_response.json()
+    assert source_payload["source_key"] == "clinical_trials"
+    assert source_payload["request_schema_ref"] == "ClinicalTrialsSourceSearchRequest"
+    assert source_payload["result_schema_ref"] == "ClinicalTrialsSourceSearchResponse"
 
 
 def test_every_v2_endpoint_resolves_over_http() -> None:
@@ -324,7 +534,14 @@ def test_all_v2_aliases_reuse_existing_v1_route_contracts() -> None:
     """Simple v2 aliases should not fork handler behavior or response contracts."""
     routes = _routes_by_path_method()
 
-    for source_router, method, source_path, target_path, summary, tags in v2_public._ALIASES:
+    for (
+        source_router,
+        method,
+        source_path,
+        target_path,
+        summary,
+        tags,
+    ) in v2_public._ALIASES:
         source = v2_public._find_route(
             source_router,
             path=source_path,
@@ -392,7 +609,10 @@ def test_publicize_json_keeps_generic_user_payload_keys_intact() -> None:
     publicized = cast("dict[str, object]", v2_public._publicize_json(payload))
     input_payload = cast(
         "dict[str, object]",
-        cast("dict[str, object]", cast("dict[str, object]", publicized["task"])["input_payload"]),
+        cast(
+            "dict[str, object]",
+            cast("dict[str, object]", publicized["task"])["input_payload"],
+        ),
     )
 
     assert "run" in input_payload

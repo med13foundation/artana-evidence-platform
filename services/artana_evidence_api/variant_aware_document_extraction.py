@@ -236,6 +236,8 @@ def _build_raw_record(
     document: HarnessDocumentRecord,
 ) -> JSONObject:
     metadata = {str(key): to_json_value(value) for key, value in document.metadata.items()}
+    selected_record = json_object_or_empty(metadata.get("selected_record"))
+    metadata = {**selected_record, **metadata}
     text_content = document.text_content.strip()
     raw_record: JSONObject = {
         **metadata,

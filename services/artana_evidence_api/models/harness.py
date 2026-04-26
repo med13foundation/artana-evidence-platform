@@ -16,6 +16,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -434,6 +435,163 @@ class HarnessDocumentModel(Base):
     )
 
 
+class SourceSearchRunModel(Base):
+    """Durable captured direct source-search result."""
+
+    __tablename__ = "source_search_runs"
+
+    id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+    )
+    space_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=False,
+        index=True,
+    )
+    created_by: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=False,
+        index=True,
+    )
+    source_key: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    query: Mapped[str] = mapped_column(Text, nullable=False)
+    query_payload: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    result_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    response_payload: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    source_capture: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_source_search_runs_space_source_created",
+            "space_id",
+            "source_key",
+            "created_at",
+        ),
+        Index("idx_source_search_runs_source_key", "source_key"),
+        Index("idx_source_search_runs_status", "status"),
+        harness_table_options(comment="Durable captured direct source-search runs."),
+    )
+
+
+class SourceSearchHandoffModel(Base):
+    """Durable handoff from captured source search to downstream processing."""
+
+    __tablename__ = "source_search_handoffs"
+
+    id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+    )
+    space_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=False,
+        index=True,
+    )
+    source_key: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    search_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        ForeignKey(
+            qualify_harness_foreign_key_target("source_search_runs.id"),
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+        index=True,
+    )
+    target_kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(256), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    created_by: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=False,
+        index=True,
+    )
+    record_selector_payload: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    search_snapshot_payload: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    source_capture_snapshot: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    handoff_payload: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    target_run_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        ForeignKey(
+            qualify_harness_foreign_key_target("harness_runs.id"),
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+    target_document_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        ForeignKey(
+            qualify_harness_foreign_key_target("harness_documents.id"),
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "space_id",
+            "source_key",
+            "search_id",
+            "target_kind",
+            "idempotency_key",
+            name="uq_source_search_handoffs_idempotency",
+        ),
+        Index(
+            "idx_source_search_handoffs_space_source_search",
+            "space_id",
+            "source_key",
+            "search_id",
+        ),
+        harness_table_options(
+            comment="Durable handoffs from source-search captures to documents.",
+        ),
+    )
+
+
 class HarnessScheduleModel(Base):
     """Durable schedule definitions for graph-harness workflows."""
 
@@ -717,4 +875,5 @@ __all__ = [
     "HarnessResearchStateModel",
     "HarnessRunModel",
     "HarnessScheduleModel",
+    "SourceSearchRunModel",
 ]

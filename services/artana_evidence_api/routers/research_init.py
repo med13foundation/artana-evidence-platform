@@ -49,6 +49,7 @@ from artana_evidence_api.research_init_helpers import (
     _run_marrvel_enrichment,
     _select_candidates_for_ingestion,
     _shortlist_candidates_for_llm_review,
+    _unknown_source_preference_keys,
 )
 from artana_evidence_api.research_init_runtime import (
     deserialize_pubmed_replay_bundle,
@@ -57,6 +58,7 @@ from artana_evidence_api.research_init_runtime import (
     store_pubmed_replay_bundle_artifact,
 )
 from artana_evidence_api.routers.runs import HarnessRunResponse
+from artana_evidence_api.source_registry import research_plan_source_keys
 from artana_evidence_api.types.common import (  # noqa: TC001
     JSONObject,
 )
@@ -202,6 +204,16 @@ async def create_research_init(  # noqa: PLR0913, PLR0915
         request_sources=request.sources,
         space_settings=space_record.settings if space_record is not None else None,
     )
+    unknown_sources = _unknown_source_preference_keys(request.sources)
+    if unknown_sources:
+        supported_sources = ", ".join(research_plan_source_keys())
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Unknown research source(s): "
+                f"{', '.join(unknown_sources)}. Supported sources: {supported_sources}."
+            ),
+        )
     orchestration_mode = _resolve_research_orchestration_mode(
         request_mode=request.orchestration_mode,
         space_settings=space_record.settings if space_record is not None else None,

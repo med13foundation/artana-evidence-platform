@@ -97,6 +97,13 @@ def test_create_enrichment_document_marks_ingestion_run_completed(
     )
     assert ingestion_run is not None
     assert ingestion_run.status == "completed"
+    source_capture = document.metadata["source_capture"]
+    assert isinstance(source_capture, dict)
+    assert source_capture["source_key"] == "clinical_trials"
+    assert source_capture["capture_stage"] == "source_document"
+    assert source_capture["capture_method"] == "research_plan"
+    assert source_capture["run_id"] == document.ingestion_run_id
+    assert source_capture["provenance"]["parent_run_id"] == parent_run.id
 
 
 # ---------------------------------------------------------------------------

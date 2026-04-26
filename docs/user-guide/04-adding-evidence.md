@@ -45,6 +45,22 @@ PDFs are enriched during extraction, not at upload time.
 
 Use this when you want discovery before review.
 
+List source capabilities first:
+
+```bash
+curl -s "$ARTANA_API_BASE_URL/v2/sources" \
+  -H "X-Artana-Key: $ARTANA_API_KEY"
+```
+
+Direct source search currently supports sources whose capability record has
+`"direct_search_enabled": true`: PubMed, MARRVEL, ClinVar, AlphaFold,
+UniProt, ClinicalTrials.gov, MGI, and ZFIN. DrugBank also supports direct
+search when `DRUGBANK_API_KEY` is configured. MONDO is an ontology-grounding
+source, not a bounded direct-search endpoint. Text and PDF are document-capture
+sources. Direct source-search responses are durable captured source results:
+the search result can be fetched later by id, but it is not promoted into the
+trusted graph until downstream extraction, proposal, and review steps approve it.
+
 Search PubMed:
 
 ```bash
@@ -73,9 +89,39 @@ curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/marrvel/searches" \
   }'
 ```
 
-Normal researcher workflows should prefer search plus governed follow-up review.
-`POST /v2/spaces/{space_id}/sources/marrvel/ingestion` exists, but it is an advanced
-direct-write path.
+Search ClinVar:
+
+```bash
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/clinvar/searches" \
+  -H "X-Artana-Key: $ARTANA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gene_symbol": "MED13",
+    "clinical_significance": ["Pathogenic"],
+    "max_results": 20
+  }'
+```
+
+Search ClinicalTrials.gov:
+
+```bash
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/clinical_trials/searches" \
+  -H "X-Artana-Key: $ARTANA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "MED13 cardiomyopathy",
+    "max_results": 20
+  }'
+```
+
+Search responses from the generic v2 source route include a `source_capture`
+object. Use it to trace a result back to its source key, source family, query,
+locator, search id, and provenance before you decide what to extract or review.
+
+Direct source search captures the search result. It does not silently promote
+trusted graph knowledge. Normal researcher workflows should follow search with
+document capture/extraction or a `research-plan` run so proposed updates move
+through review.
 
 ## 3. Run A Multi-Source Setup
 

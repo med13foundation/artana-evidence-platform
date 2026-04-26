@@ -26,6 +26,12 @@ from artana_evidence_api.source_enrichment_bridges import (
     build_uniprot_gateway,
     build_zfin_gateway,
 )
+from artana_evidence_api.source_result_capture import (
+    SourceCaptureStage,
+    attach_source_capture_metadata,
+    compact_provenance,
+    source_result_capture_metadata,
+)
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 
 if TYPE_CHECKING:
@@ -788,6 +794,13 @@ def _create_enrichment_document(
         run_id=ingestion_run.id,
         status="completed",
     )
+    document_metadata = _enrichment_document_metadata_with_capture(
+        source_type=source_type,
+        metadata=metadata,
+        sha256=sha256,
+        ingestion_run_id=ingestion_run.id,
+        parent_run_id=parent_run.id,
+    )
 
     return document_store.create_document(
         space_id=space_id,
@@ -806,8 +819,67 @@ def _create_enrichment_document(
         last_enrichment_run_id=None,
         enrichment_status="skipped",
         extraction_status="not_started",
-        metadata=metadata,
+        metadata=document_metadata,
     )
+
+
+def _enrichment_document_metadata_with_capture(
+    *,
+    source_type: str,
+    metadata: JSONObject,
+    sha256: str,
+    ingestion_run_id: str,
+    parent_run_id: str,
+) -> JSONObject:
+    """Attach normalized source-capture metadata to enrichment documents."""
+
+    query = _metadata_first_text(metadata, ("gene_symbol", "query_term"))
+    result_count = _metadata_first_count(
+        metadata,
+        (
+            "record_count",
+            "variant_count",
+            "prediction_count",
+            "trial_count",
+            "gene_count",
+            "panel_count",
+        ),
+    )
+    source_capture = source_result_capture_metadata(
+        source_key=source_type,
+        capture_stage=SourceCaptureStage.SOURCE_DOCUMENT,
+        capture_method="research_plan",
+        locator=f"{source_type}:document:{sha256[:16]}",
+        external_id=query,
+        run_id=ingestion_run_id,
+        query=query,
+        result_count=result_count,
+        provenance=compact_provenance(
+            source=metadata.get("source"),
+            parent_run_id=parent_run_id,
+            sha256=sha256,
+        ),
+    )
+    return attach_source_capture_metadata(
+        metadata=metadata,
+        source_capture=source_capture,
+    )
+
+
+def _metadata_first_text(metadata: JSONObject, keys: tuple[str, ...]) -> str | None:
+    for key in keys:
+        value = metadata.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    return None
+
+
+def _metadata_first_count(metadata: JSONObject, keys: tuple[str, ...]) -> int | None:
+    for key in keys:
+        value = metadata.get(key)
+        if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            return value
+    return None
 
 
 # ---------------------------------------------------------------------------

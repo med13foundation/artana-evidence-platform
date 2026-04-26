@@ -61,6 +61,10 @@ from artana_evidence_api.source_document_bridges import (
     SourceDocument,
     SqlAlchemySourceDocumentRepository,
 )
+from artana_evidence_api.source_registry import (
+    SourceCapability,
+    research_plan_source_keys,
+)
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityEmbeddingRefreshRequest,
     KernelEntityEmbeddingRefreshResponse,
@@ -425,7 +429,9 @@ async def test_select_candidates_for_ingestion_falls_back_to_heuristics_on_llm_e
         del candidate, objective
         raise RuntimeError("synthetic llm outage")
 
-    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _raise_llm_error)
+    monkeypatch.setattr(
+        research_init_helpers, "_review_candidate_with_llm", _raise_llm_error
+    )
 
     selected = await research_init._select_candidates_for_ingestion(
         [candidate],
@@ -471,7 +477,9 @@ async def test_select_candidates_for_ingestion_falls_back_to_heuristics_on_llm_t
             rationale="slow success",
         )
 
-    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _slow_llm_review)
+    monkeypatch.setattr(
+        research_init_helpers, "_review_candidate_with_llm", _slow_llm_review
+    )
     monkeypatch.setattr(research_init_helpers, "_LLM_RELEVANCE_TIMEOUT_SECONDS", 0.01)
 
     selected = await research_init._select_candidates_for_ingestion(
@@ -516,7 +524,9 @@ async def test_select_candidates_for_ingestion_keeps_llm_non_relevant_rejections
             rationale="not aligned enough",
         )
 
-    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _reject_with_llm)
+    monkeypatch.setattr(
+        research_init_helpers, "_review_candidate_with_llm", _reject_with_llm
+    )
 
     selected = await research_init._select_candidates_for_ingestion(
         [candidate],
@@ -567,7 +577,9 @@ async def test_select_candidates_for_ingestion_reviews_llm_shortlist_concurrentl
         finally:
             current_concurrency -= 1
 
-    monkeypatch.setattr(research_init_helpers, "_review_candidate_with_llm", _track_concurrency)
+    monkeypatch.setattr(
+        research_init_helpers, "_review_candidate_with_llm", _track_concurrency
+    )
 
     selected = await research_init._select_candidates_for_ingestion(
         candidates,
@@ -4389,6 +4401,13 @@ async def test_execute_research_init_uses_pubmed_replay_bundle_without_live_quer
         "baseline-pubmed-doc-1"
     )
     assert documents[0].metadata["document_extraction_replayed"] is True
+    source_capture = documents[0].metadata["source_capture"]
+    assert isinstance(source_capture, dict)
+    assert source_capture["source_key"] == "pubmed"
+    assert source_capture["capture_stage"] == "source_document"
+    assert source_capture["capture_method"] == "research_plan"
+    assert source_capture["external_id"] == "pmid-replay"
+    assert source_capture["locator"] == "pubmed:pmid-replay"
 
 
 @pytest.mark.asyncio
@@ -6720,22 +6739,29 @@ def test_build_source_results_mondo_pending_by_default() -> None:
 def test_build_source_results_includes_all_expected_source_keys() -> None:
     """_build_source_results returns entries for all known sources."""
     result = research_init_runtime._build_source_results(sources={})
-    expected_keys = {
-        "pubmed",
-        "marrvel",
-        "pdf",
-        "text",
-        "clinvar",
-        "mondo",
-        "drugbank",
-        "alphafold",
-        "uniprot",
-        "hgnc",
-        "clinical_trials",
-        "mgi",
-        "zfin",
-    }
+    expected_keys = set(research_plan_source_keys())
     assert set(result.keys()) == expected_keys
+
+
+def test_build_source_results_includes_registry_metadata() -> None:
+    """Research-plan source summaries use the public source registry language."""
+    result = research_init_runtime._build_source_results(sources={})
+
+    assert result["pubmed"]["source_key"] == "pubmed"
+    assert result["pubmed"]["display_name"] == "PubMed"
+    assert SourceCapability.SEARCH.value in result["pubmed"]["capabilities"]
+    assert result["pubmed"]["direct_search_enabled"] is True
+    assert result["clinvar"]["direct_search_enabled"] is True
+    assert result["clinical_trials"]["direct_search_enabled"] is True
+    assert result["uniprot"]["direct_search_enabled"] is True
+    assert result["alphafold"]["direct_search_enabled"] is True
+    assert result["drugbank"]["direct_search_enabled"] is True
+    assert result["mgi"]["direct_search_enabled"] is True
+    assert result["zfin"]["direct_search_enabled"] is True
+    assert result["mondo"]["direct_search_enabled"] is False
+    assert result["clinvar"]["research_plan_enabled"] is True
+    assert "source_result_capture" in result["clinvar"]
+    assert "proposal_flow" in result["clinvar"]
 
 
 def test_build_source_results_uniprot_skipped_by_default() -> None:
@@ -6827,9 +6853,9 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
 
     # All sources start as "pending" when enabled.
     for key in source_results:
-        assert (
-            source_results[key]["status"] == "pending"
-        ), f"Expected {key!r} to start as 'pending', got {source_results[key]['status']!r}"
+        assert source_results[key]["status"] == "pending", (
+            f"Expected {key!r} to start as 'pending', got {source_results[key]['status']!r}"
+        )
 
     # Apply the deferred-marking loop exactly as in execute_research_init_run.
     for pending_source in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
@@ -7002,6 +7028,7 @@ async def test_execute_research_init_marks_pending_sources_as_deferred(
         "execute_research_bootstrap_run",
         _fake_execute_bootstrap,
     )
+
     class _StubOntologyIngestionSummary:
         def __init__(self) -> None:
             self.terms_imported = 0
@@ -7233,6 +7260,7 @@ async def test_execute_research_init_honors_guarded_structured_source_subset(
         "execute_research_bootstrap_run",
         _fake_execute_bootstrap,
     )
+
     class _StubOntologyIngestionSummary:
         def __init__(self) -> None:
             self.terms_imported = 0
@@ -7398,7 +7426,9 @@ def test_ground_candidate_claim_drafts_tracks_surfaced_entity_ids() -> None:
             return {"id": created_entity_id}
 
     original_resolve = research_init_observation_bridge.resolve_graph_entity_label
-    research_init_observation_bridge.resolve_graph_entity_label = _fake_resolve_graph_entity_label
+    research_init_observation_bridge.resolve_graph_entity_label = (
+        _fake_resolve_graph_entity_label
+    )
     try:
         grounded_drafts, surfaced_entity_ids, created_entity_ids, errors = (
             research_init_runtime._ground_candidate_claim_drafts(
@@ -7572,7 +7602,9 @@ def test_ground_replay_candidate_claim_drafts_grounds_labels_in_current_space() 
     )
 
     original_resolve = research_init_observation_bridge.resolve_graph_entity_label
-    research_init_observation_bridge.resolve_graph_entity_label = _fake_resolve_graph_entity_label
+    research_init_observation_bridge.resolve_graph_entity_label = (
+        _fake_resolve_graph_entity_label
+    )
     try:
         grounded_drafts, surfaced_entity_ids, created_entity_ids, errors = (
             research_init_runtime._ground_replay_candidate_claim_drafts(
