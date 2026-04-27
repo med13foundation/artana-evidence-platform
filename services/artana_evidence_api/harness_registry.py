@@ -127,6 +127,37 @@ _HARNESS_TEMPLATES: tuple[HarnessTemplate, ...] = (
         ),
     ),
     HarnessTemplate(
+        id="evidence-selection",
+        display_name="Evidence Selection Harness",
+        summary=(
+            "Select relevant durable source-search records from a research goal "
+            "and create review-gated source handoffs."
+        ),
+        tool_groups=(
+            "source-discovery",
+            "source-screening",
+            "source-handoff",
+            "artifact-write",
+            "research-state-read",
+        ),
+        outputs=(
+            "evidence-selection-result",
+            "source-selection-decisions",
+            "source-handoffs",
+            "workspace-snapshot",
+        ),
+        preloaded_skill_names=(
+            "graph_harness.source_inventory",
+            "graph_harness.source_relevance",
+        ),
+        allowed_skill_names=(
+            "graph_harness.source_inventory",
+            "graph_harness.source_relevance",
+            "graph_harness.literature_refresh",
+            "graph_harness.hypothesis_staging",
+        ),
+    ),
+    HarnessTemplate(
         id="research-init",
         display_name="Research Init Harness",
         summary="Queue and execute the first research pass for one research space.",

@@ -37,6 +37,7 @@ ENV/
 *.log
 logs/
 *.pid
+.claude/
 
 # Type checker caches
 .mypy_cache/

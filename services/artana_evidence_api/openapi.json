@@ -2711,6 +2711,571 @@
         "title": "EvidenceItem",
         "type": "object"
       },
+      "EvidenceSelectionCandidateSearchRequest": {
+        "description": "Saved source-search run to screen during an evidence-selection pass.",
+        "properties": {
+          "max_records": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Records"
+          },
+          "search_id": {
+            "format": "uuid",
+            "title": "Search Id",
+            "type": "string"
+          },
+          "source_key": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Source Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_key",
+          "search_id"
+        ],
+        "title": "EvidenceSelectionCandidateSearchRequest",
+        "type": "object"
+      },
+      "EvidenceSelectionFollowUpRequest": {
+        "description": "Request payload for adding instructions to an existing research run.",
+        "properties": {
+          "candidate_searches": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSelectionCandidateSearchRequest"
+            },
+            "maxItems": 100,
+            "title": "Candidate Searches",
+            "type": "array"
+          },
+          "evidence_types": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Evidence Types",
+            "type": "array"
+          },
+          "exclusion_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Exclusion Criteria",
+            "type": "array"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "inclusion_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Inclusion Criteria",
+            "type": "array"
+          },
+          "instructions": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Instructions",
+            "type": "string"
+          },
+          "max_handoffs": {
+            "default": 20,
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Max Handoffs",
+            "type": "integer"
+          },
+          "max_records_per_search": {
+            "default": 3,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Records Per Search",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "guarded",
+            "enum": [
+              "shadow",
+              "guarded"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "planner_mode": {
+            "default": "model",
+            "enum": [
+              "model",
+              "deterministic"
+            ],
+            "title": "Planner Mode",
+            "type": "string"
+          },
+          "population_context": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Population Context"
+          },
+          "priority_outcomes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Priority Outcomes",
+            "type": "array"
+          },
+          "proposal_mode": {
+            "const": "review_required",
+            "default": "review_required",
+            "title": "Proposal Mode",
+            "type": "string"
+          },
+          "source_searches": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSelectionSourceSearchRequest"
+            },
+            "maxItems": 50,
+            "title": "Source Searches",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 25,
+            "title": "Sources",
+            "type": "array"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "instructions"
+        ],
+        "title": "EvidenceSelectionFollowUpRequest",
+        "type": "object"
+      },
+      "EvidenceSelectionRunRequest": {
+        "description": "Request payload for one goal-driven evidence-selection run.",
+        "properties": {
+          "candidate_searches": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSelectionCandidateSearchRequest"
+            },
+            "maxItems": 100,
+            "title": "Candidate Searches",
+            "type": "array"
+          },
+          "evidence_types": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Evidence Types",
+            "type": "array"
+          },
+          "exclusion_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Exclusion Criteria",
+            "type": "array"
+          },
+          "goal": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Goal",
+            "type": "string"
+          },
+          "inclusion_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Inclusion Criteria",
+            "type": "array"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "max_handoffs": {
+            "default": 20,
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Max Handoffs",
+            "type": "integer"
+          },
+          "max_records_per_search": {
+            "default": 3,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Records Per Search",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "guarded",
+            "enum": [
+              "shadow",
+              "guarded"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "planner_mode": {
+            "default": "model",
+            "enum": [
+              "model",
+              "deterministic"
+            ],
+            "title": "Planner Mode",
+            "type": "string"
+          },
+          "population_context": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Population Context"
+          },
+          "priority_outcomes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Priority Outcomes",
+            "type": "array"
+          },
+          "proposal_mode": {
+            "const": "review_required",
+            "default": "review_required",
+            "title": "Proposal Mode",
+            "type": "string"
+          },
+          "source_searches": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSelectionSourceSearchRequest"
+            },
+            "maxItems": 50,
+            "title": "Source Searches",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 25,
+            "title": "Sources",
+            "type": "array"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "goal"
+        ],
+        "title": "EvidenceSelectionRunRequest",
+        "type": "object"
+      },
+      "EvidenceSelectionRunResponse": {
+        "description": "Completed evidence-selection run response.",
+        "properties": {
+          "artifact_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Artifact Keys",
+            "type": "array"
+          },
+          "deferred_count": {
+            "title": "Deferred Count",
+            "type": "integer"
+          },
+          "deferred_records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Deferred Records",
+            "type": "array"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "handoff_count": {
+            "title": "Handoff Count",
+            "type": "integer"
+          },
+          "handoffs": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Handoffs",
+            "type": "array"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "mode": {
+            "enum": [
+              "shadow",
+              "guarded"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "planner_mode": {
+            "default": "deterministic",
+            "enum": [
+              "model",
+              "deterministic"
+            ],
+            "title": "Planner Mode",
+            "type": "string"
+          },
+          "proposal_count": {
+            "title": "Proposal Count",
+            "type": "integer"
+          },
+          "proposals": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Proposals",
+            "type": "array"
+          },
+          "review_gate": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Review Gate",
+            "type": "object"
+          },
+          "review_item_count": {
+            "title": "Review Item Count",
+            "type": "integer"
+          },
+          "review_items": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Review Items",
+            "type": "array"
+          },
+          "run": {
+            "$ref": "#/components/schemas/HarnessRunResponse"
+          },
+          "selected_count": {
+            "title": "Selected Count",
+            "type": "integer"
+          },
+          "selected_records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Selected Records",
+            "type": "array"
+          },
+          "skipped_count": {
+            "title": "Skipped Count",
+            "type": "integer"
+          },
+          "skipped_records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Skipped Records",
+            "type": "array"
+          },
+          "source_plan": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Source Plan",
+            "type": "object"
+          },
+          "workspace_snapshot": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Workspace Snapshot",
+            "type": "object"
+          }
+        },
+        "required": [
+          "run",
+          "goal",
+          "mode",
+          "source_plan",
+          "workspace_snapshot",
+          "selected_records",
+          "skipped_records",
+          "deferred_records",
+          "handoffs",
+          "proposals",
+          "review_items",
+          "selected_count",
+          "skipped_count",
+          "deferred_count",
+          "handoff_count",
+          "proposal_count",
+          "review_item_count",
+          "errors",
+          "review_gate",
+          "artifact_keys"
+        ],
+        "title": "EvidenceSelectionRunResponse",
+        "type": "object"
+      },
+      "EvidenceSelectionSourceSearchRequest": {
+        "description": "Source-search request the harness should create before screening.",
+        "properties": {
+          "max_records": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Records"
+          },
+          "query_payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Input"
+            },
+            "title": "Query Payload",
+            "type": "object"
+          },
+          "source_key": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Source Key",
+            "type": "string"
+          },
+          "timeout_seconds": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 120.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout Seconds"
+          }
+        },
+        "required": [
+          "source_key"
+        ],
+        "title": "EvidenceSelectionSourceSearchRequest",
+        "type": "object"
+      },
       "FactAssessment": {
         "description": "Structured qualitative assessment for one fact or candidate.",
         "properties": {
@@ -14260,6 +14825,192 @@
         ]
       }
     },
+    "/v1/spaces/{space_id}/agents/evidence-selection/runs": {
+      "post": {
+        "description": "Queue one evidence-selection run and wait for a sync result when possible.",
+        "operationId": "create_evidence_selection_run_v1_spaces__space_id__agents_evidence_selection_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Prefer",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prefer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceSelectionRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceSelectionRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessAcceptedRunResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start one goal-driven evidence-selection run",
+        "tags": [
+          "evidence-selection-runs"
+        ]
+      }
+    },
+    "/v1/spaces/{space_id}/agents/evidence-selection/runs/{parent_run_id}/follow-ups": {
+      "post": {
+        "description": "Queue one follow-up run inside the same research space.",
+        "operationId": "create_evidence_selection_follow_up_run_v1_spaces__space_id__agents_evidence_selection_runs__parent_run_id__follow_ups_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "parent_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parent Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Prefer",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prefer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceSelectionFollowUpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceSelectionRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessAcceptedRunResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start one evidence-selection follow-up run",
+        "tags": [
+          "evidence-selection-runs"
+        ]
+      }
+    },
     "/v1/spaces/{space_id}/agents/full-ai-orchestrator/runs": {
       "post": {
         "description": "Queue and execute the deterministic Phase 1 orchestrator baseline.",
@@ -21630,6 +22381,192 @@
         "summary": "Export evidence map",
         "tags": [
           "evidence-map"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/evidence-runs": {
+      "post": {
+        "description": "Start the goal-driven evidence-selection front door.",
+        "operationId": "create_evidence_run_v2_spaces__space_id__evidence_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Prefer",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prefer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceSelectionRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceSelectionRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessAcceptedRunResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start evidence run",
+        "tags": [
+          "research"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups": {
+      "post": {
+        "description": "Continue an existing evidence run inside the same research space.",
+        "operationId": "create_evidence_run_follow_up_v2_spaces__space_id__evidence_runs__evidence_run_id__follow_ups_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evidence_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evidence Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Prefer",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prefer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceSelectionFollowUpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceSelectionRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessAcceptedRunResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start evidence-run follow-up",
+        "tags": [
+          "research"
         ]
       }
     },
