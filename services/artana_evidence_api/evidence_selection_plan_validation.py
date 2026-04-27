@@ -7,8 +7,8 @@ from collections.abc import Sequence
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
     EvidenceSelectionSourceSearchError,
-    validate_live_source_search,
 )
+from artana_evidence_api.source_adapters import require_source_adapter
 from artana_evidence_api.source_registry import get_source_definition
 
 LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS = 120.0
@@ -175,7 +175,9 @@ def _validate_source_search_payload(
     source_search: EvidenceSelectionLiveSourceSearch,
 ) -> None:
     try:
-        validate_live_source_search(source_search)
+        require_source_adapter(source_search.source_key).validate_live_search(
+            source_search,
+        )
     except (EvidenceSelectionSourceSearchError, ValueError) as exc:
         msg = (
             "Planner returned invalid source_searches query_payload for "

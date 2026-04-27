@@ -1,570 +1,881 @@
-# Issues #16 And #17 Evidence Discovery Tracker
+# SRP Hardening Plan: Source Adapters, Candidate Generation, And Extraction
 
-Status date: April 27, 2026.
+## Purpose
 
-This file is the working progress tracker for:
+Make the Evidence API datasource, candidate-generation, and extraction pipeline
+fully single-responsibility and strongly encapsulated.
 
-- [#16 Clarify source boundaries before scaling agentic evidence selection](https://github.com/med13foundation/artana-evidence-platform/issues/16)
-- [#17 Build agentic evidence discovery on top of durable source search](https://github.com/med13foundation/artana-evidence-platform/issues/17)
+Current status: the main source-adapter, candidate-generation, source-document,
+and extraction-service SRP slices are implemented and the Evidence API service
+gate passes. The work is not completely closed because runtime serialization
+cleanup and the larger `document_extraction.py` decomposition remain.
 
-This tracker now records the docs-first pass plus the first implementation
-slice for source boundaries and agentic evidence discovery. It does not change
-public API contracts, OpenAPI artifacts, migrations, or generated coverage
-files.
+This plan starts from first principles:
 
-## Origin / Superseded Plan
+- A source should own its own behavior, not require scattered source-specific
+  conditionals across runtime modules.
+- Candidate generation should create, score, deduplicate, and classify
+  candidates through focused services with narrow contracts.
+- Extraction should turn selected evidence into reviewable proposals through
+  source-owned policy and extraction adapters, not broad orchestration modules.
+- Runtime orchestration should sequence services and persist artifacts; it should
+  not also contain the detailed ranking, staging, extraction, and graph-write
+  rules.
 
-The previous long plan described the first-principles product loop:
-
-```text
-research space
-  -> agent selects relevant source records from a goal and instructions
-  -> selected records become source documents and reviewable proposals
-  -> human/governance review decides what becomes trusted graph knowledge
-```
-
-That direction still stands. The old phase checklist is now superseded because
-the checked-out repo already contains much of the evidence-selection baseline.
-This tracker keeps the original principle but separates landed implementation
-from the remaining work in issues #16 and #17.
-
-## Product Guardrails
-
-These guardrails are still active product requirements, not historical notes:
-
-- The agent is the first relevance filter; the human/governance workflow is the
-  trust gate.
-- Retrieved records and extracted outputs are candidate evidence, not trusted
-  graph knowledge.
-- Agentic discovery must not make clinical, diagnostic, regulatory, causal, or
-  treatment recommendations.
-- A run is not a systematic review unless protocol fields, search accounting,
-  exclusion accounting, and human review decisions are captured.
-- Evidence outputs must preserve source provenance, stable source identifiers
-  or record hashes, selection/skipped/deferred reasons, source family, evidence
-  type, uncertainty, and reviewer-facing caveats.
-- Live external API checks remain opt-in because they depend on credentials,
-  source availability, network behavior, and rate limits.
+This is the active progress tracker for the next architecture pass. Keep updates
+append-only where possible and mark progress honestly against live code.
 
 ## Current Live State
 
-These items are backed by files in the current checkout. They should still be
-re-verified with service checks before any issue is closed.
+### Already Stronger
 
-- Evidence API owns the goal-driven workflow. Graph persistence and trusted
-  graph governance remain outside this tracker in `services/artana_evidence_db`.
-- Public evidence-run routes exist through
-  `services/artana_evidence_api/routers/v2_public.py` and
-  `services/artana_evidence_api/routers/evidence_selection_runs.py`.
-- The evidence-selection runtime exists in
-  `services/artana_evidence_api/evidence_selection_runtime.py` and queues
-  `harness_id="evidence-selection"`.
-- Harness registration and worker execution know about `evidence-selection` in
-  `services/artana_evidence_api/harness_registry.py`,
-  `services/artana_evidence_api/harness_runtime.py`, and
-  `services/artana_evidence_api/worker.py`.
-- The source-relevance runtime skill exists at
-  `services/artana_evidence_api/runtime_skills/orchestration/source_relevance/SKILL.md`.
-- Model and deterministic source planning exist through
-  `services/artana_evidence_api/evidence_selection_model_planner.py` and
-  `services/artana_evidence_api/evidence_selection_source_planning.py`.
-- Typed source-query playbooks now live in
-  `services/artana_evidence_api/evidence_selection_source_playbooks.py`.
-  They define source-specific objective intents, required inputs, query-payload
-  builders, interpretation hints, handoff eligibility, and non-goals for all
-  direct-search sources.
-- Supported live source-search execution exists through
-  `services/artana_evidence_api/evidence_selection_source_search.py`, reusing
-  existing direct-search gateway behavior rather than introducing parallel
-  source clients.
-- Source-owned record policies now live in
-  `services/artana_evidence_api/source_policies.py`. Handoff provider IDs,
-  source families, normalized selected-record payloads, target kind, and
-  variant-aware recommendation rules are read through these policies instead
-  of growing central handoff maps.
-- Durable selected-record handoff exists through
-  `services/artana_evidence_api/source_search_handoff.py`.
-- Review-gated extraction/proposal behavior is represented in
-  `services/artana_evidence_api/evidence_selection_extraction_policy.py` and
-  the proposal/review-item staging paths called by the runtime.
-- Product and validation docs already describe the evidence-selection harness
-  and shadow-review validation in:
-  - `docs/architecture/evidence-selection-harness.md`
-  - `docs/validation/evidence-selection-validation.md`
-  - `docs/validation/evidence-selection-review-template.md`
-- Focused tests already exist for the main evidence-selection surfaces:
-  - `services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py`
-  - `services/artana_evidence_api/tests/unit/test_evidence_selection_router.py`
-  - `services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py`
-  - `services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py`
-  - `services/artana_evidence_api/tests/unit/test_evidence_selection_benchmarks.py`
-  - `services/artana_evidence_api/tests/unit/test_evidence_selection_validation.py`
-  - `services/artana_evidence_api/tests/unit/test_evidence_selection_extraction_policy.py`
-  - `services/artana_evidence_api/tests/unit/test_source_boundary_contract.py`
-  - `services/artana_evidence_api/tests/unit/test_source_search_handoff.py`
-
-## Issue #16 Tracker: Source Boundaries
-
-Issue #16 is no longer about inventing the whole harness. It is about making
-source responsibilities clearer before more sources are added.
-
-### Done
-
-- Source metadata and capability discovery are centralized in
+- Source metadata is centralized in
   `services/artana_evidence_api/source_registry.py`.
-- Direct source-search request/response models and durable search storage live
-  in `services/artana_evidence_api/direct_source_search.py`.
-- Evidence-selection source execution is separated into
-  `EvidenceSelectionSourceSearchRunner`, which calls existing direct-search
-  services instead of bypassing them.
-- Selected-record handoff has a durable service path and tests.
-- The architecture docs say the harness coordinates lower-level endpoints and
-  does not replace them.
-- `services/artana_evidence_api/source_policies.py` owns record-level handoff
-  policy for PubMed, MARRVEL, ClinVar, ClinicalTrials.gov, UniProt, AlphaFold,
-  DrugBank, MGI, and ZFIN.
-- `source_search_handoff.py` now derives durable handoff support from
-  `source_record_policies()` and delegates provider-id extraction,
-  source-family selection, normalized record payloads, and variant-aware hints
-  to the policy layer.
-- `SourceDefinition` now rejects `direct_search_enabled=True` unless both
-  request and result schema refs are present.
-- `test_source_boundary_contract.py` proves policy/registry alignment for all
-  direct-search sources and gives focused coverage for a simple source
-  (`clinical_trials`) and a variant-aware source (`clinvar`).
+- Source record behavior is centralized in
+  `services/artana_evidence_api/source_policies.py`.
+  - `SourceRecordPolicy` owns provider identifiers, source family,
+    normalization, variant-awareness, request schema, result schema, and handoff
+    target metadata.
+- Agentic query planning is centralized in
+  `services/artana_evidence_api/evidence_selection_source_playbooks.py`.
+  - `SourceQueryPlaybook` owns per-source query payload construction.
+- Source plan validation is isolated in
+  `services/artana_evidence_api/evidence_selection_plan_validation.py`.
+- Review/extraction staging has source-specific policy in
+  `services/artana_evidence_api/evidence_selection_extraction_policy.py`.
+- Variant-aware extraction already has a stronger boundary:
+  - `services/artana_evidence_api/variant_extraction_contracts.py`
+  - `services/artana_evidence_api/variant_extraction_bridges.py`
+  - `services/artana_evidence_api/variant_aware_document_extraction.py`
+- Boundary tests exist:
+  - `services/artana_evidence_api/tests/unit/test_source_boundary_contract.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_extraction_policy.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_plan_validation.py`
 
-### Needs Verification
+### Still Not SRP-Clean Enough
 
-- Confirm the latest `make artana-evidence-api-service-checks` result on this
-  branch before marking #16 implementation slices as fully current.
-- Confirm OpenAPI remains stable if future source-boundary docs mention
-  public contracts.
-- Confirm route tests still cover generic source search, source lookup, and
-  handoff compatibility after any doc wording changes.
+- `services/artana_evidence_api/evidence_selection_runtime.py` is still a
+  central orchestration module at about 1,038 lines, but candidate screening,
+  handoff creation, and review staging have been extracted.
+  - It orchestrates runs.
+  - It runs live source searches.
+  - It applies selection/defer/skip decisions.
+- Candidate decisions now move through screening, handoff creation, review
+  staging, and runtime as typed `EvidenceSelectionCandidateDecision` objects.
+  Runtime serializes them to `JSONObject` payloads only at artifact/API result
+  boundaries.
+- Deferred selected records now carry explicit typed deferral reasons and
+  preserve the original selected relevance label when a selected candidate is
+  demoted by per-search budget, run handoff budget, or shadow mode.
+- `services/artana_evidence_api/source_document_bridges.py` is now a
+  compatibility facade at 87 lines. Source-document models, repository
+  SQL, deterministic extraction, graph writes, and extraction orchestration are
+  split into focused modules.
+- `source_document_bridges.py` still exists as a compatibility import path, but
+  production callers have been migrated to focused modules and an architecture
+  test blocks new production dependencies on the facade.
+- `services/artana_evidence_api/document_extraction.py` is still broad at about
+  2,420 lines.
+  - It owns multiple extraction contracts, review flows, draft building,
+    candidate generation, diagnostics, and review staging concerns.
+- Sources now have one typed adapter surface for metadata, record policy, query
+  playbook, live-search validation, extraction policy, and candidate context.
+  The source-search runner still owns network execution dispatch and remains a
+  future plugin-encapsulation target.
 
-### Remaining
+## Target Architecture
 
-- Document the source-boundary ownership model explicitly:
-  - source registry owns public source metadata and capability flags;
-  - direct source search owns typed query execution and durable search capture;
-  - evidence-selection planning owns goal-to-query intent conversion;
-  - source handoff owns selected-record normalization and source-document
-    creation;
-  - extraction policy owns review/proposal staging behavior.
-- Continue moving future source-specific handoff behavior behind
-  source-owned policy helpers instead of central source-key maps.
-- Decide whether repeated direct-search execution patterns should be extracted
-  into a small helper without changing route shapes or typed response schemas.
-- Keep any future refactor incremental. Do not introduce a broad
-  `EvidenceSourceAdapter` protocol until the harness/tool contract proves it
-  is needed.
+### Source Adapter Boundary
 
-### Out Of Scope For #16
+Introduce a single typed source adapter contract that composes existing
+source-owned behaviors behind one interface.
 
-- Graph-service schema or governance rewrites.
-- Frontend work.
-- Removing typed source request/response models.
-- Collapsing public source contracts into opaque JSON.
+Target responsibilities:
 
-## Issue #17 Tracker: Agentic Evidence Discovery
+- Source identity and metadata.
+- Query payload planning.
+- Live source-search payload validation.
+- Result record normalization.
+- Provider external ID extraction.
+- Variant-aware recommendation.
+- Candidate-screening hints.
+- Extraction/review staging policy.
+- Handoff eligibility and target policy.
 
-Issue #17 tracks the agentic layer above durable source search. The current
-repo already has a goal-driven evidence-selection baseline, so the remaining
-work is to make the discovery contract, validation, and rollout criteria clear.
+The adapter should not perform orchestration, persistence, or external network
+calls directly unless the existing source-search runner pattern is intentionally
+moved into the adapter in a later phase.
+
+Candidate module target:
+
+- `services/artana_evidence_api/source_adapters.py`
+
+Initial adapter shape:
+
+```python
+class EvidenceSourceAdapter(Protocol):
+    source_key: str
+    source_family: str
+
+    def definition(self) -> SourceDefinition: ...
+    def query_playbook(self) -> SourceQueryPlaybook: ...
+    def record_policy(self) -> SourceRecordPolicy: ...
+    def extraction_policy(self) -> EvidenceSelectionExtractionPolicy: ...
+    def validate_live_search(self, search: EvidenceSelectionLiveSourceSearch) -> None: ...
+    def build_candidate_context(self, record: JSONObject) -> JSONObject: ...
+```
+
+The exact names can change during implementation, but the goal should remain:
+callers ask the adapter for source behavior rather than importing many separate
+source registries.
+
+### Candidate Generation Boundary
+
+Extract candidate generation and screening from `evidence_selection_runtime.py`
+into focused modules.
+
+Target modules:
+
+- `services/artana_evidence_api/evidence_selection_candidates.py`
+  - `EvidenceSelectionCandidateSearch`
+  - selected/skipped/deferred decision models
+  - candidate search/result contracts
+- `services/artana_evidence_api/evidence_selection_candidate_screening.py`
+  - term extraction
+  - relevance scoring
+  - exclusion matching
+  - duplicate detection
+  - per-search and run-level candidate limits
+- `services/artana_evidence_api/evidence_selection_candidate_handoffs.py`
+  - selected-record handoff creation
+  - handoff error normalization
+
+Runtime should only call these services in sequence.
+
+### Extraction Boundary
+
+Extract review/extraction staging from `evidence_selection_runtime.py` and split
+large document/source-document modules.
+
+Target modules:
+
+- `services/artana_evidence_api/evidence_selection_review_staging.py`
+  - proposal draft creation for selected source records
+  - review item draft creation
+  - normalized extraction metadata assembly
+- `services/artana_evidence_api/source_document_models.py`
+  - source-document Pydantic models and lifecycle enums
+- `services/artana_evidence_api/source_document_repository.py`
+  - SQLAlchemy repository implementation only
+- `services/artana_evidence_api/source_document_entity_extraction.py`
+  - deterministic entity mention extraction only
+- `services/artana_evidence_api/source_document_graph_writer.py`
+  - graph entity/observation persistence only
+- `services/artana_evidence_api/source_document_extraction_service.py`
+  - orchestration across repository, extractor, graph writer, and metadata
+    updater
+
+Document extraction should be reviewed separately after the candidate/source
+document split. It is the largest file and should be broken down incrementally,
+not in one risky rewrite.
+
+## Workstreams
+
+### Workstream A: Source Adapter Hardening
+
+Status: implemented for first hardening slice; public-contract compatibility
+needs explicit closure
+
+Goals:
+
+- Create a typed source adapter registry that composes:
+  - `SourceDefinition`
+  - `SourceRecordPolicy`
+  - `SourceQueryPlaybook`
+  - `EvidenceSelectionExtractionPolicy`
+  - live source-search validation
+- Replace direct runtime/handoff imports of separate source behavior with adapter
+  calls where practical.
+- Keep existing public contracts stable.
+
+Implementation steps:
+
+- [x] Add adapter protocol/dataclass and registry.
+- [x] Add one adapter per direct-search source:
+  - PubMed
+  - MARRVEL
+  - ClinVar
+  - ClinicalTrials.gov
+  - UniProt
+  - AlphaFold
+  - DrugBank
+  - MGI
+  - ZFIN
+- [x] Make adapter parity tests prove every direct-search source has exactly one
+  adapter.
+- [x] Route query playbook, record policy, extraction policy, and validation
+  lookups through the adapter registry.
+- [x] Keep old helper functions as thin compatibility wrappers until callers are
+  migrated.
+- [x] Add a source-boundary architecture test so production callers cannot
+  import source-owned helper functions directly and bypass the adapter.
+- [x] Make adapter validation canonical-source-key only, keep adapter registry
+  construction lazy, and return stable candidate-context keys.
+- [ ] Verify and document whether canonical-source-key validation is an
+  intentional public contract. If aliases/case variants are still part of the
+  public API, normalize them at ingress before adapter validation.
+
+Acceptance criteria:
+
+- Adding a new direct-search source requires registering one adapter and adding
+  source-specific tests.
+- No runtime module needs its own source-key map for metadata, query planning,
+  extraction policy, or handoff eligibility.
+- Existing OpenAPI behavior remains stable unless an intentional contract change
+  is documented.
+
+### Workstream B: Candidate Generation SRP Cleanup
+
+Status: implemented for the candidate-generation hardening slice; future runtime
+serialization cleanup remains separate
+
+Goals:
+
+- Move candidate search contracts and screening decisions out of
+  `evidence_selection_runtime.py`.
+- Make candidate generation deterministic, testable, and independently
+  reusable.
+- Keep runtime orchestration small and readable.
+
+Implementation steps:
+
+- [x] Move `EvidenceSelectionCandidateSearch` and screening result/decision
+  contracts into a focused candidate module.
+- [x] Extract `_screen_candidate_searches`, `_decision_for_record`,
+  `_decision_is_duplicate`, `_mark_decision_seen`, scoring helpers, caveat
+  helpers, and relevance-label helpers into candidate screening.
+- [x] Convert JSON-shaped decision dictionaries into typed internal models where
+  feasible, then serialize only at artifact boundaries.
+- [x] Keep duplicate detection source-document aware, but hide source-document
+  metadata parsing behind a small protocol/helper.
+- [x] Move handoff-budget demotion into candidate screening so runtime does not
+  rank and demote selected candidates itself.
+- [x] Unify deferred-record semantics so per-search budget, run handoff budget,
+  shadow mode, missing search, and weak/off-objective records have explicit,
+  typed fields for `decision`, original relevance, and demotion reason.
+- [x] Move shadow-mode selected-to-deferred demotion out of runtime into a
+  focused decision-mode helper or screening service.
+- [x] Keep `evidence_selection_runtime.py` responsible only for:
+  - creating the run
+  - building/validating the source plan
+  - invoking live source searches
+  - invoking candidate screening
+  - invoking handoff/review staging
+  - writing artifacts/progress/final status
+
+Acceptance criteria:
+
+- Candidate screening can be tested without constructing a full harness run.
+- Candidate decisions have explicit selected/skipped/deferred/relevance-label
+  semantics.
+- Per-search limits, run-level handoff limits, duplicate detection, exclusion
+  handling, and weak-match handling have focused regression tests.
+- Source-record hash and source-document hash canonicalization are tested
+  together so deduplication cannot silently diverge.
+
+### Workstream C: Review And Extraction Staging SRP Cleanup
+
+Status: implemented for first hardening slice; facade deprecation remains
+
+Goals:
+
+- Move proposal/review item staging out of `evidence_selection_runtime.py`.
+- Make extraction policy the only place that maps source-specific review type,
+  proposal type, evidence role, limitations, and normalized fields.
+- Keep selected-record review staging independent from run orchestration.
+
+Implementation steps:
+
+- [x] Create `evidence_selection_review_staging.py`.
+- [x] Move `_stage_selected_records_for_review`,
+  `_proposal_draft_for_decision`, `_review_item_draft_for_decision`,
+  `_review_metadata`, and source-specific proposal/review summary calls into the
+  staging module.
+- [x] Route source policy lookup through the new source adapter registry.
+- [x] Add tests that stage selected records without running the whole runtime.
+- [x] Keep existing proposal/review payload shape stable.
+
+Acceptance criteria:
+
+- Runtime delegates review staging to one focused service.
+- Every staged review item includes source key, source family, selected record
+  hash, relevance label, normalized extraction, source limitations, and pending
+  human review gate.
+- Existing evidence-selection runtime tests still pass with minimal changes.
+
+### Workstream D: Source Document Bridge Split
+
+Status: implemented for first hardening slice
+
+Goals:
+
+- Split `source_document_bridges.py` into focused responsibilities.
+- Keep repository, deterministic extraction, graph write, metadata update, and
+  orchestration separate.
+
+Implementation steps:
+
+- [x] Move models/enums/protocols into `source_document_models.py`.
+- [x] Move SQLAlchemy persistence into `source_document_repository.py`.
+- [x] Move `_extract_entity_candidates` and related deterministic extraction
+  helpers into `source_document_entity_extraction.py`.
+- [x] Move entity/observation persistence into `source_document_graph_writer.py`.
+- [x] Move extraction orchestration and metadata status updates into
+  `source_document_extraction_service.py`.
+- [x] Keep `source_document_bridges.py` as a compatibility facade during the
+  first pass, or replace imports in one controlled migration if low risk.
+- [x] Add a removal/deprecation plan for the compatibility facade, or migrate
+  production callers to the focused modules and add a guardrail against new
+  facade imports.
+- [x] Add regression tests for repository import paths, pending extraction,
+  stale recovery, graph-write failure behavior, and metadata status updates.
+- [x] Add focused tests for deterministic source-document entity extraction.
+- [x] Add direct orchestration tests for
+  `source_document_extraction_service.py`, separate from the bridge-facade
+  compatibility tests.
+
+Acceptance criteria:
+
+- No single source-document module owns lifecycle models, repository SQL,
+  extraction heuristics, graph writes, and service orchestration at the same
+  time.
+- Existing callers keep working or are migrated in the same pass.
+- Graph-write failures still fail closed and preserve metadata diagnostics.
+
+### Workstream E: Document Extraction Decomposition
+
+Status: remaining, after Workstreams B-D
+
+Goals:
+
+- Reduce `document_extraction.py` without a broad rewrite.
+- Preserve current extraction behavior while moving cohesive pieces into focused
+  modules.
+
+Possible target modules:
+
+- `document_extraction_contracts.py`
+- `document_extraction_prompting.py`
+- `document_extraction_review.py`
+- `document_extraction_drafts.py`
+- `document_extraction_diagnostics.py`
+
+Acceptance criteria:
+
+- Each extracted module has one clear reason to change.
+- Current document extraction tests continue to pass.
+- Variant-aware extraction remains separate and does not regress.
+
+## Suggested Implementation Order
+
+The original implementation order is now mostly complete for Workstreams A-D.
+The remaining work should close the architectural gaps in dependency order, not
+by file size.
+
+## First-Principles Closure Plan
+
+### Closure Invariants
+
+The SRP hardening is complete only when these invariants are true:
+
+- Source-specific behavior is reachable through one adapter boundary by
+  production callers.
+- Candidate decisions are typed in memory and are serialized only at artifact,
+  API, or persistence boundaries.
+- Deferred records have one explicit contract that separates:
+  - the current decision (`selected`, `skipped`, `deferred`);
+  - the original relevance label;
+  - the reason a selected record was demoted or deferred;
+  - whether a record would have been selected in shadow mode.
+- Runtime sequences services and records artifacts; it does not hand-build
+  candidate decision rewrites.
+- Source-document identity, repository persistence, extraction, graph writes,
+  and orchestration each have one owning module and one test surface.
+- Compatibility facades are temporary, documented, and guarded against new
+  production dependencies.
+- `document_extraction.py` is reduced through small behavior-preserving
+  extractions, not a risky rewrite.
+
+### Phase 1: Candidate Decision Contract
+
+Status: implemented
+
+Why first:
+
+- Candidate decisions are the shared contract between screening, handoff,
+  review staging, runtime artifacts, and tests.
+- Deferred-label ambiguity cannot be fixed cleanly while decisions are untyped
+  dictionaries.
+
+Implementation steps:
+
+- [x] Add typed internal models in `evidence_selection_candidates.py`:
+  - `EvidenceSelectionDecision`
+  - `EvidenceSelectionDecisionState`
+  - `EvidenceSelectionRelevanceLabel`
+  - `EvidenceSelectionDeferralReason`
+  - `EvidenceSelectionCandidateContext`
+- [x] Keep model fields explicit for source key, source family, search id,
+  record index, record hash, title, score, matched/excluded terms, caveats,
+  reason, relevance label, original relevance label, demotion reason,
+  candidate context, and shadow selection marker.
+- [x] Add `to_artifact_payload()` or equivalent serializer so JSON conversion
+  happens only at artifact/API boundaries.
+- [x] Update candidate screening, handoff-budget application, review staging,
+  and runtime to pass typed decisions internally.
+- [x] Keep external response/artifact payload shapes backward compatible unless
+  a deliberate contract change is documented.
+
+Acceptance gates:
+
+- [x] `test_evidence_selection_candidates.py` covers hash helpers, score
+  coercion, relevance labels, decision serialization, and typed deferral state.
+- [x] Existing evidence-selection runtime and router tests pass without
+  weakening assertions.
+
+### Phase 2: Unified Deferral And Shadow Semantics
+
+Status: implemented
+
+Why second:
+
+- Deferral semantics are product-facing audit data. They must be consistent
+  before claiming the candidate pipeline is SRP-clean.
+
+Implementation steps:
+
+- [x] Replace stringly deferred rewrites with one helper, for example
+  `defer_selected_decision(decision, reason=..., mode=...)`.
+- [x] Make per-search budget, run handoff budget, missing source search, shadow
+  mode, duplicate selection, weak match, and off-objective cases use the same
+  typed decision contract.
+- [x] Preserve original relevance labels for demoted selected records.
+- [x] Use a separate typed demotion/deferral reason instead of overloading
+  `relevance_label`.
+- [x] Move shadow-mode selected-to-deferred demotion out of
+  `evidence_selection_runtime.py` into candidate screening or a focused
+  `evidence_selection_decision_modes.py` module.
+
+Acceptance gates:
+
+- [x] Focused tests prove deferred populations have consistent typed fields for
+  missing searches, per-search budget, run handoff budget, and shadow mode.
+- [x] Shadow-mode tests prove selected relevance is preserved and
+  `would_have_been_selected` or its typed replacement is explicit.
+- [x] Runtime no longer hand-builds selected-to-deferred dictionaries.
+
+### Phase 3: Source-Key Public Contract Closure
+
+Status: implemented for ingress normalization; docs/public contract remains
+unchanged
+
+Why third:
+
+- Source adapters now enforce canonical source keys. That is internally clean,
+  but public callers may still expect aliases/case variants to be normalized.
+
+Implementation steps:
+
+- [x] Inspect router request models and public/e2e tests for source-key alias
+  behavior.
+- [x] Decide the product contract:
+  - normalize aliases/case variants at ingress, then adapters receive only
+    canonical keys; or
+  - reject non-canonical source keys and document the contract.
+- [x] If normalization remains public behavior, add/keep router tests proving
+  aliases normalize before runtime.
+- [x] Canonical-only adapter validation remains internal. Public router request
+  models normalize supported aliases before runtime/adapters see the request.
+
+Acceptance gates:
+
+- [x] Public API behavior is tested: router request models normalize aliases at
+  ingress and adapters receive canonical source keys.
+- [x] OpenAPI remains stable.
+
+### Phase 4: Source-Document Identity And Extraction Closure
+
+Status: implemented
+
+Why fourth:
+
+- The source-document split is structurally clean, but two closure gaps remain:
+  identity canonicalization and direct orchestration tests.
+
+Implementation steps:
+
+- [x] Add direct tests proving `record_hash(record)` and
+  `source_document_record_hash(document)` match for the same selected record.
+- [x] Cover at least one variant-aware source and one simple source.
+- [x] Add `test_source_document_extraction_service.py` that tests
+  `SourceDocumentExtractionService` directly, without going through
+  `source_document_bridges.py`.
+- [x] Test success, no-candidate, graph-write-failure, metadata update, and
+  deduplicated seed entity summary behavior.
+
+Acceptance gates:
+
+- [x] Source-document deduplication cannot silently diverge from candidate
+  record hashing.
+- [x] Extraction-service orchestration is tested directly.
+
+### Phase 5: Compatibility Facade Closure
+
+Status: implemented for production callers; facade remains for compatibility
+
+Why fifth:
+
+- `source_document_bridges.py` is now small, but it is still a second import
+  path. A facade without a removal rule becomes long-term architectural debt.
+
+Implementation steps:
+
+- [x] Inventory production imports of `source_document_bridges.py`.
+- [x] Choose one path:
+  - migrate production callers to focused modules and keep the facade only for
+    tests/backward compatibility; or
+  - keep the facade temporarily, document a removal deadline, and add an
+    architecture test preventing new production imports.
+- [x] Update docs and tests to reflect the chosen path.
+
+Acceptance gates:
+
+- [x] There is no ambiguous ownership between facade and focused modules.
+- [x] New production code cannot grow the facade dependency by accident.
+
+### Phase 6: Runtime Serialization Cleanup
+
+Status: remaining, after Phases 1-2
+
+Why sixth:
+
+- Runtime still owns workspace snapshot and artifact serialization helpers.
+  This is less risky than typed decisions, so it should happen after the
+  decision contract is stable.
+
+Implementation steps:
+
+- [ ] Move workspace snapshot construction to
+  `evidence_selection_workspace_snapshot.py`.
+- [ ] Move source-plan artifact construction to
+  `evidence_selection_source_plan_artifact.py` or into
+  `evidence_selection_source_planning.py`.
+- [ ] Move proposal/review result serializers out of runtime if they remain
+  large enough to obscure orchestration.
+
+Acceptance gates:
+
+- [ ] Runtime is mostly run lifecycle, service invocation, progress, and final
+  artifact persistence.
+- [ ] Snapshot/source-plan payload tests remain stable.
+
+### Phase 7: Incremental Document Extraction Decomposition
+
+Status: remaining, last major phase
+
+Why last:
+
+- `document_extraction.py` is the largest remaining module and has broad blast
+  radius. It should be decomposed after the evidence-selection decision and
+  source-document boundaries are stable.
+
+Implementation steps:
+
+- [ ] Extract pure contracts/types first into `document_extraction_contracts.py`.
+- [ ] Extract prompt/schema assembly into `document_extraction_prompting.py`.
+- [ ] Extract proposal/review draft builders into `document_extraction_drafts.py`.
+- [ ] Extract diagnostics/error normalization into
+  `document_extraction_diagnostics.py`.
+- [ ] Keep variant-aware extraction separate and verify it does not regress.
+
+Acceptance gates:
+
+- [ ] `test_document_extraction.py` and
+  `test_variant_aware_document_extraction.py` pass after each small extraction.
+- [ ] No public API, OpenAPI, migration, or generated artifact changes unless
+  intentionally documented.
+
+### Final Closeout Gates
+
+Run these before calling the SRP hardening complete:
+
+- [ ] `venv/bin/ruff check` on touched files.
+- [ ] Focused unit tests for all new/changed modules.
+- [ ] `venv/bin/pytest services/artana_evidence_api/tests/unit/test_document_extraction.py services/artana_evidence_api/tests/unit/test_variant_aware_document_extraction.py -q`
+- [ ] `make artana-evidence-api-service-checks`
+- [ ] `make service-checks`
+- [ ] `git diff --check`
+- [ ] Claude second-opinion review focused on remaining SRP gaps.
+- [ ] Confirm `coverage.xml` and unrelated user-tree changes are not included
+  unless explicitly requested.
+
+## Parallelization Plan
+
+Can run in parallel:
+
+- Phase 3 source-key public contract verification.
+- Phase 4 source-document identity tests and extraction-service tests.
+- Phase 5 source-document facade import inventory.
+- Phase 7 document-extraction inventory, without editing until earlier phases
+  stabilize.
+
+Should be linear:
+
+- Phase 1 typed decision models before Phase 2 unified deferral semantics.
+- Phase 2 before Phase 6 runtime serialization cleanup.
+- Phase 4 before Phase 5 if the facade migration depends on the final focused
+  source-document service surface.
+- Phase 7 after Phases 1-6 unless a very small contracts-only extraction is
+  clearly independent.
+
+## Test Plan
+
+Focused tests to add or update:
+
+- `services/artana_evidence_api/tests/unit/test_source_adapter_registry.py`
+- `services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_screening.py`
+- `services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_handoffs.py`
+- `services/artana_evidence_api/tests/unit/test_evidence_selection_review_staging.py`
+- `services/artana_evidence_api/tests/unit/test_source_document_entity_extraction.py`
+- `services/artana_evidence_api/tests/unit/test_source_document_repository.py`
+- `services/artana_evidence_api/tests/unit/test_source_document_graph_writer.py`
+- `services/artana_evidence_api/tests/unit/test_source_document_extraction_service.py`
+- `services/artana_evidence_api/tests/unit/test_evidence_selection_candidates.py`
+- Existing:
+  - `test_source_boundary_contract.py`
+  - `test_evidence_selection_runtime.py`
+  - `test_evidence_selection_router.py`
+  - `test_evidence_selection_extraction_policy.py`
+  - `test_source_document_bridges.py`
+  - `test_document_extraction.py`
+  - `test_variant_aware_document_extraction.py`
+
+Verification gates:
+
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_adapter_registry.py -q`
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_screening.py -q`
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_review_staging.py -q`
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_handoffs.py -q`
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_document_bridges.py -q`
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_document_extraction_service.py -q`
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_candidates.py -q`
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_document_extraction.py services/artana_evidence_api/tests/unit/test_variant_aware_document_extraction.py -q`
+- `make artana-evidence-api-service-checks`
+- `make service-checks`
+- Claude second-opinion review before final closeout.
+
+## Progress Checklist
 
 ### Done
 
-- `POST /v2/spaces/{space_id}/evidence-runs` is the documented front door.
-- Follow-up runs are documented as the normal iterative path for a living
-  research space.
-- `planner_mode="model"` and `planner_mode="deterministic"` are represented in
-  the evidence-selection route/runtime contract.
-- Model source-planner output is validated before it becomes executable source
-  searches.
-- Source-planning payload builders cover PubMed, MARRVEL, ClinVar,
-  ClinicalTrials.gov, UniProt, AlphaFold, DrugBank, MGI, and ZFIN.
-- Source-planning payload builders now live behind explicit typed playbooks in
-  `evidence_selection_source_playbooks.py`, rather than being implicit adapter
-  branches inside the model planner.
-- Qualitative relevance labels are emitted in selected/skipped/deferred
-  decisions and copied into review-item metadata and the durable
-  `evidence_selection_decisions` artifact.
-- Live source-search creation now requires explicit `live_network_allowed=true`
-  on evidence-selection run and follow-up requests. Runtime validation also
-  rejects planner-created live source searches when the flag is false.
-- Manual and planner-created live source-search payloads are validated against
-  source-specific typed contracts before external source side effects.
-- Runtime budgets cap planned live source searches, candidate searches,
-  per-search records, per-search timeout, aggregate live source-search phase
-  time, and guarded handoff count.
-- Model-created source searches have an additional 5-search cap, separate from
-  the public 50-search explicit live-search request limit.
-- The runtime records selected, skipped, and deferred records as auditable
-  evidence-selection output.
-- Guarded mode creates review-gated downstream work; it must not promote graph
-  facts directly.
-- Offline benchmark fixtures exist under
-  `services/artana_evidence_api/tests/fixtures/evidence_selection/`, but the
-  current inventory is MED13-only and is not production-representative.
-- Validation helpers exist for shadow/expert review comparisons.
+- [x] Datasource registry exists.
+- [x] Source record policy exists.
+- [x] Source query playbooks exist.
+- [x] Source plan validation exists.
+- [x] Evidence-selection extraction policy exists.
+- [x] Variant-aware extraction has typed contracts and a focused adapter.
+- [x] Single typed source adapter registry exists.
+- [x] Candidate screening module exists.
+- [x] Candidate handoff module exists.
+- [x] Candidate decisions are typed internally and serialized only at
+  artifact/API result boundaries.
+- [x] Per-search budget, run handoff budget, shadow mode, and missing-search
+  deferrals use typed decision/deferral fields.
+- [x] Review staging module exists.
+- [x] Source-document selected-record identity helper exists for deduplication.
+- [x] Source-document models and deterministic entity extraction were split out
+  behind compatibility imports.
+- [x] Source-document repository, graph writer, and extraction service were
+  split out behind compatibility imports.
+- [x] Production callers no longer import `source_document_bridges.py`; the
+  facade remains only as a compatibility import path covered by tests.
+- [x] Direct source-document extraction-service orchestration tests cover
+  success, no-candidate, and graph-write-failure paths.
+- [x] Claude second-opinion follow-up fixes were applied for adapter guardrails,
+  lazy adapter construction, source-document dedup ownership, stable candidate
+  context, handoff-budget demotion, and shadow relevance preservation.
+- [x] Fresh Claude second-opinion pass found no hard blocker to closing this
+  Phases 1-5 slice. Follow-up hardening improved graph-write diagnostics,
+  replaced graph-writer runtime `assert`s with explicit exceptions, removed a
+  handoff-budget sort sentinel, and added candidate-screening tests for missing
+  searches, weak matches, and explicit exclusion matches.
+
+### Needs Implementation
+
+- [ ] Runtime workspace/source-plan artifact serialization cleanup.
+- [ ] Incremental `document_extraction.py` decomposition.
 
 ### Needs Verification
 
-- Run the focused evidence-selection tests and record the exact result in the
-  verification log.
-- Run `make artana-evidence-api-service-checks` and record the exact result
-  in the verification log.
-- Confirm the current offline benchmark fixture inventory and whether it covers
-  only MED13 or additional disease/gene cases.
-- Confirm whether real shadow-mode comparisons with human reviewers have been
-  run. If not, keep production-readiness unchecked.
-- Confirm the current service behavior for model unavailable, credential
-  missing, unsupported source, live-network-disabled, source timeout, and
-  duplicate handoff replay cases.
+- [x] No source-specific behavior remains hidden in runtime modules after
+  adapter migration for metadata, query playbook, record policy, extraction
+  policy, and live-search validation.
+- [x] Public behavior for non-canonical source-key aliases is intentionally
+  documented or normalized at ingress.
+- [x] Source-record hash and source-document hash canonicalization match.
+- [x] Source-document extraction service has direct tests outside the bridge
+  facade.
+- [x] Runtime file shrinks and mostly orchestrates evidence-selection services.
+- [x] Source-document bridge no longer mixes persistence, graph writes, and
+  metadata updates.
+- [x] Public API/OpenAPI remains stable unless explicitly changed.
+- [x] Existing evidence-selection, source-document, document-extraction, and
+  variant-aware extraction tests pass.
 
-### Remaining
+### Out Of Scope For This Plan
 
-- Keep the agentic discovery docs aligned with the code-level playbook
-  registry and qualitative relevance labels.
-- Keep budget expectations current as source counts, timeout defaults, or
-  model/tool call limits change.
-- Document how model-planned source searches are bounded by source allowlists,
-  max search count, max records, timeout, live-network opt-in, and review
-  controls.
-- Connect the validation docs to concrete acceptance criteria:
-  precision/recall where benchmark labels exist, duplicate rate, provenance
-  completeness, explanation quality, reviewer agreement, and zero
-  high-severity overclaiming.
-- Keep live external API validation opt-in. Do not make network or credential
-  dependent checks normal CI requirements.
-
-### Out Of Scope For #17
-
-- Direct graph promotion from agentic discovery.
-- Clinical, diagnostic, regulatory, or causal-truth claims.
-- Mandatory live external API tests in normal CI.
-- A new frontend.
-- A monolithic PR that implements all remaining architecture cleanup at once.
-
-## Close Criteria
-
-#16 closes when the source-boundary ownership model is documented for registry,
-direct search, source planning, handoff, and extraction policy, and tests or
-contract checks cover one simple source plus one variant-aware source without
-changing public route shapes.
-
-#17 closes when the agentic discovery contract is documented end to end,
-focused tests and service checks pass, validation gates are tied to benchmark
-or reviewer evidence, and production-readiness still requires zero
-high-severity overclaiming plus at least three distinct real shadow-mode
-research questions with human-review notes.
-
-This implementation slice is ready to stage only after focused tests, service
-checks, diff hygiene, and Claude second-opinion review are recorded below.
-`coverage.xml` should remain unstaged unless the user explicitly asks to
-include generated coverage churn.
-
-## Subagent Orchestration Plan
-
-Use this section to coordinate implementation work without turning #16/#17 into
-one monolithic PR.
-
-### Linear Foundation Lane
-
-These steps must happen in order because they define the contract that parallel
-workers will build against.
-
-1. Contract/docs owner:
-   - Owns `docs/architecture/source-boundaries.md`,
-     `docs/architecture/evidence-selection-harness.md`,
-     `docs/validation/evidence-selection-validation.md`, and this tracker.
-   - Defines source-boundary ownership for registry, direct search, source
-     planning, handoff, and extraction policy.
-   - Defines the agentic discovery decisions: source selection, query
-     formulation, record relevance, and handoff decision.
-   - Records current budget defaults and fallback behavior as policy, not as
-     hidden implementation trivia.
-2. Dispatcher scaffold owner, only if code refactor starts:
-   - Owns the smallest source-policy dispatcher shape.
-   - Keeps public route shapes and typed source schemas unchanged.
-   - Lands before any source-family worker edits handoff behavior.
-3. Release criteria owner:
-   - Waits until contract docs and validation fixtures settle.
-   - Converts benchmark and shadow-review results into close criteria for #17.
-
-### Parallel Group A: Source Boundaries (#16)
-
-Start after the contract/docs owner has named the policy fields.
-
-- Registry/contract worker:
-  - Owns `services/artana_evidence_api/source_registry.py`,
-    `services/artana_evidence_api/tests/unit/test_source_registry.py`, and a
-    future `test_source_boundary_contract.py`.
-  - Proves one simple source and one variant-aware source expose the required
-    boundary fields.
-- Variant-aware handoff worker:
-  - Owns a narrow source-policy slice for ClinVar or another variant-aware
-    source plus focused calls from
-    `services/artana_evidence_api/source_search_handoff.py`.
-  - Extends `services/artana_evidence_api/tests/unit/test_source_search_handoff.py`.
-- Simple-source handoff worker:
-  - Owns a narrow source-policy slice for a simple non-variant source such as
-    ClinicalTrials.gov.
-  - Proves normalized source-document behavior without touching public route
-    contracts.
-- Direct-search helper worker:
-  - Defer unless duplication becomes the blocking problem.
-  - If needed, owns only helper extraction in
-    `services/artana_evidence_api/direct_source_search.py` and
-    `services/artana_evidence_api/evidence_selection_source_search.py`.
-  - Must not alter typed request/response schemas or OpenAPI output.
-
-### Parallel Group B: Agentic Discovery (#17)
-
-Start after the agentic-discovery contract is documented.
-
-- Budget/model worker:
-  - Owns model fallback, planned-search caps, per-search timeout,
-    max-records-per-search, max-handoff behavior, and how fallback is surfaced
-    in source-plan artifacts/results.
-  - Keeps budget concerns separate from model-unavailable fallback behavior.
-- Runtime edge worker:
-  - Owns focused verification for model unavailable, missing credentials,
-    unsupported source, source timeout, disallowed source, duplicate handoff
-    replay, and no trusted graph write.
-  - Extends evidence-selection runtime/router/model-planner tests as needed.
-- Validation fixture worker:
-  - Owns `services/artana_evidence_api/tests/fixtures/evidence_selection/`,
-    `services/artana_evidence_api/tests/unit/test_evidence_selection_benchmarks.py`,
-    and validation docs.
-  - Expands beyond the current MED13-only fixture before production-readiness
-    is claimed.
-- Shadow-review worker:
-  - Owns reviewer-template examples and comparison-helper usage.
-  - Records human-review comparison results when real reviewer data exists.
-
-### Linear QA Lane
-
-Run this lane after worker changes settle. Do not parallelize commands that
-rewrite generated artifacts.
-
-1. Verify intended diff:
-   - `git status --short`
-   - `git diff --name-only`
-   - Confirm OpenAPI/type artifacts changed only if the contract changed.
-   - Keep `coverage.xml` unstaged or revert it after coverage runs unless the
-     user explicitly requests coverage artifact updates.
-2. Run focused checks:
-   - `make artana-evidence-api-lint`
-   - `make artana-evidence-api-type-check`
-   - `make artana-evidence-api-boundary-check`
-   - `make artana-evidence-api-contract-check`
-   - Focused evidence-selection/source-boundary pytest commands.
-3. Run issue-close gates:
-   - `make artana-evidence-api-service-checks`
-   - `make service-checks`
-4. Run opt-in live checks only when local services, network access, and
-   credentials are intentionally available:
-   - `make live-endpoint-contract-check`
-   - `make live-external-api-check`
-5. Record final evidence in this tracker:
-   - command;
-   - exit code/result;
-   - important warnings/errors;
-   - post-run `git status --short`;
-   - OpenAPI artifact status;
-   - `coverage.xml` decision;
-   - Claude second-opinion outcome.
-
-### Subagent Grouping Summary
-
-| Group | Workstream | Parallel? | Must Wait For |
-| --- | --- | --- | --- |
-| Linear 0 | Contract/docs owner | No | Current tracker |
-| A1 | Registry/contract worker | Yes | Linear 0 |
-| A2 | Variant-aware handoff worker | Yes | Linear 0, dispatcher if used |
-| A3 | Simple-source handoff worker | Yes | Linear 0, dispatcher if used |
-| A4 | Direct-search helper worker | Optional | Only if duplication blocks closure |
-| B1 | Budget/model worker | Yes | Linear 0 |
-| B2 | Runtime edge worker | Yes | Linear 0 |
-| B3 | Validation fixture worker | Partly | Linear 0 for labels/criteria |
-| B4 | Shadow-review worker | Later | Real reviewer data |
-| Linear 1 | Release criteria owner | No | A/B results |
-| Linear 2 | QA/release owner | No | All intended changes settled |
-
-## This Docs Pass
-
-### Changes
-
-- [x] Replaced the obsolete long `docs/plan.md` body with a focused #16/#17
-  tracker.
-- [x] Preserved the original first-principles product loop as a short origin
-  note.
-- [x] Recorded code-backed current state with paths and test references.
-- [x] Separated #16 source-boundary debt from #17 agentic-discovery rollout
-  criteria.
-- [x] Marked production validation as needing verification instead of claiming
-  it is complete.
-- [x] Added subagent orchestration groups for parallel and linear workstreams.
-- [x] Started implementation with subagents by adding source-boundary
-  architecture docs and tightening evidence-selection validation/contract docs.
-- [x] Added source-owned record policies for handoff normalization,
-  provider-id extraction, source-family metadata, target kind, and
-  variant-aware hints.
-- [x] Added explicit source-query playbooks for all direct-search sources.
-- [x] Added qualitative relevance labels to selection decisions, review-item
-  metadata, and durable decision artifacts.
-- [x] Added explicit `live_network_allowed` opt-in for live source searches and
-  early typed payload validation for manual/planner-created source searches.
-
-### Validation Gates Before Issue Close
-
-- Must pass before #17 close: focused evidence-selection unit tests.
-- Must pass before #16/#17 close: `make artana-evidence-api-service-checks`.
-- Must pass before a broad release/merge closeout: `make service-checks`.
-- Must confirm before staging this docs-only pass: OpenAPI artifacts are
-  unchanged.
-- Must keep out of this docs-only pass: `coverage.xml` unless explicitly
-  requested by the user.
-
-### Remaining
-
-- Keep source-boundary architecture docs updated as future source families add
-  policy fields.
-- Keep future handoff behavior moving to source-owned policy helpers.
-- Expand the validation tracker with the current benchmark fixture inventory.
-- Record real shadow-mode human-review comparison results when available.
-- Keep `docs/README.md` linked to new architecture docs as they are added.
-
-### Out Of Scope
-
-- Code refactors during this docs-first pass.
-- Public API changes during this docs-first pass.
-- OpenAPI regeneration during this docs-first pass.
-- Graph-service schema or trusted-governance changes.
-- Frontend work.
-
-## Open Questions
-
-- #16: Should handoff source-key maps move into source-owned policy helpers, or
-  should they stay centralized until another source family is added?
-- #16: Is a small direct-search execution helper enough, or is a formal
-  `EvidenceSourceAdapter` protocol eventually justified?
-- #17: Which qualitative relevance labels are stable enough to document as a
-  contract?
-- #17: What default budgets should apply to first-pass discovery versus
-  follow-up discovery?
-- #17: Which validation threshold should be required before moving beyond
-  shadow-mode human review?
+- New external datasource integrations.
+- Graph-service schema changes.
+- Frontend/UI work.
+- Changing user-facing endpoint names.
+- Changing review approval semantics.
+- Committing generated `coverage.xml` unless explicitly requested.
 
 ## Verification Log
 
-Use this section as the append-only log for actual observations on this issue
-pair. Planned commands belong in the validation gates above until they are run.
-
-### Documentation-Only Pass
-
-- `gh issue view 16 --repo med13foundation/artana-evidence-platform --json number,title,state,url`
-  - Result: issue #16 is open.
-- `gh issue view 17 --repo med13foundation/artana-evidence-platform --json number,title,state,url`
-  - Result: issue #17 is open.
-- `git diff -- docs/plan.md`
-  - Result: docs-only tracker replacement reviewed.
-- `git diff --check`
+- `wc -l services/artana_evidence_api/evidence_selection_runtime.py services/artana_evidence_api/source_document_bridges.py services/artana_evidence_api/document_extraction.py services/artana_evidence_api/evidence_selection_candidate_screening.py services/artana_evidence_api/evidence_selection_review_staging.py services/artana_evidence_api/source_document_repository.py services/artana_evidence_api/source_document_graph_writer.py`
+  - Result: after this SRP pass, `evidence_selection_runtime.py` is 1,030
+    lines, `source_document_bridges.py` is 87 lines, and
+    `document_extraction.py` remains 2,420 lines. Focused extracted modules are
+    smaller: candidate contracts are 241 lines, candidate screening is 554
+    lines, candidate handoffs are 90 lines, review staging is 232 lines,
+    source-document extraction service is 209 lines, source-document repository
+    is 388 lines, and source-document graph writer is 207 lines.
+- `rg` inventory of current boundaries
+  - Result: confirmed live source-policy, source-playbook, extraction-policy,
+    candidate-screening, review-staging, source-document bridge, and
+    variant-aware extraction paths listed above.
+- Documentation update
+  - Result: this plan replaces the empty `docs/plan.md` with the SRP hardening
+    tracker and now records the implementation status and verification results.
+- Source adapter implementation
+  - Result: added `services/artana_evidence_api/source_adapters.py` and
+    `services/artana_evidence_api/tests/unit/test_source_adapter_registry.py`.
+    The adapter registry composes source definition, query playbook, record
+    policy, extraction policy, live-search validation, and candidate context for
+    every direct-search source. Follow-up hardening added lazy adapter registry
+    construction, canonical-source-key validation, stable candidate-context
+    keys, and an architecture test that blocks production callers from
+    bypassing the adapter for source-owned helper functions.
+- Candidate/review staging implementation
+  - Result: extracted candidate contracts, screening, handoff creation, and
+    review staging into focused modules. `evidence_selection_runtime.py` now
+    delegates these responsibilities and dropped from about 1,797 lines to 1,038
+    lines. Handoff-budget demotion now lives in candidate screening, and shadow
+    deferrals preserve the selected record relevance label while adding a
+    `shadow_decision` marker.
+- Source-document split implementation
+  - Result: moved source-document lifecycle models/protocols into
+    `source_document_models.py`, SQLAlchemy persistence into
+    `source_document_repository.py`, deterministic entity extraction into
+    `source_document_entity_extraction.py`, graph entity/observation writes
+    into `source_document_graph_writer.py`, and extraction orchestration plus
+    metadata status updates into `source_document_extraction_service.py`.
+    `source_document_bridges.py` remains the compatibility facade and dropped
+    from about 1,020 lines to 87 lines.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_adapter_registry.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_screening.py services/artana_evidence_api/tests/unit/test_evidence_selection_review_staging.py services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_worker.py -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_document_entity_extraction.py services/artana_evidence_api/tests/unit/test_source_document_repository.py services/artana_evidence_api/tests/unit/test_source_document_graph_writer.py services/artana_evidence_api/tests/unit/test_source_document_bridges.py -q`
+  - Result: passed, `10 passed`.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_handoffs.py services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_screening.py services/artana_evidence_api/tests/unit/test_evidence_selection_review_staging.py services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_source_adapter_registry.py services/artana_evidence_api/tests/unit/test_source_document_entity_extraction.py services/artana_evidence_api/tests/unit/test_source_document_repository.py services/artana_evidence_api/tests/unit/test_source_document_graph_writer.py services/artana_evidence_api/tests/unit/test_source_document_bridges.py -q`
+  - Result: passed, `59 passed`.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_adapter_registry.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py services/artana_evidence_api/tests/unit/test_evidence_selection_plan_validation.py services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_screening.py services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_handoffs.py services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py services/artana_evidence_api/tests/unit/test_source_search_handoff.py -q`
+  - Result: passed after Claude second-opinion follow-up fixes, with one
+    existing FastAPI deprecation warning.
+- `venv/bin/ruff check` on touched implementation and focused test files
   - Result: passed.
-- File/path inventory check with `rg`
-  - Result: evidence-selection runtime, router, skill, planner, handoff,
-    validation, and focused test paths listed above exist in the checkout.
-- OpenAPI artifacts
-  - Result: no OpenAPI files changed during this docs-only pass.
-- `coverage.xml`
-  - Result: already modified before this docs pass; do not include it in this
-    docs-first change unless explicitly requested.
-- Claude second-opinion review
-  - Result: completed after the first tracker diff existed; useful feedback was
-    folded into product guardrails, close criteria, open questions, and this
-    verification log.
-- Subagent orchestration review
-  - Result: three read-only explorers inspected #16 source boundaries, #17
-    agentic discovery/validation, and QA/release sequencing. Their findings
-    were folded into the subagent orchestration plan above.
-- Implementation start with subagents
-  - Result: source-boundary architecture contract added, evidence-selection
-    harness contract updated, validation docs clarified, review template
-    clarified, and docs index linked to the new source-boundary note.
-  - Result: product-facing evidence-run docs kept on `/v2/spaces/{space_id}/evidence-runs`;
-    lower-level `/v1/spaces/{space_id}/agents/evidence-selection/runs` routes
-    are documented as compatibility/harness-oriented routes.
-- Final combined Claude second-opinion review
-  - Result: completed after subagent docs landed; follow-up fixes tightened the
-    source-policy target-kind wording, direct-search schema-name requirement,
-    MED13-only fixture caveat, shadow-mode readiness gate, and `/v2` versus
-    `/v1` route language.
-
-### Implementation Pass
-
-- `gh issue view 16 --repo med13foundation/artana-evidence-platform --json number,title,state,body,labels,comments`
-  - Result: issue #16 is open; source-boundary acceptance criteria were
-    refreshed from the live GitHub issue body.
-- `gh issue view 17 --repo med13foundation/artana-evidence-platform --json number,title,state,body,labels,comments`
-  - Result: issue #17 is open; agentic-discovery acceptance criteria were
-    refreshed from the live GitHub issue body.
-- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py -q`
-  - Result: passed, `32 passed`.
-- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_boundary_contract.py services/artana_evidence_api/tests/unit/test_source_search_handoff.py services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py -q`
-  - Result: passed, `51 passed`.
-- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_boundary_contract.py services/artana_evidence_api/tests/unit/test_source_registry.py services/artana_evidence_api/tests/unit/test_source_search_handoff.py services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_benchmarks.py -q`
-  - Result: passed, `80 passed`.
-- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py -q`
-  - Result: passed, `33 passed`, with one existing deprecation warning.
-- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py -q`
-  - Result: passed, `20 passed`, after adding the aggregate source-search
-    budget validator.
-- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_plan_validation.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py -q`
-  - Result: passed, `44 passed`, after the Claude second-opinion fixes for
-    model search caps, early live-network request validation, MARRVEL
-    panel/taxon intent support, empty-object source-policy compaction, and
-    focused plan-validation tests.
-- `venv/bin/ruff check` on the touched Evidence API runtime, source-policy,
-  source-playbook, handoff, router, and focused test files
-  - Result: passed.
-- `git diff --check`
-  - Result: passed.
-- `venv/bin/python scripts/export_artana_evidence_api_openapi.py --output services/artana_evidence_api/openapi.json`
-  - Result: regenerated `services/artana_evidence_api/openapi.json` after the
-    public `live_network_allowed` request-field addition.
 - `make artana-evidence-api-service-checks`
-  - Result: passed after OpenAPI regeneration and after the final
-    plan-validation extraction. Live external API tests remained skipped unless
-    their opt-in environment/services are available.
+  - Result: passed. Evidence API lint/type/boundary/OpenAPI/architecture-size
+    checks passed, database migrations applied against an ephemeral test
+    database, and the Evidence API pytest suite passed. Live external API and
+    localhost service checks remained skipped by their normal opt-in guards.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_candidates.py services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_screening.py services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_handoffs.py services/artana_evidence_api/tests/unit/test_evidence_selection_review_staging.py services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py services/artana_evidence_api/tests/unit/test_evidence_selection_benchmarks.py services/artana_evidence_api/tests/unit/test_source_adapter_registry.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py services/artana_evidence_api/tests/unit/test_source_document_entity_extraction.py services/artana_evidence_api/tests/unit/test_source_document_extraction_service.py services/artana_evidence_api/tests/unit/test_source_document_graph_writer.py services/artana_evidence_api/tests/unit/test_source_document_repository.py services/artana_evidence_api/tests/unit/test_source_document_bridges.py -q`
+  - Result: passed. This validates typed candidate decisions, unified deferral
+    semantics, source-key ingress normalization, source-document identity
+    hashing, direct extraction-service orchestration, and the production
+    facade-import guardrail.
+- `make artana-evidence-api-service-checks`
+  - Result: passed after the typed candidate decision and source-document
+    facade-closure updates. Evidence API lint, type-check, boundary, OpenAPI,
+    architecture-size, migrations, and pytest passed. Live external API and
+    localhost service checks remained skipped by their normal opt-in guards.
 - `make service-checks`
-  - Result: passed after the final plan-validation extraction. Graph checks,
-    Evidence API checks, OpenAPI contract checks, architecture-size checks, and
-    database-backed tests passed. Coverage was 87.63%, above the required 86%.
-    Live external API and localhost service checks were skipped by their normal
-    opt-in guards.
-- OpenAPI artifacts
-  - Result: `services/artana_evidence_api/openapi.json` changed intentionally
-    because the public Evidence API request contract now includes
-    `live_network_allowed`.
-- `coverage.xml`
-  - Result: generated/rewritten by `make service-checks`; keep it separate from
-    the intentional implementation unless the PR policy wants generated
-    coverage committed.
+  - Result: passed. Graph-service checks, generated contract checks,
+    Evidence API checks, OpenAPI checks, architecture-size checks, migrations,
+    and database-backed tests passed. Coverage was 87.78%, above the required
+    86%. Live external API and localhost service checks remained skipped by
+    their normal opt-in guards. This run regenerated `coverage.xml`, which
+    remains treated as generated churn unless explicitly included.
+- Claude second-opinion review after implementation
+  - Result: flagged actionable issues around source-document graph-write failure
+    signaling, deterministic handoff-budget ordering, duplicated decision
+    taxonomies, normal records emitting shadow-only payload fields, and missing
+    regression tests for those behaviors. Follow-up fixes now mark graph-write
+    failures as `DocumentExtractionStatus.FAILED`, surface the warning in
+    `SourceDocumentExtractionSummary.errors` and
+    `entity_recognition_ingestion_errors`, make handoff-budget ranking
+    deterministic with explicit tie-breakers, use enum decision/relevance
+    values as the single internal taxonomy, omit
+    `would_have_been_selected` from normal non-shadow payloads, preserve
+    original relevance on selected-to-skipped duplicate demotion, and add/update
+    focused tests for these cases.
+- Fresh Claude second-opinion review after follow-up fixes
+  - Result: no hard blocker to closing the Phases 1-5 SRP slice. The review
+    recommended extra polish around graph-write diagnostics, retry semantics for
+    failed source documents, replacing graph-writer `assert`s, avoiding a
+    handoff-budget sort sentinel, and verifying several candidate-screening
+    regressions. Follow-up fixes included exception messages in graph-write
+    diagnostics, replaced graph-writer `assert`s with explicit `ValueError`
+    checks, removed the sort sentinel, renamed the local source-record hash
+    parameter to avoid shadowing, and added tests for missing-source-search
+    deferral, weak-match human-review skips, and explicit-exclusion skips. The
+    retry policy for `FAILED` source documents remains a follow-up operational
+    decision rather than a blocker for this slice.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_candidate_screening.py services/artana_evidence_api/tests/unit/test_source_document_extraction_service.py services/artana_evidence_api/tests/unit/test_source_document_bridges.py services/artana_evidence_api/tests/unit/test_source_document_graph_writer.py services/artana_evidence_api/tests/unit/test_evidence_selection_candidates.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py -q`
+  - Result: passed after the fresh Claude follow-up fixes.
+- `make artana-evidence-api-service-checks`
+  - Result: passed after the fresh Claude follow-up fixes. Evidence API lint,
+    type-check, boundary, OpenAPI, architecture-size, migrations, and pytest
+    passed. Live external API and localhost service checks remained skipped by
+    their normal opt-in guards.
+- `make service-checks`
+  - Result: passed after the fresh Claude follow-up fixes. Graph-service checks,
+    generated contract checks, Evidence API checks, OpenAPI checks,
+    architecture-size checks, migrations, and database-backed tests passed.
+    Coverage was 87.78%, above the required 86%. Live external API and localhost
+    service checks remained skipped by their normal opt-in guards. This run
+    regenerated `coverage.xml`, which remains treated as generated churn unless
+    explicitly included.
 - Claude second-opinion review
-  - Result: completed after the implementation diff. Claude had truncated diff
-    context but flagged actionable risks around OpenAPI freshness,
-    live-network opt-in, qualitative labels, source-policy registry parity,
-    runtime budgets, architecture file size, and generated coverage churn. The
-    code already had or was updated to include OpenAPI regeneration,
-    `live_network_allowed`, source-policy/playbook parity tests,
-    relevance-label artifact/review metadata tests, aggregate source-search
-    budgets, and an extracted plan-validation module to satisfy the size gate.
-- Final Claude second-opinion review
-  - Result: completed against the staged #16/#17 diff with key implementation
-    files included. Follow-up fixes added direct
-    `evidence_selection_plan_validation` tests, an explicit 5-search cap for
-    model-created searches, early request validation for goal-only model runs
-    without live-network opt-in, explicit MARRVEL `taxon_id`/`panels` intent
-    support, empty-object source-policy compaction, and required source-policy
-    normalizer/variant functions.
+  - Result: review flagged adapter-bypass guardrails, source-document dedup
+    ownership, import-time adapter registry construction, canonical source-key
+    validation, unstable candidate-context shape, runtime handoff-budget logic,
+    and shadow-mode relevance-label loss. Follow-up fixes added the adapter
+    architecture test, moved source-document selection identity out of
+    candidate screening, made adapter registry construction lazy, rejected
+    non-canonical live-search keys at the adapter boundary, always emits
+    `provider_external_id`, moved handoff-budget demotion into candidate
+    screening, and preserved original relevance labels for shadow deferrals.
+    `make artana-evidence-api-service-checks`, `make service-checks`, and
+    `git diff --check` passed after those fixes.
+- Claude second-opinion review rerun
+  - Result: no immediate broken-code finding, but the review correctly flagged
+    remaining completion gaps before calling the SRP hardening fully done:
+    deferred-record label/demotion semantics are inconsistent, typed candidate
+    decisions are still missing, shadow-mode demotion still lives in runtime,
+    canonical source-key behavior needs explicit public-contract verification,
+    source-document hash canonicalization needs a direct regression test,
+    `source_document_bridges.py` needs a deprecation/migration guardrail, and
+    `source_document_extraction_service.py` needs direct orchestration tests.
+    These are now tracked above as remaining implementation/verification work.

@@ -25,8 +25,10 @@ from artana_evidence_api.continuous_learning_runtime import (
     execute_continuous_learning_run,
     normalize_seed_entity_ids,
 )
-from artana_evidence_api.evidence_selection_runtime import (
+from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionCandidateSearch,
+)
+from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionExecutionResult,
     EvidenceSelectionMode,
     EvidenceSelectionProposalMode,

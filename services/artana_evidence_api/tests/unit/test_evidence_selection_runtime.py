@@ -1224,7 +1224,8 @@ async def test_evidence_selection_shadow_mode_recommends_without_handoff() -> No
     assert result.deferred_records[0]["reason"] == (
         "Shadow mode records the recommendation without creating a source handoff."
     )
-    assert result.deferred_records[0]["relevance_label"] == "deferred"
+    assert result.deferred_records[0]["relevance_label"] != "deferred"
+    assert result.deferred_records[0]["shadow_decision"] == "selected"
     assert result.deferred_records[0]["would_have_been_selected"] is True
     assert document_store.count_documents(space_id=space_id) == 0
 

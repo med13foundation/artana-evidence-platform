@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import ast
+from pathlib import Path
+
 from artana_evidence_api.source_policies import (
     source_record_policies,
     source_record_policy,
@@ -10,6 +13,43 @@ from artana_evidence_api.source_registry import (
     direct_search_source_keys,
     get_source_definition,
 )
+
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_EVIDENCE_API_ROOT = _REPO_ROOT / "services" / "artana_evidence_api"
+_SOURCE_ADAPTER_INTERNAL_MODULES = frozenset(
+    {
+        "evidence_selection_extraction_policy.py",
+        "evidence_selection_source_playbooks.py",
+        "evidence_selection_source_search.py",
+        "source_adapters.py",
+        "source_policies.py",
+    },
+)
+_FORBIDDEN_SOURCE_HELPER_IMPORTS = {
+    "artana_evidence_api.evidence_selection_extraction_policy": {
+        "extraction_policy_for_source",
+    },
+    "artana_evidence_api.evidence_selection_source_playbooks": {
+        "source_query_playbook",
+    },
+    "artana_evidence_api.evidence_selection_source_search": {
+        "validate_live_source_search",
+    },
+    "artana_evidence_api.source_policies": {
+        "source_record_policy",
+    },
+    "artana_evidence_api.source_document_bridges": {
+        "SourceDocument",
+        "SourceDocumentRepositoryProtocol",
+        "build_source_document",
+        "build_source_document_repository",
+        "create_observation_bridge_entity_recognition_service",
+        "source_document_extraction_status_value",
+        "source_document_id",
+        "source_document_metadata",
+        "source_document_model_copy",
+    },
+}
 
 
 def test_every_direct_search_source_has_record_policy() -> None:
@@ -98,3 +138,26 @@ def test_variant_aware_source_boundary_policy_matches_registry() -> None:
         "conditions": ["Breast cancer"],
         "hgvs": "NM_007294.4:c.5266dupC",
     }
+
+
+def test_production_callers_use_source_adapters_for_source_owned_behavior() -> None:
+    violations: list[str] = []
+    for path in sorted(_EVIDENCE_API_ROOT.rglob("*.py")):
+        if "tests" in path.parts or path.name in _SOURCE_ADAPTER_INTERNAL_MODULES:
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ImportFrom) or node.module is None:
+                continue
+            forbidden_names = _FORBIDDEN_SOURCE_HELPER_IMPORTS.get(node.module)
+            if forbidden_names is None:
+                continue
+            imported = {alias.name for alias in node.names}
+            bypassed = sorted(imported & forbidden_names)
+            if bypassed:
+                relative_path = path.relative_to(_REPO_ROOT)
+                violations.append(
+                    f"{relative_path} imports {', '.join(bypassed)} from {node.module}",
+                )
+
+    assert violations == []

@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from artana_evidence_api.evidence_selection_source_playbooks import (
-    SourceQueryPlanningError,
-    query_payload_for_intent,
-)
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
 )
+from artana_evidence_api.source_adapters import require_source_adapter
 from artana_evidence_api.source_registry import (
     direct_search_source_keys,
     get_source_definition,
@@ -280,8 +277,10 @@ def _effective_max_records(
 
 def _query_payload_for_intent(intent: PlannedSourceIntent) -> JSONObject:
     try:
-        return query_payload_for_intent(intent)
-    except SourceQueryPlanningError as exc:
+        return require_source_adapter(intent.source_key).query_playbook().build_payload(
+            intent,
+        )
+    except ValueError as exc:
         raise ModelSourcePlanningError(str(exc)) from exc
 
 

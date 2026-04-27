@@ -23,19 +23,19 @@ from artana_evidence_api.graph_integration.submission import (
     GraphWorkflowSubmissionService,
 )
 from artana_evidence_api.proposal_actions import infer_graph_entity_type_from_label
-from artana_evidence_api.source_document_bridges import (
+from artana_evidence_api.source_document_extraction_service import (
+    create_observation_bridge_entity_recognition_service,
+)
+from artana_evidence_api.source_document_models import (
     DocumentExtractionStatus,
     DocumentFormat,
     EnrichmentStatus,
+    SourceDocument,
     SourceDocumentRepositoryProtocol,
     SourceType,
-    build_source_document,
+)
+from artana_evidence_api.source_document_repository import (
     build_source_document_repository,
-    create_observation_bridge_entity_recognition_service,
-    source_document_extraction_status_value,
-    source_document_id,
-    source_document_metadata,
-    source_document_model_copy,
 )
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 
@@ -59,6 +59,53 @@ from artana_evidence_api.research_init_models import (
 class _ObservationBridgeSummaryLike(Protocol):
     derived_graph_seed_entity_ids: tuple[str, ...]
     errors: tuple[str, ...]
+
+
+def build_source_document(**kwargs: object) -> object:
+    """Construct one service-local SourceDocument instance."""
+
+    return SourceDocument.model_validate(kwargs)
+
+
+def source_document_id(source_document: object) -> UUID | None:
+    """Return a source document UUID when available."""
+
+    document_id = getattr(source_document, "id", None)
+    return document_id if isinstance(document_id, UUID) else None
+
+
+def source_document_metadata(source_document: object) -> JSONObject | None:
+    """Return metadata payload from a source document."""
+
+    metadata = getattr(source_document, "metadata", None)
+    return cast("JSONObject", metadata) if isinstance(metadata, dict) else None
+
+
+def source_document_extraction_status_value(source_document: object) -> str | None:
+    """Return the extraction status string from a source document."""
+
+    status = getattr(source_document, "extraction_status", None)
+    if isinstance(status, str):
+        normalized = status.strip()
+        return normalized or None
+    raw_value = getattr(status, "value", None)
+    if isinstance(raw_value, str):
+        normalized = raw_value.strip()
+        return normalized or None
+    return None
+
+
+def source_document_model_copy(
+    source_document: object,
+    *,
+    update: dict[str, object],
+) -> object | None:
+    """Copy a source document with updated fields when supported."""
+
+    model_copy = getattr(source_document, "model_copy", None)
+    if not callable(model_copy):
+        return None
+    return cast("object", model_copy(update=update))
 
 
 _TOTAL_PROGRESS_STEPS = 5

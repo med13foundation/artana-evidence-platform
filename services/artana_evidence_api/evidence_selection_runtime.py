@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import json
-import re
 from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Protocol, assert_never
@@ -17,23 +14,30 @@ from artana_evidence_api.approval_store import (
 )
 from artana_evidence_api.artifact_store import HarnessArtifactStore
 from artana_evidence_api.direct_source_search import (
-    DirectSourceSearchRecord,
     DirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import (
     HarnessDocumentRecord,
     HarnessDocumentStore,
 )
-from artana_evidence_api.evidence_selection_extraction_policy import (
-    extraction_policy_for_source,
-    normalized_extraction_payload,
-    proposal_summary,
-    review_item_summary,
+from artana_evidence_api.evidence_selection_candidate_handoffs import (
+    create_selected_handoffs,
+)
+from artana_evidence_api.evidence_selection_candidate_screening import (
+    apply_handoff_budget,
+    defer_selected_for_shadow_mode,
+    screen_candidate_searches,
+)
+from artana_evidence_api.evidence_selection_candidates import (
+    EvidenceSelectionCandidateSearch,
 )
 from artana_evidence_api.evidence_selection_plan_validation import (
     LIVE_SOURCE_SEARCH_PHASE_TIMEOUT_SECONDS,
     LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS,
     validate_source_plan_result,
+)
+from artana_evidence_api.evidence_selection_review_staging import (
+    stage_selected_records_for_review,
 )
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
@@ -41,31 +45,26 @@ from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionSourceSearchRunner,
 )
 from artana_evidence_api.proposal_store import (
-    HarnessProposalDraft,
     HarnessProposalRecord,
     HarnessProposalStore,
 )
 from artana_evidence_api.queued_run_support import store_primary_result_artifact
 from artana_evidence_api.response_serialization import serialize_run_record
 from artana_evidence_api.review_item_store import (
-    HarnessReviewItemDraft,
     HarnessReviewItemRecord,
     HarnessReviewItemStore,
 )
 from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
+from artana_evidence_api.source_document_selection_identity import (
+    source_document_dedup_key,
+)
 from artana_evidence_api.source_registry import get_source_definition
 from artana_evidence_api.source_search_handoff import (
-    SourceSearchHandoffConflictError,
-    SourceSearchHandoffNotFoundError,
-    SourceSearchHandoffRequest,
     SourceSearchHandoffResponse,
-    SourceSearchHandoffSelectionError,
-    SourceSearchHandoffService,
     SourceSearchHandoffStore,
-    SourceSearchHandoffUnsupportedError,
 )
 from artana_evidence_api.transparency import ensure_run_transparency_seed
-from artana_evidence_api.types.common import JSONObject, JSONValue, json_object_or_empty
+from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 
 if TYPE_CHECKING:
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
@@ -78,39 +77,6 @@ _EVIDENCE_SELECTION_RESULT_KEY = "evidence_selection_result"
 _WORKSPACE_SNAPSHOT_KEY = "evidence_selection_workspace_snapshot"
 _DECISIONS_KEY = "evidence_selection_decisions"
 _SOURCE_PLAN_KEY = "evidence_selection_source_plan"
-_HIGH_PRIORITY_SCORE_THRESHOLD = 5.0
-_MIN_SELECTION_SCORE = 4.0
-_WORD_PATTERN = re.compile(r"[a-z0-9][a-z0-9_-]{2,}", re.IGNORECASE)
-_STOP_WORDS = frozenset(
-    {
-        "about",
-        "after",
-        "against",
-        "between",
-        "find",
-        "from",
-        "linking",
-        "records",
-        "research",
-        "result",
-        "results",
-        "source",
-        "sources",
-        "that",
-        "the",
-        "this",
-        "with",
-    },
-)
-
-
-@dataclass(frozen=True, slots=True)
-class EvidenceSelectionCandidateSearch:
-    """One durable source-search run the harness may screen."""
-
-    source_key: str
-    search_id: UUID
-    max_records: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -468,7 +434,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         completed_steps=1,
         total_steps=5,
     )
-    screening = _screen_candidate_searches(
+    screening = screen_candidate_searches(
         space_id=space_id,
         goal=goal,
         instructions=instructions,
@@ -484,22 +450,11 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
     deferred = list(screening.deferred_records)
     errors = [*live_search_errors, *screening.errors]
 
-    if len(selected) > max_handoffs:
-        selected = sorted(
-            selected,
-            key=lambda decision: -_score_from_decision(decision),
-        )
-        overflow = selected[max_handoffs:]
-        selected = selected[:max_handoffs]
-        deferred.extend(
-            {
-                **record,
-                "decision": "deferred",
-                "relevance_label": "deferred",
-                "reason": "Run handoff budget reached before this record.",
-            }
-            for record in overflow
-        )
+    selected, overflow_deferred = apply_handoff_budget(
+        selected,
+        max_handoffs=max_handoffs,
+    )
+    deferred.extend(overflow_deferred)
 
     handoffs: list[SourceSearchHandoffResponse] = []
     if mode == "guarded" and selected:
@@ -512,7 +467,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
             completed_steps=2,
             total_steps=5,
         )
-        handoffs, handoff_errors = _create_selected_handoffs(
+        handoffs, handoff_errors = create_selected_handoffs(
             space_id=space_id,
             created_by=created_by,
             selected_records=tuple(selected),
@@ -523,21 +478,12 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         )
         errors.extend(handoff_errors)
     elif mode == "shadow" and selected:
-        deferred.extend(
-            {
-                **record,
-                "decision": "deferred",
-                "relevance_label": "deferred",
-                "reason": (
-                    "Shadow mode records the recommendation without creating a "
-                    "source handoff."
-                ),
-                "would_have_been_selected": True,
-            }
-            for record in selected
-        )
+        deferred.extend(defer_selected_for_shadow_mode(selected))
         selected = []
 
+    selected_payload = [decision.to_artifact_payload() for decision in selected]
+    skipped_payload = [decision.to_artifact_payload() for decision in skipped]
+    deferred_payload = [decision.to_artifact_payload() for decision in deferred]
     proposals: list[HarnessProposalRecord] = []
     review_items: list[HarnessReviewItemRecord] = []
     if mode == "guarded" and selected and review_item_store is not None:
@@ -550,7 +496,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
             completed_steps=3,
             total_steps=5,
         )
-        proposals, review_items, staging_errors = _stage_selected_records_for_review(
+        proposals, review_items, staging_errors = stage_selected_records_for_review(
             space_id=space_id,
             run_id=run.id,
             selected_records=tuple(selected),
@@ -562,9 +508,9 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         errors.extend(staging_errors)
 
     decisions_payload: JSONObject = {
-        "selected_records": selected,
-        "skipped_records": skipped,
-        "deferred_records": deferred,
+        "selected_records": selected_payload,
+        "skipped_records": skipped_payload,
+        "deferred_records": deferred_payload,
         "handoffs": [handoff.model_dump(mode="json") for handoff in handoffs],
         "proposals": [_proposal_result_payload(proposal) for proposal in proposals],
         "review_items": [
@@ -596,9 +542,9 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         "planner_mode": planner_mode,
         "source_plan": source_plan,
         "workspace_snapshot": workspace_snapshot,
-        "selected_records": selected,
-        "skipped_records": skipped,
-        "deferred_records": deferred,
+        "selected_records": selected_payload,
+        "skipped_records": skipped_payload,
+        "deferred_records": deferred_payload,
         "handoffs": [handoff.model_dump(mode="json") for handoff in handoffs],
         "proposals": [_proposal_result_payload(proposal) for proposal in proposals],
         "review_items": [
@@ -669,9 +615,9 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         run=final_run,
         workspace_snapshot=workspace_snapshot,
         source_plan=source_plan,
-        selected_records=tuple(selected),
-        skipped_records=tuple(skipped),
-        deferred_records=tuple(deferred),
+        selected_records=tuple(selected_payload),
+        skipped_records=tuple(skipped_payload),
+        deferred_records=tuple(deferred_payload),
         handoffs=tuple(handoffs),
         proposals=tuple(proposals),
         review_items=tuple(review_items),
@@ -762,7 +708,7 @@ def build_evidence_selection_workspace_snapshot(
             "source_document_keys": sorted(
                 {
                     key
-                    for key in (_source_document_dedup_key(document) for document in prior_documents)
+                    for key in (source_document_dedup_key(document) for document in prior_documents)
                     if key is not None
                 },
             ),
@@ -876,14 +822,6 @@ def build_source_plan(
     }
 
 
-@dataclass(frozen=True, slots=True)
-class _ScreeningResult:
-    selected_records: tuple[JSONObject, ...]
-    skipped_records: tuple[JSONObject, ...]
-    deferred_records: tuple[JSONObject, ...]
-    errors: tuple[str, ...]
-
-
 async def _run_live_source_searches(
     *,
     space_id: UUID,
@@ -939,562 +877,6 @@ async def _run_live_source_searches(
             ),
         )
     return tuple(candidate_searches), tuple(errors)
-
-
-def _screen_candidate_searches(  # noqa: PLR0913
-    *,
-    space_id: UUID,
-    goal: str,
-    instructions: str | None,
-    inclusion_criteria: tuple[str, ...],
-    exclusion_criteria: tuple[str, ...],
-    candidate_searches: tuple[EvidenceSelectionCandidateSearch, ...],
-    max_records_per_search: int,
-    direct_source_search_store: DirectSourceSearchStore,
-    document_store: HarnessDocumentStore,
-) -> _ScreeningResult:
-    goal_terms = _terms(
-        " ".join(
-            (
-                goal,
-                instructions or "",
-                " ".join(inclusion_criteria),
-            ),
-        ),
-    )
-    exclusion_terms = _terms(" ".join(exclusion_criteria))
-    selected: list[JSONObject] = []
-    skipped: list[JSONObject] = []
-    deferred: list[JSONObject] = []
-    errors: list[str] = []
-    existing_document_keys = {
-        key
-        for key in (
-            _source_document_dedup_key(document)
-            for document in document_store.list_documents(space_id=space_id)
-        )
-        if key is not None
-    }
-    existing_record_hashes = {
-        record_hash
-        for record_hash in (
-            _source_document_record_hash(document)
-            for document in document_store.list_documents(space_id=space_id)
-        )
-        if record_hash is not None
-    }
-    for candidate_search in candidate_searches:
-        source_search = direct_source_search_store.get(
-            space_id=space_id,
-            source_key=candidate_search.source_key,
-            search_id=candidate_search.search_id,
-        )
-        if source_search is None:
-            errors.append(
-                f"Source search {candidate_search.source_key}/{candidate_search.search_id} was not found.",
-            )
-            deferred.append(
-                {
-                    "source_key": candidate_search.source_key,
-                    "search_id": str(candidate_search.search_id),
-                    "decision": "deferred",
-                    "relevance_label": "deferred",
-                    "reason": "Saved source search was not found for this space/source.",
-                },
-            )
-            continue
-        ranked = sorted(
-            (
-                _decision_for_record(
-                    source_search=source_search,
-                    record_index=index,
-                    record=record,
-                    goal_terms=goal_terms,
-                    exclusion_terms=exclusion_terms,
-                    existing_document_keys=existing_document_keys,
-                    existing_record_hashes=existing_record_hashes,
-                )
-                for index, record in enumerate(source_search.records)
-            ),
-            key=lambda decision: (
-                -_score_from_decision(decision),
-                int(decision["record_index"]) if isinstance(decision["record_index"], int) else 0,
-            ),
-        )
-        search_limit = (
-            candidate_search.max_records
-            if candidate_search.max_records is not None
-            else max_records_per_search
-        )
-        selected_for_search = 0
-        for decision in ranked:
-            if decision["decision"] == "selected" and _decision_is_duplicate(
-                decision=decision,
-                existing_document_keys=existing_document_keys,
-                existing_record_hashes=existing_record_hashes,
-            ):
-                skipped.append(
-                    {
-                        **decision,
-                        "decision": "skipped",
-                        "relevance_label": "context_only",
-                        "reason": (
-                            "This source record was already selected or captured "
-                            "in the research space."
-                        ),
-                    },
-                )
-                continue
-            if decision["decision"] == "selected" and selected_for_search < search_limit:
-                selected.append(decision)
-                selected_for_search += 1
-                _mark_decision_seen(
-                    decision=decision,
-                    existing_document_keys=existing_document_keys,
-                    existing_record_hashes=existing_record_hashes,
-                )
-            elif decision["decision"] == "selected":
-                deferred.append(
-                    {
-                        **decision,
-                        "decision": "deferred",
-                        "relevance_label": "deferred",
-                        "reason": "Per-search selection budget reached.",
-                    },
-                )
-            else:
-                skipped.append(decision)
-    return _ScreeningResult(
-        selected_records=tuple(selected),
-        skipped_records=tuple(skipped),
-        deferred_records=tuple(deferred),
-        errors=tuple(errors),
-    )
-
-
-def _decision_is_duplicate(
-    *,
-    decision: JSONObject,
-    existing_document_keys: set[str],
-    existing_record_hashes: set[str],
-) -> bool:
-    record_hash = decision.get("record_hash")
-    if isinstance(record_hash, str) and record_hash in existing_record_hashes:
-        return True
-    dedup_key = _decision_dedup_key(decision)
-    return dedup_key is not None and dedup_key in existing_document_keys
-
-
-def _mark_decision_seen(
-    *,
-    decision: JSONObject,
-    existing_document_keys: set[str],
-    existing_record_hashes: set[str],
-) -> None:
-    record_hash = decision.get("record_hash")
-    if isinstance(record_hash, str):
-        existing_record_hashes.add(record_hash)
-    dedup_key = _decision_dedup_key(decision)
-    if dedup_key is not None:
-        existing_document_keys.add(dedup_key)
-
-
-def _decision_dedup_key(decision: JSONObject) -> str | None:
-    source_key = decision.get("source_key")
-    search_id = decision.get("search_id")
-    record_index = decision.get("record_index")
-    if (
-        isinstance(source_key, str)
-        and isinstance(search_id, str)
-        and isinstance(record_index, int)
-    ):
-        return _record_dedup_key(
-            source_key=source_key,
-            search_id=search_id,
-            record_index=record_index,
-        )
-    return None
-
-
-def _decision_for_record(
-    *,
-    source_search: DirectSourceSearchRecord,
-    record_index: int,
-    record: JSONObject,
-    goal_terms: frozenset[str],
-    exclusion_terms: frozenset[str],
-    existing_document_keys: set[str],
-    existing_record_hashes: set[str],
-) -> JSONObject:
-    record_text = _record_search_text(record)
-    record_terms = _terms(record_text)
-    matched_terms = sorted(goal_terms & record_terms)
-    excluded_terms = sorted(exclusion_terms & record_terms)
-    record_hash = _record_hash(record)
-    dedup_key = _record_dedup_key(
-        source_key=source_search.source_key,
-        search_id=source_search.id,
-        record_index=record_index,
-    )
-    title = _record_title(record, fallback=f"{source_search.source_key} record {record_index}")
-    score = _relevance_score(
-        matched_terms=matched_terms,
-        excluded_terms=excluded_terms,
-        source_key=source_search.source_key,
-        record_text=record_text,
-    )
-    source = get_source_definition(source_search.source_key)
-    caveats = _record_caveats(
-        source_key=source_search.source_key,
-        record_text=record_text,
-        matched_terms=matched_terms,
-        excluded_terms=excluded_terms,
-    )
-    if dedup_key in existing_document_keys or record_hash in existing_record_hashes:
-        return {
-            "source_key": source_search.source_key,
-            "source_family": source.source_family if source is not None else "unknown",
-            "search_id": str(source_search.id),
-            "record_index": record_index,
-            "record_hash": record_hash,
-            "title": title,
-            "score": score,
-            "decision": "skipped",
-            "relevance_label": "context_only",
-            "reason": (
-                "This source record was already selected or captured in the "
-                "research space."
-            ),
-            "matched_terms": matched_terms,
-            "excluded_terms": excluded_terms,
-            "caveats": caveats,
-        }
-    if excluded_terms:
-        return {
-            "source_key": source_search.source_key,
-            "source_family": source.source_family if source is not None else "unknown",
-            "search_id": str(source_search.id),
-            "record_index": record_index,
-            "record_hash": record_hash,
-            "title": title,
-            "score": score,
-            "decision": "skipped",
-            "relevance_label": "off_objective",
-            "reason": "Record matched exclusion criteria.",
-            "matched_terms": matched_terms,
-            "excluded_terms": excluded_terms,
-            "caveats": caveats,
-        }
-    if not matched_terms:
-        return {
-            "source_key": source_search.source_key,
-            "source_family": source.source_family if source is not None else "unknown",
-            "search_id": str(source_search.id),
-            "record_index": record_index,
-            "record_hash": record_hash,
-            "title": title,
-            "score": score,
-            "decision": "skipped",
-            "relevance_label": "off_objective",
-            "reason": "Record did not match the research goal or inclusion criteria.",
-            "matched_terms": matched_terms,
-            "excluded_terms": excluded_terms,
-            "caveats": caveats,
-        }
-    if score < _MIN_SELECTION_SCORE:
-        return {
-            "source_key": source_search.source_key,
-            "source_family": source.source_family if source is not None else "unknown",
-            "search_id": str(source_search.id),
-            "record_index": record_index,
-            "record_hash": record_hash,
-            "title": title,
-            "score": score,
-            "decision": "skipped",
-            "relevance_label": "needs_human_review",
-            "reason": "Record had only weak goal overlap and needs a stronger topic match.",
-            "matched_terms": matched_terms,
-            "excluded_terms": excluded_terms,
-            "caveats": caveats,
-        }
-    return {
-        "source_key": source_search.source_key,
-        "source_family": source.source_family if source is not None else "unknown",
-        "search_id": str(source_search.id),
-        "record_index": record_index,
-        "record_hash": record_hash,
-        "title": title,
-        "score": score,
-        "decision": "selected",
-        "relevance_label": _relevance_label_for_selected_score(score),
-        "reason": _selection_reason(matched_terms=matched_terms, source_key=source_search.source_key),
-        "matched_terms": matched_terms,
-        "excluded_terms": excluded_terms,
-        "caveats": caveats,
-    }
-
-
-def _create_selected_handoffs(
-    *,
-    space_id: UUID,
-    created_by: UUID | str,
-    selected_records: tuple[JSONObject, ...],
-    search_store: DirectSourceSearchStore,
-    handoff_store: SourceSearchHandoffStore | None,
-    document_store: HarnessDocumentStore,
-    run_registry: HarnessRunRegistry,
-) -> tuple[list[SourceSearchHandoffResponse], list[str]]:
-    if handoff_store is None:
-        return [], ["Handoff store is unavailable."]
-    service = SourceSearchHandoffService(
-        search_store=search_store,
-        handoff_store=handoff_store,
-        document_store=document_store,
-        run_registry=run_registry,
-    )
-    handoffs: list[SourceSearchHandoffResponse] = []
-    errors: list[str] = []
-    for decision in selected_records:
-        source_key = _required_decision_string(decision, "source_key")
-        search_id = UUID(_required_decision_string(decision, "search_id"))
-        record_index = _required_decision_int(decision, "record_index")
-        record_hash = _required_decision_string(decision, "record_hash")
-        try:
-            handoff = service.create_handoff(
-                space_id=space_id,
-                source_key=source_key,
-                search_id=search_id,
-                created_by=created_by,
-                request=SourceSearchHandoffRequest(
-                    record_index=record_index,
-                    idempotency_key=f"evidence-selection:{source_key}:{search_id}:{record_index}",
-                    metadata={
-                        "selected_by": "evidence-selection",
-                        "selected_record_hash": record_hash,
-                    },
-                ),
-            )
-        except (
-            SourceSearchHandoffConflictError,
-            SourceSearchHandoffNotFoundError,
-            SourceSearchHandoffSelectionError,
-            SourceSearchHandoffUnsupportedError,
-            ValueError,
-        ) as exc:
-            errors.append(
-                f"Failed to hand off {source_key}/{search_id} record {record_index}: {exc}",
-            )
-            continue
-        handoffs.append(handoff)
-    return handoffs, errors
-
-
-def _stage_selected_records_for_review(
-    *,
-    space_id: UUID,
-    run_id: str,
-    selected_records: tuple[JSONObject, ...],
-    handoffs: tuple[SourceSearchHandoffResponse, ...],
-    search_store: DirectSourceSearchStore,
-    proposal_store: HarnessProposalStore,
-    review_item_store: HarnessReviewItemStore,
-) -> tuple[list[HarnessProposalRecord], list[HarnessReviewItemRecord], list[str]]:
-    handoff_by_record = _handoffs_by_source_record(handoffs)
-    proposal_drafts: list[HarnessProposalDraft] = []
-    review_item_drafts: list[HarnessReviewItemDraft] = []
-    errors: list[str] = []
-    for decision in selected_records:
-        try:
-            source_key = _required_decision_string(decision, "source_key")
-            search_id = UUID(_required_decision_string(decision, "search_id"))
-            record_index = _required_decision_int(decision, "record_index")
-        except ValueError as exc:
-            errors.append(str(exc))
-            continue
-        source_search = search_store.get(
-            space_id=space_id,
-            source_key=source_key,
-            search_id=search_id,
-        )
-        if source_search is None:
-            errors.append(
-                f"Cannot stage review output for missing source search {source_key}/{search_id}.",
-            )
-            continue
-        try:
-            record = source_search.records[record_index]
-        except IndexError:
-            errors.append(
-                f"Cannot stage review output for {source_key}/{search_id} record {record_index}.",
-            )
-            continue
-        handoff = handoff_by_record.get(_record_dedup_key(
-            source_key=source_key,
-            search_id=search_id,
-            record_index=record_index,
-        ))
-        document_id = str(handoff.target_document_id) if handoff is not None else None
-        review_item_drafts.append(
-            _review_item_draft_for_decision(
-                decision=decision,
-                record=record,
-                document_id=document_id,
-            ),
-        )
-        proposal_draft = _proposal_draft_for_decision(
-            decision=decision,
-            record=record,
-            document_id=document_id,
-        )
-        if proposal_draft is not None:
-            proposal_drafts.append(proposal_draft)
-    proposals = proposal_store.create_proposals(
-        space_id=space_id,
-        run_id=run_id,
-        proposals=tuple(proposal_drafts),
-    )
-    review_items = review_item_store.create_review_items(
-        space_id=space_id,
-        run_id=run_id,
-        review_items=tuple(review_item_drafts),
-    )
-    return proposals, review_items, errors
-
-
-def _handoffs_by_source_record(
-    handoffs: tuple[SourceSearchHandoffResponse, ...],
-) -> dict[str, SourceSearchHandoffResponse]:
-    indexed: dict[str, SourceSearchHandoffResponse] = {}
-    for handoff in handoffs:
-        indexed[
-            _record_dedup_key(
-                source_key=handoff.source_key,
-                search_id=handoff.search_id,
-                record_index=handoff.selected_record_index,
-            )
-        ] = handoff
-    return indexed
-
-
-def _proposal_draft_for_decision(
-    *,
-    decision: JSONObject,
-    record: JSONObject,
-    document_id: str | None,
-) -> HarnessProposalDraft | None:
-    source_key = _required_decision_string(decision, "source_key")
-    policy = extraction_policy_for_source(source_key)
-    title = _required_decision_string(decision, "title")
-    score = _score_from_decision(decision)
-    metadata = _review_metadata(decision=decision, record=record)
-    return HarnessProposalDraft(
-        proposal_type=policy.proposal_type,
-        source_kind="direct_source_search",
-        source_key=source_key,
-        document_id=document_id,
-        title=f"Review candidate: {title}",
-        summary=proposal_summary(
-            source_key=source_key,
-            selection_reason=_required_decision_string(decision, "reason"),
-        ),
-        confidence=min(max(score / 10.0, 0.1), 0.95),
-        ranking_score=score,
-        reasoning_path={
-            "selection_reason": decision.get("reason"),
-            "matched_terms": decision.get("matched_terms"),
-            "caveats": decision.get("caveats"),
-            "source_specific_limitations": list(policy.limitations),
-        },
-        evidence_bundle=[metadata],
-        payload={
-            "selected_record": record,
-            "selection": decision,
-            "normalized_extraction": metadata["normalized_extraction"],
-            "review_gate": "pending_human_review",
-        },
-        metadata=metadata,
-        claim_fingerprint=f"evidence-selection:{decision.get('record_hash')}",
-    )
-
-
-def _review_item_draft_for_decision(
-    *,
-    decision: JSONObject,
-    record: JSONObject,
-    document_id: str | None,
-) -> HarnessReviewItemDraft:
-    source_key = _required_decision_string(decision, "source_key")
-    source_family = _required_decision_string(decision, "source_family")
-    title = _required_decision_string(decision, "title")
-    score = _score_from_decision(decision)
-    metadata = _review_metadata(decision=decision, record=record)
-    return HarnessReviewItemDraft(
-        review_type=extraction_policy_for_source(source_key).review_type,
-        source_family=source_family,
-        source_kind="direct_source_search",
-        source_key=source_key,
-        document_id=document_id,
-        title=f"Review selected source record: {title}",
-        summary=review_item_summary(
-            source_key=source_key,
-            selection_reason=_required_decision_string(decision, "reason"),
-        ),
-        priority="high" if score >= _HIGH_PRIORITY_SCORE_THRESHOLD else "medium",
-        confidence=min(max(score / 10.0, 0.1), 0.95),
-        ranking_score=score,
-        evidence_bundle=[metadata],
-        payload={
-            "selected_record": record,
-            "selection": decision,
-            "normalized_extraction": metadata["normalized_extraction"],
-            "review_gate": "pending_human_review",
-        },
-        metadata=metadata,
-        review_fingerprint=f"evidence-selection-review:{decision.get('record_hash')}",
-    )
-
-
-def _review_metadata(*, decision: JSONObject, record: JSONObject) -> JSONObject:
-    return {
-        "source_search_id": decision.get("search_id"),
-        "source_key": decision.get("source_key"),
-        "source_family": decision.get("source_family"),
-        "selected_record_index": decision.get("record_index"),
-        "selected_record_hash": decision.get("record_hash"),
-        "selection_reason": decision.get("reason"),
-        "relevance_label": decision.get("relevance_label"),
-        "selection_score": decision.get("score"),
-        "matched_terms": decision.get("matched_terms"),
-        "excluded_terms": decision.get("excluded_terms"),
-        "caveats": decision.get("caveats"),
-        "normalized_extraction": normalized_extraction_payload(
-            source_key=str(decision.get("source_key") or "unknown"),
-            record=record,
-        ),
-        "source_capture": record.get("source_capture") if isinstance(record.get("source_capture"), dict) else None,
-    }
-
-
-def _proposal_type_for_source(source_key: str) -> str:
-    return extraction_policy_for_source(source_key).proposal_type
-
-
-def _review_type_for_source(source_key: str) -> str:
-    return extraction_policy_for_source(source_key).review_type
-
-
-def _proposal_summary(*, source_key: str, decision: JSONObject) -> str:
-    return proposal_summary(
-        source_key=source_key,
-        selection_reason=_required_decision_string(decision, "reason"),
-    )
-
-
-def _review_item_summary(*, source_key: str, decision: JSONObject) -> str:
-    return review_item_summary(
-        source_key=source_key,
-        selection_reason=_required_decision_string(decision, "reason"),
-    )
 
 
 def _compact_prior_goal(run: HarnessRunRecord) -> JSONObject:
@@ -1616,155 +998,6 @@ def _review_item_result_payload(review_item: HarnessReviewItemRecord) -> JSONObj
         "status": review_item.status,
         "review_fingerprint": review_item.review_fingerprint,
     }
-
-
-def _source_document_dedup_key(document: HarnessDocumentRecord) -> str | None:
-    metadata = document.metadata
-    source_key = document.source_type
-    search_id = metadata.get("source_search_id")
-    record_index = metadata.get("selected_record_index")
-    if isinstance(search_id, str) and isinstance(record_index, int):
-        return _record_dedup_key(
-            source_key=source_key,
-            search_id=search_id,
-            record_index=record_index,
-        )
-    return None
-
-
-def _source_document_record_hash(document: HarnessDocumentRecord) -> str | None:
-    selected_record = document.metadata.get("selected_record")
-    if isinstance(selected_record, dict):
-        return _record_hash(json_object_or_empty(selected_record))
-    return None
-
-
-def _record_dedup_key(
-    *,
-    source_key: str,
-    search_id: UUID | str,
-    record_index: int,
-) -> str:
-    return f"{source_key}:{search_id}:{record_index}"
-
-
-def _selection_reason(*, matched_terms: list[str], source_key: str) -> str:
-    preview = ", ".join(matched_terms[:5])
-    if preview:
-        return f"Record matches the goal/instructions through: {preview}."
-    return f"Record from {source_key} matched the evidence-selection policy."
-
-
-def _relevance_label_for_selected_score(score: float) -> str:
-    if score >= _HIGH_PRIORITY_SCORE_THRESHOLD:
-        return "strong_fit"
-    return "plausible_fit"
-
-
-def _record_caveats(
-    *,
-    source_key: str,
-    record_text: str,
-    matched_terms: list[str],
-    excluded_terms: list[str],
-) -> list[str]:
-    caveats: list[str] = []
-    caveats.extend(extraction_policy_for_source(source_key).limitations)
-    lowered = record_text.lower()
-    if "association" in lowered and "caus" not in lowered:
-        caveats.append("Association language should not be treated as causal proof.")
-    if "conflict" in lowered or "contradict" in lowered:
-        caveats.append("Record contains possible conflict or contradiction language.")
-    if not matched_terms:
-        caveats.append("No direct goal term match was found.")
-    if excluded_terms:
-        caveats.append("Record matched explicit exclusion criteria.")
-    return caveats
-
-
-def _relevance_score(
-    *,
-    matched_terms: list[str],
-    excluded_terms: list[str],
-    source_key: str,
-    record_text: str,
-) -> float:
-    score = float(len(matched_terms) * 2)
-    if source_key in {"pubmed", "clinvar", "clinical_trials"}:
-        score += 1.0
-    if "review" in record_text.lower():
-        score += 0.5
-    score -= float(len(excluded_terms) * 4)
-    return max(score, 0.0)
-
-
-def _score_from_decision(decision: JSONObject) -> float:
-    score = decision.get("score")
-    if isinstance(score, int | float) and not isinstance(score, bool):
-        return float(score)
-    return 0.0
-
-
-def _terms(text: str) -> frozenset[str]:
-    return frozenset(
-        token.casefold()
-        for token in _WORD_PATTERN.findall(text)
-        if token.casefold() not in _STOP_WORDS
-    )
-
-
-def _record_text(record: JSONObject) -> str:
-    return json.dumps(record, ensure_ascii=False, sort_keys=True)
-
-
-def _record_search_text(record: JSONObject) -> str:
-    values: list[str] = []
-
-    def collect(value: object) -> None:
-        if isinstance(value, str):
-            values.append(value)
-            return
-        if isinstance(value, int | float) and not isinstance(value, bool):
-            values.append(str(value))
-            return
-        if isinstance(value, dict):
-            for nested_value in value.values():
-                collect(nested_value)
-            return
-        if isinstance(value, list | tuple):
-            for nested_value in value:
-                collect(nested_value)
-
-    collect(record)
-    return " ".join(values)
-
-
-def _record_hash(record: JSONObject) -> str:
-    return hashlib.sha256(_record_text(record).encode("utf-8")).hexdigest()
-
-
-def _record_title(record: JSONObject, *, fallback: str) -> str:
-    for key in ("title", "brief_title", "official_title", "name", "gene_symbol"):
-        value = record.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return fallback
-
-
-def _required_decision_string(decision: JSONObject, key: str) -> str:
-    value = decision.get(key)
-    if not isinstance(value, str) or value.strip() == "":
-        msg = f"Evidence-selection decision is missing string field '{key}'."
-        raise ValueError(msg)
-    return value.strip()
-
-
-def _required_decision_int(decision: JSONObject, key: str) -> int:
-    value: JSONValue | None = decision.get(key)
-    if isinstance(value, int) and not isinstance(value, bool):
-        return value
-    msg = f"Evidence-selection decision is missing integer field '{key}'."
-    raise ValueError(msg)
 
 
 def _put_json_artifact(
