@@ -13,30 +13,42 @@ The repo currently has two passing type gates:
 - Evidence API: `make -s artana-evidence-api-type-check`
 - Graph service: `make -s graph-service-type-check`
 
-Those gates are useful, but permissive. Both still use `--follow-imports=skip`.
-The Evidence API gate also disables several broad error classes:
+Evidence API gate (current Makefile):
 
-- `no-any-unimported`
-- `no-any-return`
-- `misc`
-- `untyped-decorator`
-- `no-untyped-def`
-- `arg-type`
-- `attr-defined`
-- `assignment`
-- `unreachable`
-- `has-type`
+- Runs as a package import (`mypy -p artana_evidence_api`), so
+  `--follow-imports=skip` is no longer used.
+- `ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS` only sets
+  `--show-error-codes`. All broad `--disable-error-code` suppressions have
+  been removed; see the Evidence API Disabled-Code Burn-Down progress log
+  below.
+- `make -s artana-evidence-api-type-check-strict-imports` is now an explicit
+  alias for the same gate.
+
+Graph service gate (current Makefile):
+
+- Still uses `--follow-imports=skip` on `graph-service-type-check`.
+- Still disables four broad error classes via
+  `GRAPH_SERVICE_STRICT_IMPORT_MYPY_FLAGS`:
+  - `no-any-unimported`
+  - `no-any-return`
+  - `misc`
+  - `untyped-decorator`
+- `make -s graph-service-type-check-strict-imports` runs the package gate
+  without `--follow-imports=skip` and currently passes with the four codes
+  above still disabled.
 
 When the Evidence API package was first checked without `--follow-imports=skip`,
 mypy exposed a broad backlog. The first full-package exploratory run found about
 `1,847` errors across `65` files, mostly in tests. The runtime-only exploratory
 target started at `351` errors across `34` files and now passes:
 `make -s artana-evidence-api-type-check-strict-imports`. The graph-service
-strict-import baseline still reports `1,545` errors across `74` runtime files.
-Those graph errors are dominated by SQLAlchemy declarative model visibility and
-protocol variance; they need a dedicated graph-service ORM/protocol slice rather
-than a config-only change. These numbers are baselines for planning, not product
-failures. The existing service type gates still pass.
+strict-import baseline started at `1,545` errors across `74` runtime files and
+now passes at zero with the four disabled codes above. Those graph errors were
+dominated by SQLAlchemy declarative model visibility and protocol variance, and
+were resolved by a dedicated graph-service ORM/protocol slice rather than a
+config-only change. The remaining graph-service work tracked under issue #12 is
+to drop `--follow-imports=skip` from the default gate and to burn down the four
+remaining graph disabled codes. The existing service type gates still pass.
 
 ## First Principles
 
