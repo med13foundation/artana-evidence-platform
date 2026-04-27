@@ -354,6 +354,91 @@ def _payload_with_limit(source_search: EvidenceSelectionLiveSourceSearch) -> JSO
     return payload
 
 
+def validate_live_source_search(source_search: EvidenceSelectionLiveSourceSearch) -> None:
+    """Validate a live source-search payload before external source side effects."""
+
+    validator = _LIVE_SOURCE_SEARCH_VALIDATORS.get(source_search.source_key)
+    if validator is not None:
+        validator(source_search)
+        return
+    raise EvidenceSelectionSourceSearchError(
+        "Evidence-selection live source search does not support "
+        f"'{source_search.source_key}'.",
+    )
+
+
+def _validate_pubmed_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    AdvancedQueryParameters.model_validate(
+        _pubmed_payload_with_limit(source_search)["parameters"],
+    )
+
+
+def _validate_marrvel_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    _marrvel_search_parameters(source_search.query_payload)
+
+
+def _validate_clinvar_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    ClinVarSourceSearchRequest.model_validate(_payload_with_limit(source_search))
+
+
+def _validate_clinicaltrials_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    ClinicalTrialsSourceSearchRequest.model_validate(_payload_with_limit(source_search))
+
+
+def _validate_uniprot_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    UniProtSourceSearchRequest.model_validate(_payload_with_limit(source_search))
+
+
+def _validate_alphafold_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    AlphaFoldSourceSearchRequest.model_validate(_payload_with_limit(source_search))
+
+
+def _validate_drugbank_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    DrugBankSourceSearchRequest.model_validate(_payload_with_limit(source_search))
+
+
+def _validate_mgi_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    MGISourceSearchRequest.model_validate(_payload_with_limit(source_search))
+
+
+def _validate_zfin_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
+    ZFINSourceSearchRequest.model_validate(_payload_with_limit(source_search))
+
+
+_LIVE_SOURCE_SEARCH_VALIDATORS: dict[
+    str,
+    Callable[[EvidenceSelectionLiveSourceSearch], None],
+] = {
+    "pubmed": _validate_pubmed_source_search,
+    "marrvel": _validate_marrvel_source_search,
+    "clinvar": _validate_clinvar_source_search,
+    "clinical_trials": _validate_clinicaltrials_source_search,
+    "uniprot": _validate_uniprot_source_search,
+    "alphafold": _validate_alphafold_source_search,
+    "drugbank": _validate_drugbank_source_search,
+    "mgi": _validate_mgi_source_search,
+    "zfin": _validate_zfin_source_search,
+}
+
+
 def _pubmed_payload_with_limit(
     source_search: EvidenceSelectionLiveSourceSearch,
 ) -> JSONObject:
@@ -593,4 +678,5 @@ __all__ = [
     "EvidenceSelectionLiveSourceSearch",
     "EvidenceSelectionSourceSearchError",
     "EvidenceSelectionSourceSearchRunner",
+    "validate_live_source_search",
 ]

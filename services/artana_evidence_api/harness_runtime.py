@@ -518,6 +518,11 @@ class EvidenceSelectionHarness(
                 "EvidenceSelectionSourcePlannerMode",
                 _string_value(payload, "planner_mode", default="deterministic"),
             ),
+            live_network_allowed=_bool_value(
+                payload,
+                "live_network_allowed",
+                default=False,
+            ),
             source_searches=_source_searches(payload.get("source_searches")),
             candidate_searches=_candidate_searches(
                 payload.get("candidate_searches"),

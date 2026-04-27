@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import re
 from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
@@ -24,6 +23,10 @@ from artana_evidence_api.document_store import (
 )
 from artana_evidence_api.models import SourceSearchHandoffModel
 from artana_evidence_api.run_registry import HarnessRunRegistry
+from artana_evidence_api.source_policies import (
+    source_record_policies,
+    source_record_policy,
+)
 from artana_evidence_api.source_result_capture import (
     SourceCaptureStage,
     SourceResultCapture,
@@ -37,9 +40,7 @@ from artana_evidence_api.sqlalchemy_unit_of_work import (
 from artana_evidence_api.types.common import (
     JSONObject,
     JSONValue,
-    json_array_or_empty,
     json_object_or_empty,
-    json_value,
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
@@ -50,57 +51,12 @@ SourceSearchHandoffStatus = Literal["pending", "completed", "failed"]
 SourceSearchHandoffTargetKind = Literal["source_document"]
 
 _DURABLE_RUN_BACKED_SOURCE_KEYS = frozenset(
-    {
-        "clinvar",
-        "pubmed",
-        "marrvel",
-        "clinical_trials",
-        "uniprot",
-        "alphafold",
-        "drugbank",
-        "mgi",
-        "zfin",
-    },
-)
-_MARRVEL_VARIANT_PANEL_KEYS = frozenset(
-    {
-        "clinvar",
-        "mutalyzer",
-        "transvar",
-        "gnomad_variant",
-        "geno2mp_variant",
-        "dgv_variant",
-        "decipher_variant",
-    },
+    policy.source_key
+    for policy in source_record_policies()
+    if policy.direct_search_supported and policy.handoff_target_kind == "source_document"
 )
 _MAX_CLIENT_METADATA_BYTES = 16 * 1024
-_CLINVAR_ACCESSION_PATTERN = re.compile(
-    r"^(?:VCV|RCV|SCV)\d+(?:\.\d+)?$",
-    re.IGNORECASE,
-)
 _LOGGER = logging.getLogger(__name__)
-_PROVIDER_ID_KEYS_BY_SOURCE: dict[str, tuple[str, ...]] = {
-    "clinvar": ("accession", "clinvar_id", "variation_id"),
-    "pubmed": ("pmid", "pubmed_id", "uid"),
-    "clinical_trials": ("nct_id",),
-    "uniprot": ("uniprot_id", "primary_accession", "accession"),
-    "alphafold": ("uniprot_id", "primary_accession", "accession"),
-    "drugbank": ("drugbank_id", "drug_id"),
-    "marrvel": ("marrvel_record_id",),
-    "mgi": ("mgi_id", "primary_id", "id"),
-    "zfin": ("zfin_id", "primary_id", "id"),
-}
-_SOURCE_FAMILIES_BY_SOURCE: dict[str, str] = {
-    "pubmed": "literature",
-    "clinvar": "variant",
-    "marrvel": "model_organism",
-    "clinical_trials": "clinical",
-    "uniprot": "protein",
-    "alphafold": "structure",
-    "drugbank": "drug",
-    "mgi": "model_organism",
-    "zfin": "model_organism",
-}
 
 
 class SourceSearchHandoffRequest(BaseModel):
@@ -827,11 +783,8 @@ def _select_record(  # noqa: PLR0912
 
 
 def _provider_external_id(*, source_key: str, record: JSONObject) -> str | None:
-    for key in _PROVIDER_ID_KEYS_BY_SOURCE.get(source_key, ()):
-        value = record.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return None
+    policy = source_record_policy(source_key)
+    return policy.provider_external_id(record) if policy is not None else None
 
 
 def _record_supports_variant_aware(
@@ -839,11 +792,8 @@ def _record_supports_variant_aware(
     source_key: str,
     selected: _SelectedSourceRecord,
 ) -> bool:
-    if source_key == "marrvel":
-        return _marrvel_record_is_variant_panel(selected.record)
-    if source_key == "clinvar":
-        return _clinvar_record_has_variant_signal(selected.record)
-    return False
+    policy = source_record_policy(source_key)
+    return bool(policy and policy.recommends_variant_aware(selected.record))
 
 
 def _handoff_run_input(
@@ -860,42 +810,6 @@ def _handoff_run_input(
         "external_id": selected.external_id,
         "target_kind": target_kind,
     }
-
-
-def _marrvel_record_is_variant_panel(record: JSONObject) -> bool:
-    if record.get("variant_aware_recommended") is True:
-        return True
-    panel_name = record.get("panel_name")
-    if isinstance(panel_name, str) and panel_name.strip() in _MARRVEL_VARIANT_PANEL_KEYS:
-        return True
-    panel_family = record.get("panel_family")
-    return isinstance(panel_family, str) and panel_family.strip() == "variant"
-
-
-def _clinvar_record_has_variant_signal(record: JSONObject) -> bool:
-    if record.get("variant_aware_recommended") is True:
-        return True
-    for key in (
-        "hgvs",
-        "hgvs_notation",
-        "hgvs_c",
-        "hgvs_p",
-    ):
-        value = record.get(key)
-        if isinstance(value, str) and value.strip():
-            return True
-        if isinstance(value, int):
-            return True
-    accession = record.get("accession")
-    if isinstance(accession, str) and _CLINVAR_ACCESSION_PATTERN.fullmatch(
-        accession.strip(),
-    ):
-        return True
-    title = record.get("title")
-    if isinstance(title, str):
-        normalized_title = title.lower()
-        return any(token in normalized_title for token in (":c.", ":p.", ":g.", ":m."))
-    return False
 
 
 def _validated_uuid_string(value: UUID | str) -> str:
@@ -1193,203 +1107,19 @@ def _source_record_title(
 
 
 def _source_family(source_key: str) -> str:
-    return _SOURCE_FAMILIES_BY_SOURCE.get(source_key, "document")
+    policy = source_record_policy(source_key)
+    return policy.source_family if policy is not None else "document"
 
 
-def _normalized_source_record(  # noqa: PLR0911
+def _normalized_source_record(
     *,
     source_key: str,
     selected: _SelectedSourceRecord,
 ) -> JSONObject:
-    record = selected.record
-    if source_key == "pubmed":
-        return _compact_json_object(
-            {
-                "pmid": _string_field(record, "pmid", "pubmed_id", "uid"),
-                "title": _string_field(record, "title"),
-                "abstract": _string_field(record, "abstract"),
-                "journal": _string_field(record, "journal", "source"),
-                "publication_year": _string_field(
-                    record,
-                    "publication_year",
-                    "year",
-                ),
-            },
-        )
-    if source_key == "clinical_trials":
-        return _compact_json_object(
-            {
-                "nct_id": _string_field(record, "nct_id"),
-                "title": _string_field(record, "brief_title", "official_title"),
-                "status": _string_field(record, "overall_status", "status"),
-                "phase": _string_list_field(record, "phases"),
-                "conditions": _string_list_field(record, "conditions"),
-                "interventions": _intervention_names(record.get("interventions")),
-                "study_type": _string_field(record, "study_type"),
-            },
-        )
-    if source_key == "uniprot":
-        return _compact_json_object(
-            {
-                "uniprot_id": _string_field(
-                    record,
-                    "uniprot_id",
-                    "primary_accession",
-                    "accession",
-                ),
-                "gene_symbol": _string_field(record, "gene_name", "gene_symbol"),
-                "protein_name": _string_field(record, "protein_name", "name"),
-                "organism": _string_field(record, "organism"),
-                "function": _string_field(record, "function", "description"),
-                "sequence_length": _json_value_field(record, "sequence_length"),
-            },
-        )
-    if source_key == "alphafold":
-        return _compact_json_object(
-            {
-                "uniprot_id": _string_field(
-                    record,
-                    "uniprot_id",
-                    "primary_accession",
-                    "accession",
-                ),
-                "protein_name": _string_field(record, "protein_name", "name"),
-                "gene_symbol": _string_field(record, "gene_name", "gene_symbol"),
-                "organism": _string_field(record, "organism"),
-                "confidence": _json_value_field(
-                    record,
-                    "predicted_structure_confidence",
-                    "confidence_avg",
-                ),
-                "model_url": _string_field(record, "model_url", "cifUrl"),
-                "pdb_url": _string_field(record, "pdb_url", "pdbUrl"),
-                "domains": _json_value_field(record, "domains"),
-            },
-        )
-    if source_key == "drugbank":
-        return _compact_json_object(
-            {
-                "drugbank_id": _string_field(
-                    record,
-                    "drugbank_id",
-                    "drug_id",
-                    "drugbank-id",
-                ),
-                "drug_name": _string_field(record, "drug_name", "name"),
-                "target_name": _string_field(record, "target_name"),
-                "targets": _json_value_field(record, "targets", "target_names"),
-                "mechanism": _string_field(
-                    record,
-                    "mechanism_of_action",
-                    "mechanism",
-                ),
-                "categories": _json_value_field(record, "categories"),
-            },
-        )
-    if source_key in {"mgi", "zfin"}:
-        return _compact_json_object(
-            {
-                "provider_id": _provider_external_id(
-                    source_key=source_key,
-                    record=record,
-                ),
-                "gene_symbol": _string_field(record, "gene_symbol", "symbol"),
-                "gene_name": _string_field(record, "gene_name", "name"),
-                "species": _string_field(record, "species"),
-                "phenotypes": _json_value_field(record, "phenotype_statements"),
-                "disease_associations": _json_value_field(
-                    record,
-                    "disease_associations",
-                ),
-                "expression_terms": _json_value_field(record, "expression_terms"),
-            },
-        )
-    if source_key == "clinvar":
-        return _compact_json_object(
-            {
-                "accession": _string_field(record, "accession"),
-                "variation_id": _json_value_field(record, "variation_id"),
-                "gene_symbol": _string_field(record, "gene_symbol"),
-                "title": _string_field(record, "title"),
-                "clinical_significance": _json_value_field(
-                    record,
-                    "clinical_significance",
-                ),
-                "conditions": _json_value_field(record, "conditions"),
-                "hgvs": _string_field(record, "hgvs", "hgvs_notation"),
-            },
-        )
-    if source_key == "marrvel":
-        return _compact_json_object(
-            {
-                "marrvel_record_id": _string_field(record, "marrvel_record_id"),
-                "panel_name": _string_field(record, "panel_name"),
-                "panel_family": _string_field(record, "panel_family"),
-                "gene_symbol": _string_field(record, "gene_symbol"),
-                "resolved_gene_symbol": _string_field(
-                    record,
-                    "resolved_gene_symbol",
-                ),
-                "hgvs": _string_field(record, "hgvs", "hgvs_notation"),
-                "query_mode": _string_field(record, "query_mode"),
-                "query_value": _string_field(record, "query_value"),
-            },
-        )
+    policy = source_record_policy(source_key)
+    if policy is not None:
+        return policy.normalize_record(selected.record)
     return {}
-
-
-def _compact_json_object(payload: dict[str, JSONValue | None]) -> JSONObject:
-    return {
-        key: value
-        for key, value in payload.items()
-        if not _is_empty_json_value(value)
-    }
-
-
-def _string_field(record: JSONObject, *keys: str) -> str | None:
-    for key in keys:
-        value = record.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-        if isinstance(value, int | float) and not isinstance(value, bool):
-            return str(value)
-    return None
-
-
-def _json_value_field(record: JSONObject, *keys: str) -> JSONValue | None:
-    for key in keys:
-        if key not in record:
-            continue
-        value = json_value(record[key])
-        if _is_empty_json_value(value):
-            continue
-        return value
-    return None
-
-
-def _string_list_field(record: JSONObject, *keys: str) -> list[str]:
-    for key in keys:
-        values = [
-            item.strip()
-            for item in json_array_or_empty(record.get(key))
-            if isinstance(item, str) and item.strip()
-        ]
-        if values:
-            return values
-    return []
-
-
-def _intervention_names(value: object) -> list[str]:
-    names: list[str] = []
-    for item in json_array_or_empty(value):
-        if isinstance(item, str) and item.strip():
-            names.append(item.strip())
-            continue
-        item_payload = json_object_or_empty(item)
-        name = item_payload.get("name")
-        if isinstance(name, str) and name.strip():
-            names.append(name.strip())
-    return names
 
 
 def _display_json_value(value: JSONValue) -> str:

@@ -20,6 +20,13 @@ Offline benchmarks should run without live external APIs. Each fixture should
 include a research goal, source-search results, expected selections, expected
 skips, known duplicates, and expected proposal/review-item shape.
 
+The current fixture inventory under
+`services/artana_evidence_api/tests/fixtures/evidence_selection/` contains only
+`med13_congenital_heart_disease` unless new fixture directories are added. Do
+not treat the current benchmark as cross-disease, cross-gene, or
+production-representative coverage until the inventory is expanded and
+documented.
+
 Useful metrics:
 
 - precision: selected records that should have been selected;
@@ -31,7 +38,10 @@ Useful metrics:
 - quality of selection and skip reasons.
 
 High-severity overclaiming must be zero before calling the harness
-production-ready.
+production-ready. This is a reviewer/process gate, not just an automated metric:
+reviewers must confirm that selected records, explanations, proposals, and
+review items do not make clinical, regulatory, causal-truth, or trusted-graph
+claims beyond the source evidence.
 
 ## Shadow-Mode Review
 
@@ -53,7 +63,15 @@ labels. The service helper
 `artana_evidence_api.evidence_selection_validation.compare_evidence_selection_review`
 turns those labels into true positives, false positives, false negatives,
 confirmed skips, duplicate counts, precision, recall, explanation quality, and
-the zero high-severity-overclaim gate.
+the zero high-severity-overclaim gate. The helper aggregates reviewer-supplied
+labels and counts; it does not replace reviewer judgment.
+
+Production-readiness requires real shadow-mode runs reviewed by human experts
+on real research questions. Start with at least three distinct research
+questions across different evidence shapes, at least one domain reviewer per
+run, and an adjudication note for disagreements or borderline calls. Offline
+fixtures and helper metrics are necessary foundation checks, but they are not
+evidence that the harness is production ready.
 
 ## Expert-Review Study
 
@@ -86,4 +104,6 @@ venv/bin/pytest services/artana_evidence_api/tests/integration -q
 ```
 
 Keep deterministic unit and route tests as the merge gate. Use live tests as
-extra confidence before releases or source-gateway changes.
+extra confidence before releases or source-gateway changes. When using live
+checks, keep secrets out of committed files and prefer focused `-k` filters when
+validating one source gateway.

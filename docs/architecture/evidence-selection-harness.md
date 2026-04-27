@@ -35,13 +35,34 @@ service contracts.
 
 ## Current Runtime Contract
 
-The public route is `POST /v2/spaces/{space_id}/evidence-runs`. Follow-up runs
-use `POST /v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups`.
+The product-facing public route is `POST /v2/spaces/{space_id}/evidence-runs`.
+Follow-up runs use
+`POST /v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups`.
+The lower-level evidence-selection router also exposes
+`/v1/spaces/{space_id}/agents/evidence-selection/runs` and its follow-up route
+for harness-oriented callers. This tracker does not deprecate that lower-level
+route; product docs should keep steering normal users to the `/v2` front door.
+
+The agentic-discovery contract has four bounded decisions:
+
+- source selection: choose which allowed direct-search sources should be used;
+- query formulation: turn the goal and instructions into normalized
+  source-specific query payloads;
+- record relevance: select, skip, or defer source-search records against the
+  goal and reviewer criteria, whether the records came from searches created in
+  this run or from existing durable search results;
+- handoff decision: decide which selected records should become guarded source
+  handoffs, proposals, and review items.
+
+These are planning and triage decisions. They do not create approved graph
+facts.
 
 Each run uses `planner_mode="model"` by default. When the configured
 query-generation model is available, the researcher can provide only a goal and
-instructions; the model planner selects a bounded set of supported source
-searches and the runtime validates them before any external source call.
+instructions plus `live_network_allowed=true`; the model planner selects a
+bounded set of supported source searches and the runtime validates them before
+any external source call. Goal-only model-planned runs without live-network
+opt-in fail at request validation instead of queueing work that cannot execute.
 
 Manual runs can set `planner_mode="deterministic"`. Deterministic runs must
 provide at least one of:
@@ -53,6 +74,45 @@ If the model planner is unavailable, goal-only requests fail clearly. Explicit
 source-search or candidate-search requests can fall back to deterministic
 execution and record the fallback reason in the source-plan artifact.
 
+## Budget And Fallback Policy
+
+Current discovery is bounded by these policy defaults and validation limits:
+
+- planning mode: `planner_mode="model"` can convert a goal into executable
+  searches when a query-generation model and API key are configured;
+  `planner_mode="deterministic"` screens explicit `source_searches` or
+  `candidate_searches`;
+- explicit-work fallback: if `planner_mode="model"` is requested but the model
+  planner is unavailable, runs with explicit `source_searches` or
+  `candidate_searches` fall back to deterministic planning and record the
+  model-unavailable reason;
+- model-unavailable failure: if no explicit source work is supplied and the
+  model planner is unavailable, the request fails instead of inventing a search
+  plan;
+- live-network opt-in: `live_network_allowed=false` is the default. A run can
+  screen saved `candidate_searches` without live-network access, but any run
+  that creates live source searches, including goal-only model-planned runs,
+  must explicitly set `live_network_allowed=true`;
+- max planned searches: model-created searches are capped at 5 per run;
+- max live searches: the public request accepts up to 50 explicit live source
+  searches, and the runtime rejects planner output above that aggregate live
+  search budget;
+- max records per search: the request default is 3, with a validation range of
+  1 to 100; model-requested record limits are capped by the run's
+  `max_records_per_search`, and explicit planner output above that run limit is
+  rejected before source execution;
+- max handoffs: the request default is 20. Shadow mode can use 0 to 200, while
+  guarded mode requires at least 1 handoff slot and accepts up to 200;
+- per-search timeout: live source searches default to 120 seconds and planner
+  output cannot exceed 120 seconds;
+- candidate-evidence-only guardrail: selected records are staged as candidate
+  evidence for review. The result explicitly records
+  `approved_graph_facts_created: 0`.
+
+The model planner output is validated for live-network opt-in, allowed source
+keys, direct-search support, non-empty query payloads, record limits, search
+count limits, and timeout limits before any external source call runs.
+
 The harness can create supported live structured source searches, including
 PubMed, MARRVEL, ClinVar, ClinicalTrials.gov, UniProt, AlphaFold, DrugBank,
 MGI, and ZFIN, subject to each source's gateway availability and API keys.
@@ -60,8 +120,11 @@ Each live source search has a per-source timeout so one slow external source
 does not block indefinitely. The default is service-defined, and callers can
 set `timeout_seconds` on individual `source_searches` when a source is expected
 to be faster or slower. Searches currently run sequentially inside a single
-evidence run to keep source behavior and shared persistence simple; a future
-slice can add parallel execution with a run-level deadline if needed.
+evidence run to keep source behavior and shared persistence simple. With the
+current model-created search cap and default timeout, a worst-case source-search
+phase can approach 10 minutes before model and persistence overhead; callers
+should use async execution for broad or slow source mixes. A future slice can
+add parallel execution with a run-level deadline if needed.
 
 ## Review Gate
 

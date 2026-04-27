@@ -2800,6 +2800,12 @@
             "title": "Instructions",
             "type": "string"
           },
+          "live_network_allowed": {
+            "default": false,
+            "description": "Allow this evidence-selection follow-up to create live external source-search requests.",
+            "title": "Live Network Allowed",
+            "type": "boolean"
+          },
           "max_handoffs": {
             "default": 20,
             "maximum": 200.0,
@@ -2948,6 +2954,12 @@
               }
             ],
             "title": "Instructions"
+          },
+          "live_network_allowed": {
+            "default": false,
+            "description": "Allow this evidence-selection run to create live external source-search requests.",
+            "title": "Live Network Allowed",
+            "type": "boolean"
           },
           "max_handoffs": {
             "default": 20,

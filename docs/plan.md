@@ -1,635 +1,570 @@
-# Living Research Space And Agentic Evidence Selection Plan
+# Issues #16 And #17 Evidence Discovery Tracker
 
-Status date: April 26, 2026.
+Status date: April 27, 2026.
 
-Implementation note: the implementation slices are now in place for the
-model-planned, review-gated baseline. The
-`evidence-selection` harness has public `evidence-runs` routes, workspace
-snapshotting, deterministic ranking of durable saved source-search records,
-tool-backed structured source-search creation including PubMed and MARRVEL,
-guarded source handoff creation,
-review-gated proposal/review-item staging, follow-up runs, source-relevance
-skill registration, an auditable source-planner seam, per-source live-search
-timeouts, executable planner-added source searches, validation comparison
-helpers, planner-output validation, strict extraction-policy lookup, guarded
-review-store enforcement, model-mediated goal-only source planning, source
-query adapters, tests, and user-guide updates. The remaining expansion is real
-offline/clinical validation studies.
+This file is the working progress tracker for:
 
-Current request boundary: evidence runs default to `planner_mode="model"`.
-When a query-generation model and API key are configured, a researcher can
-submit only a goal/instructions and the planner will create bounded source
-searches. `planner_mode="deterministic"` remains available for explicit
-manual runs and still requires `source_searches` or `candidate_searches`.
-If model planning is unavailable, goal-only requests fail clearly; explicit
-source-search requests can fall back to deterministic execution with fallback
-metadata recorded in the source-plan artifact. Guarded mode requires at least
-one allowed handoff; use shadow mode for screen-only recommendations. Planner
-output is validated before source side effects so a model planner cannot
-silently add unknown, unsupported, or out-of-envelope sources.
+- [#16 Clarify source boundaries before scaling agentic evidence selection](https://github.com/med13foundation/artana-evidence-platform/issues/16)
+- [#17 Build agentic evidence discovery on top of durable source search](https://github.com/med13foundation/artana-evidence-platform/issues/17)
 
-## Goal
+This tracker now records the docs-first pass plus the first implementation
+slice for source boundaries and agentic evidence discovery. It does not change
+public API contracts, OpenAPI artifacts, migrations, or generated coverage
+files.
 
-Build the next layer of the Evidence API so a researcher can start with a goal,
-keep adding ideas over time, and let an Artana harness choose the relevant
-source records to extract into reviewable evidence proposals.
+## Origin / Superseded Plan
 
-The core product idea is:
+The previous long plan described the first-principles product loop:
 
 ```text
 research space
-  -> many research runs over time
-  -> agent searches and selects relevant source records
-  -> selected records become durable source documents
-  -> extraction creates proposals or review items
+  -> agent selects relevant source records from a goal and instructions
+  -> selected records become source documents and reviewable proposals
   -> human/governance review decides what becomes trusted graph knowledge
 ```
 
-The research space is the long-lived lab notebook. A harness run is one
-research pass inside that notebook.
+That direction still stands. The old phase checklist is now superseded because
+the checked-out repo already contains much of the evidence-selection baseline.
+This tracker keeps the original principle but separates landed implementation
+from the remaining work in issues #16 and #17.
 
-## First Principles
+## Product Guardrails
 
-- Research is iterative, not a one-time job.
-- The human gives goals, constraints, corrections, and review decisions.
-- The agent is the first relevance filter. It should choose useful source
-  records from the user goal and instructions.
-- The human remains the trust gate. Unreviewed AI output should not become
-  trusted graph state.
-- Source connectors should stay deterministic. They fetch and normalize source
-  data; they do not decide truth.
-- Handoff and persistence should stay deterministic and auditable.
-- Lower-level source/search/handoff endpoints should remain available for
-  debugging and power users, but the main product path should be a goal-driven
-  evidence harness.
+These guardrails are still active product requirements, not historical notes:
 
-## Scientific Fit And Guardrails
+- The agent is the first relevance filter; the human/governance workflow is the
+  trust gate.
+- Retrieved records and extracted outputs are candidate evidence, not trusted
+  graph knowledge.
+- Agentic discovery must not make clinical, diagnostic, regulatory, causal, or
+  treatment recommendations.
+- A run is not a systematic review unless protocol fields, search accounting,
+  exclusion accounting, and human review decisions are captured.
+- Evidence outputs must preserve source provenance, stable source identifiers
+  or record hashes, selection/skipped/deferred reasons, source family, evidence
+  type, uncertainty, and reviewer-facing caveats.
+- Live external API checks remain opt-in because they depend on credentials,
+  source availability, network behavior, and rate limits.
 
-This loop is scientifically useful only if it is framed as evidence
-surveillance and evidence staging, not automatic truth creation.
+## Current Live State
 
-Good scientific framing:
+These items are backed by files in the current checkout. They should still be
+re-verified with service checks before any issue is closed.
 
-```text
-agent finds and organizes candidate evidence
-  -> system records provenance and inclusion/exclusion reasons
-  -> extraction creates proposals or review items
-  -> humans or governance rules assess quality and certainty
-  -> only approved claims become graph knowledge
-```
+- Evidence API owns the goal-driven workflow. Graph persistence and trusted
+  graph governance remain outside this tracker in `services/artana_evidence_db`.
+- Public evidence-run routes exist through
+  `services/artana_evidence_api/routers/v2_public.py` and
+  `services/artana_evidence_api/routers/evidence_selection_runs.py`.
+- The evidence-selection runtime exists in
+  `services/artana_evidence_api/evidence_selection_runtime.py` and queues
+  `harness_id="evidence-selection"`.
+- Harness registration and worker execution know about `evidence-selection` in
+  `services/artana_evidence_api/harness_registry.py`,
+  `services/artana_evidence_api/harness_runtime.py`, and
+  `services/artana_evidence_api/worker.py`.
+- The source-relevance runtime skill exists at
+  `services/artana_evidence_api/runtime_skills/orchestration/source_relevance/SKILL.md`.
+- Model and deterministic source planning exist through
+  `services/artana_evidence_api/evidence_selection_model_planner.py` and
+  `services/artana_evidence_api/evidence_selection_source_planning.py`.
+- Typed source-query playbooks now live in
+  `services/artana_evidence_api/evidence_selection_source_playbooks.py`.
+  They define source-specific objective intents, required inputs, query-payload
+  builders, interpretation hints, handoff eligibility, and non-goals for all
+  direct-search sources.
+- Supported live source-search execution exists through
+  `services/artana_evidence_api/evidence_selection_source_search.py`, reusing
+  existing direct-search gateway behavior rather than introducing parallel
+  source clients.
+- Source-owned record policies now live in
+  `services/artana_evidence_api/source_policies.py`. Handoff provider IDs,
+  source families, normalized selected-record payloads, target kind, and
+  variant-aware recommendation rules are read through these policies instead
+  of growing central handoff maps.
+- Durable selected-record handoff exists through
+  `services/artana_evidence_api/source_search_handoff.py`.
+- Review-gated extraction/proposal behavior is represented in
+  `services/artana_evidence_api/evidence_selection_extraction_policy.py` and
+  the proposal/review-item staging paths called by the runtime.
+- Product and validation docs already describe the evidence-selection harness
+  and shadow-review validation in:
+  - `docs/architecture/evidence-selection-harness.md`
+  - `docs/validation/evidence-selection-validation.md`
+  - `docs/validation/evidence-selection-review-template.md`
+- Focused tests already exist for the main evidence-selection surfaces:
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_router.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_benchmarks.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_validation.py`
+  - `services/artana_evidence_api/tests/unit/test_evidence_selection_extraction_policy.py`
+  - `services/artana_evidence_api/tests/unit/test_source_boundary_contract.py`
+  - `services/artana_evidence_api/tests/unit/test_source_search_handoff.py`
 
-The loop is closest to:
+## Issue #16 Tracker: Source Boundaries
 
-- living evidence surveillance;
-- living systematic-review support;
-- evidence mapping;
-- gene-disease and variant curation support;
-- translational research planning;
-- hypothesis generation and gap finding;
-- knowledge-graph proposal staging.
+Issue #16 is no longer about inventing the whole harness. It is about making
+source responsibilities clearer before more sources are added.
 
-The loop should support scientific work such as:
+### Done
 
-- rare-disease evidence maps where information is scattered across literature,
-  variant databases, model organisms, protein sources, structure sources, and
-  clinical-trial records;
-- gene-disease curation where the system gathers candidate evidence for
-  review;
-- variant interpretation support where source records and papers are collected
-  as evidence candidates;
-- living literature surveillance where new papers are compared against prior
-  review decisions;
-- translational research planning where the useful output is "what evidence is
-  missing?" as much as "what evidence exists?";
-- graph-building workflows where only reviewed proposals become trusted graph
-  facts.
+- Source metadata and capability discovery are centralized in
+  `services/artana_evidence_api/source_registry.py`.
+- Direct source-search request/response models and durable search storage live
+  in `services/artana_evidence_api/direct_source_search.py`.
+- Evidence-selection source execution is separated into
+  `EvidenceSelectionSourceSearchRunner`, which calls existing direct-search
+  services instead of bypassing them.
+- Selected-record handoff has a durable service path and tests.
+- The architecture docs say the harness coordinates lower-level endpoints and
+  does not replace them.
+- `services/artana_evidence_api/source_policies.py` owns record-level handoff
+  policy for PubMed, MARRVEL, ClinVar, ClinicalTrials.gov, UniProt, AlphaFold,
+  DrugBank, MGI, and ZFIN.
+- `source_search_handoff.py` now derives durable handoff support from
+  `source_record_policies()` and delegates provider-id extraction,
+  source-family selection, normalized record payloads, and variant-aware hints
+  to the policy layer.
+- `SourceDefinition` now rejects `direct_search_enabled=True` unless both
+  request and result schema refs are present.
+- `test_source_boundary_contract.py` proves policy/registry alignment for all
+  direct-search sources and gives focused coverage for a simple source
+  (`clinical_trials`) and a variant-aware source (`clinvar`).
 
-The loop should be rejected or downgraded when the user asks it to:
+### Needs Verification
 
-- make clinical treatment decisions;
-- make regulatory claims without a protocol, quality assessment, and explicit
-  data relevance/reliability review;
-- claim causality from association-only evidence;
-- call itself a systematic review without predefined inclusion criteria,
-  exclusion criteria, search methods, and screening/accounting records;
-- turn agent-selected evidence directly into trusted graph facts;
-- omit provenance, source identifiers, inclusion/exclusion reasons, or quality
-  caveats;
-- ignore contradictory evidence or unresolved uncertainty.
+- Confirm the latest `make artana-evidence-api-service-checks` result on this
+  branch before marking #16 implementation slices as fully current.
+- Confirm OpenAPI remains stable if future source-boundary docs mention
+  public contracts.
+- Confirm route tests still cover generic source search, source lookup, and
+  handoff compatibility after any doc wording changes.
 
-Scientific outputs must therefore include:
+### Remaining
 
-- source provenance and stable source identifiers;
-- why each record was selected, skipped, or deferred;
-- duplicate and already-reviewed evidence handling;
-- evidence type and source family;
-- uncertainty and limitations;
-- contradiction flags where available;
-- proposal/review status;
-- a clear distinction between "candidate evidence", "reviewed evidence", and
-  "trusted graph knowledge".
+- Document the source-boundary ownership model explicitly:
+  - source registry owns public source metadata and capability flags;
+  - direct source search owns typed query execution and durable search capture;
+  - evidence-selection planning owns goal-to-query intent conversion;
+  - source handoff owns selected-record normalization and source-document
+    creation;
+  - extraction policy owns review/proposal staging behavior.
+- Continue moving future source-specific handoff behavior behind
+  source-owned policy helpers instead of central source-key maps.
+- Decide whether repeated direct-search execution patterns should be extracted
+  into a small helper without changing route shapes or typed response schemas.
+- Keep any future refactor incremental. Do not introduce a broad
+  `EvidenceSourceAdapter` protocol until the harness/tool contract proves it
+  is needed.
 
-## What Already Exists
+### Out Of Scope For #16
 
-- Research spaces as the container for ongoing work.
-- Durable harness runs, run status, events, artifacts, and workspace state.
-- Worker execution that maps queued runs to `harness_id` and then to a
-  `BaseHarness` wrapper.
-- Harness templates for `research-init`, `research-bootstrap`,
-  `full-ai-orchestrator`, `graph-chat`, `continuous-learning`, and related
-  workflows.
-- Runtime skill infrastructure through filesystem-backed `SKILL.md` files,
-  skill loading, capability checks, and runtime tool visibility.
-- Source registry and direct source search endpoints.
-- Durable `source_search_runs` for captured source-search results.
-- Durable `source_search_handoffs` for turning selected records into source
-  documents.
-- Source documents with provenance, source family, normalized record metadata,
-  readable extraction text, and raw selected record payloads.
-- Variant-aware extraction for supported variant-like documents.
-- Proposal and review-item stores.
-- Review-gated promotion into trusted graph state.
-- Full-AI orchestrator modes: deterministic, shadow, and guarded.
+- Graph-service schema or governance rewrites.
+- Frontend work.
+- Removing typed source request/response models.
+- Collapsing public source contracts into opaque JSON.
 
-## Missing Product Layer
+## Issue #17 Tracker: Agentic Evidence Discovery
 
-The missing layer is an agent-controlled evidence selection harness.
+Issue #17 tracks the agentic layer above durable source search. The current
+repo already has a goal-driven evidence-selection baseline, so the remaining
+work is to make the discovery contract, validation, and rollout criteria clear.
 
-Today, the infrastructure can save searches and hand off selected records. The
-next harness should decide what to select based on the user's goal, prior
-workspace history, source coverage, and review decisions.
+### Done
 
-Working name:
-
-- `evidence-selection`
-
-Runtime skill:
-
-- `graph_harness.source_relevance`
-
-Its job:
-
-1. Read the active research goal and follow-up instructions.
-2. Inspect prior runs, source results, source documents, proposals, review
-   items, and graph state.
-3. Decide which sources to search or re-search.
-4. Generate source-specific search plans.
-5. Rank returned records for relevance, novelty, and evidence value.
-6. Skip duplicates, off-topic records, weak records, and already-reviewed
-   records.
-7. Create handoffs only for selected records.
-8. Send selected records into extraction/proposal workflows.
-9. Save a clear artifact explaining why each record was selected, skipped, or
-   deferred.
-10. Preserve uncertainty, caveats, and contradiction signals for reviewer
-    judgment.
-
-## Target User Experience
-
-The main API should feel like this:
-
-```http
-POST /v2/spaces/{space_id}/evidence-runs
-```
-
-Example request:
-
-```json
-{
-  "goal": "Find evidence linking MED13 variants to congenital heart disease.",
-  "instructions": "Prioritize human clinical evidence and variant databases.",
-  "sources": ["pubmed", "clinvar", "marrvel", "uniprot"],
-  "proposal_mode": "review_required"
-}
-```
-
-Then the user inspects progress and proposals:
-
-```http
-GET /v2/spaces/{space_id}/runs/{run_id}
-GET /v2/spaces/{space_id}/runs/{run_id}/artifacts
-GET /v2/spaces/{space_id}/review-items
-```
-
-Follow-up work should build on the same research space:
-
-```http
-POST /v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups
-```
-
-Example follow-up:
-
-```json
-{
-  "instructions": "Now focus on neurodevelopmental phenotypes and loss-of-function variants."
-}
-```
-
-The lower-level endpoints stay available as advanced building blocks:
-
-```http
-GET  /v2/sources
-POST /v2/spaces/{space_id}/sources/{source_key}/searches
-GET  /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}
-POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs
-```
-
-These should be documented as advanced/debug APIs, not the normal researcher
-front door.
-
-## User Guide Impact
-
-When this plan is implemented, `docs/user-guide` should be reorganized around
-the goal-driven evidence run as the default path.
-
-The main user-guide flow should become:
-
-1. Create or open a research space.
-2. Start an evidence run with a goal, instructions, source preferences, and
-   scientific constraints.
-3. Let the harness search, select relevant records, create handoffs, and stage
-   extraction outputs.
-4. Inspect run progress, artifacts, and evidence-selection explanations.
-5. Review proposals and review items.
-6. Add follow-up ideas to the same research space.
-7. Promote only reviewed evidence into trusted graph knowledge.
-
-The lower-level source endpoints should move to an advanced/debug section:
-
-- source registry inspection;
-- direct source search;
-- saved source-search retrieval;
-- selected-record handoff;
-- run events/artifacts/policy-decision inspection.
-
-The guide should make clear that normal researchers do not need to manually
-operate every source endpoint or select every source record. They should give
-the research goal and review the staged evidence outputs.
-
-## Target Architecture
-
-```text
-User goal or follow-up instruction
-  -> evidence-selection harness run
-  -> workspace snapshot
-       - prior goals
-       - prior searches
-       - handoffs
-       - source documents
-       - proposals
-       - review decisions
-       - graph state summary
-  -> source plan
-  -> source searches
-  -> agent relevance ranking
-  -> selected record handoffs
-  -> extraction and normalization
-  -> proposals or review items
-  -> human/governance review
-  -> approved graph updates
-```
-
-## Artana Kernel And Harness Boundary
-
-Use Artana Kernel harness machinery for the intelligence layer, but keep the
-responsibilities clean.
-
-The `BaseHarness` wrapper should remain a thin execution adapter:
-
-```text
-run record
-  -> harness_id
-  -> worker
-  -> BaseHarness wrapper
-  -> workflow implementation
-```
-
-The actual agent behavior should live in:
-
-- a new runtime skill, `graph_harness.source_relevance`;
-- a skill-aware autonomous agent runner;
-- deterministic tools for listing sources, reading saved search results,
-  creating searches, creating handoffs, reading workspace state, and staging
-  proposals.
-
-Do not build a separate one-off planner that bypasses the existing runtime skill
-and harness path.
-
-## Implementation Phases
-
-### Phase 1: Product Contract And Naming
-
-Goal: define the public workflow around a living research space.
-
-- [x] Choose the final user-facing name: `evidence-runs`,
-  `research-runs`, or another product term.
-- [x] Define the first request model with `goal`, `instructions`, source
-  preferences, budget, and review mode.
-- [x] Add optional scientific protocol fields: inclusion criteria, exclusion
-  criteria, population/context, evidence types, and priority outcomes.
-- [x] Define the follow-up request model for adding new ideas to an existing
+- `POST /v2/spaces/{space_id}/evidence-runs` is the documented front door.
+- Follow-up runs are documented as the normal iterative path for a living
   research space.
-- [x] Define response models that return run id, status, selected sources, and
-  links to artifacts/review items.
-- [x] Decide which existing endpoints become the main path and which become
-  advanced/debug.
-- [x] Update OpenAPI after the route contract is implemented.
+- `planner_mode="model"` and `planner_mode="deterministic"` are represented in
+  the evidence-selection route/runtime contract.
+- Model source-planner output is validated before it becomes executable source
+  searches.
+- Source-planning payload builders cover PubMed, MARRVEL, ClinVar,
+  ClinicalTrials.gov, UniProt, AlphaFold, DrugBank, MGI, and ZFIN.
+- Source-planning payload builders now live behind explicit typed playbooks in
+  `evidence_selection_source_playbooks.py`, rather than being implicit adapter
+  branches inside the model planner.
+- Qualitative relevance labels are emitted in selected/skipped/deferred
+  decisions and copied into review-item metadata and the durable
+  `evidence_selection_decisions` artifact.
+- Live source-search creation now requires explicit `live_network_allowed=true`
+  on evidence-selection run and follow-up requests. Runtime validation also
+  rejects planner-created live source searches when the flag is false.
+- Manual and planner-created live source-search payloads are validated against
+  source-specific typed contracts before external source side effects.
+- Runtime budgets cap planned live source searches, candidate searches,
+  per-search records, per-search timeout, aggregate live source-search phase
+  time, and guarded handoff count.
+- Model-created source searches have an additional 5-search cap, separate from
+  the public 50-search explicit live-search request limit.
+- The runtime records selected, skipped, and deferred records as auditable
+  evidence-selection output.
+- Guarded mode creates review-gated downstream work; it must not promote graph
+  facts directly.
+- Offline benchmark fixtures exist under
+  `services/artana_evidence_api/tests/fixtures/evidence_selection/`, but the
+  current inventory is MED13-only and is not production-representative.
+- Validation helpers exist for shadow/expert review comparisons.
 
-### Phase 2: Workspace Memory And Snapshot
+### Needs Verification
 
-Goal: make each new run aware of previous work in the same research space.
+- Run the focused evidence-selection tests and record the exact result in the
+  verification log.
+- Run `make artana-evidence-api-service-checks` and record the exact result
+  in the verification log.
+- Confirm the current offline benchmark fixture inventory and whether it covers
+  only MED13 or additional disease/gene cases.
+- Confirm whether real shadow-mode comparisons with human reviewers have been
+  run. If not, keep production-readiness unchecked.
+- Confirm the current service behavior for model unavailable, credential
+  missing, unsupported source, live-network-disabled, source timeout, and
+  duplicate handoff replay cases.
 
-- [x] Build a workspace snapshot service for the evidence-selection harness.
-- [x] Include previous goals and follow-up instructions.
-- [x] Include prior source documents and handoff-derived source metadata.
-- [x] Include source documents and extraction state.
-- [x] Include proposals, review items, approvals, rejections, and unresolved
-  items.
-- [x] Include a compact graph-state summary from approved evidence.
-- [x] Add deduplication fingerprints for records, handoffs, and proposals.
-- [x] Add tests showing follow-up runs can see previous run state.
+### Remaining
 
-### Phase 3: Source Relevance Skill And Tools
+- Keep the agentic discovery docs aligned with the code-level playbook
+  registry and qualitative relevance labels.
+- Keep budget expectations current as source counts, timeout defaults, or
+  model/tool call limits change.
+- Document how model-planned source searches are bounded by source allowlists,
+  max search count, max records, timeout, live-network opt-in, and review
+  controls.
+- Connect the validation docs to concrete acceptance criteria:
+  precision/recall where benchmark labels exist, duplicate rate, provenance
+  completeness, explanation quality, reviewer agreement, and zero
+  high-severity overclaiming.
+- Keep live external API validation opt-in. Do not make network or credential
+  dependent checks normal CI requirements.
 
-Goal: give the harness a controlled way to decide what evidence records matter.
+### Out Of Scope For #17
 
-- [x] Add `services/artana_evidence_api/runtime_skills/.../source_relevance/SKILL.md`.
-- [x] Define the skill instructions: relevance, novelty, source fit,
-  provenance, duplicate avoidance, and review caution.
-- [x] Require the skill to separate candidate evidence from reviewed evidence
-  and trusted graph knowledge.
-- [x] Require inclusion/exclusion reasons for selected, skipped, and deferred
-  records.
-- [x] Require quality caveats for weak, indirect, conflicting, or
-  association-only evidence.
-- [x] Add or expose deterministic tools for:
-  - [x] listing available source capabilities;
-  - [x] creating supported structured source searches;
-  - [x] reading saved source-search results;
-  - [x] creating selected-record handoffs;
-  - [x] reading prior workspace state;
-  - [x] staging extraction/proposal work.
-- [x] Gate tool access through the existing runtime skill registry.
-- [x] Add tests for skill registry validation and allowed tool names.
+- Direct graph promotion from agentic discovery.
+- Clinical, diagnostic, regulatory, or causal-truth claims.
+- Mandatory live external API tests in normal CI.
+- A new frontend.
+- A monolithic PR that implements all remaining architecture cleanup at once.
 
-### Phase 4: Evidence-Selection Harness
+## Close Criteria
 
-Goal: add the actual harness that performs goal-driven source selection.
+#16 closes when the source-boundary ownership model is documented for registry,
+direct search, source planning, handoff, and extraction policy, and tests or
+contract checks cover one simple source plus one variant-aware source without
+changing public route shapes.
 
-- [x] Add a harness template for `evidence-selection`.
-- [x] Add the runtime wrapper in `harness_runtime.py`.
-- [x] Add worker support for the new `harness_id`.
-- [x] Implement the deterministic baseline workflow:
-  - [x] load workspace snapshot;
-  - [x] route source planning through an auditable planner seam;
-  - [x] let the planner return executable source searches for the runtime;
-  - [x] validate planner-added source searches before execution;
-  - [x] enable a model-mediated agent to generate source plans from goal-only
-    requests;
-  - [x] run supported live structured source searches within budget;
-  - [x] time out slow live source searches and complete with auditable errors;
-  - [x] rank saved source-search records;
-  - [x] create handoffs for selected records;
-  - [x] emit artifacts explaining selection and skipped records;
-  - [x] emit uncertainty, contradiction, and evidence-quality caveats;
-  - [x] hand selected records to review-gated proposal/review-item paths.
-- [x] Keep deterministic fallback behavior when model execution is disabled.
-- [x] Add unit tests for happy path, budget stop, shadow mode, duplicate
-  records, live source-search creation, and review staging.
+#17 closes when the agentic discovery contract is documented end to end,
+focused tests and service checks pass, validation gates are tied to benchmark
+or reviewer evidence, and production-readiness still requires zero
+high-severity overclaiming plus at least three distinct real shadow-mode
+research questions with human-review notes.
 
-### Phase 5: Iterative Follow-Up Runs
+This implementation slice is ready to stage only after focused tests, service
+checks, diff hygiene, and Claude second-opinion review are recorded below.
+`coverage.xml` should remain unstaged unless the user explicitly asks to
+include generated coverage churn.
 
-Goal: let a researcher keep building the same space over time.
+## Subagent Orchestration Plan
 
-- [x] Add the follow-up endpoint or command.
-- [x] Link follow-up runs to a parent run and the same research space.
-- [x] Store follow-up instructions as durable run input.
-- [x] Make the harness compare new instructions with previous work.
-- [x] Prevent repeated handoffs for already captured source records.
-- [x] Let the harness explicitly re-search a source with new search keys.
-- [x] Add tests for follow-up runs that expand, narrow, and correct the prior
-  research direction.
+Use this section to coordinate implementation work without turning #16/#17 into
+one monolithic PR.
 
-### Phase 6: Extraction And Proposal Integration
+### Linear Foundation Lane
 
-Goal: selected records should become reviewable evidence outputs, not just saved
-documents.
+These steps must happen in order because they define the contract that parallel
+workers will build against.
 
-- [x] Route variant-like selected records through variant-review proposal
-  staging.
-- [x] Route saved PubMed/literature records through literature-review proposal
-  staging.
-- [x] Define source-specific extraction policy for UniProt, AlphaFold,
-  DrugBank, ClinicalTrials.gov, MGI, and ZFIN.
-- [x] Stage source-specific proposals and normalized reviewer payloads for
-  non-variant sources.
-- [x] Fail loudly when a selected source has no extraction policy.
-- [x] Require a review-item store in guarded mode instead of silently using an
-  in-memory fallback.
-- [x] Add live PubMed and MARRVEL source-search creation to the evidence-run
-  runner.
-- [x] Stage source documents only; do not directly promote graph facts.
-- [x] Stage proposals and review items only; do not directly promote graph
-  facts.
-- [x] Preserve source-search id, selected record id/hash, and
-  source capture metadata on proposals.
-- [x] Preserve evidence type, source family, uncertainty, and reviewer-facing
-  limitations on proposals.
-- [x] Add regression tests proving graph promotion remains review-gated.
+1. Contract/docs owner:
+   - Owns `docs/architecture/source-boundaries.md`,
+     `docs/architecture/evidence-selection-harness.md`,
+     `docs/validation/evidence-selection-validation.md`, and this tracker.
+   - Defines source-boundary ownership for registry, direct search, source
+     planning, handoff, and extraction policy.
+   - Defines the agentic discovery decisions: source selection, query
+     formulation, record relevance, and handoff decision.
+   - Records current budget defaults and fallback behavior as policy, not as
+     hidden implementation trivia.
+2. Dispatcher scaffold owner, only if code refactor starts:
+   - Owns the smallest source-policy dispatcher shape.
+   - Keeps public route shapes and typed source schemas unchanged.
+   - Lands before any source-family worker edits handoff behavior.
+3. Release criteria owner:
+   - Waits until contract docs and validation fixtures settle.
+   - Converts benchmark and shadow-review results into close criteria for #17.
 
-### Phase 7: Documentation, QA, And Rollout
+### Parallel Group A: Source Boundaries (#16)
 
-Goal: make the new path the clear product front door while preserving advanced
-APIs.
+Start after the contract/docs owner has named the policy fields.
 
-- [x] Update user guide docs to teach goal-driven evidence runs first.
-- [x] Reorder `docs/user-guide` so the first workflow is space -> evidence run
-  -> review proposals -> follow up.
-- [x] Move direct source-search/handoff docs into an advanced/debug section.
-- [x] Add examples for iterative follow-up runs in the same research space.
-- [x] Add science-side warnings: not clinical advice, not automatic regulatory
-  evidence, not causal truth, and not a systematic review unless protocol fields
-  and accounting are used.
-- [x] Update architecture docs to describe research space as a living workspace.
-- [x] Add API migration notes if route aliases are introduced.
-- [x] Run focused unit and route tests.
-- [x] Run Evidence API service checks.
-- [x] Run full repo checks before merge when code changes are complete.
-- [x] Use Claude second-opinion before final closeout.
+- Registry/contract worker:
+  - Owns `services/artana_evidence_api/source_registry.py`,
+    `services/artana_evidence_api/tests/unit/test_source_registry.py`, and a
+    future `test_source_boundary_contract.py`.
+  - Proves one simple source and one variant-aware source expose the required
+    boundary fields.
+- Variant-aware handoff worker:
+  - Owns a narrow source-policy slice for ClinVar or another variant-aware
+    source plus focused calls from
+    `services/artana_evidence_api/source_search_handoff.py`.
+  - Extends `services/artana_evidence_api/tests/unit/test_source_search_handoff.py`.
+- Simple-source handoff worker:
+  - Owns a narrow source-policy slice for a simple non-variant source such as
+    ClinicalTrials.gov.
+  - Proves normalized source-document behavior without touching public route
+    contracts.
+- Direct-search helper worker:
+  - Defer unless duplication becomes the blocking problem.
+  - If needed, owns only helper extraction in
+    `services/artana_evidence_api/direct_source_search.py` and
+    `services/artana_evidence_api/evidence_selection_source_search.py`.
+  - Must not alter typed request/response schemas or OpenAPI output.
 
-## Validation And Testing Strategy
+### Parallel Group B: Agentic Discovery (#17)
 
-Validation must prove more than "the agent produced plausible text." It must
-prove that the harness finds useful evidence, skips weak or irrelevant records,
-preserves provenance, avoids duplicates, and keeps humans in control.
+Start after the agentic-discovery contract is documented.
 
-### Engineering Tests
+- Budget/model worker:
+  - Owns model fallback, planned-search caps, per-search timeout,
+    max-records-per-search, max-handoff behavior, and how fallback is surfaced
+    in source-plan artifacts/results.
+  - Keeps budget concerns separate from model-unavailable fallback behavior.
+- Runtime edge worker:
+  - Owns focused verification for model unavailable, missing credentials,
+    unsupported source, source timeout, disallowed source, duplicate handoff
+    replay, and no trusted graph write.
+  - Extends evidence-selection runtime/router/model-planner tests as needed.
+- Validation fixture worker:
+  - Owns `services/artana_evidence_api/tests/fixtures/evidence_selection/`,
+    `services/artana_evidence_api/tests/unit/test_evidence_selection_benchmarks.py`,
+    and validation docs.
+  - Expands beyond the current MED13-only fixture before production-readiness
+    is claimed.
+- Shadow-review worker:
+  - Owns reviewer-template examples and comparison-helper usage.
+  - Records human-review comparison results when real reviewer data exists.
 
-- [x] Unit-test workspace snapshot construction.
-- [x] Unit-test source planning with deterministic model/tool fakes.
-- [x] Unit-test record ranking, selection, skip reasons, and deferred reasons.
-- [x] Unit-test duplicate detection across prior searches, handoffs, proposals,
-  and review decisions.
-- [x] Unit-test handoff creation from selected records.
-- [x] Unit-test source failure handling and partial-run behavior.
-- [x] Route-test starting a goal-driven evidence run.
-- [x] Route-test follow-up runs in the same research space.
-- [x] Integration-test worker execution for the new harness.
-- [x] Regression-test that graph promotion never happens without review.
+### Linear QA Lane
 
-### Fixture Benchmarks
+Run this lane after worker changes settle. Do not parallelize commands that
+rewrite generated artifacts.
 
-Create offline benchmark fixtures so the harness can be tested without live
-external APIs:
+1. Verify intended diff:
+   - `git status --short`
+   - `git diff --name-only`
+   - Confirm OpenAPI/type artifacts changed only if the contract changed.
+   - Keep `coverage.xml` unstaged or revert it after coverage runs unless the
+     user explicitly requests coverage artifact updates.
+2. Run focused checks:
+   - `make artana-evidence-api-lint`
+   - `make artana-evidence-api-type-check`
+   - `make artana-evidence-api-boundary-check`
+   - `make artana-evidence-api-contract-check`
+   - Focused evidence-selection/source-boundary pytest commands.
+3. Run issue-close gates:
+   - `make artana-evidence-api-service-checks`
+   - `make service-checks`
+4. Run opt-in live checks only when local services, network access, and
+   credentials are intentionally available:
+   - `make live-endpoint-contract-check`
+   - `make live-external-api-check`
+5. Record final evidence in this tracker:
+   - command;
+   - exit code/result;
+   - important warnings/errors;
+   - post-run `git status --short`;
+   - OpenAPI artifact status;
+   - `coverage.xml` decision;
+   - Claude second-opinion outcome.
 
-```text
-services/artana_evidence_api/tests/fixtures/evidence_selection/
-  med13_congenital_heart_disease/
-    source_results.json
-    expected_selected.json
-    expected_skipped.json
-    expected_proposals.json
-  brca1_breast_cancer/
-  cftr_cystic_fibrosis/
-  mecp2_rett_syndrome/
-  tp53_li_fraumeni/
-```
+### Subagent Grouping Summary
 
-Each benchmark should define:
+| Group | Workstream | Parallel? | Must Wait For |
+| --- | --- | --- | --- |
+| Linear 0 | Contract/docs owner | No | Current tracker |
+| A1 | Registry/contract worker | Yes | Linear 0 |
+| A2 | Variant-aware handoff worker | Yes | Linear 0, dispatcher if used |
+| A3 | Simple-source handoff worker | Yes | Linear 0, dispatcher if used |
+| A4 | Direct-search helper worker | Optional | Only if duplication blocks closure |
+| B1 | Budget/model worker | Yes | Linear 0 |
+| B2 | Runtime edge worker | Yes | Linear 0 |
+| B3 | Validation fixture worker | Partly | Linear 0 for labels/criteria |
+| B4 | Shadow-review worker | Later | Real reviewer data |
+| Linear 1 | Release criteria owner | No | A/B results |
+| Linear 2 | QA/release owner | No | All intended changes settled |
 
-- research goal and instructions;
-- available source-search results;
-- records expected to be selected;
-- records expected to be skipped;
-- known duplicates;
-- known weak/indirect evidence;
-- known contradictory or uncertain evidence;
-- expected proposal/review-item shape.
+## This Docs Pass
 
-Track metrics:
+### Changes
 
-- recall of important records;
-- precision of selected records;
-- duplicate rate;
-- provenance completeness;
-- quality of selected/skipped/deferred reasons;
-- reviewer agreement;
-- high-severity overclaim count.
+- [x] Replaced the obsolete long `docs/plan.md` body with a focused #16/#17
+  tracker.
+- [x] Preserved the original first-principles product loop as a short origin
+  note.
+- [x] Recorded code-backed current state with paths and test references.
+- [x] Separated #16 source-boundary debt from #17 agentic-discovery rollout
+  criteria.
+- [x] Marked production validation as needing verification instead of claiming
+  it is complete.
+- [x] Added subagent orchestration groups for parallel and linear workstreams.
+- [x] Started implementation with subagents by adding source-boundary
+  architecture docs and tightening evidence-selection validation/contract docs.
+- [x] Added source-owned record policies for handoff normalization,
+  provider-id extraction, source-family metadata, target kind, and
+  variant-aware hints.
+- [x] Added explicit source-query playbooks for all direct-search sources.
+- [x] Added qualitative relevance labels to selection decisions, review-item
+  metadata, and durable decision artifacts.
+- [x] Added explicit `live_network_allowed` opt-in for live source searches and
+  early typed payload validation for manual/planner-created source searches.
 
-### Shadow And Guarded Rollout
+### Validation Gates Before Issue Close
 
-Start with shadow mode:
+- Must pass before #17 close: focused evidence-selection unit tests.
+- Must pass before #16/#17 close: `make artana-evidence-api-service-checks`.
+- Must pass before a broad release/merge closeout: `make service-checks`.
+- Must confirm before staging this docs-only pass: OpenAPI artifacts are
+  unchanged.
+- Must keep out of this docs-only pass: `coverage.xml` unless explicitly
+  requested by the user.
 
-- [x] The harness recommends source searches and selected records.
-- [x] It does not create handoffs automatically.
-- [x] Add a validation helper and review template to compare harness selections
-  with human selections.
-- [x] Record false positives, false negatives, duplicate suggestions, and
-  explanation quality in validation reports/templates.
-- [ ] Run real shadow-mode comparisons with human reviewers.
+### Remaining
 
-Move to guarded mode only after shadow-mode results are acceptable:
+- Keep source-boundary architecture docs updated as future source families add
+  policy fields.
+- Keep future handoff behavior moving to source-owned policy helpers.
+- Expand the validation tracker with the current benchmark fixture inventory.
+- Record real shadow-mode human-review comparison results when available.
+- Keep `docs/README.md` linked to new architecture docs as they are added.
 
-- [x] Allow handoff creation under budget and source limits.
-- [x] Keep all extraction outputs review-gated.
-- [x] Require complete provenance and selection reasons.
-- [x] Emit artifacts for selected, skipped, and deferred records.
-- [x] Stop or downgrade when sources fail, evidence is too weak, or the request
-  asks for clinical/regulatory/causal conclusions.
+### Out Of Scope
 
-### Scientific Review
+- Code refactors during this docs-first pass.
+- Public API changes during this docs-first pass.
+- OpenAPI regeneration during this docs-first pass.
+- Graph-service schema or trusted-governance changes.
+- Frontend work.
 
-Use small expert-review studies before calling the harness production-ready:
+## Open Questions
 
-- [ ] Give the same goal and source result set to the harness and to a human
-  reviewer.
-- [ ] Compare selected records and skipped records.
-- [ ] Have reviewers score relevance, completeness, novelty, provenance,
-  uncertainty handling, and overclaiming.
-- [ ] Track whether the harness saves review time without lowering evidence
-  quality.
-- [ ] Update benchmark fixtures from expert feedback.
+- #16: Should handoff source-key maps move into source-owned policy helpers, or
+  should they stay centralized until another source family is added?
+- #16: Is a small direct-search execution helper enough, or is a formal
+  `EvidenceSourceAdapter` protocol eventually justified?
+- #17: Which qualitative relevance labels are stable enough to document as a
+  contract?
+- #17: What default budgets should apply to first-pass discovery versus
+  follow-up discovery?
+- #17: Which validation threshold should be required before moving beyond
+  shadow-mode human review?
 
-### Production Readiness Gates
+## Verification Log
 
-Before production rollout:
+Use this section as the append-only log for actual observations on this issue
+pair. Planned commands belong in the validation gates above until they are run.
 
-- [x] Direct graph promotion without review is impossible.
-- [x] Provenance completeness is effectively 100%.
-- [x] Every selected record has a reason.
-- [x] Every skipped/deferred record that affects the evidence picture has a
-  reason.
-- [x] Duplicate handoffs/proposals are prevented or explicitly linked.
-- [ ] High-severity overclaiming is zero in benchmark and shadow-mode review.
-- [x] Source failures are graceful and auditable.
-- [x] Live external API tests remain opt-in but have documented local commands.
+### Documentation-Only Pass
 
-## Acceptance Criteria
+- `gh issue view 16 --repo med13foundation/artana-evidence-platform --json number,title,state,url`
+  - Result: issue #16 is open.
+- `gh issue view 17 --repo med13foundation/artana-evidence-platform --json number,title,state,url`
+  - Result: issue #17 is open.
+- `git diff -- docs/plan.md`
+  - Result: docs-only tracker replacement reviewed.
+- `git diff --check`
+  - Result: passed.
+- File/path inventory check with `rg`
+  - Result: evidence-selection runtime, router, skill, planner, handoff,
+    validation, and focused test paths listed above exist in the checkout.
+- OpenAPI artifacts
+  - Result: no OpenAPI files changed during this docs-only pass.
+- `coverage.xml`
+  - Result: already modified before this docs pass; do not include it in this
+    docs-first change unless explicitly requested.
+- Claude second-opinion review
+  - Result: completed after the first tracker diff existed; useful feedback was
+    folded into product guardrails, close criteria, open questions, and this
+    verification log.
+- Subagent orchestration review
+  - Result: three read-only explorers inspected #16 source boundaries, #17
+    agentic discovery/validation, and QA/release sequencing. Their findings
+    were folded into the subagent orchestration plan above.
+- Implementation start with subagents
+  - Result: source-boundary architecture contract added, evidence-selection
+    harness contract updated, validation docs clarified, review template
+    clarified, and docs index linked to the new source-boundary note.
+  - Result: product-facing evidence-run docs kept on `/v2/spaces/{space_id}/evidence-runs`;
+    lower-level `/v1/spaces/{space_id}/agents/evidence-selection/runs` routes
+    are documented as compatibility/harness-oriented routes.
+- Final combined Claude second-opinion review
+  - Result: completed after subagent docs landed; follow-up fixes tightened the
+    source-policy target-kind wording, direct-search schema-name requirement,
+    MED13-only fixture caveat, shadow-mode readiness gate, and `/v2` versus
+    `/v1` route language.
 
-- A user can start from a high-level research goal without manually choosing
-  every source endpoint and search result.
-- A user can add follow-up ideas to the same research space without starting
-  over.
-- A user can provide scientific constraints such as inclusion criteria,
-  exclusion criteria, evidence type preferences, and priority outcomes.
-- The harness reads previous results and avoids unnecessary duplicate work.
-- The harness selects relevant source records and creates handoffs
-  automatically.
-- Every selected record has an auditable reason and provenance trail.
-- Skipped and deferred records have auditable reasons when they affect the
-  evidence picture.
-- The system makes uncertainty, contradictions, and evidence quality caveats
-  visible to reviewers.
-- Extraction creates proposals or review items, not trusted graph facts.
-- Human/governance review remains the promotion gate.
-- Lower-level source/search/handoff endpoints remain available for advanced
-  usage.
-- API docs and `docs/user-guide` make the goal-driven harness the front door.
-- User-guide examples teach follow-up runs as normal research behavior.
-- Product docs explicitly say this is not an automatic clinical, regulatory, or
-  causal-truth engine.
+### Implementation Pass
 
-## Open Design Questions
-
-- Should the public product name be `evidence-runs`, `research-runs`, or
-  `research-sessions`?
-- Should follow-up instructions attach to a previous run, directly to the
-  research space, or both?
-- How much autonomy should the first version have: select from already-saved
-  source results only, or also launch new searches?
-- What budget limits should apply per source and per run?
-- Should skipped records be stored as first-class decisions, or only summarized
-  in artifacts?
-- Which non-variant sources get full source-specific extraction first?
-- Should evidence quality use a simple internal scale first, or align early
-  with external review conventions such as GRADE-style certainty language?
-- Which output, if any, should support PRISMA-style search and selection
-  accounting for formal review workflows?
-
-## Progress Checklist
-
-- [x] Product contract chosen.
-- [x] Public route plan finalized.
-- [x] Workspace snapshot service implemented.
-- [x] Source relevance runtime skill added.
-- [x] Evidence-selection harness template registered.
-- [x] Worker can execute the new harness.
-- [x] Harness can create supported structured source searches.
-- [x] Harness can rank and select saved source records.
-- [x] Harness can create durable handoffs.
-- [x] Harness can trigger extraction/proposal staging.
-- [x] Follow-up runs reuse previous space state.
-- [x] Duplicate captured source records are avoided.
-- [x] Selected, skipped, and deferred records carry reasons.
-- [x] Evidence caveats and uncertainty are visible in outputs.
-- [x] Review gate is preserved.
-- [x] User guide front door updated.
-- [x] Advanced/debug source endpoint docs separated.
-- [x] Follow-up run guide added.
-- [x] Scientific guardrails documented for users.
-- [x] OpenAPI updated.
-- [x] Offline benchmark fixtures added.
-- [x] Shadow-mode validation artifacts supported.
-- [x] Guarded rollout gates defined.
-- [x] Expert-review validation process documented.
-- [x] Tests and service checks pass.
+- `gh issue view 16 --repo med13foundation/artana-evidence-platform --json number,title,state,body,labels,comments`
+  - Result: issue #16 is open; source-boundary acceptance criteria were
+    refreshed from the live GitHub issue body.
+- `gh issue view 17 --repo med13foundation/artana-evidence-platform --json number,title,state,body,labels,comments`
+  - Result: issue #17 is open; agentic-discovery acceptance criteria were
+    refreshed from the live GitHub issue body.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py -q`
+  - Result: passed, `32 passed`.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_boundary_contract.py services/artana_evidence_api/tests/unit/test_source_search_handoff.py services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py -q`
+  - Result: passed, `51 passed`.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_boundary_contract.py services/artana_evidence_api/tests/unit/test_source_registry.py services/artana_evidence_api/tests/unit/test_source_search_handoff.py services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_benchmarks.py -q`
+  - Result: passed, `80 passed`.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py -q`
+  - Result: passed, `33 passed`, with one existing deprecation warning.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py -q`
+  - Result: passed, `20 passed`, after adding the aggregate source-search
+    budget validator.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_plan_validation.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py services/artana_evidence_api/tests/unit/test_evidence_selection_source_playbooks.py services/artana_evidence_api/tests/unit/test_source_boundary_contract.py -q`
+  - Result: passed, `44 passed`, after the Claude second-opinion fixes for
+    model search caps, early live-network request validation, MARRVEL
+    panel/taxon intent support, empty-object source-policy compaction, and
+    focused plan-validation tests.
+- `venv/bin/ruff check` on the touched Evidence API runtime, source-policy,
+  source-playbook, handoff, router, and focused test files
+  - Result: passed.
+- `git diff --check`
+  - Result: passed.
+- `venv/bin/python scripts/export_artana_evidence_api_openapi.py --output services/artana_evidence_api/openapi.json`
+  - Result: regenerated `services/artana_evidence_api/openapi.json` after the
+    public `live_network_allowed` request-field addition.
+- `make artana-evidence-api-service-checks`
+  - Result: passed after OpenAPI regeneration and after the final
+    plan-validation extraction. Live external API tests remained skipped unless
+    their opt-in environment/services are available.
+- `make service-checks`
+  - Result: passed after the final plan-validation extraction. Graph checks,
+    Evidence API checks, OpenAPI contract checks, architecture-size checks, and
+    database-backed tests passed. Coverage was 87.63%, above the required 86%.
+    Live external API and localhost service checks were skipped by their normal
+    opt-in guards.
+- OpenAPI artifacts
+  - Result: `services/artana_evidence_api/openapi.json` changed intentionally
+    because the public Evidence API request contract now includes
+    `live_network_allowed`.
+- `coverage.xml`
+  - Result: generated/rewritten by `make service-checks`; keep it separate from
+    the intentional implementation unless the PR policy wants generated
+    coverage committed.
+- Claude second-opinion review
+  - Result: completed after the implementation diff. Claude had truncated diff
+    context but flagged actionable risks around OpenAPI freshness,
+    live-network opt-in, qualitative labels, source-policy registry parity,
+    runtime budgets, architecture file size, and generated coverage churn. The
+    code already had or was updated to include OpenAPI regeneration,
+    `live_network_allowed`, source-policy/playbook parity tests,
+    relevance-label artifact/review metadata tests, aggregate source-search
+    budgets, and an extracted plan-validation module to satisfy the size gate.
+- Final Claude second-opinion review
+  - Result: completed against the staged #16/#17 diff with key implementation
+    files included. Follow-up fixes added direct
+    `evidence_selection_plan_validation` tests, an explicit 5-search cap for
+    model-created searches, early request validation for goal-only model runs
+    without live-network opt-in, explicit MARRVEL `taxon_id`/`panels` intent
+    support, empty-object source-policy compaction, and required source-policy
+    normalizer/variant functions.

@@ -30,6 +30,11 @@ from artana_evidence_api.evidence_selection_extraction_policy import (
     proposal_summary,
     review_item_summary,
 )
+from artana_evidence_api.evidence_selection_plan_validation import (
+    LIVE_SOURCE_SEARCH_PHASE_TIMEOUT_SECONDS,
+    LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS,
+    validate_source_plan_result,
+)
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
     EvidenceSelectionSourceSearchError,
@@ -75,7 +80,6 @@ _DECISIONS_KEY = "evidence_selection_decisions"
 _SOURCE_PLAN_KEY = "evidence_selection_source_plan"
 _HIGH_PRIORITY_SCORE_THRESHOLD = 5.0
 _MIN_SELECTION_SCORE = 4.0
-_LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS = 120.0
 _WORD_PATTERN = re.compile(r"[a-z0-9][a-z0-9_-]{2,}", re.IGNORECASE)
 _STOP_WORDS = frozenset(
     {
@@ -250,6 +254,7 @@ def queue_evidence_selection_run(  # noqa: PLR0913
     proposal_mode: EvidenceSelectionProposalMode,
     mode: EvidenceSelectionMode,
     planner_mode: EvidenceSelectionSourcePlannerMode,
+    live_network_allowed: bool = False,
     source_searches: tuple[EvidenceSelectionLiveSourceSearch, ...] = (),
     candidate_searches: tuple[EvidenceSelectionCandidateSearch, ...],
     max_records_per_search: int,
@@ -274,6 +279,7 @@ def queue_evidence_selection_run(  # noqa: PLR0913
         "proposal_mode": proposal_mode,
         "mode": mode,
         "planner_mode": planner_mode,
+        "live_network_allowed": live_network_allowed,
         "source_searches": [
             {
                 "source_key": search.source_key,
@@ -334,6 +340,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
     proposal_mode: EvidenceSelectionProposalMode,
     mode: EvidenceSelectionMode,
     planner_mode: EvidenceSelectionSourcePlannerMode = "deterministic",
+    live_network_allowed: bool = False,
     source_searches: tuple[EvidenceSelectionLiveSourceSearch, ...] = (),
     candidate_searches: tuple[EvidenceSelectionCandidateSearch, ...],
     max_records_per_search: int,
@@ -410,10 +417,13 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
     source_plan = plan_result.source_plan
     source_searches = plan_result.source_searches
     candidate_searches = plan_result.candidate_searches
-    _validate_source_plan_result(
-        plan_result=plan_result,
+    validate_source_plan_result(
+        source_searches=plan_result.source_searches,
+        candidate_searches=plan_result.candidate_searches,
+        source_plan=source_plan,
         requested_sources=sources,
         max_records_per_search=max_records_per_search,
+        live_network_allowed=live_network_allowed,
     )
     _put_json_artifact(
         artifact_store=artifact_store,
@@ -430,13 +440,23 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         content=source_plan,
     )
 
-    live_candidate_searches, live_search_errors = await _run_live_source_searches(
-        space_id=space_id,
-        created_by=created_by,
-        source_searches=source_searches,
-        direct_source_search_store=direct_source_search_store,
-        source_search_runner=source_search_runner,
-    )
+    try:
+        live_candidate_searches, live_search_errors = await asyncio.wait_for(
+            _run_live_source_searches(
+                space_id=space_id,
+                created_by=created_by,
+                source_searches=source_searches,
+                direct_source_search_store=direct_source_search_store,
+                source_search_runner=source_search_runner,
+            ),
+            timeout=LIVE_SOURCE_SEARCH_PHASE_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
+        live_candidate_searches = ()
+        live_search_errors = (
+            "Timed out creating live source searches after "
+            f"{LIVE_SOURCE_SEARCH_PHASE_TIMEOUT_SECONDS:g} seconds.",
+        )
     candidate_searches = (*candidate_searches, *live_candidate_searches)
 
     run_registry.set_progress(
@@ -475,6 +495,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
             {
                 **record,
                 "decision": "deferred",
+                "relevance_label": "deferred",
                 "reason": "Run handoff budget reached before this record.",
             }
             for record in overflow
@@ -506,6 +527,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
             {
                 **record,
                 "decision": "deferred",
+                "relevance_label": "deferred",
                 "reason": (
                     "Shadow mode records the recommendation without creating a "
                     "source handoff."
@@ -854,101 +876,6 @@ def build_source_plan(
     }
 
 
-def _validate_source_plan_result(
-    *,
-    plan_result: EvidenceSelectionSourcePlanResult,
-    requested_sources: tuple[str, ...],
-    max_records_per_search: int,
-) -> None:
-    """Validate executable planner output before any source side effects."""
-
-    allowed_sources = set(requested_sources)
-    for source_search in plan_result.source_searches:
-        _validate_source_key_for_plan(
-            source_key=source_search.source_key,
-            allowed_sources=allowed_sources,
-            requires_direct_search=True,
-        )
-        if not source_search.query_payload:
-            msg = (
-                "Planner returned source_searches with an empty query_payload "
-                f"for '{source_search.source_key}'."
-            )
-            raise ValueError(msg)
-        _validate_plan_record_limit(
-            source_key=source_search.source_key,
-            max_records=source_search.max_records,
-            max_records_per_search=max_records_per_search,
-        )
-        if (
-            source_search.timeout_seconds is not None
-            and source_search.timeout_seconds <= 0
-        ):
-            msg = (
-                "Planner returned source_searches with a non-positive timeout "
-                f"for '{source_search.source_key}'."
-            )
-            raise ValueError(msg)
-        if (
-            source_search.timeout_seconds is not None
-            and source_search.timeout_seconds > _LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS
-        ):
-            msg = (
-                "Planner returned source_searches with timeout_seconds="
-                f"{source_search.timeout_seconds:g} for '{source_search.source_key}', "
-                f"above the {_LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS:g} second limit."
-            )
-            raise ValueError(msg)
-    for candidate_search in plan_result.candidate_searches:
-        _validate_source_key_for_plan(
-            source_key=candidate_search.source_key,
-            allowed_sources=allowed_sources,
-            requires_direct_search=False,
-        )
-        _validate_plan_record_limit(
-            source_key=candidate_search.source_key,
-            max_records=candidate_search.max_records,
-            max_records_per_search=max_records_per_search,
-        )
-
-
-def _validate_source_key_for_plan(
-    *,
-    source_key: str,
-    allowed_sources: set[str],
-    requires_direct_search: bool,
-) -> None:
-    source = get_source_definition(source_key)
-    if source is None:
-        msg = f"Planner returned unknown source '{source_key}'."
-        raise ValueError(msg)
-    if allowed_sources and source_key not in allowed_sources:
-        msg = f"Planner returned source '{source_key}' outside requested sources."
-        raise ValueError(msg)
-    if requires_direct_search and not source.direct_search_enabled:
-        msg = f"Planner returned source '{source_key}' without direct search support."
-        raise ValueError(msg)
-
-
-def _validate_plan_record_limit(
-    *,
-    source_key: str,
-    max_records: int | None,
-    max_records_per_search: int,
-) -> None:
-    if max_records is None:
-        return
-    if max_records < 1:
-        msg = f"Planner returned non-positive max_records for '{source_key}'."
-        raise ValueError(msg)
-    if max_records > max_records_per_search:
-        msg = (
-            f"Planner returned max_records={max_records} for '{source_key}', "
-            f"above max_records_per_search={max_records_per_search}."
-        )
-        raise ValueError(msg)
-
-
 @dataclass(frozen=True, slots=True)
 class _ScreeningResult:
     selected_records: tuple[JSONObject, ...]
@@ -975,7 +902,7 @@ async def _run_live_source_searches(
         timeout_seconds = (
             source_search.timeout_seconds
             if source_search.timeout_seconds is not None
-            else _LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS
+            else LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS
         )
         if timeout_seconds <= 0:
             errors.append(
@@ -1071,6 +998,7 @@ def _screen_candidate_searches(  # noqa: PLR0913
                     "source_key": candidate_search.source_key,
                     "search_id": str(candidate_search.search_id),
                     "decision": "deferred",
+                    "relevance_label": "deferred",
                     "reason": "Saved source search was not found for this space/source.",
                 },
             )
@@ -1109,6 +1037,7 @@ def _screen_candidate_searches(  # noqa: PLR0913
                     {
                         **decision,
                         "decision": "skipped",
+                        "relevance_label": "context_only",
                         "reason": (
                             "This source record was already selected or captured "
                             "in the research space."
@@ -1129,6 +1058,7 @@ def _screen_candidate_searches(  # noqa: PLR0913
                     {
                         **decision,
                         "decision": "deferred",
+                        "relevance_label": "deferred",
                         "reason": "Per-search selection budget reached.",
                     },
                 )
@@ -1230,6 +1160,7 @@ def _decision_for_record(
             "title": title,
             "score": score,
             "decision": "skipped",
+            "relevance_label": "context_only",
             "reason": (
                 "This source record was already selected or captured in the "
                 "research space."
@@ -1248,6 +1179,7 @@ def _decision_for_record(
             "title": title,
             "score": score,
             "decision": "skipped",
+            "relevance_label": "off_objective",
             "reason": "Record matched exclusion criteria.",
             "matched_terms": matched_terms,
             "excluded_terms": excluded_terms,
@@ -1263,6 +1195,7 @@ def _decision_for_record(
             "title": title,
             "score": score,
             "decision": "skipped",
+            "relevance_label": "off_objective",
             "reason": "Record did not match the research goal or inclusion criteria.",
             "matched_terms": matched_terms,
             "excluded_terms": excluded_terms,
@@ -1278,6 +1211,7 @@ def _decision_for_record(
             "title": title,
             "score": score,
             "decision": "skipped",
+            "relevance_label": "needs_human_review",
             "reason": "Record had only weak goal overlap and needs a stronger topic match.",
             "matched_terms": matched_terms,
             "excluded_terms": excluded_terms,
@@ -1292,6 +1226,7 @@ def _decision_for_record(
         "title": title,
         "score": score,
         "decision": "selected",
+        "relevance_label": _relevance_label_for_selected_score(score),
         "reason": _selection_reason(matched_terms=matched_terms, source_key=source_search.source_key),
         "matched_terms": matched_terms,
         "excluded_terms": excluded_terms,
@@ -1527,6 +1462,7 @@ def _review_metadata(*, decision: JSONObject, record: JSONObject) -> JSONObject:
         "selected_record_index": decision.get("record_index"),
         "selected_record_hash": decision.get("record_hash"),
         "selection_reason": decision.get("reason"),
+        "relevance_label": decision.get("relevance_label"),
         "selection_score": decision.get("score"),
         "matched_terms": decision.get("matched_terms"),
         "excluded_terms": decision.get("excluded_terms"),
@@ -1717,6 +1653,12 @@ def _selection_reason(*, matched_terms: list[str], source_key: str) -> str:
     if preview:
         return f"Record matches the goal/instructions through: {preview}."
     return f"Record from {source_key} matched the evidence-selection policy."
+
+
+def _relevance_label_for_selected_score(score: float) -> str:
+    if score >= _HIGH_PRIORITY_SCORE_THRESHOLD:
+        return "strong_fit"
+    return "plausible_fit"
 
 
 def _record_caveats(
