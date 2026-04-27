@@ -377,6 +377,52 @@ class _TooLongTimeoutPlanner:
         )
 
 
+class _TooManyLiveSourceSearchesPlanner:
+    """Planner double that violates the live source-search count budget."""
+
+    async def build_plan(
+        self,
+        *,
+        goal: str,
+        instructions: str | None,
+        requested_sources: tuple[str, ...],
+        source_searches: tuple[EvidenceSelectionLiveSourceSearch, ...],
+        candidate_searches: tuple[EvidenceSelectionCandidateSearch, ...],
+        inclusion_criteria: tuple[str, ...],
+        exclusion_criteria: tuple[str, ...],
+        population_context: str | None,
+        evidence_types: tuple[str, ...],
+        priority_outcomes: tuple[str, ...],
+        workspace_snapshot: JSONObject,
+        max_records_per_search: int,
+    ) -> EvidenceSelectionSourcePlanResult:
+        del (
+            goal,
+            instructions,
+            requested_sources,
+            source_searches,
+            candidate_searches,
+            inclusion_criteria,
+            exclusion_criteria,
+            population_context,
+            evidence_types,
+            priority_outcomes,
+            workspace_snapshot,
+            max_records_per_search,
+        )
+        return EvidenceSelectionSourcePlanResult(
+            source_plan={"planner": {"kind": "agent"}},
+            source_searches=tuple(
+                EvidenceSelectionLiveSourceSearch(
+                    source_key="clinvar",
+                    query_payload={"gene_symbol": "MED13"},
+                )
+                for _ in range(51)
+            ),
+            candidate_searches=(),
+        )
+
+
 class _FakePubMedDiscoveryService(PubMedDiscoveryService):
     """PubMed discovery double that records the harness-created request."""
 
@@ -622,6 +668,7 @@ async def test_evidence_selection_executes_planner_added_live_searches() -> None
         sources=(),
         proposal_mode="review_required",
         mode="guarded",
+        live_network_allowed=True,
         source_searches=(),
         candidate_searches=(),
         max_records_per_search=3,
@@ -720,6 +767,7 @@ async def test_evidence_selection_rejects_planner_source_outside_request() -> No
             sources=("pubmed",),
             proposal_mode="review_required",
             mode="guarded",
+            live_network_allowed=True,
             candidate_searches=(),
             max_records_per_search=3,
             max_handoffs=10,
@@ -766,6 +814,7 @@ async def test_evidence_selection_rejects_planner_timeout_above_ceiling() -> Non
             sources=("clinvar",),
             proposal_mode="review_required",
             mode="guarded",
+            live_network_allowed=True,
             candidate_searches=(),
             max_records_per_search=3,
             max_handoffs=10,
@@ -784,6 +833,53 @@ async def test_evidence_selection_rejects_planner_timeout_above_ceiling() -> Non
             direct_source_search_store=InMemoryDirectSourceSearchStore(),
             source_search_handoff_store=InMemorySourceSearchHandoffStore(),
             source_planner=_TooLongTimeoutPlanner(),
+        )
+
+
+@pytest.mark.asyncio
+async def test_evidence_selection_rejects_planner_source_search_budget_overflow() -> None:
+    space_id = uuid4()
+    user_id = uuid4()
+    run_registry = HarnessRunRegistry()
+    artifact_store = HarnessArtifactStore()
+    run = run_registry.create_run(
+        space_id=space_id,
+        harness_id="evidence-selection",
+        title="Invalid Planner Search Budget",
+        input_payload={},
+        graph_service_status="not_checked",
+        graph_service_version="not_checked",
+    )
+    artifact_store.seed_for_run(run=run)
+
+    with pytest.raises(ValueError, match="above the 50 search run budget"):
+        await execute_evidence_selection_run(
+            space_id=space_id,
+            run=run,
+            goal="Find MED13 evidence.",
+            instructions=None,
+            sources=("clinvar",),
+            proposal_mode="review_required",
+            mode="guarded",
+            live_network_allowed=True,
+            candidate_searches=(),
+            max_records_per_search=3,
+            max_handoffs=10,
+            inclusion_criteria=(),
+            exclusion_criteria=(),
+            population_context=None,
+            evidence_types=(),
+            priority_outcomes=(),
+            parent_run_id=None,
+            created_by=user_id,
+            run_registry=run_registry,
+            artifact_store=artifact_store,
+            document_store=HarnessDocumentStore(),
+            proposal_store=HarnessProposalStore(),
+            review_item_store=HarnessReviewItemStore(),
+            direct_source_search_store=InMemoryDirectSourceSearchStore(),
+            source_search_handoff_store=InMemorySourceSearchHandoffStore(),
+            source_planner=_TooManyLiveSourceSearchesPlanner(),
         )
 
 
@@ -1128,6 +1224,7 @@ async def test_evidence_selection_shadow_mode_recommends_without_handoff() -> No
     assert result.deferred_records[0]["reason"] == (
         "Shadow mode records the recommendation without creating a source handoff."
     )
+    assert result.deferred_records[0]["relevance_label"] == "deferred"
     assert result.deferred_records[0]["would_have_been_selected"] is True
     assert document_store.count_documents(space_id=space_id) == 0
 
@@ -1380,6 +1477,7 @@ async def test_evidence_selection_keeps_biomedical_goal_terms() -> None:
 
     assert result.selected_records[0]["record_index"] == 0
     assert result.selected_records[0]["matched_terms"] == ["evidence", "variant"]
+    assert result.selected_records[0]["relevance_label"] == "strong_fit"
 
 
 @pytest.mark.asyncio
@@ -1412,6 +1510,7 @@ async def test_evidence_selection_runs_live_source_search_and_stages_review_outp
         sources=("clinvar",),
         proposal_mode="review_required",
         mode="guarded",
+        live_network_allowed=True,
         source_searches=(
             EvidenceSelectionLiveSourceSearch(
                 source_key="clinvar",
@@ -1443,6 +1542,7 @@ async def test_evidence_selection_runs_live_source_search_and_stages_review_outp
     )
 
     assert len(result.selected_records) == 1
+    assert result.selected_records[0]["relevance_label"] == "strong_fit"
     assert len(result.handoffs) == 1
     assert len(result.proposals) == 1
     assert result.proposals[0].status == "pending_review"
@@ -1452,6 +1552,16 @@ async def test_evidence_selection_runs_live_source_search_and_stages_review_outp
     assert result.review_items[0].status == "pending_review"
     assert result.review_items[0].metadata["selected_record_hash"] == (
         result.selected_records[0]["record_hash"]
+    )
+    assert result.review_items[0].metadata["relevance_label"] == "strong_fit"
+    decisions_artifact = artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=run.id,
+        artifact_key="evidence_selection_decisions",
+    )
+    assert decisions_artifact is not None
+    assert decisions_artifact.content["selected_records"][0]["relevance_label"] == (
+        "strong_fit"
     )
     assert result.workspace_snapshot["graph_state_summary"] == {
         "approved_evidence_count": 0,
@@ -1562,6 +1672,7 @@ async def test_evidence_selection_live_source_search_times_out() -> None:
         sources=("clinvar",),
         proposal_mode="review_required",
         mode="guarded",
+        live_network_allowed=True,
         source_searches=(
             EvidenceSelectionLiveSourceSearch(
                 source_key="clinvar",
@@ -1662,6 +1773,7 @@ async def test_evidence_selection_runner_creates_live_pubmed_search() -> None:
         sources=("pubmed",),
         proposal_mode="review_required",
         mode="guarded",
+        live_network_allowed=True,
         source_searches=(
             EvidenceSelectionLiveSourceSearch(
                 source_key="pubmed",
@@ -1766,6 +1878,7 @@ async def test_evidence_selection_runner_creates_live_marrvel_search() -> None:
         sources=("marrvel",),
         proposal_mode="review_required",
         mode="guarded",
+        live_network_allowed=True,
         source_searches=(
             EvidenceSelectionLiveSourceSearch(
                 source_key="marrvel",

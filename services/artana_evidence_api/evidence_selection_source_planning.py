@@ -1,35 +1,24 @@
-"""Source-specific query planning adapters for evidence-selection runs."""
+"""Source planning adapters for evidence-selection runs."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
 
-from artana_evidence_api.direct_source_search import (
-    AlphaFoldSourceSearchRequest,
-    ClinicalTrialsSourceSearchRequest,
-    ClinVarSourceSearchRequest,
-    DrugBankSourceSearchRequest,
-    MGISourceSearchRequest,
-    UniProtSourceSearchRequest,
-    ZFINSourceSearchRequest,
+from artana_evidence_api.evidence_selection_source_playbooks import (
+    SourceQueryPlanningError,
+    query_payload_for_intent,
 )
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
 )
-from artana_evidence_api.marrvel_discovery import SUPPORTED_MARRVEL_PANELS
-from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
 from artana_evidence_api.source_registry import (
     direct_search_source_keys,
     get_source_definition,
     normalize_source_key,
 )
-from artana_evidence_api.types.common import JSONObject, json_object_or_empty
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from artana_evidence_api.types.common import JSONObject
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-_DEFAULT_MARRVEL_PANELS = ("omim", "clinvar", "gnomad", "geno2mp", "expression")
-_SUPPORTED_MARRVEL_PANEL_SET = frozenset(SUPPORTED_MARRVEL_PANELS)
 _DIRECT_SEARCH_SOURCE_SET = frozenset(direct_search_source_keys())
 
 
@@ -53,6 +42,8 @@ class PlannedSourceIntent(BaseModel):
     disease: str | None = Field(default=None, min_length=1, max_length=256)
     phenotype: str | None = Field(default=None, min_length=1, max_length=256)
     organism: str | None = Field(default=None, min_length=1, max_length=128)
+    taxon_id: int | None = Field(default=None, ge=1)
+    panels: list[str] | None = Field(default=None, min_length=1, max_length=20)
     evidence_role: str = Field(..., min_length=1, max_length=256)
     reason: str = Field(..., min_length=1, max_length=512)
     max_records: int | None = Field(default=None, ge=1, le=100)
@@ -90,6 +81,18 @@ class PlannedSourceIntent(BaseModel):
             msg = "value must not be empty"
             raise ValueError(msg)
         return normalized
+
+    @field_validator("panels")
+    @classmethod
+    def _normalize_panels(cls, values: list[str] | None) -> list[str] | None:
+        if values is None:
+            return None
+        normalized: list[str] = []
+        for value in values:
+            candidate = value.strip().lower()
+            if candidate and candidate not in normalized:
+                normalized.append(candidate)
+        return normalized or None
 
 
 class DeferredSourcePlan(BaseModel):
@@ -142,51 +145,6 @@ class ModelEvidenceSelectionSourcePlanContract(BaseModel):
             return None
         normalized = " ".join(value.split())
         return normalized or None
-
-
-class _MarrvelPlanningPayload(BaseModel):
-    """MARRVEL query payload shape accepted by evidence-selection planning."""
-
-    model_config = ConfigDict(strict=True)
-
-    gene_symbol: str | None = Field(default=None, min_length=1)
-    variant_hgvs: str | None = Field(default=None, min_length=1)
-    protein_variant: str | None = Field(default=None, min_length=1)
-    taxon_id: int = Field(default=9606, ge=1)
-    panels: list[str] | None = Field(default=None)
-
-    @field_validator("gene_symbol", "variant_hgvs", "protein_variant")
-    @classmethod
-    def _normalize_optional_text(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        normalized = " ".join(value.split())
-        return normalized or None
-
-    @field_validator("panels")
-    @classmethod
-    def _validate_panels(cls, value: list[str] | None) -> list[str] | None:
-        if value is None:
-            return None
-        normalized: list[str] = []
-        for panel in value:
-            candidate = panel.strip().lower()
-            if candidate not in _SUPPORTED_MARRVEL_PANEL_SET:
-                msg = f"Unsupported MARRVEL panel '{panel}'."
-                raise ValueError(msg)
-            if candidate not in normalized:
-                normalized.append(candidate)
-        return normalized
-
-    @model_validator(mode="after")
-    def _validate_query_input(self) -> _MarrvelPlanningPayload:
-        if self.protein_variant and self.variant_hgvs:
-            msg = "Provide either variant_hgvs or protein_variant, not both."
-            raise ValueError(msg)
-        if self.gene_symbol or self.variant_hgvs or self.protein_variant:
-            return self
-        msg = "Provide gene_symbol, variant_hgvs, or protein_variant for MARRVEL."
-        raise ValueError(msg)
 
 
 @dataclass(frozen=True, slots=True)
@@ -321,213 +279,10 @@ def _effective_max_records(
 
 
 def _query_payload_for_intent(intent: PlannedSourceIntent) -> JSONObject:
-    source_key = normalize_source_key(intent.source_key)
-    builders: dict[str, Callable[[PlannedSourceIntent], JSONObject]] = {
-        "pubmed": _pubmed_payload,
-        "marrvel": _marrvel_payload,
-        "clinvar": _clinvar_payload,
-        "clinical_trials": _clinical_trials_payload,
-        "uniprot": _uniprot_payload,
-        "alphafold": _alphafold_payload,
-        "drugbank": _drugbank_payload,
-        "mgi": lambda value: _alliance_gene_payload(value, source_name="MGI"),
-        "zfin": lambda value: _alliance_gene_payload(value, source_name="ZFIN"),
-    }
-    builder = builders.get(source_key)
-    if builder is not None:
-        return builder(intent)
-    msg = f"Model planner cannot build query payload for source '{source_key}'."
-    raise ModelSourcePlanningError(msg)
-
-
-def _pubmed_payload(intent: PlannedSourceIntent) -> JSONObject:
-    parameters: JSONObject = {}
-    if intent.gene_symbol is not None:
-        parameters["gene_symbol"] = intent.gene_symbol
-    search_term = _combined_query(
-        intent,
-        fields=("query", "disease", "phenotype", "drug_name", "organism"),
-    )
-    if search_term is not None:
-        parameters["search_term"] = search_term
-    return _validated_pubmed_payload(payload={"parameters": parameters})
-
-
-def _marrvel_payload(intent: PlannedSourceIntent) -> JSONObject:
-    payload: JSONObject = {}
-    if intent.gene_symbol is not None:
-        payload["gene_symbol"] = intent.gene_symbol
-    if intent.variant_hgvs is not None:
-        payload["variant_hgvs"] = intent.variant_hgvs
-    if intent.protein_variant is not None:
-        payload["protein_variant"] = intent.protein_variant
-    if not payload:
-        msg = (
-            "Model planner must provide gene_symbol, variant_hgvs, or "
-            "protein_variant for MARRVEL."
-        )
-        raise ModelSourcePlanningError(msg)
-    payload["taxon_id"] = 9606
-    payload["panels"] = [
-        panel for panel in _DEFAULT_MARRVEL_PANELS if panel in _SUPPORTED_MARRVEL_PANEL_SET
-    ]
-    validated = _MarrvelPlanningPayload.model_validate(payload)
-    return _planning_payload(validated)
-
-
-def _clinvar_payload(intent: PlannedSourceIntent) -> JSONObject:
-    gene_symbol = _required_text(
-        intent.gene_symbol,
-        source_key="clinvar",
-        field_name="gene_symbol",
-    )
-    payload: JSONObject = {"gene_symbol": gene_symbol}
-    validated = ClinVarSourceSearchRequest.model_validate(payload)
-    return _planning_payload(validated)
-
-
-def _clinical_trials_payload(intent: PlannedSourceIntent) -> JSONObject:
-    query = _combined_query(
-        intent,
-        fields=("query", "disease", "phenotype", "gene_symbol", "drug_name"),
-    )
-    payload: JSONObject = {
-        "query": _required_text(
-            query,
-            source_key="clinical_trials",
-            field_name="query",
-        ),
-    }
-    validated = ClinicalTrialsSourceSearchRequest.model_validate(payload)
-    return _planning_payload(validated)
-
-
-def _uniprot_payload(intent: PlannedSourceIntent) -> JSONObject:
-    if intent.uniprot_id is not None:
-        payload: JSONObject = {"uniprot_id": intent.uniprot_id}
-    else:
-        query = _combined_query(
-            intent,
-            fields=("query", "gene_symbol", "organism"),
-        )
-        payload = {
-            "query": _required_text(
-                query,
-                source_key="uniprot",
-                field_name="query",
-            ),
-        }
-    validated = UniProtSourceSearchRequest.model_validate(payload)
-    return _planning_payload(validated)
-
-
-def _alphafold_payload(intent: PlannedSourceIntent) -> JSONObject:
-    payload: JSONObject = {
-        "uniprot_id": _required_text(
-            intent.uniprot_id,
-            source_key="alphafold",
-            field_name="uniprot_id",
-        ),
-    }
-    validated = AlphaFoldSourceSearchRequest.model_validate(payload)
-    return _planning_payload(validated)
-
-
-def _drugbank_payload(intent: PlannedSourceIntent) -> JSONObject:
-    if intent.drugbank_id is not None:
-        payload: JSONObject = {"drugbank_id": intent.drugbank_id}
-    else:
-        drug_name = intent.drug_name or intent.query
-        payload = {
-            "drug_name": _required_text(
-                drug_name,
-                source_key="drugbank",
-                field_name="drug_name",
-            ),
-        }
-    validated = DrugBankSourceSearchRequest.model_validate(payload)
-    return _planning_payload(validated)
-
-
-def _alliance_gene_payload(
-    intent: PlannedSourceIntent,
-    *,
-    source_name: Literal["MGI", "ZFIN"],
-) -> JSONObject:
-    query = _combined_query(
-        intent,
-        fields=("query", "gene_symbol", "phenotype", "disease"),
-    )
-    payload: JSONObject = {
-        "query": _required_text(
-            query,
-            source_key=source_name.lower(),
-            field_name="query",
-        ),
-    }
-    if source_name == "MGI":
-        return _planning_payload(MGISourceSearchRequest.model_validate(payload))
-    return _planning_payload(ZFINSourceSearchRequest.model_validate(payload))
-
-
-def _validated_pubmed_payload(*, payload: JSONObject) -> JSONObject:
-    raw_parameters = payload.get("parameters")
-    parameters = raw_parameters if isinstance(raw_parameters, dict) else {}
-    validated = AdvancedQueryParameters.model_validate(parameters)
-    return {
-        "parameters": json_object_or_empty(
-            validated.model_dump(
-                mode="json",
-                exclude_defaults=True,
-                exclude_none=True,
-            ),
-        ),
-    }
-
-
-def _planning_payload(payload: BaseModel) -> JSONObject:
-    return json_object_or_empty(
-        payload.model_dump(
-            mode="json",
-            exclude_defaults=True,
-            exclude_none=True,
-        ),
-    )
-
-
-def _combined_query(
-    intent: PlannedSourceIntent,
-    *,
-    fields: tuple[
-        Literal[
-            "query",
-            "gene_symbol",
-            "drug_name",
-            "disease",
-            "phenotype",
-            "organism",
-        ],
-        ...,
-    ],
-) -> str | None:
-    terms: list[str] = []
-    for field_name in fields:
-        value = getattr(intent, field_name)
-        if isinstance(value, str) and value and value not in terms:
-            terms.append(value)
-    return " ".join(terms) if terms else None
-
-
-def _required_text(
-    value: str | None,
-    *,
-    source_key: str,
-    field_name: str,
-) -> str:
-    if value is not None and value.strip():
-        return value.strip()
-    msg = f"Model planner must provide {field_name} for {source_key}."
-    raise ModelSourcePlanningError(msg)
+    try:
+        return query_payload_for_intent(intent)
+    except SourceQueryPlanningError as exc:
+        raise ModelSourcePlanningError(str(exc)) from exc
 
 
 __all__ = [

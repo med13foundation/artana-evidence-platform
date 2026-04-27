@@ -132,6 +132,11 @@ async def _execute_test_harness_run(
                 else "deterministic"
             ),
         ),
+        live_network_allowed=(
+            payload["live_network_allowed"]
+            if isinstance(payload.get("live_network_allowed"), bool)
+            else False
+        ),
         source_searches=tuple(source_searches),
         candidate_searches=tuple(candidate_searches),
         max_records_per_search=3,
@@ -397,7 +402,10 @@ def test_v2_evidence_run_accepts_goal_only_model_planner_default() -> None:
 
     response = client.post(
         f"/v2/spaces/{space_id}/evidence-runs",
-        json={"goal": "Find MED13 congenital heart disease evidence."},
+        json={
+            "goal": "Find MED13 congenital heart disease evidence.",
+            "live_network_allowed": True,
+        },
         headers=auth_headers(),
     )
 
@@ -426,12 +434,26 @@ def test_v2_evidence_run_rejects_goal_only_when_model_planner_unavailable(
 
     response = client.post(
         f"/v2/spaces/{space_id}/evidence-runs",
-        json={"goal": "Find MED13 evidence."},
+        json={"goal": "Find MED13 evidence.", "live_network_allowed": True},
         headers=auth_headers(),
     )
 
     assert response.status_code == 503
     assert "Model source planning is unavailable" in response.json()["detail"]
+
+
+def test_v2_evidence_run_rejects_goal_only_model_without_live_network_opt_in() -> None:
+    client, _search_store, _run_registry = _build_client()
+    space_id = uuid4()
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/evidence-runs",
+        json={"goal": "Find MED13 evidence."},
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 422
+    assert "goal-only model-planned evidence runs" in json.dumps(response.json())
 
 
 def test_v2_evidence_run_follow_up_reuses_parent_goal() -> None:
@@ -625,6 +647,52 @@ def test_v2_evidence_run_rejects_guarded_zero_handoff_budget() -> None:
     assert "guarded evidence runs require max_handoffs" in json.dumps(response.json())
 
 
+def test_v2_evidence_run_requires_live_network_opt_in_for_live_searches() -> None:
+    client, _search_store, _run_registry = _build_client()
+    space_id = uuid4()
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/evidence-runs",
+        json={
+            "goal": "Find MED13 evidence.",
+            "source_searches": [
+                {
+                    "source_key": "clinvar",
+                    "query_payload": {"gene_symbol": "MED13"},
+                },
+            ],
+        },
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 422
+    assert "live_network_allowed must be true" in json.dumps(response.json())
+
+
+def test_v2_evidence_run_rejects_invalid_live_search_payload() -> None:
+    client, _search_store, _run_registry = _build_client()
+    space_id = uuid4()
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/evidence-runs",
+        json={
+            "goal": "Find MED13 evidence.",
+            "live_network_allowed": True,
+            "source_searches": [
+                {
+                    "source_key": "clinvar",
+                    "query_payload": {"query": "MED13"},
+                },
+            ],
+        },
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 422
+    assert "Invalid query_payload for source 'clinvar'" in json.dumps(response.json())
+    assert "gene_symbol" in json.dumps(response.json())
+
+
 def test_v2_evidence_run_rejects_ambiguous_live_search_limit() -> None:
     client, _search_store, _run_registry = _build_client()
     space_id = uuid4()
@@ -633,6 +701,7 @@ def test_v2_evidence_run_rejects_ambiguous_live_search_limit() -> None:
         f"/v2/spaces/{space_id}/evidence-runs",
         json={
             "goal": "Find MED13 evidence.",
+            "live_network_allowed": True,
             "source_searches": [
                 {
                     "source_key": "clinvar",
@@ -656,6 +725,7 @@ def test_v2_evidence_run_rejects_ambiguous_pubmed_search_limit() -> None:
         f"/v2/spaces/{space_id}/evidence-runs",
         json={
             "goal": "Find MED13 evidence.",
+            "live_network_allowed": True,
             "source_searches": [
                 {
                     "source_key": "pubmed",
@@ -686,6 +756,7 @@ def test_v2_evidence_run_rejects_timeout_above_runtime_ceiling() -> None:
         f"/v2/spaces/{space_id}/evidence-runs",
         json={
             "goal": "Find MED13 evidence.",
+            "live_network_allowed": True,
             "source_searches": [
                 {
                     "source_key": "clinvar",

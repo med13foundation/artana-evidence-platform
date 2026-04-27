@@ -27,6 +27,8 @@ from artana_evidence_api.evidence_selection_runtime import (
 )
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
+    EvidenceSelectionSourceSearchError,
+    validate_live_source_search,
 )
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
 from artana_evidence_api.queued_run_support import (
@@ -136,6 +138,11 @@ class EvidenceSelectionSourceSearchRequest(BaseModel):
         ):
             msg = "Provide max_records or query_payload.max_results, not both"
             raise ValueError(msg)
+        try:
+            validate_live_source_search(self.to_runtime())
+        except (EvidenceSelectionSourceSearchError, ValueError) as exc:
+            msg = f"Invalid query_payload for source '{self.source_key}': {exc}"
+            raise ValueError(msg) from exc
         return self
 
     def to_runtime(self) -> EvidenceSelectionLiveSourceSearch:
@@ -160,6 +167,13 @@ class EvidenceSelectionRunRequest(BaseModel):
     proposal_mode: Literal["review_required"] = "review_required"
     mode: Literal["shadow", "guarded"] = "guarded"
     planner_mode: Literal["model", "deterministic"] = "model"
+    live_network_allowed: bool = Field(
+        default=False,
+        description=(
+            "Allow this evidence-selection run to create live external "
+            "source-search requests."
+        ),
+    )
     source_searches: list[EvidenceSelectionSourceSearchRequest] = Field(
         default_factory=list,
         max_length=50,
@@ -228,6 +242,22 @@ class EvidenceSelectionRunRequest(BaseModel):
         if self.mode == "guarded" and self.max_handoffs == 0:
             msg = "guarded evidence runs require max_handoffs to be at least 1"
             raise ValueError(msg)
+        if self.source_searches and not self.live_network_allowed:
+            msg = (
+                "live_network_allowed must be true when source_searches are "
+                "provided."
+            )
+            raise ValueError(msg)
+        if (
+            self.planner_mode == "model"
+            and not self.live_network_allowed
+            and not self.candidate_searches
+        ):
+            msg = (
+                "live_network_allowed must be true for goal-only model-planned "
+                "evidence runs."
+            )
+            raise ValueError(msg)
         if (
             self.planner_mode == "deterministic"
             and not self.candidate_searches
@@ -259,6 +289,13 @@ class EvidenceSelectionFollowUpRequest(BaseModel):
     proposal_mode: Literal["review_required"] = "review_required"
     mode: Literal["shadow", "guarded"] = "guarded"
     planner_mode: Literal["model", "deterministic"] = "model"
+    live_network_allowed: bool = Field(
+        default=False,
+        description=(
+            "Allow this evidence-selection follow-up to create live external "
+            "source-search requests."
+        ),
+    )
     source_searches: list[EvidenceSelectionSourceSearchRequest] = Field(
         default_factory=list,
         max_length=50,
@@ -326,6 +363,22 @@ class EvidenceSelectionFollowUpRequest(BaseModel):
     def _default_sources_from_candidates(self) -> EvidenceSelectionFollowUpRequest:
         if self.mode == "guarded" and self.max_handoffs == 0:
             msg = "guarded evidence-run follow-ups require max_handoffs to be at least 1"
+            raise ValueError(msg)
+        if self.source_searches and not self.live_network_allowed:
+            msg = (
+                "live_network_allowed must be true when source_searches are "
+                "provided."
+            )
+            raise ValueError(msg)
+        if (
+            self.planner_mode == "model"
+            and not self.live_network_allowed
+            and not self.candidate_searches
+        ):
+            msg = (
+                "live_network_allowed must be true for goal-only model-planned "
+                "evidence-run follow-ups."
+            )
             raise ValueError(msg)
         if (
             self.planner_mode == "deterministic"
@@ -403,6 +456,7 @@ async def create_evidence_selection_run(  # noqa: PLR0913
         proposal_mode=request.proposal_mode,
         mode=request.mode,
         planner_mode=request.planner_mode,
+        live_network_allowed=request.live_network_allowed,
         source_searches=tuple(search.to_runtime() for search in request.source_searches),
         candidate_searches=tuple(
             candidate.to_runtime() for candidate in request.candidate_searches
@@ -483,6 +537,7 @@ async def create_evidence_selection_follow_up_run(  # noqa: PLR0913
         proposal_mode=request.proposal_mode,
         mode=request.mode,
         planner_mode=request.planner_mode,
+        live_network_allowed=request.live_network_allowed,
         source_searches=tuple(search.to_runtime() for search in request.source_searches),
         candidate_searches=tuple(
             candidate.to_runtime() for candidate in request.candidate_searches
@@ -513,6 +568,7 @@ async def _create_evidence_selection_run_from_parts(  # noqa: PLR0913
     proposal_mode: EvidenceSelectionProposalMode,
     mode: EvidenceSelectionMode,
     planner_mode: EvidenceSelectionSourcePlannerMode,
+    live_network_allowed: bool,
     source_searches: tuple[EvidenceSelectionLiveSourceSearch, ...],
     candidate_searches: tuple[EvidenceSelectionCandidateSearch, ...],
     max_records_per_search: int,
@@ -550,6 +606,7 @@ async def _create_evidence_selection_run_from_parts(  # noqa: PLR0913
         proposal_mode=proposal_mode,
         mode=mode,
         planner_mode=planner_mode,
+        live_network_allowed=live_network_allowed,
         source_searches=source_searches,
         candidate_searches=candidate_searches,
         max_records_per_search=max_records_per_search,

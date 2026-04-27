@@ -98,6 +98,11 @@ class SourceDefinition(BaseModel):
         if not self.requires_credentials and self.credential_names:
             msg = "credential_names requires requires_credentials"
             raise ValueError(msg)
+        if self.direct_search_enabled and (
+            self.request_schema_ref is None or self.result_schema_ref is None
+        ):
+            msg = "direct_search_enabled requires request_schema_ref and result_schema_ref"
+            raise ValueError(msg)
         return self
 
 
