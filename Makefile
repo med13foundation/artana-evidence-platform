@@ -129,7 +129,7 @@ define check_venv
 fi
 endef
 
-.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test coverage-check artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
+.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test coverage-check artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
@@ -262,13 +262,16 @@ graph-service-test: ## Run graph service tests against isolated Postgres
 	@$(MAKE) -s postgres-wait
 	$(call run_with_postgres_env,$(USE_PYTHON) scripts/run_isolated_postgres_tests.py $(GRAPH_SERVICE_TEST_PATHS) -q)
 
-graph-service-checks: ## Run graph service gates
+graph-service-static-checks: ## Run graph service gates except tests
 	@$(MAKE) -s graph-service-lint
 	@$(MAKE) -s graph-service-type-check
 	@$(MAKE) -s graph-service-type-check-strict-imports
 	@$(MAKE) -s graph-service-boundary-check
 	@$(MAKE) -s graph-service-contract-check
 	@$(MAKE) -s graph-phase6-release-check
+
+graph-service-checks: ## Run graph service gates
+	@$(MAKE) -s graph-service-static-checks
 	@$(MAKE) -s graph-service-test
 
 artana-evidence-api-lint: ## Run ruff on evidence API paths
@@ -299,16 +302,19 @@ coverage-check: ## Enforce service coverage threshold
 	@$(MAKE) -s postgres-wait
 	$(call run_with_postgres_env,$(USE_PYTHON) scripts/run_isolated_postgres_tests.py $(COVERAGE_TEST_PATHS) -W "ignore:unclosed database in <sqlite3.Connection object:ResourceWarning" --cov=services --cov-report=term-missing --cov-report=xml --cov-fail-under=$(COVERAGE_MIN) -q)
 
-artana-evidence-api-service-checks: ## Run evidence API gates
+artana-evidence-api-static-checks: ## Run evidence API gates except tests
 	@$(MAKE) -s artana-evidence-api-lint
 	@$(MAKE) -s artana-evidence-api-type-check
 	@$(MAKE) -s artana-evidence-api-boundary-check
 	@$(MAKE) -s artana-evidence-api-contract-check
+
+artana-evidence-api-service-checks: ## Run evidence API gates
+	@$(MAKE) -s artana-evidence-api-static-checks
 	@$(MAKE) -s artana-evidence-api-test
 
 service-checks: ## Run all service gates including coverage enforcement
-	@$(MAKE) -s graph-service-checks
-	@$(MAKE) -s artana-evidence-api-service-checks
+	@$(MAKE) -s graph-service-static-checks
+	@$(MAKE) -s artana-evidence-api-static-checks
 	@$(MAKE) -s coverage-check
 
 live-endpoint-contract-check: ## Run opt-in live endpoint contract against make run-all

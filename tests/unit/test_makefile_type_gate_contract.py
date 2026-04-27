@@ -47,10 +47,43 @@ def test_evidence_api_strict_import_target_remains_explicit_alias() -> None:
 
 
 def test_evidence_api_service_checks_enforce_normal_type_gate_once() -> None:
-    service_check_body = _target_body(
+    static_check_body = _target_body(
         _makefile_text(),
+        "artana-evidence-api-static-checks",
+    )
+
+    assert static_check_body.count("artana-evidence-api-type-check") == 1
+    assert "artana-evidence-api-type-check-strict-imports" not in static_check_body
+
+
+def test_static_service_check_targets_do_not_run_tests() -> None:
+    makefile_text = _makefile_text()
+    graph_static_body = _target_body(makefile_text, "graph-service-static-checks")
+    evidence_static_body = _target_body(
+        makefile_text,
+        "artana-evidence-api-static-checks",
+    )
+    graph_service_body = _target_body(makefile_text, "graph-service-checks")
+    evidence_service_body = _target_body(
+        makefile_text,
         "artana-evidence-api-service-checks",
     )
 
-    assert service_check_body.count("artana-evidence-api-type-check") == 1
-    assert "artana-evidence-api-type-check-strict-imports" not in service_check_body
+    assert "graph-service-test" not in graph_static_body
+    assert "artana-evidence-api-test" not in evidence_static_body
+    assert "@$(MAKE) -s graph-service-static-checks" in graph_service_body
+    assert "@$(MAKE) -s graph-service-test" in graph_service_body
+    assert "@$(MAKE) -s artana-evidence-api-static-checks" in evidence_service_body
+    assert "@$(MAKE) -s artana-evidence-api-test" in evidence_service_body
+
+
+def test_pre_commit_hooks_avoid_duplicate_full_service_gates() -> None:
+    pre_commit_config = (_REPO_ROOT / ".pre-commit-config.yaml").read_text(
+        encoding="utf-8",
+    )
+
+    assert "entry: make -s artana-evidence-api-type-check\n" in pre_commit_config
+    assert "artana-evidence-api-type-check-strict-imports" not in pre_commit_config
+    assert "pre-push" not in pre_commit_config
+    assert "entry: make -s graph-service-checks" not in pre_commit_config
+    assert "entry: make -s artana-evidence-api-service-checks" not in pre_commit_config

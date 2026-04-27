@@ -9,6 +9,10 @@ A space is your research space.
 For MED13, you might create one space called `MED13 Workspace`. It keeps the
 topic, permissions, evidence, graph context, and research state together.
 
+Think of a space as a living workspace. You can run one evidence pass, review
+the outputs, add a follow-up idea later, and keep building on the same prior
+source results and review decisions.
+
 Useful endpoints:
 
 - `POST /v2/spaces`
@@ -93,6 +97,15 @@ Useful endpoints:
 - `GET /v2/spaces/{space_id}/evidence-map/entities`
 - `GET /v2/spaces/{space_id}/evidence-map/claims`
 - `GET /v2/spaces/{space_id}/evidence-map/claims/{claim_id}/evidence`
+
+## Scientific Boundary
+
+The platform helps organize research evidence. It does not turn raw source
+results into clinical advice, automatic regulatory-grade evidence, proof of
+causality, or a formal systematic review by itself.
+
+For high-stakes scientific use, treat harness output as reviewable work. A
+human reviewer still decides what is strong enough to trust and promote.
 
 ## Output
 

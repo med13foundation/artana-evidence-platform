@@ -23,11 +23,11 @@ The platform helps you build a trusted evidence map:
 
 ```text
 Choose topic
-  -> Add or find evidence
-  -> Extract reviewable proposals
+  -> Start an evidence run
+  -> Let the harness search, select useful source records, and stage reviewable work
   -> Review proposals
   -> Promote trusted items into the graph
-  -> Explore, ask questions, and repeat
+  -> Add follow-up ideas and repeat
 ```
 
 The most important product idea is the review gate. The AI can search, extract,
@@ -37,11 +37,12 @@ For a MED13 project, that might look like:
 
 ```text
 Create "MED13 Workspace"
-  -> upload papers and search PubMed, MARRVEL, and ClinVar
-  -> extract candidate variants, claims, observations, and evidence
+  -> start an evidence run with a MED13 goal
+  -> search PubMed, MARRVEL, ClinVar, or other supported source results
+  -> create source handoffs and reviewable proposals/items for selected records
   -> review the queue
   -> promote strong evidence into the graph
-  -> ask evidence-backed questions
+  -> add a follow-up question and keep building the same space
 ```
 
 ## Who This Is For

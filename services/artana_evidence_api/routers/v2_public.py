@@ -137,6 +137,7 @@ from . import (
     chat,
     continuous_learning_runs,
     documents,
+    evidence_selection_runs,
     full_ai_orchestrator_runs,
     graph_connection_runs,
     graph_curation_runs,
@@ -3127,6 +3128,72 @@ async def create_source_search_handoff(
             update={"extraction": json_object_or_empty(jsonable_encoder(extraction))},
         )
     return response
+
+
+@router.post(
+    "/v2/spaces/{space_id}/evidence-runs",
+    response_model=evidence_selection_runs.EvidenceSelectionRunResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={202: {"model": HarnessAcceptedRunResponse}},
+    summary="Start evidence run",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["research"],
+)
+async def create_evidence_run(
+    space_id: UUID,
+    request: evidence_selection_runs.EvidenceSelectionRunRequest,
+    *,
+    prefer: str | None = Header(default=None, alias="Prefer"),
+    run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
+    artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
+    execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+) -> evidence_selection_runs.EvidenceSelectionRunResponse | JSONResponse:
+    """Start the goal-driven evidence-selection front door."""
+
+    return await evidence_selection_runs.create_evidence_selection_run(
+        space_id=space_id,
+        request=request,
+        prefer=prefer,
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        execution_services=execution_services,
+        current_user=current_user,
+    )
+
+
+@router.post(
+    "/v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups",
+    response_model=evidence_selection_runs.EvidenceSelectionRunResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={202: {"model": HarnessAcceptedRunResponse}},
+    summary="Start evidence-run follow-up",
+    dependencies=[Depends(require_harness_space_write_access)],
+    tags=["research"],
+)
+async def create_evidence_run_follow_up(
+    space_id: UUID,
+    evidence_run_id: UUID,
+    request: evidence_selection_runs.EvidenceSelectionFollowUpRequest,
+    *,
+    prefer: str | None = Header(default=None, alias="Prefer"),
+    run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
+    artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
+    execution_services: HarnessExecutionServices = _HARNESS_EXECUTION_SERVICES_DEPENDENCY,
+    current_user: HarnessUser = Depends(get_current_harness_user),
+) -> evidence_selection_runs.EvidenceSelectionRunResponse | JSONResponse:
+    """Continue an existing evidence run inside the same research space."""
+
+    return await evidence_selection_runs.create_evidence_selection_follow_up_run(
+        space_id=space_id,
+        parent_run_id=evidence_run_id,
+        request=request,
+        prefer=prefer,
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        execution_services=execution_services,
+        current_user=current_user,
+    )
 
 
 @router.get(

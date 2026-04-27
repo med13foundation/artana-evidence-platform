@@ -25,6 +25,10 @@ from artana_evidence_api.composition import (
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.database import SessionLocal, set_session_rls_context
 from artana_evidence_api.dependencies import get_document_binary_store
+from artana_evidence_api.direct_source_search import SqlAlchemyDirectSourceSearchStore
+from artana_evidence_api.evidence_selection_source_search import (
+    EvidenceSelectionSourceSearchRunner,
+)
 from artana_evidence_api.graph_chat_runtime import HarnessGraphChatRunner
 from artana_evidence_api.graph_connection_runtime import (
     HarnessGraphConnectionRunner,
@@ -45,6 +49,7 @@ from artana_evidence_api.research_onboarding_agent_runtime import (
     HarnessResearchOnboardingRunner,
 )
 from artana_evidence_api.run_registry import HarnessRunRecord
+from artana_evidence_api.source_search_handoff import SqlAlchemySourceSearchHandoffStore
 from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessApprovalStore,
     SqlAlchemyHarnessChatSessionStore,
@@ -52,6 +57,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessGraphSnapshotStore,
     SqlAlchemyHarnessProposalStore,
     SqlAlchemyHarnessResearchStateStore,
+    SqlAlchemyHarnessReviewItemStore,
     SqlAlchemyHarnessScheduleStore,
 )
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
@@ -77,6 +83,7 @@ _WORKER_HEARTBEAT_PATH = "logs/artana-evidence-api-worker-heartbeat.json"
 _WORKER_HEARTBEAT_KEEPALIVE_SECONDS = 15.0
 _WORKER_EXECUTABLE_HARNESSES = (
     "full-ai-orchestrator",
+    "evidence-selection",
     "research-init",
     "research-bootstrap",
     "research-onboarding",
@@ -146,6 +153,7 @@ def _build_worker_services(
         chat_session_store=SqlAlchemyHarnessChatSessionStore(session),
         document_store=SqlAlchemyHarnessDocumentStore(session),
         proposal_store=SqlAlchemyHarnessProposalStore(session),
+        review_item_store=SqlAlchemyHarnessReviewItemStore(session),
         approval_store=SqlAlchemyHarnessApprovalStore(session),
         research_state_store=SqlAlchemyHarnessResearchStateStore(session),
         graph_snapshot_store=SqlAlchemyHarnessGraphSnapshotStore(session),
@@ -164,6 +172,11 @@ def _build_worker_services(
         ),
         pubmed_discovery_service_factory=lambda: _pubmed_discovery_service_context(),
         document_binary_store=get_document_binary_store(),
+        direct_source_search_store=SqlAlchemyDirectSourceSearchStore(session),
+        source_search_handoff_store=SqlAlchemySourceSearchHandoffStore(session),
+        source_search_runner=EvidenceSelectionSourceSearchRunner(
+            pubmed_discovery_service_factory=lambda: _pubmed_discovery_service_context(),
+        ),
         execution_override=execution_override,
     )
     return runtime, services

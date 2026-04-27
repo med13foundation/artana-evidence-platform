@@ -159,7 +159,12 @@ jobs:
             > .env.postgres
 
       - name: Run graph service checks
-        run: make graph-service-checks
+        run: |
+          if [ "${{ needs.plan_service_checks.outputs.full }}" = "true" ]; then
+            make graph-service-static-checks
+          else
+            make graph-service-checks
+          fi
 
   graph-service-checks:
     needs:

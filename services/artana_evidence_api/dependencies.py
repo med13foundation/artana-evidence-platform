@@ -33,6 +33,9 @@ from artana_evidence_api.document_binary_store import (
     LocalFilesystemHarnessDocumentBinaryStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection_source_search import (
+    EvidenceSelectionSourceSearchRunner,
+)
 from artana_evidence_api.graph_chat_runtime import HarnessGraphChatRunner
 from artana_evidence_api.graph_client import GraphTransportBundle
 from artana_evidence_api.graph_connection_runtime import (
@@ -513,6 +516,7 @@ _ARTIFACT_STORE_PROVIDER = Depends(get_artifact_store)
 _CHAT_SESSION_STORE_PROVIDER = Depends(get_chat_session_store)
 _DOCUMENT_STORE_PROVIDER = Depends(get_document_store)
 _PROPOSAL_STORE_PROVIDER = Depends(get_proposal_store)
+_REVIEW_ITEM_STORE_PROVIDER = Depends(get_review_item_store)
 _APPROVAL_STORE_PROVIDER = Depends(get_approval_store)
 _RESEARCH_STATE_STORE_PROVIDER = Depends(get_research_state_store)
 _GRAPH_SNAPSHOT_STORE_PROVIDER = Depends(get_graph_snapshot_store)
@@ -524,6 +528,8 @@ _RESEARCH_ONBOARDING_RUNNER_PROVIDER = Depends(get_research_onboarding_runner)
 _GRAPH_API_GATEWAY_FACTORY_PROVIDER = Depends(get_graph_api_gateway_factory)
 _PUBMED_DISCOVERY_FACTORY_PROVIDER = Depends(get_pubmed_discovery_service_factory)
 _DOCUMENT_BINARY_STORE_PROVIDER = Depends(get_document_binary_store)
+_DIRECT_SOURCE_SEARCH_STORE_PROVIDER = Depends(get_direct_source_search_store)
+_SOURCE_SEARCH_HANDOFF_STORE_PROVIDER = Depends(get_source_search_handoff_store)
 
 
 def get_harness_execution_services(  # noqa: PLR0913
@@ -533,6 +539,7 @@ def get_harness_execution_services(  # noqa: PLR0913
     chat_session_store: HarnessChatSessionStore = _CHAT_SESSION_STORE_PROVIDER,
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_PROVIDER,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_PROVIDER,
+    review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_PROVIDER,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_PROVIDER,
     research_state_store: HarnessResearchStateStore = _RESEARCH_STATE_STORE_PROVIDER,
     graph_snapshot_store: HarnessGraphSnapshotStore = _GRAPH_SNAPSHOT_STORE_PROVIDER,
@@ -553,6 +560,12 @@ def get_harness_execution_services(  # noqa: PLR0913
         AbstractContextManager[PubMedDiscoveryService],
     ] = _PUBMED_DISCOVERY_FACTORY_PROVIDER,
     document_binary_store: HarnessDocumentBinaryStore = _DOCUMENT_BINARY_STORE_PROVIDER,
+    direct_source_search_store: DirectSourceSearchStore = (
+        _DIRECT_SOURCE_SEARCH_STORE_PROVIDER
+    ),
+    source_search_handoff_store: SourceSearchHandoffStore = (
+        _SOURCE_SEARCH_HANDOFF_STORE_PROVIDER
+    ),
 ) -> HarnessExecutionServices:
     """Return the shared service bundle used by the harness dispatcher and worker."""
     return HarnessExecutionServices(
@@ -562,6 +575,7 @@ def get_harness_execution_services(  # noqa: PLR0913
         chat_session_store=chat_session_store,
         document_store=document_store,
         proposal_store=proposal_store,
+        review_item_store=review_item_store,
         approval_store=approval_store,
         research_state_store=research_state_store,
         graph_snapshot_store=graph_snapshot_store,
@@ -573,6 +587,11 @@ def get_harness_execution_services(  # noqa: PLR0913
         graph_api_gateway_factory=graph_api_gateway_factory,
         pubmed_discovery_service_factory=pubmed_discovery_service_factory,
         document_binary_store=document_binary_store,
+        direct_source_search_store=direct_source_search_store,
+        source_search_handoff_store=source_search_handoff_store,
+        source_search_runner=EvidenceSelectionSourceSearchRunner(
+            pubmed_discovery_service_factory=pubmed_discovery_service_factory,
+        ),
     )
 
 
@@ -603,6 +622,7 @@ __all__ = [
     "get_research_state_store",
     "get_run_registry",
     "get_schedule_store",
+    "get_source_search_handoff_store",
     "get_uniprot_source_gateway",
     "get_zfin_source_gateway",
     "require_harness_space_read_access",

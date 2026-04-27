@@ -25,6 +25,19 @@ from artana_evidence_api.continuous_learning_runtime import (
     execute_continuous_learning_run,
     normalize_seed_entity_ids,
 )
+from artana_evidence_api.evidence_selection_runtime import (
+    EvidenceSelectionCandidateSearch,
+    EvidenceSelectionExecutionResult,
+    EvidenceSelectionMode,
+    EvidenceSelectionProposalMode,
+    EvidenceSelectionSourcePlanner,
+    EvidenceSelectionSourcePlannerMode,
+    execute_evidence_selection_run,
+)
+from artana_evidence_api.evidence_selection_source_search import (
+    EvidenceSelectionLiveSourceSearch,
+    EvidenceSelectionSourceSearchRunner,
+)
 from artana_evidence_api.full_ai_orchestrator_contracts import (
     FullAIOrchestratorPlannerMode,
 )
@@ -67,6 +80,7 @@ from artana_evidence_api.research_onboarding_runtime import (
     execute_research_onboarding_continuation,
     execute_research_onboarding_run,
 )
+from artana_evidence_api.review_item_store import HarnessReviewItemStore
 from artana_evidence_api.run_budget import (
     budget_from_json,
     resolve_continuous_learning_run_budget,
@@ -94,6 +108,7 @@ if TYPE_CHECKING:
     from .artifact_store import HarnessArtifactStore
     from .chat_sessions import HarnessChatSessionStore
     from .composition import GraphHarnessKernelRuntime
+    from .direct_source_search import DirectSourceSearchStore
     from .document_binary_store import HarnessDocumentBinaryStore
     from .document_store import HarnessDocumentStore
     from .graph_chat_runtime import HarnessGraphChatRunner
@@ -104,6 +119,7 @@ if TYPE_CHECKING:
     from .research_state import HarnessResearchStateStore
     from .run_registry import HarnessRunRegistry
     from .schedule_store import HarnessScheduleStore
+    from .source_search_handoff import SourceSearchHandoffStore
 
 HarnessExecutionResult: TypeAlias = (
     FullAIOrchestratorExecutionResult
@@ -111,6 +127,7 @@ HarnessExecutionResult: TypeAlias = (
     | ResearchBootstrapExecutionResult
     | ResearchOnboardingExecutionResult
     | ResearchOnboardingContinuationResult
+    | EvidenceSelectionExecutionResult
     | ContinuousLearningExecutionResult
     | MechanismDiscoveryRunExecutionResult
     | GraphConnectionExecutionResult
@@ -145,6 +162,15 @@ class HarnessExecutionServices:
         AbstractContextManager[PubMedDiscoveryService],
     ]
     document_binary_store: HarnessDocumentBinaryStore | None = None
+    direct_source_search_store: DirectSourceSearchStore | None = None
+    source_search_handoff_store: SourceSearchHandoffStore | None = None
+    review_item_store: HarnessReviewItemStore = field(
+        default_factory=HarnessReviewItemStore,
+    )
+    source_search_runner: EvidenceSelectionSourceSearchRunner = field(
+        default_factory=EvidenceSelectionSourceSearchRunner,
+    )
+    source_planner: EvidenceSelectionSourcePlanner | None = None
     graph_search_runner: HarnessGraphSearchRunner = field(
         default_factory=HarnessGraphSearchRunner,
     )
@@ -210,6 +236,66 @@ def _uuid(value: str, *, field_name: str) -> UUID:
     except ValueError as exc:  # pragma: no cover - defensive validation
         msg = f"Run payload field '{field_name}' must be a UUID."
         raise RuntimeError(msg) from exc
+
+
+def _candidate_searches(value: object) -> tuple[EvidenceSelectionCandidateSearch, ...]:
+    if not isinstance(value, list):
+        return ()
+    candidate_searches: list[EvidenceSelectionCandidateSearch] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        source_key = item.get("source_key")
+        search_id = item.get("search_id")
+        if not isinstance(source_key, str) or not isinstance(search_id, str):
+            continue
+        max_records = item.get("max_records")
+        candidate_searches.append(
+            EvidenceSelectionCandidateSearch(
+                source_key=source_key,
+                search_id=_uuid(search_id, field_name="candidate_searches.search_id"),
+                max_records=(
+                    max_records
+                    if isinstance(max_records, int) and not isinstance(max_records, bool)
+                    else None
+                ),
+            ),
+        )
+    return tuple(candidate_searches)
+
+
+def _source_searches(value: object) -> tuple[EvidenceSelectionLiveSourceSearch, ...]:
+    if not isinstance(value, list):
+        return ()
+    source_searches: list[EvidenceSelectionLiveSourceSearch] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        source_key = item.get("source_key")
+        query_payload = item.get("query_payload")
+        if not isinstance(source_key, str) or not isinstance(query_payload, dict):
+            continue
+        max_records = item.get("max_records")
+        timeout_seconds = item.get("timeout_seconds")
+        source_searches.append(
+            EvidenceSelectionLiveSourceSearch(
+                source_key=source_key,
+                query_payload=json_object(query_payload) or {},
+                max_records=(
+                    max_records
+                    if isinstance(max_records, int) and not isinstance(max_records, bool)
+                    else None
+                ),
+                timeout_seconds=(
+                    float(timeout_seconds)
+                    if isinstance(timeout_seconds, int | float)
+                    and not isinstance(timeout_seconds, bool)
+                    and timeout_seconds > 0
+                    else None
+                ),
+            ),
+        )
+    return tuple(source_searches)
 
 
 def _require_run(
@@ -393,6 +479,72 @@ class FullAIOrchestratorHarness(
                 payload,
                 "guarded_rollout_profile_source",
             ),
+        )
+
+
+class EvidenceSelectionHarness(
+    _HarnessServicesMixin,
+    BaseHarness[EvidenceSelectionExecutionResult],
+):
+    """Artana harness wrapper for goal-driven source-record selection."""
+
+    def __init__(self, *, services: HarnessExecutionServices) -> None:
+        super().__init__(kernel=services.runtime.kernel)
+        self._bind_services(services=services)
+
+    async def step(
+        self,
+        *,
+        context: HarnessContext,
+    ) -> EvidenceSelectionExecutionResult:
+        run = _require_run(services=self._services, context=context)
+        payload = run.input_payload
+        parent_run_id = _optional_string(payload, "parent_run_id")
+        return await execute_evidence_selection_run(
+            space_id=UUID(run.space_id),
+            run=run,
+            goal=_string_value(payload, "goal", default=""),
+            instructions=_optional_string(payload, "instructions"),
+            sources=tuple(_string_list(payload.get("sources"))),
+            proposal_mode=cast(
+                "EvidenceSelectionProposalMode",
+                _string_value(payload, "proposal_mode", default="review_required"),
+            ),
+            mode=cast(
+                "EvidenceSelectionMode",
+                _string_value(payload, "mode", default="guarded"),
+            ),
+            planner_mode=cast(
+                "EvidenceSelectionSourcePlannerMode",
+                _string_value(payload, "planner_mode", default="deterministic"),
+            ),
+            source_searches=_source_searches(payload.get("source_searches")),
+            candidate_searches=_candidate_searches(
+                payload.get("candidate_searches"),
+            ),
+            max_records_per_search=_int_value(
+                payload,
+                "max_records_per_search",
+                default=3,
+            ),
+            max_handoffs=_int_value(payload, "max_handoffs", default=20),
+            inclusion_criteria=tuple(_string_list(payload.get("inclusion_criteria"))),
+            exclusion_criteria=tuple(_string_list(payload.get("exclusion_criteria"))),
+            population_context=_optional_string(payload, "population_context"),
+            evidence_types=tuple(_string_list(payload.get("evidence_types"))),
+            priority_outcomes=tuple(_string_list(payload.get("priority_outcomes"))),
+            parent_run_id=parent_run_id,
+            created_by=_string_value(payload, "created_by", default=run.space_id),
+            run_registry=self._services.run_registry,
+            artifact_store=self._services.artifact_store,
+            document_store=self._services.document_store,
+            proposal_store=self._services.proposal_store,
+            review_item_store=self._services.review_item_store,
+            approval_store=self._services.approval_store,
+            direct_source_search_store=self._services.direct_source_search_store,
+            source_search_handoff_store=self._services.source_search_handoff_store,
+            source_search_runner=self._services.source_search_runner,
+            source_planner=self._services.source_planner,
         )
 
 
@@ -897,6 +1049,11 @@ def build_harness_for_run(  # noqa: PLR0912
         harness = cast(
             "BaseHarness[HarnessExecutionResult]",
             FullAIOrchestratorHarness(services=services),
+        )
+    elif harness_id == "evidence-selection":
+        harness = cast(
+            "BaseHarness[HarnessExecutionResult]",
+            EvidenceSelectionHarness(services=services),
         )
     elif harness_id == "research-init":
         harness = cast(

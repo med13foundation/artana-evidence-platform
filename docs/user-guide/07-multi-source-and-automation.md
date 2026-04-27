@@ -3,6 +3,122 @@
 Once the basic document and review flow is comfortable, these workflows help
 you cover more ground.
 
+## Evidence Runs
+
+Use `evidence-runs` as the goal-driven front door for iterative research.
+
+Good for:
+
+- giving the harness a research goal and follow-up instructions
+- asking the harness to create supported structured source searches
+- screening durable saved source-search results for relevance
+- creating guarded source handoffs for selected records
+- staging selected records as reviewable proposals or review items
+- preserving selected, skipped, and deferred reasons for review
+- continuing the same research space over time
+
+Endpoints:
+
+- `POST /v2/spaces/{space_id}/evidence-runs`
+- `POST /v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups`
+
+Current behavior: evidence runs default to `planner_mode: "model"`. When the
+model planner is configured, you can submit only a goal/instructions and the
+harness will choose a small set of supported source searches, run them, screen
+the durable results, create guarded handoffs, and stage review-gated proposals
+or review items. You can still provide `source_searches` or `candidate_searches`
+directly for manual control. Shadow mode records recommendations without
+creating handoffs.
+If model planning is not configured, goal-only requests return a clear
+unavailable error; explicit source-search requests can still run
+deterministically.
+
+Goal-only example:
+
+```json
+{
+  "goal": "Find evidence linking MED13 variants to congenital heart disease",
+  "mode": "guarded"
+}
+```
+
+Manual deterministic example:
+
+```json
+{
+  "goal": "Find evidence linking MED13 variants to congenital heart disease",
+  "mode": "guarded",
+  "planner_mode": "deterministic",
+  "source_searches": [
+    {
+      "source_key": "clinvar",
+      "query_payload": {"gene_symbol": "MED13"},
+      "max_records": 5
+    }
+  ]
+}
+```
+
+Explicit source-search example:
+
+```json
+{
+  "goal": "Find evidence linking MED13 variants to congenital heart disease",
+  "mode": "guarded",
+  "source_searches": [
+    {
+      "source_key": "clinvar",
+      "query_payload": {"gene_symbol": "MED13"},
+      "max_records": 5
+    }
+  ]
+}
+```
+
+PubMed uses a nested query payload:
+
+```json
+{
+  "goal": "Find papers linking MED13 variants to congenital heart disease",
+  "mode": "guarded",
+  "source_searches": [
+    {
+      "source_key": "pubmed",
+      "query_payload": {
+        "parameters": {
+          "search_term": "MED13 congenital heart disease"
+        }
+      },
+      "max_records": 5
+    }
+  ]
+}
+```
+
+MARRVEL uses gene or variant query fields:
+
+```json
+{
+  "goal": "Find variant-context evidence for MED13",
+  "mode": "guarded",
+  "source_searches": [
+    {
+      "source_key": "marrvel",
+      "query_payload": {
+        "gene_symbol": "MED13",
+        "panels": ["omim", "clinvar"]
+      },
+      "max_records": 5
+    }
+  ]
+}
+```
+
+Evidence runs are for research triage and review preparation. They are not
+clinical advice, automatic regulatory evidence, proof of causality, or a formal
+systematic review unless your workflow also captures protocol fields, search
+accounting, exclusions, and human reviewer decisions.
+
 ## Research Plan
 
 Use `research-plan` when you already know the research question and source mix.

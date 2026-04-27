@@ -12,6 +12,8 @@ Use these first.
 | Check current identity | `GET /v2/auth/me` |
 | Get or create default space | `PUT /v2/spaces/default` |
 | Create a named space | `POST /v2/spaces` |
+| Start a goal-driven evidence run | `POST /v2/spaces/{space_id}/evidence-runs` |
+| Add follow-up instructions | `POST /v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups` |
 | Upload text evidence | `POST /v2/spaces/{space_id}/documents/text` |
 | Upload PDF evidence | `POST /v2/spaces/{space_id}/documents/pdf` |
 | Extract reviewable findings | `POST /v2/spaces/{space_id}/documents/{document_id}/extraction` |
@@ -19,10 +21,6 @@ Use these first.
 | Promote or reject suggestions | `POST /v2/spaces/{space_id}/review-items/{item_id}/decision` |
 | List evidence sources | `GET /v2/sources` |
 | Inspect one evidence source | `GET /v2/sources/{source_key}` |
-| Search a direct-search source | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` |
-| Get a source search result | `GET /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}` |
-| Hand off a selected source result | `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs` |
-| Create research plan | `POST /v2/spaces/{space_id}/research-plan` |
 | Ask an evidence-map question | `POST /v2/spaces/{space_id}/workflows/evidence-search/tasks` |
 | Chat over documents and evidence | `/v2/spaces/{space_id}/chat-sessions/*` |
 
@@ -42,6 +40,10 @@ Use these when you understand the core review flow.
 | Run evidence curation | `POST /v2/spaces/{space_id}/workflows/evidence-curation/tasks` |
 | Create or manage schedules | `/v2/spaces/{space_id}/schedules/*` |
 | Use full research workflows | `/v2/spaces/{space_id}/workflows/full-research/*` |
+| Create an older research plan | `POST /v2/spaces/{space_id}/research-plan` |
+| Search a direct-search source manually | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` |
+| Get a source search result | `GET /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}` |
+| Hand off one selected source record | `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs` |
 
 ## Runtime And Debug API
 
@@ -84,6 +86,12 @@ Use these for identity, API keys, and membership management.
 workflows should prefer MARRVEL search plus governed review. Direct-write paths
 are useful for system-owned or advanced operations, but they are not the best
 first API to learn.
+
+Manual source-search and handoff endpoints are also advanced building blocks.
+The normal researcher path is now `POST /v2/spaces/{space_id}/evidence-runs`,
+which lets the harness create supported source searches, screen saved source
+results, and explain selected, skipped, and deferred records before anything
+reaches the review gate.
 
 ## Source Capability Note
 

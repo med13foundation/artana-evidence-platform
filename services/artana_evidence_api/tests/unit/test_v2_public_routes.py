@@ -16,6 +16,7 @@ from artana_evidence_api.routers import (
     chat,
     continuous_learning_runs,
     documents,
+    evidence_selection_runs,
     full_ai_orchestrator_runs,
     graph_connection_runs,
     graph_curation_runs,
@@ -135,6 +136,11 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
         "/v2/spaces/{space_id}/sources/zfin/searches/{search_id}",
         "GET",
     ): v2_public.get_zfin_source_search,
+    ("/v2/spaces/{space_id}/evidence-runs", "POST"): v2_public.create_evidence_run,
+    (
+        "/v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups",
+        "POST",
+    ): v2_public.create_evidence_run_follow_up,
     ("/v2/spaces/{space_id}/research-plan", "POST"): v2_public.create_research_plan,
     ("/v2/spaces/{space_id}/tasks", "POST"): v2_public.create_task,
     ("/v2/spaces/{space_id}/tasks", "GET"): v2_public.list_tasks,
@@ -235,6 +241,11 @@ _CUSTOM_V1_ROUTE_EQUIVALENTS = {
     ("/v1/spaces/{space_id}/marrvel/searches", "POST"),
     ("/v1/spaces/{space_id}/marrvel/searches/{result_id}", "GET"),
     ("/v1/spaces/{space_id}/agents/research-bootstrap/runs", "POST"),
+    ("/v1/spaces/{space_id}/agents/evidence-selection/runs", "POST"),
+    (
+        "/v1/spaces/{space_id}/agents/evidence-selection/runs/{parent_run_id}/follow-ups",
+        "POST",
+    ),
     ("/v1/spaces/{space_id}/agents/graph-curation/runs", "POST"),
     (
         "/v1/spaces/{space_id}/chat-sessions/{session_id}/messages/{run_id}/stream",
@@ -262,6 +273,7 @@ _USER_FACING_V1_ROUTERS = (
     approvals.router,
     chat.router,
     graph_explorer.router,
+    evidence_selection_runs.router,
     research_bootstrap_runs.router,
     graph_search_runs.router,
     graph_connection_runs.router,
@@ -361,6 +373,7 @@ def _concrete_v2_path(path: str) -> str:
         "{template_id}": "research-bootstrap",
         "{source_key}": "pubmed",
         "{search_id}": _UUID,
+        "{evidence_run_id}": _UUID,
     }
     concrete = path
     for parameter, value in replacements.items():

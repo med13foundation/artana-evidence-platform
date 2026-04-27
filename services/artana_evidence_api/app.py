@@ -35,6 +35,9 @@ from .routers.continuous_learning_runs import (
     router as continuous_learning_runs_router,
 )
 from .routers.documents import router as documents_router
+from .routers.evidence_selection_runs import (
+    router as evidence_selection_runs_router,
+)
 from .routers.full_ai_orchestrator_runs import (
     router as full_ai_orchestrator_runs_router,
 )
@@ -217,6 +220,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     app.include_router(chat_router)
     app.include_router(continuous_learning_runs_router)
     app.include_router(documents_router)
+    app.include_router(evidence_selection_runs_router)
     app.include_router(full_ai_orchestrator_runs_router)
     app.include_router(graph_connection_runs_router)
     app.include_router(graph_curation_runs_router)

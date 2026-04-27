@@ -14,6 +14,7 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 import artana_evidence_api.worker as worker_module
 import pytest
+from artana.models import TenantContext
 from artana_evidence_api.agent_contracts import (
     EvidenceItem,
     GraphConnectionContract,
@@ -26,7 +27,15 @@ from artana_evidence_api.continuous_learning_runtime import (
     execute_continuous_learning_run,
     queue_continuous_learning_run,
 )
+from artana_evidence_api.direct_source_search import (
+    ClinVarSourceSearchResponse,
+    InMemoryDirectSourceSearchStore,
+)
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection_runtime import (
+    EvidenceSelectionCandidateSearch,
+    queue_evidence_selection_run,
+)
 from artana_evidence_api.graph_chat_runtime import (
     GraphChatResult,
     HarnessGraphChatRequest,
@@ -52,6 +61,12 @@ from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.run_budget import default_continuous_learning_run_budget
 from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
 from artana_evidence_api.schedule_store import HarnessScheduleStore
+from artana_evidence_api.source_result_capture import (
+    SourceCaptureStage,
+    SourceResultCapture,
+    source_result_capture_metadata,
+)
+from artana_evidence_api.source_search_handoff import InMemorySourceSearchHandoffStore
 from artana_evidence_api.tests.support import (
     FakeEvent,
     FakeEventType,
@@ -421,10 +436,26 @@ def test_build_worker_services_use_graph_admin_transport_for_background_runs(
 
 class _FakeKernelRuntime:
     def __init__(self) -> None:
+        self.kernel = _WorkerKernelAdapter(self)
+        self._runs: set[tuple[str, str]] = set()
         self._leases: dict[tuple[str, str], str] = {}
         self._events: dict[tuple[str, str], list[FakeEvent]] = {}
         self.acquired: list[tuple[str, str, str]] = []
         self.released: list[tuple[str, str, str]] = []
+
+    def tenant_context(self, *, tenant_id: str) -> TenantContext:
+        return TenantContext(
+            tenant_id=tenant_id,
+            capabilities=frozenset(),
+            budget_usd_limit=10.0,
+        )
+
+    def ensure_run(self, *, run_id: str, tenant_id: str) -> bool:
+        key = (tenant_id, run_id)
+        if key in self._runs:
+            return False
+        self._runs.add(key)
+        return True
 
     def acquire_run_lease(
         self,
@@ -463,6 +494,33 @@ class _FakeKernelRuntime:
         tenant_id: str,
     ) -> tuple[FakeEvent, ...]:
         return tuple(self._events.get((tenant_id, run_id), ()))
+
+    def append_run_summary(
+        self,
+        *,
+        run_id: str,
+        tenant_id: str,
+        summary_type: str,
+        summary_json: str,
+        step_key: str,
+        parent_step_key: str | None = None,
+    ) -> int:
+        _ = parent_step_key
+        events = self._events.setdefault((tenant_id, run_id), [])
+        events.append(
+            FakeEvent(
+                event_id=f"{step_key}:summary:{len(events)}",
+                event_type=FakeEventType(value="run_summary"),
+                payload=FakePayload(
+                    payload={
+                        "summary_type": summary_type,
+                        "summary_json": summary_json,
+                    },
+                ),
+                timestamp=datetime.now(UTC),
+            ),
+        )
+        return len(events)
 
     def explain_tool_allowlist(
         self,
@@ -542,6 +600,60 @@ class _FakeKernelRuntime:
             ensure_ascii=False,
             sort_keys=True,
             default=str,
+        )
+
+
+class _WorkerKernelAdapter:
+    """Async kernel facade used by worker harness integration tests."""
+
+    def __init__(self, runtime: _FakeKernelRuntime) -> None:
+        self._runtime = runtime
+
+    async def load_run(self, *, run_id: str, tenant: TenantContext) -> None:
+        if (tenant.tenant_id, run_id) not in self._runtime._runs:
+            self._runtime.ensure_run(run_id=run_id, tenant_id=tenant.tenant_id)
+
+    async def start_run(self, *, tenant: TenantContext, run_id: str) -> None:
+        self._runtime.ensure_run(run_id=run_id, tenant_id=tenant.tenant_id)
+
+    async def append_harness_event(self, **_: object) -> None:
+        return None
+
+    async def get_events(
+        self,
+        *,
+        run_id: str,
+        tenant: TenantContext,
+    ) -> tuple[FakeEvent, ...]:
+        return self._runtime.get_events(run_id=run_id, tenant_id=tenant.tenant_id)
+
+    async def get_latest_run_summary(
+        self,
+        *,
+        run_id: str,
+        tenant: TenantContext,
+        summary_type: str,
+    ) -> object | None:
+        _ = run_id, tenant, summary_type
+        return None
+
+    async def append_run_summary(
+        self,
+        *,
+        run_id: str,
+        tenant: TenantContext,
+        summary_type: str,
+        summary_json: str,
+        step_key: str,
+        parent_step_key: str | None = None,
+    ) -> int:
+        return self._runtime.append_run_summary(
+            run_id=run_id,
+            tenant_id=tenant.tenant_id,
+            summary_type=summary_type,
+            summary_json=summary_json,
+            step_key=step_key,
+            parent_step_key=parent_step_key,
         )
 
 
@@ -660,6 +772,45 @@ class _FakeGraphChatRunner(HarnessGraphChatRunner):
 @contextmanager
 def _fake_pubmed_discovery_context() -> Iterator[PubMedDiscoveryService]:
     yield cast("PubMedDiscoveryService", object())
+
+
+def _clinvar_source_search(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+) -> ClinVarSourceSearchResponse:
+    now = datetime.now(UTC)
+    capture = source_result_capture_metadata(
+        source_key="clinvar",
+        capture_stage=SourceCaptureStage.SEARCH_RESULT,
+        capture_method="direct_source_search",
+        locator=f"clinvar:search:{search_id}",
+        retrieved_at=now,
+        search_id=str(search_id),
+        query="MED13",
+        query_payload={"gene_symbol": "MED13"},
+        result_count=1,
+        provenance={"provider": "test"},
+    )
+    return ClinVarSourceSearchResponse(
+        id=search_id,
+        space_id=space_id,
+        query="MED13",
+        gene_symbol="MED13",
+        max_results=10,
+        record_count=1,
+        records=[
+            {
+                "accession": "VCV000001",
+                "gene_symbol": "MED13",
+                "title": "MED13 congenital heart disease variant",
+                "clinical_significance": "Pathogenic",
+            },
+        ],
+        created_at=now,
+        completed_at=now,
+        source_capture=SourceResultCapture.model_validate(capture),
+    )
 
 
 def _payload_strings(payload: object) -> list[str]:
@@ -785,6 +936,103 @@ def test_run_worker_tick_executes_queued_continuous_learning_runs() -> None:
     assert research_state is not None
     assert research_state.last_graph_snapshot_id is not None
     assert len(graph_snapshot_store.list_snapshots(space_id=space_id)) == 1
+
+
+def test_run_worker_tick_executes_queued_evidence_selection_runs() -> None:
+    runtime = _FakeKernelRuntime()
+    run_registry = HarnessRunRegistry()
+    artifact_store = HarnessArtifactStore()
+    chat_session_store = HarnessChatSessionStore()
+    document_store = HarnessDocumentStore()
+    proposal_store = HarnessProposalStore()
+    approval_store = HarnessApprovalStore()
+    research_state_store = HarnessResearchStateStore()
+    graph_snapshot_store = HarnessGraphSnapshotStore()
+    schedule_store = HarnessScheduleStore()
+    direct_search_store = InMemoryDirectSourceSearchStore()
+    handoff_store = InMemorySourceSearchHandoffStore()
+    space_id = uuid4()
+    user_id = uuid4()
+    search_id = uuid4()
+    direct_search_store.save(
+        _clinvar_source_search(space_id=space_id, search_id=search_id),
+        created_by=user_id,
+    )
+    run = queue_evidence_selection_run(
+        space_id=space_id,
+        title="Select MED13 evidence",
+        goal="Find MED13 congenital heart disease evidence.",
+        instructions="Prioritize ClinVar records.",
+        sources=("clinvar",),
+        proposal_mode="review_required",
+        mode="guarded",
+        planner_mode="deterministic",
+        candidate_searches=(
+            EvidenceSelectionCandidateSearch(
+                source_key="clinvar",
+                search_id=search_id,
+            ),
+        ),
+        max_records_per_search=3,
+        max_handoffs=10,
+        inclusion_criteria=(),
+        exclusion_criteria=(),
+        population_context=None,
+        evidence_types=(),
+        priority_outcomes=(),
+        parent_run_id=None,
+        created_by=user_id,
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        runtime=cast("GraphHarnessKernelRuntime", runtime),
+    )
+    services = HarnessExecutionServices(
+        runtime=cast("GraphHarnessKernelRuntime", runtime),
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        chat_session_store=chat_session_store,
+        document_store=document_store,
+        proposal_store=proposal_store,
+        approval_store=approval_store,
+        research_state_store=research_state_store,
+        graph_snapshot_store=graph_snapshot_store,
+        schedule_store=schedule_store,
+        graph_connection_runner=_FakeGraphConnectionRunner(),
+        graph_chat_runner=_FakeGraphChatRunner(),
+        graph_api_gateway_factory=_FakeGraphApiGateway,
+        pubmed_discovery_service_factory=_fake_pubmed_discovery_context,
+        direct_source_search_store=direct_search_store,
+        source_search_handoff_store=handoff_store,
+    )
+
+    result = asyncio.run(
+        run_worker_tick(
+            candidate_runs=[run],
+            runtime=cast("GraphHarnessKernelRuntime", runtime),
+            services=services,
+            worker_id="worker-1",
+            lease_ttl_seconds=120,
+        ),
+    )
+
+    assert result.scanned_run_count == 1
+    assert result.leased_run_count == 1
+    assert result.executed_run_count == 1
+    assert result.completed_run_count == 1
+    assert result.failed_run_count == 0
+    assert result.results[0].outcome == "completed"
+    updated_run = run_registry.get_run(space_id=space_id, run_id=run.id)
+    assert updated_run is not None
+    assert updated_run.status == "completed"
+    assert document_store.count_documents(space_id=space_id) == 1
+    assert proposal_store.count_proposals(space_id=space_id) == 1
+    result_artifact = artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=run.id,
+        artifact_key="evidence_selection_result",
+    )
+    assert result_artifact is not None
+    assert result_artifact.content["selected_count"] == 1
 
 
 def test_run_worker_tick_skips_runs_without_a_lease() -> None:

@@ -1,0 +1,22 @@
+{
+  "goal": "Find evidence linking MED13 variants to congenital heart disease",
+  "instructions": "Prioritize variant records with clear congenital heart disease language.",
+  "source_key": "clinvar",
+  "query": "MED13",
+  "records": [
+    {
+      "accession": "VCV000001",
+      "gene_symbol": "MED13",
+      "title": "MED13 congenital heart disease variant",
+      "clinical_significance": "Pathogenic",
+      "condition": "congenital heart disease"
+    },
+    {
+      "accession": "VCV000002",
+      "gene_symbol": "BRCA1",
+      "title": "BRCA1 breast cancer variant",
+      "clinical_significance": "Pathogenic",
+      "condition": "breast cancer"
+    }
+  ]
+}
