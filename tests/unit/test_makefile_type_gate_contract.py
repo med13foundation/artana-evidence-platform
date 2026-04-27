@@ -49,7 +49,7 @@ def test_evidence_api_strict_import_target_remains_explicit_alias() -> None:
 def test_evidence_api_service_checks_enforce_normal_type_gate_once() -> None:
     static_check_body = _target_body(
         _makefile_text(),
-        "artana-evidence-api-static-checks",
+        "artana-evidence-api-static-checks-core",
     )
 
     assert static_check_body.count("artana-evidence-api-type-check") == 1
@@ -59,9 +59,17 @@ def test_evidence_api_service_checks_enforce_normal_type_gate_once() -> None:
 def test_static_service_check_targets_do_not_run_tests() -> None:
     makefile_text = _makefile_text()
     graph_static_body = _target_body(makefile_text, "graph-service-static-checks")
+    graph_static_core_body = _target_body(
+        makefile_text,
+        "graph-service-static-checks-core",
+    )
     evidence_static_body = _target_body(
         makefile_text,
         "artana-evidence-api-static-checks",
+    )
+    evidence_static_core_body = _target_body(
+        makefile_text,
+        "artana-evidence-api-static-checks-core",
     )
     graph_service_body = _target_body(makefile_text, "graph-service-checks")
     evidence_service_body = _target_body(
@@ -70,7 +78,14 @@ def test_static_service_check_targets_do_not_run_tests() -> None:
     )
 
     assert "graph-service-test" not in graph_static_body
+    assert "graph-service-test" not in graph_static_core_body
     assert "artana-evidence-api-test" not in evidence_static_body
+    assert "artana-evidence-api-test" not in evidence_static_core_body
+    assert "@$(MAKE) -s graph-service-static-checks-core" in graph_static_body
+    assert (
+        "@$(MAKE) -s artana-evidence-api-static-checks-core"
+        in evidence_static_body
+    )
     assert "@$(MAKE) -s graph-service-static-checks" in graph_service_body
     assert "@$(MAKE) -s graph-service-test" in graph_service_body
     assert "@$(MAKE) -s artana-evidence-api-static-checks" in evidence_service_body

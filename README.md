@@ -139,8 +139,9 @@ make artana-evidence-api-service-checks
 ```
 
 `make all` is an alias for `make service-checks`, the normal CI gate. It runs
-lint, type checks, architecture checks, contract checks, isolated Postgres
-tests, and coverage.
+lint, type checks, architecture checks (service boundaries and per-file
+size budget under `architecture_overrides.json`), contract checks, isolated
+Postgres tests, and coverage.
 Live/external tests are not required for normal CI; they skip with explicit
 messages unless their environment variables or local services are available.
 
