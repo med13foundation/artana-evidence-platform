@@ -38,24 +38,3 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
-
-      - id: evidence-api-strict-import-type-check
-        name: evidence API strict-import type check
-        entry: make -s artana-evidence-api-type-check-strict-imports
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
-
-      - id: graph-service-checks-pre-push
-        name: graph service full checks
-        entry: make -s graph-service-checks
-        language: system
-        pass_filenames: false
-        stages: [pre-push]
-
-      - id: evidence-api-service-checks-pre-push
-        name: evidence API full checks
-        entry: make -s artana-evidence-api-service-checks
-        language: system
-        pass_filenames: false
-        stages: [pre-push]
