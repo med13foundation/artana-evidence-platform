@@ -1,6 +1,6 @@
 # Project Status
 
-Status date: April 23, 2026.
+Status date: April 26, 2026.
 
 ## Summary
 
@@ -19,6 +19,9 @@ Implemented now:
 - document upload, extraction, proposals, review queue, runs, artifacts,
   research-init, chat, graph-search, continuous-learning, supervisor, and full
   AI orchestrator endpoints in the Evidence API;
+- source registry, durable direct source-search capture, and idempotent
+  selected-record handoff for PubMed, MARRVEL, ClinVar, ClinicalTrials.gov,
+  UniProt, AlphaFold, DrugBank, MGI, and ZFIN;
 - dictionary, claims, relations, observations, provenance, graph views,
   reasoning paths, workflows, domain packs, and admin space-sync endpoints in
   the graph service.
@@ -55,7 +58,8 @@ The Evidence API is the user-facing backend service in this repo. It owns:
 - run lifecycle, artifacts, progress, policy, approvals, and workspace
   inspection;
 - research-init and research-bootstrap workflows;
-- source discovery endpoints for PubMed and MARRVEL;
+- source capability, direct-search, durable search retrieval, and selected
+  source-result handoff endpoints;
 - graph explorer and graph search workflow surfaces;
 - full AI orchestrator, supervisor, continuous-learning, graph-curation,
   graph-connection, hypothesis, and mechanism-discovery runs.
@@ -105,6 +109,10 @@ scaffold:
 - no frontend or SDK package in this checkout;
 - external live-source checks remain opt-in because they depend on network and
   external API availability.
+
+Direct source-search handoff is implemented in the Evidence API and remains
+review-gated. It creates extraction inputs or durable source documents from
+captured source results, but it does not write trusted graph facts directly.
 
 See [Pending Boundary Issues](./architecture/pending-boundary-issues.md) and
 [Remaining Work](./remaining_work_priorities.md).

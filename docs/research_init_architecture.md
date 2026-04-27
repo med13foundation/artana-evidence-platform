@@ -82,8 +82,21 @@ include `source_capture` metadata with the source key, capture stage, locator,
 query, run/search id, result count, source family, and compact provenance.
 Structured direct source searches persist their captured search response in the
 Evidence API database so lookup by search id survives process restarts.
-Downstream extraction, review items, or proposal staging still happen through
-document/extraction workflows or the `research-plan` orchestration path.
+Downstream extraction, review items, or proposal staging happen through three
+review-gated paths:
+
+- document/extraction workflows for uploaded text and PDFs;
+- `research-plan` orchestration for multi-source topic setup;
+- direct source-search handoff for one selected captured search record.
+
+The handoff endpoint is
+`POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs`.
+ClinVar and MARRVEL variant records enter the variant-aware extraction branch.
+PubMed, ClinicalTrials.gov, UniProt, AlphaFold, DrugBank, MGI, and ZFIN create
+durable source documents that preserve the selected record, source-capture
+metadata, normalized fields, and audit payload. Handoff output can stage
+documents, candidates, proposals, or review items, but it does not directly
+promote trusted graph facts.
 
 Live calls to external sources remain environment-dependent. Tests that require
 real external APIs are opt-in. PubMed replay bundles are internal test fixtures,

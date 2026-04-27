@@ -1,6 +1,6 @@
 # Current System
 
-Status date: April 23, 2026.
+Status date: April 26, 2026.
 
 This repo is the extracted backend for the Artana evidence platform. It contains
 two service packages plus service-focused scripts, tests, migrations, docs, and
@@ -24,7 +24,7 @@ There is no top-level `src/` package, no frontend app, and no
 
 | Service | Owns | Does Not Own |
 | --- | --- | --- |
-| Evidence API | local identity gateway, API keys, spaces, documents, proposal/review flow, research-init, chat, AI runs, workflow artifacts | graph schema ownership, dictionary ownership, canonical graph persistence |
+| Evidence API | local identity gateway, API keys, spaces, documents, durable direct source-search capture and handoff, proposal/review flow, research-init, chat, AI runs, workflow artifacts | graph schema ownership, dictionary ownership, canonical graph persistence |
 | Graph service | graph schema, dictionary, claims, relations, observations, provenance, graph views, domain packs, graph workflows, admin space sync | end-user API keys, document upload UX, research-init orchestration |
 
 The Evidence API talks to the graph service through HTTP/client contracts. It
@@ -69,6 +69,7 @@ make graph-service-contract-check
 ```text
 Create or get a space
   -> add or discover evidence
+  -> hand off selected source results when needed
   -> extract reviewable proposals
   -> review or reject proposals
   -> promote trusted items into the graph
@@ -77,6 +78,9 @@ Create or get a space
 
 The review queue is the trust gate. AI workflows can search, extract, and stage
 work, but promoted graph state should flow through review/governance.
+Direct source-search handoff follows the same rule: it creates extraction input
+or durable source documents from captured source records, not trusted graph
+facts.
 
 ## Quality Gates
 

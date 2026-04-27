@@ -119,9 +119,27 @@ object. Use it to trace a result back to its source key, source family, query,
 locator, search id, and provenance before you decide what to extract or review.
 
 Direct source search captures the search result. It does not silently promote
-trusted graph knowledge. Normal researcher workflows should follow search with
-document capture/extraction or a `research-plan` run so proposed updates move
-through review.
+trusted graph knowledge. When you want to work on one selected result from a
+captured search, hand it off:
+
+```bash
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/clinvar/searches/$SEARCH_ID/handoffs" \
+  -H "X-Artana-Key: $ARTANA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "record_index": 0
+  }'
+```
+
+Handoff is idempotent. Repeating the same handoff request returns the same
+completed or failed outcome instead of creating duplicate documents, runs, or
+review items. ClinVar and MARRVEL variant records enter the variant-aware
+extraction path. PubMed, ClinicalTrials.gov, UniProt, AlphaFold, DrugBank, MGI,
+and ZFIN handoffs create durable source documents with the selected record,
+source-capture metadata, normalized fields, and readable extraction text.
+
+Normal researcher workflows should follow search or handoff with extraction,
+proposal review, and promotion. The graph only changes after review.
 
 ## 3. Run A Multi-Source Setup
 
