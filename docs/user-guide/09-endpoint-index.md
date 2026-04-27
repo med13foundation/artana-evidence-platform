@@ -21,7 +21,6 @@ Use these first.
 | Promote or reject suggestions | `POST /v2/spaces/{space_id}/review-items/{item_id}/decision` |
 | List evidence sources | `GET /v2/sources` |
 | Inspect one evidence source | `GET /v2/sources/{source_key}` |
-| Create research plan | `POST /v2/spaces/{space_id}/research-plan` |
 | Ask an evidence-map question | `POST /v2/spaces/{space_id}/workflows/evidence-search/tasks` |
 | Chat over documents and evidence | `/v2/spaces/{space_id}/chat-sessions/*` |
 
@@ -41,6 +40,7 @@ Use these when you understand the core review flow.
 | Run evidence curation | `POST /v2/spaces/{space_id}/workflows/evidence-curation/tasks` |
 | Create or manage schedules | `/v2/spaces/{space_id}/schedules/*` |
 | Use full research workflows | `/v2/spaces/{space_id}/workflows/full-research/*` |
+| Create an older research plan | `POST /v2/spaces/{space_id}/research-plan` |
 | Search a direct-search source manually | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` |
 | Get a source search result | `GET /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}` |
 | Hand off one selected source record | `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs` |
