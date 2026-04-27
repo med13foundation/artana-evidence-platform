@@ -47,9 +47,16 @@ def test_aggregate_service_checks_run_coverage_gate() -> None:
     makefile = (REPO_ROOT / "Makefile").read_text()
     service_checks_target = _make_target_body(makefile, "service-checks")
 
-    assert "$(MAKE) -s graph-service-static-checks" in service_checks_target
-    assert "$(MAKE) -s artana-evidence-api-static-checks" in service_checks_target
+    assert "$(MAKE) -s graph-service-static-checks-core" in service_checks_target
+    assert (
+        "$(MAKE) -s artana-evidence-api-static-checks-core" in service_checks_target
+    )
+    assert "$(MAKE) -s architecture-size-check" in service_checks_target
     assert "$(MAKE) -s coverage-check" in service_checks_target
+    assert "$(MAKE) -s graph-service-static-checks\n" not in service_checks_target
+    assert (
+        "$(MAKE) -s artana-evidence-api-static-checks\n" not in service_checks_target
+    )
     assert "$(MAKE) -s graph-service-checks" not in service_checks_target
     assert "$(MAKE) -s artana-evidence-api-service-checks" not in service_checks_target
 
