@@ -2,13 +2,8 @@
 
 from __future__ import annotations
 
+import artana_evidence_api.source_adapters as source_adapters_module
 import pytest
-from artana_evidence_api.evidence_selection_extraction_policy import (
-    extraction_policy_for_source,
-)
-from artana_evidence_api.evidence_selection_source_playbooks import (
-    source_query_playbook,
-)
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
     EvidenceSelectionSourceSearchError,
@@ -20,7 +15,6 @@ from artana_evidence_api.source_adapters import (
     source_adapter_keys,
     source_adapters,
 )
-from artana_evidence_api.source_policies import source_record_policy
 from artana_evidence_api.source_registry import (
     direct_search_source_keys,
     get_source_definition,
@@ -40,14 +34,31 @@ def test_source_adapter_registry_matches_direct_search_sources() -> None:
 
 
 @pytest.mark.parametrize("source_key", direct_search_source_keys())
-def test_source_adapter_composes_source_owned_contracts(source_key: str) -> None:
+def test_source_adapter_exposes_source_owned_behavior(source_key: str) -> None:
     adapter = require_source_adapter(source_key)
+    definition = get_source_definition(source_key)
 
-    assert adapter.definition() == get_source_definition(source_key)
-    assert adapter.query_playbook() == source_query_playbook(source_key)
-    assert adapter.record_policy() == source_record_policy(source_key)
-    assert adapter.extraction_policy() == extraction_policy_for_source(source_key)
-    assert adapter.source_family == adapter.definition().source_family
+    assert definition is not None
+    assert adapter.source_family == definition.source_family
+    assert adapter.display_name == definition.display_name
+    assert adapter.request_schema_ref == definition.request_schema_ref
+    assert adapter.result_schema_ref == definition.result_schema_ref
+    assert adapter.direct_search_supported is True
+    assert adapter.handoff_target_kind == "source_document"
+    assert adapter.supported_objective_intents
+    assert adapter.result_interpretation_hints
+    assert adapter.non_goals
+    assert adapter.handoff_eligible is True
+
+
+def test_source_adapter_does_not_expose_inner_contracts() -> None:
+    adapter = require_source_adapter("pubmed")
+
+    assert not hasattr(adapter, "definition")
+    assert not hasattr(adapter, "query_playbook")
+    assert not hasattr(adapter, "record_policy")
+    assert not hasattr(adapter, "extraction_policy")
+    assert "SourceAdapter" not in source_adapters_module.__all__
 
 
 @pytest.mark.parametrize("source_key", direct_search_source_keys())
@@ -107,6 +118,27 @@ def test_require_source_adapter_rejects_non_direct_search_source() -> None:
         require_source_adapter("hgnc")
 
 
+def test_require_source_adapter_rejects_unknown_source() -> None:
+    with pytest.raises(SourceAdapterRegistryError, match="custom_source"):
+        require_source_adapter("custom_source")
+
+
+def test_source_adapter_registry_wraps_missing_extraction_policy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _raise_missing_extraction_policy(source_key: str) -> None:
+        raise KeyError(source_key)
+
+    monkeypatch.setattr(
+        source_adapters_module,
+        "adapter_extraction_policy_for_source",
+        _raise_missing_extraction_policy,
+    )
+
+    with pytest.raises(SourceAdapterRegistryError, match="extraction policy"):
+        source_adapters_module._build_source_adapter("pubmed")
+
+
 def test_source_adapter_builds_candidate_context_from_record_policy() -> None:
     adapter = require_source_adapter("clinvar")
 
@@ -119,7 +151,7 @@ def test_source_adapter_builds_candidate_context_from_record_policy() -> None:
             "clinical_significance": {"description": "Pathogenic"},
             "conditions": ["Breast cancer"],
         },
-    )
+    ).to_json()
 
     assert context["source_key"] == "clinvar"
     assert context["source_family"] == "variant"
@@ -156,7 +188,7 @@ def test_source_adapter_builds_candidate_context_from_record_policy() -> None:
 def test_source_adapter_emits_candidate_context_provider_id_when_missing() -> None:
     adapter = require_source_adapter("pubmed")
 
-    context = adapter.build_candidate_context({"title": "MED13 review"})
+    context = adapter.build_candidate_context({"title": "MED13 review"}).to_json()
 
     assert context["provider_external_id"] is None
     assert context["variant_aware_recommended"] is False

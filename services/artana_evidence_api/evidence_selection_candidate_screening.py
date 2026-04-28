@@ -333,7 +333,7 @@ def _decision_for_record(
         excluded_terms=excluded_terms,
     )
     candidate_context = (
-        adapter.build_candidate_context(record) if adapter is not None else None
+        adapter.build_candidate_context(record).to_json() if adapter is not None else None
     )
     source_family = adapter.source_family if adapter is not None else "unknown"
     if dedup_key in existing_document_keys or source_record_hash in existing_record_hashes:
@@ -479,7 +479,7 @@ def _record_caveats(
 ) -> list[str]:
     caveats: list[str] = []
     adapter = source_adapter(source_key)
-    limitations = adapter.extraction_policy().limitations if adapter is not None else ()
+    limitations = adapter.limitations if adapter is not None else ()
     caveats.extend(limitations)
     lowered = record_text.lower()
     if "association" in lowered and "caus" not in lowered:

@@ -111,23 +111,23 @@ class _MarrvelPlanningPayload(BaseModel):
         raise ValueError(msg)
 
 
-def source_query_playbook(source_key: str) -> SourceQueryPlaybook | None:
+def adapter_source_query_playbook(source_key: str) -> SourceQueryPlaybook | None:
     """Return the source-query playbook for a source key."""
 
     return _SOURCE_QUERY_PLAYBOOKS.get(normalize_source_key(source_key))
 
 
-def source_query_playbooks() -> tuple[SourceQueryPlaybook, ...]:
+def adapter_source_query_playbooks() -> tuple[SourceQueryPlaybook, ...]:
     """Return all source-query playbooks in stable registry order."""
 
     return tuple(_SOURCE_QUERY_PLAYBOOKS.values())
 
 
-def query_payload_for_intent(intent: SourceQueryIntent) -> JSONObject:
+def adapter_query_payload_for_intent(intent: SourceQueryIntent) -> JSONObject:
     """Build an executable direct-source query payload for a normalized intent."""
 
     source_key = normalize_source_key(intent.source_key)
-    playbook = source_query_playbook(source_key)
+    playbook = adapter_source_query_playbook(source_key)
     if playbook is None:
         msg = f"Model planner cannot build query payload for source '{source_key}'."
         raise SourceQueryPlanningError(msg)
@@ -429,7 +429,4 @@ __all__ = [
     "SourceQueryIntent",
     "SourceQueryPlaybook",
     "SourceQueryPlanningError",
-    "query_payload_for_intent",
-    "source_query_playbook",
-    "source_query_playbooks",
 ]

@@ -277,9 +277,7 @@ def _effective_max_records(
 
 def _query_payload_for_intent(intent: PlannedSourceIntent) -> JSONObject:
     try:
-        return require_source_adapter(intent.source_key).query_playbook().build_payload(
-            intent,
-        )
+        return require_source_adapter(intent.source_key).build_query_payload(intent)
     except ValueError as exc:
         raise ModelSourcePlanningError(str(exc)) from exc
 

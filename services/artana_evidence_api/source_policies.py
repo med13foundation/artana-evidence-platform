@@ -57,13 +57,13 @@ class SourceRecordPolicy:
         return None
 
 
-def source_record_policy(source_key: str) -> SourceRecordPolicy | None:
+def adapter_source_record_policy(source_key: str) -> SourceRecordPolicy | None:
     """Return the source record policy for one source key."""
 
     return _SOURCE_RECORD_POLICIES.get(source_key)
 
 
-def source_record_policies() -> tuple[SourceRecordPolicy, ...]:
+def adapter_source_record_policies() -> tuple[SourceRecordPolicy, ...]:
     """Return source record policies in stable registry order."""
 
     return tuple(_SOURCE_RECORD_POLICIES.values())
@@ -436,6 +436,4 @@ _SOURCE_RECORD_POLICIES: dict[str, SourceRecordPolicy] = {
 __all__ = [
     "SourceHandoffTargetKind",
     "SourceRecordPolicy",
-    "source_record_policies",
-    "source_record_policy",
 ]

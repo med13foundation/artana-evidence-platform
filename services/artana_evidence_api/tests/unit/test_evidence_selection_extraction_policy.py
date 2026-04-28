@@ -2,33 +2,20 @@
 
 from __future__ import annotations
 
-from artana_evidence_api.evidence_selection_extraction_policy import (
-    extraction_policy_for_source,
-    normalized_extraction_payload,
-)
+from artana_evidence_api.source_adapters import require_source_adapter
 
 
 def test_extraction_policy_for_known_source_returns_source_specific_contract() -> None:
-    policy = extraction_policy_for_source("uniprot")
+    adapter = require_source_adapter("uniprot")
 
-    assert policy.proposal_type == "protein_annotation_candidate"
-    assert policy.review_type == "protein_annotation_review"
-    assert "uniprot_id" in policy.normalized_fields
-
-
-def test_extraction_policy_for_unknown_source_fails_loudly() -> None:
-    try:
-        extraction_policy_for_source("custom_source")
-    except KeyError as exc:
-        assert "custom_source" in str(exc)
-    else:  # pragma: no cover - defensive assertion
-        raise AssertionError("unknown extraction policies should fail loudly")
+    assert adapter.proposal_type == "protein_annotation_candidate"
+    assert adapter.review_type == "protein_annotation_review"
+    assert "uniprot_id" in adapter.normalized_fields
 
 
 def test_normalized_extraction_payload_filters_missing_values() -> None:
-    payload = normalized_extraction_payload(
-        source_key="drugbank",
-        record={
+    payload = require_source_adapter("drugbank").normalized_extraction_payload(
+        {
             "drugbank_id": "DB01234",
             "drug_name": "Olaparib",
             "target_name": "",
@@ -45,9 +32,8 @@ def test_normalized_extraction_payload_filters_missing_values() -> None:
 
 
 def test_normalized_extraction_payload_does_not_overmatch_identifier_suffixes() -> None:
-    payload = normalized_extraction_payload(
-        source_key="uniprot",
-        record={
+    payload = require_source_adapter("uniprot").normalized_extraction_payload(
+        {
             "uniprot_id": "Q9UHV7",
             "valid": "not an identifier",
             "hybrid": "not an identifier",

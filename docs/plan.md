@@ -85,10 +85,12 @@ append-only where possible and mark progress honestly against live code.
   - Candidate extraction and proposal-review diagnostics are typed in
   `document_extraction_contracts.py`; status/error normalization now lives in
   `document_extraction_diagnostics.py`.
-- Sources now have one typed adapter surface for metadata, record policy, query
-  playbook, live-search validation, extraction policy, and candidate context.
-  The source-search runner still owns network execution dispatch and remains a
-  future plugin-encapsulation target.
+- Sources now have one typed adapter surface for metadata, query-payload
+  planning, live-search validation, record normalization, provider IDs,
+  variant-aware hints, extraction/review staging, and typed candidate context.
+  Production callers use adapter-level behavior instead of receiving raw policy
+  or playbook objects. The source-search runner still owns network execution
+  dispatch and remains a future plugin-encapsulation target.
 
 ## Target Architecture
 
@@ -117,24 +119,33 @@ Candidate module target:
 
 - `services/artana_evidence_api/source_adapters.py`
 
-Initial adapter shape:
+Current adapter shape:
 
 ```python
 class EvidenceSourceAdapter(Protocol):
     source_key: str
     source_family: str
+    display_name: str
+    request_schema_ref: str | None
+    result_schema_ref: str | None
+    proposal_type: str
+    review_type: str
+    limitations: tuple[str, ...]
 
-    def definition(self) -> SourceDefinition: ...
-    def query_playbook(self) -> SourceQueryPlaybook: ...
-    def record_policy(self) -> SourceRecordPolicy: ...
-    def extraction_policy(self) -> EvidenceSelectionExtractionPolicy: ...
+    def build_query_payload(self, intent: SourceQueryIntent) -> JSONObject: ...
+    def normalize_record(self, record: JSONObject) -> JSONObject: ...
+    def provider_external_id(self, record: JSONObject) -> str | None: ...
+    def recommends_variant_aware(self, record: JSONObject) -> bool: ...
+    def normalized_extraction_payload(self, record: JSONObject) -> JSONObject: ...
+    def proposal_summary(self, selection_reason: str) -> str: ...
+    def review_item_summary(self, selection_reason: str) -> str: ...
     def validate_live_search(self, search: EvidenceSelectionLiveSourceSearch) -> None: ...
-    def build_candidate_context(self, record: JSONObject) -> JSONObject: ...
+    def build_candidate_context(self, record: JSONObject) -> SourceCandidateContext: ...
 ```
 
-The exact names can change during implementation, but the goal should remain:
-callers ask the adapter for source behavior rather than importing many separate
-source registries.
+The goal is now stricter than composition: callers ask the adapter for behavior
+and do not receive raw `SourceRecordPolicy`, `SourceQueryPlaybook`, or
+`EvidenceSelectionExtractionPolicy` objects.
 
 ### Candidate Generation Boundary
 
@@ -222,12 +233,24 @@ Implementation steps:
   adapter.
 - [x] Route query playbook, record policy, extraction policy, and validation
   lookups through the adapter registry.
-- [x] Keep old helper functions as thin compatibility wrappers until callers are
-  migrated.
+- [x] Demote old source helper lookups behind the adapter boundary after callers
+  were migrated.
 - [x] Add a source-boundary architecture test so production callers cannot
   import source-owned helper functions directly and bypass the adapter.
 - [x] Make adapter validation canonical-source-key only, keep adapter registry
   construction lazy, and return stable candidate-context keys.
+- [x] Remove public inner-contract getters from the adapter and expose
+  adapter-level behavior for query planning, normalization, provider IDs,
+  variant-aware hints, extraction payloads, proposal/review summaries, and
+  candidate context.
+- [x] Make the concrete adapter private and publish only the protocol plus
+  registry functions.
+- [x] Make candidate context typed in the adapter and serialize through
+  `SourceCandidateContext.to_json()` at the candidate artifact boundary.
+- [x] Keep adapter-backed durable handoff source-key discovery lazy so registry
+  construction does not happen at module import time.
+- [x] Normalize adapter registry failures behind `SourceAdapterRegistryError`
+  when any composed source contract is missing.
 - [x] Verify and document whether canonical-source-key validation is an
   intentional public contract. If aliases/case variants are still part of the
   public API, normalize them at ingress before adapter validation.
@@ -238,6 +261,8 @@ Acceptance criteria:
   source-specific tests.
 - No runtime module needs its own source-key map for metadata, query planning,
   extraction policy, or handoff eligibility.
+- Production callers cannot import source-owned policy/playbook/extraction
+  helper modules or private source-search validation helpers.
 - Existing OpenAPI behavior remains stable unless an intentional contract change
   is documented.
 
@@ -705,6 +730,12 @@ Verification gates:
 - [x] Evidence-selection extraction policy exists.
 - [x] Variant-aware extraction has typed contracts and a focused adapter.
 - [x] Single typed source adapter registry exists.
+- [x] Source adapters no longer expose raw source policy, query playbook, or
+  extraction policy objects to production callers.
+- [x] Source-owned helper lookups are private to the adapter boundary, with an
+  AST boundary test guarding both direct imports and module-attribute bypasses.
+- [x] Candidate context is represented as `SourceCandidateContext` before JSON
+  serialization at the candidate decision boundary.
 - [x] Candidate screening module exists.
 - [x] Candidate handoff module exists.
 - [x] Candidate decisions are typed internally and serialized only at

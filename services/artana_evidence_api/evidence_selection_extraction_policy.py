@@ -183,7 +183,9 @@ _POLICIES: dict[str, EvidenceSelectionExtractionPolicy] = {
 }
 
 
-def extraction_policy_for_source(source_key: str) -> EvidenceSelectionExtractionPolicy:
+def adapter_extraction_policy_for_source(
+    source_key: str,
+) -> EvidenceSelectionExtractionPolicy:
     """Return the staging policy for a selected source record."""
 
     try:
@@ -193,10 +195,14 @@ def extraction_policy_for_source(source_key: str) -> EvidenceSelectionExtraction
         raise KeyError(msg) from exc
 
 
-def normalized_extraction_payload(*, source_key: str, record: JSONObject) -> JSONObject:
+def adapter_normalized_extraction_payload(
+    *,
+    source_key: str,
+    record: JSONObject,
+) -> JSONObject:
     """Return source-specific normalized fields for reviewer-facing extraction."""
 
-    policy = extraction_policy_for_source(source_key)
+    policy = adapter_extraction_policy_for_source(source_key)
     extracted = {
         field: record[field]
         for field in policy.normalized_fields
@@ -213,20 +219,20 @@ def normalized_extraction_payload(*, source_key: str, record: JSONObject) -> JSO
     }
 
 
-def proposal_summary(*, source_key: str, selection_reason: str) -> str:
+def adapter_proposal_summary(*, source_key: str, selection_reason: str) -> str:
     """Return a source-specific proposal summary."""
 
-    policy = extraction_policy_for_source(source_key)
+    policy = adapter_extraction_policy_for_source(source_key)
     return (
         f"Selected {source_key} record is a {policy.evidence_role} and requires "
         f"curator review before any graph promotion. Reason: {selection_reason}"
     )
 
 
-def review_item_summary(*, source_key: str, selection_reason: str) -> str:
+def adapter_review_item_summary(*, source_key: str, selection_reason: str) -> str:
     """Return a source-specific review item summary."""
 
-    policy = extraction_policy_for_source(source_key)
+    policy = adapter_extraction_policy_for_source(source_key)
     limitations = " ".join(policy.limitations)
     return (
         f"Review the selected {source_key} record as {policy.evidence_role}. "
@@ -252,8 +258,4 @@ def _is_identifier_key(*, key: str, suffixes: Iterable[str]) -> bool:
 
 __all__ = [
     "EvidenceSelectionExtractionPolicy",
-    "extraction_policy_for_source",
-    "normalized_extraction_payload",
-    "proposal_summary",
-    "review_item_summary",
 ]

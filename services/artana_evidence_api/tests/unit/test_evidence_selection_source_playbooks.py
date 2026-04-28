@@ -9,22 +9,19 @@ from artana_evidence_api.evidence_selection_source_planning import (
     PlannedSourceIntent,
     adapt_model_source_plan,
 )
-from artana_evidence_api.evidence_selection_source_playbooks import (
-    source_query_playbook,
-    source_query_playbooks,
-)
+from artana_evidence_api.source_adapters import require_source_adapter, source_adapters
 from artana_evidence_api.source_registry import direct_search_source_keys
 
 
 def test_every_direct_search_source_has_query_playbook() -> None:
-    playbook_keys = {playbook.source_key for playbook in source_query_playbooks()}
+    playbook_keys = {adapter.source_key for adapter in source_adapters()}
 
     assert playbook_keys == set(direct_search_source_keys())
-    for playbook in source_query_playbooks():
-        assert playbook.supported_objective_intents
-        assert playbook.result_interpretation_hints
-        assert playbook.non_goals
-        assert playbook.handoff_eligible is True
+    for adapter in source_adapters():
+        assert adapter.supported_objective_intents
+        assert adapter.result_interpretation_hints
+        assert adapter.non_goals
+        assert adapter.handoff_eligible is True
 
 
 @pytest.mark.parametrize(
@@ -139,10 +136,9 @@ def test_source_query_playbooks_emit_valid_payloads(
     intent: PlannedSourceIntent,
     expected_payload: dict[str, object],
 ) -> None:
-    playbook = source_query_playbook(source_key)
+    adapter = require_source_adapter(source_key)
 
-    assert playbook is not None
-    assert playbook.build_payload(intent) == expected_payload
+    assert adapter.build_query_payload(intent) == expected_payload
 
 
 @pytest.mark.parametrize(
@@ -196,7 +192,7 @@ def test_source_query_playbooks_reject_missing_required_fields(
 
 
 def test_marrvel_playbook_accepts_explicit_panels_and_taxon() -> None:
-    playbook = source_query_playbook("marrvel")
+    adapter = require_source_adapter("marrvel")
     intent = PlannedSourceIntent(
         source_key="marrvel",
         gene_symbol="med13",
@@ -206,8 +202,7 @@ def test_marrvel_playbook_accepts_explicit_panels_and_taxon() -> None:
         reason="Search a non-human MARRVEL slice.",
     )
 
-    assert playbook is not None
-    assert playbook.build_payload(intent) == {
+    assert adapter.build_query_payload(intent) == {
         "gene_symbol": "med13",
         "taxon_id": 7955,
         "panels": ["clinvar", "omim"],

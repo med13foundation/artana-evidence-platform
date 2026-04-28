@@ -9,6 +9,7 @@ from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import lru_cache
 from typing import Literal, Protocol, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
@@ -50,14 +51,18 @@ from sqlalchemy.orm import Session
 SourceSearchHandoffStatus = Literal["pending", "completed", "failed"]
 SourceSearchHandoffTargetKind = Literal["source_document"]
 
-_DURABLE_RUN_BACKED_SOURCE_KEYS = frozenset(
-    adapter.source_key
-    for adapter in source_adapters()
-    if adapter.record_policy().direct_search_supported
-    and adapter.record_policy().handoff_target_kind == "source_document"
-)
 _MAX_CLIENT_METADATA_BYTES = 16 * 1024
 _LOGGER = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _durable_run_backed_source_keys() -> frozenset[str]:
+    return frozenset(
+        adapter.source_key
+        for adapter in source_adapters()
+        if adapter.direct_search_supported
+        and adapter.handoff_target_kind == "source_document"
+    )
 
 
 class SourceSearchHandoffRequest(BaseModel):
@@ -417,7 +422,7 @@ class SourceSearchHandoffService:
         """Create or replay one source-search handoff."""
 
         created_by_id = _validated_uuid_string(created_by)
-        if source_key not in _DURABLE_RUN_BACKED_SOURCE_KEYS:
+        if source_key not in _durable_run_backed_source_keys():
             message = (
                 f"Source '{source_key}' search results are not yet backed by "
                 "durable source_search_runs handoff storage."
@@ -785,11 +790,7 @@ def _select_record(  # noqa: PLR0912
 
 def _provider_external_id(*, source_key: str, record: JSONObject) -> str | None:
     adapter = source_adapter(source_key)
-    return (
-        adapter.record_policy().provider_external_id(record)
-        if adapter is not None
-        else None
-    )
+    return adapter.provider_external_id(record) if adapter is not None else None
 
 
 def _record_supports_variant_aware(
@@ -800,7 +801,7 @@ def _record_supports_variant_aware(
     adapter = source_adapter(source_key)
     return bool(
         adapter is not None
-        and adapter.record_policy().recommends_variant_aware(selected.record),
+        and adapter.recommends_variant_aware(selected.record),
     )
 
 
@@ -1126,7 +1127,7 @@ def _normalized_source_record(
 ) -> JSONObject:
     adapter = source_adapter(source_key)
     if adapter is not None:
-        return adapter.record_policy().normalize_record(selected.record)
+        return adapter.normalize_record(selected.record)
     return {}
 
 

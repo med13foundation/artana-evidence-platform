@@ -354,7 +354,9 @@ def _payload_with_limit(source_search: EvidenceSelectionLiveSourceSearch) -> JSO
     return payload
 
 
-def validate_live_source_search(source_search: EvidenceSelectionLiveSourceSearch) -> None:
+def adapter_validate_live_source_search(
+    source_search: EvidenceSelectionLiveSourceSearch,
+) -> None:
     """Validate a live source-search payload before external source side effects."""
 
     validator = _LIVE_SOURCE_SEARCH_VALIDATORS.get(source_search.source_key)
@@ -678,5 +680,4 @@ __all__ = [
     "EvidenceSelectionLiveSourceSearch",
     "EvidenceSelectionSourceSearchError",
     "EvidenceSelectionSourceSearchRunner",
-    "validate_live_source_search",
 ]

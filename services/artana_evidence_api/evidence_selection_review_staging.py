@@ -11,11 +11,6 @@ from artana_evidence_api.evidence_selection_candidates import (
     record_dedup_key,
     score_from_decision,
 )
-from artana_evidence_api.evidence_selection_extraction_policy import (
-    normalized_extraction_payload,
-    proposal_summary,
-    review_item_summary,
-)
 from artana_evidence_api.proposal_store import (
     HarnessProposalDraft,
     HarnessProposalRecord,
@@ -26,7 +21,10 @@ from artana_evidence_api.review_item_store import (
     HarnessReviewItemRecord,
     HarnessReviewItemStore,
 )
-from artana_evidence_api.source_adapters import require_source_adapter
+from artana_evidence_api.source_adapters import (
+    EvidenceSourceAdapter,
+    require_source_adapter,
+)
 from artana_evidence_api.source_search_handoff import SourceSearchHandoffResponse
 from artana_evidence_api.types.common import JSONObject
 
@@ -130,28 +128,25 @@ def _proposal_draft_for_decision(
     document_id: str | None,
 ) -> HarnessProposalDraft | None:
     source_key = decision.source_key
-    policy = require_source_adapter(source_key).extraction_policy()
+    adapter = require_source_adapter(source_key)
     title = decision.title or f"{source_key} record"
     score = score_from_decision(decision)
-    metadata = _review_metadata(decision=decision, record=record)
+    metadata = _review_metadata(decision=decision, record=record, adapter=adapter)
     payload = decision.to_artifact_payload()
     return HarnessProposalDraft(
-        proposal_type=policy.proposal_type,
+        proposal_type=adapter.proposal_type,
         source_kind="direct_source_search",
         source_key=source_key,
         document_id=document_id,
         title=f"Review candidate: {title}",
-        summary=proposal_summary(
-            source_key=source_key,
-            selection_reason=decision.reason,
-        ),
+        summary=adapter.proposal_summary(decision.reason),
         confidence=min(max(score / 10.0, 0.1), 0.95),
         ranking_score=score,
         reasoning_path={
             "selection_reason": decision.reason,
             "matched_terms": list(decision.matched_terms),
             "caveats": list(decision.caveats),
-            "source_specific_limitations": list(policy.limitations),
+            "source_specific_limitations": list(adapter.limitations),
         },
         evidence_bundle=[metadata],
         payload={
@@ -173,21 +168,19 @@ def _review_item_draft_for_decision(
 ) -> HarnessReviewItemDraft:
     source_key = decision.source_key
     source_family = decision.source_family
+    adapter = require_source_adapter(source_key)
     title = decision.title or f"{source_key} record"
     score = score_from_decision(decision)
-    metadata = _review_metadata(decision=decision, record=record)
+    metadata = _review_metadata(decision=decision, record=record, adapter=adapter)
     payload = decision.to_artifact_payload()
     return HarnessReviewItemDraft(
-        review_type=require_source_adapter(source_key).extraction_policy().review_type,
+        review_type=adapter.review_type,
         source_family=source_family,
         source_kind="direct_source_search",
         source_key=source_key,
         document_id=document_id,
         title=f"Review selected source record: {title}",
-        summary=review_item_summary(
-            source_key=source_key,
-            selection_reason=decision.reason,
-        ),
+        summary=adapter.review_item_summary(decision.reason),
         priority="high" if score >= HIGH_PRIORITY_SCORE_THRESHOLD else "medium",
         confidence=min(max(score / 10.0, 0.1), 0.95),
         ranking_score=score,
@@ -207,6 +200,7 @@ def _review_metadata(
     *,
     decision: EvidenceSelectionCandidateDecision,
     record: JSONObject,
+    adapter: EvidenceSourceAdapter,
 ) -> JSONObject:
     source_capture = record.get("source_capture")
     return {
@@ -221,10 +215,7 @@ def _review_metadata(
         "matched_terms": list(decision.matched_terms),
         "excluded_terms": list(decision.excluded_terms),
         "caveats": list(decision.caveats),
-        "normalized_extraction": normalized_extraction_payload(
-            source_key=decision.source_key,
-            record=record,
-        ),
+        "normalized_extraction": adapter.normalized_extraction_payload(record),
         "source_capture": source_capture if isinstance(source_capture, dict) else None,
     }
 
