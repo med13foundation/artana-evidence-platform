@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Protocol, assert_never
 from uuid import UUID
 
 from artana_evidence_api.approval_store import (
-    HarnessApprovalRecord,
     HarnessApprovalStore,
 )
 from artana_evidence_api.artifact_store import HarnessArtifactStore
@@ -17,7 +15,6 @@ from artana_evidence_api.direct_source_search import (
     DirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import (
-    HarnessDocumentRecord,
     HarnessDocumentStore,
 )
 from artana_evidence_api.evidence_selection_candidate_handoffs import (
@@ -36,13 +33,23 @@ from artana_evidence_api.evidence_selection_plan_validation import (
     LIVE_SOURCE_SEARCH_TIMEOUT_SECONDS,
     validate_source_plan_result,
 )
+from artana_evidence_api.evidence_selection_result_serialization import (
+    proposal_result_payload,
+    review_item_result_payload,
+)
 from artana_evidence_api.evidence_selection_review_staging import (
     stage_selected_records_for_review,
+)
+from artana_evidence_api.evidence_selection_source_plan_artifact import (
+    build_source_plan,
 )
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
     EvidenceSelectionSourceSearchError,
     EvidenceSelectionSourceSearchRunner,
+)
+from artana_evidence_api.evidence_selection_workspace_snapshot import (
+    build_evidence_selection_workspace_snapshot,
 )
 from artana_evidence_api.proposal_store import (
     HarnessProposalRecord,
@@ -55,16 +62,12 @@ from artana_evidence_api.review_item_store import (
     HarnessReviewItemStore,
 )
 from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
-from artana_evidence_api.source_document_selection_identity import (
-    source_document_dedup_key,
-)
-from artana_evidence_api.source_registry import get_source_definition
 from artana_evidence_api.source_search_handoff import (
     SourceSearchHandoffResponse,
     SourceSearchHandoffStore,
 )
 from artana_evidence_api.transparency import ensure_run_transparency_seed
-from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+from artana_evidence_api.types.common import JSONObject
 
 if TYPE_CHECKING:
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
@@ -512,9 +515,9 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         "skipped_records": skipped_payload,
         "deferred_records": deferred_payload,
         "handoffs": [handoff.model_dump(mode="json") for handoff in handoffs],
-        "proposals": [_proposal_result_payload(proposal) for proposal in proposals],
+        "proposals": [proposal_result_payload(proposal) for proposal in proposals],
         "review_items": [
-            _review_item_result_payload(review_item) for review_item in review_items
+            review_item_result_payload(review_item) for review_item in review_items
         ],
         "errors": errors,
     }
@@ -546,9 +549,9 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         "skipped_records": skipped_payload,
         "deferred_records": deferred_payload,
         "handoffs": [handoff.model_dump(mode="json") for handoff in handoffs],
-        "proposals": [_proposal_result_payload(proposal) for proposal in proposals],
+        "proposals": [proposal_result_payload(proposal) for proposal in proposals],
         "review_items": [
-            _review_item_result_payload(review_item) for review_item in review_items
+            review_item_result_payload(review_item) for review_item in review_items
         ],
         "selected_count": len(selected),
         "skipped_count": len(skipped),
@@ -625,203 +628,6 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
     )
 
 
-def build_evidence_selection_workspace_snapshot(
-    *,
-    space_id: UUID,
-    run: HarnessRunRecord,
-    goal: str,
-    instructions: str | None,
-    parent_run_id: UUID | str | None,
-    run_registry: HarnessRunRegistry,
-    document_store: HarnessDocumentStore,
-    proposal_store: HarnessProposalStore,
-    review_item_store: HarnessReviewItemStore | None,
-    approval_store: HarnessApprovalStore | None,
-) -> JSONObject:
-    """Return compact prior workspace state for evidence-selection decisions."""
-
-    prior_runs = [
-        prior_run
-        for prior_run in run_registry.list_runs(space_id=space_id)
-        if prior_run.id != run.id
-    ][:20]
-    prior_documents = document_store.list_documents(space_id=space_id)[:50]
-    prior_proposals = proposal_store.list_proposals(space_id=space_id)[:50]
-    prior_review_items = (
-        review_item_store.list_review_items(space_id=space_id)[:50]
-        if review_item_store is not None
-        else []
-    )
-    prior_approvals = (
-        approval_store.list_space_approvals(space_id=space_id)[:50]
-        if approval_store is not None
-        else []
-    )
-    prior_evidence_runs = [
-        prior_run
-        for prior_run in prior_runs
-        if prior_run.harness_id == "evidence-selection"
-    ]
-    return {
-        "space_id": str(space_id),
-        "run_id": run.id,
-        "goal": goal,
-        "instructions": instructions,
-        "parent_run_id": str(parent_run_id) if parent_run_id is not None else None,
-        "prior_run_count": len(prior_runs),
-        "prior_evidence_run_count": len(prior_evidence_runs),
-        "prior_goals": [
-            _compact_prior_goal(prior_run)
-            for prior_run in prior_evidence_runs[:10]
-        ],
-        "document_count": len(prior_documents),
-        "source_documents": [
-            _document_snapshot(document) for document in prior_documents[:20]
-        ],
-        "proposal_count": len(prior_proposals),
-        "proposal_status_counts": dict(
-            sorted(Counter(proposal.status for proposal in prior_proposals).items()),
-        ),
-        "proposals": [
-            _proposal_snapshot(proposal) for proposal in prior_proposals[:20]
-        ],
-        "review_item_count": len(prior_review_items),
-        "review_item_status_counts": dict(
-            sorted(Counter(item.status for item in prior_review_items).items()),
-        ),
-        "review_items": [
-            _review_item_snapshot(review_item)
-            for review_item in prior_review_items[:20]
-        ],
-        "approval_count": len(prior_approvals),
-        "approval_status_counts": dict(
-            sorted(Counter(approval.status for approval in prior_approvals).items()),
-        ),
-        "approvals": [
-            _approval_snapshot(approval) for approval in prior_approvals[:20]
-        ],
-        "graph_state_summary": _graph_state_summary(
-            proposals=prior_proposals,
-            approvals=prior_approvals,
-        ),
-        "deduplication": {
-            "source_document_keys": sorted(
-                {
-                    key
-                    for key in (source_document_dedup_key(document) for document in prior_documents)
-                    if key is not None
-                },
-            ),
-            "proposal_fingerprints": sorted(
-                proposal.claim_fingerprint
-                for proposal in prior_proposals
-                if proposal.claim_fingerprint is not None
-            ),
-            "review_fingerprints": sorted(
-                review_item.review_fingerprint
-                for review_item in prior_review_items
-                if review_item.review_fingerprint is not None
-            ),
-        },
-    }
-
-
-def build_source_plan(
-    *,
-    goal: str,
-    instructions: str | None,
-    requested_sources: tuple[str, ...],
-    source_searches: tuple[EvidenceSelectionLiveSourceSearch, ...],
-    candidate_searches: tuple[EvidenceSelectionCandidateSearch, ...],
-    inclusion_criteria: tuple[str, ...],
-    exclusion_criteria: tuple[str, ...],
-    population_context: str | None,
-    evidence_types: tuple[str, ...],
-    priority_outcomes: tuple[str, ...],
-    planner_kind: str = "deterministic",
-    planner_mode: EvidenceSelectionSourcePlannerMode = "deterministic",
-    planner_reason: str | None = None,
-    model_id: str | None = None,
-    planner_version: str | None = None,
-    planned_searches: tuple[JSONObject, ...] = (),
-    deferred_sources: tuple[JSONObject, ...] = (),
-    validation_decisions: tuple[JSONObject, ...] = (),
-    fallback_reason: str | None = None,
-    agent_run_id: str | None = None,
-) -> JSONObject:
-    """Return the auditable source plan artifact for this run."""
-
-    candidate_source_counts = Counter(search.source_key for search in candidate_searches)
-    live_source_counts = Counter(search.source_key for search in source_searches)
-    requested = list(dict.fromkeys(requested_sources))
-    for source_key in live_source_counts:
-        if source_key not in requested:
-            requested.append(source_key)
-    source_entries: list[JSONObject] = []
-    for source_key in requested:
-        source = get_source_definition(source_key)
-        source_entries.append(
-            {
-                "source_key": source_key,
-                "source_family": source.source_family if source is not None else "unknown",
-                "candidate_search_count": candidate_source_counts.get(source_key, 0),
-                "live_search_count": live_source_counts.get(source_key, 0),
-                "action": (
-                    "run_and_screen_source_searches"
-                    if live_source_counts.get(source_key, 0) > 0
-                    else "screen_saved_searches"
-                    if candidate_source_counts.get(source_key, 0) > 0
-                    else "defer_search_request"
-                ),
-                "reason": (
-                    "The harness will create and screen source-search results for this source."
-                    if live_source_counts.get(source_key, 0) > 0
-                    else
-                    "Saved source-search results were supplied for this source."
-                    if candidate_source_counts.get(source_key, 0) > 0
-                    else "No source-search request or saved source-search result was supplied."
-                ),
-            },
-        )
-    return {
-        "goal": goal,
-        "instructions": instructions,
-        "sources": source_entries,
-        "selection_policy": {
-            "harness_role": (
-                "deterministically select relevant candidate evidence before "
-                "human review"
-            ),
-            "human_role": "review and approve before trusted graph promotion",
-            "inclusion_criteria": list(inclusion_criteria),
-            "exclusion_criteria": list(exclusion_criteria),
-            "population_context": population_context,
-            "evidence_types": list(evidence_types),
-            "priority_outcomes": list(priority_outcomes),
-        },
-        "current_capability": (
-            "Creates supported structured source searches, screens durable "
-            "source-search results, creates guarded handoffs, stages "
-            "review-gated proposals/items, and can use a model planner to "
-            "turn a research goal into source searches."
-        ),
-        "planner": {
-            "kind": planner_kind,
-            "mode": planner_mode,
-            "agent_invoked": planner_kind == "model",
-            "reason": planner_reason,
-            "active_skill": "graph_harness.source_relevance",
-            "model_id": model_id,
-            "planner_version": planner_version,
-            "fallback_reason": fallback_reason,
-            "agent_run_id": agent_run_id,
-            "planned_searches": list(planned_searches),
-            "deferred_sources": list(deferred_sources),
-            "validation_decisions": list(validation_decisions),
-        },
-    }
-
-
 async def _run_live_source_searches(
     *,
     space_id: UUID,
@@ -877,127 +683,6 @@ async def _run_live_source_searches(
             ),
         )
     return tuple(candidate_searches), tuple(errors)
-
-
-def _compact_prior_goal(run: HarnessRunRecord) -> JSONObject:
-    return {
-        "run_id": run.id,
-        "status": run.status,
-        "goal": run.input_payload.get("goal") if isinstance(run.input_payload.get("goal"), str) else None,
-        "instructions": (
-            run.input_payload.get("instructions")
-            if isinstance(run.input_payload.get("instructions"), str)
-            else None
-        ),
-        "created_at": run.created_at.isoformat(),
-    }
-
-
-def _document_snapshot(document: HarnessDocumentRecord) -> JSONObject:
-    source_capture = json_object_or_empty(document.metadata.get("source_capture"))
-    return {
-        "document_id": document.id,
-        "title": document.title,
-        "source_type": document.source_type,
-        "source_family": document.metadata.get("source_family"),
-        "source_search_id": document.metadata.get("source_search_id"),
-        "selected_record_index": document.metadata.get("selected_record_index"),
-        "extraction_status": document.extraction_status,
-        "source_capture": source_capture,
-    }
-
-
-def _proposal_snapshot(proposal: HarnessProposalRecord) -> JSONObject:
-    return {
-        "proposal_id": proposal.id,
-        "title": proposal.title,
-        "proposal_type": proposal.proposal_type,
-        "source_key": proposal.source_key,
-        "status": proposal.status,
-        "confidence": proposal.confidence,
-        "ranking_score": proposal.ranking_score,
-        "claim_fingerprint": proposal.claim_fingerprint,
-    }
-
-
-def _review_item_snapshot(review_item: HarnessReviewItemRecord) -> JSONObject:
-    return {
-        "review_item_id": review_item.id,
-        "title": review_item.title,
-        "review_type": review_item.review_type,
-        "source_key": review_item.source_key,
-        "source_family": review_item.source_family,
-        "status": review_item.status,
-        "priority": review_item.priority,
-        "confidence": review_item.confidence,
-        "ranking_score": review_item.ranking_score,
-        "review_fingerprint": review_item.review_fingerprint,
-    }
-
-
-def _approval_snapshot(approval: HarnessApprovalRecord) -> JSONObject:
-    return {
-        "run_id": approval.run_id,
-        "approval_key": approval.approval_key,
-        "title": approval.title,
-        "risk_level": approval.risk_level,
-        "target_type": approval.target_type,
-        "target_id": approval.target_id,
-        "status": approval.status,
-        "decision_reason": approval.decision_reason,
-    }
-
-
-def _graph_state_summary(
-    *,
-    proposals: list[HarnessProposalRecord],
-    approvals: list[HarnessApprovalRecord],
-) -> JSONObject:
-    promoted_proposals = [
-        proposal for proposal in proposals if proposal.status == "promoted"
-    ]
-    approved_actions = [
-        approval for approval in approvals if approval.status == "approved"
-    ]
-    return {
-        "approved_evidence_count": len(promoted_proposals),
-        "approved_action_count": len(approved_actions),
-        "pending_review_count": sum(
-            1 for proposal in proposals if proposal.status == "pending_review"
-        ),
-        "rejected_evidence_count": sum(
-            1 for proposal in proposals if proposal.status == "rejected"
-        ),
-        "summary_basis": (
-            "Evidence API proposal and approval state; trusted graph facts are "
-            "still read through the graph service."
-        ),
-    }
-
-
-def _proposal_result_payload(proposal: HarnessProposalRecord) -> JSONObject:
-    return {
-        "proposal_id": proposal.id,
-        "proposal_type": proposal.proposal_type,
-        "source_key": proposal.source_key,
-        "document_id": proposal.document_id,
-        "title": proposal.title,
-        "status": proposal.status,
-        "claim_fingerprint": proposal.claim_fingerprint,
-    }
-
-
-def _review_item_result_payload(review_item: HarnessReviewItemRecord) -> JSONObject:
-    return {
-        "review_item_id": review_item.id,
-        "review_type": review_item.review_type,
-        "source_key": review_item.source_key,
-        "document_id": review_item.document_id,
-        "title": review_item.title,
-        "priority": review_item.priority,
-        "status": review_item.status,
-        "review_fingerprint": review_item.review_fingerprint,
-    }
 
 
 def _put_json_artifact(

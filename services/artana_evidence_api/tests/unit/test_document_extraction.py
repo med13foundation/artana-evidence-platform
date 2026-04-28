@@ -989,7 +989,7 @@ async def test_pre_resolve_entities_with_ai_caps_ai_budget(
     )
     monkeypatch.setattr(
         document_extraction,
-        "_resolve_exact_entity_label",
+        "resolve_exact_entity_label",
         _fake_exact_match,
     )
     monkeypatch.setattr(
@@ -1064,7 +1064,7 @@ async def test_pre_resolve_entities_with_ai_times_out_and_falls_back(
     )
     monkeypatch.setattr(
         document_extraction,
-        "_resolve_exact_entity_label",
+        "resolve_exact_entity_label",
         _never_exact_match,
     )
     monkeypatch.setattr(

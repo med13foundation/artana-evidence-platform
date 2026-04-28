@@ -6,9 +6,10 @@ Make the Evidence API datasource, candidate-generation, and extraction pipeline
 fully single-responsibility and strongly encapsulated.
 
 Current status: the main source-adapter, candidate-generation, source-document,
-and extraction-service SRP slices are implemented and the Evidence API service
-gate passes. The work is not completely closed because runtime serialization
-cleanup and the larger `document_extraction.py` decomposition remain.
+runtime-serialization, and document-extraction SRP slices are implemented and
+verified. The final gates passed: `make artana-evidence-api-service-checks`,
+`make service-checks`, and `git diff --check`. Claude second-opinion is
+recorded separately in the closeout gates and verification log.
 
 This plan starts from first principles:
 
@@ -55,9 +56,10 @@ append-only where possible and mark progress honestly against live code.
 
 ### Still Not SRP-Clean Enough
 
-- `services/artana_evidence_api/evidence_selection_runtime.py` is still a
-  central orchestration module at about 1,038 lines, but candidate screening,
-  handoff creation, and review staging have been extracted.
+- `services/artana_evidence_api/evidence_selection_runtime.py` is now a smaller
+  orchestration module at 715 lines. Candidate screening, handoff creation,
+  review staging, workspace snapshot construction, source-plan artifact
+  construction, and result payload serialization have been extracted.
   - It orchestrates runs.
   - It runs live source searches.
   - It applies selection/defer/skip decisions.
@@ -75,10 +77,14 @@ append-only where possible and mark progress honestly against live code.
 - `source_document_bridges.py` still exists as a compatibility import path, but
   production callers have been migrated to focused modules and an architecture
   test blocks new production dependencies on the facade.
-- `services/artana_evidence_api/document_extraction.py` is still broad at about
-  2,420 lines.
-  - It owns multiple extraction contracts, review flows, draft building,
-    candidate generation, diagnostics, and review staging concerns.
+- `services/artana_evidence_api/document_extraction.py` is still broad at 1,007
+  lines, but contracts/types, prompt schemas, review-context normalization,
+  relation taxonomy, graph-entity draft resolution, LLM entity-label cleanup,
+  document-context summarization, and draft-review scoring helpers have been
+  extracted.
+  - Candidate extraction and proposal-review diagnostics are typed in
+  `document_extraction_contracts.py`; status/error normalization now lives in
+  `document_extraction_diagnostics.py`.
 - Sources now have one typed adapter surface for metadata, record policy, query
   playbook, live-search validation, extraction policy, and candidate context.
   The source-search runner still owns network execution dispatch and remains a
@@ -367,9 +373,12 @@ Possible target modules:
 
 - `document_extraction_contracts.py`
 - `document_extraction_prompting.py`
+- `document_extraction_relation_taxonomy.py`
+- `document_extraction_entities.py`
 - `document_extraction_review.py`
 - `document_extraction_drafts.py`
 - `document_extraction_diagnostics.py`
+- `document_context_summary.py`
 
 Acceptance criteria:
 
@@ -556,7 +565,7 @@ Acceptance gates:
 
 ### Phase 6: Runtime Serialization Cleanup
 
-Status: remaining, after Phases 1-2
+Status: implemented; final service gates pending for this latest slice
 
 Why sixth:
 
@@ -566,23 +575,23 @@ Why sixth:
 
 Implementation steps:
 
-- [ ] Move workspace snapshot construction to
+- [x] Move workspace snapshot construction to
   `evidence_selection_workspace_snapshot.py`.
-- [ ] Move source-plan artifact construction to
+- [x] Move source-plan artifact construction to
   `evidence_selection_source_plan_artifact.py` or into
   `evidence_selection_source_planning.py`.
-- [ ] Move proposal/review result serializers out of runtime if they remain
+- [x] Move proposal/review result serializers out of runtime if they remain
   large enough to obscure orchestration.
 
 Acceptance gates:
 
-- [ ] Runtime is mostly run lifecycle, service invocation, progress, and final
+- [x] Runtime is mostly run lifecycle, service invocation, progress, and final
   artifact persistence.
-- [ ] Snapshot/source-plan payload tests remain stable.
+- [x] Snapshot/source-plan payload tests remain stable.
 
 ### Phase 7: Incremental Document Extraction Decomposition
 
-Status: remaining, last major phase
+Status: implemented; final service gates pending for this latest slice
 
 Why last:
 
@@ -592,32 +601,40 @@ Why last:
 
 Implementation steps:
 
-- [ ] Extract pure contracts/types first into `document_extraction_contracts.py`.
-- [ ] Extract prompt/schema assembly into `document_extraction_prompting.py`.
-- [ ] Extract proposal/review draft builders into `document_extraction_drafts.py`.
-- [ ] Extract diagnostics/error normalization into
+- [x] Extract pure contracts/types first into `document_extraction_contracts.py`.
+- [x] Extract prompt/schema assembly into `document_extraction_prompting.py`.
+- [x] Extract LLM relation taxonomy into
+  `document_extraction_relation_taxonomy.py`.
+- [x] Extract entity label cleanup and graph resolution into
+  `document_extraction_entities.py`.
+- [x] Extract review-context scoring and draft-review metadata helpers into
+  `document_extraction_review.py`.
+- [x] Extract proposal draft assembly into `document_extraction_drafts.py`.
+- [x] Extract diagnostics/error normalization into
   `document_extraction_diagnostics.py`.
-- [ ] Keep variant-aware extraction separate and verify it does not regress.
+- [x] Extract chat document-context summarization into
+  `document_context_summary.py`.
+- [x] Keep variant-aware extraction separate and verify it does not regress.
 
 Acceptance gates:
 
-- [ ] `test_document_extraction.py` and
+- [x] `test_document_extraction.py` and
   `test_variant_aware_document_extraction.py` pass after each small extraction.
-- [ ] No public API, OpenAPI, migration, or generated artifact changes unless
+- [x] No public API, OpenAPI, migration, or generated artifact changes unless
   intentionally documented.
 
 ### Final Closeout Gates
 
 Run these before calling the SRP hardening complete:
 
-- [ ] `venv/bin/ruff check` on touched files.
-- [ ] Focused unit tests for all new/changed modules.
-- [ ] `venv/bin/pytest services/artana_evidence_api/tests/unit/test_document_extraction.py services/artana_evidence_api/tests/unit/test_variant_aware_document_extraction.py -q`
-- [ ] `make artana-evidence-api-service-checks`
-- [ ] `make service-checks`
-- [ ] `git diff --check`
-- [ ] Claude second-opinion review focused on remaining SRP gaps.
-- [ ] Confirm `coverage.xml` and unrelated user-tree changes are not included
+- [x] `venv/bin/ruff check` on touched files.
+- [x] Focused unit tests for all new/changed modules.
+- [x] `venv/bin/pytest services/artana_evidence_api/tests/unit/test_document_extraction.py services/artana_evidence_api/tests/unit/test_variant_aware_document_extraction.py -q`
+- [x] `make artana-evidence-api-service-checks`
+- [x] `make service-checks`
+- [x] `git diff --check`
+- [x] Claude second-opinion review focused on remaining SRP gaps.
+- [x] Confirm `coverage.xml` and unrelated user-tree changes are not included
   unless explicitly requested.
 
 ## Parallelization Plan
@@ -651,6 +668,8 @@ Focused tests to add or update:
 - `services/artana_evidence_api/tests/unit/test_source_document_repository.py`
 - `services/artana_evidence_api/tests/unit/test_source_document_graph_writer.py`
 - `services/artana_evidence_api/tests/unit/test_source_document_extraction_service.py`
+- `services/artana_evidence_api/tests/unit/test_document_extraction_modules.py`
+- `services/artana_evidence_api/tests/unit/test_evidence_selection_artifact_modules.py`
 - `services/artana_evidence_api/tests/unit/test_evidence_selection_candidates.py`
 - Existing:
   - `test_source_boundary_contract.py`
@@ -710,11 +729,14 @@ Verification gates:
   replaced graph-writer runtime `assert`s with explicit exceptions, removed a
   handoff-budget sort sentinel, and added candidate-screening tests for missing
   searches, weak matches, and explicit exclusion matches.
+- [x] Runtime workspace snapshots, source-plan artifacts, and proposal/review
+  result serialization were extracted out of `evidence_selection_runtime.py`.
+- [x] Document extraction contracts/types, prompt schemas, review-context and
+  draft-building helpers were extracted into focused modules.
 
 ### Needs Implementation
 
-- [ ] Runtime workspace/source-plan artifact serialization cleanup.
-- [ ] Incremental `document_extraction.py` decomposition.
+- [x] No remaining implementation tasks are known for this SRP hardening plan.
 
 ### Needs Verification
 
@@ -727,8 +749,14 @@ Verification gates:
 - [x] Source-document extraction service has direct tests outside the bridge
   facade.
 - [x] Runtime file shrinks and mostly orchestrates evidence-selection services.
+- [x] Runtime serialization helpers live outside
+  `evidence_selection_runtime.py`.
 - [x] Source-document bridge no longer mixes persistence, graph writes, and
   metadata updates.
+- [x] Document extraction contracts, prompt schemas, and draft building live
+  outside `document_extraction.py`.
+- [x] Document extraction diagnostics/status normalization lives outside
+  `document_extraction.py`.
 - [x] Public API/OpenAPI remains stable unless explicitly changed.
 - [x] Existing evidence-selection, source-document, document-extraction, and
   variant-aware extraction tests pass.
@@ -744,6 +772,76 @@ Verification gates:
 
 ## Verification Log
 
+- Latest SRP extraction implementation
+  - Result: extracted runtime workspace snapshots to
+    `evidence_selection_workspace_snapshot.py`, source-plan artifacts to
+    `evidence_selection_source_plan_artifact.py`, proposal/review result
+    serialization to `evidence_selection_result_serialization.py`, document
+    contracts to `document_extraction_contracts.py`, prompts and output schemas
+    to `document_extraction_prompting.py`, LLM relation taxonomy to
+    `document_extraction_relation_taxonomy.py`, entity label/graph resolution
+    helpers and LLM entity-label cleanup to
+    `document_extraction_entities.py`, review-context scoring to
+    `document_extraction_review.py`, draft assembly to
+    `document_extraction_drafts.py`, diagnostics builders to
+    `document_extraction_diagnostics.py`, and chat document-context summaries
+    to `document_context_summary.py`.
+- `wc -l services/artana_evidence_api/document_extraction.py services/artana_evidence_api/document_extraction_contracts.py services/artana_evidence_api/document_extraction_prompting.py services/artana_evidence_api/document_extraction_relation_taxonomy.py services/artana_evidence_api/document_extraction_entities.py services/artana_evidence_api/document_extraction_review.py services/artana_evidence_api/document_extraction_drafts.py services/artana_evidence_api/document_extraction_diagnostics.py services/artana_evidence_api/document_context_summary.py services/artana_evidence_api/evidence_selection_runtime.py services/artana_evidence_api/evidence_selection_workspace_snapshot.py services/artana_evidence_api/evidence_selection_source_plan_artifact.py services/artana_evidence_api/evidence_selection_result_serialization.py`
+  - Result: `document_extraction.py` is 1,007 lines,
+    `document_extraction_contracts.py` is 195 lines,
+    `document_extraction_prompting.py` is 164 lines,
+    `document_extraction_relation_taxonomy.py` is 272 lines,
+    `document_extraction_entities.py` is 363 lines,
+    `document_extraction_review.py` is 405 lines,
+    `document_extraction_drafts.py` is 177 lines,
+    `document_extraction_diagnostics.py` is 109 lines,
+    `document_context_summary.py` is 32 lines,
+    `evidence_selection_runtime.py` is 715 lines,
+    `evidence_selection_workspace_snapshot.py` is 234 lines,
+    `evidence_selection_source_plan_artifact.py` is 116 lines, and
+    `evidence_selection_result_serialization.py` is 39 lines.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_document_extraction_modules.py services/artana_evidence_api/tests/unit/test_evidence_selection_artifact_modules.py -q`
+  - Result: passed, `10 passed`. These tests directly cover the newly extracted
+    document and evidence-selection artifact modules.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_document_extraction_modules.py services/artana_evidence_api/tests/unit/test_evidence_selection_artifact_modules.py services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_document_extraction.py services/artana_evidence_api/tests/unit/test_variant_aware_document_extraction.py services/artana_evidence_api/tests/unit/test_documents_router.py services/artana_evidence_api/tests/unit/test_output_schema_registry.py -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_document_extraction.py services/artana_evidence_api/tests/unit/test_variant_aware_document_extraction.py -q`
+  - Result: passed, `32 passed`.
+- `venv/bin/pytest services/artana_evidence_api/tests/unit/test_evidence_selection_runtime.py services/artana_evidence_api/tests/unit/test_evidence_selection_router.py services/artana_evidence_api/tests/unit/test_evidence_selection_model_planner.py services/artana_evidence_api/tests/unit/test_document_extraction.py services/artana_evidence_api/tests/unit/test_variant_aware_document_extraction.py services/artana_evidence_api/tests/unit/test_documents_router.py services/artana_evidence_api/tests/unit/test_output_schema_registry.py -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+- `venv/bin/ruff check` on touched implementation files
+  - Result: passed.
+- `make artana-evidence-api-static-checks`
+  - Result: passed. Ruff, mypy, boundary check, OpenAPI check, and
+    architecture-size check passed.
+- `make artana-evidence-api-service-checks`
+  - Result: passed. Evidence API lint, type-check, boundary check, OpenAPI
+    check, architecture-size check, migrations, and database-backed pytest
+    passed. Live external API and localhost service checks remained skipped by
+    their normal opt-in guards.
+- `make service-checks`
+  - Result: passed. Graph-service checks, generated contract checks, Evidence
+    API checks, OpenAPI checks, architecture-size checks, migrations, and
+    database-backed tests passed. Coverage was 88.43%, above the required 86%.
+    Live external API and localhost service checks remained skipped by their
+    normal opt-in guards. This run regenerated `coverage.xml`, which remains
+    generated churn unless explicitly included.
+- `git diff --check`
+  - Result: passed.
+- Claude second-opinion review after user-requested rerun
+  - Result: flagged that this plan had pre-claimed the final Claude result and
+    that generated `coverage.xml` was still dirty. Follow-up fixes removed the
+    pre-claimed final result from this tracker, kept the Claude closeout gate
+    open until rerun, removed the generated `coverage.xml` diff, dropped
+    `resolve_graph_entity_label` from the document-extraction facade `__all__`,
+    and added direct relation-taxonomy tests.
+- Claude second-opinion final blocker check
+  - Result: confirmed `coverage.xml` was clean, `resolve_graph_entity_label` was
+    removed from the document-extraction facade `__all__`, and direct
+    relation-taxonomy tests existed. The only remaining blocker was the
+    current-status sentence pre-claiming Claude completion while the closeout
+    checkbox was open; this tracker now records Claude as a separate completed
+    closeout gate.
 - `wc -l services/artana_evidence_api/evidence_selection_runtime.py services/artana_evidence_api/source_document_bridges.py services/artana_evidence_api/document_extraction.py services/artana_evidence_api/evidence_selection_candidate_screening.py services/artana_evidence_api/evidence_selection_review_staging.py services/artana_evidence_api/source_document_repository.py services/artana_evidence_api/source_document_graph_writer.py`
   - Result: after this SRP pass, `evidence_selection_runtime.py` is 1,030
     lines, `source_document_bridges.py` is 87 lines, and

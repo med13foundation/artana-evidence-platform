@@ -12,6 +12,8 @@ from artana_evidence_api.evidence_selection_candidates import (
 )
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionSourcePlanResult,
+)
+from artana_evidence_api.evidence_selection_source_plan_artifact import (
     build_source_plan,
 )
 from artana_evidence_api.evidence_selection_source_planning import (
