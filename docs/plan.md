@@ -190,8 +190,8 @@ not in one risky rewrite.
 
 ### Workstream A: Source Adapter Hardening
 
-Status: implemented for first hardening slice; public-contract compatibility
-needs explicit closure
+Status: implemented; public-contract compatibility is closed through ingress
+normalization
 
 Goals:
 
@@ -228,7 +228,7 @@ Implementation steps:
   import source-owned helper functions directly and bypass the adapter.
 - [x] Make adapter validation canonical-source-key only, keep adapter registry
   construction lazy, and return stable candidate-context keys.
-- [ ] Verify and document whether canonical-source-key validation is an
+- [x] Verify and document whether canonical-source-key validation is an
   intentional public contract. If aliases/case variants are still part of the
   public API, normalize them at ingress before adapter validation.
 
