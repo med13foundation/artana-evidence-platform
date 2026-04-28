@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import cast
 
+from artana_evidence_api.source_plugins.registry import evidence_source_plugin_keys
 from artana_evidence_api.source_registry import (
     SourceDefinition,
     get_source_definition,
-    list_source_definitions,
 )
 from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
 
@@ -140,13 +140,9 @@ def _source_registry_summary(source: SourceDefinition) -> JSONObject:
 
 
 def registry_source_result_keys() -> tuple[str, ...]:
-    """Return registry-backed source-result keys in public source order."""
+    """Return plugin-backed source-result keys in public source order."""
 
-    return tuple(
-        source.source_key
-        for source in list_source_definitions()
-        if source.research_plan_enabled
-    )
+    return evidence_source_plugin_keys()
 
 
 __all__ = ["build_source_results", "registry_source_result_keys"]

@@ -123,19 +123,12 @@ def test_require_source_adapter_rejects_unknown_source() -> None:
         require_source_adapter("custom_source")
 
 
-def test_source_adapter_registry_wraps_missing_extraction_policy(
+def test_source_adapter_registry_rejects_missing_plugin(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def _raise_missing_extraction_policy(source_key: str) -> None:
-        raise KeyError(source_key)
+    monkeypatch.setattr(source_adapters_module, "source_plugin", lambda _: None)
 
-    monkeypatch.setattr(
-        source_adapters_module,
-        "adapter_extraction_policy_for_source",
-        _raise_missing_extraction_policy,
-    )
-
-    with pytest.raises(SourceAdapterRegistryError, match="extraction policy"):
+    with pytest.raises(SourceAdapterRegistryError, match="source plugin"):
         source_adapters_module._build_source_adapter("pubmed")
 
 
