@@ -55,11 +55,12 @@ curl -s "$ARTANA_API_BASE_URL/v2/sources" \
 Direct source search currently supports sources whose capability record has
 `"direct_search_enabled": true`: PubMed, MARRVEL, ClinVar, AlphaFold,
 UniProt, ClinicalTrials.gov, MGI, and ZFIN. DrugBank also supports direct
-search when `DRUGBANK_API_KEY` is configured. MONDO is an ontology-grounding
-source, not a bounded direct-search endpoint. Text and PDF are document-capture
-sources. Direct source-search responses are durable captured source results:
-the search result can be fetched later by id, but it is not promoted into the
-trusted graph until downstream extraction, proposal, and review steps approve it.
+search when `DRUGBANK_API_KEY` is configured. MONDO and HGNC are
+ontology/authority-grounding sources, not bounded direct-search endpoints. Text
+and PDF are document-capture sources. Direct source-search responses are durable
+captured source results: the search result can be fetched later by id, but it is
+not promoted into the trusted graph until downstream extraction, proposal, and
+review steps approve it.
 
 Search PubMed:
 

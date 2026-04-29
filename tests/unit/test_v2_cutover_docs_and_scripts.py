@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -66,6 +67,30 @@ def test_high_traffic_docs_are_v2_first() -> None:
             "/v2/spaces/$SPACE_ID/documents/text",
             "/v2/spaces/$SPACE_ID/workflows/topic-setup/tasks",
             "/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs",
+        ),
+        "services/artana_evidence_api/docs/user-guide.md": (
+            "/v2/spaces/$SPACE_ID/proposed-updates?document_id=<document_id>",
+            "/v2/spaces/{space_id}/tasks/{task_id}/outputs",
+        ),
+        "docs/full_AI_orchestrator.md": (
+            "/v2/spaces/{space_id}/workflows/full-research/tasks",
+            "/v2/spaces/{space_id}/tasks/{task_id}/decisions",
+        ),
+        "docs/research_init_architecture.md": (
+            "/v2/spaces/{space_id}/research-plan",
+            "/v2/spaces/{space_id}/review-items",
+            "services/artana_evidence_api/source_plugins/",
+        ),
+        "docs/architecture/local-identity-boundary.md": (
+            "/v2/auth/bootstrap",
+            "/v2/auth/api-keys",
+        ),
+        "docs/remaining_work_priorities.md": (
+            "/v2/auth/bootstrap",
+            "review flow through review items",
+        ),
+        "docs/artana-kernel/docs/deep_traceability.md": (
+            "/v2/spaces/{space_id}/tasks/{task_id}/working-state",
         ),
         "docs/user-guide/02-core-concepts.md": ("/v2/spaces/{space_id}/tasks",),
         "docs/user-guide/03-workflow-overview.md": (
@@ -132,8 +157,10 @@ def test_user_guide_matches_key_v2_public_endpoints() -> None:
     }
     forbidden_fragments = (
         "/v2/spaces/{space_id}/proposals",
+        "/v2/spaces/$SPACE_ID/proposals",
         "/v2/spaces/$SPACE_ID/review-items/<item_id>/actions",
         "/v2/spaces/{space_id}/review-items/{item_id}/actions",
+        '/v2/spaces/$SPACE_ID/tasks/<task_id>/approvals/<approval_key>"',
         "/v2/spaces/$SPACE_ID/evidence-map/document",
         "/v2/spaces/{space_id}/tasks/{task_id}/approvals/{approval_key}`",
         "sources/sources",
@@ -147,3 +174,40 @@ def test_user_guide_matches_key_v2_public_endpoints() -> None:
             assert fragment in contents, (relative_path, fragment)
         for fragment in forbidden_fragments:
             assert fragment not in contents, (relative_path, fragment)
+
+
+def test_evidence_run_examples_include_live_network_opt_in() -> None:
+    doc = _read("docs/user-guide/07-multi-source-and-automation.md")
+
+    assert doc.count('"live_network_allowed": true') >= 5
+    assert "Any request that creates live source searches must set" in doc
+
+
+def test_endpoint_index_names_public_grounding_sources() -> None:
+    doc = _read("docs/user-guide/09-endpoint-index.md")
+
+    assert "MONDO and HGNC are background" in doc
+    assert "/v2/spaces/{space_id}/sources/pubmed/searches" in doc
+    assert "/v2/spaces/{space_id}/sources/marrvel/searches" in doc
+
+
+def test_rewritten_public_routes_exist_in_openapi() -> None:
+    document = json.loads(_read("services/artana_evidence_api/openapi.json"))
+    paths = document["paths"]
+    required_routes = {
+        "/v2/auth/bootstrap": ("post",),
+        "/v2/auth/api-keys": ("get", "post"),
+        "/v2/spaces/{space_id}/proposed-updates": ("get",),
+        "/v2/spaces/{space_id}/review-items/{item_id}/decision": ("post",),
+        "/v2/spaces/{space_id}/sources/marrvel/ingestion": ("post",),
+        "/v2/spaces/{space_id}/tasks/{task_id}/decisions": ("get",),
+        "/v2/spaces/{space_id}/tasks/{task_id}/outputs": ("get",),
+        "/v2/spaces/{space_id}/tasks/{task_id}/working-state": ("get",),
+        "/v2/spaces/{space_id}/workflows/full-research/tasks": ("get", "post"),
+        "/v2/spaces/{space_id}/workflows/topic-setup/tasks": ("post",),
+    }
+
+    for path, methods in required_routes.items():
+        assert path in paths, path
+        for method in methods:
+            assert method in paths[path], (path, method)

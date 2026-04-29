@@ -34,7 +34,7 @@ The current endpoint surface is easiest to understand in layers:
 1. auth and space setup
 2. generic run lifecycle and transparency
 3. document, review, and chat workflows
-4. direct discovery and graph explorer reads
+4. direct discovery and evidence-map reads
 5. typed research workflows
 
 One important runtime rule:
@@ -347,11 +347,11 @@ Important promotion nuance:
 | --- | --- | --- |
 | `GET` | `/v2/spaces/{space_id}/review-items` | Lists the unified review queue across proposals, review-only items, and approvals. |
 | `GET` | `/v2/spaces/{space_id}/review-items/{item_id}` | Returns one review queue item. |
-| `POST` | `/v2/spaces/{space_id}/review-items/{item_id}/actions` | Applies one review action through the unified queue surface. |
-| `GET` | `/v2/spaces/{space_id}/proposals` | Lists proposal records directly. |
-| `GET` | `/v2/spaces/{space_id}/proposals/{proposal_id}` | Returns one proposal. |
-| `POST` | `/v2/spaces/{space_id}/proposals/{proposal_id}/promote` | Promotes one proposal directly. |
-| `POST` | `/v2/spaces/{space_id}/proposals/{proposal_id}/reject` | Rejects one proposal directly. |
+| `POST` | `/v2/spaces/{space_id}/review-items/{item_id}/decision` | Applies one review action through the unified queue surface. |
+| `GET` | `/v2/spaces/{space_id}/proposed-updates` | Lists proposal records directly. |
+| `GET` | `/v2/spaces/{space_id}/proposed-updates/{proposal_id}` | Returns one proposal. |
+| `POST` | `/v2/spaces/{space_id}/proposed-updates/{proposal_id}/promote` | Promotes one proposal directly. |
+| `POST` | `/v2/spaces/{space_id}/proposed-updates/{proposal_id}/reject` | Rejects one proposal directly. |
 
 Use `/review-items` as the default human review API.
 
@@ -392,10 +392,10 @@ Proposal list filters:
 - `task_id`
 - `document_id`
 
-Think of `/proposals` as the lower-level primitive behind the unified review
-queue.
+Think of `/proposed-updates` as the lower-level primitive behind the unified
+review queue.
 
-## 9. Graph Explorer
+## 9. Evidence Map
 
 | Method | Path | What it does |
 | --- | --- | --- |
@@ -432,7 +432,7 @@ Unified graph document request body:
 }
 ```
 
-Use graph explorer when you want read-only graph inspection without starting a
+Use the evidence map when you want read-only graph inspection without starting a
 new AI run.
 
 ## 10. Direct Source Discovery
@@ -684,11 +684,11 @@ immediately instead of waiting for the inline completion window.
 | --- | --- | --- |
 | `GET` | `/v2/spaces/{space_id}/schedules` | Lists saved schedules. |
 | `POST` | `/v2/spaces/{space_id}/schedules` | Creates one schedule. |
-| `GET` | `/v2/spaces/{space_id}/schedules/{schedule_id}` | Returns one schedule plus recent runs. |
+| `GET` | `/v2/spaces/{space_id}/schedules/{schedule_id}` | Returns one schedule plus recent tasks. |
 | `PATCH` | `/v2/spaces/{space_id}/schedules/{schedule_id}` | Updates one schedule. |
 | `POST` | `/v2/spaces/{space_id}/schedules/{schedule_id}/pause` | Pauses one schedule. |
 | `POST` | `/v2/spaces/{space_id}/schedules/{schedule_id}/resume` | Resumes one schedule. |
-| `POST` | `/v2/spaces/{space_id}/schedules/{schedule_id}/start-now` | Triggers an immediate run from the stored schedule. |
+| `POST` | `/v2/spaces/{space_id}/schedules/{schedule_id}/start-now` | Triggers an immediate task from the stored schedule. |
 
 Create schedule body:
 
@@ -723,7 +723,7 @@ Create schedule body:
 | Method | Path | What it does |
 | --- | --- | --- |
 | `POST` | `/v2/spaces/{space_id}/workflows/full-research/tasks` | Starts one composed supervisor workflow. |
-| `GET` | `/v2/spaces/{space_id}/workflows/full-research/tasks` | Lists typed supervisor runs. |
+| `GET` | `/v2/spaces/{space_id}/workflows/full-research/tasks` | Lists typed supervisor tasks. |
 | `GET` | `/v2/spaces/{space_id}/workflows/full-research/tasks/{task_id}` | Returns typed supervisor detail. |
 | `GET` | `/v2/spaces/{space_id}/workflows/full-research/dashboard` | Returns typed dashboard summary. |
 | `POST` | `/v2/spaces/{space_id}/workflows/full-research/tasks/{task_id}/suggested-updates/{candidate_index}/decision` | Promotes or rejects one supervisor briefing-chat candidate. |
@@ -782,10 +782,10 @@ Most users should start with:
 
 Advanced or lower-level surfaces:
 
-- `/v2/spaces/{space_id}/proposals/*`
+- `/v2/spaces/{space_id}/proposed-updates/*`
 - inline chat candidate review
 - `/v2/spaces/{space_id}/sources/marrvel/ingestion`
-- graph explorer entity, claim, evidence, and unified-document routes
+- evidence-map entity, claim, evidence, and unified-document routes
 - `/v2/spaces/{space_id}/members/*`
 - `/v2/spaces/{space_id}/settings`
 - direct generic `/tasks` creation
@@ -803,7 +803,7 @@ Read endpoints include:
 - document list/detail
 - review queue list/detail
 - proposal list/detail
-- graph explorer reads
+- evidence-map reads
 - saved PubMed and MARRVEL result reads
 - research state
 - supervisor list/detail/dashboard

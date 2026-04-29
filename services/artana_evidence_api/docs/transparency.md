@@ -13,8 +13,8 @@ Use this page when you want to answer:
 
 Every run now exposes two dedicated transparency endpoints:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/capabilities`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/policy-decisions`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/capabilities`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/decisions`
 
 Every run also persists two matching artifacts:
 
@@ -33,22 +33,22 @@ Think about transparency in three layers:
    started.
 2. `events`
    This is the raw lifecycle stream for the run.
-3. `policy-decisions`
+3. `decisions`
    This is the cleaned-up ordered record of what the run actually tried to do,
    including later manual review actions when they can be tied back to the run.
 
 If you only remember one rule:
 
 - use `capabilities` to answer "what could this run do?"
-- use `policy-decisions` to answer "what did this run do?"
+- use `decisions` to answer "what did this run do?"
 
 ## When To Use Each Endpoint
 
 | Endpoint | Use it when you want to know | Typical reader |
 | --- | --- | --- |
-| `/runs/{run_id}/capabilities` | what tools were visible, blocked, or filtered | developers, operators, UI clients |
-| `/runs/{run_id}/policy-decisions` | what the run executed and how those decisions ended | developers, reviewers, auditors |
-| `/runs/{run_id}/events` | the raw lifecycle trace | debugging and low-level inspection |
+| `/tasks/{task_id}/capabilities` | what tools were visible, blocked, or filtered | developers, operators, UI clients |
+| `/tasks/{task_id}/decisions` | what the run executed and how those decisions ended | developers, reviewers, auditors |
+| `/tasks/{task_id}/events` | the raw lifecycle trace | debugging and low-level inspection |
 
 ## `capabilities`: What The Run Could Use
 
@@ -81,9 +81,9 @@ Example:
 export HARNESS_URL="http://localhost:8091"
 export TOKEN="your-jwt-token"
 export SPACE_ID="11111111-1111-1111-1111-111111111111"
-export RUN_ID="44444444-4444-4444-4444-444444444444"
+export TASK_ID="44444444-4444-4444-4444-444444444444"
 
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/capabilities" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/capabilities" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -94,7 +94,7 @@ What to look for first:
 - `policy_profile`
 - `artifact_key`
 
-## `policy-decisions`: What The Run Actually Did
+## `decisions`: What The Run Actually Did
 
 This endpoint returns the ordered decision log for the run.
 
@@ -130,13 +130,13 @@ Important fields on each decision:
 Example:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/policy-decisions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/decisions" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ## What `decision_source` Means
 
-`policy-decisions` can contain more than one kind of decision.
+`decisions` can contain more than one kind of decision.
 
 Current values:
 
@@ -154,11 +154,11 @@ This means one run can show both:
 
 ## Common Questions
 
-### Why do I sometimes see tools in `capabilities` but not in `policy-decisions`?
+### Why do I sometimes see tools in `capabilities` but not in `decisions`?
 
 Because the run was allowed to use those tools, but it did not need them.
 
-### Why can `policy-decisions` be empty?
+### Why can `decisions` be empty?
 
 This usually means one of these things:
 
@@ -176,14 +176,14 @@ promoted or rejected, that decision can still be attached to the original run.
 
 `events` is the raw lifecycle log.
 
-`policy-decisions` is the structured answer to:
+`decisions` is the structured answer to:
 
 - what was attempted
 - what decision was taken
 - what was the outcome
 
 Use `events` for low-level debugging.
-Use `policy-decisions` for product and audit views.
+Use `decisions` for product and audit views.
 
 ## Typical Workflow
 
@@ -191,20 +191,20 @@ This is the recommended order when you are inspecting a run:
 
 1. Start or fetch a run.
 2. Read `capabilities` once to see the allowed tool surface.
-3. Read `policy-decisions` to see what the run actually executed.
+3. Read `decisions` to see what the run actually executed.
 4. Read `events` only if you need the lower-level trace.
-5. Read `artifacts` if you want the actual content outputs.
+5. Read `outputs` if you want the actual content outputs.
 
 In practice, most users should use this sequence:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/capabilities" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/capabilities" \
   -H "Authorization: Bearer $TOKEN"
 
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/policy-decisions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/decisions" \
   -H "Authorization: Bearer $TOKEN"
 
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/artifacts" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/outputs" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -215,11 +215,11 @@ A good first example is a verified chat run.
 Typical inspection flow:
 
 1. send a chat message
-2. record the returned `run.id`
+2. record the returned `task_id`
 3. open `capabilities`
-4. open `policy-decisions`
+4. open `decisions`
 5. if the chat produced graph-write candidates, review one
-6. open `policy-decisions` again and confirm the manual review entry is there
+6. open `decisions` again and confirm the manual review entry is there
 
 That gives you a full trace from:
 
@@ -229,7 +229,7 @@ That gives you a full trace from:
 
 ## Example: Approval-Gated Curation Run
 
-For curation runs, `policy-decisions` is especially useful because it helps
+For curation runs, `decisions` is especially useful because it helps
 explain pauses and resumes.
 
 Typical pattern:
@@ -240,7 +240,7 @@ Typical pattern:
 - the run resumes
 - final actions are recorded
 
-This is much easier to follow through `policy-decisions` than by reading raw
+This is much easier to follow through `decisions` than by reading raw
 events alone.
 
 ## Artifact Keys To Remember
@@ -254,10 +254,10 @@ You can fetch them directly through the artifact routes if you already know the
 key:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/artifacts/run_capabilities" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/outputs/run_capabilities" \
   -H "Authorization: Bearer $TOKEN"
 
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/artifacts/policy_decisions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/outputs/policy_decisions" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -267,12 +267,12 @@ clearest public API.
 ## Best Practices
 
 - Always inspect `capabilities` before assuming a missing tool call is a bug.
-- Use `policy-decisions` as the default audit view for runs.
+- Use `decisions` as the default audit view for runs.
 - Use `events` only when you need lower-level lifecycle detail.
-- For UI pages, show `capabilities` as a snapshot and `policy-decisions` as a
+- For UI pages, show `capabilities` as a snapshot and `decisions` as a
   timeline.
 - For support/debugging, compare the four views in this order:
-  `progress`, `capabilities`, `policy-decisions`, `events`.
+  `progress`, `capabilities`, `decisions`, `events`.
 
 ## Related Docs
 

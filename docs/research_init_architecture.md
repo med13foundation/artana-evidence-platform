@@ -1,18 +1,21 @@
-# Research Init Architecture
+# Research Plan Architecture
 
-Status date: April 25, 2026.
+Status date: April 29, 2026.
 
-Research init is the Evidence API workflow for starting a new research space
+Research plan is the Evidence API workflow for starting a new research space
 from an objective, seed terms, and selected sources.
 
-Entry point:
+Compatibility note: the older research-init route is still available for
+existing clients, but current public docs and examples use the v2
+`research-plan` entry point.
 
-- `POST /v1/spaces/{space_id}/research-init`
+Public entry point:
+
 - `POST /v2/spaces/{space_id}/research-plan`
 
-Related direct workflow endpoint:
+Related workflow endpoint:
 
-- `POST /v1/spaces/{space_id}/agents/research-bootstrap/runs`
+- `POST /v2/spaces/{space_id}/workflows/topic-setup/tasks`
 
 Related source capability endpoints:
 
@@ -23,28 +26,30 @@ Related source capability endpoints:
 ## Current Flow
 
 ```text
-research-init request
+research-plan request
   -> build source plan
   -> run PubMed discovery when enabled
   -> run structured-source enrichment when enabled
   -> store source/document records
   -> extract or stage reviewable findings
   -> optionally call research-bootstrap
-  -> save run state, artifacts, and research state
+  -> save task state, outputs, and research state
 ```
 
-The runtime is queue-aware through the Evidence API run infrastructure. Callers
-can inspect run progress, events, artifacts, policy decisions, and workspace
-state through `/v1/spaces/{space_id}/runs/*`.
+The runtime is queue-aware through the Evidence API task infrastructure. Callers
+can inspect task progress, events, outputs, decisions, and working state through
+`/v2/spaces/{space_id}/tasks/*`.
 
 ## Source Coverage In This Service
 
-Research-init source keys are registered in
-`services/artana_evidence_api/source_registry.py`. The registry tells clients
-which sources support direct search, which sources run through `research-plan`,
-and which sources require live external calls or credentials.
+Research-plan source keys are registered in
+`services/artana_evidence_api/source_registry.py`, while direct-search route
+behavior is registered through `services/artana_evidence_api/source_plugins/`.
+Together they tell clients which sources support direct search, which sources
+run through `research-plan`, and which sources require live external calls or
+credentials.
 
-Research-init code currently has service-local source support for:
+Research-plan runtime currently has service-local source support for:
 
 - PubMed;
 - MARRVEL;
@@ -77,7 +82,7 @@ MONDO remains a research-plan/background ontology grounding step rather than a
 direct search endpoint. Text and PDF remain document-capture sources. HGNC
 remains an enrichment/grounding source.
 
-Generic v2 source-search responses and research-init-created source documents
+Generic v2 source-search responses and research-plan-created source documents
 include `source_capture` metadata with the source key, capture stage, locator,
 query, run/search id, result count, source family, and compact provenance.
 Structured direct source searches persist their captured search response in the
@@ -117,7 +122,7 @@ research_init_runtime
 
 The distinction is practical:
 
-- research-init is document/source heavy;
+- research-plan is document/source heavy;
 - bootstrap is graph/reasoning heavy.
 
 ## Governance
@@ -125,13 +130,13 @@ The distinction is practical:
 Research init should stage proposals or review items rather than silently
 turning AI output into trusted graph truth. Review happens through:
 
-- `GET /v1/spaces/{space_id}/review-queue`
-- `POST /v1/spaces/{space_id}/review-queue/{item_id}/actions`
+- `GET /v2/spaces/{space_id}/review-items`
+- `POST /v2/spaces/{space_id}/review-items/{item_id}/decision`
 
 Advanced direct-write endpoints still exist, such as
-`POST /v1/spaces/{space_id}/marrvel/ingest`, but normal researcher workflows
-should prefer discovery, extraction, and review. Direct source search and
-research-plan orchestration both stage work before graph promotion.
+`POST /v2/spaces/{space_id}/sources/marrvel/ingestion`, but normal researcher
+workflows should prefer discovery, extraction, and review. Direct source
+search and research-plan orchestration both stage work before graph promotion.
 
 ## Current Files
 
@@ -139,6 +144,7 @@ research-plan orchestration both stage work before graph promotion.
 | --- | --- |
 | `services/artana_evidence_api/routers/research_init.py` | API route |
 | `services/artana_evidence_api/source_registry.py` | source capability registry |
+| `services/artana_evidence_api/source_plugins/` | source plugin contracts and route registration |
 | `services/artana_evidence_api/source_result_capture.py` | normalized source-result capture metadata |
 | `services/artana_evidence_api/routers/v2_public.py` | v2 source and research-plan routes |
 | `services/artana_evidence_api/research_init_runtime.py` | main runtime |

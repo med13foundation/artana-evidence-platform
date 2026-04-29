@@ -315,7 +315,7 @@ If you are learning the service, start here:
 For exact request and response schemas, use one of these:
 
 - interactive docs at `/docs`
-- [openapi.json](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/openapi.json)
+- [openapi.json](../openapi.json)
 
 For a minimal external-project flow, see
 `services/artana_evidence_db/examples/http_only_client_flow.py`. It uses only

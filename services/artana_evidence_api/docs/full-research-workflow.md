@@ -44,16 +44,16 @@ Choose one:
 If you are scripting the API from Python, call the same HTTP routes with
 `httpx` or `requests`. The matching route families are:
 
-- `POST /v1/spaces/{space_id}/documents/text`
-- `POST /v1/spaces/{space_id}/documents/pdf`
-- `POST /v1/spaces/{space_id}/chat-sessions/{session_id}/messages`
-- `POST /v1/spaces/{space_id}/pubmed/searches`
+- `POST /v2/spaces/{space_id}/documents/text`
+- `POST /v2/spaces/{space_id}/documents/pdf`
+- `POST /v2/spaces/{space_id}/chat-sessions/{session_id}/messages`
+- `POST /v2/spaces/{space_id}/sources/pubmed/searches`
 
 If your space is brand new and you want the service to guide setup before you
 start reviewing evidence, the newer setup endpoints are:
 
-- `POST /v1/spaces/{space_id}/agents/research-onboarding/runs`
-- `POST /v1/spaces/{space_id}/research-init`
+- `POST /v2/spaces/{space_id}/workflows/research-onboarding/tasks`
+- `POST /v2/spaces/{space_id}/research-plan`
 
 ## What The Main Terms Mean
 
@@ -79,7 +79,7 @@ PDF workflow:
 - that enriched text is then used for proposal staging
 
 This means PDF upload alone does not immediately create proposals. The
-`/extract` call is the point where enrichment and proposal staging happen.
+`/extraction` call is the point where enrichment and proposal staging happen.
 
 ## Use Case 1: Review One Paper
 
@@ -92,7 +92,7 @@ Goal:
 Upload the PDF:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/pdf" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/pdf" \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@./med13.pdf" \
   -F "title=MED13 paper"
@@ -101,7 +101,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/pdf" \
 Run extraction:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/<document_id>/extraction" \
   -H "Authorization: Bearer $TOKEN" \
   -X POST
 ```
@@ -109,14 +109,14 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
 List the document-scoped review queue:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items?document_id=<document_id>" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 Act on one queue item:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/decision" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -157,7 +157,7 @@ First upload or submit the document.
 Then create a chat session:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -168,7 +168,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
 Send the message with the tracked `document_id`:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -182,7 +182,7 @@ If the answer is verified and you want reviewed graph changes, stage generic
 proposals from the chat result:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/proposals/graph-write" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/suggested-updates" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -193,7 +193,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/proposals/g
 Then review those staged items through the review queue:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -208,7 +208,7 @@ Goal:
 Start the search:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/sources/pubmed/searches" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -223,7 +223,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
 Fetch the saved job:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches/<job_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/sources/pubmed/searches/<job_id>" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

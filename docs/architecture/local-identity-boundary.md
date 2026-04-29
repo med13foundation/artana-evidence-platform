@@ -1,6 +1,6 @@
 # Local Identity Boundary
 
-Status: implemented as v1.
+Status: implemented with v2 public routes and v1 compatibility routes.
 
 The Evidence API owns a local identity boundary for the current testing phase.
 The implementation is SQL-backed and in-process, but workflow code talks to an
@@ -26,17 +26,18 @@ space membership rows directly.
 
 The public tester flow is:
 
-- `POST /v1/auth/bootstrap`: create the first self-hosted user and initial API
+- `POST /v2/auth/bootstrap`: create the first self-hosted user and initial API
   key using `X-Artana-Bootstrap-Key`.
-- `POST /v1/auth/testers`: admin-only tester creation with an initial API key.
-- `GET /v1/auth/me`: resolve the current API key or bearer-token identity.
-- `POST /v1/auth/api-keys`: create an additional API key for the current user.
-- `GET /v1/auth/api-keys`: list API-key summaries.
-- `DELETE /v1/auth/api-keys/{key_id}`: revoke one key.
-- `POST /v1/auth/api-keys/{key_id}/rotate`: revoke and replace one key.
+- `POST /v2/auth/testers`: admin-only tester creation with an initial API key.
+- `GET /v2/auth/me`: resolve the current API key or bearer-token identity.
+- `POST /v2/auth/api-keys`: create an additional API key for the current user.
+- `GET /v2/auth/api-keys`: list API-key summaries.
+- `DELETE /v2/auth/api-keys/{key_id}`: revoke one key.
+- `POST /v2/auth/api-keys/{key_id}/rotate`: revoke and replace one key.
 
 Normal requests can use `X-Artana-Key`. Bearer JWTs are also supported by the
-auth layer.
+auth layer. Existing v1 compatibility routes mirror this auth surface for older
+clients; new docs, scripts, and testers should use the v2 routes above.
 
 ## Current Tables
 
@@ -49,7 +50,7 @@ The gateway currently uses Evidence API tables:
 
 Space creation explicitly ensures an owner through the gateway. SQL-backed
 member addition requires the target user to exist first; admins should create
-testers with `POST /v1/auth/testers` instead of relying on hidden placeholder
+testers with `POST /v2/auth/testers` instead of relying on hidden placeholder
 users.
 
 ## Future Extraction Path

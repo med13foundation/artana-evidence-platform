@@ -38,10 +38,9 @@ service contracts.
 The product-facing public route is `POST /v2/spaces/{space_id}/evidence-runs`.
 Follow-up runs use
 `POST /v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups`.
-The lower-level evidence-selection router also exposes
-`/v1/spaces/{space_id}/agents/evidence-selection/runs` and its follow-up route
-for harness-oriented callers. This tracker does not deprecate that lower-level
-route; product docs should keep steering normal users to the `/v2` front door.
+The lower-level evidence-selection router still exists for harness-oriented
+compatibility, but product docs should keep steering normal users to the
+`/v2` front door.
 
 The agentic-discovery contract has four bounded decisions:
 

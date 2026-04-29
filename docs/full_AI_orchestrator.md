@@ -1,14 +1,14 @@
 # Full AI Orchestrator
 
-Status date: April 23, 2026.
+Status date: April 29, 2026.
 
 The full AI orchestrator is the Evidence API's broadest research workflow. It
-wraps research-init with planner checkpoints, guarded decisions, artifacts, and
+wraps research-plan with planner checkpoints, guarded decisions, outputs, and
 operator-controllable rollout modes.
 
-Endpoint:
+Public endpoint:
 
-- `POST /v1/spaces/{space_id}/agents/full-ai-orchestrator/runs`
+- `POST /v2/spaces/{space_id}/workflows/full-research/tasks`
 
 Primary files:
 
@@ -21,13 +21,13 @@ Primary files:
 
 The orchestrator can:
 
-- create a durable run;
-- execute research-init style source discovery and extraction;
+- create a durable task;
+- execute research-plan style source discovery and extraction;
 - use planner checkpoints in shadow or guarded modes;
-- record action history and decision artifacts;
+- record action history and decision outputs;
 - preserve replay bundles and source execution summaries;
-- expose progress, events, artifacts, policy decisions, and workspace state
-  through the shared run APIs.
+- expose progress, events, outputs, decisions, and working state through the
+  shared task APIs.
 
 ## Modes
 
@@ -40,7 +40,7 @@ space settings and request/runtime options:
   actions under guardrails.
 
 Guarded behavior is intentionally narrow. The orchestrator should not bypass
-the review queue or graph governance boundary.
+the review gate or graph governance boundary.
 
 ## Trust Boundary
 
@@ -52,12 +52,12 @@ by proposal/review flows and graph service policy.
 
 Use these runtime endpoints to inspect behavior:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/progress`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/events`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/policy-decisions`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/workspace`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/progress`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/events`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/decisions`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/working-state`
 
 The old long-form canary reports are not kept in `docs/`. New rollout evidence
 should live under ignored `reports/` output and be summarized in PRs.

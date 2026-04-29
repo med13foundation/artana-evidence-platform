@@ -4,10 +4,10 @@ This folder explains the standalone `artana_evidence_db` service in plain langua
 
 If you are new to the service, read these files in order:
 
-1. [Getting Started](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/docs/getting-started.md)
-2. [Core Concepts](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/docs/concepts.md)
-3. [Data Model](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/docs/data-model.md)
-4. [API Reference](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/docs/api-reference.md)
+1. [Getting Started](./getting-started.md)
+2. [Core Concepts](./concepts.md)
+3. [Data Model](./data-model.md)
+4. [API Reference](./api-reference.md)
 
 Planning:
 
@@ -15,10 +15,10 @@ Planning:
 
 Useful companion files:
 
-- Service overview: [README.md](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/README.md)
-- Container definition: [Dockerfile](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/Dockerfile)
+- Service overview: [README.md](../README.md)
+- Container definition: [Dockerfile](../Dockerfile)
 - Interactive API docs when the service is running: `/docs`
-- Raw OpenAPI spec: [openapi.json](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/openapi.json)
+- Raw OpenAPI spec: [openapi.json](../openapi.json)
 
 What this service is:
 

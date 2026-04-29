@@ -34,6 +34,11 @@ STALE_ROOT_PATH_REFERENCES = (
     "src/infrastructure",
     "src/type_definitions",
 )
+DOC_ROOTS = (
+    "docs",
+    "services/artana_evidence_api/docs",
+    "services/artana_evidence_db/docs",
+)
 
 
 def _read_text(relative_path: str) -> str:
@@ -172,6 +177,24 @@ def test_readme_presents_independent_backend_project() -> None:
         / "artana_evidence_db"
         / "artana-evidence-db.generated.ts"
     ).exists()
+
+
+def test_docs_do_not_link_removed_project_status() -> None:
+    """Regression: docs indexes must not point at deleted status files."""
+
+    assert not (REPO_ROOT / "docs" / "project_status.md").exists()
+    for relative_path in ("README.md", "docs/README.md"):
+        assert "project_status.md" not in _read_text(relative_path)
+
+
+def test_docs_do_not_use_machine_absolute_paths() -> None:
+    """Regression: reusable docs must not link to one developer's checkout."""
+
+    for doc_root in DOC_ROOTS:
+        for path in (REPO_ROOT / doc_root).rglob("*.md"):
+            text = path.read_text(encoding="utf-8")
+            assert "/Users/alvaro" not in text, path.relative_to(REPO_ROOT)
+            assert "/Users/alvaro1" not in text, path.relative_to(REPO_ROOT)
 
 
 def test_readme_visualizes_two_service_system_shape() -> None:

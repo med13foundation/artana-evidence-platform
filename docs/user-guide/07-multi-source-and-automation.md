@@ -23,11 +23,13 @@ Endpoints:
 - `POST /v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups`
 
 Current behavior: evidence runs default to `planner_mode: "model"`. When the
-model planner is configured, you can submit only a goal/instructions and the
-harness will choose a small set of supported source searches, run them, screen
-the durable results, create guarded handoffs, and stage review-gated proposals
-or review items. You can still provide `source_searches` or `candidate_searches`
-directly for manual control. Shadow mode records recommendations without
+model planner is configured, you can submit a goal/instructions plus
+`live_network_allowed: true`, and the harness will choose a small set of
+supported source searches, run them, screen the durable results, create guarded
+handoffs, and stage review-gated proposals or review items. You can still
+provide `source_searches` or `candidate_searches` directly for manual control.
+Any request that creates live source searches must set
+`live_network_allowed: true`. Shadow mode records recommendations without
 creating handoffs.
 If model planning is not configured, goal-only requests return a clear
 unavailable error; explicit source-search requests can still run
@@ -38,7 +40,8 @@ Goal-only example:
 ```json
 {
   "goal": "Find evidence linking MED13 variants to congenital heart disease",
-  "mode": "guarded"
+  "mode": "guarded",
+  "live_network_allowed": true
 }
 ```
 
@@ -49,6 +52,7 @@ Manual deterministic example:
   "goal": "Find evidence linking MED13 variants to congenital heart disease",
   "mode": "guarded",
   "planner_mode": "deterministic",
+  "live_network_allowed": true,
   "source_searches": [
     {
       "source_key": "clinvar",
@@ -65,6 +69,7 @@ Explicit source-search example:
 {
   "goal": "Find evidence linking MED13 variants to congenital heart disease",
   "mode": "guarded",
+  "live_network_allowed": true,
   "source_searches": [
     {
       "source_key": "clinvar",
@@ -81,6 +86,7 @@ PubMed uses a nested query payload:
 {
   "goal": "Find papers linking MED13 variants to congenital heart disease",
   "mode": "guarded",
+  "live_network_allowed": true,
   "source_searches": [
     {
       "source_key": "pubmed",
@@ -101,6 +107,7 @@ MARRVEL uses gene or variant query fields:
 {
   "goal": "Find variant-context evidence for MED13",
   "mode": "guarded",
+  "live_network_allowed": true,
   "source_searches": [
     {
       "source_key": "marrvel",

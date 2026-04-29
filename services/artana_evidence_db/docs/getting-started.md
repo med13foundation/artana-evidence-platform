@@ -22,7 +22,7 @@ In one sentence:
 ## What The Container Contains
 
 The runtime container is defined in
-[Dockerfile](/Users/alvaro1/Documents/med13/foundation/resource_library/services/artana_evidence_db/Dockerfile).
+[Dockerfile](../Dockerfile).
 
 At runtime it contains:
 

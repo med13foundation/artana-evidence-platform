@@ -198,6 +198,6 @@ Do not:
   `source_plugins/pdf.py`;
 - register plugins through import side effects;
 - put database sessions, routers, SQLAlchemy models, graph-service internals,
-  or review-queue persistence inside plugins;
+  or review-item persistence inside plugins;
 - make document-ingestion plugins dispatch extraction/review side effects;
 - add new source-key live-search handler maps outside the plugin registry.

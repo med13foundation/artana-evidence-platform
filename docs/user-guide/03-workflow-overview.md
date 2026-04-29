@@ -37,7 +37,7 @@ when you need more control or debugging visibility.
 | Inspect sources | `GET /v2/sources` | Confirm which sources support direct search or enrichment |
 | Search one source directly | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` | Manually pre-capture or debug source-specific results |
 | Hand off one selected source result | `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs` | Manually turn one captured result into extraction input |
-| Create an older research plan | `POST /v2/spaces/{space_id}/research-plan` | Use legacy source-enrichment planning workflows |
+| Create a research plan | `POST /v2/spaces/{space_id}/research-plan` | Use source-enrichment planning workflows |
 | Add your own evidence | `POST /v2/spaces/{space_id}/documents/text` and `POST /v2/spaces/{space_id}/documents/pdf` | Upload a MED13 paper, note, or copied abstract |
 | Extract from one document | `POST /v2/spaces/{space_id}/documents/{document_id}/extraction` | Turn a specific document into reviewable suggestions |
 
