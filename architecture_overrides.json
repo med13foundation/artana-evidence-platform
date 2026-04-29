@@ -2,212 +2,233 @@
     "file_size": [
         {
             "path": "services/artana_evidence_api/research_init_runtime.py",
-            "max_lines": 4200,
+            "max_lines": 3822,
             "reason": "Research-init orchestration is intentionally centralized while the extracted evidence API stabilizes run planning, source enrichment, and graph handoff behavior.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/routers/v2_public.py",
-            "max_lines": 3900,
+            "max_lines": 2326,
             "reason": "Public v2 router consolidates request models, typed dispatch, and response construction across many endpoints; per-domain splits are deferred until the v2 route surface stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/full_ai_orchestrator_runtime.py",
-            "max_lines": 3500,
+            "max_lines": 3222,
             "reason": "Full-AI orchestration remains co-located during guarded rollout hardening; split by planning, execution, and reporting is tracked as follow-up work.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner.py",
-            "max_lines": 3400,
+            "max_lines": 3141,
             "reason": "Shadow planning is broad while planner evidence, guardrail, and comparison contracts are still being stabilized.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "scripts/run_phase1_guarded_eval.py",
-            "max_lines": 3300,
+            "max_lines": 3109,
             "reason": "Phase-1 guarded eval harness drives fixture preparation, run execution, and reporting in one script for reproducible offline runs.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/phase1_compare.py",
-            "max_lines": 2800,
+            "max_lines": 2613,
             "reason": "Phase-1 compare module co-locates rollout-mode diff logic, summary aggregation, and reporting while compare contracts are still being stabilized.",
-            "expires_on": "2026-12-31"
-        },
-        {
-            "path": "services/artana_evidence_api/document_extraction.py",
-            "max_lines": 2600,
-            "reason": "Document extraction keeps parsing, normalization, and proposal preparation together until the variant-aware extraction seams settle.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/sqlalchemy_stores.py",
-            "max_lines": 2600,
+            "max_lines": 2382,
             "reason": "Evidence API stores are temporarily consolidated during extracted-repo migration and database contract hardening.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/phase2_shadow_compare.py",
-            "max_lines": 2500,
+            "max_lines": 2328,
             "reason": "Phase-2 shadow compare module co-locates shadow diff, baseline reconciliation, and reporting while shadow contracts are still being stabilized.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/research_bootstrap_runtime.py",
-            "max_lines": 2400,
+            "max_lines": 2220,
             "reason": "Research-bootstrap orchestration is co-located while bootstrap planning, source seeding, and proposal handoff contracts stabilize.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/ai_full_mode_service.py",
-            "max_lines": 2300,
+            "max_lines": 2097,
             "reason": "Graph full-mode service logic remains centralized while workflow persistence and relation-governance contracts stabilize.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/research_init_source_enrichment.py",
-            "max_lines": 2300,
+            "max_lines": 2150,
             "reason": "Source enrichment intentionally consolidates per-source gateway, document, and proposal logic; decomposition is tracked under the source-boundary work in #16.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "scripts/run_full_ai_real_space_canary.py",
-            "max_lines": 2300,
+            "max_lines": 2082,
             "reason": "Full-AI real-space canary harness drives canary setup, run orchestration, and reporting in one script for reproducible canary cycles.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/routers/supervisor_runs.py",
-            "max_lines": 2200,
+            "max_lines": 2019,
             "reason": "Supervisor-runs router consolidates request validation, dispatch, and run-state shaping; per-endpoint splits are deferred until the route surface stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/graph_domain_config.py",
-            "max_lines": 2000,
+            "max_lines": 1825,
             "reason": "Graph domain config groups governance defaults, allowed-relation maps, and domain rules together for review coherence during contract stabilization.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/graph_workflow_service.py",
-            "max_lines": 1900,
+            "max_lines": 1752,
             "reason": "Graph workflow orchestration is kept together while graph run lifecycle behavior is hardened in the extracted service.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/dictionary_management_service.py",
-            "max_lines": 1900,
+            "max_lines": 1725,
             "reason": "Dictionary management spans governance, constraints, and promotion flows; decomposition is deferred until the standalone graph API stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/supervisor_runtime.py",
-            "max_lines": 1900,
+            "max_lines": 1775,
             "reason": "Supervisor runtime keeps run-lifecycle, evidence handoff, and reporting co-located while supervisor contracts are still being hardened.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/artana_stores.py",
-            "max_lines": 1900,
+            "max_lines": 1765,
             "reason": "Evidence API artana stores are temporarily consolidated during extracted-repo migration and database contract hardening, mirroring sqlalchemy_stores.py.",
-            "expires_on": "2026-12-31"
-        },
-        {
-            "path": "services/artana_evidence_api/evidence_selection_runtime.py",
-            "max_lines": 1900,
-            "reason": "Evidence-selection runtime keeps source screening, extraction handoff, proposal creation, and artifact reporting co-located while the harness contract stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/kernel_dictionary_models.py",
-            "max_lines": 1800,
+            "max_lines": 1675,
             "reason": "Dictionary ORM models are grouped for schema coherence during migration and contract stabilization.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/dictionary_repository.py",
-            "max_lines": 1800,
+            "max_lines": 1672,
             "reason": "Dictionary repository methods remain broad while governance, constraint, and search workflows are extracted by concern.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/continuous_learning_runtime.py",
-            "max_lines": 1800,
+            "max_lines": 1612,
             "reason": "Continuous-learning orchestration remains centralized while learning-loop, evaluation, and feedback contracts are still being stabilized.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "scripts/run_live_evidence_session_audit.py",
-            "max_lines": 1700,
+            "max_lines": 1566,
             "reason": "Live-evidence session-audit harness drives session preparation, audit run, and reporting in one script for reproducible live audits.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/types/graph_contracts.py",
-            "max_lines": 1700,
+            "max_lines": 1553,
             "reason": "Graph contracts group typed request/response schemas that travel together for the standalone graph boundary; splitting is deferred until the boundary stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/source_search_handoff.py",
-            "max_lines": 1700,
+            "max_lines": 1276,
             "reason": "Source-search handoff centralizes durable handoff persistence, supported-source policy, and normalization rules; decomposition is tracked under the source-boundary work in #16.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/variant_aware_document_extraction.py",
-            "max_lines": 1600,
+            "max_lines": 1494,
             "reason": "Variant-aware extraction co-locates variant detection, normalization, and proposal preparation while variant-extraction seams settle.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/proposal_actions.py",
-            "max_lines": 1600,
+            "max_lines": 1481,
             "reason": "Proposal action handlers are grouped while proposal/review/governance contracts are still being stabilized.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/graph_transport.py",
-            "max_lines": 1600,
+            "max_lines": 1476,
             "reason": "Graph transport packages mutation/query plumbing and per-call typing while extraction-time contracts settle.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/dictionary_proposal_service.py",
-            "max_lines": 1500,
+            "max_lines": 1372,
             "reason": "Dictionary proposal service keeps proposal lifecycle, review gating, and persistence together while dictionary governance contracts mature.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/routers/chat.py",
-            "max_lines": 1500,
+            "max_lines": 1344,
             "reason": "Chat router consolidates request validation, dispatch, and response construction for chat endpoints; per-feature splits are deferred until the chat contract stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_support.py",
-            "max_lines": 1400,
+            "max_lines": 1266,
             "reason": "Shadow planner support utilities stay co-located while shadow planner contracts are still being stabilized.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/routers/dictionary.py",
-            "max_lines": 1400,
+            "max_lines": 1248,
             "reason": "Dictionary router consolidates request validation, dispatch, and response construction for dictionary endpoints; per-domain splits are deferred until the dictionary route surface stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_api/routers/documents.py",
-            "max_lines": 1400,
+            "max_lines": 1239,
             "reason": "Documents router consolidates request validation, dispatch, and response construction for document endpoints; per-feature splits are deferred until the document route surface stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         },
         {
             "path": "services/artana_evidence_db/routers/claims.py",
-            "max_lines": 1300,
+            "max_lines": 1205,
             "reason": "Claims router consolidates request validation, dispatch, and response construction for claim endpoints; per-feature splits are deferred until the claim route surface stabilizes.",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31"
         }
     ]
