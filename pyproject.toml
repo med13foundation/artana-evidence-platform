@@ -43,35 +43,16 @@ strict_equality = true
 show_error_codes = true
 disallow_any_generics = true
 disallow_any_unimported = true
+# Keep expression-level Any allowed because service boundaries intentionally
+# normalize JSON, Pydantic, SQLAlchemy, and external payloads with narrower
+# helpers and typed contracts instead of a global expression ban.
 disallow_any_expr = false
 [[tool.mypy.overrides]]
-module = [ "alembic.*", "requests.*", "requests",]
+module = [ "requests.*", "requests",]
+# requests is the only remaining runtime dependency without bundled stubs in
+# this environment; keep the override narrow and do not add service-local
+# modules here.
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [ "jsonschema", "jsonschema.*",]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [ "artana", "artana.*",]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [ "artana_evidence_db", "artana_evidence_db.*",]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [
-  "services.artana_evidence_db.legacy_dependency_factories",
-]
-disallow_untyped_defs = false
-
-[[tool.mypy.overrides]]
-module = [
-  "services.artana_evidence_db.routers.graph_views",
-  "services.artana_evidence_db.routers.reasoning_paths",
-]
-disable_error_code = [ "arg-type",]
 
 [tool.flake8]
 max-line-length = 88

@@ -7,9 +7,13 @@ import argparse
 import json
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from types import TracebackType
-from typing import Self
+from typing import TYPE_CHECKING, Protocol, Self, cast
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
 
 
 def _skip_dictionary_seed(*_args: object, **_kwargs: object) -> None:
@@ -32,6 +36,15 @@ class _NoopSession:
 
     def commit(self) -> None:
         """No-op commit for schema export."""
+
+
+class _GraphAppOpenAPIExportModule(Protocol):
+    """Module surface patched while rendering the graph OpenAPI document."""
+
+    SessionLocal: type[_NoopSession]
+    seed_builtin_dictionary_entries: Callable[..., None]
+    seed_biomedical_starter_concepts_for_existing_spaces: Callable[..., None]
+    create_app: Callable[[], FastAPI]
 
 
 def _parse_args() -> argparse.Namespace:
@@ -66,12 +79,14 @@ def render_openapi_document() -> str:
 
     import artana_evidence_db.app as graph_app_module
 
-    graph_app_module.SessionLocal = _NoopSession
-    graph_app_module.seed_builtin_dictionary_entries = _skip_dictionary_seed
-    graph_app_module.seed_biomedical_starter_concepts_for_existing_spaces = (
+    # Narrow the module to the monkey-patched export surface used only here.
+    graph_app_export_module = cast("_GraphAppOpenAPIExportModule", graph_app_module)
+    graph_app_export_module.SessionLocal = _NoopSession
+    graph_app_export_module.seed_builtin_dictionary_entries = _skip_dictionary_seed
+    graph_app_export_module.seed_biomedical_starter_concepts_for_existing_spaces = (
         _skip_dictionary_seed
     )
-    create_app = graph_app_module.create_app
+    create_app = graph_app_export_module.create_app
 
     document = create_app().openapi()
     return json.dumps(document, indent=2, sort_keys=True) + "\n"

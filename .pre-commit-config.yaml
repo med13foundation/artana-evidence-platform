@@ -31,10 +31,3 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
-
-      - id: graph-service-strict-import-type-check
-        name: graph service strict-import type check
-        entry: make -s graph-service-type-check-strict-imports
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
