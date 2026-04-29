@@ -1558,5 +1558,23 @@ Template:
     narrowing. The review also asked to confirm generic route pre-validation;
     `v2_public.py` calls `_require_direct_search_source(source_key)` before
     plugin dispatch.
+  - Claude second-opinion follow-up: completed and verified locally. Generic
+    create/get routes already require harness space write/read access and
+    pre-validate the source key before plugin dispatch. The real follow-up gap
+    was MARRVEL GET fallback durability: rebuilt MARRVEL results are now saved
+    into the direct-source search store, matching PubMed fallback semantics.
+    The route endpoint expectation map is now returned as an immutable mapping.
+    Follow-up regression coverage now asserts immutable endpoint-map behavior,
+    durable MARRVEL field preservation, and rebuilt-vs-stored payload parity.
+  - Command: `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_route_plugins.py services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_direct_source_route_plugins_cover_registry_sources services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_direct_source_route_plugin_registry_has_no_source_payloads services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_generic_source_search_routes_do_not_branch_on_source_keys services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_typed_direct_source_routes_are_registered_from_route_plugins services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_direct_source_typed_route_plugins_define_expected_public_routes services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_v2_public_has_no_concrete_direct_source_route_paths -q`
+  - Result: passed, 14 tests, with one existing FastAPI deprecation warning.
+  - Command: `make artana-evidence-api-static-checks`
+  - Result: passed after the Claude follow-up patch. Evidence API OpenAPI
+    remained up to date.
+  - Command: `make service-checks`
+  - Result: passed after the Claude follow-up patch. Coverage gate passed at
+    87.44%; expected opt-in live external API and localhost service tests were
+    skipped by their normal guards. Generated `coverage.xml` was restored as
+    unrelated churn.
   - Command: `git diff --check`
   - Result: passed after final docs update.

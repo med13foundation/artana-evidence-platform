@@ -341,9 +341,13 @@ def get_marrvel_source_search_payload(
         created_at=completed_at,
         completed_at=completed_at,
     )
-    return _marrvel_result_payload(
+    saved_result = direct_source_search_store.save(
         durable_result,
-        source_capture=durable_result.source_capture.to_metadata(),
+        created_by=current_user.id,
+    )
+    return _marrvel_result_payload(
+        saved_result,
+        source_capture=saved_result.source_capture.to_metadata(),
     )
 
 

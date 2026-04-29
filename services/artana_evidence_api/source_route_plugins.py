@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from types import MappingProxyType
 from uuid import UUID
 
 from artana_evidence_api.source_registry import (
@@ -28,7 +30,7 @@ from artana_evidence_api.types.common import JSONObject
 from fastapi import APIRouter
 
 RouteKey = tuple[str, str]
-RouteEndpointMap = dict[RouteKey, RouteEndpoint]
+RouteEndpointMap = Mapping[RouteKey, RouteEndpoint]
 
 
 class DirectSourceRoutePluginRegistryError(LookupError):
@@ -110,11 +112,11 @@ def get_direct_source_search_payload(
 def direct_source_typed_route_endpoint_map() -> RouteEndpointMap:
     """Return typed direct-source route endpoint expectations for tests."""
 
-    endpoints: RouteEndpointMap = {}
+    endpoints: dict[RouteKey, RouteEndpoint] = {}
     for plugin in direct_source_route_plugins():
         for route in plugin.routes:
             endpoints[(route.path, route.method)] = route.endpoint
-    return endpoints
+    return MappingProxyType(endpoints)
 
 
 def register_direct_source_typed_routes(router: APIRouter) -> None:

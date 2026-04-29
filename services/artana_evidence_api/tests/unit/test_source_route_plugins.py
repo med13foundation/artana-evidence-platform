@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import MutableMapping
 from datetime import UTC, datetime
+from typing import cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -16,6 +18,7 @@ from artana_evidence_api.direct_source_search import (
     MarrvelSourceSearchResponse,
     PubMedSourceSearchResponse,
 )
+from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryResult
 from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
 from artana_evidence_api.source_result_capture import (
     SourceCaptureStage,
@@ -32,6 +35,7 @@ from artana_evidence_api.source_route_plugins import (
     DirectSourceRoutePluginRegistryError,
     create_direct_source_search_payload,
     direct_source_route_plugin_keys,
+    direct_source_typed_route_endpoint_map,
     get_direct_source_search_payload,
     require_direct_source_route_plugin,
 )
@@ -68,6 +72,21 @@ def _capture(source_key: str, search_id: UUID, query: str) -> SourceResultCaptur
     )
 
 
+class _MarrvelResultLookup:
+    def __init__(self, result: MarrvelDiscoveryResult) -> None:
+        self._result = result
+
+    def get_result(
+        self,
+        *,
+        owner_id: UUID,
+        result_id: UUID,
+    ) -> MarrvelDiscoveryResult | None:
+        if self._result.owner_id == owner_id and self._result.id == result_id:
+            return self._result
+        return None
+
+
 def test_unknown_direct_source_route_plugin_raises_registry_error() -> None:
     with pytest.raises(DirectSourceRoutePluginRegistryError):
         require_direct_source_route_plugin("not_a_source")
@@ -89,6 +108,18 @@ def test_generic_route_dependency_keys_match_route_plugin_keys() -> None:
     )
 
     assert set(dependencies.source_dependencies) == set(direct_source_route_plugin_keys())
+
+
+def test_typed_route_endpoint_map_is_read_only() -> None:
+    endpoint_map = direct_source_typed_route_endpoint_map()
+    route_key = next(iter(endpoint_map))
+    mutable_endpoint_map = cast(
+        "MutableMapping[tuple[str, str], object]",
+        endpoint_map,
+    )
+
+    with pytest.raises(TypeError):
+        mutable_endpoint_map[route_key] = endpoint_map[route_key]
 
 
 def test_stored_pubmed_get_does_not_require_discovery_service() -> None:
@@ -172,6 +203,67 @@ def test_stored_marrvel_get_does_not_require_discovery_service() -> None:
 
     assert payload["id"] == str(search_id)
     assert payload["source_key"] == "marrvel"
+
+
+def test_marrvel_get_fallback_persists_rebuilt_durable_result() -> None:
+    search_id = uuid4()
+    store = InMemoryDirectSourceSearchStore()
+    discovery_result = MarrvelDiscoveryResult(
+        id=search_id,
+        space_id=_SPACE_ID,
+        owner_id=_USER_ID,
+        query_mode="gene",
+        query_value="BRCA1",
+        gene_symbol="BRCA1",
+        resolved_gene_symbol="BRCA1",
+        resolved_variant=None,
+        taxon_id=9606,
+        status="completed",
+        gene_found=True,
+        gene_info={"symbol": "BRCA1", "entrezGeneId": 672},
+        omim_count=1,
+        variant_count=1,
+        panel_counts={"omim": 1},
+        panels={"omim": [{"phenotype": "Breast cancer"}]},
+        available_panels=["omim"],
+        created_at=datetime.now(UTC),
+    )
+
+    payload = get_direct_source_search_payload(
+        source_key="marrvel",
+        space_id=_SPACE_ID,
+        search_id=search_id,
+        dependencies=DirectSourceRouteDependencies(
+            current_user=_user(),
+            direct_source_search_store=store,
+            source_dependencies={"marrvel": _MarrvelResultLookup(discovery_result)},
+        ),
+    )
+
+    assert payload["id"] == str(search_id)
+    stored_result = store.get(
+        space_id=_SPACE_ID,
+        source_key="marrvel",
+        search_id=search_id,
+    )
+    assert isinstance(stored_result, MarrvelSourceSearchResponse)
+    assert stored_result.id == search_id
+    assert stored_result.space_id == _SPACE_ID
+    assert stored_result.source_key == "marrvel"
+    assert stored_result.query == "BRCA1"
+
+    payload_from_store = get_direct_source_search_payload(
+        source_key="marrvel",
+        space_id=_SPACE_ID,
+        search_id=search_id,
+        dependencies=DirectSourceRouteDependencies(
+            current_user=_user(),
+            direct_source_search_store=store,
+            source_dependencies={"marrvel": None},
+        ),
+    )
+
+    assert payload_from_store == payload
 
 
 def test_gateway_source_get_returns_404_for_missing_stored_result() -> None:
