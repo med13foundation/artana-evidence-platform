@@ -1,22 +1,22 @@
 # Deep Traceability
 
-Status date: April 23, 2026.
+Status date: April 29, 2026.
 
-Traceability in this repo is split between Evidence API run records, Artana
+Traceability in this repo is split between Evidence API task records, Artana
 kernel state, and graph provenance.
 
 ## Evidence API Runtime Trace
 
-Use these endpoints for one run:
+Use these endpoints for one Evidence API task:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/progress`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/events`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/policy-decisions`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/workspace`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/progress`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/events`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/decisions`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/working-state`
 
-Artifacts are the main way to inspect summaries, replay bundles, planner
+Outputs are the main way to inspect summaries, replay bundles, planner
 decisions, source execution summaries, graph snapshots, and generated briefs.
 
 ## Artana Kernel Trace

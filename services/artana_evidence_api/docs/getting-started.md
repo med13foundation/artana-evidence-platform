@@ -149,7 +149,7 @@ All examples below assume `SPACE_ID` is a research space you can access.
 If you want to confirm who the service thinks you are, call:
 
 ```bash
-curl -s "$HARNESS_URL/v1/auth/me" \
+curl -s "$HARNESS_URL/v2/auth/me" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -163,7 +163,7 @@ Example:
 ```bash
 export HARNESS_URL="http://localhost:8091"
 
-curl -s "$HARNESS_URL/v1/harnesses" \
+curl -s "$HARNESS_URL/v2/workflow-templates" \
   -H "X-TEST-USER-ID: 11111111-1111-1111-1111-111111111111" \
   -H "X-TEST-USER-EMAIL: researcher@example.com" \
   -H "X-TEST-USER-ROLE: researcher"
@@ -175,7 +175,7 @@ Use this only for local development and tests.
 
 If you want a normal Artana API key for SDK or HTTP usage, use:
 
-[`scripts/issue_artana_evidence_api_key.py`](/Users/alvaro/Documents/Code/monorepo/scripts/issue_artana_evidence_api_key.py)
+[`scripts/issue_artana_evidence_api_key.py`](../../../scripts/issue_artana_evidence_api_key.py)
 
 Fresh deployment, first key:
 
@@ -210,7 +210,7 @@ eval "$(venv/bin/python scripts/issue_artana_evidence_api_key.py ...)"
 Once you have a working credential, the easiest space setup call is:
 
 ```bash
-curl -s -X PUT "$HARNESS_URL/v1/spaces/default" \
+curl -s -X PUT "$HARNESS_URL/v2/spaces/default" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -243,7 +243,7 @@ What changes between text and PDF:
 Example with one text note:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/text" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -256,7 +256,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
 Then:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/<document_id>/extraction" \
   -H "Authorization: Bearer $TOKEN" \
   -X POST
 ```
@@ -264,14 +264,14 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
 Then:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items?document_id=<document_id>" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 Then:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -282,7 +282,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
 And finally:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -316,26 +316,26 @@ curl -s "$HARNESS_URL/health" -H "Authorization: Bearer $TOKEN"
 2. Confirm your identity:
 
 ```bash
-curl -s "$HARNESS_URL/v1/auth/me" -H "X-Artana-Key: $ARTANA_API_KEY"
+curl -s "$HARNESS_URL/v2/auth/me" -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
 3. Get or create your default space:
 
 ```bash
-curl -s -X PUT "$HARNESS_URL/v1/spaces/default" \
+curl -s -X PUT "$HARNESS_URL/v2/spaces/default" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
 4. List available harnesses:
 
 ```bash
-curl -s "$HARNESS_URL/v1/harnesses" -H "Authorization: Bearer $TOKEN"
+curl -s "$HARNESS_URL/v2/workflow-templates" -H "Authorization: Bearer $TOKEN"
 ```
 
 5. Start a research bootstrap run:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/research-bootstrap/runs" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/topic-setup/tasks" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -346,17 +346,17 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/agents/research-bootstrap/runs" \
   }'
 ```
 
-6. Inspect the run artifacts:
+6. Inspect the task outputs:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/<run_id>/artifacts" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 And then, once you have staged work, list the review queue:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -370,27 +370,27 @@ Every run now gives you two extra views:
 
 - `capabilities`
   what the run was allowed to use when it started
-- `policy-decisions`
+- `decisions`
   what the run actually executed, plus later human review decisions that can be
   tied back to the run
 
 If you only want one quick learning exercise after your first run, do this:
 
 1. start any run
-2. copy the returned `run.id`
+2. copy the returned `task_id`
 3. fetch `capabilities`
-4. fetch `policy-decisions`
+4. fetch `decisions`
 
 Example:
 
 ```bash
 export SPACE_ID="11111111-1111-1111-1111-111111111111"
-export RUN_ID="<run_id>"
+export TASK_ID="<task_id>"
 
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/capabilities" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/capabilities" \
   -H "Authorization: Bearer $TOKEN"
 
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/runs/$RUN_ID/policy-decisions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/$TASK_ID/decisions" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

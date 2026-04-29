@@ -74,7 +74,7 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items?document_id=<document_id>
 Promote one staged queue item:
 
 ```bash
-curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/decision" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -87,7 +87,7 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
 Reject one instead:
 
 ```bash
-curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/actions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/decision" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -157,7 +157,7 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/suggested-u
   }'
 ```
 
-Then review those staged items through `/review-items/<item_id>/actions`.
+Then review those staged items through `/review-items/<item_id>/decision`.
 
 Inline candidate review still exists, but generic proposal staging plus the
 review queue is the easier default to explain and operate.
@@ -258,12 +258,12 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/topic-setup/tasks" \
 
 What to look for in the response:
 
-- `run.id`
+- `task_id`
 - `graph_snapshot.id`
 - `research_brief`
 - `proposal_count`
 
-List the artifacts for the run:
+List the outputs for the task:
 
 ```bash
 curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs" \
@@ -350,7 +350,7 @@ What to inspect:
 List the staged mechanism proposals:
 
 ```bash
-curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/proposals?proposal_type=mechanism_candidate" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/proposed-updates?proposal_type=mechanism_candidate" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -385,7 +385,7 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/approvals" \
 Approve one action:
 
 ```bash
-curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/approvals/<approval_key>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/approvals/<approval_key>/decision" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -406,7 +406,7 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/resume" \
   }'
 ```
 
-Inspect final curation artifacts:
+Inspect final curation outputs:
 
 ```bash
 curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs/curation_summary" \
@@ -482,13 +482,13 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/resume" \
 
 5. fetch supervisor detail again and confirm it is completed
 
-## Use Case 9: Build A Dashboard For Supervisor Runs
+## Use Case 9: Build A Dashboard For Supervisor Tasks
 
 Goal:
 
 - show recent supervisor activity
 - highlight paused approval queues
-- deep-link into the most important runs
+- deep-link into the most important tasks
 
 Fetch the dashboard summary:
 
@@ -499,7 +499,7 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/dashboard" \
 
 Useful query examples:
 
-Only paused runs:
+Only paused tasks:
 
 ```bash
 curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/workflows/full-research/dashboard?status=paused" \
@@ -581,7 +581,7 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/events" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-If you need the actual output content, open the artifacts:
+If you need the actual output content, open the outputs:
 
 ```bash
 curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs" \
@@ -591,6 +591,6 @@ curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/tasks/<task_id>/outputs" \
 This is the recommended inspection order for operators and UI clients:
 
 1. `capabilities`
-2. `policy-decisions`
+2. `decisions`
 3. `events`
-4. `artifacts`
+4. `outputs`

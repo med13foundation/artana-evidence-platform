@@ -30,7 +30,7 @@ Examples:
 - `claim-curation`
 - `supervisor`
 
-Use `GET /v1/harnesses` to discover the available harnesses and their declared
+Use `GET /v2/workflow-templates` to discover the available harnesses and their declared
 outputs.
 
 ## Run
@@ -56,9 +56,9 @@ Common run statuses:
 
 There are two ways to start work:
 
-- generic route: `POST /v1/spaces/{space_id}/runs`
+- generic route: `POST /v2/spaces/{space_id}/tasks`
 - typed workflow routes such as
-  `/v1/spaces/{space_id}/agents/research-bootstrap/runs`
+  `/v2/spaces/{space_id}/workflows/topic-setup/tasks`
 
 For most users, the typed workflow routes are easier to use.
 
@@ -77,7 +77,7 @@ The progress payload includes:
 
 Use:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/progress`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/progress`
 
 ## Event
 
@@ -93,7 +93,7 @@ Examples:
 
 Use:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/events`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/events`
 
 ## Transparency
 
@@ -101,20 +101,20 @@ Every run now has two transparency views:
 
 - `capabilities`: the frozen list of tools the run was allowed to use when it
   started
-- `policy-decisions`: the ordered log of what the run actually tried to do,
+- `decisions`: the ordered log of what the run actually tried to do,
   plus any later human review decisions tied back to that run
 
 Use:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/capabilities`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/policy-decisions`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/capabilities`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/decisions`
 
 Use `capabilities` when you want to answer:
 
 - what tools could this run use?
 - which tools were filtered out?
 
-Use `policy-decisions` when you want to answer:
+Use `decisions` when you want to answer:
 
 - what did the run actually execute?
 - did it pause for approval?
@@ -124,7 +124,7 @@ The simplest way to think about transparency is:
 
 - `capabilities` is the allowed-tool snapshot
 - `events` is the raw lifecycle log
-- `policy-decisions` is the structured decision timeline
+- `decisions` is the structured decision timeline
 
 If you are new to these features, read [Run Transparency](./transparency.md)
 next.
@@ -144,8 +144,8 @@ Examples:
 
 Use:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts`
-- `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts/{artifact_key}`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs/{artifact_key}`
 
 ## Workspace Snapshot
 
@@ -161,7 +161,7 @@ Workspace is better for the latest evolving state, such as:
 
 Use:
 
-- `GET /v1/spaces/{space_id}/runs/{run_id}/workspace`
+- `GET /v2/spaces/{space_id}/tasks/{task_id}/working-state`
 
 ## Proposal
 
@@ -196,7 +196,7 @@ One queue item can wrap:
 - one review-only follow-up item
 - one paused-run approval
 
-That is why `/review-queue` is the easiest default review surface.
+That is why `/review-items` is the easiest default review surface.
 
 Typical actions:
 
@@ -352,7 +352,7 @@ Approval-gated runs:
 2. run pauses
 3. review approvals
 4. resume run
-5. inspect summary and artifacts
+5. inspect summary and outputs
 
 Supervisor runs:
 

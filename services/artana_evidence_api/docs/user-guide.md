@@ -38,7 +38,7 @@ It is a governed workflow system. That means it tries to keep track of:
 - what evidence supported it
 - what the AI suggested
 - what a human approved or rejected
-- what happened during a run
+- what happened during a task
 
 ## Data Sources: Not Just PubMed
 
@@ -76,7 +76,7 @@ These are sources the larger orchestration flows can use when enabled:
 - `mondo`
 
 In practice, these usually show up through larger workflows like
-`research-init`, bootstrap-style discovery, or guarded orchestration rather
+`research-plan`, bootstrap-style discovery, or guarded orchestration rather
 than through the very first beginner examples.
 
 ### Why PubMed Shows Up More In The Docs
@@ -99,9 +99,9 @@ full service accurately enough.
 Think of the service like this:
 
 1. you give it research material
-2. it creates a work session called a `run`
-3. the AI reads, searches, or reasons inside that run
-4. the service saves artifacts, progress, and decisions
+2. it creates a work session called a `task`
+3. the AI reads, searches, or reasons inside that task
+4. the service saves outputs, progress, and decisions
 5. you review anything important before it becomes official
 
 For beginners, the easiest version is even simpler:
@@ -131,7 +131,7 @@ that graph.
 If you want the simplest boundary:
 
 - `artana_evidence_db` owns official graph state and graph governance
-- `artana_evidence_api` owns AI-assisted workflows, runs, chat, extraction,
+- `artana_evidence_api` owns AI-assisted workflows, tasks, chat, extraction,
   orchestration, review, and transparency
 
 ## Who This Guide Is For
@@ -224,7 +224,7 @@ default it sets:
 If you prefer the raw API instead of the helper script, the first-key route is:
 
 ```bash
-curl -s "$HARNESS_URL/v1/auth/bootstrap" \
+curl -s "$HARNESS_URL/v2/auth/bootstrap" \
   -X POST \
   -H "X-Artana-Bootstrap-Key: $ARTANA_EVIDENCE_API_BOOTSTRAP_KEY" \
   -H "Content-Type: application/json" \
@@ -261,7 +261,7 @@ venv/bin/python scripts/issue_artana_evidence_api_key.py \
 You can also do that directly through HTTP:
 
 ```bash
-curl -s "$HARNESS_URL/v1/auth/api-keys" \
+curl -s "$HARNESS_URL/v2/auth/api-keys" \
   -X POST \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
@@ -276,7 +276,7 @@ curl -s "$HARNESS_URL/v1/auth/api-keys" \
 The easiest sanity check is:
 
 ```bash
-curl -s "$HARNESS_URL/v1/auth/me" \
+curl -s "$HARNESS_URL/v2/auth/me" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -287,7 +287,7 @@ If that works, your key is valid and the service can resolve your identity.
 If you do not already know your `SPACE_ID`, the easiest beginner setup call is:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/default" \
+curl -s "$HARNESS_URL/v2/spaces/default" \
   -X PUT \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
@@ -325,9 +325,9 @@ Examples:
 - a PDF
 - a paper you want tracked
 
-### Run
+### Task
 
-A `run` is one AI job or workflow execution.
+A `task` is one AI job or workflow execution.
 
 Examples:
 
@@ -344,25 +344,25 @@ It is the system saying:
 
 "I think this might be worth adding, but I want review before it becomes official."
 
-### Review Queue Item
+### Review Item
 
-A `review queue item` is the unified thing you actually review in the product.
+A `review item` is the unified thing you actually review in the product.
 
 It can represent:
 
 - a proposal
 - a review-only follow-up item
-- a paused approval from a run
+- a paused approval from a task
 
-That is why the review queue is now the easiest default review surface.
+That is why review items are now the easiest default review surface.
 
 ### Approval
 
 An `approval` is a human yes/no decision on something the system paused for.
 
-### Artifact
+### Output
 
-An `artifact` is saved output from a run.
+An `output` is saved content from a task.
 
 Examples:
 
@@ -373,7 +373,7 @@ Examples:
 
 ### Progress And Events
 
-These are the "what is happening right now?" views for a run.
+These are the "what is happening right now?" views for a task.
 
 - `progress` is the latest status snapshot
 - `events` are the step-by-step history
@@ -392,7 +392,7 @@ Start with one note or one PDF.
 Text note:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/text" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -405,7 +405,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/text" \
 PDF:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/pdf" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/pdf" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -F "file=@./paper.pdf" \
   -F "title=MED13 paper"
@@ -425,7 +425,7 @@ What success looks like:
 Now ask the system to read the document and stage reviewable findings.
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/documents/<document_id>/extract" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/documents/<document_id>/extraction" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -X POST
 ```
@@ -458,7 +458,7 @@ What success looks like:
 - you may also get a `review_item_count`
 - genomics documents can also mark the document as `variant_aware_extraction`
   in metadata
-- if you retry after a partial earlier run, the service now reuses matching
+- if you retry after a partial earlier extraction attempt, the service now reuses matching
   already-staged proposals and review items instead of returning a misleading
   empty extraction result
 
@@ -467,7 +467,7 @@ What success looks like:
 List the unified queue:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue?document_id=<document_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items?document_id=<document_id>" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
@@ -475,7 +475,7 @@ This queue can include:
 
 - proposals you can `promote` or `reject`
 - review-only items you can `convert_to_proposal`, `mark_resolved`, or `dismiss`
-- approvals from paused runs that you can `approve` or `reject`
+- approvals from paused tasks that you can `approve` or `reject`
 
 One important nuance:
 
@@ -489,14 +489,14 @@ If you want the lower-level proposal records directly, you can still list them:
 List proposals:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/proposals?document_id=<document_id>" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/proposed-updates?document_id=<document_id>" \
   -H "X-Artana-Key: $ARTANA_API_KEY"
 ```
 
 Promote one:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/decision" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -509,7 +509,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
 Reject one:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/review-queue/<item_id>/actions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/review-items/<item_id>/decision" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -537,7 +537,7 @@ Compatibility note:
 Create a chat session:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -548,7 +548,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions" \
 Ask a question:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/chat-sessions/<session_id>/messages" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -575,14 +575,14 @@ If you are unsure which feature to use, use this table.
 
 | Your goal | Start with | Why |
 | --- | --- | --- |
-| Review one note or paper | Documents + extraction + review queue | Safest and easiest workflow |
+| Review one note or paper | Documents + extraction + review items | Safest and easiest workflow |
 | Ask questions about a known document set | Chat sessions | Keeps answers tied to documents and graph context |
 | Find literature first | PubMed search | Good before extraction or bootstrap |
 | Build an initial project map | Research bootstrap | Bigger starting workflow for a new space |
 | Keep a topic refreshed over time | Continuous learning | Re-runs research on a schedule |
 | Compare many generated ideas | Mechanism discovery | Produces ranked hypothesis-style outputs |
 | Force approval checkpoints into claim writing | Claim curation | Most governed path for graph-impacting claims |
-| Run a bigger orchestrated sequence | Supervisor | Composes several workflows into one parent run |
+| Run a bigger orchestrated sequence | Supervisor | Composes several workflows into one parent task |
 
 ## How A Researcher Can Actually Use The Different Sources
 
@@ -647,7 +647,7 @@ Typical path:
 1. run a PubMed search
 2. inspect the returned job
 3. optionally ingest or follow up with document-centered review
-4. use the results to seed chat, bootstrap, or research-init
+4. use the results to seed chat, bootstrap, or research-plan work
 
 #### MARRVEL
 
@@ -671,7 +671,7 @@ evidence.
 
 The direct ingest route still exists for advanced or system-owned usage:
 
-- `POST /v1/spaces/{space_id}/marrvel/ingest`
+- `POST /v2/spaces/{space_id}/sources/marrvel/ingestion`
 
 ### 3. Ask For A Bigger Multi-Source Research Sweep
 
@@ -679,10 +679,10 @@ Use this when your question is larger than one document or one search.
 
 Best entry point:
 
-- `research-init`
+- `research-plan`
 
 This is where the service can combine multiple enabled source families in one
-run.
+task.
 
 The public request shape supports a `sources` map, for example:
 
@@ -716,7 +716,7 @@ Good rule of thumb:
 - add `mgi` or `zfin` when model-organism evidence matters
 - add `alphafold` when structure or protein-shape context matters
 
-### 4. Use Bootstrap For A First Map, Then Graduate To Research-Init
+### 4. Use Bootstrap For A First Map, Then Graduate To Research-Plan
 
 Bootstrap is still useful, but it is a narrower mental model.
 
@@ -730,7 +730,7 @@ If what you want is:
 
 - "use several sources intentionally and let me choose them"
 
-`research-init` is the better fit.
+`research-plan` is the better fit.
 
 ### 5. Use Chat After You Have Evidence In Place
 
@@ -738,7 +738,7 @@ Chat works best after at least one of these is true:
 
 - you uploaded documents
 - you ran literature discovery
-- you completed a broader multi-source run
+- you completed a broader multi-source task
 
 That way the chat is grounded in something real instead of being asked to think
 from scratch.
@@ -761,11 +761,11 @@ If you are a researcher and do not want to overthink this, use:
 
 - `marrvel`
 - optionally `clinvar`
-- then chat or research-init
+- then chat or research-plan
 
 ### Broad Mechanism Or Evidence-Mapping Question
 
-- `research-init`
+- `research-plan`
 - enable `pubmed`, `marrvel`, and `clinvar`
 - add `drugbank`, `clinical_trials`, `mgi`, `zfin`, or `alphafold` only when
   the question needs them
@@ -787,11 +787,11 @@ Good learning order:
 
 This order works because each step builds on the last one.
 
-## The Next Level: Understanding Runs
+## The Next Level: Understanding Tasks
 
-Once you move beyond one document, you need to understand `runs`.
+Once you move beyond one document, you need to understand `tasks`.
 
-A run is the service's way of making AI work inspectable.
+A task is the service's way of making AI work inspectable.
 
 That matters because bigger workflows are not just one response body. They
 have:
@@ -799,14 +799,14 @@ have:
 - status
 - progress
 - events
-- artifacts
+- outputs
 - pause/resume behavior
 
 ### Why Runs Matter
 
-Without runs, a long AI workflow would feel like a black box.
+Without tasks, a long AI workflow would feel like a black box.
 
-With runs, you can answer:
+With tasks, you can answer:
 
 - is it still working?
 - what step is it on?
@@ -817,24 +817,24 @@ With runs, you can answer:
 
 | What you want to know | Endpoint |
 | --- | --- |
-| Is the run alive? | `GET /v1/spaces/{space_id}/runs/{run_id}` |
-| What is it doing now? | `GET /v1/spaces/{space_id}/runs/{run_id}/progress` |
-| What happened step by step? | `GET /v1/spaces/{space_id}/runs/{run_id}/events` |
-| What files or outputs did it save? | `GET /v1/spaces/{space_id}/runs/{run_id}/artifacts` |
-| What tools was it allowed to use? | `GET /v1/spaces/{space_id}/runs/{run_id}/capabilities` |
-| What did it actually decide to do? | `GET /v1/spaces/{space_id}/runs/{run_id}/policy-decisions` |
-| It paused, now what? | `POST /v1/spaces/{space_id}/runs/{run_id}/resume` |
+| Is the task alive? | `GET /v2/spaces/{space_id}/tasks/{task_id}` |
+| What is it doing now? | `GET /v2/spaces/{space_id}/tasks/{task_id}/progress` |
+| What happened step by step? | `GET /v2/spaces/{space_id}/tasks/{task_id}/events` |
+| What files or outputs did it save? | `GET /v2/spaces/{space_id}/tasks/{task_id}/outputs` |
+| What tools was it allowed to use? | `GET /v2/spaces/{space_id}/tasks/{task_id}/capabilities` |
+| What did it actually decide to do? | `GET /v2/spaces/{space_id}/tasks/{task_id}/decisions` |
+| It paused, now what? | `POST /v2/spaces/{space_id}/tasks/{task_id}/resume` |
 
 ### A Good Beginner Habit
 
-When something feels confusing, inspect the run in this order:
+When something feels confusing, inspect the task in this order:
 
-1. run
+1. task
 2. progress
 3. events
-4. artifacts
+4. outputs
 5. capabilities
-6. policy-decisions
+6. decisions
 
 That usually tells the story.
 
@@ -875,7 +875,7 @@ This is good for:
 Start a search:
 
 ```bash
-curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
+curl -s "$HARNESS_URL/v2/spaces/$SPACE_ID/sources/pubmed/searches" \
   -H "X-Artana-Key: $ARTANA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -887,7 +887,7 @@ curl -s "$HARNESS_URL/v1/spaces/$SPACE_ID/pubmed/searches" \
   }'
 ```
 
-This is often the right move before a bootstrap run or before asking a broad
+This is often the right move before a bootstrap task or before asking a broad
 chat question.
 
 ## MARRVEL Search: Best For Gene-Centered Discovery
@@ -902,7 +902,7 @@ Typical use:
 
 1. search by gene symbol or variant
 2. inspect the returned panels
-3. use the result to guide later extraction, review, or multi-source runs
+3. use the result to guide later extraction, review, or multi-source tasks
 
 This is especially useful when a researcher starts with a gene and wants a fast
 structured view before doing broader workflow orchestration.
@@ -999,12 +999,12 @@ happened.
 Two endpoints matter a lot:
 
 - `GET /capabilities`
-- `GET /policy-decisions`
+- `GET /decisions`
 
 In plain English:
 
-- `capabilities` says what the run could use
-- `policy-decisions` says what the run actually did
+- `capabilities` says what the task could use
+- `decisions` says what the task actually did
 
 This matters when someone asks:
 
@@ -1063,7 +1063,7 @@ Usually it is better to inspect:
 
 - progress
 - events
-- artifacts
+- outputs
 
 first.
 
@@ -1081,17 +1081,17 @@ Those are related, but they are not the same thing.
 | If you want to... | Use... |
 | --- | --- |
 | check the service is alive | `/health` |
-| see what workflows exist | `/v1/harnesses` |
+| see what workflows exist | `/v2/workflow-templates` |
 | upload evidence | `/documents/text` or `/documents/pdf` |
-| extract findings from a document | `/documents/{document_id}/extract` |
-| review staged findings | `/review-queue` |
+| extract findings from a document | `/documents/{document_id}/extraction` |
+| review staged findings | `/review-items` |
 | ask grounded questions | `/chat-sessions` and `/messages` |
-| stage graph writes from verified chat | `/chat-sessions/{session_id}/proposals/graph-write` |
-| inspect long-running work | `/runs`, `/progress`, `/events`, `/artifacts` |
-| inspect AI policy and tool visibility | `/capabilities` and `/policy-decisions` |
-| search literature | `/pubmed/searches` |
-| start a larger research job | workflow-specific run endpoints |
-| resume a paused governed workflow | `/runs/{run_id}/resume` |
+| stage graph writes from verified chat | `/chat-sessions/{session_id}/suggested-updates` |
+| inspect long-running work | `/tasks`, `/progress`, `/events`, `/outputs` |
+| inspect AI policy and tool visibility | `/capabilities` and `/decisions` |
+| search literature | `/sources/pubmed/searches` |
+| start a larger research job | workflow-specific task endpoints |
+| resume a paused governed workflow | `/tasks/{task_id}/resume` |
 
 ## Recommended Learning Path For Teams
 
@@ -1102,12 +1102,12 @@ If you are onboarding a team, this order works well:
 - health
 - one text document
 - extraction
-- review queue
+- review items
 
 ### Day 2
 
 - chat with document context
-- run inspection
+- task inspection
 - transparency inspection
 
 ### Day 3
@@ -1133,7 +1133,7 @@ A good practical rule is:
 - let AI read, summarize, search, and suggest
 - let governed review decide what becomes official
 
-That is why proposals, approvals, runs, and transparency exist.
+That is why proposals, approvals, tasks, and transparency exist.
 
 ## When You Are Ready For More Detail
 

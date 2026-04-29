@@ -1,6 +1,6 @@
 # Remaining Work Priorities
 
-Status date: April 26, 2026.
+Status date: April 29, 2026.
 
 The backend scaffold is in place. The remaining work is about hardening the
 boundaries, making testing easier, and preparing for external users without
@@ -30,8 +30,8 @@ overbuilding too early.
 
 ## P1 - Test Local Identity With Real Users
 
-- Use `POST /v1/auth/bootstrap` for the first local/admin user.
-- Use `POST /v1/auth/testers` for additional internal testers.
+- Use `POST /v2/auth/bootstrap` for the first local/admin user.
+- Use `POST /v2/auth/testers` for additional internal testers.
 - Watch for friction around key rotation, lost keys, space membership, and
   admin operations.
 - Decide later whether to implement `RemoteIdentityGateway`; do not add it
@@ -50,7 +50,7 @@ overbuilding too early.
 - Keep Cloud Run runtime-config sync scripts aligned with the current env var
   contract.
 - Add or refresh staging smoke checks for `/health`, OpenAPI, auth bootstrap or
-  tester creation, graph space sync, and one review-queue flow.
+  tester creation, graph space sync, and one review flow through review items.
 - Keep live external API tests opt-in. They depend on network and third-party
   service availability.
 

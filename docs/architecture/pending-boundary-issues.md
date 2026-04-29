@@ -1,6 +1,6 @@
 # Pending Boundary Issues
 
-Status date: April 24, 2026.
+Status date: April 29, 2026.
 
 The repo is now an extracted two-service backend, but a few architecture issues
 remain too large for a narrow patch.
@@ -16,7 +16,7 @@ is still backed by local Evidence API SQL tables.
 Current state:
 
 - low-friction tester access uses `X-Artana-Key`;
-- admin tester creation lives at `POST /v1/auth/testers`;
+- admin tester creation lives at `POST /v2/auth/testers`;
 - owner/member checks use the gateway;
 - direct identity ORM imports are blocked outside the allowlist by
   `scripts/validate_artana_evidence_api_service_boundary.py`.
@@ -56,15 +56,15 @@ The largest modules still mix several responsibilities:
 
 First slice completed:
 
-- research-init document source classification and selected-source workset
+- research-plan document source classification and selected-source workset
   selection now live in
   `services/artana_evidence_api/research_init_document_selection.py`.
 
 Target split:
 
-- research-init: source discovery, replay, document preparation, extraction
+- research-plan: source discovery, replay, document preparation, extraction
   staging, state finalization;
-- full AI orchestrator: planner, action executor, guarded policy, artifact
+- full AI orchestrator: planner, action executor, guarded policy, output
   writer;
 - graph workflows: command-family modules once current service gates stay
   stable.

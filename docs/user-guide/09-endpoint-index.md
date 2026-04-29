@@ -40,8 +40,10 @@ Use these when you understand the core review flow.
 | Run evidence curation | `POST /v2/spaces/{space_id}/workflows/evidence-curation/tasks` |
 | Create or manage schedules | `/v2/spaces/{space_id}/schedules/*` |
 | Use full research workflows | `/v2/spaces/{space_id}/workflows/full-research/*` |
-| Create an older research plan | `POST /v2/spaces/{space_id}/research-plan` |
-| Search a direct-search source manually | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` |
+| Create a research plan | `POST /v2/spaces/{space_id}/research-plan` |
+| Search PubMed directly with its typed request/response shape | `POST /v2/spaces/{space_id}/sources/pubmed/searches` |
+| Search MARRVEL directly with its typed request/response shape | `POST /v2/spaces/{space_id}/sources/marrvel/searches` |
+| Search any direct-search source manually | `POST /v2/spaces/{space_id}/sources/{source_key}/searches` |
 | Get a source search result | `GET /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}` |
 | Hand off one selected source record | `POST /v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs` |
 
@@ -98,8 +100,9 @@ reaches the review gate.
 `GET /v2/sources` is the source of truth for which sources can be searched
 directly. PubMed, MARRVEL, ClinVar, AlphaFold, UniProt, ClinicalTrials.gov,
 MGI, and ZFIN support direct search. DrugBank supports direct search when
-`DRUGBANK_API_KEY` is configured. MONDO is a background ontology-grounding
-source, while text and PDF are document-capture sources.
+`DRUGBANK_API_KEY` is configured. MONDO and HGNC are background
+ontology/authority-grounding sources, while text and PDF are document-capture
+sources.
 Generic source-search responses include `source_capture` metadata so clients can
 trace a result to its source, family, query, locator, and provenance. Structured
 direct source-search results are stored durably in the Evidence API database and
