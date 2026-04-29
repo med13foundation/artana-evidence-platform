@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from enum import Enum
+from functools import lru_cache
 from typing import cast
 
 from artana_evidence_api.types.common import ResearchSpaceSourcePreferences
@@ -115,310 +116,6 @@ class SourceListResponse(BaseModel):
     total: int
 
 
-_SOURCE_DEFINITIONS: tuple[SourceDefinition, ...] = (
-    SourceDefinition(
-        source_key="pubmed",
-        display_name="PubMed",
-        description="Biomedical literature discovery through PubMed search.",
-        source_family="literature",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=True,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="PubMedSearchRequest",
-        result_schema_ref="DiscoverySearchJob",
-        result_capture="Search previews and selected articles become source documents with PubMed provenance.",
-        proposal_flow="Captured abstracts or papers flow through document extraction before review.",
-    ),
-    SourceDefinition(
-        source_key="marrvel",
-        display_name="MARRVEL",
-        description="Gene and variant panel discovery through MARRVEL.",
-        source_family="variant",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=True,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="MarrvelSearchRequest",
-        result_schema_ref="MarrvelSearchResponse",
-        result_capture="Panel data becomes source documents with MARRVEL provenance.",
-        proposal_flow="Structured records flow through proposal generation and review.",
-    ),
-    SourceDefinition(
-        source_key="clinvar",
-        display_name="ClinVar",
-        description="Variant and clinical-significance enrichment from ClinVar.",
-        source_family="variant",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=True,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="ClinVarSourceSearchRequest",
-        result_schema_ref="ClinVarSourceSearchResponse",
-        result_capture=(
-            "ClinVar records are captured as direct source-search results with "
-            "ClinVar provenance."
-        ),
-        proposal_flow=(
-            "Variant observations and candidate claims require downstream "
-            "extraction or research-plan review before promotion."
-        ),
-    ),
-    SourceDefinition(
-        source_key="mondo",
-        display_name="MONDO",
-        description="Disease ontology grounding and concept expansion.",
-        source_family="ontology",
-        capabilities=(SourceCapability.ENRICHMENT, SourceCapability.RESEARCH_PLAN),
-        direct_search_enabled=False,
-        research_plan_enabled=True,
-        default_research_plan_enabled=True,
-        live_network_required=True,
-        requires_credentials=False,
-        result_capture="Ontology matches enrich source context and research state.",
-        proposal_flow="Ontology-grounded concepts support later proposal review.",
-    ),
-    SourceDefinition(
-        source_key="pdf",
-        display_name="PDF Uploads",
-        description="User-provided PDF evidence.",
-        source_family="document",
-        capabilities=(
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=False,
-        research_plan_enabled=True,
-        default_research_plan_enabled=True,
-        live_network_required=False,
-        requires_credentials=False,
-        request_schema_ref="DocumentUploadRequest",
-        result_capture="Uploaded PDFs become source documents.",
-        proposal_flow="Extracted PDF text creates reviewable proposals.",
-    ),
-    SourceDefinition(
-        source_key="text",
-        display_name="Text Evidence",
-        description="User-provided text evidence or copied abstracts.",
-        source_family="document",
-        capabilities=(
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=False,
-        research_plan_enabled=True,
-        default_research_plan_enabled=True,
-        live_network_required=False,
-        requires_credentials=False,
-        request_schema_ref="TextDocumentCreateRequest",
-        result_capture="Text payloads become source documents.",
-        proposal_flow="Extracted text creates reviewable proposals.",
-    ),
-    SourceDefinition(
-        source_key="drugbank",
-        display_name="DrugBank",
-        description="Drug and target enrichment from DrugBank.",
-        source_family="drug",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=False,
-        live_network_required=True,
-        requires_credentials=True,
-        credential_names=("DRUGBANK_API_KEY",),
-        request_schema_ref="DrugBankSourceSearchRequest",
-        result_schema_ref="DrugBankSourceSearchResponse",
-        result_capture=(
-            "DrugBank records are captured as direct source-search results with "
-            "DrugBank provenance."
-        ),
-        proposal_flow=(
-            "Drug-target candidates require downstream extraction or research-plan "
-            "review before promotion."
-        ),
-    ),
-    SourceDefinition(
-        source_key="alphafold",
-        display_name="AlphaFold",
-        description="Protein structure enrichment from AlphaFold.",
-        source_family="structure",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=False,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="AlphaFoldSourceSearchRequest",
-        result_schema_ref="AlphaFoldSourceSearchResponse",
-        result_capture=(
-            "Structure records are captured as direct source-search results with "
-            "AlphaFold provenance."
-        ),
-        proposal_flow=(
-            "Protein-domain candidates require downstream extraction or "
-            "research-plan review before promotion."
-        ),
-    ),
-    SourceDefinition(
-        source_key="uniprot",
-        display_name="UniProt",
-        description="Protein and accession enrichment from UniProt.",
-        source_family="protein",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=False,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="UniProtSourceSearchRequest",
-        result_schema_ref="UniProtSourceSearchResponse",
-        result_capture="UniProt records enrich protein source context.",
-        proposal_flow="Protein annotations support later proposal review.",
-    ),
-    SourceDefinition(
-        source_key="hgnc",
-        display_name="HGNC",
-        description="Gene nomenclature and alias grounding.",
-        source_family="ontology",
-        capabilities=(SourceCapability.ENRICHMENT, SourceCapability.RESEARCH_PLAN),
-        direct_search_enabled=False,
-        research_plan_enabled=True,
-        default_research_plan_enabled=False,
-        live_network_required=True,
-        requires_credentials=False,
-        result_capture="HGNC aliases enrich gene source context.",
-        proposal_flow="Gene alias grounding supports later extraction and review.",
-    ),
-    SourceDefinition(
-        source_key="clinical_trials",
-        display_name="ClinicalTrials.gov",
-        description="Clinical trial enrichment from ClinicalTrials.gov.",
-        source_family="clinical",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=False,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="ClinicalTrialsSourceSearchRequest",
-        result_schema_ref="ClinicalTrialsSourceSearchResponse",
-        result_capture=(
-            "Trial records are captured as direct source-search results with "
-            "ClinicalTrials.gov provenance."
-        ),
-        proposal_flow=(
-            "Trial-condition and trial-intervention candidates require downstream "
-            "extraction or research-plan review before promotion."
-        ),
-    ),
-    SourceDefinition(
-        source_key="mgi",
-        display_name="MGI",
-        description="Mouse model enrichment from MGI.",
-        source_family="model_organism",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=False,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="MGISourceSearchRequest",
-        result_schema_ref="MGISourceSearchResponse",
-        result_capture=(
-            "MGI records are captured as direct source-search results with "
-            "model-organism provenance."
-        ),
-        proposal_flow=(
-            "Mouse phenotype and disease candidates require downstream extraction "
-            "or research-plan review before promotion."
-        ),
-    ),
-    SourceDefinition(
-        source_key="zfin",
-        display_name="ZFIN",
-        description="Zebrafish model enrichment from ZFIN.",
-        source_family="model_organism",
-        capabilities=(
-            SourceCapability.SEARCH,
-            SourceCapability.ENRICHMENT,
-            SourceCapability.DOCUMENT_CAPTURE,
-            SourceCapability.PROPOSAL_GENERATION,
-            SourceCapability.RESEARCH_PLAN,
-        ),
-        direct_search_enabled=True,
-        research_plan_enabled=True,
-        default_research_plan_enabled=False,
-        live_network_required=True,
-        requires_credentials=False,
-        request_schema_ref="ZFINSourceSearchRequest",
-        result_schema_ref="ZFINSourceSearchResponse",
-        result_capture=(
-            "ZFIN records are captured as direct source-search results with "
-            "model-organism provenance."
-        ),
-        proposal_flow=(
-            "Zebrafish phenotype and expression candidates require downstream "
-            "extraction or research-plan review before promotion."
-        ),
-    ),
-)
-
-_SOURCE_DEFINITIONS_BY_KEY = {
-    definition.source_key: definition for definition in _SOURCE_DEFINITIONS
-}
 _SOURCE_KEY_ALIASES = {
     "clinicaltrials": "clinical_trials",
     "clinicaltrials.gov": "clinical_trials",
@@ -438,21 +135,21 @@ def normalize_source_key(source_key: str) -> str:
 
 
 def list_source_definitions() -> tuple[SourceDefinition, ...]:
-    """Return all source definitions in public display order."""
+    """Return all plugin-owned source definitions in public display order."""
 
-    return _SOURCE_DEFINITIONS
+    return _source_definitions()
 
 
 def get_source_definition(source_key: str) -> SourceDefinition | None:
     """Return one source definition by public or canonical key."""
 
-    return _SOURCE_DEFINITIONS_BY_KEY.get(normalize_source_key(source_key))
+    return _source_definitions_by_key().get(normalize_source_key(source_key))
 
 
 def source_keys() -> tuple[str, ...]:
     """Return every canonical source key."""
 
-    return tuple(_SOURCE_DEFINITIONS_BY_KEY)
+    return tuple(_source_definitions_by_key())
 
 
 def research_plan_source_keys() -> tuple[str, ...]:
@@ -460,7 +157,7 @@ def research_plan_source_keys() -> tuple[str, ...]:
 
     return tuple(
         definition.source_key
-        for definition in _SOURCE_DEFINITIONS
+        for definition in _source_definitions()
         if definition.research_plan_enabled
     )
 
@@ -470,7 +167,7 @@ def direct_search_source_keys() -> tuple[str, ...]:
 
     return tuple(
         definition.source_key
-        for definition in _SOURCE_DEFINITIONS
+        for definition in _source_definitions()
         if definition.direct_search_enabled
     )
 
@@ -480,7 +177,7 @@ def default_research_plan_source_preferences() -> ResearchSpaceSourcePreferences
 
     defaults = {
         definition.source_key: definition.default_research_plan_enabled
-        for definition in _SOURCE_DEFINITIONS
+        for definition in _source_definitions()
         if definition.research_plan_enabled
     }
     return cast("ResearchSpaceSourcePreferences", defaults)
@@ -499,6 +196,18 @@ def unknown_source_preference_keys(raw_sources: object) -> tuple[str, ...]:
         or normalize_source_key(raw_key) not in known_keys
     }
     return tuple(sorted(unknown_keys))
+
+
+@lru_cache(maxsize=1)
+def _source_definitions() -> tuple[SourceDefinition, ...]:
+    from artana_evidence_api.source_plugins.registry import public_source_definitions
+
+    return public_source_definitions()
+
+
+@lru_cache(maxsize=1)
+def _source_definitions_by_key() -> dict[str, SourceDefinition]:
+    return {definition.source_key: definition for definition in _source_definitions()}
 
 
 __all__ = [

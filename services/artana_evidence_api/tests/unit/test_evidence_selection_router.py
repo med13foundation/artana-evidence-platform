@@ -58,6 +58,9 @@ from artana_evidence_api.research_onboarding_agent_runtime import (
     HarnessResearchOnboardingRunner,
 )
 from artana_evidence_api.research_state import HarnessResearchStateStore
+from artana_evidence_api.routers.evidence_selection_runs import (
+    EvidenceSelectionSourceSearchRequest,
+)
 from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
 from artana_evidence_api.schedule_store import HarnessScheduleStore
 from artana_evidence_api.source_result_capture import (
@@ -691,6 +694,16 @@ def test_v2_evidence_run_rejects_invalid_live_search_payload() -> None:
     assert response.status_code == 422
     assert "Invalid query_payload for source 'clinvar'" in json.dumps(response.json())
     assert "gene_symbol" in json.dumps(response.json())
+
+
+def test_evidence_selection_live_search_request_normalizes_source_key_alias() -> None:
+    request = EvidenceSelectionSourceSearchRequest(
+        source_key="clinical-trials",
+        query_payload={"query": "MED13 congenital heart disease"},
+    )
+
+    assert request.source_key == "clinical_trials"
+    assert request.to_runtime().source_key == "clinical_trials"
 
 
 def test_v2_evidence_run_rejects_ambiguous_live_search_limit() -> None:

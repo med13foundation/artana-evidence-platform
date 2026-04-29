@@ -100,6 +100,26 @@ def _bridge_session() -> Iterator[object]:
         engine.dispose()
 
 
+@contextmanager
+def _document_only_session() -> Iterator[object]:
+    engine = create_engine("sqlite:///:memory:")
+    with engine.connect() as conn:
+        conn.execute(sa_text(_SOURCE_DOCUMENTS_DDL))
+        conn.commit()
+    session_factory = sa_sessionmaker(
+        bind=engine,
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+    )
+    session = session_factory()
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
+
+
 @pytest.mark.asyncio
 async def test_service_local_observation_bridge_extracts_and_persists_mentions() -> (
     None
@@ -161,3 +181,54 @@ async def test_service_local_observation_bridge_extracts_and_persists_mentions()
         ).scalar_one()
         assert entity_count == observation_count
         assert entity_count > 0
+
+
+@pytest.mark.asyncio
+async def test_service_local_observation_bridge_records_graph_write_warning() -> None:
+    with _document_only_session() as session:
+        repository = SqlAlchemySourceDocumentRepository(session)
+        space_id = uuid4()
+        source_id = uuid4()
+        document_id = uuid4()
+        repository.upsert(
+            build_source_document(
+                id=document_id,
+                research_space_id=space_id,
+                source_id=source_id,
+                external_record_id="pubmed:pmid:12345",
+                source_type=SourceType.PUBMED,
+                document_format=DocumentFormat.MEDLINE_XML,
+                enrichment_status=EnrichmentStatus.SKIPPED,
+                extraction_status=DocumentExtractionStatus.PENDING,
+                metadata={
+                    "raw_record": {
+                        "title": "MED13 mediator complex mechanism",
+                        "abstract": "MED13 appears in a source document.",
+                    },
+                },
+            ),
+        )
+        service = create_observation_bridge_entity_recognition_service(
+            session=session,
+            source_document_repository=repository,
+            pipeline_run_event_repository=object(),
+        )
+
+        summary = await service.process_pending_documents(limit=5)
+
+        persisted = repository.get_by_id(document_id)
+        assert len(summary.errors) == 1
+        assert summary.errors[0].startswith(
+            "observation_bridge_graph_write_skipped:OperationalError:",
+        )
+        assert summary.derived_graph_seed_entity_ids == ()
+        assert persisted is not None
+        assert persisted.extraction_status == DocumentExtractionStatus.FAILED
+        assert persisted.metadata["entity_recognition_wrote_to_kernel"] is False
+        assert persisted.metadata["entity_recognition_ingestion_success"] is False
+        assert persisted.metadata["entity_recognition_ingestion_errors"] == [
+            summary.errors[0],
+        ]
+        assert persisted.metadata["entity_recognition_graph_write_warning"].startswith(
+            "observation_bridge_graph_write_skipped:",
+        )

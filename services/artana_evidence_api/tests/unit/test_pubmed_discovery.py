@@ -11,14 +11,17 @@ import pytest
 from artana_evidence_api import pubmed_discovery
 from artana_evidence_api.pubmed_discovery import (
     AdvancedQueryParameters,
+    DeterministicPubMedSearchGateway,
     DiscoveryProvider,
     DiscoverySearchJob,
     DiscoverySearchStatus,
     LocalPubMedDiscoveryService,
     NCBIPubMedGatewaySettings,
     NCBIPubMedSearchGateway,
+    PubMedSearchRateLimitError,
     RunPubmedSearchRequest,
     build_pubmed_query_preview,
+    create_pubmed_search_gateway,
 )
 
 
@@ -96,6 +99,34 @@ def test_build_pubmed_query_preview_matches_platform_query_builder() -> None:
     )
 
 
+def test_pubmed_search_gateway_uses_deterministic_backend_in_tests(monkeypatch) -> None:
+    monkeypatch.delenv("ARTANA_PUBMED_SEARCH_BACKEND", raising=False)
+    monkeypatch.setenv("PYTEST_CURRENT_TEST", "test")
+
+    gateway = create_pubmed_search_gateway()
+
+    assert isinstance(gateway, DeterministicPubMedSearchGateway)
+
+
+def test_pubmed_search_gateway_uses_live_backend_and_ncbi_metadata(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_PUBMED_SEARCH_BACKEND", "ncbi")
+    monkeypatch.setenv("NCBI_API_KEY", "api-key")
+    monkeypatch.setenv("NCBI_EMAIL", "curator@example.org")
+    monkeypatch.setenv("NCBI_TOOL", "artana-test")
+
+    gateway = create_pubmed_search_gateway()
+
+    assert isinstance(gateway, NCBIPubMedSearchGateway)
+    assert gateway._attach_ncbi_metadata({"db": "pubmed"}) == {
+        "db": "pubmed",
+        "tool": "artana-test",
+        "api_key": "api-key",
+        "email": "curator@example.org",
+    }
+
+
 @pytest.mark.asyncio
 async def test_ncbi_pubmed_gateway_retries_rate_limit_and_succeeds(
     monkeypatch,
@@ -166,6 +197,43 @@ async def test_ncbi_pubmed_gateway_retries_rate_limit_and_succeeds(
     assert sleep_calls == [1.0, 2.0]
     assert payload.article_ids == ["111", "222"]
     assert payload.total_count == 2
+
+
+@pytest.mark.asyncio
+async def test_ncbi_pubmed_gateway_uses_retry_after_for_final_rate_limit(
+    monkeypatch,
+) -> None:
+    sleep_calls: list[float] = []
+
+    async def fake_sleep(delay_seconds: float) -> None:
+        sleep_calls.append(delay_seconds)
+
+    class _NoOpLimiter:
+        async def acquire(self) -> None:
+            return None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            status_code=429,
+            request=request,
+            headers={"Retry-After": "9"},
+            json={"error": "rate limited"},
+        )
+
+    from artana_evidence_api import pubmed_search
+
+    monkeypatch.setattr(pubmed_search.asyncio, "sleep", fake_sleep)
+    gateway = NCBIPubMedSearchGateway(
+        settings=NCBIPubMedGatewaySettings(timeout_seconds=1.0),
+        transport=httpx.MockTransport(handler),
+    )
+    gateway._rate_limiter = _NoOpLimiter()
+
+    with pytest.raises(PubMedSearchRateLimitError) as exc_info:
+        await gateway.run_search(AdvancedQueryParameters(search_term="angiosarcoma"))
+
+    assert sleep_calls == [9, 9, 9]
+    assert exc_info.value.retry_after_seconds == 9
 
 
 def test_pubmed_search_parameters_reject_blank_queries() -> None:

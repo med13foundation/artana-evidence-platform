@@ -69,6 +69,7 @@ from .routers.spaces import router as spaces_router
 from .routers.supervisor_runs import router as supervisor_runs_router
 from .routers.v2_public import router as v2_public_router
 from .runtime_skill_registry import validate_graph_harness_skill_configuration
+from .source_route_plugins import validate_direct_source_route_plugins
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,7 @@ async def _app_lifespan(_: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:  # noqa: PLR0915
     """Create the standalone harness API application."""
     validate_graph_harness_skill_configuration()
+    validate_direct_source_route_plugins()
     install_request_id_log_record_factory()
     settings = get_settings()
     app = FastAPI(

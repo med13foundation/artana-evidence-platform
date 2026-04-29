@@ -14,12 +14,14 @@ from artana_evidence_api.dependencies import (
     get_run_registry,
     require_harness_space_write_access,
 )
+from artana_evidence_api.evidence_selection_candidates import (
+    EvidenceSelectionCandidateSearch,
+)
 from artana_evidence_api.evidence_selection_model_planner import (
     is_model_source_planner_available,
     model_source_planner_unavailable_detail,
 )
 from artana_evidence_api.evidence_selection_runtime import (
-    EvidenceSelectionCandidateSearch,
     EvidenceSelectionMode,
     EvidenceSelectionProposalMode,
     EvidenceSelectionSourcePlannerMode,
@@ -28,7 +30,6 @@ from artana_evidence_api.evidence_selection_runtime import (
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
     EvidenceSelectionSourceSearchError,
-    validate_live_source_search,
 )
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
 from artana_evidence_api.queued_run_support import (
@@ -45,6 +46,7 @@ from artana_evidence_api.queued_run_support import (
 )
 from artana_evidence_api.routers.runs import HarnessRunResponse
 from artana_evidence_api.run_registry import HarnessRunRegistry
+from artana_evidence_api.source_adapters import require_source_adapter
 from artana_evidence_api.source_registry import (
     get_source_definition,
     normalize_source_key,
@@ -139,7 +141,9 @@ class EvidenceSelectionSourceSearchRequest(BaseModel):
             msg = "Provide max_records or query_payload.max_results, not both"
             raise ValueError(msg)
         try:
-            validate_live_source_search(self.to_runtime())
+            require_source_adapter(self.source_key).validate_live_search(
+                self.to_runtime(),
+            )
         except (EvidenceSelectionSourceSearchError, ValueError) as exc:
             msg = f"Invalid query_payload for source '{self.source_key}': {exc}"
             raise ValueError(msg) from exc
