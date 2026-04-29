@@ -66,6 +66,38 @@ Code-backed facts from the current repository:
     context, and handoff policy are plugin-owned.
 - `services/artana_evidence_api/source_search_handoff.py`
   - Uses adapter-backed source behavior for durable source-search handoff.
+- `services/artana_evidence_api/source_route_contracts.py`
+  - Holds the typed public route plugin contract, typed route declaration
+    contract, and generic `DirectSourceRouteDependencies` bag.
+- `services/artana_evidence_api/source_route_dependencies.py`
+  - Collects FastAPI dependencies for the generic source-key route and returns
+    a generic `DirectSourceRouteDependencies` bag.
+  - The route contract no longer exposes one public field per datasource.
+- `services/artana_evidence_api/source_route_helpers.py`
+  - Holds shared route-edge mechanics: generic request-model validation,
+    stored-result lookup, JSON encoding, and gateway-unavailable errors.
+- `services/artana_evidence_api/source_route_plugins.py`
+  - Is the only public direct-source route plugin registry.
+  - It explicitly registers typed FastAPI routes in the same order as
+    `direct_search_source_keys()`.
+  - It also owns generic `/sources/{source_key}/searches` create/get dispatch.
+  - Validation fails closed if the route plugin list drifts from the
+    direct-search source registry order.
+- `services/artana_evidence_api/source_route_*.py`
+  - Focused route modules own the concrete public typed source-search route
+    declarations for PubMed, MARRVEL, ClinVar, DrugBank, AlphaFold, UniProt,
+    ClinicalTrials.gov, MGI, and ZFIN.
+  - These modules own route paths, request/response model binding, route-level
+    dependency declarations, OpenAPI summaries, generic-route payload parsing,
+    source gateway execution, and compatibility response shaping.
+  - `routers/v2_public.py` no longer declares concrete direct-source route
+    paths; it only calls `register_direct_source_typed_routes(router)` before
+    registering the generic source-search routes, then delegates generic
+    source-search create/get through `source_route_plugins.py`.
+  - Shared route validation formatting lives in `source_route_errors.py`.
+  - Route-specific behavior remains public API compatibility only; source
+    planning, validation, normalization, candidate context, and handoff policy
+    remain source-plugin/route-plugin owned.
 
 Approximate relevant code size:
 
@@ -79,9 +111,14 @@ Approximate relevant code size:
 - `evidence_selection_source_search.py`: 116 lines
 - `direct_source_search.py`: 1,119 lines
 - `source_search_handoff.py`: 1,276 lines
+- public source-route compatibility surface: about 2,500 lines across
+  `source_route_contracts.py`, `source_route_dependencies.py`,
+  `source_route_helpers.py`, `source_route_plugins.py`,
+  `source_route_errors.py`, and focused `source_route_*.py` source modules
 
-Total directly adjacent surface: about 8,100 lines, including source plugin
-modules and stable public direct-source/search-handoff surfaces.
+Total directly adjacent surface: about 10,900 lines, including source plugin
+modules, stable public direct-source/search-handoff surfaces, and the public
+source-route plugin edge.
 
 ## Target Architecture
 
@@ -624,11 +661,22 @@ variant-aware path first.
   - Keep `research_plan_source_keys`.
   - Keep `default_research_plan_source_preferences`.
   - Keep `unknown_source_preference_keys`.
-- [x] Track route-level per-source branching in `routers/v2_public.py`.
-  Current remaining branching is route/API-shape compatibility for typed
-  public endpoints and generic response shaping. Source behavior ownership
-  remains in plugins/adapters; future route cleanup should preserve public
-  schemas before removing those branches.
+- [x] Move route-level direct-source branching out of
+  `routers/v2_public.py`.
+  - Generic create/get source-search routes now dispatch through
+    `source_route_plugins.py`, with guard tests preventing source-key branches
+    from returning to those generic handlers.
+  - Generic source-key route dependencies are built by
+    `source_route_dependencies.py`, so `v2_public.py` does not enumerate
+    source gateways or discovery services in its route signatures.
+  - The separate `source_route_adapters.py` registry has been removed; the
+    route plugin registry owns typed route registration plus generic dispatch.
+  - Typed direct-source route declarations now live in focused
+    `source_route_*.py` modules and are registered through
+    `source_route_plugins.py`.
+  - `v2_public.py` keeps the public router and source-agnostic workflow
+    endpoints; it no longer declares concrete direct-source paths such as
+    `/sources/pubmed/searches`.
 - [x] Add `services/artana_evidence_api/source_plugins/clinical_trials.py`.
 - [x] Move ClinicalTrials.gov metadata into the plugin.
 - [x] Move ClinicalTrials.gov query planning into the plugin.
@@ -1033,6 +1081,9 @@ The full plugin refactor is complete only when:
   authority/grounding plugins for ontology and nomenclature sources, and
   document-ingestion plugins for user-provided content.
 - Production orchestration modules do not contain per-source behavior maps.
+- Public typed direct-source routes are route-plugin registered outside
+  `routers/v2_public.py`; the public router does not own source-specific route
+  declarations.
 - Plugin modules do not bypass PHI encryption, graph RLS, or persistence
   boundaries.
 - OpenAPI output has no drift unless an intentional public contract change is
@@ -1326,8 +1377,8 @@ Template:
   - Code: replaced PubMed/MARRVEL source-key branches in
     `source_plugins/registry.py` with source-owned execution plugin builders.
   - Docs: recorded the intentional MARRVEL planner-vs-public-search default
-    panel split and enumerated the remaining route-edge source branches as
-    public API schema compatibility only.
+    panel split and enumerated the then-remaining route-edge source branches
+    as public API schema compatibility only.
   - Hardening: strengthened architecture tests to reject per-source dispatch
     maps and source-key branching in orchestration modules.
   - Command: `venv/bin/ruff check services/artana_evidence_api/source_adapters.py services/artana_evidence_api/source_policies.py services/artana_evidence_api/source_registry.py services/artana_evidence_api/evidence_selection_source_playbooks.py services/artana_evidence_api/evidence_selection_extraction_policy.py services/artana_evidence_api/evidence_selection_source_search.py services/artana_evidence_api/research_init_source_results.py services/artana_evidence_api/source_plugins services/artana_evidence_api/tests/unit/test_source_plugin_architecture.py services/artana_evidence_api/tests/unit/test_source_registry.py services/artana_evidence_api/tests/unit/test_source_adapter_registry.py services/artana_evidence_api/tests/unit/test_source_plugin_parity.py services/artana_evidence_api/tests/unit/test_pubmed_plugin.py services/artana_evidence_api/tests/unit/test_pubmed_discovery.py`
@@ -1360,5 +1411,152 @@ Template:
     confirmed the plugin-backed facades have no residual per-source behavior
     maps, the AST architecture guard passes, and OpenAPI has no diff. Follow-up
     docs recorded the intentional MARRVEL planner-vs-public-search default
-    split and enumerated the remaining `v2_public.py` route-edge source
+    split and enumerated the then-remaining `v2_public.py` route-edge source
     branches as public API schema compatibility only.
+- 2026-04-28: Route-edge caveat closeout slice.
+  - Code: extracted source-specific public route parsing, dependency bridging,
+    durable response shaping, and generic route dispatch from
+    `routers/v2_public.py` into `source_route_adapters.py` plus focused
+    PubMed/MARRVEL route adapter modules.
+  - Code: generic `create_source_search` and `get_source_search` now delegate
+    through the route adapter registry without source-key branches.
+  - Code: fixed PubMed/MARRVEL generic GET cache-hit behavior so stored
+    results do not require live discovery-service wiring.
+  - Code: moved shared route validation-error formatting into
+    `source_route_errors.py`, renamed the MARRVEL result payload helper to
+    source-specific wording, and narrowed `source_route_adapters.py.__all__`
+    to the generic registry boundary.
+  - Code: at this slice, typed per-source v2 routes still remained in
+    `v2_public.py` for public API schema and OpenAPI compatibility only. This
+    caveat is superseded by the typed route-plugin closeout below.
+  - Tests: added route-adapter coverage/drift checks and an AST guard proving
+    the generic source-search routes do not branch on source keys.
+  - Tests: added module-level adapter behavior tests for unknown adapters,
+    stored PubMed/MARRVEL GETs without live discovery services, missing stored
+    gateway-source results, and generic payload validation before gateway
+    availability.
+  - Command: `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_route_adapters.py services/artana_evidence_api/tests/unit/test_direct_source_search_routes.py::test_mixed_case_source_keys_route_through_generic_dispatch services/artana_evidence_api/tests/unit/test_pubmed_router.py::test_create_pubmed_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_marrvel_router.py::test_create_marrvel_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_source_search_openapi_keeps_typed_routes_and_capture_contract services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_direct_source_route_adapters_cover_registry_sources services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_generic_source_search_routes_do_not_branch_on_source_keys -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+  - Command: `make architecture-size-check`
+  - Result: passed after splitting route adapters so the new boundary did not
+    become a monolith.
+  - Command: `venv/bin/ruff check services/artana_evidence_api/source_route_errors.py services/artana_evidence_api/source_route_adapters.py services/artana_evidence_api/source_route_adapter_contracts.py services/artana_evidence_api/source_route_pubmed.py services/artana_evidence_api/source_route_marrvel.py services/artana_evidence_api/routers/v2_public.py services/artana_evidence_api/tests/unit/test_source_route_adapters.py services/artana_evidence_api/tests/unit/test_v2_public_routes.py`
+  - Result: passed.
+  - Claude second-opinion review: completed. Actionable findings addressed by
+    fixing the stored PubMed/MARRVEL generic GET service-availability
+    regression, deduplicating route validation formatting, renaming the
+    MARRVEL payload helper, tightening the registry `__all__`, moving typed
+    PubMed/MARRVEL imports to focused modules, and adding direct adapter tests.
+  - Command: `make artana-evidence-api-type-check`
+  - Result: passed.
+  - Command: `make artana-evidence-api-static-checks`
+  - Result: passed. Evidence API OpenAPI remained up to date.
+  - Command: `make service-checks`
+  - Result: passed. Graph-service checks, evidence API static checks,
+    OpenAPI/generated TypeScript checks, architecture size, ephemeral
+    Postgres migrations, test suites, and coverage gate passed at 87.44%.
+    Expected opt-in live external API and localhost service tests remained
+    skipped by their normal guards. Generated `coverage.xml` was restored as
+    unrelated churn.
+  - Command: `git diff --check`
+  - Result: passed after final route-adapter and docs updates.
+- 2026-04-28: Typed route-plugin closeout slice.
+  - Code: moved concrete typed direct-source route declarations out of
+    `routers/v2_public.py` and into focused `source_route_*.py` modules for
+    PubMed, MARRVEL, ClinVar, DrugBank, AlphaFold, UniProt,
+    ClinicalTrials.gov, MGI, and ZFIN.
+  - Code: added `source_route_plugins.py` as the typed public route plugin
+    registry and fail-closed drift check against `direct_search_source_keys()`.
+  - Code: `v2_public.py` now registers typed source routes through
+    `register_direct_source_typed_routes(router)` before the generic
+    source-search routes; it no longer declares concrete direct-source paths.
+  - Code: moved the remaining ClinVar, ClinicalTrials.gov, UniProt,
+    AlphaFold, DrugBank, MGI, and ZFIN generic-route payload behavior out of
+    `source_route_adapters.py` and into their focused source route modules.
+  - Code: added `source_route_dependencies.py` and a source-keyed
+    `DirectSourceRouteDependencies` bag so the route contract and
+    `v2_public.py` no longer expose one dependency field per datasource.
+  - Code: added `source_route_helpers.py` for shared route-edge validation,
+    stored-result lookup, JSON encoding, and gateway-unavailable errors.
+  - Code: replaced import-time route-registry drift checks with explicit
+    validation functions invoked by app startup and tests.
+  - Tests: added route-plugin registration coverage proving every concrete
+    typed route comes from the route plugin endpoint map and not from
+    `v2_public.py`.
+  - Tests: added a source check proving `v2_public.py` does not contain
+    concrete direct-source path declarations.
+  - Tests: added guards proving `source_route_adapters.py` is registry-only
+    and every typed route plugin defines the expected public route metadata.
+  - Command: `venv/bin/pytest services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_every_v2_route_is_covered_by_the_route_contract services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_every_v2_route_is_exposed_in_openapi services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_source_search_openapi_keeps_typed_routes_and_capture_contract services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_typed_direct_source_routes_are_registered_from_route_plugins services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_v2_public_has_no_concrete_direct_source_route_paths -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+  - Command: `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_route_adapters.py services/artana_evidence_api/tests/unit/test_direct_source_search_routes.py services/artana_evidence_api/tests/unit/test_pubmed_router.py::test_create_pubmed_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_marrvel_router.py::test_create_marrvel_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_v2_public_routes.py -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+  - Claude second-opinion review: completed. Actionable findings addressed by
+    moving the remaining per-source payload logic into focused source route
+    modules, replacing the per-source-field dependency contract with a
+    source-keyed dependency bag, documenting FastAPI route-edge coupling,
+    deduplicating request parsing through shared helpers, preserving the
+    MARRVEL schema-name subclass with a clearer comment, replacing
+    import-time drift checks with explicit validators, and adding route plugin
+    metadata/registry-only guard tests.
+  - Command: `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_route_adapters.py services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_direct_source_route_adapters_cover_registry_sources services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_direct_source_route_adapter_registry_has_no_source_payloads services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_generic_source_search_routes_do_not_branch_on_source_keys services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_typed_direct_source_routes_are_registered_from_route_plugins services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_direct_source_typed_route_plugins_define_expected_public_routes services/artana_evidence_api/tests/unit/test_v2_public_routes.py::test_v2_public_has_no_concrete_direct_source_route_paths -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+  - Command: `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_route_adapters.py services/artana_evidence_api/tests/unit/test_direct_source_search_routes.py services/artana_evidence_api/tests/unit/test_pubmed_router.py::test_create_pubmed_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_marrvel_router.py::test_create_marrvel_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_v2_public_routes.py -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+  - Command: `make architecture-size-check`
+  - Result: passed.
+  - Command: `make artana-evidence-api-type-check`
+  - Result: passed.
+  - Command: `make artana-evidence-api-static-checks`
+  - Result: passed. Evidence API OpenAPI remained up to date.
+  - Command: `make service-checks`
+  - Result: passed. Graph-service checks, evidence API static checks,
+    OpenAPI/generated TypeScript checks, architecture size, ephemeral
+    Postgres migrations, test suites, and coverage gate passed at 87.44%.
+    Expected opt-in live external API and localhost service tests remained
+    skipped by their normal guards. Generated `coverage.xml` was restored as
+    unrelated churn.
+  - Claude second-opinion re-review: completed. Blockers-only verdict found
+    no merge-blocking issues. Non-blocking notes were that registry validation
+    is cheap enough to call at startup/use sites, generic source-key requests
+    still assemble all route-edge source dependencies, and the source-keyed
+    dependency bag intentionally uses `object | None` plus focused-module
+    casts to keep the public route contract closed.
+  - Command: `git diff --check`
+  - Result: passed after final docs update.
+- 2026-04-29: Route plugin registry consolidation.
+  - Code: removed the separate `source_route_adapters.py` registry.
+  - Code: moved generic `/sources/{source_key}/searches` create/get dispatch
+    into `source_route_plugins.py`, so one route plugin registry owns typed
+    route registration and generic route dispatch.
+  - Code: renamed the shared contract module to `source_route_contracts.py`
+    and made `DirectSourceRoutePlugin` own typed routes plus generic
+    create/get payload handlers.
+  - Tests: renamed route adapter tests to route plugin tests and updated guard
+    coverage so the plugin registry must cover every direct-search source and
+    remain free of source-specific payload behavior.
+  - Tests: added dependency-map drift coverage so generic route dependency
+    keys must match `direct_source_route_plugin_keys()`.
+  - Hardening: normalized MARRVEL stored-result handling to the same explicit
+    type-narrowing pattern as PubMed.
+  - Docs: updated this tracker and `docs/source_plugins.md` to remove the
+    remaining active route-adapter caveat.
+  - Command: `venv/bin/pytest services/artana_evidence_api/tests/unit/test_source_route_plugins.py services/artana_evidence_api/tests/unit/test_direct_source_search_routes.py services/artana_evidence_api/tests/unit/test_pubmed_router.py::test_create_pubmed_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_marrvel_router.py::test_create_marrvel_search_through_generic_v2_source_route services/artana_evidence_api/tests/unit/test_v2_public_routes.py -q`
+  - Result: passed with one existing FastAPI deprecation warning.
+  - Command: `make artana-evidence-api-static-checks`
+  - Result: passed. Evidence API OpenAPI remained up to date.
+  - Command: `make service-checks`
+  - Result: passed. Graph-service checks, evidence API static checks,
+    OpenAPI/generated TypeScript checks, architecture size, ephemeral
+    Postgres migrations, test suites, and coverage gate passed at 87.44%.
+    Expected opt-in live external API and localhost service tests remained
+    skipped by their normal guards. Generated `coverage.xml` was restored as
+    unrelated churn.
+  - Claude second-opinion review: completed. No clear merge blocker was found
+    in the supplied context. Actionable feedback addressed by adding
+    dependency-map drift coverage and normalizing MARRVEL stored-result type
+    narrowing. The review also asked to confirm generic route pre-validation;
+    `v2_public.py` calls `_require_direct_search_source(source_key)` before
+    plugin dispatch.
+  - Command: `git diff --check`
+  - Result: passed after final docs update.

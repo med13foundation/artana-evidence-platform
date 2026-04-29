@@ -143,18 +143,41 @@ temporary parity tests.
 
 ### Public Route Compatibility Branches
 
-`routers/v2_public.py` still has explicit per-source route handlers and two
-generic source-search routing helpers:
+The public API still exposes concrete typed routes per direct-search source
+because each source has its own request and response schemas. Those concrete
+route declarations do not live in `routers/v2_public.py`; they live behind
+route plugins.
 
-- `create_direct_source_search`
-- `get_direct_source_search`
+`source_route_plugins.py` registers typed direct-source route plugins in the
+same order as `direct_search_source_keys()`. Focused `source_route_*.py`
+modules own route paths, request/response model binding, route dependencies,
+OpenAPI summaries, generic-route payload parsing, gateway execution, and
+compatibility response shaping for each source.
 
-That branching is allowed only at the public API edge because each source has a
-different request schema, response schema, dependency injection shape, and
-OpenAPI route contract. It should not be copied into orchestration, handoff,
-planning, adapter, or extraction modules. New source behavior should still land
-in the source plugin first; route code may call stable compatibility helpers
-only to preserve public API shape.
+`routers/v2_public.py` only calls `register_direct_source_typed_routes(router)`
+before registering the generic source-search routes. The generic source-search
+routes delegate through `source_route_plugins.py` instead of branching on
+source keys:
+
+- `create_source_search`
+- `get_source_search`
+
+The route plugin layer owns public API compatibility parsing, response shaping,
+typed route registration, and generic source-key dispatch. It is split into the
+route plugin registry (`source_route_plugins.py`), generic dependency assembly
+(`source_route_dependencies.py`), shared route helpers/errors, shared route
+contracts, and focused source-specific route modules. Keep each module under
+the architecture-size budget and split new source-specific route behavior
+before it turns into another central router. Generic route functions must
+remain source-agnostic; tests guard that they do not reintroduce source-key
+branches. New source behavior should still land in the source plugin first;
+route code may call stable compatibility helpers only to preserve public API
+shape.
+
+Existing path-parameter names are intentionally preserved for compatibility:
+PubMed uses `{job_id}`, MARRVEL uses `{result_id}`, and the other direct-search
+sources use `{search_id}`. New source routes should prefer `{search_id}` unless
+they are preserving an existing public contract.
 
 MARRVEL has one intentional default split:
 

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import ast
+import inspect
 import json
 from collections import Counter
 from collections.abc import Iterable
 from typing import cast
 
+from artana_evidence_api import source_route_plugins
 from artana_evidence_api.app import create_app
 from artana_evidence_api.auth import require_harness_read_access
 from artana_evidence_api.routers import (
@@ -43,6 +46,12 @@ from artana_evidence_api.source_registry import (
     direct_search_source_keys,
     list_source_definitions,
 )
+from artana_evidence_api.source_route_plugins import (
+    direct_source_route_plugin_keys,
+    direct_source_route_plugins,
+    direct_source_typed_route_endpoint_map,
+    validate_direct_source_route_plugins,
+)
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
@@ -64,78 +73,6 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
         "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs",
         "POST",
     ): v2_public.create_source_search_handoff,
-    (
-        "/v2/spaces/{space_id}/sources/pubmed/searches",
-        "POST",
-    ): v2_public.create_pubmed_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}",
-        "GET",
-    ): v2_public.get_pubmed_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/marrvel/searches",
-        "POST",
-    ): v2_public.create_marrvel_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}",
-        "GET",
-    ): v2_public.get_marrvel_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/clinvar/searches",
-        "POST",
-    ): v2_public.create_clinvar_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/clinvar/searches/{search_id}",
-        "GET",
-    ): v2_public.get_clinvar_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/clinical_trials/searches",
-        "POST",
-    ): v2_public.create_clinicaltrials_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/clinical_trials/searches/{search_id}",
-        "GET",
-    ): v2_public.get_clinicaltrials_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/uniprot/searches",
-        "POST",
-    ): v2_public.create_uniprot_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/uniprot/searches/{search_id}",
-        "GET",
-    ): v2_public.get_uniprot_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/alphafold/searches",
-        "POST",
-    ): v2_public.create_alphafold_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/alphafold/searches/{search_id}",
-        "GET",
-    ): v2_public.get_alphafold_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/drugbank/searches",
-        "POST",
-    ): v2_public.create_drugbank_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/drugbank/searches/{search_id}",
-        "GET",
-    ): v2_public.get_drugbank_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/mgi/searches",
-        "POST",
-    ): v2_public.create_mgi_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/mgi/searches/{search_id}",
-        "GET",
-    ): v2_public.get_mgi_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/zfin/searches",
-        "POST",
-    ): v2_public.create_zfin_source_search,
-    (
-        "/v2/spaces/{space_id}/sources/zfin/searches/{search_id}",
-        "GET",
-    ): v2_public.get_zfin_source_search,
     ("/v2/spaces/{space_id}/evidence-runs", "POST"): v2_public.create_evidence_run,
     (
         "/v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups",
@@ -218,6 +155,15 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
         "POST",
     ): v2_public.decide_full_research_suggested_update,
 }
+
+
+def _custom_v2_route_endpoints() -> dict[RouteKey, object]:
+    return {
+        **_CUSTOM_V2_ROUTE_ENDPOINTS,
+        **direct_source_typed_route_endpoint_map(),
+    }
+
+
 _CUSTOM_V1_ROUTE_EQUIVALENTS = {
     ("/v1/harnesses", "GET"),
     ("/v1/spaces/{space_id}/research-init", "POST"),
@@ -312,7 +258,7 @@ def _v2_alias_keys() -> set[RouteKey]:
 
 
 def _expected_v2_keys() -> set[RouteKey]:
-    return _v2_alias_keys() | set(_CUSTOM_V2_ROUTE_ENDPOINTS)
+    return _v2_alias_keys() | set(_custom_v2_route_endpoints())
 
 
 def _user_facing_v1_keys() -> set[RouteKey]:
@@ -351,6 +297,13 @@ def _assert_no_path_leaks(paths: Iterable[str]) -> None:
     )
     for path in paths:
         assert all(fragment not in path for fragment in forbidden_fragments), path
+
+
+def _expr_contains_source_key(expr: ast.expr, *, source_keys: set[str]) -> bool:
+    return any(
+        isinstance(node, ast.Constant) and node.value in source_keys
+        for node in ast.walk(expr)
+    )
 
 
 def _concrete_v2_path(path: str) -> str:
@@ -503,6 +456,158 @@ def test_source_search_openapi_keeps_typed_routes_and_capture_contract() -> None
     }
 
 
+def test_direct_source_route_plugins_cover_registry_sources() -> None:
+    """Every direct-search source must have one public route plugin."""
+
+    validate_direct_source_route_plugins()
+    assert set(direct_source_route_plugin_keys()) == set(direct_search_source_keys())
+
+
+def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
+    """The route plugin registry should not own source-specific payload behavior."""
+
+    source = inspect.getsource(source_route_plugins)
+
+    forbidden_snippets = (
+        "run_clinvar_direct_search",
+        "run_clinicaltrials_direct_search",
+        "run_uniprot_direct_search",
+        "run_alphafold_direct_search",
+        "run_drugbank_direct_search",
+        "run_mgi_direct_search",
+        "run_zfin_direct_search",
+        "create_clinvar_source_search_payload",
+        "create_clinicaltrials_source_search_payload",
+        "create_uniprot_source_search_payload",
+        "create_alphafold_source_search_payload",
+        "create_drugbank_source_search_payload",
+        "create_mgi_source_search_payload",
+        "create_zfin_source_search_payload",
+    )
+    for snippet in forbidden_snippets:
+        assert snippet not in source
+
+
+def test_generic_source_search_routes_do_not_branch_on_source_keys() -> None:
+    """Generic source-search routes should delegate through route plugins."""
+
+    source_keys = set(direct_search_source_keys())
+    branches: list[str] = []
+
+    for route_handler in (v2_public.create_source_search, v2_public.get_source_search):
+        tree = ast.parse(inspect.getsource(route_handler))
+        if any(
+            isinstance(node, ast.If)
+            and _expr_contains_source_key(
+                node.test,
+                source_keys=source_keys,
+            )
+            for node in ast.walk(tree)
+        ):
+            branches.append(route_handler.__name__)
+
+    assert branches == []
+
+
+def test_typed_direct_source_routes_are_registered_from_route_plugins() -> None:
+    """Typed direct-source routes should not be declared inside v2_public."""
+
+    validate_direct_source_route_plugins()
+    routes = _routes_by_path_method()
+
+    for key, endpoint in direct_source_typed_route_endpoint_map().items():
+        assert routes[key].endpoint is endpoint
+        assert endpoint.__module__ != v2_public.__name__
+
+
+def test_direct_source_typed_route_plugins_define_expected_public_routes() -> None:
+    """Each direct source should own stable typed route metadata."""
+
+    expected_routes = {
+        "pubmed": (
+            ("/v2/spaces/{space_id}/sources/pubmed/searches", "POST", 201),
+            ("/v2/spaces/{space_id}/sources/pubmed/searches/{job_id}", "GET", None),
+        ),
+        "marrvel": (
+            ("/v2/spaces/{space_id}/sources/marrvel/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/marrvel/searches/{result_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "clinvar": (
+            ("/v2/spaces/{space_id}/sources/clinvar/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/clinvar/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "drugbank": (
+            ("/v2/spaces/{space_id}/sources/drugbank/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/drugbank/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "alphafold": (
+            ("/v2/spaces/{space_id}/sources/alphafold/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/alphafold/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "uniprot": (
+            ("/v2/spaces/{space_id}/sources/uniprot/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/uniprot/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "clinical_trials": (
+            (
+                "/v2/spaces/{space_id}/sources/clinical_trials/searches",
+                "POST",
+                201,
+            ),
+            (
+                "/v2/spaces/{space_id}/sources/clinical_trials/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "mgi": (
+            ("/v2/spaces/{space_id}/sources/mgi/searches", "POST", 201),
+            ("/v2/spaces/{space_id}/sources/mgi/searches/{search_id}", "GET", None),
+        ),
+        "zfin": (
+            ("/v2/spaces/{space_id}/sources/zfin/searches", "POST", 201),
+            ("/v2/spaces/{space_id}/sources/zfin/searches/{search_id}", "GET", None),
+        ),
+    }
+
+    assert tuple(expected_routes) == direct_search_source_keys()
+    for plugin in direct_source_route_plugins():
+        assert tuple(
+            (route.path, route.method, route.status_code) for route in plugin.routes
+        ) == expected_routes[plugin.source_key]
+        assert all(route.response_model is not None for route in plugin.routes)
+        assert all(route.dependencies for route in plugin.routes)
+
+
+def test_v2_public_has_no_concrete_direct_source_route_paths() -> None:
+    """Concrete direct-source paths should live in route plugins."""
+
+    source = inspect.getsource(v2_public)
+
+    for source_key in direct_search_source_keys():
+        assert f"/v2/spaces/{{space_id}}/sources/{source_key}/searches" not in source
+
+
 def test_v2_source_endpoints_return_registry_entries_over_http() -> None:
     client = TestClient(create_app())
 
@@ -575,7 +680,7 @@ def test_custom_v2_wrappers_delegate_to_expected_task_handlers() -> None:
     """Custom wrappers exist only when the public path parameter names changed."""
     routes = _routes_by_path_method()
 
-    for key, endpoint in _CUSTOM_V2_ROUTE_ENDPOINTS.items():
+    for key, endpoint in _custom_v2_route_endpoints().items():
         assert routes[key].endpoint is endpoint
 
 
