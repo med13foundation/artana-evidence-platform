@@ -60,7 +60,6 @@ _STRUCTURED_REPLAY_SOURCE_KIND_TO_KEY = {
 _MIN_GENE_FAMILY_TOKEN_LENGTH = 4
 
 
-
 @dataclass(frozen=True, slots=True)
 class ResearchInitPubMedResultRecord:
     """Compact summary of one PubMed query family."""
@@ -68,6 +67,7 @@ class ResearchInitPubMedResultRecord:
     query: str
     total_found: int
     abstracts_ingested: int
+
 
 @dataclass(frozen=True, slots=True)
 class ResearchInitExecutionResult:
@@ -82,6 +82,8 @@ class ResearchInitExecutionResult:
     errors: list[str]
     claim_curation: JSONObject | None = None
     research_brief_markdown: str | None = None
+    research_brief_generation: JSONObject | None = None
+
 
 @dataclass(frozen=True, slots=True)
 class _PreparedDocumentExtraction:
@@ -92,6 +94,7 @@ class _PreparedDocumentExtraction:
     errors: tuple[str, ...]
     failed: bool = False
 
+
 @dataclass(frozen=True, slots=True)
 class _PubMedQueryExecutionResult:
     """One completed PubMed query family plus ordered candidate outputs."""
@@ -99,6 +102,7 @@ class _PubMedQueryExecutionResult:
     query_result: ResearchInitPubMedResultRecord | None
     candidates: tuple[object, ...]
     errors: tuple[str, ...]
+
 
 @dataclass(frozen=True, slots=True)
 class ResearchInitPubMedReplayBundle:
@@ -109,6 +113,7 @@ class ResearchInitPubMedReplayBundle:
     selection_errors: tuple[str, ...]
     documents: tuple[ResearchInitPubMedReplayDocument, ...] = ()
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitPubMedReplayDocument:
     """Replayable PubMed document outputs captured from a baseline run."""
@@ -117,6 +122,7 @@ class ResearchInitPubMedReplayDocument:
     sha256: str
     title: str
     extraction_proposals: tuple[ResearchInitStructuredReplayProposal, ...] = ()
+
 
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredReplayDocument:
@@ -138,6 +144,7 @@ class ResearchInitStructuredReplayDocument:
     extraction_status: str
     metadata: JSONObject
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredReplayProposal:
     """Replayable structured-source proposal payload."""
@@ -156,6 +163,7 @@ class ResearchInitStructuredReplayProposal:
     source_document_id: str | None = None
     claim_fingerprint: str | None = None
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredEnrichmentReplaySource:
     """Replayable outputs for one structured enrichment source."""
@@ -167,11 +175,13 @@ class ResearchInitStructuredEnrichmentReplaySource:
     records_processed: int = 0
     errors: tuple[str, ...] = ()
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredEnrichmentReplayBundle:
     """Replayable structured enrichment outputs captured from a prior run."""
 
     sources: tuple[ResearchInitStructuredEnrichmentReplaySource, ...]
+
 
 @dataclass(frozen=True, slots=True)
 class _StoredReplayProposalResult:
@@ -181,6 +191,7 @@ class _StoredReplayProposalResult:
     surfaced_entity_ids: tuple[str, ...] = ()
     created_entity_ids: tuple[str, ...] = ()
     errors: tuple[str, ...] = ()
+
 
 @dataclass(frozen=True, slots=True)
 class _PubMedObservationSyncResult:
@@ -193,6 +204,7 @@ class _PubMedObservationSyncResult:
     seed_entity_ids: tuple[str, ...]
     errors: tuple[str, ...] = ()
 
+
 @dataclass(frozen=True, slots=True)
 class _ObservationBridgeBatchResult:
     """Batch result for one shared observation-bridge run."""
@@ -200,6 +212,7 @@ class _ObservationBridgeBatchResult:
     document_results: dict[str, _PubMedObservationSyncResult]
     seed_entity_ids: tuple[str, ...]
     errors: tuple[str, ...] = ()
+
 
 class _NoOpPipelineRunEventRepository:
     """Drop pipeline trace events for transient observation-bridge runs."""
@@ -233,6 +246,7 @@ class _NoOpPipelineRunEventRepository:
         )
         return []
 
+
 class ResearchInitProgressObserver(Protocol):
     """Observer notified whenever research-init advances one major phase."""
 
@@ -247,6 +261,7 @@ class ResearchInitProgressObserver(Protocol):
         workspace_snapshot: JSONObject,
     ) -> None: ...
 
+
 @dataclass(frozen=True, slots=True)
 class _ChaseRoundResult:
     """Result of one entity chase round."""
@@ -255,6 +270,7 @@ class _ChaseRoundResult:
     documents_created: int
     proposals_created: int
     errors: list[str]
+
 
 @dataclass(frozen=True, slots=True)
 class _ChaseRoundPreparation:

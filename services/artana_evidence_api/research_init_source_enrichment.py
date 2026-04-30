@@ -8,6 +8,7 @@ results, and tracks progress in source_results.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -75,6 +76,7 @@ async def run_clinvar_enrichment(
     all_errors: list[str] = []
     records_processed = 0
     records_by_gene: dict[str, list[dict[str, object]]] = {}
+    document_ids_by_gene: dict[str, str] = {}
 
     gateway = build_clinvar_gateway()
     if gateway is None:
@@ -90,7 +92,6 @@ async def run_clinvar_enrichment(
                 raw_records = await gateway.fetch_records(config=config)
                 records_processed += len(raw_records)
                 if raw_records:
-                    records_by_gene[gene_symbol] = raw_records
                     text_content = _format_clinvar_results(gene_symbol, raw_records)
                     record = _create_enrichment_document(
                         space_id=space_id,
@@ -109,13 +110,18 @@ async def run_clinvar_enrichment(
                     )
                     if record is not None:
                         documents.append(record)
+                        records_by_gene[gene_symbol] = raw_records
+                        document_ids_by_gene[gene_symbol] = record.id
             except Exception as exc:  # noqa: BLE001
                 msg = f"ClinVar query for {gene_symbol}: {exc}"
                 logger.warning(msg)
                 all_errors.append(msg)
 
     # Create proposals directly from structured records
-    all_proposals = _create_clinvar_proposals(gene_symbols, documents, records_by_gene)
+    all_proposals = _create_clinvar_proposals(
+        records_by_gene,
+        document_ids_by_gene=document_ids_by_gene,
+    )
 
     return SourceEnrichmentResult(
         source_key="clinvar",
@@ -127,9 +133,9 @@ async def run_clinvar_enrichment(
 
 
 def _create_clinvar_proposals(
-    gene_symbols: list[str],  # noqa: ARG001
-    documents: list[HarnessDocumentRecord],  # noqa: ARG001
     records_by_gene: dict[str, list[dict[str, object]]],
+    *,
+    document_ids_by_gene: Mapping[str, str],
 ) -> list[HarnessProposalDraft]:
     """Create unreviewed bootstrap drafts from ClinVar variant records.
 
@@ -140,6 +146,14 @@ def _create_clinvar_proposals(
 
     proposals: list[HarnessProposalDraft] = []
     for gene_symbol, records in records_by_gene.items():
+        document_id = document_ids_by_gene.get(gene_symbol)
+        if document_id is None:
+            logger.warning(
+                "Skipping ClinVar proposals for %s because no source document "
+                "was resolved",
+                gene_symbol,
+            )
+            continue
         for rec in records:
             parsed = json_object_or_empty(rec.get("parsed_data"))
             clin_sig = (
@@ -198,6 +212,7 @@ def _create_clinvar_proposals(
                     proposal_type="candidate_claim",
                     source_kind="clinvar_enrichment",
                     source_key=f"clinvar:{clinvar_id}",
+                    document_id=document_id,
                     title=f"ClinVar: {gene_symbol} variant {relation_type} {condition_text}",
                     summary=(
                         f"ClinVar variant {clinvar_id} in {gene_symbol} ({variant_type}) "
@@ -234,6 +249,7 @@ def _create_clinvar_proposals(
                         extra={
                             "gene_symbol": gene_symbol,
                             "clinical_significance": str(clin_sig),
+                            "source_document_id": document_id,
                         },
                     ),
                 ),
@@ -384,8 +400,8 @@ async def run_alphafold_enrichment(
     documents: list[HarnessDocumentRecord] = []
     all_errors: list[str] = []
     records_processed = 0
-    # Collect (term, uniprot_id, records) for proposal creation
-    alphafold_record_groups: list[tuple[str, str, list[dict[str, object]]]] = []
+    # Collect (term, uniprot_id, records, document_id) for proposal creation.
+    alphafold_record_groups: list[tuple[str, str, list[dict[str, object]], str]] = []
 
     gateway = build_alphafold_gateway()
     if gateway is None:
@@ -415,7 +431,6 @@ async def run_alphafold_enrichment(
                 )
                 records_processed += result.fetched_records
                 if result.records:
-                    alphafold_record_groups.append((term, uniprot_id, result.records))
                     text_content = _format_alphafold_results(term, result.records)
                     record = _create_enrichment_document(
                         space_id=space_id,
@@ -435,6 +450,9 @@ async def run_alphafold_enrichment(
                     )
                     if record is not None:
                         documents.append(record)
+                        alphafold_record_groups.append(
+                            (term, uniprot_id, result.records, record.id),
+                        )
             except Exception as exc:  # noqa: BLE001
                 msg = f"AlphaFold query for {term}: {exc}"
                 logger.warning(msg)
@@ -442,9 +460,14 @@ async def run_alphafold_enrichment(
 
     # Create proposals directly from structured records
     all_proposals: list[HarnessProposalDraft] = []
-    for term, uniprot_id, af_records in alphafold_record_groups:
+    for term, uniprot_id, af_records, document_id in alphafold_record_groups:
         all_proposals.extend(
-            _create_alphafold_proposals(term, uniprot_id, af_records),
+            _create_alphafold_proposals(
+                term,
+                uniprot_id,
+                af_records,
+                document_id=document_id,
+            ),
         )
 
     return SourceEnrichmentResult(
@@ -460,6 +483,8 @@ def _create_alphafold_proposals(
     query_term: str,
     uniprot_id: str,
     records: list[dict[str, object]],
+    *,
+    document_id: str,
 ) -> list[HarnessProposalDraft]:
     """Create unreviewed bootstrap drafts from AlphaFold structure predictions.
 
@@ -488,6 +513,7 @@ def _create_alphafold_proposals(
                             proposal_type="candidate_claim",
                             source_kind="alphafold_enrichment",
                             source_key=f"alphafold:{uniprot_id}:{domain_name}",
+                            document_id=document_id,
                             title=f"AlphaFold: {domain_name} PART_OF {protein_name}",
                             summary=(
                                 f"AlphaFold structure prediction shows {domain_name} "
@@ -519,7 +545,10 @@ def _create_alphafold_proposals(
                             },
                             metadata=_bootstrap_proposal_metadata(
                                 source="alphafold_enrichment",
-                                extra={"uniprot_id": uniprot_id},
+                                extra={
+                                    "uniprot_id": uniprot_id,
+                                    "source_document_id": document_id,
+                                },
                             ),
                         ),
                     )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
@@ -71,6 +72,12 @@ def parent_run(
     )
 
 
+def _clinvar_document_ids(
+    records_by_gene: dict[str, list[dict[str, object]]],
+) -> dict[str, str]:
+    return {gene: f"doc-{gene}" for gene in records_by_gene}
+
+
 def test_create_enrichment_document_marks_ingestion_run_completed(
     space_id: UUID,
     document_store: HarnessDocumentStore,
@@ -104,6 +111,42 @@ def test_create_enrichment_document_marks_ingestion_run_completed(
     assert source_capture["capture_method"] == "research_plan"
     assert source_capture["run_id"] == document.ingestion_run_id
     assert source_capture["provenance"]["parent_run_id"] == parent_run.id
+
+
+def test_create_enrichment_document_reuses_duplicate_source_document(
+    space_id: UUID,
+    document_store: HarnessDocumentStore,
+    run_registry: HarnessRunRegistry,
+    artifact_store: HarnessArtifactStore,
+    parent_run: object,
+) -> None:
+    first = _create_enrichment_document(
+        space_id=space_id,
+        document_store=document_store,
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        parent_run=parent_run,
+        title="ClinVar variants for BRCA1",
+        source_type="clinvar",
+        text_content="ClinVar variants for BRCA1.",
+        metadata={"source": "research-init-clinvar", "gene_symbol": "BRCA1"},
+    )
+    second = _create_enrichment_document(
+        space_id=space_id,
+        document_store=document_store,
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        parent_run=parent_run,
+        title="ClinVar variants for BRCA1",
+        source_type="clinvar",
+        text_content="ClinVar variants for BRCA1.",
+        metadata={"source": "research-init-clinvar", "gene_symbol": "BRCA1"},
+    )
+
+    assert first is not None
+    assert second is not None
+    assert second.id == first.id
+    assert document_store.count_documents(space_id=space_id) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -950,7 +993,10 @@ class TestCreateClinVarProposals:
                 },
             ],
         }
-        proposals = _create_clinvar_proposals(["BRCA1"], [], records_by_gene)
+        proposals = _create_clinvar_proposals(
+            records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
+        )
         assert len(proposals) == 1
         p = proposals[0]
         assert isinstance(p, HarnessProposalDraft)
@@ -958,6 +1004,8 @@ class TestCreateClinVarProposals:
         assert p.confidence == 0.5
         assert p.metadata["requires_qualitative_review"] is True
         assert p.metadata["direct_graph_promotion_allowed"] is False
+        assert p.document_id == "doc-BRCA1"
+        assert p.metadata["source_document_id"] == "doc-BRCA1"
         assert p.payload["proposed_claim_type"] == "CAUSES"
         assert p.payload["proposed_subject_label"] == "BRCA1"
         assert "Hereditary breast cancer" in p.payload["proposed_object_label"]
@@ -973,7 +1021,10 @@ class TestCreateClinVarProposals:
                 },
             ],
         }
-        proposals = _create_clinvar_proposals(["TP53"], [], records_by_gene)
+        proposals = _create_clinvar_proposals(
+            records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
+        )
         assert len(proposals) == 1
         p = proposals[0]
         assert p.confidence == 0.5
@@ -990,7 +1041,10 @@ class TestCreateClinVarProposals:
                 },
             ],
         }
-        proposals = _create_clinvar_proposals(["EGFR"], [], records_by_gene)
+        proposals = _create_clinvar_proposals(
+            records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
+        )
         assert len(proposals) == 0
 
     def test_skips_unknown_with_no_conditions(self) -> None:
@@ -1003,7 +1057,10 @@ class TestCreateClinVarProposals:
                 },
             ],
         }
-        proposals = _create_clinvar_proposals(["BRCA2"], [], records_by_gene)
+        proposals = _create_clinvar_proposals(
+            records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
+        )
         assert len(proposals) == 0
 
     def test_handles_parsed_data(self) -> None:
@@ -1019,7 +1076,10 @@ class TestCreateClinVarProposals:
                 },
             ],
         }
-        proposals = _create_clinvar_proposals(["BRCA1"], [], records_by_gene)
+        proposals = _create_clinvar_proposals(
+            records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
+        )
         assert len(proposals) == 1
         p = proposals[0]
         assert p.payload["variant_type"] == "insertion"
@@ -1047,14 +1107,13 @@ class TestCreateClinVarProposals:
             ],
         }
         proposals = _create_clinvar_proposals(
-            ["BRCA1", "TP53"],
-            [],
             records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
         )
         assert len(proposals) == 3
 
     def test_empty_records(self) -> None:
-        proposals = _create_clinvar_proposals(["BRCA1"], [], {})
+        proposals = _create_clinvar_proposals({}, document_ids_by_gene={})
         assert proposals == []
 
     def test_associated_with_for_uncertain_significance(self) -> None:
@@ -1067,7 +1126,10 @@ class TestCreateClinVarProposals:
                 },
             ],
         }
-        proposals = _create_clinvar_proposals(["EGFR"], [], records_by_gene)
+        proposals = _create_clinvar_proposals(
+            records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
+        )
         assert len(proposals) == 1
         p = proposals[0]
         assert p.payload["proposed_claim_type"] == "ASSOCIATED_WITH"
@@ -1083,12 +1145,36 @@ class TestCreateClinVarProposals:
                 },
             ],
         }
-        proposals = _create_clinvar_proposals(["BRCA1"], [], records_by_gene)
+        proposals = _create_clinvar_proposals(
+            records_by_gene,
+            document_ids_by_gene=_clinvar_document_ids(records_by_gene),
+        )
         assert len(proposals) == 1
         bundle = proposals[0].evidence_bundle
         assert len(bundle) == 1
         assert bundle[0]["source_type"] == "structured_database"
         assert "clinvar:55555" in bundle[0]["locator"]
+
+    def test_skips_records_without_source_document(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        records_by_gene = {
+            "BRCA1": [
+                {
+                    "clinvar_id": "55555",
+                    "clinical_significance": "Pathogenic",
+                    "conditions": ["Cancer"],
+                },
+            ],
+        }
+        with caplog.at_level(logging.WARNING):
+            proposals = _create_clinvar_proposals(
+                records_by_gene,
+                document_ids_by_gene={},
+            )
+        assert proposals == []
+        assert "no source document was resolved" in caplog.text
 
 
 # ---------------------------------------------------------------------------
@@ -1109,7 +1195,12 @@ class TestCreateAlphaFoldProposals:
                 ],
             },
         ]
-        proposals = _create_alphafold_proposals("TP53", "P04637", records)
+        proposals = _create_alphafold_proposals(
+            "TP53",
+            "P04637",
+            records,
+            document_id="doc-alphafold",
+        )
         assert len(proposals) == 2
         for p in proposals:
             assert isinstance(p, HarnessProposalDraft)
@@ -1117,6 +1208,8 @@ class TestCreateAlphaFoldProposals:
             assert p.confidence == 0.5
             assert p.metadata["requires_qualitative_review"] is True
             assert p.metadata["direct_graph_promotion_allowed"] is False
+            assert p.document_id == "doc-alphafold"
+            assert p.metadata["source_document_id"] == "doc-alphafold"
             assert p.payload["proposed_claim_type"] == "PART_OF"
             assert p.payload["proposed_object_label"] == "Tumor protein p53"
             assert p.payload["uniprot_id"] == "P04637"
@@ -1131,7 +1224,12 @@ class TestCreateAlphaFoldProposals:
                 ],
             },
         ]
-        proposals = _create_alphafold_proposals("TEST", "Q12345", records)
+        proposals = _create_alphafold_proposals(
+            "TEST",
+            "Q12345",
+            records,
+            document_id="doc-alphafold",
+        )
         assert len(proposals) == 1
         assert proposals[0].payload["proposed_subject_label"] == "KnownDomain"
 
@@ -1139,11 +1237,21 @@ class TestCreateAlphaFoldProposals:
         records = [
             {"protein_name": "TestProtein", "domains": []},
         ]
-        proposals = _create_alphafold_proposals("TEST", "Q12345", records)
+        proposals = _create_alphafold_proposals(
+            "TEST",
+            "Q12345",
+            records,
+            document_id="doc-alphafold",
+        )
         assert proposals == []
 
     def test_no_proposals_for_no_records(self) -> None:
-        proposals = _create_alphafold_proposals("TEST", "Q12345", [])
+        proposals = _create_alphafold_proposals(
+            "TEST",
+            "Q12345",
+            [],
+            document_id="doc-alphafold",
+        )
         assert proposals == []
 
     def test_handles_domain_name_key(self) -> None:
@@ -1155,7 +1263,12 @@ class TestCreateAlphaFoldProposals:
                 ],
             },
         ]
-        proposals = _create_alphafold_proposals("KIN", "P99999", records)
+        proposals = _create_alphafold_proposals(
+            "KIN",
+            "P99999",
+            records,
+            document_id="doc-alphafold",
+        )
         assert len(proposals) == 1
         assert proposals[0].payload["proposed_subject_label"] == "SH2"
 
@@ -1168,7 +1281,12 @@ class TestCreateAlphaFoldProposals:
                 ],
             },
         ]
-        proposals = _create_alphafold_proposals("TEST", "Q12345", records)
+        proposals = _create_alphafold_proposals(
+            "TEST",
+            "Q12345",
+            records,
+            document_id="doc-alphafold",
+        )
         assert len(proposals) == 1
         bundle = proposals[0].evidence_bundle
         assert len(bundle) == 1
@@ -1184,7 +1302,12 @@ class TestCreateAlphaFoldProposals:
                 ],
             },
         ]
-        proposals = _create_alphafold_proposals("TEST", "Q12345", records)
+        proposals = _create_alphafold_proposals(
+            "TEST",
+            "Q12345",
+            records,
+            document_id="doc-alphafold",
+        )
         assert proposals[0].source_key == "alphafold:Q12345:MyDomain"
 
     def test_uses_query_term_when_protein_name_missing(self) -> None:
@@ -1195,7 +1318,12 @@ class TestCreateAlphaFoldProposals:
                 ],
             },
         ]
-        proposals = _create_alphafold_proposals("MED13", "Q9UHV7", records)
+        proposals = _create_alphafold_proposals(
+            "MED13",
+            "Q9UHV7",
+            records,
+            document_id="doc-alphafold",
+        )
         assert len(proposals) == 1
         assert proposals[0].payload["proposed_object_label"] == "MED13"
 
@@ -1246,6 +1374,68 @@ class TestEnrichmentReturnsProposals:
 
         assert len(result.proposals_created) == 1
         assert len(result.documents_created) == 1
+        assert (
+            result.proposals_created[0].document_id
+            == result.documents_created[0].id
+        )
+        assert (
+            result.proposals_created[0].metadata["source_document_id"]
+            == result.documents_created[0].id
+        )
+
+    def test_clinvar_enrichment_reuses_document_for_repeat_proposals(
+        self,
+        space_id: UUID,
+        document_store: HarnessDocumentStore,
+        run_registry: HarnessRunRegistry,
+        artifact_store: HarnessArtifactStore,
+        parent_run: object,
+    ) -> None:
+        mock_records = [
+            {
+                "clinvar_id": "99999",
+                "title": "BRCA1 variant",
+                "clinical_significance": "Pathogenic",
+                "conditions": ["Breast cancer"],
+                "variation_type": "SNV",
+            },
+        ]
+
+        mock_gateway = MagicMock()
+        mock_gateway.fetch_records = AsyncMock(return_value=mock_records)
+
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_clinvar_gateway",
+            return_value=mock_gateway,
+        ):
+            first = asyncio.run(
+                run_clinvar_enrichment(
+                    space_id=space_id,
+                    seed_terms=["BRCA1"],
+                    document_store=document_store,
+                    run_registry=run_registry,
+                    artifact_store=artifact_store,
+                    parent_run=parent_run,
+                ),
+            )
+            second = asyncio.run(
+                run_clinvar_enrichment(
+                    space_id=space_id,
+                    seed_terms=["BRCA1"],
+                    document_store=document_store,
+                    run_registry=run_registry,
+                    artifact_store=artifact_store,
+                    parent_run=parent_run,
+                ),
+            )
+
+        assert len(first.documents_created) == 1
+        assert len(second.documents_created) == 1
+        assert document_store.count_documents(space_id=space_id) == 1
+        document_id = first.documents_created[0].id
+        assert second.documents_created[0].id == document_id
+        assert first.proposals_created[0].document_id == document_id
+        assert second.proposals_created[0].document_id == document_id
 
     def test_alphafold_enrichment_returns_proposals(
         self,
@@ -1299,6 +1489,8 @@ class TestEnrichmentReturnsProposals:
         assert len(result.documents_created) == 1
         p = result.proposals_created[0]
         assert isinstance(p, HarnessProposalDraft)
+        assert p.document_id == result.documents_created[0].id
+        assert p.metadata["source_document_id"] == result.documents_created[0].id
         assert p.payload["proposed_claim_type"] == "PART_OF"
 
     def test_empty_enrichment_has_empty_proposals(

@@ -193,9 +193,10 @@ def _create_enrichment_document(
     text_content: str,
     metadata: JSONObject,
 ) -> HarnessDocumentRecord | None:
-    """Create a harness document for enrichment results, skipping duplicates.
+    """Create or resolve a harness document for enrichment results.
 
-    Returns ``None`` when the content hash already exists in the space.
+    Returns the existing document when the content hash already exists in the space
+    so downstream proposals can still point at a resolvable source document.
     """
     content_bytes = text_content.encode("utf-8")
     sha256 = hashlib.sha256(content_bytes).hexdigest()
@@ -206,11 +207,11 @@ def _create_enrichment_document(
     )
     if existing is not None:
         logger.debug(
-            "Skipping duplicate enrichment document (sha256=%s, source=%s)",
+            "Reusing duplicate enrichment document (sha256=%s, source=%s)",
             sha256[:12],
             source_type,
         )
-        return None
+        return existing
 
     ingestion_run = run_registry.create_run(
         space_id=space_id,

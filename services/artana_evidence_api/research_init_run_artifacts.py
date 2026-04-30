@@ -93,6 +93,7 @@ def research_init_result_payload(
     errors: list[str],
     claim_curation: JSONObject | None = None,
     research_brief_markdown: str | None = None,
+    research_brief_generation: JSONObject | None = None,
 ) -> JSONObject:
     """Build the terminal research-init result artifact payload."""
     serialized_source_results = source_results_with_alias_yield(source_results)
@@ -117,6 +118,8 @@ def research_init_result_payload(
     }
     if research_brief_markdown is not None:
         result["research_brief_markdown"] = research_brief_markdown
+    if research_brief_generation is not None:
+        result["research_brief_generation"] = research_brief_generation
     return result
 
 

@@ -17,6 +17,10 @@ from artana_evidence_api.queued_run_support import store_primary_result_artifact
 from artana_evidence_api.research_bootstrap_runtime import (
     ResearchBootstrapExecutionResult,
 )
+from artana_evidence_api.research_init_brief_outcome import (
+    ResearchInitBriefLlmStatus,
+    ResearchInitBriefOutcome,
+)
 from artana_evidence_api.research_init_chase import (
     _enabled_chase_source_keys,
     _filtered_chase_reason_counts,
@@ -69,6 +73,107 @@ def _resolve_bootstrap_source_type(**kwargs: object) -> str | None:
     if candidate is None or candidate is _resolve_bootstrap_source_type:
         candidate = _default_resolve_bootstrap_source_type
     return cast("_BootstrapSourceResolver", candidate)(**kwargs)
+
+
+async def _generate_and_store_research_brief(
+    *,
+    objective: str,
+    seed_terms: list[str],
+    source_results: dict[str, JSONObject],
+    documents_ingested: int,
+    proposal_count: int,
+    entity_count: int,
+    errors: list[str],
+    chase_rounds_completed: int,
+    proposals: list[JSONObject],
+    artifact_store: HarnessArtifactStore,
+    space_id: UUID,
+    run_id: str,
+) -> ResearchInitBriefOutcome:
+    """Generate the final brief and return structured diagnostics."""
+    try:
+        from artana_evidence_api.research_init_brief import (
+            ResearchBrief,
+            generate_llm_research_brief,
+            generate_research_brief,
+            store_research_brief,
+        )
+
+        deterministic_brief = generate_research_brief(
+            objective=objective,
+            seed_terms=seed_terms,
+            source_results=source_results,
+            documents_ingested=documents_ingested,
+            proposal_count=proposal_count,
+            entity_count=entity_count,
+            errors=errors,
+            chase_rounds_completed=chase_rounds_completed,
+            proposals=proposals,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return ResearchInitBriefOutcome.skipped(
+            reason="generation_failed",
+            error=str(exc),
+            llm_status="not_attempted",
+        )
+
+    brief = deterministic_brief
+    llm_status: ResearchInitBriefLlmStatus = "not_attempted"
+    llm_error: str | None = None
+    try:
+        enhanced_brief: object = await generate_llm_research_brief(
+            objective=objective,
+            seed_terms=seed_terms,
+            deterministic_brief=deterministic_brief,
+        )
+    except Exception as exc:  # noqa: BLE001
+        llm_status = "failed"
+        llm_error = str(exc)
+    else:
+        if not isinstance(enhanced_brief, ResearchBrief):
+            llm_status = "failed"
+            llm_error = (
+                f"generate_llm_research_brief returned {type(enhanced_brief).__name__}"
+            )
+        else:
+            llm_status = (
+                "fallback_deterministic"
+                if enhanced_brief is deterministic_brief
+                else "completed"
+            )
+            brief = enhanced_brief
+
+    try:
+        markdown = brief.to_markdown()
+    except Exception as exc:  # noqa: BLE001
+        return ResearchInitBriefOutcome.skipped(
+            reason="render_failed",
+            error=str(exc),
+            llm_status=llm_status,
+            llm_error=llm_error,
+        )
+
+    try:
+        store_research_brief(
+            brief=brief,
+            artifact_store=artifact_store,
+            space_id=space_id,
+            run_id=run_id,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return ResearchInitBriefOutcome.skipped(
+            reason="storage_failed",
+            error=str(exc),
+            llm_status=llm_status,
+            markdown=markdown,
+            llm_error=llm_error,
+        )
+
+    return ResearchInitBriefOutcome.completed(
+        markdown=markdown,
+        llm_status=llm_status,
+        llm_error=llm_error,
+    )
 
 
 async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
@@ -501,85 +606,62 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
     )
     attach_alias_yield_rollup(source_results)
 
-    # ── Generate research brief ────────────────────────────────────
-    research_brief_markdown: str | None = None
+    chase_rounds_completed = 0
+    workspace_record = artifact_store.get_workspace(
+        space_id=space_id,
+        run_id=run.id,
+    )
+    workspace_payload = (
+        workspace_record.snapshot if workspace_record is not None else {}
+    )
+    for cr in range(1, 3):
+        if f"chase_round_{cr}" in workspace_payload:
+            chase_rounds_completed = cr
+
     try:
-        from artana_evidence_api.research_init_brief import (
-            generate_research_brief,
-            store_research_brief,
-        )
-
-        chase_rounds_completed = 0
-        # Count chase rounds from workspace artifacts
-        workspace_record = artifact_store.get_workspace(
+        run_proposals = proposal_store.list_proposals(
             space_id=space_id,
             run_id=run.id,
         )
-        workspace_payload = (
-            workspace_record.snapshot if workspace_record is not None else {}
-        )
-        for cr in range(1, 3):
-            if f"chase_round_{cr}" in workspace_payload:
-                chase_rounds_completed = cr
-
-        # Pull proposals to ground cross-source overlap detection in
-        # the brief.  Falls back gracefully if the store has none.
-        try:
-            run_proposals = proposal_store.list_proposals(
-                space_id=space_id,
-                run_id=run.id,
-            )
-            proposal_dicts: list[JSONObject] = [
-                {
-                    "source_kind": p.source_kind,
-                    "payload": p.payload,
-                    "metadata": p.metadata,
-                }
-                for p in run_proposals
-            ]
-        except Exception as exc:  # noqa: BLE001
-            logging.getLogger(__name__).debug(
-                "Failed to load proposals for brief overlap detection: %s",
-                exc,
-            )
-            proposal_dicts = []
-
-        brief = generate_research_brief(
-            objective=objective,
-            seed_terms=seed_terms,
-            source_results=source_results,
-            documents_ingested=documents_ingested,
-            proposal_count=created_proposal_count
-            + bootstrap_generated_proposal_count,
-            entity_count=len(created_entity_ids),
-            errors=errors,
-            chase_rounds_completed=chase_rounds_completed,
-            proposals=proposal_dicts,
-        )
-
-        # Try LLM-enhanced brief (falls back to deterministic on any error)
-        try:
-            from artana_evidence_api.research_init_brief import (
-                generate_llm_research_brief,
-            )
-
-            brief = await generate_llm_research_brief(
-                objective=objective,
-                seed_terms=seed_terms,
-                deterministic_brief=brief,
-            )
-        except Exception:  # noqa: BLE001, S110
-            pass  # Keep deterministic brief
-
-        store_research_brief(
-            brief=brief,
-            artifact_store=artifact_store,
-            space_id=space_id,
-            run_id=run.id,
-        )
-        research_brief_markdown = brief.to_markdown()
+        proposal_dicts: list[JSONObject] = [
+            {
+                "source_kind": p.source_kind,
+                "payload": p.payload,
+                "metadata": p.metadata,
+            }
+            for p in run_proposals
+        ]
     except Exception as exc:  # noqa: BLE001
-        errors.append(f"Research brief generation skipped: {exc}")
+        logging.getLogger(__name__).debug(
+            "Failed to load proposals for brief overlap detection: %s",
+            exc,
+        )
+        proposal_dicts = []
+
+    brief_outcome = await _generate_and_store_research_brief(
+        objective=objective,
+        seed_terms=seed_terms,
+        source_results=source_results,
+        documents_ingested=documents_ingested,
+        proposal_count=final_proposal_count,
+        entity_count=len(created_entity_ids),
+        errors=errors,
+        chase_rounds_completed=chase_rounds_completed,
+        proposals=proposal_dicts,
+        artifact_store=artifact_store,
+        space_id=space_id,
+        run_id=run.id,
+    )
+    research_brief_markdown = brief_outcome.markdown
+    brief_error_message = brief_outcome.to_error_message()
+    if brief_error_message is not None:
+        final_errors.append(brief_error_message)
+    brief_generation_metadata = brief_outcome.to_metadata()
+    artifact_store.patch_workspace(
+        space_id=space_id,
+        run_id=run.id,
+        patch={"research_brief_generation": brief_generation_metadata},
+    )
     await guarded_brief_verifier(
         services=services,
         space_id=space_id,
@@ -605,6 +687,7 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
             else None
         ),
         research_brief_markdown=research_brief_markdown,
+        research_brief_generation=brief_generation_metadata,
     )
 
     store_primary_result_artifact(
@@ -622,6 +705,7 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
             "errors": list(final_errors),
             "research_state": research_state_data,
             "research_init_result": result_payload,
+            "research_brief_generation": brief_generation_metadata,
             "claim_curation": result_payload.get("claim_curation"),
             "source_results": result_payload["source_results"],
             "pubmed_results": [
@@ -669,6 +753,8 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
         errors=final_errors,
         claim_curation=json_object(result_payload.get("claim_curation")),
         research_brief_markdown=research_brief_markdown,
+        research_brief_generation=brief_generation_metadata,
     )
+
 
 __all__ = ["complete_research_init_run"]

@@ -60,6 +60,23 @@ __all__ = [
 
 
 def _build_live_brief_metadata(*, workspace_snapshot: JSONObject) -> JSONObject:
+    workspace_status = workspace_snapshot.get("status")
+    brief_generation = json_object_or_empty(
+        workspace_snapshot.get("research_brief_generation")
+    )
+    generation_status = brief_generation.get("status")
+    generation_reason = brief_generation.get("reason")
+    generation_error = brief_generation.get("error")
+    llm_status = brief_generation.get("llm_status")
+    missing_reason = (
+        "research_brief_not_stored"
+        if generation_status == "completed"
+        else generation_reason
+        if isinstance(generation_reason, str)
+        else "missing_research_brief"
+        if workspace_status == "completed"
+        else "not_yet_generated"
+    )
     research_brief = workspace_snapshot.get("research_brief")
     if not isinstance(research_brief, dict):
         return {
@@ -68,17 +85,29 @@ def _build_live_brief_metadata(*, workspace_snapshot: JSONObject) -> JSONObject:
             "markdown_length": 0,
             "section_count": 0,
             "llm_markdown_present": False,
+            "brief_markdown_present": False,
+            "status": "skipped" if workspace_status == "completed" else "pending",
+            "reason": missing_reason,
+            "error": generation_error if isinstance(generation_error, str) else None,
+            "llm_status": llm_status if isinstance(llm_status, str) else "unknown",
         }
     markdown = research_brief.get("markdown")
     sections = research_brief.get("sections")
     title = research_brief.get("title")
+    markdown_present = isinstance(markdown, str) and markdown.strip() != ""
+    llm_markdown_present = llm_status == "completed" and markdown_present
     return {
         "result_key": "research_brief",
         "present": True,
         "title": title if isinstance(title, str) else None,
         "markdown_length": len(markdown) if isinstance(markdown, str) else 0,
         "section_count": len(sections) if isinstance(sections, list) else 0,
-        "llm_markdown_present": isinstance(markdown, str) and markdown.strip() != "",
+        "llm_markdown_present": llm_markdown_present,
+        "brief_markdown_present": markdown_present,
+        "status": "completed",
+        "reason": None,
+        "error": generation_error if isinstance(generation_error, str) else None,
+        "llm_status": llm_status if isinstance(llm_status, str) else "unknown",
     }
 
 
