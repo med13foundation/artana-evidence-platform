@@ -14,6 +14,7 @@ from uuid import UUID, uuid4
 import pytest
 from artana_evidence_api import (
     full_ai_orchestrator_runtime,
+    research_init_guarded,
     research_init_helpers,
     research_init_observation_bridge,
     research_init_runtime,
@@ -45,6 +46,7 @@ from artana_evidence_api.research_bootstrap_runtime import (
     ResearchBootstrapClaimCurationSummary,
     ResearchBootstrapExecutionResult,
 )
+from artana_evidence_api.research_init_models import _ChaseRoundPreparation
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.routers import research_init
@@ -6853,9 +6855,9 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
 
     # All sources start as "pending" when enabled.
     for key in source_results:
-        assert source_results[key]["status"] == "pending", (
-            f"Expected {key!r} to start as 'pending', got {source_results[key]['status']!r}"
-        )
+        assert (
+            source_results[key]["status"] == "pending"
+        ), f"Expected {key!r} to start as 'pending', got {source_results[key]['status']!r}"
 
     # Apply the deferred-marking loop exactly as in execute_research_init_run.
     for pending_source in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
@@ -7607,7 +7609,7 @@ def test_ground_replay_candidate_claim_drafts_grounds_labels_in_current_space() 
     )
     try:
         grounded_drafts, surfaced_entity_ids, created_entity_ids, errors = (
-            research_init_runtime._ground_replay_candidate_claim_drafts(
+            research_init_observation_bridge._ground_replay_candidate_claim_drafts(
                 space_id=space_id,
                 drafts=replay_drafts,
                 graph_api_gateway=_GraphApiGatewayWithCreation(),
@@ -7625,7 +7627,7 @@ def test_ground_replay_candidate_claim_drafts_grounds_labels_in_current_space() 
     assert grounded_drafts[1].payload["proposed_object"] == created_entity_id
 
 
-def _build_chase_preparation_for_test() -> research_init_runtime._ChaseRoundPreparation:
+def _build_chase_preparation_for_test() -> _ChaseRoundPreparation:
     candidates = (
         full_ai_orchestrator_runtime.ResearchOrchestratorChaseCandidate(
             entity_id="entity-1",
@@ -7658,10 +7660,10 @@ def _build_chase_preparation_for_test() -> research_init_runtime._ChaseRoundPrep
             novelty_basis="not_in_previous_seed_terms",
         ),
     )
-    return research_init_runtime._ChaseRoundPreparation(
+    return _ChaseRoundPreparation(
         candidates=candidates,
         filtered_candidates=(),
-        deterministic_selection=research_init_runtime.ResearchOrchestratorChaseSelection(
+        deterministic_selection=research_init_guarded.ResearchOrchestratorChaseSelection(
             selected_entity_ids=["entity-1", "entity-2", "entity-3"],
             selected_labels=["CDK8", "MED12", "MED13L"],
             stop_instead=False,
@@ -8176,7 +8178,7 @@ def test_prepare_chase_round_keeps_taxonomic_candidates_for_organism_objective()
 def test_coerce_guarded_chase_selection_accepts_ordered_subset() -> None:
     preparation = _build_chase_preparation_for_test()
 
-    selection = research_init_runtime._coerce_guarded_chase_selection(
+    selection = research_init_guarded.coerce_guarded_chase_selection(
         selection_payload={
             "selected_entity_ids": ["entity-1", "entity-3"],
             "selected_labels": ["CDK8", "MED13L"],
@@ -8195,7 +8197,7 @@ def test_coerce_guarded_chase_selection_accepts_ordered_subset() -> None:
 def test_coerce_guarded_chase_selection_accepts_exact_deterministic_selection() -> None:
     preparation = _build_chase_preparation_for_test()
 
-    selection = research_init_runtime._coerce_guarded_chase_selection(
+    selection = research_init_guarded.coerce_guarded_chase_selection(
         selection_payload={
             "selected_entity_ids": ["entity-1", "entity-2", "entity-3"],
             "selected_labels": ["CDK8", "MED12", "MED13L"],
@@ -8216,7 +8218,7 @@ def test_coerce_guarded_chase_selection_accepts_exact_deterministic_selection() 
 def test_coerce_guarded_chase_selection_rejects_unknown_entity() -> None:
     preparation = _build_chase_preparation_for_test()
 
-    selection = research_init_runtime._coerce_guarded_chase_selection(
+    selection = research_init_guarded.coerce_guarded_chase_selection(
         selection_payload={
             "selected_entity_ids": ["entity-missing"],
             "selected_labels": ["Missing"],
@@ -8233,7 +8235,7 @@ def test_coerce_guarded_chase_selection_rejects_unknown_entity() -> None:
 def test_coerce_guarded_chase_selection_rejects_out_of_order_subset() -> None:
     preparation = _build_chase_preparation_for_test()
 
-    selection = research_init_runtime._coerce_guarded_chase_selection(
+    selection = research_init_guarded.coerce_guarded_chase_selection(
         selection_payload={
             "selected_entity_ids": ["entity-3", "entity-1"],
             "selected_labels": ["MED13L", "CDK8"],
@@ -8250,7 +8252,7 @@ def test_coerce_guarded_chase_selection_rejects_out_of_order_subset() -> None:
 def test_coerce_guarded_chase_selection_accepts_stop_with_reason() -> None:
     preparation = _build_chase_preparation_for_test()
 
-    selection = research_init_runtime._coerce_guarded_chase_selection(
+    selection = research_init_guarded.coerce_guarded_chase_selection(
         selection_payload={
             "selected_entity_ids": [],
             "selected_labels": [],
@@ -8332,7 +8334,7 @@ async def test_maybe_select_guarded_chase_round_selection_uses_observer() -> Non
                     full_ai_orchestrator_runtime.ResearchOrchestratorChaseCandidate,
                     ...,
                 ],
-                deterministic_selection: research_init_runtime.ResearchOrchestratorChaseSelection,
+                deterministic_selection: research_init_guarded.ResearchOrchestratorChaseSelection,
                 workspace_snapshot: dict[str, object],
             ) -> dict[str, object]:
                 assert round_number == 1
@@ -8358,7 +8360,7 @@ async def test_maybe_select_guarded_chase_round_selection_uses_observer() -> Non
                 }
 
         selection = (
-            await research_init_runtime._maybe_select_guarded_chase_round_selection(
+            await research_init_guarded.maybe_select_guarded_chase_round_selection(
                 services=services,
                 space_id=space_id,
                 run_id=queued_run.id,

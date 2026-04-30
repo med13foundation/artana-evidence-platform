@@ -4,12 +4,16 @@
 Production Python files within the in-scope service and script trees must stay
 under the default line budget. Files that exceed it must be explicitly
 documented in ``architecture_overrides.json`` with a non-empty reason and an
-ISO ``expires_on`` date. The gate fails when:
+ISO ``expires_on`` date. Overrides are a ratchet, not extra room for growth:
+their ``max_lines`` value must match the current file size. The gate fails when:
 
 * an in-scope production file exceeds the default budget without an override;
 * an overridden file exceeds its declared ``max_lines``;
+* an overridden file is smaller than its declared ``max_lines``;
+* an overridden file is now within the default budget;
 * an override path does not exist on disk;
-* an override is missing ``reason`` or ``expires_on``;
+* an override is missing ``reason``, ``tracking_ref``, or ``expires_on``;
+* an override's ``tracking_ref`` is not an issue, URL, or existing docs path;
 * an override's ``expires_on`` is on or before today;
 * an override points outside the in-scope service/script tree.
 """
@@ -21,6 +25,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OVERRIDES_FILE = REPO_ROOT / "architecture_overrides.json"
@@ -50,6 +55,7 @@ class FileSizeOverride:
     path: str
     max_lines: int
     reason: str
+    tracking_ref: str
     expires_on: date
 
 
@@ -130,6 +136,7 @@ def parse_overrides(
         path = entry.get("path")
         max_lines = entry.get("max_lines")
         reason = entry.get("reason")
+        tracking_ref = entry.get("tracking_ref")
         expires_on_raw = entry.get("expires_on")
 
         if not isinstance(path, str) or not path:
@@ -162,6 +169,14 @@ def parse_overrides(
                 ),
             )
             continue
+        if not isinstance(tracking_ref, str) or not tracking_ref.strip():
+            errors.append(
+                Violation(
+                    path=path,
+                    message='"tracking_ref" must be a non-empty issue or plan reference',
+                ),
+            )
+            continue
         if not isinstance(expires_on_raw, str):
             errors.append(
                 Violation(
@@ -188,6 +203,7 @@ def parse_overrides(
                 path=path,
                 max_lines=max_lines,
                 reason=reason.strip(),
+                tracking_ref=tracking_ref.strip(),
                 expires_on=expires_on,
             ),
         )
@@ -218,6 +234,14 @@ def validate(
                 ),
             )
             continue
+        tracking_ref_error = _validate_tracking_ref(override.tracking_ref)
+        if tracking_ref_error is not None:
+            violations.append(
+                Violation(
+                    path=override.path,
+                    message=tracking_ref_error,
+                ),
+            )
         if override.path not in file_sizes:
             violations.append(
                 Violation(
@@ -237,6 +261,18 @@ def validate(
                 ),
             )
         actual = file_sizes[override.path]
+        if actual <= default_max:
+            violations.append(
+                Violation(
+                    path=override.path,
+                    message=(
+                        f"override is no longer needed because the file is"
+                        f" {actual} lines, within the default {default_max}-line"
+                        " budget; remove the override"
+                    ),
+                ),
+            )
+            continue
         if actual > override.max_lines:
             violations.append(
                 Violation(
@@ -244,6 +280,17 @@ def validate(
                     message=(
                         f"file is {actual} lines but override allows"
                         f" only {override.max_lines}"
+                    ),
+                ),
+            )
+        elif actual < override.max_lines:
+            violations.append(
+                Violation(
+                    path=override.path,
+                    message=(
+                        f"override allows {override.max_lines} lines but the file"
+                        f" is only {actual}; lower max_lines to {actual} so the"
+                        " guardrail cannot hide new growth"
                     ),
                 ),
             )
@@ -264,6 +311,31 @@ def validate(
             )
 
     return violations
+
+
+def _validate_tracking_ref(tracking_ref: str) -> str | None:
+    """Return an error when a tracking reference is not actionable."""
+
+    if tracking_ref.startswith(("http://", "https://")):
+        parsed = urlparse(tracking_ref)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            return None
+        return "tracking_ref URL must include an http(s) scheme and host"
+    if tracking_ref.startswith("#") and tracking_ref[1:].isdigit():
+        return None
+    if tracking_ref.startswith("docs/"):
+        docs_path = tracking_ref.split("#", maxsplit=1)[0]
+        candidate = (REPO_ROOT / docs_path).resolve()
+        docs_root = (REPO_ROOT / "docs").resolve()
+        if not candidate.is_relative_to(docs_root):
+            return 'tracking_ref docs path must stay under "docs/"'
+        if candidate.is_file():
+            return None
+        return f'tracking_ref docs path does not exist: "{docs_path}"'
+    return (
+        'tracking_ref must be a GitHub issue like "#123", an http(s) URL,'
+        " or an existing docs/ path"
+    )
 
 
 def _load_overrides_from_disk() -> tuple[list[FileSizeOverride], list[Violation]]:

@@ -19,7 +19,7 @@ from artana_evidence_api.mechanism_discovery_runtime import (
     MechanismDiscoveryRunExecutionResult,
     queue_mechanism_discovery_run,
 )
-from artana_evidence_api.queued_run_support import (
+from artana_evidence_api.queued_run import (
     HarnessAcceptedRunResponse,
     build_accepted_run_response,
     load_primary_result_artifact,

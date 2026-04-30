@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.process_health import ProcessHealth, read_heartbeat
-from artana_evidence_api.runtime_support import get_artana_model_health
+from artana_evidence_api.runtime import get_artana_model_health
 from artana_evidence_api.step_helpers import get_step_execution_health
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 from fastapi import APIRouter

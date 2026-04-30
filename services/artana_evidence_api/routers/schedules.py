@@ -22,7 +22,7 @@ from artana_evidence_api.dependencies import (
     require_harness_space_read_access,
     require_harness_space_write_access,
 )
-from artana_evidence_api.queued_run_support import HarnessAcceptedRunResponse
+from artana_evidence_api.queued_run import HarnessAcceptedRunResponse
 from artana_evidence_api.routers.continuous_learning_runs import (
     ContinuousLearningRunRequest,
     ContinuousLearningRunResponse,

@@ -1,0 +1,335 @@
+{
+  "root_module_counts": [
+    {
+      "path": "services/artana_evidence_api",
+      "max_modules": 237,
+      "target_modules": 190,
+      "reason": "Phase 0 baseline before moving Evidence API module families into packages.",
+      "tracking_ref": "docs/architecture/module-packaging-plan.md"
+    },
+    {
+      "path": "services/artana_evidence_db",
+      "max_modules": 184,
+      "target_modules": 155,
+      "reason": "Phase 0 baseline before moving graph-service module families into packages.",
+      "tracking_ref": "docs/architecture/module-packaging-plan.md"
+    }
+  ],
+  "root_module_families": [
+    {
+      "path": "services/artana_evidence_api",
+      "prefix": "full_ai",
+      "max_modules": 29,
+      "target_package": "services/artana_evidence_api/full_ai_orchestrator",
+      "reason": "Full-AI orchestration is the largest root module family and is scheduled for package migration."
+    },
+    {
+      "path": "services/artana_evidence_api",
+      "prefix": "research_init",
+      "max_modules": 22,
+      "target_package": "services/artana_evidence_api/research_init",
+      "reason": "Research-init modules should move into workflow, document, and source packages."
+    },
+    {
+      "path": "services/artana_evidence_api",
+      "prefix": "evidence_selection",
+      "max_modules": 15,
+      "target_package": "services/artana_evidence_api/evidence_selection",
+      "reason": "Evidence-selection modules are an existing root family retained until a dedicated package pass."
+    },
+    {
+      "path": "services/artana_evidence_api",
+      "prefix": "source_route",
+      "max_modules": 14,
+      "target_package": "services/artana_evidence_api/source_routes",
+      "reason": "Source route compatibility modules remain at root until route package boundaries are introduced."
+    },
+    {
+      "path": "services/artana_evidence_api",
+      "prefix": "document_extraction",
+      "max_modules": 8,
+      "target_package": "services/artana_evidence_api/research_init/documents",
+      "reason": "Document extraction modules are scheduled for research-init document packaging."
+    },
+    {
+      "path": "services/artana_evidence_api",
+      "prefix": "source_document",
+      "max_modules": 7,
+      "target_package": "services/artana_evidence_api/source_handoff",
+      "reason": "Source document modules are scheduled for source-handoff packaging."
+    },
+    {
+      "path": "services/artana_evidence_db",
+      "prefix": "ai_full",
+      "max_modules": 8,
+      "target_package": "services/artana_evidence_db/ai_full_mode",
+      "reason": "Graph full-mode modules are scheduled for ai_full_mode package migration."
+    },
+    {
+      "path": "services/artana_evidence_db",
+      "prefix": "entity_embedding",
+      "max_modules": 7,
+      "target_package": "services/artana_evidence_db/entity_embedding",
+      "reason": "Entity embedding modules are an existing graph-service root family retained until packaging."
+    }
+  ],
+  "package_module_counts": [
+    {
+      "path": "services/artana_evidence_api/routers",
+      "max_modules": 36,
+      "reason": "Evidence API routers are an existing package family; future route moves should ratchet this count down.",
+      "tracking_ref": "docs/architecture/module-packaging-plan.md"
+    },
+    {
+      "path": "services/artana_evidence_db/routers",
+      "max_modules": 22,
+      "reason": "Graph routers are an existing package family; future route moves should ratchet this count down.",
+      "tracking_ref": "docs/architecture/module-packaging-plan.md"
+    },
+    {
+      "path": "services/artana_evidence_db/graph_api_schemas",
+      "max_modules": 22,
+      "reason": "Graph API schema modules are an existing schema package family retained until schema subpackages are introduced.",
+      "tracking_ref": "docs/architecture/module-packaging-plan.md"
+    }
+  ],
+  "large_helper_modules": [],
+  "import_cycle_roots": [
+    {
+      "path": "services/artana_evidence_api/source_plugins",
+      "reason": "Existing plugin package should stay acyclic as a reference package shape."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator",
+      "reason": "Full-AI orchestrator implementation package should stay acyclic as root modules move into it."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator/shadow_planner",
+      "reason": "Full-AI shadow-planner implementation package should stay acyclic after root module migration."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator/shadow",
+      "reason": "Full-AI shadow checkpoint and summary package should stay acyclic after root module migration."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator/progress",
+      "reason": "Full-AI progress observer implementation package should stay acyclic after root module migration."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator/guarded",
+      "reason": "Full-AI guarded planner implementation package should stay acyclic after root module migration."
+    },
+    {
+      "path": "services/artana_evidence_api/routers",
+      "reason": "Router package should stay acyclic while route modules are moved or split."
+    },
+    {
+      "path": "services/artana_evidence_db/routers",
+      "reason": "Graph router package should stay acyclic while route modules are moved or split."
+    },
+    {
+      "path": "services/artana_evidence_db/graph_api_schemas",
+      "reason": "Graph API schema package should stay acyclic before deeper schema packaging."
+    }
+  ],
+  "compatibility_facades": [
+    {
+      "path": "scripts/run_full_ai_real_space_canary.py",
+      "module": "scripts.run_full_ai_real_space_canary",
+      "canonical_package": "scripts.full_ai_real_space_canary",
+      "reason": "Legacy script entrypoint kept while implementation lives in scripts/full_ai_real_space_canary."
+    },
+    {
+      "path": "scripts/run_live_evidence_session_audit.py",
+      "module": "scripts.run_live_evidence_session_audit",
+      "canonical_package": "scripts.live_evidence_session_audit",
+      "reason": "Legacy script entrypoint kept while implementation lives in scripts/live_evidence_session_audit."
+    },
+    {
+      "path": "scripts/run_phase1_guarded_eval.py",
+      "module": "scripts.run_phase1_guarded_eval",
+      "canonical_package": "scripts.phase1_guarded_eval",
+      "reason": "Legacy script entrypoint kept while implementation lives in scripts/phase1_guarded_eval."
+    },
+    {
+      "path": "services/artana_evidence_api/queued_run_support.py",
+      "module": "artana_evidence_api.queued_run_support",
+      "canonical_package": "artana_evidence_api.queued_run",
+      "reason": "Legacy queued-run helper import kept while implementation lives in the queued_run package."
+    },
+    {
+      "path": "services/artana_evidence_api/runtime_support.py",
+      "module": "artana_evidence_api.runtime_support",
+      "canonical_package": "artana_evidence_api.runtime",
+      "reason": "Legacy runtime helper import kept while implementation lives in the runtime package."
+    },
+    {
+      "path": "services/artana_evidence_db/dictionary_support.py",
+      "module": "artana_evidence_db.dictionary_support",
+      "canonical_package": "artana_evidence_db.dictionary",
+      "reason": "Legacy dictionary helper import kept while implementation lives in the dictionary package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner",
+      "reason": "Legacy shadow-planner aggregate import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_comparison.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_comparison",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.comparison",
+      "reason": "Legacy shadow-planner comparison import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_decisions.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_decisions",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.decisions",
+      "reason": "Legacy shadow-planner decision import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_fallbacks.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_fallbacks",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.fallbacks",
+      "reason": "Legacy shadow-planner fallback import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_models.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_models",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.models",
+      "reason": "Legacy shadow-planner model import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_prompts.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_prompts",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.prompts",
+      "reason": "Legacy shadow-planner prompt import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_runtime.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_runtime",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.runtime",
+      "reason": "Legacy shadow-planner runtime import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_telemetry.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_telemetry",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.telemetry",
+      "reason": "Legacy shadow-planner telemetry import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_validation.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_validation",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.validation",
+      "reason": "Legacy shadow-planner validation import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_planner_workspace.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_planner_workspace",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow_planner.workspace",
+      "reason": "Legacy shadow-planner workspace import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_progress_observer.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_progress_observer",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.progress.observer",
+      "reason": "Legacy full-AI progress observer import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_progress_state.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_progress_state",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.progress.state",
+      "reason": "Legacy full-AI progress state import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_initial_decisions.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_initial_decisions",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.initial_decisions",
+      "reason": "Legacy full-AI initial-decision import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_queue.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_queue",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.queue",
+      "reason": "Legacy full-AI queue import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_runtime_artifacts.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_runtime_artifacts",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.runtime_artifacts",
+      "reason": "Legacy full-AI runtime artifact import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_runtime_constants.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_runtime_constants",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.runtime_constants",
+      "reason": "Legacy full-AI runtime constants import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_runtime_models.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_runtime_models",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.runtime_models",
+      "reason": "Legacy full-AI runtime model import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_guarded_rollout.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_guarded_rollout",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.guarded.rollout",
+      "reason": "Legacy full-AI guarded rollout import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_guarded_selection.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_guarded_selection",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.guarded.selection",
+      "reason": "Legacy full-AI guarded selection import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_guarded_support.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_guarded_support",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.guarded.support",
+      "reason": "Legacy full-AI guarded support import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_guarded_verification.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_guarded_verification",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.guarded.verification",
+      "reason": "Legacy full-AI guarded verification import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_checkpoints.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_checkpoints",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow.checkpoints",
+      "reason": "Legacy full-AI shadow checkpoint import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_shadow_support.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_shadow_support",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.shadow.support",
+      "reason": "Legacy full-AI shadow support import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_common_support.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_common_support",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.action_registry",
+      "reason": "Legacy full-AI common-support import kept while action registry and workspace helpers live in focused full_ai_orchestrator package modules."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_execute.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_execute",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.execute",
+      "reason": "Legacy full-AI execute import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_response.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_response",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.response",
+      "reason": "Legacy full-AI response import kept while implementation lives in the full_ai_orchestrator package."
+    },
+    {
+      "path": "services/artana_evidence_api/full_ai_orchestrator_response_support.py",
+      "module": "artana_evidence_api.full_ai_orchestrator_response_support",
+      "canonical_package": "artana_evidence_api.full_ai_orchestrator.response_support",
+      "reason": "Legacy full-AI response support import kept while implementation lives in the full_ai_orchestrator package."
+    }
+  ]
+}

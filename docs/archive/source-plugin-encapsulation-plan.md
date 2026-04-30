@@ -1,5 +1,12 @@
 # Datasource Plugin Encapsulation Plan
 
+Archived status date: April 30, 2026.
+
+This is a historical implementation tracker for the datasource/source-plugin
+encapsulation work. Use the current developer guide at
+`docs/source_plugins.md` and the current roadmap at
+`docs/remaining_work_priorities.md` for active guidance.
+
 ## Purpose
 
 Move from the current adapter-facade architecture to true per-source plugins.
@@ -524,7 +531,7 @@ Deliverables:
 
 - Keep file ownership disjoint during implementation.
 - Prevent overlapping edits to the same plugin files.
-- Integrate subagent findings into `docs/plan.md`.
+- Integrate subagent findings into this tracker.
 - Run focused tests after each phase.
 - Run `make artana-evidence-api-service-checks` before phase closeout.
 - Run `make service-checks` before final closeout.
@@ -1022,7 +1029,7 @@ Goal: make the new architecture understandable and safe to maintain.
 
 Public schema impact: no.
 
-- [x] Update `docs/plan.md` after each phase.
+- [x] Update this tracker after each phase.
 - [x] Add or update source-plugin developer docs.
 - [x] Document how to add a new datasource.
 - [x] Document how non-direct sources are represented.

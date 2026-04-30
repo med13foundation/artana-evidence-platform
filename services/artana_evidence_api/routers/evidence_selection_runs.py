@@ -32,7 +32,7 @@ from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionSourceSearchError,
 )
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
-from artana_evidence_api.queued_run_support import (
+from artana_evidence_api.queued_run import (
     HarnessAcceptedRunResponse,
     build_accepted_run_response,
     load_primary_result_artifact,

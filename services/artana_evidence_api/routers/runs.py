@@ -25,7 +25,7 @@ from artana_evidence_api.graph_client import (
     GraphTransportBundle,  # noqa: TC001
 )
 from artana_evidence_api.harness_registry import get_harness_template
-from artana_evidence_api.queued_run_support import (
+from artana_evidence_api.queued_run import (
     maybe_execute_test_worker_run,
     require_worker_ready,
     should_require_worker_ready,

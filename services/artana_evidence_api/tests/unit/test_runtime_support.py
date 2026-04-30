@@ -367,6 +367,13 @@ def test_get_artana_model_health_logs_probe_failure(
 async def test_run_model_health_probe_uses_request_local_store(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from artana_evidence_api.runtime import model_health as canonical_model_health
+
+    original_create_store = canonical_model_health.create_artana_postgres_store
+    original_kernel = canonical_model_health.ArtanaKernel
+    original_adapter = canonical_model_health.LiteLLMAdapter
+    original_client = canonical_model_health.SingleStepModelClient
+    original_tenant_context = canonical_model_health.TenantContext
     created_stores: list[_FakeProbeStore] = []
     created_kernels: list[_FakeKernel] = []
     created_adapters: list[_FakeAdapter] = []
@@ -441,3 +448,8 @@ async def test_run_model_health_probe_uses_request_local_store(
     assert created_adapters
     assert created_adapters[0].timeout_seconds == 7.5
     assert created_adapters[0].max_retries == 0
+    assert canonical_model_health.create_artana_postgres_store is original_create_store
+    assert canonical_model_health.ArtanaKernel is original_kernel
+    assert canonical_model_health.LiteLLMAdapter is original_adapter
+    assert canonical_model_health.SingleStepModelClient is original_client
+    assert canonical_model_health.TenantContext is original_tenant_context

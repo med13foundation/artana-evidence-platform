@@ -1,6 +1,6 @@
 # Full AI Orchestrator
 
-Status date: April 29, 2026.
+Status date: April 30, 2026.
 
 The full AI orchestrator is the Evidence API's broadest research workflow. It
 wraps research-plan with planner checkpoints, guarded decisions, outputs, and
@@ -13,9 +13,20 @@ Public endpoint:
 Primary files:
 
 - `services/artana_evidence_api/routers/full_ai_orchestrator_runs.py`
-- `services/artana_evidence_api/full_ai_orchestrator_runtime.py`
+- `services/artana_evidence_api/full_ai_orchestrator/execute.py`
+- `services/artana_evidence_api/full_ai_orchestrator/queue.py`
+- `services/artana_evidence_api/full_ai_orchestrator/response.py`
 - `services/artana_evidence_api/full_ai_orchestrator_contracts.py`
+- `services/artana_evidence_api/full_ai_orchestrator/shadow_planner/`
+
+Compatibility imports:
+
+- `services/artana_evidence_api/full_ai_orchestrator_runtime.py`
 - `services/artana_evidence_api/full_ai_orchestrator_shadow_planner.py`
+- other root `full_ai_orchestrator_*.py` files
+
+Those root files are kept as thin compatibility facades so older imports and
+tests continue to work. New implementation work should use the package paths.
 
 ## Current Behavior
 
@@ -62,13 +73,30 @@ Use these runtime endpoints to inspect behavior:
 The old long-form canary reports are not kept in `docs/`. New rollout evidence
 should live under ignored `reports/` output and be summarized in PRs.
 
+## Package Layout
+
+The implementation is now grouped by responsibility:
+
+```text
+full_ai_orchestrator/
+  execute.py              main run execution
+  queue.py                task queue entrypoint
+  response.py             API response assembly
+  action_registry.py      allowed orchestrator actions
+  workspace_support.py    workspace/result helpers
+  progress/               progress observer and state
+  guarded/                guarded rollout, readiness, policy, verification
+  shadow/                 shadow summaries, decisions, timelines
+  shadow_planner/         planner prompts, validation, runtime, telemetry
+```
+
 ## Known Architecture Debt
 
-`full_ai_orchestrator_runtime.py` is still too large. Split it after the
-current behavior is stable:
+The full-AI package split is complete enough that the old root runtime module
+is no longer a monolith. Remaining debt is mostly compatibility cleanup:
 
-- planner checkpoint assembly;
-- guarded action execution;
-- runtime policy;
-- artifact writing;
-- source execution summaries.
+- keep root `full_ai_orchestrator_*.py` facades only while old imports need
+  them;
+- prefer package-path imports for new code;
+- remove compatibility facades only after the control file and tests prove no
+  internal or documented caller still needs the old path.

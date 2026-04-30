@@ -1,6 +1,6 @@
 # Pending Boundary Issues
 
-Status date: April 29, 2026.
+Status date: April 30, 2026.
 
 The repo is now an extracted two-service backend, but a few architecture issues
 remain too large for a narrow patch.
@@ -44,28 +44,33 @@ Remaining cleanup:
 - then add a validator rule that prevents production runtime imports from
   `artana_evidence_api.routers.*`.
 
-## Large Runtime Modules
+## Large Runtime And Workflow Modules
 
-Status: partially addressed; first decomposition slice landed.
+Status: partially addressed; full-AI decomposition slice landed.
 
-The largest modules still mix several responsibilities:
+The full-AI orchestrator implementation now lives under
+`services/artana_evidence_api/full_ai_orchestrator/`. The old root
+`full_ai_orchestrator_*.py` files are compatibility facades and should not be
+treated as the primary implementation.
+
+The largest remaining modules that still mix several responsibilities are:
 
 - `services/artana_evidence_api/research_init_runtime.py`
-- `services/artana_evidence_api/full_ai_orchestrator_runtime.py`
 - `services/artana_evidence_db/graph_workflow_service.py`
 
-First slice completed:
+Completed slices:
 
 - research-plan document source classification and selected-source workset
   selection now live in
   `services/artana_evidence_api/research_init_document_selection.py`.
+- full-AI execution, queueing, response assembly, progress, guarded decisions,
+  shadow summaries, and shadow planner logic now live in focused
+  `full_ai_orchestrator/` package modules.
 
 Target split:
 
 - research-plan: source discovery, replay, document preparation, extraction
   staging, state finalization;
-- full AI orchestrator: planner, action executor, guarded policy, output
-  writer;
 - graph workflows: command-family modules once current service gates stay
   stable.
 

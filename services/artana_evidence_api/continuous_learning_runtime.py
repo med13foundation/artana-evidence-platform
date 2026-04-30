@@ -3,24 +3,43 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from time import monotonic
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4  # noqa: TC003
 
+from artana_evidence_api.continuous_learning_budget import (
+    _active_budget_status,
+    _budget_failure_http_exception,
+    _build_budget_usage,
+    _completed_budget_status,
+    _elapsed_runtime_seconds,
+    _ensure_budget_capacity,
+    _exhausted_budget_status,
+    _write_budget_state,
+)
+from artana_evidence_api.continuous_learning_planning import (
+    ActiveScheduleRunConflictError,
+    ContinuousLearningCandidateRecord,
+    ContinuousLearningExecutionResult,
+    ScheduleTriggerClaimConflictError,
+    build_candidate_claim_proposals,
+    build_new_paper_list,
+    build_next_questions,
+    collect_candidates,
+    ensure_schedule_has_no_active_run,
+    find_active_schedule_run,
+    normalize_seed_entity_ids,
+)
 from artana_evidence_api.graph_client import GraphServiceClientError
 from artana_evidence_api.graph_connection_runtime import (
     HarnessGraphConnectionRequest,
     HarnessGraphConnectionRunner,
 )
 from artana_evidence_api.proposal_store import (
-    HarnessProposalDraft,
-    HarnessProposalRecord,
     HarnessProposalStore,
 )
 from artana_evidence_api.queued_run_support import store_primary_result_artifact
-from artana_evidence_api.ranking import rank_candidate_claim
 from artana_evidence_api.research_bootstrap_runtime import (
     _graph_document_hash,
     _graph_summary_payload,
@@ -36,8 +55,6 @@ from artana_evidence_api.response_serialization import (
 from artana_evidence_api.run_budget import (
     HarnessRunBudget,
     HarnessRunBudgetExceededError,
-    HarnessRunBudgetStatus,
-    HarnessRunBudgetUsage,
     budget_status_to_json,
     budget_to_json,
 )
@@ -55,10 +72,6 @@ from artana_evidence_api.types.graph_contracts import KernelGraphDocumentRespons
 from fastapi import HTTPException, status
 
 if TYPE_CHECKING:
-    from artana_evidence_api.agent_contracts import (
-        GraphConnectionContract,
-        ProposedRelation,
-    )
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
     from artana_evidence_api.document_store import HarnessDocumentStore
@@ -73,527 +86,6 @@ if TYPE_CHECKING:
         HarnessRunRegistry,
     )
     from artana_evidence_api.schedule_store import HarnessScheduleStore
-
-_BLANK_SEED_ENTITY_IDS_ERROR = "seed_entity_ids cannot contain blank values"
-_ACTIVE_SCHEDULE_RUN_STATUSES = frozenset({"queued", "running", "paused"})
-
-
-class ActiveScheduleRunConflictError(RuntimeError):
-    """Raised when a schedule-bound run is already active."""
-
-    def __init__(self, *, schedule_id: str, run_id: str, status: str) -> None:
-        self.schedule_id = schedule_id
-        self.run_id = run_id
-        self.status = status
-        super().__init__(
-            f"Schedule '{schedule_id}' already has active run '{run_id}' "
-            f"with status '{status}'.",
-        )
-
-
-class ScheduleTriggerClaimConflictError(RuntimeError):
-    """Raised when another caller already owns the trigger claim."""
-
-    def __init__(self, *, schedule_id: str) -> None:
-        self.schedule_id = schedule_id
-        super().__init__(
-            f"Schedule '{schedule_id}' is already being triggered by another caller.",
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class ContinuousLearningCandidateRecord:
-    """One candidate relation observed during a learning cycle."""
-
-    seed_entity_id: str
-    source_entity_id: str
-    relation_type: str
-    target_entity_id: str
-    confidence: float
-    evidence_summary: str
-    reasoning: str
-    agent_run_id: str | None
-    source_type: str
-
-
-@dataclass(frozen=True, slots=True)
-class ContinuousLearningExecutionResult:
-    """Combined outcome for one completed continuous-learning run."""
-
-    run: HarnessRunRecord
-    candidates: list[ContinuousLearningCandidateRecord]
-    proposal_records: list[HarnessProposalRecord]
-    delta_report: JSONObject
-    next_questions: list[str]
-    errors: list[str]
-    run_budget: HarnessRunBudget
-    budget_status: HarnessRunBudgetStatus
-
-
-def find_active_schedule_run(
-    *,
-    space_id: UUID | str,
-    schedule_id: str,
-    run_registry: HarnessRunRegistry,
-) -> HarnessRunRecord | None:
-    """Return the newest active continuous-learning run for one schedule."""
-    normalized_schedule_id = schedule_id.strip()
-    if normalized_schedule_id == "":
-        return None
-    for run in run_registry.list_runs(space_id=space_id):
-        if run.harness_id != "continuous-learning":
-            continue
-        if run.status not in _ACTIVE_SCHEDULE_RUN_STATUSES:
-            continue
-        if run.input_payload.get("schedule_id") != normalized_schedule_id:
-            continue
-        return run
-    return None
-
-
-def ensure_schedule_has_no_active_run(
-    *,
-    space_id: UUID | str,
-    schedule_id: str,
-    run_registry: HarnessRunRegistry,
-) -> None:
-    """Raise when a schedule already owns an active continuous-learning run."""
-    active_run = find_active_schedule_run(
-        space_id=space_id,
-        schedule_id=schedule_id,
-        run_registry=run_registry,
-    )
-    if active_run is None:
-        return
-    raise ActiveScheduleRunConflictError(
-        schedule_id=schedule_id,
-        run_id=active_run.id,
-        status=active_run.status,
-    )
-
-
-def _elapsed_runtime_seconds(started_at: float) -> float:
-    return round(max(monotonic() - started_at, 0.0), 6)
-
-
-def _build_budget_usage(
-    *,
-    tool_calls: int,
-    external_queries: int,
-    new_proposals: int,
-    runtime_seconds: float,
-    cost_usd: float = 0.0,
-) -> HarnessRunBudgetUsage:
-    return HarnessRunBudgetUsage(
-        tool_calls=tool_calls,
-        external_queries=external_queries,
-        new_proposals=new_proposals,
-        runtime_seconds=runtime_seconds,
-        cost_usd=cost_usd,
-    )
-
-
-def _active_budget_status(
-    *,
-    budget: HarnessRunBudget,
-    usage: HarnessRunBudgetUsage,
-) -> HarnessRunBudgetStatus:
-    return HarnessRunBudgetStatus(
-        status="active",
-        limits=budget,
-        usage=usage,
-        exhausted_limit=None,
-        message="Run is within budget limits.",
-    )
-
-
-def _completed_budget_status(
-    *,
-    budget: HarnessRunBudget,
-    usage: HarnessRunBudgetUsage,
-) -> HarnessRunBudgetStatus:
-    return HarnessRunBudgetStatus(
-        status="completed",
-        limits=budget,
-        usage=usage,
-        exhausted_limit=None,
-        message="Run completed within budget limits.",
-    )
-
-
-def _exhausted_budget_status(
-    *,
-    budget: HarnessRunBudget,
-    exceeded: HarnessRunBudgetExceededError,
-) -> HarnessRunBudgetStatus:
-    return HarnessRunBudgetStatus(
-        status="exhausted",
-        limits=budget,
-        usage=exceeded.usage,
-        exhausted_limit=exceeded.limit_name,
-        message=str(exceeded),
-    )
-
-
-def _write_budget_state(  # noqa: PLR0913
-    *,
-    space_id: UUID,
-    run_id: str,
-    artifact_store: HarnessArtifactStore,
-    budget: HarnessRunBudget,
-    budget_status: HarnessRunBudgetStatus,
-) -> None:
-    artifact_store.put_artifact(
-        space_id=space_id,
-        run_id=run_id,
-        artifact_key="run_budget",
-        media_type="application/json",
-        content={"limits": budget_to_json(budget)},
-    )
-    artifact_store.put_artifact(
-        space_id=space_id,
-        run_id=run_id,
-        artifact_key="budget_status",
-        media_type="application/json",
-        content=budget_status_to_json(budget_status),
-    )
-    artifact_store.patch_workspace(
-        space_id=space_id,
-        run_id=run_id,
-        patch={
-            "run_budget": budget_to_json(budget),
-            "budget_status": budget_status_to_json(budget_status),
-        },
-    )
-
-
-def _ensure_budget_capacity(  # noqa: PLR0913
-    *,
-    budget: HarnessRunBudget,
-    tool_calls: int,
-    external_queries: int,
-    runtime_seconds: float,
-    next_tool_calls: int = 0,
-    next_external_queries: int = 0,
-) -> None:
-    projected_tool_calls = tool_calls + next_tool_calls
-    if projected_tool_calls > budget.max_tool_calls:
-        usage = _build_budget_usage(
-            tool_calls=tool_calls,
-            external_queries=external_queries,
-            new_proposals=0,
-            runtime_seconds=runtime_seconds,
-        )
-        message = (
-            "Run exceeded max_tool_calls budget: "
-            f"{projected_tool_calls} > {budget.max_tool_calls}"
-        )
-        raise HarnessRunBudgetExceededError(
-            limit_name="max_tool_calls",
-            limit_value=float(budget.max_tool_calls),
-            usage=usage,
-            message=message,
-        )
-    projected_external_queries = external_queries + next_external_queries
-    if projected_external_queries > budget.max_external_queries:
-        usage = _build_budget_usage(
-            tool_calls=tool_calls,
-            external_queries=external_queries,
-            new_proposals=0,
-            runtime_seconds=runtime_seconds,
-        )
-        message = (
-            "Run exceeded max_external_queries budget: "
-            f"{projected_external_queries} > {budget.max_external_queries}"
-        )
-        raise HarnessRunBudgetExceededError(
-            limit_name="max_external_queries",
-            limit_value=float(budget.max_external_queries),
-            usage=usage,
-            message=message,
-        )
-    if runtime_seconds > float(budget.max_runtime_seconds):
-        usage = _build_budget_usage(
-            tool_calls=tool_calls,
-            external_queries=external_queries,
-            new_proposals=0,
-            runtime_seconds=runtime_seconds,
-        )
-        message = (
-            "Run exceeded max_runtime_seconds budget: "
-            f"{runtime_seconds:.3f} > {budget.max_runtime_seconds}"
-        )
-        raise HarnessRunBudgetExceededError(
-            limit_name="max_runtime_seconds",
-            limit_value=float(budget.max_runtime_seconds),
-            usage=usage,
-            message=message,
-        )
-
-
-def _budget_failure_http_exception(
-    exceeded: HarnessRunBudgetExceededError,
-) -> HTTPException:
-    return HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail=str(exceeded),
-    )
-
-
-def normalize_seed_entity_ids(seed_entity_ids: list[str] | None) -> list[str]:
-    """Normalize a schedule or run request seed list."""
-    if seed_entity_ids is None:
-        return []
-    normalized_ids: list[str] = []
-    for value in seed_entity_ids:
-        normalized = value.strip()
-        if not normalized:
-            raise ValueError(_BLANK_SEED_ENTITY_IDS_ERROR)
-        normalized_ids.append(normalized)
-    return normalized_ids
-
-
-def _candidate_from_relation(
-    *,
-    seed_entity_id: str,
-    relation: ProposedRelation,
-    agent_run_id: str | None,
-    source_type: str,
-) -> ContinuousLearningCandidateRecord:
-    return ContinuousLearningCandidateRecord(
-        seed_entity_id=seed_entity_id,
-        source_entity_id=relation.source_id,
-        relation_type=relation.relation_type,
-        target_entity_id=relation.target_id,
-        confidence=relation.confidence,
-        evidence_summary=relation.evidence_summary,
-        reasoning=relation.reasoning,
-        agent_run_id=agent_run_id,
-        source_type=source_type,
-    )
-
-
-def collect_candidates(
-    outcomes: list[GraphConnectionContract],
-    *,
-    max_candidates: int,
-) -> tuple[list[ContinuousLearningCandidateRecord], list[str]]:
-    """Collect normalized learning-cycle candidates from graph-connection outcomes."""
-    candidates: list[ContinuousLearningCandidateRecord] = []
-    errors: list[str] = []
-    for outcome in outcomes:
-        if outcome.decision != "generated" and not outcome.proposed_relations:
-            errors.append(
-                f"seed:{outcome.seed_entity_id}:no_generated_relations:{outcome.decision}",
-            )
-        for relation in outcome.proposed_relations:
-            if len(candidates) >= max_candidates:
-                break
-            candidates.append(
-                _candidate_from_relation(
-                    seed_entity_id=outcome.seed_entity_id,
-                    relation=relation,
-                    agent_run_id=outcome.agent_run_id,
-                    source_type=outcome.source_type,
-                ),
-            )
-    return candidates, errors
-
-
-def _relation_source_key(relation: ProposedRelation) -> str:
-    return f"{relation.source_id}:{relation.relation_type}:{relation.target_id}"
-
-
-def build_candidate_claim_proposals(
-    *,
-    outcomes: list[GraphConnectionContract],
-    max_new_proposals: int,
-    existing_source_keys: set[str],
-) -> tuple[tuple[HarnessProposalDraft, ...], list[JSONObject]]:
-    """Build only net-new candidate-claim proposals for one learning cycle."""
-    proposals: list[HarnessProposalDraft] = []
-    skipped_candidates: list[JSONObject] = []
-    staged_source_keys: set[str] = set()
-    for outcome in outcomes:
-        for relation in outcome.proposed_relations:
-            if len(proposals) >= max_new_proposals:
-                break
-            source_key = _relation_source_key(relation)
-            if source_key in existing_source_keys or source_key in staged_source_keys:
-                skipped_candidates.append(
-                    {
-                        "seed_entity_id": outcome.seed_entity_id,
-                        "source_key": source_key,
-                        "reason": "already_reviewed_or_staged",
-                    },
-                )
-                continue
-            ranking = rank_candidate_claim(
-                confidence=relation.confidence,
-                supporting_document_count=relation.supporting_document_count,
-                evidence_reference_count=len(relation.supporting_provenance_ids),
-            )
-            evidence_bundle: list[JSONObject] = [
-                evidence.model_dump(mode="json") for evidence in outcome.evidence
-            ]
-            evidence_bundle.append(
-                {
-                    "source_type": "continuous_learning_relation",
-                    "locator": source_key,
-                    "excerpt": relation.evidence_summary,
-                    "relevance": relation.confidence,
-                },
-            )
-            proposals.append(
-                HarnessProposalDraft(
-                    proposal_type="candidate_claim",
-                    source_kind="continuous_learning_run",
-                    source_key=source_key,
-                    title=(
-                        f"Continuous learning claim: {relation.source_id} "
-                        f"{relation.relation_type} {relation.target_id}"
-                    ),
-                    summary=relation.evidence_summary,
-                    confidence=relation.confidence,
-                    ranking_score=ranking.score,
-                    reasoning_path={
-                        "seed_entity_id": outcome.seed_entity_id,
-                        "source_entity_id": relation.source_id,
-                        "relation_type": relation.relation_type,
-                        "target_entity_id": relation.target_id,
-                        "reasoning": relation.reasoning,
-                        "agent_run_id": outcome.agent_run_id,
-                    },
-                    evidence_bundle=evidence_bundle,
-                    payload={
-                        "proposed_claim_type": relation.relation_type,
-                        "proposed_subject": relation.source_id,
-                        "proposed_object": relation.target_id,
-                        "evidence_tier": relation.evidence_tier,
-                        "supporting_document_count": relation.supporting_document_count,
-                        "supporting_provenance_ids": relation.supporting_provenance_ids,
-                    },
-                    metadata={
-                        "seed_entity_id": outcome.seed_entity_id,
-                        "agent_run_id": outcome.agent_run_id,
-                        "source_type": outcome.source_type,
-                        **ranking.metadata,
-                    },
-                ),
-            )
-            staged_source_keys.add(source_key)
-    return tuple(proposals), skipped_candidates
-
-
-def build_new_paper_list(outcomes: list[GraphConnectionContract]) -> list[JSONObject]:
-    """Build a normalized paper/provenance reference list from cycle outcomes."""
-    seen_refs: set[tuple[str, str]] = set()
-    paper_refs: list[JSONObject] = []
-    for outcome in outcomes:
-        for relation in outcome.proposed_relations:
-            for provenance_id in relation.supporting_provenance_ids:
-                ref = ("provenance", provenance_id)
-                if ref in seen_refs:
-                    continue
-                seen_refs.add(ref)
-                paper_refs.append(
-                    {
-                        "reference_type": "provenance",
-                        "reference_id": provenance_id,
-                        "seed_entity_id": outcome.seed_entity_id,
-                        "source_key": _relation_source_key(relation),
-                    },
-                )
-        for evidence in outcome.evidence:
-            ref = (evidence.source_type, evidence.locator)
-            if ref in seen_refs:
-                continue
-            seen_refs.add(ref)
-            paper_refs.append(
-                {
-                    "reference_type": evidence.source_type,
-                    "reference_id": evidence.locator,
-                    "seed_entity_id": outcome.seed_entity_id,
-                },
-            )
-    return paper_refs
-
-
-def _append_next_question(
-    *,
-    questions: list[str],
-    seen_questions: set[str],
-    candidate: str,
-    max_next_questions: int,
-) -> bool:
-    normalized = candidate.strip()
-    if (
-        normalized == ""
-        or normalized in seen_questions
-        or len(questions) >= max_next_questions
-    ):
-        return False
-    questions.append(normalized)
-    seen_questions.add(normalized)
-    return True
-
-
-def build_next_questions(
-    proposals: list[HarnessProposalRecord],
-    *,
-    max_next_questions: int,
-    objective: str | None = None,
-    existing_pending_questions: list[str] | None = None,
-) -> list[str]:
-    """Build a lightweight next-question backlog from staged proposals."""
-    questions: list[str] = []
-    seen_questions: set[str] = set()
-    for question in existing_pending_questions or []:
-        _append_next_question(
-            questions=questions,
-            seen_questions=seen_questions,
-            candidate=question,
-            max_next_questions=max_next_questions,
-        )
-        if len(questions) >= max_next_questions:
-            return questions
-    for proposal in proposals[:max_next_questions]:
-        subject = proposal.payload.get("proposed_subject")
-        relation_type = proposal.payload.get("proposed_claim_type")
-        target = proposal.payload.get("proposed_object")
-        if not (
-            isinstance(subject, str)
-            and isinstance(relation_type, str)
-            and isinstance(target, str)
-        ):
-            continue
-        _append_next_question(
-            questions=questions,
-            seen_questions=seen_questions,
-            candidate=(
-                f"What new evidence best validates "
-                f"{subject} {relation_type} {target}?"
-            ),
-            max_next_questions=max_next_questions,
-        )
-        if len(questions) >= max_next_questions:
-            return questions
-    if (
-        isinstance(objective, str)
-        and objective.strip() != ""
-        and len(questions) < max_next_questions
-    ):
-        _append_next_question(
-            questions=questions,
-            seen_questions=seen_questions,
-            candidate=(
-                "What evidence should be collected next to advance: "
-                f"{objective.strip()}?"
-            ),
-            max_next_questions=max_next_questions,
-        )
-    return questions
-
 
 def _research_state_snapshot_artifact(state: HarnessResearchStateRecord) -> JSONObject:
     return {

@@ -374,6 +374,88 @@ def test_sqlalchemy_harness_document_store_persists_and_updates_documents(
     assert [document.id for document in listed_documents] == [created_document.id]
 
 
+def test_sqlalchemy_harness_document_store_counts_finds_and_updates_content(
+    session: Session,
+) -> None:
+    document_store = SqlAlchemyHarnessDocumentStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-ingestion",
+        title="Document ingestion",
+        input_payload={"title": "Durable document"},
+    )
+
+    created = document_store.create_document(
+        space_id=space_id,
+        created_by=str(uuid4()),
+        title="Durable document",
+        source_type="pdf",
+        filename="evidence.pdf",
+        media_type="application/pdf",
+        sha256="pdf-sha-123",
+        byte_size=128,
+        page_count=None,
+        text_content="",
+        raw_storage_key=None,
+        enriched_storage_key=None,
+        ingestion_run_id=run.id,
+        last_enrichment_run_id=None,
+        enrichment_status="not_started",
+        extraction_status="not_started",
+        metadata=None,
+    )
+
+    assert document_store.count_documents(space_id=space_id) == 1
+    assert document_store.count_documents(space_id=str(uuid4())) == 0
+    assert (
+        document_store.find_document_by_sha256(
+            space_id=space_id,
+            sha256="pdf-sha-123",
+        )
+        is not None
+    )
+    assert (
+        document_store.find_document_by_sha256(
+            space_id=space_id,
+            sha256="missing-sha",
+        )
+        is None
+    )
+    assert (
+        document_store.get_document(space_id=str(uuid4()), document_id=created.id)
+        is None
+    )
+    assert (
+        document_store.update_document(
+            space_id=space_id,
+            document_id=str(uuid4()),
+            text_content="missing",
+        )
+        is None
+    )
+
+    updated = document_store.update_document(
+        space_id=space_id,
+        document_id=created.id,
+        text_content="Line one\nLine two",
+        page_count=2,
+        raw_storage_key="documents/raw/evidence.pdf",
+        enriched_storage_key="documents/enriched/evidence.txt",
+        enrichment_status="completed",
+        metadata_patch={"page_range": "1-2"},
+    )
+
+    assert updated is not None
+    assert updated.text_excerpt == "Line one Line two"
+    assert updated.page_count == 2
+    assert updated.raw_storage_key == "documents/raw/evidence.pdf"
+    assert updated.enriched_storage_key == "documents/enriched/evidence.txt"
+    assert updated.enrichment_status == "completed"
+    assert updated.metadata["page_range"] == "1-2"
+
+
 def test_sqlalchemy_harness_proposal_store_filters_by_document_id(
     session: Session,
 ) -> None:
@@ -1162,6 +1244,140 @@ def test_sqlalchemy_harness_review_item_store_reuses_existing_item_after_unique_
             ),
         ).scalars().all()
         assert len(stored_models) == 1
+
+
+def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
+    session: Session,
+) -> None:
+    review_store = SqlAlchemyHarnessReviewItemStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-extraction",
+        title="Review queue run",
+        input_payload={"source": "unit-test"},
+    )
+    document_id = str(uuid4())
+    created = review_store.create_review_items(
+        space_id=space_id,
+        run_id=run.id,
+        review_items=(
+            HarnessReviewItemDraft(
+                review_type="phenotype_claim_review",
+                source_family="document_extraction",
+                source_kind="document_extraction",
+                source_key="doc:phenotype:1",
+                document_id=document_id,
+                title="Review phenotype",
+                summary="developmental delay",
+                priority="high",
+                confidence=0.91,
+                ranking_score=0.91,
+                evidence_bundle=[{"quote": "developmental delay"}],
+                payload={"phenotype": "developmental delay"},
+                metadata={"source": "unit-test"},
+                review_fingerprint="review-fingerprint-1",
+            ),
+            HarnessReviewItemDraft(
+                review_type="variant_claim_review",
+                source_family="document_extraction",
+                source_kind="document_extraction",
+                source_key="doc:variant:1",
+                document_id=str(uuid4()),
+                title="Review variant",
+                summary="variant evidence",
+                priority="medium",
+                confidence=0.72,
+                ranking_score=0.72,
+                evidence_bundle=[],
+                payload={"variant": "c.1A>G"},
+                metadata={},
+                review_fingerprint=None,
+            ),
+        ),
+    )
+
+    assert review_store.count_review_items(space_id=space_id) == 2
+    assert len(review_store.list_review_items(space_id=space_id)) == 2
+    assert (
+        len(review_store.list_review_items(space_id=space_id, status="pending_review"))
+        == 2
+    )
+    assert (
+        len(
+            review_store.list_review_items(
+                space_id=space_id,
+                review_type="phenotype_claim_review",
+            ),
+        )
+        == 1
+    )
+    assert (
+        len(
+            review_store.list_review_items(
+                space_id=space_id,
+                source_family="document_extraction",
+                run_id=run.id,
+                document_id=document_id,
+            ),
+        )
+        == 1
+    )
+
+    fetched = review_store.get_review_item(
+        space_id=space_id,
+        review_item_id=created[0].id,
+    )
+    assert fetched is not None
+    assert fetched.metadata["source"] == "unit-test"
+    assert (
+        review_store.get_review_item(
+            space_id=str(uuid4()),
+            review_item_id=created[0].id,
+        )
+        is None
+    )
+    with pytest.raises(ValueError, match="Unsupported review item status"):
+        review_store.decide_review_item(
+            space_id=space_id,
+            review_item_id=created[0].id,
+            status="needs_more_magic",
+            decision_reason=None,
+        )
+
+    decided = review_store.decide_review_item(
+        space_id=space_id,
+        review_item_id=created[0].id,
+        status="resolved",
+        decision_reason=" accepted ",
+        metadata={"reviewed_by": "unit-test"},
+        linked_proposal_id=f" {uuid4()} ",
+        linked_approval_key=" approval-1 ",
+    )
+    assert decided is not None
+    assert decided.status == "resolved"
+    assert decided.decision_reason == "accepted"
+    assert decided.metadata["reviewed_by"] == "unit-test"
+    assert decided.linked_proposal_id is not None
+    assert decided.linked_approval_key == "approval-1"
+
+    with pytest.raises(ValueError, match="already decided"):
+        review_store.decide_review_item(
+            space_id=space_id,
+            review_item_id=created[0].id,
+            status="dismissed",
+            decision_reason="duplicate",
+        )
+    assert (
+        review_store.decide_review_item(
+            space_id=space_id,
+            review_item_id=str(uuid4()),
+            status="dismissed",
+            decision_reason="missing",
+        )
+        is None
+    )
 
 
 def test_sqlalchemy_harness_schedule_store_preserves_run_metadata_across_sessions(

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date
+import json
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,7 @@ from scripts.validate_architecture_size import (
     validate,
 )
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
 TODAY = date(2026, 4, 26)
 FUTURE = date(2026, 12, 31)
 PAST = date(2026, 1, 1)
@@ -29,11 +31,13 @@ def _override(
     max_lines: int = 1500,
     expires_on: date = FUTURE,
     reason: str = "transitional",
+    tracking_ref: str = "docs/plan.md",
 ) -> FileSizeOverride:
     return FileSizeOverride(
         path=path,
         max_lines=max_lines,
         reason=reason,
+        tracking_ref=tracking_ref,
         expires_on=expires_on,
     )
 
@@ -113,6 +117,7 @@ class TestParseOverrides:
                     "path": "services/artana_evidence_api/foo.py",
                     "max_lines": 1500,
                     "reason": "transitional",
+                    "tracking_ref": "docs/plan.md",
                     "expires_on": "2026-12-31",
                 },
             ],
@@ -125,6 +130,7 @@ class TestParseOverrides:
                 path="services/artana_evidence_api/foo.py",
                 max_lines=1500,
                 reason="transitional",
+                tracking_ref="docs/plan.md",
                 expires_on=FUTURE,
             ),
         ]
@@ -144,12 +150,21 @@ class TestParseOverrides:
     @pytest.mark.parametrize(
         ("entry", "expected_fragment"),
         [
-            ({"max_lines": 1500, "reason": "x", "expires_on": "2026-12-31"}, "path"),
+            (
+                {
+                    "max_lines": 1500,
+                    "reason": "x",
+                    "tracking_ref": "docs/plan.md",
+                    "expires_on": "2026-12-31",
+                },
+                "path",
+            ),
             (
                 {
                     "path": "services/artana_evidence_api/foo.py",
                     "max_lines": 0,
                     "reason": "x",
+                    "tracking_ref": "docs/plan.md",
                     "expires_on": "2026-12-31",
                 },
                 "max_lines",
@@ -159,6 +174,7 @@ class TestParseOverrides:
                     "path": "services/artana_evidence_api/foo.py",
                     "max_lines": 1500,
                     "reason": "   ",
+                    "tracking_ref": "docs/plan.md",
                     "expires_on": "2026-12-31",
                 },
                 "reason",
@@ -168,6 +184,36 @@ class TestParseOverrides:
                     "path": "services/artana_evidence_api/foo.py",
                     "max_lines": 1500,
                     "reason": "x",
+                    "tracking_ref": "   ",
+                    "expires_on": "2026-12-31",
+                },
+                "tracking_ref",
+            ),
+            (
+                {
+                    "path": "services/artana_evidence_api/foo.py",
+                    "max_lines": 1500,
+                    "reason": "x",
+                    "expires_on": "2026-12-31",
+                },
+                "tracking_ref",
+            ),
+            (
+                {
+                    "path": "services/artana_evidence_api/foo.py",
+                    "max_lines": 1500,
+                    "reason": "x",
+                    "tracking_ref": 123,
+                    "expires_on": "2026-12-31",
+                },
+                "tracking_ref",
+            ),
+            (
+                {
+                    "path": "services/artana_evidence_api/foo.py",
+                    "max_lines": 1500,
+                    "reason": "x",
+                    "tracking_ref": "docs/plan.md",
                     "expires_on": "not-a-date",
                 },
                 "expires_on",
@@ -177,6 +223,7 @@ class TestParseOverrides:
                     "path": "services/artana_evidence_api/foo.py",
                     "max_lines": 1500,
                     "reason": "x",
+                    "tracking_ref": "docs/plan.md",
                 },
                 "expires_on",
             ),
@@ -198,6 +245,7 @@ class TestParseOverrides:
             "path": "services/artana_evidence_api/foo.py",
             "max_lines": 1500,
             "reason": "x",
+            "tracking_ref": "docs/plan.md",
             "expires_on": "2026-12-31",
         }
         overrides, errors = parse_overrides({"file_size": [entry, dict(entry)]})
@@ -229,18 +277,47 @@ class TestValidate:
         assert "1500 lines" in violations[0].message
         assert f"{DEFAULT_MAX_LINES}-line budget" in violations[0].message
 
-    def test_oversized_file_with_sufficient_override_passes(self) -> None:
+    def test_oversized_file_with_exact_override_passes(self) -> None:
         violations = validate(
             file_sizes={"services/artana_evidence_api/big.py": 1500},
-            overrides=[_override("services/artana_evidence_api/big.py", max_lines=1700)],
+            overrides=[
+                _override("services/artana_evidence_api/big.py", max_lines=1500)
+            ],
             today=TODAY,
         )
         assert violations == []
 
+    def test_oversized_file_with_override_headroom_fails(self) -> None:
+        violations = validate(
+            file_sizes={"services/artana_evidence_api/big.py": 1500},
+            overrides=[
+                _override("services/artana_evidence_api/big.py", max_lines=1700)
+            ],
+            today=TODAY,
+        )
+        assert len(violations) == 1
+        assert "lower max_lines to 1500" in violations[0].message
+
+    def test_override_for_file_within_default_budget_fails(self) -> None:
+        violations = validate(
+            file_sizes={"services/artana_evidence_api/small_again.py": 900},
+            overrides=[
+                _override(
+                    "services/artana_evidence_api/small_again.py",
+                    max_lines=900,
+                ),
+            ],
+            today=TODAY,
+        )
+        assert len(violations) == 1
+        assert "no longer needed" in violations[0].message
+
     def test_file_exceeds_override_max_lines_fails(self) -> None:
         violations = validate(
             file_sizes={"services/artana_evidence_api/big.py": 1800},
-            overrides=[_override("services/artana_evidence_api/big.py", max_lines=1700)],
+            overrides=[
+                _override("services/artana_evidence_api/big.py", max_lines=1700)
+            ],
             today=TODAY,
         )
         assert len(violations) == 1
@@ -255,6 +332,54 @@ class TestValidate:
         )
         assert len(violations) == 1
         assert "does not exist" in violations[0].message
+
+    @pytest.mark.parametrize(
+        "tracking_ref",
+        [
+            "not-actionable",
+            "docs/missing-plan.md",
+            "docs/../scripts/validate_architecture_size.py",
+            "https://",
+        ],
+    )
+    def test_override_with_bad_tracking_ref_fails(self, tracking_ref: str) -> None:
+        violations = validate(
+            file_sizes={"services/artana_evidence_api/big.py": 1500},
+            overrides=[
+                _override(
+                    "services/artana_evidence_api/big.py",
+                    max_lines=1500,
+                    tracking_ref=tracking_ref,
+                ),
+            ],
+            today=TODAY,
+        )
+        assert any("tracking_ref" in violation.message for violation in violations)
+
+    @pytest.mark.parametrize(
+        "tracking_ref",
+        [
+            "#123",
+            "https://github.com/med13foundation/artana-evidence-platform/issues/123",
+            "docs/plan.md",
+        ],
+    )
+    def test_override_with_actionable_tracking_ref_passes(
+        self,
+        tracking_ref: str,
+    ) -> None:
+        violations = validate(
+            file_sizes={"services/artana_evidence_api/big.py": 1500},
+            overrides=[
+                _override(
+                    "services/artana_evidence_api/big.py",
+                    max_lines=1500,
+                    tracking_ref=tracking_ref,
+                ),
+            ],
+            today=TODAY,
+        )
+        assert violations == []
 
     def test_override_outside_scope_fails(self) -> None:
         violations = validate(
@@ -326,6 +451,24 @@ class TestScanRepo:
 
     def test_handles_missing_root_dirs_gracefully(self, tmp_path: Path) -> None:
         assert scan_repo(tmp_path) == {}
+
+
+class TestLiveArchitectureOverrides:
+    def test_live_overrides_match_current_repo_sizes(self) -> None:
+        raw_overrides = json.loads(
+            (REPO_ROOT / "architecture_overrides.json").read_text(encoding="utf-8"),
+        )
+        overrides, parse_errors = parse_overrides(raw_overrides)
+
+        assert parse_errors == []
+        assert (
+            validate(
+                file_sizes=scan_repo(REPO_ROOT),
+                overrides=overrides,
+                today=datetime.now(tz=UTC).date(),
+            )
+            == []
+        )
 
 
 class TestViolationDataclass:

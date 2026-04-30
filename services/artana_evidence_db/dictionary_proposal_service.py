@@ -2,13 +2,28 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
-from decimal import Decimal
-from typing import Literal, TypeAlias, cast
-from uuid import UUID, uuid4
+from datetime import UTC, datetime
+from uuid import uuid4
 
-from artana_evidence_db.common_types import JSONObject, JSONValue
+from artana_evidence_db.common_types import JSONObject
 from artana_evidence_db.dictionary_models import DictionaryProposal
+from artana_evidence_db.dictionary_proposal_merge_targets import (
+    DictionaryProposalMergeTargetResolver,
+)
+from artana_evidence_db.dictionary_proposal_support import (
+    REVIEWABLE_PROPOSAL_STATUSES,
+    AppliedDictionaryObject,
+    ProposalStatus,
+    ProposalType,
+    normalize_actor,
+    normalize_dictionary_id,
+    normalize_domain_context,
+    normalize_optional_text,
+    normalize_profile,
+    normalize_required_text,
+    normalize_source_ref,
+    snapshot_proposal_model,
+)
 from artana_evidence_db.kernel_dictionary_models import (
     DictionaryChangelogModel,
     DictionaryProposalModel,
@@ -27,180 +42,6 @@ from artana_evidence_db.semantic_ports import DictionaryPort
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-ProposalStatus = Literal[
-    "SUBMITTED",
-    "CHANGES_REQUESTED",
-    "APPROVED",
-    "REJECTED",
-    "MERGED",
-]
-ProposalType = Literal[
-    "DOMAIN_CONTEXT",
-    "ENTITY_TYPE",
-    "VARIABLE",
-    "RELATION_TYPE",
-    "RELATION_CONSTRAINT",
-    "RELATION_SYNONYM",
-    "VALUE_SET",
-    "VALUE_SET_ITEM",
-]
-ConstraintProfile = Literal["EXPECTED", "ALLOWED", "REVIEW_ONLY", "FORBIDDEN"]
-AppliedDictionaryObject: TypeAlias = (
-    DictionaryDomainContext
-    | DictionaryEntityType
-    | VariableDefinition
-    | DictionaryRelationType
-    | RelationConstraint
-    | DictionaryRelationSynonym
-    | ValueSet
-    | ValueSetItem
-)
-
-_VALID_CONSTRAINT_PROFILES: frozenset[str] = frozenset(
-    {"EXPECTED", "ALLOWED", "REVIEW_ONLY", "FORBIDDEN"},
-)
-_REVIEWABLE_PROPOSAL_STATUSES: frozenset[str] = frozenset(
-    {"SUBMITTED", "CHANGES_REQUESTED"},
-)
-_PROPOSAL_SNAPSHOT_FIELDS: tuple[str, ...] = (
-    "id",
-    "proposal_type",
-    "status",
-    "source_type",
-    "entity_type",
-    "relation_type",
-    "target_type",
-    "value_set_id",
-    "variable_id",
-    "canonical_name",
-    "data_type",
-    "preferred_unit",
-    "constraints",
-    "sensitivity",
-    "code",
-    "synonym",
-    "source",
-    "display_name",
-    "description",
-    "name",
-    "display_label",
-    "domain_context",
-    "external_ontology_ref",
-    "external_ref",
-    "expected_properties",
-    "synonyms",
-    "is_directional",
-    "inverse_label",
-    "is_extensible",
-    "sort_order",
-    "is_active_value",
-    "is_allowed",
-    "requires_evidence",
-    "profile",
-    "rationale",
-    "evidence_payload",
-    "proposed_by",
-    "reviewed_by",
-    "reviewed_at",
-    "decision_reason",
-    "merge_target_type",
-    "merge_target_id",
-    "applied_domain_context_id",
-    "applied_entity_type_id",
-    "applied_variable_id",
-    "applied_relation_type_id",
-    "applied_relation_synonym_id",
-    "applied_value_set_id",
-    "applied_value_set_item_id",
-    "applied_constraint_id",
-    "source_ref",
-    "created_at",
-    "updated_at",
-)
-
-
-def _to_json_value(value: object) -> JSONValue:  # noqa: PLR0911
-    """Convert proposal values into changelog-safe JSON."""
-    if value is None or isinstance(value, str | int | float | bool):
-        return value
-    if isinstance(value, datetime | date):
-        return value.isoformat()
-    if isinstance(value, UUID):
-        return str(value)
-    if isinstance(value, Decimal):
-        return float(value)
-    if isinstance(value, dict):
-        return {str(key): _to_json_value(item) for key, item in value.items()}
-    if isinstance(value, list | tuple):
-        return [_to_json_value(item) for item in value]
-    if isinstance(value, set):
-        return [_to_json_value(item) for item in sorted(value, key=str)]
-    return str(value)
-
-
-def _snapshot_proposal_model(model: DictionaryProposalModel) -> JSONObject:
-    """Build a JSON snapshot for proposal lifecycle audit history."""
-    return {
-        field_name: _to_json_value(getattr(model, field_name))
-        for field_name in _PROPOSAL_SNAPSHOT_FIELDS
-    }
-
-
-def _normalize_actor(value: str) -> str:
-    normalized = value.strip()
-    if not normalized:
-        msg = "actor is required"
-        raise ValueError(msg)
-    return normalized
-
-
-def _normalize_dictionary_id(value: str, *, field_name: str) -> str:
-    normalized = value.strip().upper()
-    if not normalized:
-        msg = f"{field_name} is required"
-        raise ValueError(msg)
-    return normalized
-
-
-def _normalize_domain_context(value: str) -> str:
-    normalized = value.strip().lower()
-    if not normalized:
-        msg = "domain_context is required"
-        raise ValueError(msg)
-    return normalized
-
-
-def _normalize_required_text(value: str, *, field_name: str) -> str:
-    normalized = value.strip()
-    if not normalized:
-        msg = f"{field_name} is required"
-        raise ValueError(msg)
-    return normalized
-
-
-def _normalize_source_ref(value: str | None) -> str | None:
-    if value is None:
-        return None
-    normalized = value.strip()
-    return normalized or None
-
-
-def _normalize_optional_text(value: str | None) -> str | None:
-    if value is None:
-        return None
-    normalized = value.strip()
-    return normalized or None
-
-
-def _normalize_profile(value: str) -> ConstraintProfile:
-    normalized = value.strip().upper()
-    if normalized not in _VALID_CONSTRAINT_PROFILES:
-        msg = (
-            "profile must be one of EXPECTED, ALLOWED, REVIEW_ONLY, or FORBIDDEN"
-        )
-        raise ValueError(msg)
-    return cast("ConstraintProfile", normalized)
-
 
 class DictionaryProposalService:
     """DB-owned governance workflow for dictionary change proposals."""
@@ -213,6 +54,7 @@ class DictionaryProposalService:
     ) -> None:
         self._session = session
         self._dictionary = dictionary_service
+        self._merge_targets = DictionaryProposalMergeTargetResolver(dictionary_service)
 
     def _get_model(self, proposal_id: str) -> DictionaryProposalModel:
         model = self._session.get(DictionaryProposalModel, proposal_id)
@@ -222,7 +64,7 @@ class DictionaryProposalService:
         return model
 
     def _require_reviewable_status(self, model: DictionaryProposalModel) -> None:
-        if model.status not in _REVIEWABLE_PROPOSAL_STATUSES:
+        if model.status not in REVIEWABLE_PROPOSAL_STATUSES:
             msg = f"Dictionary proposal '{model.id}' is already {model.status}"
             raise ValueError(msg)
 
@@ -237,9 +79,9 @@ class DictionaryProposalService:
         merge_target_id: str | None = None,
     ) -> None:
         model.status = status
-        model.reviewed_by = _normalize_actor(reviewed_by)
+        model.reviewed_by = normalize_actor(reviewed_by)
         model.reviewed_at = datetime.now(UTC)
-        model.decision_reason = _normalize_optional_text(decision_reason)
+        model.decision_reason = normalize_optional_text(decision_reason)
         model.merge_target_type = merge_target_type
         model.merge_target_id = merge_target_id
 
@@ -257,7 +99,7 @@ class DictionaryProposalService:
                 record_id=model.id,
                 action=action,
                 before_snapshot=before_snapshot,
-                after_snapshot=_snapshot_proposal_model(model),
+                after_snapshot=snapshot_proposal_model(model),
                 changed_by=changed_by,
                 source_ref=model.source_ref,
             ),
@@ -277,196 +119,6 @@ class DictionaryProposalService:
         )
         return DictionaryProposal.model_validate(model, from_attributes=True)
 
-    def _resolve_merge_target(
-        self,
-        model: DictionaryProposalModel,
-        *,
-        target_id: str,
-    ) -> tuple[str, str]:
-        normalized_target_id = _normalize_required_text(
-            target_id,
-            field_name="target_id",
-        )
-        merge_target = self._resolve_merge_target_by_type(
-            model,
-            normalized_target_id=normalized_target_id,
-        )
-        if merge_target is None:
-            msg = f"Unsupported proposal type '{model.proposal_type}'"
-            raise ValueError(msg)
-        return merge_target
-
-    def _resolve_merge_target_by_type(
-        self,
-        model: DictionaryProposalModel,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str] | None:
-        merge_target: tuple[str, str] | None = None
-        if model.proposal_type == "DOMAIN_CONTEXT":
-            merge_target = self._resolve_domain_context_merge_target(
-                normalized_target_id=normalized_target_id,
-            )
-        elif model.proposal_type == "ENTITY_TYPE":
-            merge_target = self._resolve_entity_type_merge_target(
-                normalized_target_id=normalized_target_id,
-            )
-        elif model.proposal_type == "VARIABLE":
-            merge_target = self._resolve_variable_merge_target(
-                normalized_target_id=normalized_target_id,
-            )
-        elif model.proposal_type == "RELATION_TYPE":
-            merge_target = self._resolve_relation_type_merge_target(
-                normalized_target_id=normalized_target_id,
-            )
-        elif model.proposal_type == "VALUE_SET":
-            merge_target = self._resolve_value_set_merge_target(
-                normalized_target_id=normalized_target_id,
-            )
-        elif model.proposal_type == "RELATION_CONSTRAINT":
-            merge_target = self._resolve_relation_constraint_merge_target(
-                model,
-                normalized_target_id=normalized_target_id,
-            )
-        elif model.proposal_type == "RELATION_SYNONYM":
-            merge_target = self._resolve_relation_synonym_merge_target(
-                model,
-                normalized_target_id=normalized_target_id,
-            )
-        elif model.proposal_type == "VALUE_SET_ITEM":
-            merge_target = self._resolve_value_set_item_merge_target(
-                model,
-                normalized_target_id=normalized_target_id,
-            )
-        return merge_target
-
-    def _resolve_domain_context_merge_target(
-        self,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        contexts = self._dictionary.list_domain_contexts(include_inactive=True)
-        if not any(context.id == normalized_target_id for context in contexts):
-            msg = f"Domain context '{normalized_target_id}' not found"
-            raise ValueError(msg)
-        return "DOMAIN_CONTEXT", normalized_target_id
-
-    def _resolve_entity_type_merge_target(
-        self,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        if (
-            self._dictionary.get_entity_type(
-                normalized_target_id,
-                include_inactive=True,
-            )
-            is None
-        ):
-            msg = f"Entity type '{normalized_target_id}' not found"
-            raise ValueError(msg)
-        return "ENTITY_TYPE", normalized_target_id
-
-    def _resolve_variable_merge_target(
-        self,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        if self._dictionary.get_variable(normalized_target_id) is None:
-            msg = f"Variable '{normalized_target_id}' not found"
-            raise ValueError(msg)
-        return "VARIABLE", normalized_target_id
-
-    def _resolve_relation_type_merge_target(
-        self,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        if (
-            self._dictionary.get_relation_type(
-                normalized_target_id,
-                include_inactive=True,
-            )
-            is None
-        ):
-            msg = f"Relation type '{normalized_target_id}' not found"
-            raise ValueError(msg)
-        return "RELATION_TYPE", normalized_target_id
-
-    def _resolve_relation_constraint_merge_target(
-        self,
-        model: DictionaryProposalModel,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        try:
-            constraint_id = int(normalized_target_id)
-        except ValueError as exc:
-            msg = "target_id must be a numeric relation constraint id"
-            raise ValueError(msg) from exc
-        constraints = self._dictionary.get_constraints(
-            source_type=model.source_type,
-            relation_type=model.relation_type,
-            include_inactive=False,
-        )
-        if not any(
-            constraint.id == constraint_id and constraint.target_type == model.target_type
-            for constraint in constraints
-        ):
-            msg = f"Relation constraint '{constraint_id}' not found"
-            raise ValueError(msg)
-        return "RELATION_CONSTRAINT", str(constraint_id)
-
-    def _resolve_relation_synonym_merge_target(
-        self,
-        model: DictionaryProposalModel,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        try:
-            synonym_id = int(normalized_target_id)
-        except ValueError as exc:
-            msg = "target_id must be a numeric relation synonym id"
-            raise ValueError(msg) from exc
-        synonyms = self._dictionary.list_relation_synonyms(
-            relation_type_id=model.relation_type,
-            include_inactive=True,
-        )
-        if not any(synonym.id == synonym_id for synonym in synonyms):
-            msg = f"Relation synonym '{synonym_id}' not found"
-            raise ValueError(msg)
-        return "RELATION_SYNONYM", str(synonym_id)
-
-    def _resolve_value_set_merge_target(
-        self,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        if self._dictionary.get_value_set(normalized_target_id) is None:
-            msg = f"Value set '{normalized_target_id}' not found"
-            raise ValueError(msg)
-        return "VALUE_SET", normalized_target_id
-
-    def _resolve_value_set_item_merge_target(
-        self,
-        model: DictionaryProposalModel,
-        *,
-        normalized_target_id: str,
-    ) -> tuple[str, str]:
-        try:
-            value_set_item_id = int(normalized_target_id)
-        except ValueError as exc:
-            msg = "target_id must be a numeric value-set item id"
-            raise ValueError(msg) from exc
-        items = self._dictionary.list_value_set_items(
-            value_set_id=model.value_set_id or "",
-            include_inactive=True,
-        )
-        if not any(item.id == value_set_item_id for item in items):
-            msg = f"Value-set item '{value_set_item_id}' not found"
-            raise ValueError(msg)
-        return "VALUE_SET_ITEM", str(value_set_item_id)
-
     def _ensure_domain_context_exists(self, domain_context: str) -> None:
         contexts = self._dictionary.list_domain_contexts(include_inactive=False)
         if not any(context.id == domain_context for context in contexts):
@@ -480,7 +132,7 @@ class DictionaryProposalService:
         source_ref: str | None,
         identity_fields: dict[str, str | None],
     ) -> DictionaryProposal | None:
-        normalized_source_ref = _normalize_source_ref(source_ref)
+        normalized_source_ref = normalize_source_ref(source_ref)
         if normalized_source_ref is None:
             return None
         model = self._session.scalar(
@@ -515,10 +167,10 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for a domain context."""
-        normalized_domain_context = _normalize_domain_context(domain_context_id)
+        normalized_domain_context = normalize_domain_context(domain_context_id)
         existing = self._get_existing_idempotent_proposal(
             proposal_type="DOMAIN_CONTEXT",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={"domain_context": normalized_domain_context},
         )
         if existing is not None:
@@ -535,15 +187,15 @@ class DictionaryProposalService:
             proposal_type="DOMAIN_CONTEXT",
             status="SUBMITTED",
             domain_context=normalized_domain_context,
-            display_name=_normalize_required_text(
+            display_name=normalize_required_text(
                 display_name,
                 field_name="display_name",
             ),
             description=description,
-            rationale=_normalize_required_text(rationale, field_name="rationale"),
+            rationale=normalize_required_text(rationale, field_name="rationale"),
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -562,14 +214,14 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for an entity type."""
-        normalized_entity_type = _normalize_dictionary_id(
+        normalized_entity_type = normalize_dictionary_id(
             entity_type,
             field_name="entity_type",
         )
-        normalized_domain_context = _normalize_domain_context(domain_context)
+        normalized_domain_context = normalize_domain_context(domain_context)
         existing = self._get_existing_idempotent_proposal(
             proposal_type="ENTITY_TYPE",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={"entity_type": normalized_entity_type},
         )
         if existing is not None:
@@ -584,11 +236,11 @@ class DictionaryProposalService:
             proposal_type="ENTITY_TYPE",
             status="SUBMITTED",
             entity_type=normalized_entity_type,
-            display_name=_normalize_required_text(
+            display_name=normalize_required_text(
                 display_name,
                 field_name="display_name",
             ),
-            description=_normalize_required_text(
+            description=normalize_required_text(
                 description,
                 field_name="description",
             ),
@@ -597,10 +249,10 @@ class DictionaryProposalService:
                 external_ontology_ref.strip() if external_ontology_ref else None
             ),
             expected_properties=expected_properties or {},
-            rationale=_normalize_required_text(rationale, field_name="rationale"),
+            rationale=normalize_required_text(rationale, field_name="rationale"),
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -619,14 +271,14 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for a relation type."""
-        normalized_relation_type = _normalize_dictionary_id(
+        normalized_relation_type = normalize_dictionary_id(
             relation_type,
             field_name="relation_type",
         )
-        normalized_domain_context = _normalize_domain_context(domain_context)
+        normalized_domain_context = normalize_domain_context(domain_context)
         existing = self._get_existing_idempotent_proposal(
             proposal_type="RELATION_TYPE",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={"relation_type": normalized_relation_type},
         )
         if existing is not None:
@@ -641,21 +293,21 @@ class DictionaryProposalService:
             proposal_type="RELATION_TYPE",
             status="SUBMITTED",
             relation_type=normalized_relation_type,
-            display_name=_normalize_required_text(
+            display_name=normalize_required_text(
                 display_name,
                 field_name="display_name",
             ),
-            description=_normalize_required_text(
+            description=normalize_required_text(
                 description,
                 field_name="description",
             ),
             domain_context=normalized_domain_context,
             is_directional=is_directional,
             inverse_label=inverse_label.strip() if inverse_label else None,
-            rationale=_normalize_required_text(rationale, field_name="rationale"),
+            rationale=normalize_required_text(rationale, field_name="rationale"),
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -677,14 +329,14 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for a variable definition."""
-        normalized_variable_id = _normalize_dictionary_id(
+        normalized_variable_id = normalize_dictionary_id(
             variable_id,
             field_name="variable_id",
         )
-        normalized_domain_context = _normalize_domain_context(domain_context)
+        normalized_domain_context = normalize_domain_context(domain_context)
         existing = self._get_existing_idempotent_proposal(
             proposal_type="VARIABLE",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={"variable_id": normalized_variable_id},
         )
         if existing is not None:
@@ -699,27 +351,27 @@ class DictionaryProposalService:
             proposal_type="VARIABLE",
             status="SUBMITTED",
             variable_id=normalized_variable_id,
-            canonical_name=_normalize_required_text(
+            canonical_name=normalize_required_text(
                 canonical_name,
                 field_name="canonical_name",
             ),
-            display_name=_normalize_required_text(
+            display_name=normalize_required_text(
                 display_name,
                 field_name="display_name",
             ),
-            data_type=_normalize_required_text(data_type, field_name="data_type").upper(),
+            data_type=normalize_required_text(data_type, field_name="data_type").upper(),
             preferred_unit=preferred_unit.strip() if preferred_unit else None,
             constraints=constraints or {},
             domain_context=normalized_domain_context,
-            sensitivity=_normalize_required_text(
+            sensitivity=normalize_required_text(
                 sensitivity,
                 field_name="sensitivity",
             ).upper(),
             description=description,
-            rationale=_normalize_required_text(rationale, field_name="rationale"),
+            rationale=normalize_required_text(rationale, field_name="rationale"),
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -735,14 +387,14 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for a relation synonym."""
-        normalized_relation_type = _normalize_dictionary_id(
+        normalized_relation_type = normalize_dictionary_id(
             relation_type_id,
             field_name="relation_type_id",
         )
-        normalized_synonym = _normalize_required_text(synonym, field_name="synonym")
+        normalized_synonym = normalize_required_text(synonym, field_name="synonym")
         existing = self._get_existing_idempotent_proposal(
             proposal_type="RELATION_SYNONYM",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={
                 "relation_type": normalized_relation_type,
                 "synonym": normalized_synonym,
@@ -761,10 +413,10 @@ class DictionaryProposalService:
             relation_type=normalized_relation_type,
             synonym=normalized_synonym,
             source=source.strip() if source else None,
-            rationale=_normalize_required_text(rationale, field_name="rationale"),
+            rationale=normalize_required_text(rationale, field_name="rationale"),
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -783,17 +435,17 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for a value set."""
-        normalized_value_set_id = _normalize_required_text(
+        normalized_value_set_id = normalize_required_text(
             value_set_id,
             field_name="value_set_id",
         )
-        normalized_variable_id = _normalize_required_text(
+        normalized_variable_id = normalize_required_text(
             variable_id,
             field_name="variable_id",
         )
         existing = self._get_existing_idempotent_proposal(
             proposal_type="VALUE_SET",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={"value_set_id": normalized_value_set_id},
         )
         if existing is not None:
@@ -818,14 +470,14 @@ class DictionaryProposalService:
             status="SUBMITTED",
             value_set_id=normalized_value_set_id,
             variable_id=normalized_variable_id,
-            name=_normalize_required_text(name, field_name="name"),
+            name=normalize_required_text(name, field_name="name"),
             description=description,
             external_ref=external_ref,
             is_extensible=is_extensible,
-            rationale=_normalize_required_text(rationale, field_name="rationale"),
+            rationale=normalize_required_text(rationale, field_name="rationale"),
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -845,14 +497,14 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for a value-set item."""
-        normalized_value_set_id = _normalize_required_text(
+        normalized_value_set_id = normalize_required_text(
             value_set_id,
             field_name="value_set_id",
         )
-        normalized_code = _normalize_required_text(code, field_name="code")
+        normalized_code = normalize_required_text(code, field_name="code")
         existing = self._get_existing_idempotent_proposal(
             proposal_type="VALUE_SET_ITEM",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={
                 "value_set_id": normalized_value_set_id,
                 "code": normalized_code,
@@ -870,7 +522,7 @@ class DictionaryProposalService:
             status="SUBMITTED",
             value_set_id=normalized_value_set_id,
             code=normalized_code,
-            display_label=_normalize_required_text(
+            display_label=normalize_required_text(
                 display_label,
                 field_name="display_label",
             ),
@@ -878,10 +530,10 @@ class DictionaryProposalService:
             external_ref=external_ref,
             sort_order=sort_order,
             is_active_value=is_active,
-            rationale=_normalize_required_text(rationale, field_name="rationale"),
+            rationale=normalize_required_text(rationale, field_name="rationale"),
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -917,21 +569,21 @@ class DictionaryProposalService:
         source_ref: str | None = None,
     ) -> DictionaryProposal:
         """Create a submitted proposal for a relation constraint."""
-        normalized_source = _normalize_dictionary_id(
+        normalized_source = normalize_dictionary_id(
             source_type,
             field_name="source_type",
         )
-        normalized_relation = _normalize_dictionary_id(
+        normalized_relation = normalize_dictionary_id(
             relation_type,
             field_name="relation_type",
         )
-        normalized_target = _normalize_dictionary_id(
+        normalized_target = normalize_dictionary_id(
             target_type,
             field_name="target_type",
         )
         existing = self._get_existing_idempotent_proposal(
             proposal_type="RELATION_CONSTRAINT",
-            source_ref=_normalize_source_ref(source_ref),
+            source_ref=normalize_source_ref(source_ref),
             identity_fields={
                 "source_type": normalized_source,
                 "relation_type": normalized_relation,
@@ -940,7 +592,7 @@ class DictionaryProposalService:
         )
         if existing is not None:
             return existing
-        normalized_profile = _normalize_profile(profile)
+        normalized_profile = normalize_profile(profile)
         normalized_rationale = rationale.strip()
         if not normalized_rationale:
             msg = "rationale is required"
@@ -979,8 +631,8 @@ class DictionaryProposalService:
             profile=normalized_profile,
             rationale=normalized_rationale,
             evidence_payload=evidence_payload or {},
-            proposed_by=_normalize_actor(proposed_by),
-            source_ref=_normalize_source_ref(source_ref),
+            proposed_by=normalize_actor(proposed_by),
+            source_ref=normalize_source_ref(source_ref),
         )
         return self._finalize_created_proposal(model)
 
@@ -1023,7 +675,7 @@ class DictionaryProposalService:
             domain_context_id=model.domain_context,
             display_name=model.display_name,
             description=model.description,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1049,7 +701,7 @@ class DictionaryProposalService:
             domain_context=model.domain_context,
             external_ontology_ref=model.external_ontology_ref,
             expected_properties=model.expected_properties,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1080,7 +732,7 @@ class DictionaryProposalService:
             preferred_unit=model.preferred_unit,
             constraints=model.constraints,
             description=model.description,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1107,7 +759,7 @@ class DictionaryProposalService:
             domain_context=model.domain_context,
             is_directional=model.is_directional,
             inverse_label=model.inverse_label,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1140,7 +792,7 @@ class DictionaryProposalService:
             is_allowed=model.is_allowed,
             requires_evidence=model.requires_evidence,
             profile=model.profile,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1157,7 +809,7 @@ class DictionaryProposalService:
             relation_type_id=model.relation_type,
             synonym=model.synonym,
             source=model.source,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1182,7 +834,7 @@ class DictionaryProposalService:
             description=model.description,
             external_ref=model.external_ref,
             is_extensible=model.is_extensible,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1208,7 +860,7 @@ class DictionaryProposalService:
             external_ref=model.external_ref,
             sort_order=model.sort_order or 0,
             is_active=model.is_active_value,
-            created_by=_normalize_actor(reviewed_by),
+            created_by=normalize_actor(reviewed_by),
             source_ref=model.source_ref,
         )
 
@@ -1222,7 +874,7 @@ class DictionaryProposalService:
         """Approve a submitted proposal and apply it to official dictionary state."""
         model = self._get_model(proposal_id)
         self._require_reviewable_status(model)
-        before_snapshot = _snapshot_proposal_model(model)
+        before_snapshot = snapshot_proposal_model(model)
         applied: AppliedDictionaryObject
 
         if model.proposal_type == "DOMAIN_CONTEXT":
@@ -1281,7 +933,7 @@ class DictionaryProposalService:
         """Reject a submitted dictionary proposal."""
         model = self._get_model(proposal_id)
         self._require_reviewable_status(model)
-        before_snapshot = _snapshot_proposal_model(model)
+        before_snapshot = snapshot_proposal_model(model)
         normalized_reason = decision_reason.strip()
         if not normalized_reason:
             msg = "decision_reason is required when rejecting a proposal"
@@ -1311,7 +963,7 @@ class DictionaryProposalService:
         """Move a proposal into changes-requested state with reviewer guidance."""
         model = self._get_model(proposal_id)
         self._require_reviewable_status(model)
-        before_snapshot = _snapshot_proposal_model(model)
+        before_snapshot = snapshot_proposal_model(model)
         normalized_reason = decision_reason.strip()
         if not normalized_reason:
             msg = "decision_reason is required when requesting changes"
@@ -1342,12 +994,12 @@ class DictionaryProposalService:
         """Merge a proposal into an existing approved dictionary entry."""
         model = self._get_model(proposal_id)
         self._require_reviewable_status(model)
-        before_snapshot = _snapshot_proposal_model(model)
+        before_snapshot = snapshot_proposal_model(model)
         normalized_reason = decision_reason.strip()
         if not normalized_reason:
             msg = "decision_reason is required when merging a proposal"
             raise ValueError(msg)
-        merge_target_type, merge_target_id = self._resolve_merge_target(
+        merge_target_type, merge_target_id = self._merge_targets.resolve(
             model,
             target_id=target_id,
         )

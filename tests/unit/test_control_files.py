@@ -314,7 +314,6 @@ def test_architecture_overrides_reference_existing_service_paths() -> None:
     assert isinstance(raw_overrides, dict)
     file_size_overrides = raw_overrides.get("file_size")
     assert isinstance(file_size_overrides, list)
-    assert file_size_overrides
 
     for raw_entry in file_size_overrides:
         assert isinstance(raw_entry, dict)
@@ -351,10 +350,25 @@ def test_architecture_size_check_target_exists() -> None:
     assert "architecture-size-check" in _make_targets()
 
 
+def test_architecture_structure_check_target_exists() -> None:
+    """Regression: the structure gate must be a first-class Makefile target."""
+    makefile = _read_text("Makefile")
+    body = _make_target_body(makefile, "architecture-structure-check")
+
+    assert "scripts/validate_architecture_structure.py" in body
+    assert "architecture-structure-check" in _make_targets()
+
+
 def test_graph_service_static_checks_runs_architecture_size_check() -> None:
     """Regression: the graph static gate must include the size budget check."""
     body = _make_target_body(_read_text("Makefile"), "graph-service-static-checks")
     assert "$(MAKE) -s architecture-size-check" in body
+
+
+def test_graph_service_static_checks_runs_architecture_structure_check() -> None:
+    """Regression: the graph static gate must include the structure guard."""
+    body = _make_target_body(_read_text("Makefile"), "graph-service-static-checks")
+    assert "$(MAKE) -s architecture-structure-check" in body
 
 
 def test_artana_evidence_api_static_checks_runs_architecture_size_check() -> None:
@@ -364,6 +378,15 @@ def test_artana_evidence_api_static_checks_runs_architecture_size_check() -> Non
         "artana-evidence-api-static-checks",
     )
     assert "$(MAKE) -s architecture-size-check" in body
+
+
+def test_artana_evidence_api_static_checks_runs_architecture_structure_check() -> None:
+    """Regression: the evidence API static gate must include the structure guard."""
+    body = _make_target_body(
+        _read_text("Makefile"),
+        "artana-evidence-api-static-checks",
+    )
+    assert "$(MAKE) -s architecture-structure-check" in body
 
 
 def test_service_checks_runs_architecture_size_check_once() -> None:
@@ -377,9 +400,27 @@ def test_service_checks_runs_architecture_size_check_once() -> None:
     assert "$(MAKE) -s artana-evidence-api-static-checks\n" not in body
 
 
+def test_service_checks_runs_architecture_structure_check_once() -> None:
+    """Regression: the aggregate gate must not duplicate the structure check."""
+    body = _make_target_body(_read_text("Makefile"), "service-checks")
+
+    assert body.count("$(MAKE) -s architecture-structure-check") == 1
+    assert "$(MAKE) -s graph-service-static-checks-core" in body
+    assert "$(MAKE) -s artana-evidence-api-static-checks-core" in body
+
+
 def test_validate_architecture_size_script_exists_and_is_executable_module() -> None:
     """Regression: the validator script must exist and be importable."""
     script_path = REPO_ROOT / "scripts" / "validate_architecture_size.py"
+    assert script_path.exists()
+    text = script_path.read_text(encoding="utf-8")
+    assert text.startswith("#!/usr/bin/env python3")
+    assert "raise SystemExit(main())" in text
+
+
+def test_validate_architecture_structure_script_exists_and_is_executable_module() -> None:
+    """Regression: the structure validator script must exist and be importable."""
+    script_path = REPO_ROOT / "scripts" / "validate_architecture_structure.py"
     assert script_path.exists()
     text = script_path.read_text(encoding="utf-8")
     assert text.startswith("#!/usr/bin/env python3")
