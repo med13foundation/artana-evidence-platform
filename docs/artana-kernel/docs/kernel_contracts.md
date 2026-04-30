@@ -1,6 +1,6 @@
 # Kernel Contracts
 
-Status date: April 23, 2026.
+Status date: April 30, 2026.
 
 The Evidence API uses `artana-kernel` for durable model/tool execution, runtime
 state, middleware, replay policy, and structured model steps.
@@ -19,7 +19,9 @@ The service-local integration is responsible for:
 
 ## Runtime Store
 
-`services/artana_evidence_api/runtime_support.py` owns Artana store resolution.
+`services/artana_evidence_api/runtime/postgres_store.py` owns Artana store
+resolution. `services/artana_evidence_api/runtime_support.py` remains as a
+compatibility facade for older imports.
 If `ARTANA_STATE_URI` is unset, the service derives it from the configured
 database URL and appends `search_path=artana,public`.
 

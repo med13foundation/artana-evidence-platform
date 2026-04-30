@@ -1,6 +1,6 @@
 # Remaining Work Priorities
 
-Status date: April 29, 2026.
+Status date: April 30, 2026.
 
 The backend scaffold is in place. The remaining work is about hardening the
 boundaries, making testing easier, and preparing for external users without
@@ -37,13 +37,14 @@ overbuilding too early.
 - Decide later whether to implement `RemoteIdentityGateway`; do not add it
   until tester or customer needs make the extra service worthwhile.
 
-## P2 - Reduce Runtime Module Size
+## P2 - Continue Packaging Cleanup
 
 - Split `research_init_runtime.py` by source discovery, document preparation,
   extraction staging, replay, and finalization.
-- Split `full_ai_orchestrator_runtime.py` by planner, guarded action executor,
-  policy, and artifact writing.
 - Split `graph_workflow_service.py` by command family.
+- Continue reducing root compatibility facades only after
+  `architecture_structure_overrides.json` and compatibility tests prove no
+  internal or documented caller still needs the old import path.
 
 ## P2 - Improve Deployment Confidence
 

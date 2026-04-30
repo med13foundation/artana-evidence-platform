@@ -1,6 +1,6 @@
 # Docs Index
 
-Status date: April 29, 2026.
+Status date: April 30, 2026.
 
 This directory describes the current extracted backend repo. The source of
 truth in this checkout is two Python services:
@@ -18,9 +18,10 @@ or `packages/artana_api`.
 
 - [Current System](./architecture/current-system.md)
 - [User Guide](./user-guide/README.md)
-- [Engineering Plan](./plan.md)
-- [Source Plugin Developer Guide](./source_plugins.md)
 - [Remaining Work](./remaining_work_priorities.md)
+- [Module Packaging Plan](./architecture/module-packaging-plan.md)
+- [Source Plugin Developer Guide](./source_plugins.md)
+- [V2 API Migration Plan](./v2_api_migration_plan.md)
 
 ## Architecture
 
@@ -34,9 +35,11 @@ or `packages/artana_api`.
 
 ## Migration And Release
 
-- [Migration Plan](./migration-plan.md)
-- [Migration Checklist](./migration-checklist.md)
 - [Graph Release Policy](./graph/reference/release-policy.md)
 - [Graph Release Checklist](./graph/reference/release-checklist.md)
 - [Graph Upgrade Guide](./graph/reference/upgrade-guide.md)
 - [GitHub Projects Playbook](./github_projects_playbook.md)
+
+## Archive
+
+- [Archived Planning Docs](./archive/README.md)

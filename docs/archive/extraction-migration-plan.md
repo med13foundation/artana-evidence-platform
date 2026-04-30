@@ -2,8 +2,10 @@
 
 Status date: April 23, 2026.
 
+Archived status date: April 30, 2026.
+
 The extraction migration is complete for this checkout. This file is now a
-short status record, not an open migration roadmap.
+historical status record, not an open migration roadmap.
 
 ## Completed Target
 
@@ -60,4 +62,4 @@ Remaining work is not migration import work. It is architecture hardening:
 - decide future identity ownership after internal testing;
 - keep service contract and boundary checks green.
 
-See [Remaining Work](./remaining_work_priorities.md).
+See [Remaining Work](../remaining_work_priorities.md).

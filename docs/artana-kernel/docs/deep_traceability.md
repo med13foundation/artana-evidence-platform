@@ -22,8 +22,10 @@ decisions, source execution summaries, graph snapshots, and generated briefs.
 ## Artana Kernel Trace
 
 The Artana store captures model/tool execution state for kernel-backed steps.
-The Evidence API configures the store in
-`services/artana_evidence_api/runtime_support.py`.
+The Evidence API configures the store through
+`services/artana_evidence_api/runtime/postgres_store.py`. The old
+`services/artana_evidence_api/runtime_support.py` path remains as a
+compatibility facade.
 
 ## Graph Trace
 

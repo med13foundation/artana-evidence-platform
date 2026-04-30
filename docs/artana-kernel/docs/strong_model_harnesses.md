@@ -1,13 +1,16 @@
 # Strong Model Harnesses
 
-Status date: April 23, 2026.
+Status date: April 30, 2026.
 
 The main strong-model user in this repo is the full AI orchestrator shadow and
 guarded planner path.
 
 Primary file:
 
-- `services/artana_evidence_api/full_ai_orchestrator_shadow_planner.py`
+- `services/artana_evidence_api/full_ai_orchestrator/shadow_planner/`
+
+The old `services/artana_evidence_api/full_ai_orchestrator_shadow_planner.py`
+path remains as a compatibility facade.
 
 ## Current Use
 
@@ -23,7 +26,11 @@ governance.
 
 Model capability defaults and health checks live in:
 
-- `services/artana_evidence_api/runtime_support.py`
+- `services/artana_evidence_api/runtime/model_registry.py`
+- `services/artana_evidence_api/runtime/model_health.py`
+
+The old `services/artana_evidence_api/runtime_support.py` path remains as a
+compatibility facade.
 
 Without `OPENAI_API_KEY`, model health reports degraded or unknown and optional
 model-backed steps use deterministic fallback where the runtime supports it.

@@ -1,10 +1,11 @@
 # V2 API Migration Plan
 
-Status date: April 26, 2026.
+Status date: April 30, 2026.
 
 This plan covers the work required to move the Evidence API from a
-runtime-shaped v1 surface to a product-shaped v2 surface. Source-registry and
-direct source-search work is tracked in `docs/plan.md`.
+runtime-shaped v1 surface to a product-shaped v2 surface. The completed
+source-registry and direct source-search tracker is archived at
+`docs/archive/source-plugin-encapsulation-plan.md`.
 
 Current status:
 

@@ -27,10 +27,13 @@ Current code-backed facts from this checkout:
 - `services/artana_evidence_api` has 237 top-level Python modules.
 - `services/artana_evidence_db` has 184 top-level Python modules.
 - The largest remaining module families are:
-  - Evidence API: `full_ai_orchestrator_*`, `research_init_*`,
-    `sqlalchemy_*`, `phase*_compare*`, source handoff, and routers.
+  - Evidence API: `research_init_*`, `sqlalchemy_*`, `phase*_compare*`,
+    source handoff, routers, and compatibility-only
+    `full_ai_orchestrator_*` root facades.
   - Graph service: `ai_full_mode_*`, `dictionary_*`, `graph_domain_*`,
-    graph workflow, and kernel dictionary models.
+    graph workflow, and kernel dictionary models. `dictionary_support.py`
+    has been split, but the broader graph dictionary family is still a future
+    package pass.
 
 This is acceptable for the monolith cleanup branch, but it is not the final
 shape we want.
@@ -67,13 +70,16 @@ shape we want.
 ```text
 services/artana_evidence_api/
   full_ai_orchestrator/
-    runtime.py
     execute.py
     queue.py
     response.py
     action_registry.py
     workspace_support.py
-    artifacts.py
+    runtime_artifacts.py
+    runtime_constants.py
+    runtime_models.py
+    response_artifacts.py
+    response_summaries.py
     progress/
     guarded/
     shadow/
@@ -109,7 +115,9 @@ services/artana_evidence_api/
 
 Root modules such as `full_ai_orchestrator_runtime.py` and
 `research_init_runtime.py` should remain as thin compatibility facades until all
-internal imports are migrated.
+internal imports are migrated. Compatibility facades are listed in
+`architecture_structure_overrides.json`; file-size exceptions remain tracked
+separately in `architecture_overrides.json`.
 
 ### Graph Service
 
@@ -373,23 +381,23 @@ Acceptance criteria:
       facade and remove its large-helper exception from the structure guard.
 - [x] Add compatibility tests proving the old common-support path re-exports
       the focused canonical modules and package internals no longer import it.
-- [ ] Keep root `full_ai_orchestrator_*.py` facades where external or test
+- [x] Keep root `full_ai_orchestrator_*.py` facades where external or test
       imports still rely on them.
-- [ ] Migrate internal imports to package paths.
-- [ ] Add compatibility tests for root full-AI facades, including at least one
+- [x] Migrate internal imports to package paths.
+- [x] Add compatibility tests for root full-AI facades, including at least one
       test for each old-path monkeypatch seam that Phase 0 says must remain
       compatible.
-- [ ] Run contract checks even if the move looks internal, because FastAPI and
+- [x] Run contract checks even if the move looks internal, because FastAPI and
       Pydantic can expose import-path drift indirectly.
 
 Acceptance criteria:
 
-- [ ] Full-AI orchestrator imports are package-based internally.
-- [ ] Existing public/root import paths still pass compatibility tests.
-- [ ] `make artana-evidence-api-contract-check` passes with no unintended
+- [x] Full-AI orchestrator imports are package-based internally.
+- [x] Existing public/root import paths still pass compatibility tests.
+- [x] `make artana-evidence-api-contract-check` passes with no unintended
       artifact diff.
-- [ ] The import-cycle check passes for the moved package family.
-- [ ] `make artana-evidence-api-service-checks` passes.
+- [x] The import-cycle check passes for the moved package family.
+- [x] `make artana-evidence-api-service-checks` passes.
 
 ### Phase 3: Evidence API Research Init, Stores, And Compare
 

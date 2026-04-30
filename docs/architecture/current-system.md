@@ -1,6 +1,6 @@
 # Current System
 
-Status date: April 29, 2026.
+Status date: April 30, 2026.
 
 This repo is the extracted backend for the Artana evidence platform. It contains
 two service packages plus service-focused scripts, tests, migrations, docs, and
@@ -30,6 +30,31 @@ There is no top-level `src/` package, no frontend app, and no
 The Evidence API talks to the graph service through HTTP/client contracts. It
 should not package or import graph implementation internals for normal runtime
 behavior.
+
+## Current Package Map
+
+Read the repo by package first, then by compatibility facade only when an old
+import path needs to be preserved.
+
+```text
+services/artana_evidence_api/
+  routers/                public Evidence API routes
+  full_ai_orchestrator/   full-AI execution, planner, guarded, shadow, progress
+  queued_run/             queued task responses, waits, worker readiness
+  runtime/                model config, model health, Artana Postgres store
+  source_plugins/         source-owned search, normalization, policy metadata
+  graph_integration/      graph service HTTP/client boundary
+
+services/artana_evidence_db/
+  routers/                graph service routes
+  dictionary/             dictionary constraints, schemas, value validation
+  graph_api_schemas/      graph API contracts
+```
+
+Root files such as `runtime_support.py`, `queued_run_support.py`,
+`dictionary_support.py`, and `full_ai_orchestrator_*.py` are compatibility
+facades when a package path exists. New implementation work should use the
+package path.
 
 ## Local Runtime
 

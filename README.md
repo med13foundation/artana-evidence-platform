@@ -107,9 +107,9 @@ curl http://127.0.0.1:8091/health
 - [Docs Index](docs/README.md)
 - [Current System](docs/architecture/current-system.md)
 - [User Guide](docs/user-guide/README.md)
-- [Engineering Plan](docs/plan.md)
-- [Source Plugin Guide](docs/source_plugins.md)
 - [Remaining Work](docs/remaining_work_priorities.md)
+- [Module Packaging Plan](docs/architecture/module-packaging-plan.md)
+- [Source Plugin Guide](docs/source_plugins.md)
 
 ## Main Workflow
 
