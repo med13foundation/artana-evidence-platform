@@ -121,7 +121,7 @@ define check_venv
 fi
 endef
 
-.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check architecture-size-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test coverage-check artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
+.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check graph-phase6-release-check architecture-size-check architecture-structure-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test coverage-check artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
@@ -241,6 +241,10 @@ architecture-size-check: ## Enforce per-file architecture size budget
 	$(call check_venv)
 	$(USE_PYTHON) scripts/validate_architecture_size.py
 
+architecture-structure-check: ## Enforce package structure and sprawl guardrails
+	$(call check_venv)
+	$(USE_PYTHON) scripts/validate_architecture_structure.py
+
 graph-service-lint: ## Run ruff on graph service paths
 	$(call check_venv)
 	$(USE_PYTHON) -m ruff check $(GRAPH_SERVICE_LINT_PATHS)
@@ -269,6 +273,7 @@ graph-service-static-checks-core: ## Run graph service static gates except repo-
 graph-service-static-checks: ## Run graph service gates except tests
 	@$(MAKE) -s graph-service-static-checks-core
 	@$(MAKE) -s architecture-size-check
+	@$(MAKE) -s architecture-structure-check
 
 graph-service-checks: ## Run graph service gates
 	@$(MAKE) -s graph-service-static-checks
@@ -311,6 +316,7 @@ artana-evidence-api-static-checks-core: ## Run evidence API static gates except 
 artana-evidence-api-static-checks: ## Run evidence API gates except tests
 	@$(MAKE) -s artana-evidence-api-static-checks-core
 	@$(MAKE) -s architecture-size-check
+	@$(MAKE) -s architecture-structure-check
 
 artana-evidence-api-service-checks: ## Run evidence API gates
 	@$(MAKE) -s artana-evidence-api-static-checks
@@ -320,6 +326,7 @@ service-checks: ## Run all service gates including coverage enforcement
 	@$(MAKE) -s graph-service-static-checks-core
 	@$(MAKE) -s artana-evidence-api-static-checks-core
 	@$(MAKE) -s architecture-size-check
+	@$(MAKE) -s architecture-structure-check
 	@$(MAKE) -s coverage-check
 
 live-endpoint-contract-check: ## Run opt-in live endpoint contract against make run-all

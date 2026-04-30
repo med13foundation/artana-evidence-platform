@@ -54,6 +54,7 @@ _ROLLBACK_REQUIRED_CANARY_GATES = frozenset(
     },
 )
 
+
 def _dict_value(value: object) -> JSONObject:
     return dict(value) if isinstance(value, dict) else {}
 
@@ -80,7 +81,6 @@ def _dict_of_ints(value: object) -> dict[str, int]:
     }
 
 
-
 def _maybe_string(value: object) -> str | None:
     if not isinstance(value, str):
         return None
@@ -90,7 +90,6 @@ def _maybe_string(value: object) -> str | None:
 
 def _bool_or_none(value: object) -> bool | None:
     return value if isinstance(value, bool) else None
-
 
 
 def _int_value(value: object) -> int:
@@ -213,4 +212,3 @@ def _canary_verdict_label(value: object) -> str:
     if verdict == "pass":
         return "PASS"
     return verdict
-

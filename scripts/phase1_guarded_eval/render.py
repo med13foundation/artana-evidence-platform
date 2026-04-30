@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from scripts.phase1_guarded_eval_common import (
+from scripts.phase1_guarded_eval.common import (
     _bool_or_none,
     _canary_verdict_label,
     _dict_of_ints,
@@ -20,10 +20,11 @@ from scripts.phase1_guarded_eval_common import (
     _optional_gate_label,
     _string_list,
 )
-from scripts.phase1_guarded_eval_review import _classify_fixture_review_verdict
+from scripts.phase1_guarded_eval.review import _classify_fixture_review_verdict
 
 if TYPE_CHECKING:
     from artana_evidence_api.types.common import JSONObject
+
 
 def _drift_label(value: object) -> str | None:
     drift_class = _maybe_string(value)
@@ -756,5 +757,3 @@ def _validate_guarded_report_payload(report: JSONObject) -> None:
                 "requires a non-empty `canary_gate.verdict` value."
             )
             raise ValueError(msg)
-
-

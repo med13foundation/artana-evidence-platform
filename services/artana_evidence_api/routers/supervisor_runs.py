@@ -44,7 +44,7 @@ from artana_evidence_api.proposal_actions import (
 from artana_evidence_api.proposal_store import (
     HarnessProposalStore,  # noqa: TC001
 )
-from artana_evidence_api.queued_run_support import (
+from artana_evidence_api.queued_run import (
     HarnessAcceptedRunResponse,
     build_accepted_run_response,
     load_primary_result_artifact,

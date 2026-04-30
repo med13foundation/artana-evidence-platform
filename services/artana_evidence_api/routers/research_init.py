@@ -30,7 +30,7 @@ from artana_evidence_api.full_ai_orchestrator_runtime import (
     store_pubmed_replay_bundle_artifact as store_full_ai_pubmed_replay_bundle_artifact,
 )
 from artana_evidence_api.graph_client import GraphServiceClientError
-from artana_evidence_api.queued_run_support import wake_worker_for_queued_run
+from artana_evidence_api.queued_run import wake_worker_for_queued_run
 from artana_evidence_api.research_init_helpers import (
     ResearchInitOrchestrationMode,
     _build_pubmed_queries,

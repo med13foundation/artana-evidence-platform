@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeVar
 from uuid import UUID
 
-from artana_evidence_api.full_ai_orchestrator_guarded_rollout import (
+from artana_evidence_api.full_ai_orchestrator.guarded.rollout import (
     _guarded_profile_allows_chase,
     _guarded_rollout_profile,
 )
@@ -35,6 +35,7 @@ _T = TypeVar("_T")
 
 def _source_payload(sources: object) -> JSONObject:
     return json_object_or_empty(sources)
+
 
 def _build_compare_orchestrator_progress_observer(
     *,
@@ -218,8 +219,6 @@ class _CompositeProgressObserver(ResearchInitProgressObserver):
                 metadata=metadata,
                 workspace_snapshot=workspace_snapshot,
             )
-
-
 
 
 __all__ = [

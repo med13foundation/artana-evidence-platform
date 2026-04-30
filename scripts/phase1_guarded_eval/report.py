@@ -10,7 +10,7 @@ from artana_evidence_api.full_ai_orchestrator_contracts import (
     FullAIOrchestratorPlannerMode,
 )
 
-from scripts.phase1_guarded_eval_common import (
+from scripts.phase1_guarded_eval.common import (
     _GUARDED_SOURCE_CHASE_PROFILE,
     _ROLLBACK_REQUIRED_CANARY_GATES,
     Phase1GuardedCompareMode,
@@ -23,7 +23,7 @@ from scripts.phase1_guarded_eval_common import (
     _round_runtime_seconds,
     _string_list,
 )
-from scripts.phase1_guarded_eval_review import (
+from scripts.phase1_guarded_eval.review import (
     _build_fixture_guarded_graduation_review,
     _build_fixture_review_summary,
 )
@@ -57,6 +57,7 @@ def _extract_guarded_readiness(compare_payload: JSONObject) -> JSONObject:
     orchestrator = _dict_value(compare_payload.get("orchestrator"))
     workspace = _dict_value(orchestrator.get("workspace"))
     return _dict_value(workspace.get("guarded_readiness"))
+
 
 def _build_guarded_graduation_gate(
     *,

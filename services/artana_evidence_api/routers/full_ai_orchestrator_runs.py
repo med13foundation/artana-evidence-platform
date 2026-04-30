@@ -29,7 +29,7 @@ from artana_evidence_api.full_ai_orchestrator_runtime import (
     store_pubmed_replay_bundle_artifact,
 )
 from artana_evidence_api.graph_client import GraphServiceClientError
-from artana_evidence_api.queued_run_support import (
+from artana_evidence_api.queued_run import (
     HarnessAcceptedRunResponse,
     build_accepted_run_response,
     load_primary_result_artifact,

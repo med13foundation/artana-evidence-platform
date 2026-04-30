@@ -68,12 +68,15 @@ shape we want.
 services/artana_evidence_api/
   full_ai_orchestrator/
     runtime.py
-    execution.py
+    execute.py
     queue.py
     response.py
+    action_registry.py
+    workspace_support.py
     artifacts.py
     progress/
     guarded/
+    shadow/
     shadow_planner/
 
   research_init/
@@ -258,60 +261,118 @@ import high-level routers or orchestrators.
 
 ### Phase 0: Inventory And Rules
 
-- [ ] Generate an import map for the top-level module families.
-- [ ] Identify current facade modules and private test seams.
-- [ ] Record which paths are public compatibility paths.
-- [ ] Decide package names before moving files.
-- [ ] Add a small structure check that fails when a new large module family is
+- [x] Generate an import map for the top-level module families.
+- [x] Identify current facade modules and private test seams.
+- [x] Record which paths are public compatibility paths.
+- [x] Decide package names before moving files.
+- [x] Add a small structure check that fails when a new large module family is
       added at the service root instead of inside a package.
-- [ ] Add a repo-local AST import-cycle check for the package families being
+- [x] Add a repo-local AST import-cycle check for the package families being
       moved.
-- [ ] Define the compatibility-facade list in a repo-local control file or test
+- [x] Define the compatibility-facade list in a repo-local control file or test
       fixture so Phase 5 has something objective to clean up.
-- [ ] Enumerate every preserved old-path monkeypatch seam; each seam must have
+- [x] Enumerate every preserved old-path monkeypatch seam; each seam must have
       a compatibility test or an explicit removal/waiver note.
 
 Acceptance criteria:
 
-- [ ] We know which imports must remain compatible.
-- [ ] We know which modules can move without public impact.
-- [ ] The new structure rule is wired into `service-checks` or a normal
+- [x] We know which imports must remain compatible.
+- [x] We know which modules can move without public impact.
+- [x] The new structure rule is wired into `service-checks` or a normal
       service check target.
-- [ ] The new structure rule reports current root module counts.
-- [ ] Compatibility facade behavior is documented and testable.
+- [x] The new structure rule reports current root module counts.
+- [x] Compatibility facade behavior is documented and testable.
 
 ### Phase 1: Script Packages
 
 Start with scripts because they are easier to verify and already have helper
 modules.
 
-- [ ] Move full-AI canary helpers under `scripts/full_ai_real_space_canary/`.
-- [ ] Move live evidence audit helpers under
+- [x] Move full-AI canary helpers under `scripts/full_ai_real_space_canary/`.
+- [x] Move live evidence audit helpers under
       `scripts/live_evidence_session_audit/`.
-- [ ] Move Phase 1 guarded-eval helpers under `scripts/phase1_guarded_eval/`.
-- [ ] Keep existing script files as entrypoint facades.
-- [ ] Verify each script works with both file-path execution and
+- [x] Move Phase 1 guarded-eval helpers under `scripts/phase1_guarded_eval/`.
+- [x] Keep existing script files as entrypoint facades.
+- [x] Verify each script works with both file-path execution and
       `python -m scripts.<entrypoint>`.
-- [ ] Keep `scripts/__init__.py` present so `python -m scripts.<entrypoint>`
+- [x] Keep `scripts/__init__.py` present so `python -m scripts.<entrypoint>`
       stays reliable.
-- [ ] Use `git mv` for moves so history remains followable.
+- [x] Use `git mv` for moves so history remains followable.
 
 Acceptance criteria:
 
-- [ ] Existing operator commands still work.
-- [ ] No bare sibling imports remain in split script helpers.
-- [ ] Script helper modules are grouped by runnable workflow.
-- [ ] Script entrypoint compatibility tests or smoke commands are recorded in
+- [x] Existing operator commands still work.
+- [x] No bare sibling imports remain in split script helpers.
+- [x] Script helper modules are grouped by runnable workflow.
+- [x] Script entrypoint compatibility tests or smoke commands are recorded in
       the phase diff.
 
 ### Phase 2: Evidence API Full-AI Orchestrator
 
-- [ ] Create `services/artana_evidence_api/full_ai_orchestrator/`.
-- [ ] Move runtime models, constants, artifacts, queue, execution, progress,
+- [x] Create `services/artana_evidence_api/full_ai_orchestrator/`.
+- [x] Move runtime models, constants, artifacts, queue, execution, progress,
       guarded, and response modules into that package.
-- [ ] Create `full_ai_orchestrator/shadow_planner/` for shadow planner
+- [x] Create `full_ai_orchestrator/shadow_planner/` for shadow planner
       workspace, prompts, validation, comparison, fallback, telemetry, and
       decisions.
+- [x] Move the shadow-planner implementation modules into
+      `full_ai_orchestrator/shadow_planner/`.
+- [x] Keep explicit root compatibility facades for the old
+      `full_ai_orchestrator_shadow_planner*` module paths.
+- [x] Add compatibility tests for the moved shadow-planner facades, including
+      the existing old-path monkeypatch seam used by tests.
+- [x] Enumerate the preserved shadow-planner old-path monkeypatch seams:
+      `has_configured_openai_api_key`, `get_model_registry`, and
+      `create_artana_postgres_store`.
+- [x] Create `full_ai_orchestrator/progress/` for progress observer
+      composition and progress-state persistence.
+- [x] Move progress observer implementation modules into
+      `full_ai_orchestrator/progress/`.
+- [x] Keep explicit root compatibility facades for the old
+      `full_ai_orchestrator_progress_*` module paths.
+- [x] Add compatibility tests for the moved progress facades and the runtime
+      call sites that expose the progress observer.
+- [x] Confirm there are no preserved progress old-path monkeypatch seams in
+      the current service tests.
+- [x] Move runtime constants, result model, artifact helpers, initial-decision
+      builder, and queue entrypoint into `full_ai_orchestrator/`.
+- [x] Keep explicit root compatibility facades for the old runtime-support and
+      queue module paths.
+- [x] Preserve the old queue-path `ensure_run_transparency_seed` monkeypatch
+      seam while the root queue facade remains.
+- [x] Create `full_ai_orchestrator/guarded/` for guarded rollout policy,
+      guarded selection, guarded artifact support, and guarded verification.
+- [x] Move guarded implementation modules into `full_ai_orchestrator/guarded/`.
+- [x] Keep explicit root compatibility facades for the old
+      `full_ai_orchestrator_guarded_*` module paths.
+- [x] Add compatibility tests for guarded facades and guarded canonical import
+      direction.
+- [x] Move response serialization and response-support helpers into
+      `full_ai_orchestrator/`.
+- [x] Keep explicit root compatibility facades for the old
+      `full_ai_orchestrator_response*` module paths.
+- [x] Create `full_ai_orchestrator/shadow/` for shadow checkpoint orchestration
+      and shadow summary helpers.
+- [x] Move shadow checkpoint and shadow-support implementation modules into
+      `full_ai_orchestrator/shadow/`.
+- [x] Keep explicit root compatibility facades for the old
+      `full_ai_orchestrator_shadow_checkpoints` and
+      `full_ai_orchestrator_shadow_support` module paths.
+- [x] Add compatibility tests for shadow facades, internal package-path imports,
+      the runtime recommendation monkeypatch seam, and duplicated shadow/guarded
+      constants that remain pending a later split.
+- [x] Move the full-AI execute entrypoint into `full_ai_orchestrator/execute.py`.
+- [x] Keep an explicit root compatibility facade for the old
+      `full_ai_orchestrator_execute` module path.
+- [x] Preserve the old runtime-path `execute_research_init_run` monkeypatch
+      seam while the root runtime facade remains.
+- [x] Split `full_ai_orchestrator_common_support.py` into focused
+      `full_ai_orchestrator/action_registry.py` and
+      `full_ai_orchestrator/workspace_support.py` package modules.
+- [x] Turn `full_ai_orchestrator_common_support.py` into a small compatibility
+      facade and remove its large-helper exception from the structure guard.
+- [x] Add compatibility tests proving the old common-support path re-exports
+      the focused canonical modules and package internals no longer import it.
 - [ ] Keep root `full_ai_orchestrator_*.py` facades where external or test
       imports still rely on them.
 - [ ] Migrate internal imports to package paths.

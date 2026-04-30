@@ -40,7 +40,7 @@ from artana_evidence_api.graph_client import GraphTransportBundle
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
 from artana_evidence_api.identity.contracts import IdentityGateway
 from artana_evidence_api.proposal_store import HarnessProposalStore
-from artana_evidence_api.queued_run_support import HarnessAcceptedRunResponse
+from artana_evidence_api.queued_run import HarnessAcceptedRunResponse
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.review_item_store import HarnessReviewItemStore
 from artana_evidence_api.run_registry import HarnessRunRegistry

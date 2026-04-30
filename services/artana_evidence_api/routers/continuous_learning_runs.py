@@ -24,7 +24,7 @@ from artana_evidence_api.dependencies import (
     require_harness_space_write_access,
 )
 from artana_evidence_api.graph_client import GraphServiceClientError
-from artana_evidence_api.queued_run_support import (
+from artana_evidence_api.queued_run import (
     HarnessAcceptedRunResponse,
     build_accepted_run_response,
     load_primary_result_artifact,

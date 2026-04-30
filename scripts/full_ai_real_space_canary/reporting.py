@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from scripts.full_ai_real_space_canary_utils import (
+from scripts.full_ai_real_space_canary.utils import (
     _artifact_contents_by_key,
     _build_run_matrix,
     _dict_value,
@@ -30,7 +30,7 @@ from scripts.full_ai_real_space_canary_utils import (
 if TYPE_CHECKING:
     from artana_evidence_api.types.common import JSONObject
 
-    from scripts.run_full_ai_real_space_canary import (
+    from scripts.full_ai_real_space_canary.runner import (
         LiveCanaryMode,
         RealSpaceCanaryConfig,
     )
@@ -47,6 +47,7 @@ _SOURCE_POLICY_CATEGORIES = (
     "grounding",
 )
 _DEFAULT_REPORT_SUBDIR = "full_ai_orchestrator_real_space_canary"
+
 
 def _summarize_live_run(  # noqa: PLR0913
     *,
@@ -883,8 +884,6 @@ def write_real_space_canary_report(
         "summary_json": str(summary_json),
         "summary_markdown": str(summary_markdown),
     }
-
-
 
 
 __all__ = [

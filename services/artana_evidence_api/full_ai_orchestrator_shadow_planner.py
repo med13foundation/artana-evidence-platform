@@ -2,29 +2,29 @@
 
 from __future__ import annotations
 
-from artana_evidence_api.full_ai_orchestrator_shadow_planner_comparison import (
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.comparison import (
     build_shadow_planner_comparison,
 )
-from artana_evidence_api.full_ai_orchestrator_shadow_planner_models import (
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.models import (
     ShadowPlannerRecommendationOutput,
     ShadowPlannerRecommendationResult,
     ShadowPlannerTelemetry,
 )
-from artana_evidence_api.full_ai_orchestrator_shadow_planner_prompts import (
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.prompts import (
     _build_shadow_planner_prompt,
     load_shadow_planner_prompt,
     shadow_planner_prompt_version,
 )
-from artana_evidence_api.full_ai_orchestrator_shadow_planner_runtime import (
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.runtime import (
     create_artana_postgres_store,
     get_model_registry,
     has_configured_openai_api_key,
     recommend_shadow_planner_action,
 )
-from artana_evidence_api.full_ai_orchestrator_shadow_planner_validation import (
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.validation import (
     validate_shadow_planner_output,
 )
-from artana_evidence_api.full_ai_orchestrator_shadow_planner_workspace import (
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.workspace import (
     _planner_source_taxonomy,
     build_shadow_planner_workspace_summary,
     planner_action_registry_by_state,

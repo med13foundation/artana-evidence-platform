@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from artana_evidence_api.queued_run_support import HarnessAcceptedRunResponse
+from artana_evidence_api.queued_run import HarnessAcceptedRunResponse
 from artana_evidence_api.routers import research_init, runs
 from artana_evidence_api.routers.artifacts import (
     HarnessArtifactListResponse,

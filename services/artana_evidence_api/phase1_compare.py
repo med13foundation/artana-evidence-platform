@@ -32,15 +32,15 @@ from artana_evidence_api.dependencies import (
     get_run_registry,
     get_schedule_store,
 )
-from artana_evidence_api.full_ai_orchestrator_contracts import (
-    FullAIOrchestratorPlannerMode,
-)
-from artana_evidence_api.full_ai_orchestrator_guarded_rollout import (
+from artana_evidence_api.full_ai_orchestrator.guarded.rollout import (
     _GUARDED_PROFILE_CHASE_ONLY,
     _GUARDED_PROFILE_DRY_RUN,
     _GUARDED_PROFILE_LOW_RISK,
     _GUARDED_PROFILE_SOURCE_CHASE,
     _guarded_profile_allows_chase,
+)
+from artana_evidence_api.full_ai_orchestrator_contracts import (
+    FullAIOrchestratorPlannerMode,
 )
 from artana_evidence_api.full_ai_orchestrator_runtime import (
     _FullAIOrchestratorProgressObserver,
@@ -719,9 +719,7 @@ async def _probe_guarded_structured_rollout_seam(
             "guarded_execution_count": len(observer.guarded_execution_log),
             "persisted_guarded_structured_enrichment_selection": (
                 json_object(
-                    persisted_snapshot.get(
-                        "guarded_structured_enrichment_selection"
-                    )
+                    persisted_snapshot.get("guarded_structured_enrichment_selection")
                 )
             ),
         },
