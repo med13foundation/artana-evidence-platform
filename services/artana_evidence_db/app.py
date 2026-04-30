@@ -11,6 +11,7 @@ from .routers.claims import router as claims_router
 from .routers.concepts import router as concepts_router
 from .routers.dictionary import router as dictionary_router
 from .routers.dictionary_proposals import router as dictionary_proposals_router
+from .routers.dictionary_transforms import router as dictionary_transforms_router
 from .routers.domain_packs import router as domain_packs_router
 from .routers.entities import router as entities_router
 from .routers.graph_documents import router as graph_documents_router
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(concepts_router)
     app.include_router(dictionary_router)
     app.include_router(dictionary_proposals_router)
+    app.include_router(dictionary_transforms_router)
     app.include_router(domain_packs_router)
     app.include_router(entities_router)
     app.include_router(graph_documents_router)

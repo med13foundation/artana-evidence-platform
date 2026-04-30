@@ -9,64 +9,56 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .common import JSONObject, JSONValue
+from .graph_decision_contracts import (
+    DecisionConfidenceAssessment,
+    DecisionConfidenceResult,
+    DecisionDuplicateConflictState,
+    DecisionEvidenceState,
+    DecisionRiskTier,
+    DecisionSourceReliability,
+    DecisionValidationState,
+)
+from .graph_dictionary_contracts import (
+    DictionaryEntityTypeListResponse,
+    DictionaryEntityTypeProposalCreateRequest,
+    DictionaryEntityTypeResponse,
+    DictionaryProposalResponse,
+    DictionaryProposalStatus,
+    DictionaryProposalType,
+    DictionaryRelationConstraintProposalCreateRequest,
+    DictionaryRelationSynonymListResponse,
+    DictionaryRelationSynonymResponse,
+    DictionaryRelationTypeListResponse,
+    DictionaryRelationTypeProposalCreateRequest,
+    DictionaryRelationTypeResponse,
+    DictionarySearchListResponse,
+    DictionarySearchResultResponse,
+)
 from .graph_fact_assessment import (
     FactAssessment,
     assessment_confidence,
 )
-
-DecisionValidationState = Literal[
-    "VALID",
-    "VALID_WITH_GRAPH_REPAIR",
-    "REVIEW_REQUIRED",
-    "INVALID",
-]
-DecisionEvidenceState = Literal[
-    "ACCEPTED_DIRECT_EVIDENCE",
-    "DIRECT_EVIDENCE_PRESENT",
-    "EVIDENCE_LOCATOR_ONLY",
-    "GENERATED_SUMMARY_ONLY",
-    "REQUIRED_EVIDENCE_MISSING",
-]
-DecisionDuplicateConflictState = Literal[
-    "CLEAR",
-    "DUPLICATE_EXISTING",
-    "POSSIBLE_DUPLICATE",
-    "CONFLICTING_CLAIM",
-]
-DecisionSourceReliability = Literal[
-    "CURATED",
-    "TRUSTED_EXTERNAL",
-    "USER_UPLOADED",
-    "UNKNOWN",
-    "AI_GENERATED_ONLY",
-]
-DecisionRiskTier = Literal["low", "medium", "high"]
-
-
-class DecisionConfidenceAssessment(BaseModel):
-    """Qualitative inputs the graph DB uses to score governed AI decisions."""
-
-    model_config = ConfigDict(strict=False, extra="forbid")
-
-    fact_assessment: FactAssessment
-    validation_state: DecisionValidationState = "VALID"
-    evidence_state: DecisionEvidenceState = "DIRECT_EVIDENCE_PRESENT"
-    duplicate_conflict_state: DecisionDuplicateConflictState = "CLEAR"
-    source_reliability: DecisionSourceReliability = "UNKNOWN"
-    risk_tier: DecisionRiskTier = "low"
-    rationale: str | None = Field(default=None, max_length=4000)
-
-
-class DecisionConfidenceResult(BaseModel):
-    """DB-computed policy confidence result."""
-
-    model_config = ConfigDict(strict=True)
-
-    confidence_model_version: str
-    computed_confidence: float = Field(ge=0.0, le=1.0)
-    cap_values: dict[str, float]
-    blocking_reasons: list[str]
-    human_review_reasons: list[str]
+from .graph_workflow_contracts import (
+    CreateManualHypothesisRequest,
+    ExplanationResponse,
+    GraphOperatingMode,
+    GraphWorkflowAction,
+    GraphWorkflowActionRequest,
+    GraphWorkflowAIDecisionEnvelope,
+    GraphWorkflowCreateRequest,
+    GraphWorkflowKind,
+    GraphWorkflowListResponse,
+    GraphWorkflowPolicy,
+    GraphWorkflowResponse,
+    GraphWorkflowRiskTier,
+    GraphWorkflowStatus,
+    HypothesisListResponse,
+    HypothesisResponse,
+    OperatingModeCapabilitiesResponse,
+    OperatingModeRequest,
+    OperatingModeResponse,
+    ValidationExplanationRequest,
+)
 
 
 class KernelRelationPaperLinkResponse(BaseModel):
@@ -678,264 +670,6 @@ class KernelRelationSuggestionListResponse(BaseModel):
     )
 
 
-class DictionaryEntityTypeResponse(BaseModel):
-    """Typed dictionary entity-type response."""
-
-    model_config = ConfigDict(strict=True)
-
-    id: str
-    display_name: str
-    description: str
-    domain_context: str
-    external_ontology_ref: str | None = None
-    expected_properties: JSONObject = Field(default_factory=dict)
-    description_embedding: list[float] | None = None
-    embedded_at: datetime | None = None
-    embedding_model: str | None = None
-    created_by: str
-    is_active: bool
-    valid_from: datetime | None = None
-    valid_to: datetime | None = None
-    superseded_by: str | None = None
-    source_ref: str | None = None
-    review_status: str
-    reviewed_by: str | None = None
-    reviewed_at: datetime | None = None
-    revocation_reason: str | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
-class DictionaryEntityTypeListResponse(BaseModel):
-    """List response for typed dictionary entity types."""
-
-    model_config = ConfigDict(strict=True)
-
-    entity_types: list[DictionaryEntityTypeResponse]
-    total: int
-
-
-class DictionaryRelationTypeResponse(BaseModel):
-    """Typed dictionary relation-type response."""
-
-    model_config = ConfigDict(strict=True)
-
-    id: str
-    display_name: str
-    description: str
-    domain_context: str
-    is_directional: bool
-    inverse_label: str | None = None
-    description_embedding: list[float] | None = None
-    embedded_at: datetime | None = None
-    embedding_model: str | None = None
-    created_by: str
-    is_active: bool
-    valid_from: datetime | None = None
-    valid_to: datetime | None = None
-    superseded_by: str | None = None
-    source_ref: str | None = None
-    review_status: str
-    reviewed_by: str | None = None
-    reviewed_at: datetime | None = None
-    revocation_reason: str | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
-class DictionaryRelationTypeListResponse(BaseModel):
-    """List response for typed dictionary relation types."""
-
-    model_config = ConfigDict(strict=True)
-
-    relation_types: list[DictionaryRelationTypeResponse]
-    total: int
-
-
-class DictionaryRelationSynonymResponse(BaseModel):
-    """Typed dictionary relation-synonym response."""
-
-    model_config = ConfigDict(strict=True)
-
-    id: int
-    relation_type: str
-    synonym: str
-    source: str | None = None
-    created_by: str
-    is_active: bool
-    valid_from: datetime | None = None
-    valid_to: datetime | None = None
-    superseded_by: str | None = None
-    source_ref: str | None = None
-    review_status: str
-    reviewed_by: str | None = None
-    reviewed_at: datetime | None = None
-    revocation_reason: str | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
-class DictionaryRelationSynonymListResponse(BaseModel):
-    """List response for typed dictionary relation synonyms."""
-
-    model_config = ConfigDict(strict=True)
-
-    relation_synonyms: list[DictionaryRelationSynonymResponse]
-    total: int
-
-
-class DictionarySearchResultResponse(BaseModel):
-    """Typed dictionary search hit."""
-
-    model_config = ConfigDict(strict=True)
-
-    dimension: str
-    entry_id: str
-    display_name: str
-    description: str | None = None
-    domain_context: str | None = None
-    match_method: str
-    similarity_score: float
-    metadata: JSONObject = Field(default_factory=dict)
-
-
-class DictionarySearchListResponse(BaseModel):
-    """List response for typed dictionary search hits."""
-
-    model_config = ConfigDict(strict=True)
-
-    results: list[DictionarySearchResultResponse]
-    total: int
-
-
-DictionaryProposalType = Literal[
-    "DOMAIN_CONTEXT",
-    "ENTITY_TYPE",
-    "VARIABLE",
-    "RELATION_TYPE",
-    "RELATION_CONSTRAINT",
-    "RELATION_SYNONYM",
-    "VALUE_SET",
-    "VALUE_SET_ITEM",
-]
-DictionaryProposalStatus = Literal[
-    "SUBMITTED",
-    "DUPLICATE",
-    "CHANGES_REQUESTED",
-    "APPROVED",
-    "REJECTED",
-    "MERGED",
-]
-
-
-class DictionaryProposalResponse(BaseModel):
-    """Typed governed dictionary-proposal response."""
-
-    model_config = ConfigDict(strict=True)
-
-    id: str
-    proposal_type: DictionaryProposalType
-    status: DictionaryProposalStatus
-    entity_type: str | None = None
-    source_type: str | None = None
-    relation_type: str | None = None
-    target_type: str | None = None
-    value_set_id: str | None = None
-    variable_id: str | None = None
-    canonical_name: str | None = None
-    data_type: str | None = None
-    preferred_unit: str | None = None
-    constraints: JSONObject = Field(default_factory=dict)
-    sensitivity: str | None = None
-    code: str | None = None
-    synonym: str | None = None
-    source: str | None = None
-    display_name: str | None = None
-    name: str | None = None
-    display_label: str | None = None
-    description: str | None = None
-    domain_context: str | None = None
-    external_ontology_ref: str | None = None
-    external_ref: str | None = None
-    expected_properties: JSONObject = Field(default_factory=dict)
-    synonyms: list[str] = Field(default_factory=list)
-    is_directional: bool | None = None
-    inverse_label: str | None = None
-    is_extensible: bool | None = None
-    sort_order: int | None = None
-    is_active_value: bool | None = None
-    is_allowed: bool | None = None
-    requires_evidence: bool | None = None
-    profile: str | None = None
-    rationale: str
-    evidence_payload: JSONObject = Field(default_factory=dict)
-    proposed_by: str
-    reviewed_by: str | None = None
-    reviewed_at: datetime | None = None
-    decision_reason: str | None = None
-    merge_target_type: str | None = None
-    merge_target_id: str | None = None
-    applied_domain_context_id: str | None = None
-    applied_entity_type_id: str | None = None
-    applied_variable_id: str | None = None
-    applied_relation_type_id: str | None = None
-    applied_constraint_id: int | None = None
-    applied_relation_synonym_id: int | None = None
-    applied_value_set_id: str | None = None
-    applied_value_set_item_id: int | None = None
-    source_ref: str | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
-class DictionaryEntityTypeProposalCreateRequest(BaseModel):
-    """Governed entity-type proposal request."""
-
-    model_config = ConfigDict(strict=False, extra="forbid")
-
-    id: str = Field(..., min_length=1, max_length=64)
-    display_name: str = Field(..., min_length=1, max_length=128)
-    description: str = Field(..., min_length=1)
-    domain_context: str = Field(..., min_length=1, max_length=64)
-    rationale: str = Field(..., min_length=1)
-    evidence_payload: JSONObject = Field(default_factory=dict)
-    external_ontology_ref: str | None = Field(default=None, max_length=255)
-    expected_properties: JSONObject = Field(default_factory=dict)
-    source_ref: str | None = Field(default=None, max_length=1024)
-
-
-class DictionaryRelationTypeProposalCreateRequest(BaseModel):
-    """Governed relation-type proposal request."""
-
-    model_config = ConfigDict(strict=False, extra="forbid")
-
-    id: str = Field(..., min_length=1, max_length=64)
-    display_name: str = Field(..., min_length=1, max_length=128)
-    description: str = Field(..., min_length=1)
-    domain_context: str = Field(..., min_length=1, max_length=64)
-    rationale: str = Field(..., min_length=1)
-    evidence_payload: JSONObject = Field(default_factory=dict)
-    is_directional: bool = True
-    inverse_label: str | None = Field(default=None, max_length=128)
-    source_ref: str | None = Field(default=None, max_length=1024)
-
-
-class DictionaryRelationConstraintProposalCreateRequest(BaseModel):
-    """Governed relation-constraint proposal request."""
-
-    model_config = ConfigDict(strict=False, extra="forbid")
-
-    source_type: str = Field(..., min_length=1, max_length=64)
-    relation_type: str = Field(..., min_length=1, max_length=64)
-    target_type: str = Field(..., min_length=1, max_length=64)
-    rationale: str = Field(..., min_length=1)
-    evidence_payload: JSONObject = Field(default_factory=dict)
-    is_allowed: bool = True
-    requires_evidence: bool = True
-    profile: Literal["EXPECTED", "ALLOWED", "REVIEW_ONLY", "FORBIDDEN"] = "ALLOWED"
-    source_ref: str | None = Field(default=None, max_length=1024)
-
-
 class KernelReasoningPathResponse(BaseModel):
     """One reasoning path summary row."""
 
@@ -1243,245 +977,6 @@ class ConnectorProposalResponse(BaseModel):
     updated_at: datetime
 
 
-GraphOperatingMode = Literal[
-    "manual",
-    "ai_assist_human_batch",
-    "human_evidence_ai_graph",
-    "ai_full_graph",
-    "ai_full_evidence",
-    "continuous_learning",
-]
-GraphWorkflowKind = Literal[
-    "evidence_approval",
-    "batch_review",
-    "ai_evidence_decision",
-    "conflict_resolution",
-    "continuous_learning_review",
-    "bootstrap_review",
-]
-GraphWorkflowStatus = Literal[
-    "SUBMITTED",
-    "PLAN_READY",
-    "WAITING_REVIEW",
-    "APPLIED",
-    "REJECTED",
-    "CHANGES_REQUESTED",
-    "BLOCKED",
-    "FAILED",
-]
-GraphWorkflowAction = Literal[
-    "apply_plan",
-    "approve",
-    "reject",
-    "request_changes",
-    "split",
-    "defer_to_human",
-    "mark_resolved",
-]
-GraphWorkflowRiskTier = Literal["low", "medium", "high"]
-
-
-class GraphWorkflowPolicy(BaseModel):
-    """Per-space workflow policy controls for one operating mode."""
-
-    model_config = ConfigDict(strict=True)
-
-    allow_ai_graph_repair: bool = False
-    allow_ai_evidence_decisions: bool = False
-    batch_auto_apply_low_risk: bool = False
-    trusted_ai_principals: list[str] = Field(default_factory=list)
-    min_ai_confidence: float = Field(default=0.85, ge=0.0, le=1.0)
-
-
-class OperatingModeRequest(BaseModel):
-    """Request payload for updating one graph space operating mode."""
-
-    model_config = ConfigDict(strict=True)
-
-    mode: GraphOperatingMode
-    workflow_policy: GraphWorkflowPolicy = Field(
-        default_factory=GraphWorkflowPolicy,
-    )
-
-
-class OperatingModeResponse(BaseModel):
-    """Public operating mode response."""
-
-    model_config = ConfigDict(strict=True)
-
-    research_space_id: str
-    mode: GraphOperatingMode
-    workflow_policy: GraphWorkflowPolicy
-    capabilities: JSONObject
-
-
-class OperatingModeCapabilitiesResponse(BaseModel):
-    """Public capabilities for the active operating mode."""
-
-    model_config = ConfigDict(strict=True)
-
-    research_space_id: str
-    mode: GraphOperatingMode
-    capabilities: JSONObject
-
-
-class GraphWorkflowCreateRequest(BaseModel):
-    """Request payload for creating a unified graph workflow."""
-
-    model_config = ConfigDict(strict=False)
-
-    kind: GraphWorkflowKind
-    input_payload: JSONObject = Field(default_factory=dict)
-    decision_payload: JSONObject = Field(default_factory=dict)
-    source_ref: str | None = Field(default=None, max_length=1024)
-
-
-class GraphWorkflowAIDecisionEnvelope(BaseModel):
-    """Trusted AI actor envelope for workflow actions."""
-
-    model_config = ConfigDict(strict=False)
-
-    ai_principal: str = Field(..., min_length=1, max_length=128)
-    model_id: str | None = Field(default=None, max_length=128)
-    model_version: str | None = Field(default=None, max_length=128)
-    prompt_id: str | None = Field(default=None, max_length=128)
-    prompt_version: str | None = Field(default=None, max_length=128)
-    evidence_locator: str | None = Field(default=None, max_length=1024)
-    rationale: str = Field(..., min_length=1, max_length=4000)
-
-
-class GraphWorkflowActionRequest(BaseModel):
-    """Request payload for acting on one unified graph workflow."""
-
-    model_config = ConfigDict(strict=False, extra="forbid")
-
-    action: GraphWorkflowAction
-    input_hash: str | None = Field(default=None, min_length=64, max_length=64)
-    risk_tier: GraphWorkflowRiskTier = "low"
-    confidence_assessment: DecisionConfidenceAssessment | None = None
-    reason: str | None = Field(default=None, max_length=4096)
-    decision_payload: JSONObject = Field(default_factory=dict)
-    generated_resources_payload: JSONObject = Field(default_factory=dict)
-    ai_decision: GraphWorkflowAIDecisionEnvelope | None = None
-
-
-class GraphWorkflowResponse(BaseModel):
-    """Public unified graph workflow response."""
-
-    model_config = ConfigDict(strict=True)
-
-    id: str
-    research_space_id: str
-    kind: GraphWorkflowKind
-    status: GraphWorkflowStatus
-    operating_mode: GraphOperatingMode
-    input_payload: JSONObject
-    plan_payload: JSONObject
-    generated_resources_payload: JSONObject
-    decision_payload: JSONObject
-    policy_payload: JSONObject
-    explanation_payload: JSONObject
-    source_ref: str | None
-    workflow_hash: str
-    created_by: str
-    updated_by: str
-    created_at: datetime
-    updated_at: datetime
-
-
-class GraphWorkflowListResponse(BaseModel):
-    """List response for unified graph workflows."""
-
-    model_config = ConfigDict(strict=True)
-
-    workflows: list[GraphWorkflowResponse]
-    total: int = Field(..., ge=0)
-    offset: int = Field(..., ge=0)
-    limit: int = Field(..., ge=1)
-
-
-class ExplanationResponse(BaseModel):
-    """Human-readable explanation for graph workflow resources."""
-
-    model_config = ConfigDict(strict=True)
-
-    research_space_id: str
-    resource_type: str
-    resource_id: str
-    why_this_exists: str
-    approved_by: str | None = None
-    evidence: JSONObject = Field(default_factory=dict)
-    policy: JSONObject = Field(default_factory=dict)
-    generated_resources: JSONObject = Field(default_factory=dict)
-    validation: JSONObject = Field(default_factory=dict)
-    next_action: JSONObject = Field(default_factory=dict)
-    details: JSONObject = Field(default_factory=dict)
-
-
-class ValidationExplanationRequest(BaseModel):
-    """Request payload for explainable validation preflight."""
-
-    model_config = ConfigDict(strict=False)
-
-    validation_payload: JSONObject = Field(default_factory=dict)
-    context_payload: JSONObject = Field(default_factory=dict)
-
-
-class CreateManualHypothesisRequest(BaseModel):
-    """Request payload for manually logging one hypothesis."""
-
-    model_config = ConfigDict(strict=True)
-
-    statement: str = Field(..., min_length=1, max_length=4000)
-    rationale: str = Field(..., min_length=1, max_length=4000)
-    seed_entity_ids: list[str] = Field(default_factory=list, max_length=100)
-    source_type: str = Field(default="manual", min_length=1, max_length=64)
-
-
-class HypothesisResponse(BaseModel):
-    """Serialized hypothesis row derived from relation-claim ledger."""
-
-    model_config = ConfigDict(strict=True)
-
-    claim_id: UUID
-    polarity: str
-    claim_status: str
-    validation_state: str
-    persistability: str
-    confidence: float
-    source_label: str | None
-    relation_type: str
-    target_label: str | None
-    claim_text: str | None
-    linked_relation_id: UUID | None
-    origin: str
-    seed_entity_ids: list[str]
-    supporting_provenance_ids: list[str]
-    reasoning_path_id: UUID | None
-    supporting_claim_ids: list[str]
-    direct_supporting_claim_ids: list[str]
-    transferred_supporting_claim_ids: list[str]
-    transferred_from_entities: list[str]
-    transfer_basis: list[str]
-    contradiction_claim_ids: list[str]
-    explanation: str | None
-    path_confidence: float | None
-    path_length: int | None
-    created_at: datetime
-    metadata: JSONObject
-
-
-class HypothesisListResponse(BaseModel):
-    """List response for hypotheses in one research space."""
-
-    model_config = ConfigDict(strict=True)
-
-    hypotheses: list[HypothesisResponse]
-    total: int
-    offset: int
-    limit: int
-
-
 __all__ = [
     "AIDecisionResponse",
     "AIDecisionSubmitRequest",
@@ -1496,6 +991,25 @@ __all__ = [
     "CreateManualHypothesisRequest",
     "DecisionConfidenceAssessment",
     "DecisionConfidenceResult",
+    "DecisionDuplicateConflictState",
+    "DecisionEvidenceState",
+    "DecisionRiskTier",
+    "DecisionSourceReliability",
+    "DecisionValidationState",
+    "DictionaryEntityTypeListResponse",
+    "DictionaryEntityTypeProposalCreateRequest",
+    "DictionaryEntityTypeResponse",
+    "DictionaryProposalResponse",
+    "DictionaryProposalStatus",
+    "DictionaryProposalType",
+    "DictionaryRelationConstraintProposalCreateRequest",
+    "DictionaryRelationSynonymListResponse",
+    "DictionaryRelationSynonymResponse",
+    "DictionaryRelationTypeListResponse",
+    "DictionaryRelationTypeProposalCreateRequest",
+    "DictionaryRelationTypeResponse",
+    "DictionarySearchListResponse",
+    "DictionarySearchResultResponse",
     "ExplanationResponse",
     "GraphChangeClaimRequest",
     "GraphChangeConceptRequest",

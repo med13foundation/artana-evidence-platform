@@ -6,15 +6,16 @@ from typing import Literal
 
 from artana_evidence_db.auth import (
     get_current_active_user,
-    to_graph_principal,
-    to_graph_rls_session_context,
 )
 from artana_evidence_db.database import (
     get_session,
-    set_graph_rls_session_context,
 )
 from artana_evidence_db.dependencies import get_dictionary_service
-from artana_evidence_db.graph_access import evaluate_graph_admin_access
+from artana_evidence_db.dictionary_router_support import (
+    RelationConstraintCreateRequest,
+    _manual_actor,
+    _require_graph_admin,
+)
 from artana_evidence_db.semantic_ports import DictionaryPort
 from artana_evidence_db.service_contracts import (
     DictionaryChangelogListResponse,
@@ -37,9 +38,6 @@ from artana_evidence_db.service_contracts import (
     EntityResolutionPolicyResponse,
     RelationConstraintListResponse,
     RelationConstraintResponse,
-    TransformRegistryListResponse,
-    TransformRegistryResponse,
-    TransformVerificationResponse,
     ValueSetCreateRequest,
     ValueSetItemActiveRequest,
     ValueSetItemCreateRequest,
@@ -55,41 +53,10 @@ from artana_evidence_db.service_contracts import (
 )
 from artana_evidence_db.user_models import User
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/v1/dictionary", tags=["dictionary"])
-
-
-class RelationConstraintCreateRequest(BaseModel):
-    """Create one relation constraint in the graph dictionary."""
-
-    model_config = ConfigDict(strict=False)
-
-    source_type: str = Field(..., min_length=1, max_length=64)
-    relation_type: str = Field(..., min_length=1, max_length=64)
-    target_type: str = Field(..., min_length=1, max_length=64)
-    is_allowed: bool = True
-    requires_evidence: bool = True
-    profile: Literal["EXPECTED", "ALLOWED", "REVIEW_ONLY", "FORBIDDEN"] = "ALLOWED"
-    source_ref: str | None = Field(default=None, max_length=1024)
-
-
-def _require_graph_admin(*, current_user: User, session: Session) -> None:
-    if not evaluate_graph_admin_access(to_graph_principal(current_user)).allowed:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Graph service admin access is required for this operation",
-        )
-    set_graph_rls_session_context(
-        session,
-        context=to_graph_rls_session_context(current_user, bypass_rls=True),
-    )
-
-
-def _manual_actor(current_user: User) -> str:
-    return f"manual:{current_user.id}"
 
 
 @router.get(
@@ -97,10 +64,9 @@ def _manual_actor(current_user: User) -> str:
     response_model=DictionaryDomainContextListResponse,
     summary="List graph dictionary domain contexts",
     description=(
-        "Returns the approved `domain_context` ids accepted by dictionary "
-        "mutation routes such as `POST /v1/dictionary/entity-types`. "
-        "Dictionary governance routes require a bearer token with "
-        "`graph_admin=true`."
+        "Returns the approved `domain_context` ids accepted by dictionary mutation "
+        "routes such as `POST /v1/dictionary/entity-types`. Dictionary governance "
+        "routes require a bearer token with `graph_admin=true`."
     ),
 )
 def list_dictionary_domain_contexts(
@@ -109,6 +75,7 @@ def list_dictionary_domain_contexts(
     dictionary_service: DictionaryPort = Depends(get_dictionary_service),
     session: Session = Depends(get_session),
 ) -> DictionaryDomainContextListResponse:
+    """Return the approved graph dictionary domain contexts."""
     _require_graph_admin(current_user=current_user, session=session)
     domain_contexts = dictionary_service.list_domain_contexts()
     return DictionaryDomainContextListResponse(
@@ -1167,82 +1134,3 @@ def revoke_dictionary_relation_synonym(
             detail=str(exc),
         ) from exc
     return DictionaryRelationSynonymResponse.from_model(relation_synonym)
-
-
-@router.get(
-    "/transforms",
-    response_model=TransformRegistryListResponse,
-    summary="List graph dictionary transforms",
-)
-def list_transform_registry(
-    *,
-    status_filter: str = Query("ACTIVE", alias="status"),
-    include_inactive: bool = Query(False),
-    production_only: bool = Query(False),
-    current_user: User = Depends(get_current_active_user),
-    dictionary_service: DictionaryPort = Depends(get_dictionary_service),
-    session: Session = Depends(get_session),
-) -> TransformRegistryListResponse:
-    _require_graph_admin(current_user=current_user, session=session)
-    transforms = dictionary_service.list_transforms(
-        status=status_filter,
-        include_inactive=include_inactive,
-        production_only=production_only,
-    )
-    return TransformRegistryListResponse(
-        transforms=[
-            TransformRegistryResponse.from_model(transform) for transform in transforms
-        ],
-        total=len(transforms),
-    )
-
-
-@router.post(
-    "/transforms/{transform_id}/verify",
-    response_model=TransformVerificationResponse,
-    summary="Run transform fixture verification",
-)
-def verify_transform_registry_entry(
-    transform_id: str,
-    *,
-    current_user: User = Depends(get_current_active_user),
-    dictionary_service: DictionaryPort = Depends(get_dictionary_service),
-    session: Session = Depends(get_session),
-) -> TransformVerificationResponse:
-    _require_graph_admin(current_user=current_user, session=session)
-    try:
-        verification = dictionary_service.verify_transform(transform_id)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-    return TransformVerificationResponse.from_model(verification)
-
-
-@router.patch(
-    "/transforms/{transform_id}/promote",
-    response_model=TransformRegistryResponse,
-    summary="Promote one graph dictionary transform to production use",
-)
-def promote_transform_registry_entry(
-    transform_id: str,
-    *,
-    current_user: User = Depends(get_current_active_user),
-    dictionary_service: DictionaryPort = Depends(get_dictionary_service),
-    session: Session = Depends(get_session),
-) -> TransformRegistryResponse:
-    _require_graph_admin(current_user=current_user, session=session)
-    try:
-        transform = dictionary_service.promote_transform(
-            transform_id,
-            reviewed_by=_manual_actor(current_user),
-        )
-        session.commit()
-    except ValueError as exc:
-        session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-    return TransformRegistryResponse.from_model(transform)
