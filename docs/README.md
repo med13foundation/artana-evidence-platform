@@ -25,6 +25,7 @@ or `packages/artana_api`.
 ## Architecture
 
 - [Source Boundaries](./architecture/source-boundaries.md)
+- [Module Packaging Plan](./architecture/module-packaging-plan.md)
 - [Local Identity Boundary](./architecture/local-identity-boundary.md)
 - [Pending Boundary Issues](./architecture/pending-boundary-issues.md)
 - [Research Plan Architecture](./research_init_architecture.md)
