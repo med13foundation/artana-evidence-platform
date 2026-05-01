@@ -372,8 +372,10 @@ async def test_research_init_full_pipeline_e2e(
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del owner_id
+        del owner_id, max_results_per_query, max_previews_per_query
         phases_executed["pubmed_discovery"] = True
         search_term = query_params.get("search_term", "unknown")
         matching = [c for c in _TEST_CANDIDATES if search_term in c.queries]

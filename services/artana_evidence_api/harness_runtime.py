@@ -68,6 +68,10 @@ from artana_evidence_api.research_bootstrap_runtime import (
     ResearchBootstrapExecutionResult,
     execute_research_bootstrap_run,
 )
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCaps,
+    source_caps_from_overrides,
+)
 from artana_evidence_api.research_init_runtime import (
     ResearchInitExecutionResult,
     execute_research_init_run,
@@ -98,6 +102,7 @@ from artana_evidence_api.types.common import (
     json_array_or_empty,
     json_object,
 )
+from pydantic import ValidationError
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -315,6 +320,18 @@ def _require_run(
     return run
 
 
+def _source_caps_from_payload(
+    payload: object,
+    *,
+    harness_id: str,
+) -> ResearchInitSourceCaps:
+    try:
+        return source_caps_from_overrides(payload)
+    except (TypeError, ValidationError) as exc:
+        msg = f"Invalid persisted source_caps payload for {harness_id}: {exc}"
+        raise ValueError(msg) from exc
+
+
 class _HarnessServicesMixin:
     """Bind shared service references used by harness subclasses."""
 
@@ -415,6 +432,10 @@ class ResearchInitHarness(
             sources=cast("ResearchSpaceSourcePreferences", sources),
             execution_services=self._services,
             existing_run=run,
+            source_caps=_source_caps_from_payload(
+                payload.get("source_caps"),
+                harness_id="research-init",
+            ),
         )
 
 
@@ -480,6 +501,10 @@ class FullAIOrchestratorHarness(
             guarded_rollout_profile_source=_optional_string(
                 payload,
                 "guarded_rollout_profile_source",
+            ),
+            source_caps=_source_caps_from_payload(
+                payload.get("source_caps"),
+                harness_id="full-ai-orchestrator",
             ),
         )
 

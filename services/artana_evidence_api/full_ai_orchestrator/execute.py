@@ -84,6 +84,11 @@ from artana_evidence_api.full_ai_orchestrator_contracts import (
     FullAIOrchestratorPlannerMode,
 )
 from artana_evidence_api.queued_run import store_primary_result_artifact
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCaps,
+    default_source_caps,
+    source_caps_to_json,
+)
 from artana_evidence_api.research_init_runtime import (
     ResearchInitExecutionResult,
     ResearchInitPubMedReplayBundle,
@@ -144,11 +149,14 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
     structured_enrichment_replay_bundle: (
         ResearchInitStructuredEnrichmentReplayBundle | None
     ) = None,
+    source_caps: ResearchInitSourceCaps | None = None,
     replayed_research_init_result: ResearchInitExecutionResult | None = None,
     replayed_workspace_snapshot: JSONObject | None = None,
     replayed_phase_records: dict[str, list[JSONObject]] | None = None,
 ) -> FullAIOrchestratorExecutionResult:
     """Execute the deterministic Phase 1 orchestrator baseline."""
+    effective_source_caps = source_caps or default_source_caps()
+    source_caps_payload = source_caps_to_json(effective_source_caps)
     resolved_guarded_rollout_profile, resolved_guarded_rollout_profile_source = (
         resolve_guarded_rollout_profile(
             planner_mode=planner_mode,
@@ -185,6 +193,7 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
         max_hypotheses=max_hypotheses,
         workspace_snapshot={
             "source_results": build_source_results(sources=sources),
+            "source_caps": source_caps_payload,
             "current_round": 0,
             "documents_ingested": 0,
             "proposal_count": 0,
@@ -216,7 +225,7 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
     )
     progress_observer.enqueue_initial_shadow_checkpoint()
     if replayed_research_init_result is not None:
-        execution_services.run_registry.set_run_status(
+        running_run = execution_services.run_registry.set_run_status(
             space_id=space_id,
             run_id=existing_run.id,
             status="running",
@@ -230,14 +239,9 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
                 run_id=existing_run.id,
                 patch=sanitized_snapshot,
             )
-        updated_run = execution_services.run_registry.set_run_status(
-            space_id=space_id,
-            run_id=existing_run.id,
-            status="completed",
-        )
         research_init_result = replace(
             replayed_research_init_result,
-            run=existing_run if updated_run is None else updated_run,
+            run=existing_run if running_run is None else running_run,
         )
         if replayed_phase_records is not None:
             progress_observer.phase_records.clear()
@@ -256,6 +260,8 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
             progress_observer=progress_observer,
             pubmed_replay_bundle=effective_pubmed_replay_bundle,
             structured_enrichment_replay_bundle=structured_enrichment_replay_bundle,
+            source_caps=effective_source_caps,
+            complete_run_status=False,
         )
     workspace_record = execution_services.artifact_store.get_workspace(
         space_id=space_id,
@@ -409,7 +415,10 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
             _GUARDED_DECISION_PROOF_SUMMARY_ARTIFACT_KEY
         )
         workspace_summary["guarded_decision_proofs"] = guarded_decision_proof_summary
-    run_record = research_init_result.run
+    run_record = replace(
+        research_init_result.run,
+        status="completed",
+    )
     result = FullAIOrchestratorExecutionResult(
         run=run_record,
         planner_mode=planner_mode,
@@ -440,38 +449,33 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
     response_payload = build_full_ai_orchestrator_run_response(result).model_dump(
         mode="json",
     )
-    store_primary_result_artifact(
-        artifact_store=execution_services.artifact_store,
-        space_id=space_id,
-        run_id=run_record.id,
-        artifact_key=_RESULT_ARTIFACT_KEY,
-        content=response_payload,
-        status_value="completed",
-        result_keys=(
-            _RESULT_ARTIFACT_KEY,
-            "research_init_result",
-            _DECISION_HISTORY_ARTIFACT_KEY,
-            _ACTION_REGISTRY_ARTIFACT_KEY,
-            _INITIALIZE_ARTIFACT_KEY,
-            _PUBMED_ARTIFACT_KEY,
-            _DRIVEN_TERMS_ARTIFACT_KEY,
-            _SOURCE_EXECUTION_ARTIFACT_KEY,
-            _BOOTSTRAP_ARTIFACT_KEY,
-            _CHASE_ROUNDS_ARTIFACT_KEY,
-            _BRIEF_METADATA_ARTIFACT_KEY,
-            _SHADOW_PLANNER_WORKSPACE_ARTIFACT_KEY,
-            _SHADOW_PLANNER_RECOMMENDATION_ARTIFACT_KEY,
-            _SHADOW_PLANNER_COMPARISON_ARTIFACT_KEY,
-            _SHADOW_PLANNER_TIMELINE_ARTIFACT_KEY,
-            _GUARDED_EXECUTION_ARTIFACT_KEY,
-            _GUARDED_READINESS_ARTIFACT_KEY,
-            *(
-                (_GUARDED_DECISION_PROOF_SUMMARY_ARTIFACT_KEY,)
-                if guarded_decision_proof_summary is not None
-                else ()
-            ),
+    result_keys = (
+        _RESULT_ARTIFACT_KEY,
+        "research_init_result",
+        _DECISION_HISTORY_ARTIFACT_KEY,
+        _ACTION_REGISTRY_ARTIFACT_KEY,
+        _INITIALIZE_ARTIFACT_KEY,
+        _PUBMED_ARTIFACT_KEY,
+        _DRIVEN_TERMS_ARTIFACT_KEY,
+        _SOURCE_EXECUTION_ARTIFACT_KEY,
+        _BOOTSTRAP_ARTIFACT_KEY,
+        _CHASE_ROUNDS_ARTIFACT_KEY,
+        _BRIEF_METADATA_ARTIFACT_KEY,
+        _SHADOW_PLANNER_WORKSPACE_ARTIFACT_KEY,
+        _SHADOW_PLANNER_RECOMMENDATION_ARTIFACT_KEY,
+        _SHADOW_PLANNER_COMPARISON_ARTIFACT_KEY,
+        _SHADOW_PLANNER_TIMELINE_ARTIFACT_KEY,
+        _GUARDED_EXECUTION_ARTIFACT_KEY,
+        _GUARDED_READINESS_ARTIFACT_KEY,
+        *(
+            (_GUARDED_DECISION_PROOF_SUMMARY_ARTIFACT_KEY,)
+            if guarded_decision_proof_summary is not None
+            else ()
         ),
-        workspace_patch={
+    )
+    workspace_patch = cast(
+        "JSONObject",
+        {
             "decision_history_key": _DECISION_HISTORY_ARTIFACT_KEY,
             "action_registry_key": _ACTION_REGISTRY_ARTIFACT_KEY,
             "decision_count": len(decisions),
@@ -525,5 +529,36 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
             "full_ai_orchestrator_result": response_payload,
             "brief_result_key": "research_brief",
         },
+    )
+    store_primary_result_artifact(
+        artifact_store=execution_services.artifact_store,
+        space_id=space_id,
+        run_id=run_record.id,
+        artifact_key=_RESULT_ARTIFACT_KEY,
+        content=response_payload,
+        status_value="completed",
+        result_keys=result_keys,
+        workspace_patch=workspace_patch,
+    )
+    completed_run = execution_services.run_registry.set_run_status(
+        space_id=space_id,
+        run_id=run_record.id,
+        status="completed",
+    )
+    completed_run = run_record if completed_run is None else completed_run
+    result = replace(result, run=completed_run)
+    response_payload = build_full_ai_orchestrator_run_response(result).model_dump(
+        mode="json",
+    )
+    workspace_patch["full_ai_orchestrator_result"] = response_payload
+    store_primary_result_artifact(
+        artifact_store=execution_services.artifact_store,
+        space_id=space_id,
+        run_id=completed_run.id,
+        artifact_key=_RESULT_ARTIFACT_KEY,
+        content=response_payload,
+        status_value="completed",
+        result_keys=result_keys,
+        workspace_patch=workspace_patch,
     )
     return result

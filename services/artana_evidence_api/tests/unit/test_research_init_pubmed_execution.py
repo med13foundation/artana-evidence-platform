@@ -44,8 +44,12 @@ async def test_run_pubmed_query_executions_preserves_order_with_bounded_concurre
         *,
         query_params: Mapping[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> _PubMedQueryExecutionResult:
         del owner_id
+        assert max_results_per_query == 12
+        assert max_previews_per_query == 6
         nonlocal current_concurrency, max_concurrency
         current_concurrency += 1
         max_concurrency = max(max_concurrency, current_concurrency)
@@ -71,6 +75,8 @@ async def test_run_pubmed_query_executions_preserves_order_with_bounded_concurre
         query_runner=_query_runner,
         owner_id=uuid4(),
         concurrency_limit=2,
+        max_results_per_query=12,
+        max_previews_per_query=6,
     )
 
     assert max_concurrency == 2

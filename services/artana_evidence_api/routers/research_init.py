@@ -31,6 +31,10 @@ from artana_evidence_api.full_ai_orchestrator_runtime import (
 )
 from artana_evidence_api.graph_client import GraphServiceClientError
 from artana_evidence_api.queued_run import wake_worker_for_queued_run
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCapsRequest,
+    default_source_caps,
+)
 from artana_evidence_api.research_init_helpers import (
     ResearchInitOrchestrationMode,
     _build_pubmed_queries,
@@ -95,6 +99,13 @@ class ResearchInitRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=256)
     max_depth: int = Field(default=2, ge=1, le=4)
     max_hypotheses: int = Field(default=20, ge=1, le=100)
+    source_caps: ResearchInitSourceCapsRequest | None = Field(
+        default=None,
+        description=(
+            "Optional bounded per-run source caps. Omitted values keep the "
+            "backward-compatible research-init defaults."
+        ),
+    )
     sources: dict[str, bool] | None = Field(
         default=None,
         description="Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin.",
@@ -218,6 +229,11 @@ async def create_research_init(  # noqa: PLR0913, PLR0915
         request_mode=request.orchestration_mode,
         space_settings=space_record.settings if space_record is not None else None,
     )
+    source_caps = (
+        request.source_caps.to_runtime_caps()
+        if request.source_caps is not None
+        else default_source_caps()
+    )
     replay_bundle = None
 
     try:
@@ -237,6 +253,7 @@ async def create_research_init(  # noqa: PLR0913, PLR0915
                 replay_bundle = await prepare_pubmed_replay_bundle(
                     objective=request.objective,
                     seed_terms=list(request.seed_terms),
+                    source_caps=source_caps,
                 )
         title = (request.title or "").strip() or "Research Init Bootstrap"
         planner_mode = _planner_mode_for_research_orchestration(orchestration_mode)
@@ -254,6 +271,7 @@ async def create_research_init(  # noqa: PLR0913, PLR0915
                 run_registry=run_registry,
                 artifact_store=artifact_store,
                 execution_services=execution_services,
+                source_caps=source_caps,
             )
         else:
             guarded_rollout_profile, guarded_rollout_profile_source = (
@@ -281,6 +299,7 @@ async def create_research_init(  # noqa: PLR0913, PLR0915
                 execution_services=execution_services,
                 guarded_rollout_profile=guarded_rollout_profile,
                 guarded_rollout_profile_source=guarded_rollout_profile_source,
+                source_caps=source_caps,
             )
         if replay_bundle is not None:
             store_replay_bundle = (

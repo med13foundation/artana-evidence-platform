@@ -6,8 +6,11 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCaps,
+    default_source_caps,
+)
 from artana_evidence_api.research_init_source_enrichment_common import (
-    _MAX_TERMS_PER_SOURCE,
     _UNREVIEWED_BOOTSTRAP_PROPOSAL_SCORE,
     SourceEnrichmentResult,
     _bootstrap_proposal_metadata,
@@ -43,10 +46,11 @@ async def run_clinicaltrials_enrichment_impl(
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
     gateway_factory: Callable[[], ClinicalTrialsGatewayProtocol | None],
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query ClinicalTrials.gov for registered trials matching seed terms.
 
-    Pulls up to ``_MAX_TERMS_PER_SOURCE`` of the most relevant seed terms
+    Pulls up to the configured maximum number of relevant seed terms
     (preferring gene symbols when present, falling back to free-text terms),
     runs the v2 REST API search for each, and creates one enrichment
     document per term that returned results.  Each registered trial yields
@@ -58,6 +62,7 @@ async def run_clinicaltrials_enrichment_impl(
     # fall back to free-text seed terms when no gene-shaped tokens are
     # present.  This keeps the search relevant without losing the
     # disease/condition queries the user typed in directly.
+    effective_source_caps = source_caps or default_source_caps()
     candidate_terms: list[str] = _extract_likely_gene_symbols(seed_terms)
     if not candidate_terms:
         candidate_terms = [t for t in seed_terms if t and t.strip()]
@@ -73,11 +78,11 @@ async def run_clinicaltrials_enrichment_impl(
     if gateway is None:
         all_errors.append("ClinicalTrials.gov gateway not available")
     else:
-        for term in candidate_terms[:_MAX_TERMS_PER_SOURCE]:
+        for term in candidate_terms[: effective_source_caps.max_terms_per_source]:
             try:
                 fetch_result = await gateway.fetch_records_async(
                     query=term,
-                    max_results=10,
+                    max_results=effective_source_caps.clinical_trials_max_results,
                 )
                 raw_records = list(fetch_result.records)
                 records_processed += len(raw_records)
@@ -338,16 +343,18 @@ async def run_mgi_enrichment_impl(
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
     gateway_factory: Callable[[], AllianceGeneGatewayProtocol | None],
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query MGI (via the Alliance API) for mouse gene records matching seed terms.
 
-    Pulls up to ``_MAX_TERMS_PER_SOURCE`` likely gene symbols, runs the
+    Pulls up to the configured maximum number of likely gene symbols, runs the
     Alliance ``/search`` query for each (filtered to ``Mus musculus``), and
     creates one enrichment document per gene that returned results.  Each
     mouse gene yields proposals like ``GENE → ASSOCIATED_WITH → PHENOTYPE``
     for each mouse phenotype annotation, plus ``GENE → CAUSES → DISEASE`` for
     disease associations from the Alliance disease annotations.
     """
+    effective_source_caps = source_caps or default_source_caps()
     candidate_terms: list[str] = _extract_likely_gene_symbols(seed_terms)
     if not candidate_terms:
         return SourceEnrichmentResult(source_key="mgi")
@@ -361,11 +368,11 @@ async def run_mgi_enrichment_impl(
     if gateway is None:
         all_errors.append("MGI gateway not available")
     else:
-        for term in candidate_terms[:_MAX_TERMS_PER_SOURCE]:
+        for term in candidate_terms[: effective_source_caps.max_terms_per_source]:
             try:
                 fetch_result = await gateway.fetch_records_async(
                     query=term,
-                    max_results=10,
+                    max_results=effective_source_caps.mgi_max_results,
                 )
                 raw_records = list(fetch_result.records)
                 records_processed += len(raw_records)
@@ -612,10 +619,11 @@ async def run_zfin_enrichment_impl(
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
     gateway_factory: Callable[[], AllianceGeneGatewayProtocol | None],
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query ZFIN (via the Alliance API) for zebrafish gene records.
 
-    Pulls up to ``_MAX_TERMS_PER_SOURCE`` likely gene symbols, runs the
+    Pulls up to the configured maximum number of likely gene symbols, runs the
     Alliance ``/search`` query for each (filtered to ``Danio rerio``), and
     creates one enrichment document per gene that returned results.  Each
     zebrafish gene yields proposals like ``GENE → ASSOCIATED_WITH →
@@ -623,6 +631,7 @@ async def run_zfin_enrichment_impl(
     EXPRESSED_IN → TISSUE`` for each zebrafish anatomy expression term, and
     ``GENE → CAUSES → DISEASE`` for disease associations.
     """
+    effective_source_caps = source_caps or default_source_caps()
     candidate_terms: list[str] = _extract_likely_gene_symbols(seed_terms)
     if not candidate_terms:
         return SourceEnrichmentResult(source_key="zfin")
@@ -636,11 +645,11 @@ async def run_zfin_enrichment_impl(
     if gateway is None:
         all_errors.append("ZFIN gateway not available")
     else:
-        for term in candidate_terms[:_MAX_TERMS_PER_SOURCE]:
+        for term in candidate_terms[: effective_source_caps.max_terms_per_source]:
             try:
                 fetch_result = await gateway.fetch_records_async(
                     query=term,
-                    max_results=10,
+                    max_results=effective_source_caps.zfin_max_results,
                 )
                 raw_records = list(fetch_result.records)
                 records_processed += len(raw_records)

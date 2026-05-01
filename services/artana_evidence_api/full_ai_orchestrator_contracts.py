@@ -5,6 +5,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCapsRequest,
+)
 from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -190,6 +193,12 @@ class FullAIOrchestratorRunRequest(BaseModel):
     sources: ResearchSpaceSourcePreferences | None = None
     max_depth: int = Field(default=2, ge=1, le=4)
     max_hypotheses: int = Field(default=20, ge=1, le=100)
+    source_caps: ResearchInitSourceCapsRequest | None = Field(
+        default=None,
+        description=(
+            "Optional bounded per-run source caps for the research-init phase."
+        ),
+    )
     planner_mode: FullAIOrchestratorPlannerMode = FullAIOrchestratorPlannerMode.SHADOW
     guarded_rollout_profile: FullAIOrchestratorGuardedRolloutProfile | None = Field(
         default=None,

@@ -31,6 +31,9 @@ if TYPE_CHECKING:
         HarnessProposalDraft,
         HarnessProposalStore,
     )
+    from artana_evidence_api.research_init.source_caps import (
+        ResearchInitSourceCaps,
+    )
     from artana_evidence_api.research_init_source_enrichment import (
         SourceEnrichmentResult,
     )
@@ -100,6 +103,7 @@ async def run_structured_enrichment_source(
     source_results: dict[str, JSONObject],
     enrichment_documents: list[HarnessDocumentRecord],
     errors: list[str],
+    source_caps: ResearchInitSourceCaps,
     proposal_writer: ReviewedEnrichmentProposalWriter,
     replay_source: ResearchInitStructuredEnrichmentReplaySource | None = None,
 ) -> int:
@@ -125,6 +129,7 @@ async def run_structured_enrichment_source(
                 run_registry=run_registry,
                 artifact_store=artifact_store,
                 parent_run=parent_run,
+                source_caps=source_caps,
             )
             if timeout_seconds is None:
                 result = await runner_call

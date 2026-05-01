@@ -46,7 +46,11 @@ from artana_evidence_api.research_bootstrap_runtime import (
     ResearchBootstrapClaimCurationSummary,
     ResearchBootstrapExecutionResult,
 )
+from artana_evidence_api.research_init.source_caps import ResearchInitSourceCaps
 from artana_evidence_api.research_init_models import _ChaseRoundPreparation
+from artana_evidence_api.research_init_source_enrichment_common import (
+    SourceEnrichmentResult,
+)
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.routers import research_init
@@ -1247,9 +1251,11 @@ async def test_create_research_init_captures_pubmed_replay_bundle(
         *,
         objective: str,
         seed_terms: list[str],
+        source_caps: ResearchInitSourceCaps,
     ) -> research_init_runtime.ResearchInitPubMedReplayBundle:
         assert objective == "Investigate MED13 syndrome"
         assert seed_terms == ["MED13"]
+        assert source_caps.pubmed_max_results_per_query == 10
         return replay_bundle
 
     monkeypatch.setattr(research_init, "_require_worker_ready", lambda: None)
@@ -1304,6 +1310,101 @@ async def test_create_research_init_captures_pubmed_replay_bundle(
     assert replay_artifact.content["selection_errors"] == [
         "captured in research-init router",
     ]
+    assert run_registry.list_runs(space_id=space_record.id)[0].input_payload[
+        "source_caps"
+    ]["pubmed_max_results_per_query"] == 10
+
+
+@pytest.mark.asyncio
+async def test_create_research_init_captures_source_cap_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    owner_id = uuid4()
+    space_store = HarnessResearchSpaceStore()
+    space_record = space_store.create_space(
+        owner_id=owner_id,
+        name="Source Caps",
+        description="Persist source cap overrides before worker handoff",
+    )
+    run_registry = HarnessRunRegistry()
+    artifact_store = HarnessArtifactStore()
+    captured_caps: list[ResearchInitSourceCaps] = []
+    replay_bundle = research_init_runtime.ResearchInitPubMedReplayBundle(
+        query_executions=(),
+        selected_candidates=(),
+        selection_errors=(),
+    )
+
+    async def _fake_prepare_pubmed_replay_bundle(
+        *,
+        objective: str,
+        seed_terms: list[str],
+        source_caps: ResearchInitSourceCaps,
+    ) -> research_init_runtime.ResearchInitPubMedReplayBundle:
+        del objective, seed_terms
+        captured_caps.append(source_caps)
+        return replay_bundle
+
+    monkeypatch.setattr(research_init, "_require_worker_ready", lambda: None)
+    monkeypatch.setattr(
+        full_ai_orchestrator_runtime,
+        "ensure_run_transparency_seed",
+        lambda **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        research_init,
+        "prepare_pubmed_replay_bundle",
+        _fake_prepare_pubmed_replay_bundle,
+    )
+
+    response = await research_init.create_research_init(
+        space_id=UUID(space_record.id),
+        request=research_init.ResearchInitRequest(
+            objective="Investigate MED13 syndrome",
+            seed_terms=["MED13"],
+            source_caps={
+                "pubmed_max_results_per_query": 42,
+                "pubmed_max_previews_per_query": 9,
+                "max_terms_per_source": 3,
+                "clinvar_max_results": 7,
+            },
+            sources={"pubmed": True, "marrvel": False, "pdf": False, "text": False},
+        ),
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        graph_api_gateway=_StubGraphApiGateway(),
+        execution_services=cast(
+            "HarnessExecutionServices",
+            type("_StubExecutionServices", (), {"runtime": object()})(),
+        ),
+        current_user=HarnessUser(
+            id=owner_id,
+            email="owner@example.com",
+            username="owner",
+            full_name="Owner",
+            role=HarnessUserRole.RESEARCHER,
+            status=HarnessUserStatus.ACTIVE,
+        ),
+        identity_gateway=LocalIdentityGateway(research_space_store=space_store),
+    )
+
+    assert captured_caps == [
+        ResearchInitSourceCaps(
+            pubmed_max_results_per_query=42,
+            pubmed_max_previews_per_query=9,
+            max_terms_per_source=3,
+            clinvar_max_results=7,
+        ),
+    ]
+    stored_run = run_registry.list_runs(space_id=space_record.id)[0]
+    assert stored_run.input_payload["source_caps"]["pubmed_max_results_per_query"] == 42
+    assert stored_run.input_payload["source_caps"]["drugbank_max_results"] == 20
+    workspace = artifact_store.get_workspace(
+        space_id=space_record.id,
+        run_id=response.run.id,
+    )
+    assert workspace is not None
+    assert workspace.snapshot["source_caps"]["max_terms_per_source"] == 3
 
 
 @pytest.mark.asyncio
@@ -3675,8 +3776,10 @@ async def test_execute_research_init_runs_pubmed_queries_concurrently_preserving
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del owner_id
+        del owner_id, max_results_per_query, max_previews_per_query
         nonlocal current_concurrency, max_concurrency
         current_concurrency += 1
         max_concurrency = max(max_concurrency, current_concurrency)
@@ -3787,8 +3890,10 @@ async def test_prepare_pubmed_replay_bundle_captures_selected_candidates(
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del owner_id
+        del owner_id, max_results_per_query, max_previews_per_query
         query = query_params.get("search_term", "") or ""
         candidate = research_init._PubMedCandidate(
             title=f"{query} paper",
@@ -4236,8 +4341,10 @@ async def test_execute_research_init_uses_pubmed_replay_bundle_without_live_quer
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del query_params, owner_id
+        del query_params, owner_id, max_results_per_query, max_previews_per_query
         raise AssertionError("live pubmed query should not run from replay")
 
     async def _unexpected_select_candidates(
@@ -4658,8 +4765,10 @@ async def test_execute_research_init_loads_pubmed_replay_bundle_from_artifact(
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del query_params, owner_id
+        del query_params, owner_id, max_results_per_query, max_previews_per_query
         raise AssertionError("live pubmed query should not run from replay artifact")
 
     async def _unexpected_select_candidates(
@@ -4813,8 +4922,10 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del owner_id
+        del owner_id, max_results_per_query, max_previews_per_query
         candidate = research_init._PubMedCandidate(
             title="MED13 syndrome overview",
             text="MED13 syndrome evidence abstract.",
@@ -4967,8 +5078,10 @@ async def test_execute_research_init_skips_duplicate_pubmed_documents(
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del owner_id
+        del owner_id, max_results_per_query, max_previews_per_query
         query = query_params.get("search_term", "") or ""
         candidate = research_init._PubMedCandidate(
             title="Existing MED13 article",
@@ -5144,8 +5257,10 @@ async def test_execute_research_init_suppresses_scope_refinement_after_prior_con
         *,
         query_params: dict[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> research_init_runtime._PubMedQueryExecutionResult:
-        del owner_id
+        del owner_id, max_results_per_query, max_previews_per_query
         query = query_params.get("search_term", "") or ""
         candidate = research_init._PubMedCandidate(
             title="Existing MED13 article",
@@ -6990,6 +7105,7 @@ async def test_run_structured_enrichment_source_times_out_marrvel_and_keeps_run_
         source_results=source_results,
         enrichment_documents=enrichment_documents,
         errors=errors,
+        source_caps=ResearchInitSourceCaps(),
     )
 
     assert created == 0
@@ -6998,6 +7114,56 @@ async def test_run_structured_enrichment_source_times_out_marrvel_and_keeps_run_
     assert source_results["marrvel"]["failure_reason"] == "timeout"
     assert source_results["marrvel"]["timeout_seconds"] == 0.01
     assert errors == ["MARRVEL enrichment timed out after 0.01s"]
+
+
+async def test_run_structured_enrichment_source_passes_source_caps_to_runner() -> None:
+    document_store = HarnessDocumentStore()
+    proposal_store = HarnessProposalStore()
+    run_registry = HarnessRunRegistry()
+    artifact_store = HarnessArtifactStore()
+    space_id = uuid4()
+    parent_run = run_registry.create_run(
+        space_id=space_id,
+        harness_id="research-init",
+        title="Structured caps test",
+        input_payload={"objective": "Investigate BRCA1"},
+        graph_service_status="ok",
+        graph_service_version="graph-v1",
+    )
+    expected_caps = ResearchInitSourceCaps(
+        max_terms_per_source=2,
+        clinvar_max_results=8,
+    )
+    captured_caps: list[ResearchInitSourceCaps] = []
+
+    async def _runner(**kwargs: object) -> SourceEnrichmentResult:
+        captured_caps.append(cast("ResearchInitSourceCaps", kwargs["source_caps"]))
+        return SourceEnrichmentResult(source_key="clinvar")
+
+    created = await research_init_runtime._run_structured_enrichment_source(
+        source_key="clinvar",
+        source_label="ClinVar",
+        log_message="Phase 2b: running ClinVar enrichment for space %s",
+        runner=_runner,
+        space_id=space_id,
+        seed_terms=["BRCA1"],
+        document_store=document_store,
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        parent_run=parent_run,
+        proposal_store=proposal_store,
+        run_id=parent_run.id,
+        objective="Investigate BRCA1",
+        source_results=research_init_runtime._build_source_results(
+            sources={"clinvar": True},
+        ),
+        enrichment_documents=[],
+        errors=[],
+        source_caps=expected_caps,
+    )
+
+    assert created == 0
+    assert captured_caps == [expected_caps]
 
 
 @pytest.mark.asyncio

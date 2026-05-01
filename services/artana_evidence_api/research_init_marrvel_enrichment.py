@@ -6,8 +6,11 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCaps,
+    default_source_caps,
+)
 from artana_evidence_api.research_init_source_enrichment_common import (
-    _MAX_TERMS_PER_SOURCE,
     _SYSTEM_OWNER_ID,
     SourceEnrichmentResult,
     _create_enrichment_document,
@@ -40,8 +43,10 @@ async def run_marrvel_enrichment_impl(
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
     discovery_service_factory: Callable[[], MarrvelDiscoveryServiceProtocol | None],
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query MARRVEL for gene-centric data from seed terms."""
+    effective_source_caps = source_caps or default_source_caps()
     gene_symbols = _extract_likely_gene_symbols(seed_terms)
     if not gene_symbols:
         return SourceEnrichmentResult(source_key="marrvel")
@@ -54,7 +59,7 @@ async def run_marrvel_enrichment_impl(
     if service is None:
         all_errors.append("MARRVEL discovery service not available")
     else:
-        for gene_symbol in gene_symbols[:_MAX_TERMS_PER_SOURCE]:
+        for gene_symbol in gene_symbols[: effective_source_caps.max_terms_per_source]:
             try:
                 result = await service.search(
                     gene_symbol=gene_symbol,

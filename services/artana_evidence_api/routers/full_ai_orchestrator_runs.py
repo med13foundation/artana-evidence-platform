@@ -41,6 +41,9 @@ from artana_evidence_api.queued_run import (
     wait_for_terminal_run,
     wake_worker_for_queued_run,
 )
+from artana_evidence_api.research_init.source_caps import (
+    default_source_caps,
+)
 from artana_evidence_api.research_init_helpers import _resolve_research_init_sources
 from artana_evidence_api.research_init_runtime import (
     deserialize_pubmed_replay_bundle,
@@ -119,6 +122,11 @@ async def create_full_ai_orchestrator_run(  # noqa: PLR0913
             space_settings=space_record.settings if space_record is not None else None,
         )
     )
+    source_caps = (
+        request.source_caps.to_runtime_caps()
+        if request.source_caps is not None
+        else default_source_caps()
+    )
     replay_bundle = None
     try:
         if should_require_worker_ready(execution_services=execution_services):
@@ -138,6 +146,7 @@ async def create_full_ai_orchestrator_run(  # noqa: PLR0913
                 replay_bundle = await prepare_pubmed_replay_bundle(
                     objective=objective,
                     seed_terms=normalized_seed_terms,
+                    source_caps=source_caps,
                 )
         queued_run = queue_full_ai_orchestrator_run(
             space_id=space_id,
@@ -155,6 +164,7 @@ async def create_full_ai_orchestrator_run(  # noqa: PLR0913
             execution_services=execution_services,
             guarded_rollout_profile=guarded_rollout_profile,
             guarded_rollout_profile_source=guarded_rollout_profile_source,
+            source_caps=source_caps,
         )
         if replay_bundle is not None:
             store_pubmed_replay_bundle_artifact(
