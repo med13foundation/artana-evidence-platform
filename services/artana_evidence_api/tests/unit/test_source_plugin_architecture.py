@@ -57,6 +57,7 @@ def test_source_plugins_do_not_collapse_into_single_monolith() -> None:
     assert (_SOURCE_PLUGINS_ROOT / "clinvar.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "drugbank.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "alphafold.py").exists()
+    assert (_SOURCE_PLUGINS_ROOT / "gnomad.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "uniprot.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "clinical_trials.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "mgi.py").exists()

@@ -70,6 +70,7 @@ from artana_evidence_api.source_enrichment_bridges import (
     build_clinicaltrials_gateway,
     build_clinvar_gateway,
     build_drugbank_gateway,
+    build_gnomad_gateway,
     build_mgi_gateway,
     build_uniprot_gateway,
     build_zfin_gateway,
@@ -121,6 +122,7 @@ if TYPE_CHECKING:
         ClinicalTrialsGatewayProtocol,
         ClinVarGatewayProtocol,
         DrugBankGatewayProtocol,
+        GnomADGatewayProtocol,
         UniProtGatewayProtocol,
     )
     from sqlalchemy.orm import Session
@@ -471,6 +473,12 @@ def get_alphafold_source_gateway() -> AlphaFoldGatewayProtocol | None:
     return build_alphafold_gateway()
 
 
+def get_gnomad_source_gateway() -> GnomADGatewayProtocol | None:
+    """Return the gnomAD gateway used by direct source search."""
+
+    return build_gnomad_gateway()
+
+
 def get_drugbank_source_gateway() -> DrugBankGatewayProtocol | None:
     """Return the DrugBank gateway when direct-search credentials are configured."""
 
@@ -606,6 +614,7 @@ __all__ = [
     "get_document_store",
     "get_alphafold_source_gateway",
     "get_drugbank_source_gateway",
+    "get_gnomad_source_gateway",
     "get_graph_api_gateway_factory",
     "get_graph_chat_runner",
     "get_graph_connection_runner",

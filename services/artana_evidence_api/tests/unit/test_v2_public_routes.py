@@ -424,6 +424,8 @@ def test_source_search_openapi_keeps_typed_routes_and_capture_contract() -> None
     assert "UniProtSourceSearchResponse" in schemas
     assert "AlphaFoldSourceSearchRequest" in schemas
     assert "AlphaFoldSourceSearchResponse" in schemas
+    assert "GnomADSourceSearchRequest" in schemas
+    assert "GnomADSourceSearchResponse" in schemas
     assert "DrugBankSourceSearchRequest" in schemas
     assert "DrugBankSourceSearchResponse" in schemas
     assert "MGISourceSearchRequest" in schemas
@@ -556,6 +558,14 @@ def test_direct_source_typed_route_plugins_define_expected_public_routes() -> No
             ("/v2/spaces/{space_id}/sources/alphafold/searches", "POST", 201),
             (
                 "/v2/spaces/{space_id}/sources/alphafold/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "gnomad": (
+            ("/v2/spaces/{space_id}/sources/gnomad/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/gnomad/searches/{search_id}",
                 "GET",
                 None,
             ),

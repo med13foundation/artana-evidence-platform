@@ -19,6 +19,7 @@ from artana_evidence_api.dependencies import (
     get_direct_source_search_store,
     get_document_store,
     get_drugbank_source_gateway,
+    get_gnomad_source_gateway,
     get_mgi_source_gateway,
     get_pubmed_discovery_service,
     get_research_space_store,
@@ -32,6 +33,7 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
     SqlAlchemyDirectSourceSearchStore,
 )
+from artana_evidence_api.direct_sources.gnomad_gateway import GnomADGatewayFetchResult
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.drugbank_gateway import DrugBankGatewayFetchResult
 from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryResult
@@ -268,6 +270,49 @@ class _StubAlphaFoldGateway:
         )
 
 
+class _StubGnomADGateway:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str | None, str | None, str, str, int]] = []
+
+    def fetch_records(
+        self,
+        *,
+        gene_symbol: str | None = None,
+        variant_id: str | None = None,
+        reference_genome: str = "GRCh38",
+        dataset: str = "gnomad_r4",
+        max_results: int = 20,
+    ) -> GnomADGatewayFetchResult:
+        self.calls.append(
+            (gene_symbol, variant_id, reference_genome, dataset, max_results),
+        )
+        if variant_id is not None:
+            records = [
+                {
+                    "source": "gnomad",
+                    "record_type": "variant_frequency",
+                    "variant_id": variant_id,
+                    "gene_symbol": "MED13",
+                    "dataset": dataset,
+                    "reference_genome": "GRCh38",
+                    "genome": {"ac": 1, "an": 152332, "af": 0.00000656},
+                },
+            ]
+        else:
+            records = [
+                {
+                    "source": "gnomad",
+                    "record_type": "gene_constraint",
+                    "gene_symbol": gene_symbol or "MED13",
+                    "gene_id": "ENSG00000108510",
+                    "reference_genome": reference_genome,
+                    "constraint": {"pLI": 1},
+                    "pLI": 1.0,
+                },
+            ]
+        return GnomADGatewayFetchResult(records=records, fetched_records=len(records))
+
+
 class _StubDrugBankGateway:
     def fetch_records(
         self,
@@ -401,6 +446,7 @@ def _build_client(
     clinicaltrials_gateway: object | None = None,
     uniprot_gateway: object | None = None,
     alphafold_gateway: object | None = None,
+    gnomad_gateway: object | None = None,
     drugbank_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
@@ -426,6 +472,7 @@ def _build_client(
         clinicaltrials_gateway=clinicaltrials_gateway,
         uniprot_gateway=uniprot_gateway,
         alphafold_gateway=alphafold_gateway,
+        gnomad_gateway=gnomad_gateway,
         drugbank_gateway=drugbank_gateway,
         mgi_gateway=mgi_gateway,
         zfin_gateway=zfin_gateway,
@@ -452,6 +499,7 @@ def _build_client_for_space(
     clinicaltrials_gateway: object | None = None,
     uniprot_gateway: object | None = None,
     alphafold_gateway: object | None = None,
+    gnomad_gateway: object | None = None,
     drugbank_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
@@ -477,6 +525,7 @@ def _build_client_for_space(
     )
     app.dependency_overrides[get_uniprot_source_gateway] = lambda: uniprot_gateway
     app.dependency_overrides[get_alphafold_source_gateway] = lambda: alphafold_gateway
+    app.dependency_overrides[get_gnomad_source_gateway] = lambda: gnomad_gateway
     app.dependency_overrides[get_drugbank_source_gateway] = lambda: drugbank_gateway
     app.dependency_overrides[get_mgi_source_gateway] = lambda: mgi_gateway
     app.dependency_overrides[get_zfin_source_gateway] = lambda: zfin_gateway
@@ -748,6 +797,14 @@ def test_source_search_handoff_creates_non_variant_source_document() -> None:
             "structure",
             "model_url",
             "https://alphafold.example/P38398.pdb",
+        ),
+        (
+            "gnomad",
+            {"gnomad_gateway": _StubGnomADGateway()},
+            {"gene_symbol": "MED13"},
+            "population_genetics",
+            "gene_symbol",
+            "MED13",
         ),
         (
             "drugbank",
@@ -1131,6 +1188,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         clinvar_gateway=_StubClinVarGateway(),
         uniprot_gateway=_StubUniProtGateway(),
         alphafold_gateway=_StubAlphaFoldGateway(),
+        gnomad_gateway=_StubGnomADGateway(),
         drugbank_gateway=_StubDrugBankGateway(),
         mgi_gateway=_StubAllianceGeneGateway(source_key="mgi"),
         zfin_gateway=_StubAllianceGeneGateway(source_key="zfin"),
@@ -1139,6 +1197,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         ("ClinVar", {"gene_symbol": "BRCA1"}, "clinvar"),
         ("UniProt", {"query": "BRCA1"}, "uniprot"),
         ("AlphaFold", {"uniprot_id": "P38398"}, "alphafold"),
+        ("GnomAD", {"gene_symbol": "MED13"}, "gnomad"),
         ("DrugBank", {"drug_name": "Olaparib"}, "drugbank"),
         ("MGI", {"query": "BRCA1"}, "mgi"),
         ("ZFIN", {"query": "BRCA1"}, "zfin"),
@@ -1308,6 +1367,69 @@ def test_create_alphafold_source_search_returns_records_and_capture_metadata() -
     assert payload["records"][0]["model_url"].endswith("P38398.pdb")
     assert payload["source_capture"]["source_key"] == "alphafold"
     assert payload["source_capture"]["query"] == "P38398"
+
+
+def test_create_gnomad_gene_source_search_returns_records_and_capture_metadata() -> None:
+    gnomad_gateway = _StubGnomADGateway()
+    built = _build_client(gnomad_gateway=gnomad_gateway)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/gnomad/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "med13", "reference_genome": "GRCh38"},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "gnomad"
+    assert payload["query_kind"] == "gene"
+    assert payload["query"] == "MED13"
+    assert payload["records"][0]["record_type"] == "gene_constraint"
+    assert payload["records"][0]["gene_id"] == "ENSG00000108510"
+    assert payload["source_capture"]["source_key"] == "gnomad"
+    assert payload["source_capture"]["query"] == "MED13"
+    assert payload["source_capture"]["external_id"] == "ENSG00000108510"
+    assert payload["source_capture"]["provenance"]["provider"] == "gnomAD GraphQL API"
+    assert gnomad_gateway.calls == [("MED13", None, "GRCh38", "gnomad_r4", 20)]
+
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/gnomad/searches/{payload['id']}",
+        headers=_auth_headers(),
+    )
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == payload["id"]
+
+
+def test_create_gnomad_variant_source_search_returns_variant_frequency_record() -> None:
+    built = _build_client(gnomad_gateway=_StubGnomADGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/gnomad/searches",
+        headers=_auth_headers(),
+        json={"variant_id": "17-5982158-C-T", "dataset": "gnomad_r4"},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "gnomad"
+    assert payload["query_kind"] == "variant"
+    assert payload["query"] == "17-5982158-C-T"
+    assert payload["source_capture"]["external_id"] == "17-5982158-C-T"
+    assert payload["records"][0]["record_type"] == "variant_frequency"
+    assert payload["records"][0]["genome"]["af"] == 0.00000656
+
+
+def test_create_gnomad_source_search_returns_503_when_gateway_missing() -> None:
+    built = _build_client(gnomad_gateway=None)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/gnomad/searches",
+        headers=_auth_headers(),
+        json={"gene_symbol": "MED13"},
+    )
+
+    assert response.status_code == 503
+    assert "gnomAD gateway is not available" in response.json()["detail"]
 
 
 def test_create_drugbank_source_search_requires_configured_credentials() -> None:

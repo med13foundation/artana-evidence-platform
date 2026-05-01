@@ -26,6 +26,7 @@ from artana_evidence_api.source_route_mgi import mgi_typed_route_plugin
 from artana_evidence_api.source_route_pubmed import pubmed_typed_route_plugin
 from artana_evidence_api.source_route_uniprot import uniprot_typed_route_plugin
 from artana_evidence_api.source_route_zfin import zfin_typed_route_plugin
+from artana_evidence_api.source_routes.gnomad import gnomad_typed_route_plugin
 from artana_evidence_api.types.common import JSONObject
 from fastapi import APIRouter
 
@@ -43,6 +44,7 @@ _DIRECT_SOURCE_ROUTE_PLUGINS = (
     clinvar_typed_route_plugin(),
     drugbank_typed_route_plugin(),
     alphafold_typed_route_plugin(),
+    gnomad_typed_route_plugin(),
     uniprot_typed_route_plugin(),
     clinical_trials_typed_route_plugin(),
     mgi_typed_route_plugin(),

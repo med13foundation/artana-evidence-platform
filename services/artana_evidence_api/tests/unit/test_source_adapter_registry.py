@@ -197,6 +197,7 @@ def _valid_query_payload(source_key: str) -> JSONObject:
         "clinical_trials": {"query": "MED13 congenital heart disease"},
         "uniprot": {"uniprot_id": "Q9UHV7"},
         "alphafold": {"uniprot_id": "Q9UHV7"},
+        "gnomad": {"gene_symbol": "MED13"},
         "drugbank": {"drugbank_id": "DB08820"},
         "mgi": {"query": "Med13"},
         "zfin": {"query": "med13"},

@@ -107,6 +107,20 @@ class AlphaFoldGatewayProtocol(Protocol):
     ) -> GatewayFetchResultProtocol: ...
 
 
+class GnomADGatewayProtocol(Protocol):
+    """gnomAD gateway contract used by direct source search."""
+
+    def fetch_records(
+        self,
+        *,
+        gene_symbol: str | None = None,
+        variant_id: str | None = None,
+        reference_genome: str = "GRCh38",
+        dataset: str = "gnomad_r4",
+        max_results: int = 20,
+    ) -> GatewayFetchResultProtocol: ...
+
+
 class ClinicalTrialsGatewayProtocol(Protocol):
     """ClinicalTrials.gov gateway contract used by structured enrichment."""
 
@@ -175,6 +189,13 @@ def build_alphafold_gateway() -> AlphaFoldGatewayProtocol | None:
     return cast("AlphaFoldGatewayProtocol", AlphaFoldSourceGateway())
 
 
+def build_gnomad_gateway() -> GnomADGatewayProtocol | None:
+    """Construct the service-local gnomAD gateway."""
+    from artana_evidence_api.direct_sources.gnomad_gateway import GnomADSourceGateway
+
+    return cast("GnomADGatewayProtocol", GnomADSourceGateway())
+
+
 def build_marrvel_discovery_service() -> MarrvelDiscoveryServiceProtocol | None:
     """Construct the service-local MARRVEL discovery service."""
     return MarrvelDiscoveryService()
@@ -207,6 +228,7 @@ __all__ = [
     "build_clinicaltrials_gateway",
     "build_clinvar_gateway",
     "build_drugbank_gateway",
+    "build_gnomad_gateway",
     "build_marrvel_discovery_service",
     "build_mgi_gateway",
     "build_uniprot_gateway",
