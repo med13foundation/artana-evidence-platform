@@ -111,6 +111,7 @@ class ResearchSpaceSourcePreferences(TypedDict, total=False):
     text: bool
     drugbank: bool
     alphafold: bool
+    gnomad: bool
     uniprot: bool
     hgnc: bool
     clinical_trials: bool

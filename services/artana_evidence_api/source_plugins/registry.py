@@ -21,6 +21,7 @@ from artana_evidence_api.source_plugins.contracts import (
     EvidenceSourcePlugin,
 )
 from artana_evidence_api.source_plugins.drugbank import DRUGBANK_PLUGIN
+from artana_evidence_api.source_plugins.gnomad import GNOMAD_PLUGIN
 from artana_evidence_api.source_plugins.ingestion.pdf import PDF_INGESTION_PLUGIN
 from artana_evidence_api.source_plugins.ingestion.text import TEXT_INGESTION_PLUGIN
 from artana_evidence_api.source_plugins.marrvel import (
@@ -34,10 +35,7 @@ from artana_evidence_api.source_plugins.pubmed import (
 )
 from artana_evidence_api.source_plugins.uniprot import UNIPROT_PLUGIN
 from artana_evidence_api.source_plugins.zfin import ZFIN_PLUGIN
-from artana_evidence_api.source_registry import (
-    SourceDefinition,
-    normalize_source_key,
-)
+from artana_evidence_api.source_registry import SourceDefinition, normalize_source_key
 
 _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     PUBMED_PLUGIN,
@@ -45,6 +43,7 @@ _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     CLINVAR_PLUGIN,
     DRUGBANK_PLUGIN,
     ALPHAFOLD_PLUGIN,
+    GNOMAD_PLUGIN,
     UNIPROT_PLUGIN,
     CLINICAL_TRIALS_PLUGIN,
     MGI_PLUGIN,
@@ -73,6 +72,7 @@ _PUBLIC_SOURCE_PLUGINS: tuple[
     TEXT_INGESTION_PLUGIN,
     DRUGBANK_PLUGIN,
     ALPHAFOLD_PLUGIN,
+    GNOMAD_PLUGIN,
     UNIPROT_PLUGIN,
     HGNC_AUTHORITY_PLUGIN,
     CLINICAL_TRIALS_PLUGIN,

@@ -9,6 +9,7 @@ from artana_evidence_api.dependencies import (
     get_clinvar_source_gateway,
     get_direct_source_search_store,
     get_drugbank_source_gateway,
+    get_gnomad_source_gateway,
     get_mgi_source_gateway,
     get_pubmed_discovery_service,
     get_uniprot_source_gateway,
@@ -23,6 +24,7 @@ from artana_evidence_api.source_enrichment_bridges import (
     ClinicalTrialsGatewayProtocol,
     ClinVarGatewayProtocol,
     DrugBankGatewayProtocol,
+    GnomADGatewayProtocol,
     UniProtGatewayProtocol,
 )
 from artana_evidence_api.source_route_contracts import (
@@ -43,6 +45,7 @@ _CLINICALTRIALS_SOURCE_GATEWAY_DEPENDENCY = Depends(
 )
 _UNIPROT_SOURCE_GATEWAY_DEPENDENCY = Depends(get_uniprot_source_gateway)
 _ALPHAFOLD_SOURCE_GATEWAY_DEPENDENCY = Depends(get_alphafold_source_gateway)
+_GNOMAD_SOURCE_GATEWAY_DEPENDENCY = Depends(get_gnomad_source_gateway)
 _DRUGBANK_SOURCE_GATEWAY_DEPENDENCY = Depends(get_drugbank_source_gateway)
 _MGI_SOURCE_GATEWAY_DEPENDENCY = Depends(get_mgi_source_gateway)
 _ZFIN_SOURCE_GATEWAY_DEPENDENCY = Depends(get_zfin_source_gateway)
@@ -70,6 +73,7 @@ def direct_source_route_dependencies(
     alphafold_gateway: AlphaFoldGatewayProtocol | None = (
         _ALPHAFOLD_SOURCE_GATEWAY_DEPENDENCY
     ),
+    gnomad_gateway: GnomADGatewayProtocol | None = _GNOMAD_SOURCE_GATEWAY_DEPENDENCY,
     drugbank_gateway: DrugBankGatewayProtocol | None = (
         _DRUGBANK_SOURCE_GATEWAY_DEPENDENCY
     ),
@@ -88,6 +92,7 @@ def direct_source_route_dependencies(
             "clinical_trials": clinicaltrials_gateway,
             "uniprot": uniprot_gateway,
             "alphafold": alphafold_gateway,
+            "gnomad": gnomad_gateway,
             "drugbank": drugbank_gateway,
             "mgi": mgi_gateway,
             "zfin": zfin_gateway,

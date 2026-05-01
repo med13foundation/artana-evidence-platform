@@ -102,6 +102,7 @@ def test_generic_route_dependency_keys_match_route_plugin_keys() -> None:
         clinicaltrials_gateway=None,
         uniprot_gateway=None,
         alphafold_gateway=None,
+        gnomad_gateway=None,
         drugbank_gateway=None,
         mgi_gateway=None,
         zfin_gateway=None,

@@ -21,6 +21,7 @@ Examples:
 - ClinVar
 - DrugBank
 - AlphaFold
+- gnomAD
 - UniProt
 - ClinicalTrials.gov
 - MGI

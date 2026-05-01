@@ -2214,7 +2214,7 @@
                 "type": "null"
               }
             ],
-            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin).",
+            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin).",
             "title": "Sources"
           }
         },
@@ -3576,6 +3576,220 @@
           "errors"
         ],
         "title": "FullAIOrchestratorRunResponse",
+        "type": "object"
+      },
+      "GnomADSourceSearchRequest": {
+        "description": "Request payload for a direct gnomAD gene or variant lookup.",
+        "properties": {
+          "dataset": {
+            "default": "gnomad_r4",
+            "description": "gnomAD dataset used for variant lookup.",
+            "enum": [
+              "gnomad_r4",
+              "gnomad_r4_non_ukb",
+              "gnomad_r3",
+              "gnomad_r3_controls_and_biobanks",
+              "gnomad_r3_non_cancer",
+              "gnomad_r3_non_neuro",
+              "gnomad_r3_non_topmed",
+              "gnomad_r3_non_v2",
+              "gnomad_r2_1",
+              "gnomad_r2_1_controls",
+              "gnomad_r2_1_non_neuro",
+              "gnomad_r2_1_non_cancer",
+              "gnomad_r2_1_non_topmed",
+              "exac"
+            ],
+            "title": "Dataset",
+            "type": "string"
+          },
+          "gene_symbol": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Gene symbol for gnomAD constraint lookup.",
+            "title": "Gene Symbol"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "reference_genome": {
+            "default": "GRCh38",
+            "description": "Reference genome used for gene constraint lookup.",
+            "enum": [
+              "GRCh37",
+              "GRCh38"
+            ],
+            "title": "Reference Genome",
+            "type": "string"
+          },
+          "variant_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "gnomAD variant ID, for example '17-5982158-C-T'.",
+            "title": "Variant Id"
+          }
+        },
+        "title": "GnomADSourceSearchRequest",
+        "type": "object"
+      },
+      "GnomADSourceSearchResponse": {
+        "description": "Response payload for one captured gnomAD direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset": {
+            "default": "gnomad_r4",
+            "enum": [
+              "gnomad_r4",
+              "gnomad_r4_non_ukb",
+              "gnomad_r3",
+              "gnomad_r3_controls_and_biobanks",
+              "gnomad_r3_non_cancer",
+              "gnomad_r3_non_neuro",
+              "gnomad_r3_non_topmed",
+              "gnomad_r3_non_v2",
+              "gnomad_r2_1",
+              "gnomad_r2_1_controls",
+              "gnomad_r2_1_non_neuro",
+              "gnomad_r2_1_non_cancer",
+              "gnomad_r2_1_non_topmed",
+              "exac"
+            ],
+            "title": "Dataset",
+            "type": "string"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "gene_symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gene Symbol"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "query_kind": {
+            "enum": [
+              "gene",
+              "variant"
+            ],
+            "title": "Query Kind",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "reference_genome": {
+            "default": "GRCh38",
+            "enum": [
+              "GRCh37",
+              "GRCh38"
+            ],
+            "title": "Reference Genome",
+            "type": "string"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "gnomad",
+            "default": "gnomad",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "variant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant Id"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "query_kind",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "GnomADSourceSearchResponse",
         "type": "object"
       },
       "GraphChatEvidenceItem": {
@@ -10782,6 +10996,10 @@
           },
           "drugbank": {
             "title": "Drugbank",
+            "type": "boolean"
+          },
+          "gnomad": {
+            "title": "Gnomad",
             "type": "boolean"
           },
           "hgnc": {
@@ -24717,6 +24935,130 @@
           }
         ],
         "summary": "Get DrugBank evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/gnomad/searches": {
+      "post": {
+        "description": "Typed v2 route for gnomAD source search.",
+        "operationId": "create_gnomad_source_search_v2_spaces__space_id__sources_gnomad_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GnomADSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GnomADSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search gnomAD evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/gnomad/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for gnomAD source-search lookup.",
+        "operationId": "get_gnomad_source_search_v2_spaces__space_id__sources_gnomad_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GnomADSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get gnomAD evidence source search",
         "tags": [
           "sources"
         ]

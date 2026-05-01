@@ -34,6 +34,7 @@ def test_source_registry_lists_all_research_plan_sources() -> None:
         "text",
         "drugbank",
         "alphafold",
+        "gnomad",
         "uniprot",
         "hgnc",
         "clinical_trials",
@@ -50,6 +51,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
         "clinvar",
         "drugbank",
         "alphafold",
+        "gnomad",
         "uniprot",
         "clinical_trials",
         "mgi",
@@ -63,7 +65,14 @@ def test_source_registry_marks_direct_search_sources() -> None:
     mondo = get_source_definition("mondo")
     direct_extra_sources = [
         get_source_definition(source_key)
-        for source_key in ("drugbank", "alphafold", "uniprot", "mgi", "zfin")
+        for source_key in (
+            "drugbank",
+            "alphafold",
+            "gnomad",
+            "uniprot",
+            "mgi",
+            "zfin",
+        )
     ]
 
     assert pubmed is not None
@@ -136,6 +145,7 @@ def test_source_registry_defaults_match_research_init_behavior() -> None:
         "text": True,
         "drugbank": False,
         "alphafold": False,
+        "gnomad": False,
         "uniprot": False,
         "hgnc": False,
         "clinical_trials": False,
