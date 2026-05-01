@@ -705,7 +705,8 @@ class TestCrossSourcePipeline:
         )
         assert doc1 is not None
 
-        # Second creation with identical content should return None (dedup)
+        # Second creation with identical content should resolve the existing
+        # document so structured proposals can still cite it.
         doc2 = _create_enrichment_document(
             space_id=space_id,
             document_store=document_store,
@@ -717,4 +718,8 @@ class TestCrossSourcePipeline:
             text_content=text_content,
             metadata={"source": "test"},
         )
-        assert doc2 is None, "Duplicate content should be deduplicated"
+        assert doc2 is not None
+        assert (
+            doc2.id == doc1.id
+        ), "Duplicate content should reuse the source document"
+        assert document_store.count_documents(space_id=space_id) == 1

@@ -1685,6 +1685,116 @@ async def test_execute_run_loads_pubmed_replay_bundle_from_artifact(
 
 
 @pytest.mark.asyncio
+async def test_execute_run_records_structured_brief_skip_metadata(
+    services: HarnessExecutionServices,
+) -> None:
+    space_id = uuid4()
+    run = queue_full_ai_orchestrator_run(
+        space_id=space_id,
+        title="Full AI Orchestrator Harness",
+        objective="Investigate MED13 syndrome",
+        seed_terms=["MED13"],
+        sources={"pubmed": True, "clinvar": True},
+        max_depth=1,
+        max_hypotheses=5,
+        graph_service_status="ok",
+        graph_service_version="test",
+        run_registry=services.run_registry,
+        artifact_store=services.artifact_store,
+        execution_services=services,
+        planner_mode=FullAIOrchestratorPlannerMode.GUARDED,
+    )
+
+    async def _fake_execute_research_init_run(
+        **kwargs: object,
+    ) -> ResearchInitExecutionResult:
+        services_arg = kwargs["execution_services"]
+        assert isinstance(services_arg, HarnessExecutionServices)
+        services_arg.artifact_store.patch_workspace(
+            space_id=space_id,
+            run_id=run.id,
+            patch={
+                "status": "completed",
+                "documents_ingested": 10,
+                "proposal_count": 156,
+                "source_results": {
+                    "pubmed": {
+                        "selected": True,
+                        "status": "completed",
+                        "documents_ingested": 10,
+                    },
+                    "clinvar": {
+                        "selected": True,
+                        "status": "completed",
+                        "record_count": 1,
+                    },
+                },
+                "bootstrap_summary": {"proposal_count": 156},
+                "pending_questions": [],
+            },
+        )
+        return ResearchInitExecutionResult(
+            run=run,
+            pubmed_results=(),
+            documents_ingested=10,
+            proposal_count=156,
+            research_state=None,
+            pending_questions=[],
+            errors=[
+                "Research brief generation skipped: storage_failed: "
+                "artifact store unavailable"
+            ],
+            claim_curation=None,
+            research_brief_markdown=None,
+            research_brief_generation={
+                "status": "skipped",
+                "reason": "storage_failed",
+                "error": "artifact store unavailable",
+                "llm_status": "fallback_deterministic",
+                "brief_markdown_present": True,
+                "markdown_length": 42,
+            },
+        )
+
+    from artana_evidence_api import full_ai_orchestrator_runtime
+
+    original = full_ai_orchestrator_runtime.execute_research_init_run
+    full_ai_orchestrator_runtime.execute_research_init_run = (
+        _fake_execute_research_init_run
+    )
+    try:
+        result = await execute_full_ai_orchestrator_run(
+            space_id=space_id,
+            title=run.title,
+            objective="Investigate MED13 syndrome",
+            seed_terms=["MED13"],
+            max_depth=1,
+            max_hypotheses=5,
+            sources={"pubmed": True, "clinvar": True},
+            execution_services=services,
+            existing_run=run,
+            planner_mode=FullAIOrchestratorPlannerMode.GUARDED,
+        )
+    finally:
+        full_ai_orchestrator_runtime.execute_research_init_run = original
+
+    brief_artifact = services.artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=run.id,
+        artifact_key="full_ai_orchestrator_brief_metadata",
+    )
+
+    assert result.brief_metadata["present"] is False
+    assert result.brief_metadata["status"] == "skipped"
+    assert result.brief_metadata["reason"] == "storage_failed"
+    assert result.brief_metadata["error"] == "artifact store unavailable"
+    assert result.brief_metadata["llm_status"] == "fallback_deterministic"
+    assert brief_artifact is not None
+    assert brief_artifact.content["reason"] == "storage_failed"
+    assert brief_artifact.content["error"] == "artifact store unavailable"
+
+
+@pytest.mark.asyncio
 async def test_execute_run_forwards_structured_replay_bundle(
     services: HarnessExecutionServices,
 ) -> None:

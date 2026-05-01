@@ -12,6 +12,7 @@ from artana_evidence_api.document_extraction_contracts import (
 )
 from artana_evidence_api.document_extraction_entities import (
     build_unresolved_entity_id,
+    canonical_entity_label_rejection_reason,
     require_match_display_label,
     require_match_id,
     resolve_entity_label,
@@ -45,6 +46,21 @@ def build_document_extraction_drafts(
     skipped_candidates: list[JSONObject] = []
     normalized_review_context = review_context or build_document_review_context()
     for index, candidate in enumerate(candidates):
+        subject_rejection_reason = canonical_entity_label_rejection_reason(
+            candidate.subject_label,
+        )
+        if subject_rejection_reason is not None:
+            skipped_candidates.append(
+                _skipped_non_canonical_candidate(
+                    document=document,
+                    candidate=candidate,
+                    candidate_index=index,
+                    reason="non_canonical_subject_label",
+                    label=candidate.subject_label,
+                    rejection_reason=subject_rejection_reason,
+                ),
+            )
+            continue
         subject_match = resolve_entity_label(
             space_id=space_id,
             label=candidate.subject_label,
@@ -67,6 +83,22 @@ def build_document_extraction_drafts(
             graph_api_gateway=graph_api_gateway,
         )
         for object_index, object_label in enumerate(object_labels):
+            object_rejection_reason = canonical_entity_label_rejection_reason(
+                object_label,
+            )
+            if object_rejection_reason is not None:
+                skipped_candidates.append(
+                    _skipped_non_canonical_candidate(
+                        document=document,
+                        candidate=candidate,
+                        candidate_index=index,
+                        reason="non_canonical_object_label",
+                        label=object_label,
+                        rejection_reason=object_rejection_reason,
+                        object_index=object_index,
+                    ),
+                )
+                continue
             object_match = resolve_entity_label(
                 space_id=space_id,
                 label=object_label,
@@ -172,6 +204,33 @@ def build_document_extraction_drafts(
                 review_context=normalized_review_context,
             )
     return tuple(drafts), skipped_candidates
+
+
+def _skipped_non_canonical_candidate(
+    *,
+    document: HarnessDocumentRecord,
+    candidate: ExtractedRelationCandidate,
+    candidate_index: int,
+    reason: str,
+    label: str,
+    rejection_reason: str,
+    object_index: int | None = None,
+) -> JSONObject:
+    payload: JSONObject = {
+        "document_id": document.id,
+        "document_title": document.title,
+        "candidate_index": candidate_index,
+        "reason": reason,
+        "label": label,
+        "label_rejection_reason": rejection_reason,
+        "subject_label": candidate.subject_label,
+        "object_label": candidate.object_label,
+        "relation_type": candidate.relation_type,
+        "sentence": candidate.sentence,
+    }
+    if object_index is not None:
+        payload["object_index"] = object_index
+    return payload
 
 
 __all__ = ["build_document_extraction_drafts"]

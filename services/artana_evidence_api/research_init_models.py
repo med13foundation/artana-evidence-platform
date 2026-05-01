@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol
 from uuid import UUID
 
 from artana_evidence_api.full_ai_orchestrator_contracts import (
@@ -60,7 +60,6 @@ _STRUCTURED_REPLAY_SOURCE_KIND_TO_KEY = {
 _MIN_GENE_FAMILY_TOKEN_LENGTH = 4
 
 
-
 @dataclass(frozen=True, slots=True)
 class ResearchInitPubMedResultRecord:
     """Compact summary of one PubMed query family."""
@@ -68,6 +67,7 @@ class ResearchInitPubMedResultRecord:
     query: str
     total_found: int
     abstracts_ingested: int
+
 
 @dataclass(frozen=True, slots=True)
 class ResearchInitExecutionResult:
@@ -82,6 +82,91 @@ class ResearchInitExecutionResult:
     errors: list[str]
     claim_curation: JSONObject | None = None
     research_brief_markdown: str | None = None
+    research_brief_generation: JSONObject | None = None
+
+
+ResearchInitBriefOutcomeStatus = Literal["completed", "skipped"]
+ResearchInitBriefSkipReason = Literal[
+    "generation_failed",
+    "render_failed",
+    "storage_failed",
+]
+ResearchInitBriefLlmStatus = Literal[
+    "not_attempted",
+    "completed",
+    "fallback_deterministic",
+    "failed",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchInitBriefOutcome:
+    """Structured result for the final research brief step."""
+
+    status: ResearchInitBriefOutcomeStatus
+    reason: ResearchInitBriefSkipReason | None
+    error: str | None
+    llm_status: ResearchInitBriefLlmStatus
+    markdown: str | None = None
+    llm_error: str | None = None
+
+    @classmethod
+    def completed(
+        cls,
+        *,
+        markdown: str,
+        llm_status: ResearchInitBriefLlmStatus,
+        llm_error: str | None = None,
+    ) -> ResearchInitBriefOutcome:
+        return cls(
+            status="completed",
+            reason=None,
+            error=None,
+            llm_status=llm_status,
+            markdown=markdown,
+            llm_error=llm_error,
+        )
+
+    @classmethod
+    def skipped(
+        cls,
+        *,
+        reason: ResearchInitBriefSkipReason,
+        error: str,
+        llm_status: ResearchInitBriefLlmStatus,
+        markdown: str | None = None,
+        llm_error: str | None = None,
+    ) -> ResearchInitBriefOutcome:
+        return cls(
+            status="skipped",
+            reason=reason,
+            error=error,
+            llm_status=llm_status,
+            markdown=markdown,
+            llm_error=llm_error,
+        )
+
+    def to_metadata(self) -> JSONObject:
+        markdown_present = (
+            isinstance(self.markdown, str) and self.markdown.strip() != ""
+        )
+        return {
+            "status": self.status,
+            "reason": self.reason,
+            "error": self.error,
+            "llm_status": self.llm_status,
+            "llm_error": self.llm_error,
+            "brief_markdown_present": markdown_present,
+            "markdown_length": len(self.markdown) if self.markdown is not None else 0,
+        }
+
+    def to_error_message(self) -> str | None:
+        if self.status != "skipped":
+            return None
+        if self.error is None or self.error.strip() == "":
+            return f"Research brief generation skipped: {self.reason}"
+        return f"Research brief generation skipped: {self.reason}: {self.error}"
+
 
 @dataclass(frozen=True, slots=True)
 class _PreparedDocumentExtraction:
@@ -92,6 +177,7 @@ class _PreparedDocumentExtraction:
     errors: tuple[str, ...]
     failed: bool = False
 
+
 @dataclass(frozen=True, slots=True)
 class _PubMedQueryExecutionResult:
     """One completed PubMed query family plus ordered candidate outputs."""
@@ -99,6 +185,7 @@ class _PubMedQueryExecutionResult:
     query_result: ResearchInitPubMedResultRecord | None
     candidates: tuple[object, ...]
     errors: tuple[str, ...]
+
 
 @dataclass(frozen=True, slots=True)
 class ResearchInitPubMedReplayBundle:
@@ -109,6 +196,7 @@ class ResearchInitPubMedReplayBundle:
     selection_errors: tuple[str, ...]
     documents: tuple[ResearchInitPubMedReplayDocument, ...] = ()
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitPubMedReplayDocument:
     """Replayable PubMed document outputs captured from a baseline run."""
@@ -117,6 +205,7 @@ class ResearchInitPubMedReplayDocument:
     sha256: str
     title: str
     extraction_proposals: tuple[ResearchInitStructuredReplayProposal, ...] = ()
+
 
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredReplayDocument:
@@ -138,6 +227,7 @@ class ResearchInitStructuredReplayDocument:
     extraction_status: str
     metadata: JSONObject
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredReplayProposal:
     """Replayable structured-source proposal payload."""
@@ -156,6 +246,7 @@ class ResearchInitStructuredReplayProposal:
     source_document_id: str | None = None
     claim_fingerprint: str | None = None
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredEnrichmentReplaySource:
     """Replayable outputs for one structured enrichment source."""
@@ -167,11 +258,13 @@ class ResearchInitStructuredEnrichmentReplaySource:
     records_processed: int = 0
     errors: tuple[str, ...] = ()
 
+
 @dataclass(frozen=True, slots=True)
 class ResearchInitStructuredEnrichmentReplayBundle:
     """Replayable structured enrichment outputs captured from a prior run."""
 
     sources: tuple[ResearchInitStructuredEnrichmentReplaySource, ...]
+
 
 @dataclass(frozen=True, slots=True)
 class _StoredReplayProposalResult:
@@ -181,6 +274,7 @@ class _StoredReplayProposalResult:
     surfaced_entity_ids: tuple[str, ...] = ()
     created_entity_ids: tuple[str, ...] = ()
     errors: tuple[str, ...] = ()
+
 
 @dataclass(frozen=True, slots=True)
 class _PubMedObservationSyncResult:
@@ -193,6 +287,7 @@ class _PubMedObservationSyncResult:
     seed_entity_ids: tuple[str, ...]
     errors: tuple[str, ...] = ()
 
+
 @dataclass(frozen=True, slots=True)
 class _ObservationBridgeBatchResult:
     """Batch result for one shared observation-bridge run."""
@@ -200,6 +295,7 @@ class _ObservationBridgeBatchResult:
     document_results: dict[str, _PubMedObservationSyncResult]
     seed_entity_ids: tuple[str, ...]
     errors: tuple[str, ...] = ()
+
 
 class _NoOpPipelineRunEventRepository:
     """Drop pipeline trace events for transient observation-bridge runs."""
@@ -233,6 +329,7 @@ class _NoOpPipelineRunEventRepository:
         )
         return []
 
+
 class ResearchInitProgressObserver(Protocol):
     """Observer notified whenever research-init advances one major phase."""
 
@@ -247,6 +344,7 @@ class ResearchInitProgressObserver(Protocol):
         workspace_snapshot: JSONObject,
     ) -> None: ...
 
+
 @dataclass(frozen=True, slots=True)
 class _ChaseRoundResult:
     """Result of one entity chase round."""
@@ -255,6 +353,7 @@ class _ChaseRoundResult:
     documents_created: int
     proposals_created: int
     errors: list[str]
+
 
 @dataclass(frozen=True, slots=True)
 class _ChaseRoundPreparation:

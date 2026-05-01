@@ -37,6 +37,7 @@ from artana_evidence_api.document_extraction_drafts import (
     build_document_extraction_drafts,
 )
 from artana_evidence_api.document_extraction_entities import (
+    canonical_entity_label_rejection_reason,
     clean_candidate_label,
     clean_llm_entity_label,
     resolve_exact_entity_label,
@@ -265,6 +266,8 @@ def extract_relation_candidates(text: str) -> list[ExtractedRelationCandidate]:
                 "ASSOCIATED_WITH",
             )
             if subject_label == "" or object_label == "":
+                continue
+            if canonical_entity_label_rejection_reason(subject_label) is not None:
                 continue
             candidate_key = (
                 subject_label.casefold(),
@@ -914,6 +917,8 @@ async def pre_resolve_entities_with_ai(
         for label in (candidate.subject_label, candidate.object_label):
             normalized_label = label.strip()
             if normalized_label == "":
+                continue
+            if canonical_entity_label_rejection_reason(normalized_label) is not None:
                 continue
             cache_key = normalized_label.casefold()
             if cache_key in seen_labels:

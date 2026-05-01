@@ -89,27 +89,51 @@ def _build_brief_metadata(
     workspace_snapshot: JSONObject,
     research_init_result: ResearchInitExecutionResult,
 ) -> JSONObject:
+    brief_generation = json_object_or_empty(
+        research_init_result.research_brief_generation
+    )
+    generation_status = brief_generation.get("status")
+    llm_status = brief_generation.get("llm_status")
+    brief_markdown_present = research_init_result.research_brief_markdown is not None
+    llm_markdown_present = llm_status == "completed" and brief_markdown_present
     research_brief = workspace_snapshot.get("research_brief")
     if not isinstance(research_brief, dict):
+        reason = brief_generation.get("reason")
+        error = brief_generation.get("error")
+        missing_reason = (
+            "research_brief_not_stored"
+            if generation_status == "completed"
+            else "missing_research_brief"
+        )
         return {
             "result_key": "research_brief",
             "present": False,
             "markdown_length": 0,
             "section_count": 0,
-            "llm_markdown_present": research_init_result.research_brief_markdown
-            is not None,
+            "llm_markdown_present": llm_markdown_present,
+            "brief_markdown_present": brief_markdown_present,
+            "status": "skipped",
+            "reason": reason if isinstance(reason, str) else missing_reason,
+            "error": error if isinstance(error, str) else None,
+            "llm_status": llm_status if isinstance(llm_status, str) else "unknown",
         }
     markdown = research_brief.get("markdown")
     sections = research_brief.get("sections")
     title = research_brief.get("title")
+    reason = brief_generation.get("reason")
+    error = brief_generation.get("error")
     return {
         "result_key": "research_brief",
         "present": True,
         "title": title if isinstance(title, str) else None,
         "markdown_length": len(markdown) if isinstance(markdown, str) else 0,
         "section_count": len(sections) if isinstance(sections, list) else 0,
-        "llm_markdown_present": research_init_result.research_brief_markdown
-        is not None,
+        "llm_markdown_present": llm_markdown_present,
+        "brief_markdown_present": brief_markdown_present,
+        "status": "completed",
+        "reason": reason if isinstance(reason, str) else None,
+        "error": error if isinstance(error, str) else None,
+        "llm_status": llm_status if isinstance(llm_status, str) else "unknown",
     }
 
 
