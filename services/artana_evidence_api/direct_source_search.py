@@ -8,7 +8,20 @@ from threading import RLock
 from typing import Literal, Protocol, TypeVar, cast
 from uuid import UUID, uuid4
 
-from artana_evidence_api.clinicaltrials_gateway import ClinicalTrialsGatewayFetchResult
+from artana_evidence_api.direct_sources.capture import (
+    build_direct_search_capture,
+    json_records,
+    next_page_token,
+    single_record_external_id,
+)
+from artana_evidence_api.direct_sources.gnomad import (
+    GnomADDataset,
+    GnomADQueryKind,
+    GnomADReferenceGenome,
+    GnomADSourceSearchRequest,
+    GnomADSourceSearchResponse,
+    run_gnomad_direct_search,
+)
 from artana_evidence_api.models import SourceSearchRunModel
 from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
 from artana_evidence_api.source_enrichment_bridges import (
@@ -436,6 +449,7 @@ DirectSourceSearchRecord = (
     | PubMedSourceSearchResponse
     | UniProtSourceSearchResponse
     | AlphaFoldSourceSearchResponse
+    | GnomADSourceSearchResponse
     | DrugBankSourceSearchResponse
     | ClinicalTrialsSourceSearchResponse
     | MGISourceSearchResponse
@@ -664,12 +678,12 @@ async def run_clinvar_direct_search(
     """Fetch ClinVar records and capture them as a direct source search."""
 
     created_at = datetime.now(UTC)
-    records = _json_records(
+    records = json_records(
         await gateway.fetch_records(config=request.to_query_config()),
     )
     completed_at = datetime.now(UTC)
     search_id = uuid4()
-    external_id = _single_record_external_id(
+    external_id = single_record_external_id(
         records,
         keys=("accession", "clinvar_id", "variation_id"),
     )
@@ -721,11 +735,11 @@ async def run_clinicaltrials_direct_search(
         query=request.query,
         max_results=request.max_results,
     )
-    records = _json_records(fetch_result.records)
+    records = json_records(fetch_result.records)
     completed_at = datetime.now(UTC)
     search_id = uuid4()
-    next_page_token = _next_page_token(fetch_result)
-    external_id = _single_record_external_id(records, keys=("nct_id",))
+    page_token = next_page_token(fetch_result)
+    external_id = single_record_external_id(records, keys=("nct_id",))
     capture = source_result_capture_metadata(
         source_key="clinical_trials",
         capture_stage=SourceCaptureStage.SEARCH_RESULT,
@@ -740,7 +754,7 @@ async def run_clinicaltrials_direct_search(
         provenance=compact_provenance(
             provider="ClinicalTrials.gov API v2",
             fetched_records=fetch_result.fetched_records,
-            next_page_token=next_page_token,
+            next_page_token=page_token,
         ),
     )
     result = ClinicalTrialsSourceSearchResponse(
@@ -750,7 +764,7 @@ async def run_clinicaltrials_direct_search(
         max_results=request.max_results,
         fetched_records=fetch_result.fetched_records,
         record_count=len(records),
-        next_page_token=next_page_token,
+        next_page_token=page_token,
         records=records,
         created_at=created_at,
         completed_at=completed_at,
@@ -776,11 +790,11 @@ async def run_uniprot_direct_search(
         uniprot_id=request.uniprot_id,
         max_results=request.max_results,
     )
-    records = _json_records(fetch_result.records)
+    records = json_records(fetch_result.records)
     completed_at = datetime.now(UTC)
     search_id = uuid4()
     query = request.query_text()
-    capture = _direct_search_capture(
+    capture = build_direct_search_capture(
         source_key="uniprot",
         search_id=search_id,
         completed_at=completed_at,
@@ -788,7 +802,7 @@ async def run_uniprot_direct_search(
         query_payload=request.model_dump(mode="json", exclude_none=True),
         result_count=len(records),
         provider="UniProt REST API",
-        external_id=_single_record_external_id(
+        external_id=single_record_external_id(
             records,
             keys=("uniprot_id", "primary_accession", "accession"),
             expected=request.uniprot_id,
@@ -827,10 +841,10 @@ async def run_alphafold_direct_search(
         uniprot_id=request.uniprot_id,
         max_results=request.max_results,
     )
-    records = _json_records(fetch_result.records)
+    records = json_records(fetch_result.records)
     completed_at = datetime.now(UTC)
     search_id = uuid4()
-    capture = _direct_search_capture(
+    capture = build_direct_search_capture(
         source_key="alphafold",
         search_id=search_id,
         completed_at=completed_at,
@@ -838,7 +852,7 @@ async def run_alphafold_direct_search(
         query_payload=request.model_dump(mode="json"),
         result_count=len(records),
         provider="AlphaFold Protein Structure Database API",
-        external_id=_single_record_external_id(
+        external_id=single_record_external_id(
             records,
             keys=("uniprot_id", "primary_accession", "accession"),
             expected=request.uniprot_id,
@@ -878,11 +892,11 @@ async def run_drugbank_direct_search(
         drugbank_id=request.drugbank_id,
         max_results=request.max_results,
     )
-    records = _json_records(fetch_result.records)
+    records = json_records(fetch_result.records)
     completed_at = datetime.now(UTC)
     search_id = uuid4()
     query = request.query_text()
-    capture = _direct_search_capture(
+    capture = build_direct_search_capture(
         source_key="drugbank",
         search_id=search_id,
         completed_at=completed_at,
@@ -890,7 +904,7 @@ async def run_drugbank_direct_search(
         query_payload=request.model_dump(mode="json", exclude_none=True),
         result_count=len(records),
         provider="DrugBank API",
-        external_id=_single_record_external_id(
+        external_id=single_record_external_id(
             records,
             keys=("drugbank_id", "drug_id"),
             expected=request.drugbank_id,
@@ -929,11 +943,11 @@ async def run_mgi_direct_search(
         query=request.query,
         max_results=request.max_results,
     )
-    records = _json_records(fetch_result.records)
+    records = json_records(fetch_result.records)
     completed_at = datetime.now(UTC)
     search_id = uuid4()
-    external_id = _single_record_external_id(records, keys=("mgi_id",))
-    capture = _direct_search_capture(
+    external_id = single_record_external_id(records, keys=("mgi_id",))
+    capture = build_direct_search_capture(
         source_key="mgi",
         search_id=search_id,
         completed_at=completed_at,
@@ -974,11 +988,11 @@ async def run_zfin_direct_search(
         query=request.query,
         max_results=request.max_results,
     )
-    records = _json_records(fetch_result.records)
+    records = json_records(fetch_result.records)
     completed_at = datetime.now(UTC)
     search_id = uuid4()
-    external_id = _single_record_external_id(records, keys=("zfin_id",))
-    capture = _direct_search_capture(
+    external_id = single_record_external_id(records, keys=("zfin_id",))
+    capture = build_direct_search_capture(
         source_key="zfin",
         search_id=search_id,
         completed_at=completed_at,
@@ -1004,72 +1018,6 @@ async def run_zfin_direct_search(
     return store.save(result, created_by=created_by)
 
 
-def _direct_search_capture(
-    *,
-    source_key: str,
-    search_id: UUID,
-    completed_at: datetime,
-    query: str,
-    query_payload: object,
-    result_count: int,
-    provider: str,
-    external_id: str | None = None,
-    provenance: object | None = None,
-) -> JSONObject:
-    return source_result_capture_metadata(
-        source_key=source_key,
-        capture_stage=SourceCaptureStage.SEARCH_RESULT,
-        capture_method="direct_source_search",
-        locator=f"{source_key}:search:{search_id}",
-        external_id=external_id,
-        retrieved_at=completed_at,
-        search_id=str(search_id),
-        query=query,
-        query_payload=query_payload,
-        result_count=result_count,
-        provenance=compact_provenance(
-            **{
-                **json_object_or_empty(provenance),
-                "provider": provider,
-            },
-        ),
-    )
-
-
-def _json_records(records: list[dict[str, object]]) -> list[JSONObject]:
-    return [json_object_or_empty(record) for record in records]
-
-
-def _next_page_token(fetch_result: ClinicalTrialsGatewayFetchResult | object) -> str | None:
-    raw_token = getattr(fetch_result, "next_page_token", None)
-    if isinstance(raw_token, str) and raw_token.strip():
-        return raw_token.strip()
-    return None
-
-
-def _single_record_external_id(
-    records: list[JSONObject],
-    *,
-    keys: tuple[str, ...],
-    expected: str | None = None,
-) -> str | None:
-    if len(records) != 1:
-        return None
-    expected_value = expected.strip().casefold() if expected is not None else None
-    record = records[0]
-    for key in keys:
-        raw_value = record.get(key)
-        if raw_value is None:
-            continue
-        candidate = str(raw_value).strip()
-        if not candidate:
-            continue
-        if expected_value is not None and candidate.casefold() != expected_value:
-            return None
-        return candidate
-    return None
-
-
 def _response_model_for_source_key(
     source_key: str,
 ) -> type[BaseModel] | None:
@@ -1079,6 +1027,7 @@ def _response_model_for_source_key(
         "clinical_trials": ClinicalTrialsSourceSearchResponse,
         "uniprot": UniProtSourceSearchResponse,
         "alphafold": AlphaFoldSourceSearchResponse,
+        "gnomad": GnomADSourceSearchResponse,
         "drugbank": DrugBankSourceSearchResponse,
         "mgi": MGISourceSearchResponse,
         "zfin": ZFINSourceSearchResponse,
@@ -1099,6 +1048,11 @@ __all__ = [
     "DirectSourceSearchStore",
     "DrugBankSourceSearchRequest",
     "DrugBankSourceSearchResponse",
+    "GnomADDataset",
+    "GnomADQueryKind",
+    "GnomADReferenceGenome",
+    "GnomADSourceSearchRequest",
+    "GnomADSourceSearchResponse",
     "InMemoryDirectSourceSearchStore",
     "MarrvelSourceSearchResponse",
     "MGISourceSearchRequest",
@@ -1113,6 +1067,7 @@ __all__ = [
     "run_clinicaltrials_direct_search",
     "run_clinvar_direct_search",
     "run_drugbank_direct_search",
+    "run_gnomad_direct_search",
     "run_mgi_direct_search",
     "run_uniprot_direct_search",
     "run_zfin_direct_search",

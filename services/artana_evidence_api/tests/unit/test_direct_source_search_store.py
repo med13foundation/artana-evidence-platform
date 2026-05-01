@@ -13,6 +13,7 @@ from artana_evidence_api.direct_source_search import (
     ClinVarSourceSearchResponse,
     DirectSourceSearchRecord,
     DrugBankSourceSearchResponse,
+    GnomADSourceSearchResponse,
     InMemoryDirectSourceSearchStore,
     MGISourceSearchResponse,
     PubMedSourceSearchResponse,
@@ -89,6 +90,7 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
     clinical_trials_id = uuid4()
     uniprot_id = uuid4()
     alphafold_id = uuid4()
+    gnomad_id = uuid4()
     drugbank_id = uuid4()
     mgi_id = uuid4()
     zfin_id = uuid4()
@@ -187,6 +189,26 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
                 source_key="alphafold",
                 search_id=alphafold_id,
                 query="P38398",
+            ),
+        ),
+        GnomADSourceSearchResponse(
+            id=gnomad_id,
+            space_id=space_id,
+            query="MED13",
+            query_kind="gene",
+            gene_symbol="MED13",
+            reference_genome="GRCh38",
+            dataset="gnomad_r4",
+            max_results=1,
+            fetched_records=1,
+            record_count=1,
+            records=[{"gene_symbol": "MED13", "gene_id": "ENSG00000108510"}],
+            created_at=created_at,
+            completed_at=completed_at,
+            source_capture=_capture(
+                source_key="gnomad",
+                search_id=gnomad_id,
+                query="MED13",
             ),
         ),
         DrugBankSourceSearchResponse(

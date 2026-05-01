@@ -510,7 +510,14 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
             errors.append(f"Chase round {chase_round} failed: {exc}")
             break
 
-    for pending_source in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
+    for pending_source in (
+        "clinvar",
+        "drugbank",
+        "alphafold",
+        "gnomad",
+        "uniprot",
+        "hgnc",
+    ):
         if source_results.get(pending_source, {}).get("status") == "pending":
             source_results[pending_source]["status"] = "deferred"
 

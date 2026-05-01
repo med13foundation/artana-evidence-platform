@@ -156,6 +156,7 @@ def test_create_space_persists_source_preferences() -> None:
         "text": False,
         "drugbank": False,
         "alphafold": False,
+        "gnomad": False,
         "uniprot": False,
         "hgnc": True,
         "clinical_trials": False,

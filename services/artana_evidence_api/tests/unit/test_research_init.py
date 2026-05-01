@@ -2025,6 +2025,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
@@ -2056,6 +2057,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
@@ -4872,6 +4874,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
@@ -4901,6 +4904,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
@@ -5372,6 +5376,7 @@ async def test_execute_research_init_syncs_pubmed_observations_for_existing_pubm
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "pdf": False,
             "text": False,
         },
@@ -5398,6 +5403,7 @@ async def test_execute_research_init_syncs_pubmed_observations_for_existing_pubm
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "pdf": False,
             "text": False,
         },
@@ -5532,6 +5538,7 @@ async def test_execute_research_init_keeps_llm_candidate_fallback_diagnostics_ou
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "pdf": False,
             "text": False,
         },
@@ -5558,6 +5565,7 @@ async def test_execute_research_init_keeps_llm_candidate_fallback_diagnostics_ou
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "pdf": False,
             "text": False,
         },
@@ -6757,6 +6765,7 @@ def test_build_source_results_includes_registry_metadata() -> None:
     assert result["clinical_trials"]["direct_search_enabled"] is True
     assert result["uniprot"]["direct_search_enabled"] is True
     assert result["alphafold"]["direct_search_enabled"] is True
+    assert result["gnomad"]["direct_search_enabled"] is True
     assert result["drugbank"]["direct_search_enabled"] is True
     assert result["mgi"]["direct_search_enabled"] is True
     assert result["zfin"]["direct_search_enabled"] is True
@@ -6771,6 +6780,20 @@ def test_build_source_results_uniprot_skipped_by_default() -> None:
     result = research_init_runtime._build_source_results(sources={})
     assert result["uniprot"]["status"] == "skipped"
     assert result["uniprot"]["selected"] is False
+
+
+def test_build_source_results_gnomad_skipped_by_default() -> None:
+    """gnomad defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["gnomad"]["status"] == "skipped"
+    assert result["gnomad"]["selected"] is False
+
+
+def test_build_source_results_gnomad_pending_when_enabled() -> None:
+    """gnomad status is 'pending' when gnomad=True in sources."""
+    result = research_init_runtime._build_source_results(sources={"gnomad": True})
+    assert result["gnomad"]["status"] == "pending"
+    assert result["gnomad"]["selected"] is True
 
 
 def test_build_source_results_uniprot_pending_when_enabled() -> None:
@@ -6826,7 +6849,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     """Sources still 'pending' at the end of execute_research_init_run are marked 'deferred'.
 
     This exercises the loop:
-        for pending_source in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
+        for pending_source in ("clinvar", "drugbank", "alphafold", "gnomad", ...):
             if source_results.get(pending_source, {}).get("status") == "pending":
                 source_results[pending_source]["status"] = "deferred"
 
@@ -6845,6 +6868,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
             "text": True,
             "drugbank": True,
             "alphafold": True,
+            "gnomad": True,
             "uniprot": True,
             "hgnc": True,
             "clinical_trials": True,
@@ -6860,7 +6884,14 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
         ), f"Expected {key!r} to start as 'pending', got {source_results[key]['status']!r}"
 
     # Apply the deferred-marking loop exactly as in execute_research_init_run.
-    for pending_source in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
+    for pending_source in (
+        "clinvar",
+        "drugbank",
+        "alphafold",
+        "gnomad",
+        "uniprot",
+        "hgnc",
+    ):
         if source_results.get(pending_source, {}).get("status") == "pending":
             source_results[pending_source]["status"] = "deferred"
 
@@ -6868,6 +6899,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     assert source_results["clinvar"]["status"] == "deferred"
     assert source_results["drugbank"]["status"] == "deferred"
     assert source_results["alphafold"]["status"] == "deferred"
+    assert source_results["gnomad"]["status"] == "deferred"
     assert source_results["uniprot"]["status"] == "deferred"
     assert source_results["hgnc"]["status"] == "deferred"
 
@@ -6886,22 +6918,30 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
             "clinvar": False,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
         },
     )
 
     # All these are skipped because they are disabled.
-    for key in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
+    for key in ("clinvar", "drugbank", "alphafold", "gnomad", "uniprot", "hgnc"):
         assert source_results[key]["status"] == "skipped"
 
     # Apply the loop.
-    for pending_source in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
+    for pending_source in (
+        "clinvar",
+        "drugbank",
+        "alphafold",
+        "gnomad",
+        "uniprot",
+        "hgnc",
+    ):
         if source_results.get(pending_source, {}).get("status") == "pending":
             source_results[pending_source]["status"] = "deferred"
 
     # Still skipped — not upgraded to deferred.
-    for key in ("clinvar", "drugbank", "alphafold", "uniprot", "hgnc"):
+    for key in ("clinvar", "drugbank", "alphafold", "gnomad", "uniprot", "hgnc"):
         assert source_results[key]["status"] == "skipped"
 
 
@@ -7722,6 +7762,7 @@ def test_prepare_chase_round_stringifies_graph_entity_ids() -> None:
             "clinvar": True,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
             "clinical_trials": False,
@@ -7799,6 +7840,7 @@ def test_prepare_chase_round_filters_low_signal_labels() -> None:
             "clinvar": True,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
             "clinical_trials": False,
@@ -7897,6 +7939,7 @@ def test_prepare_chase_round_prioritizes_objective_relevant_candidates() -> None
             "clinvar": True,
             "drugbank": True,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
             "clinical_trials": False,
@@ -7985,6 +8028,7 @@ def test_prepare_chase_round_filters_taxonomic_spillover_for_non_organism_object
             "clinvar": True,
             "drugbank": True,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
             "clinical_trials": False,
@@ -8069,6 +8113,7 @@ def test_prepare_chase_round_filters_underanchored_fragment_labels() -> None:
             "clinvar": True,
             "drugbank": True,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
             "clinical_trials": False,
@@ -8151,6 +8196,7 @@ def test_prepare_chase_round_keeps_taxonomic_candidates_for_organism_objective()
             "clinvar": True,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
             "clinical_trials": False,
@@ -8287,6 +8333,7 @@ async def test_maybe_select_guarded_chase_round_selection_uses_observer() -> Non
             "clinvar": True,
             "drugbank": False,
             "alphafold": False,
+            "gnomad": False,
             "uniprot": False,
             "hgnc": False,
         },

@@ -144,7 +144,7 @@ class CreateHarnessResearchSpaceRequest(BaseModel):
     description: str = Field(default="", max_length=500)
     sources: dict[str, bool] | None = Field(
         default=None,
-        description="Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin).",
+        description="Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin).",
     )
 
 

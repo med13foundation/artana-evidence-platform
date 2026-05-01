@@ -34,6 +34,7 @@ def test_source_plugin_registry_is_explicit_and_consistent() -> None:
         "clinvar",
         "drugbank",
         "alphafold",
+        "gnomad",
         "uniprot",
         "clinical_trials",
         "mgi",

@@ -59,6 +59,10 @@ _SOURCE_RESULT_COUNTERS: dict[str, JSONObject] = {
         "records_processed": 0,
         "observations_created": 0,
     },
+    "gnomad": {
+        "records_processed": 0,
+        "observations_created": 0,
+    },
     "uniprot": {
         "records_processed": 0,
         "observations_created": 0,

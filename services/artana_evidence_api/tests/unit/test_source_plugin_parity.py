@@ -123,6 +123,12 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             evidence_role="structure",
             reason="Fetch structure.",
         ),
+        "gnomad": PlannedSourceIntent(
+            source_key="gnomad",
+            gene_symbol="MED13",
+            evidence_role="population genetics",
+            reason="Fetch gnomAD constraint.",
+        ),
         "uniprot": PlannedSourceIntent(
             source_key="uniprot",
             gene_symbol="MED13",
@@ -205,6 +211,15 @@ def _record(source_key: str) -> JSONObject:
             "model_url": "https://alphafold.example/P38398.cif",
             "pdb_url": "https://alphafold.example/P38398.pdb",
             "domains": [{"name": "BRCT"}],
+        },
+        "gnomad": {
+            "record_type": "variant_frequency",
+            "variant_id": "17-5982158-C-T",
+            "gene_symbol": "MED13",
+            "dataset": "gnomad_r4",
+            "reference_genome": "GRCh38",
+            "genome": {"ac": 1, "an": 152332, "af": 0.00000656},
+            "major_consequence": "missense_variant",
         },
         "uniprot": {
             "uniprot_id": "Q9UHV7",
