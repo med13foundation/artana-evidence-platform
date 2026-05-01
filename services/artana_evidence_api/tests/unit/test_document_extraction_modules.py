@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 from artana_evidence_api.document_context_summary import summarize_document_context
+from artana_evidence_api.document_extraction import extract_relation_candidates
 from artana_evidence_api.document_extraction_contracts import (
     DocumentCandidateExtractionDiagnostics,
     DocumentProposalReviewDiagnostics,
@@ -29,8 +30,10 @@ from artana_evidence_api.document_extraction_drafts import (
 )
 from artana_evidence_api.document_extraction_entities import (
     build_unresolved_entity_id,
+    canonical_entity_label_rejection_reason,
     clean_candidate_label,
     clean_llm_entity_label,
+    is_canonical_entity_label,
     require_match_display_label,
     require_match_id,
     resolve_exact_entity_label,
@@ -214,6 +217,9 @@ def test_entity_helpers_clean_split_and_resolve_labels() -> None:
 
     assert clean_candidate_label("mutation in MED13 in patients") == "MED13"
     assert clean_llm_entity_label("Inherited pathogenic variants in BRCA1") == "BRCA1"
+    assert clean_llm_entity_label("were") == ""
+    assert clean_llm_entity_label("Some features are common between conditions") == ""
+    assert clean_llm_entity_label("and MED13L are now all") == "MED13L"
     assert build_unresolved_entity_id("MED13 gene") == "unresolved:med13_gene"
     assert split_compound_entity_label(
         space_id=space_id,
@@ -228,6 +234,57 @@ def test_entity_helpers_clean_split_and_resolve_labels() -> None:
     assert resolved is not None
     assert require_match_display_label(resolved) == "EGFR"
     assert require_match_id(resolved) != ""
+
+
+@pytest.mark.parametrize(
+    "label",
+    [
+        "BRCA1",
+        "cisplatin",
+        "EGFR T790M",
+        "triple-negative breast cancer",
+        "DNA damage repair",
+        "PD-L1",
+        "5-FU",
+        "1q21",
+        "Cancer associated fibroblasts",
+        "BRCA1 regulated genes",
+        "T cell effector activity",
+        "dilated cardiomyopathy",
+    ],
+)
+def test_canonical_entity_label_filter_accepts_entity_like_labels(label: str) -> None:
+    assert is_canonical_entity_label(label)
+
+
+@pytest.mark.parametrize(
+    ("label", "reason"),
+    [
+        ("were", "standalone_fragment_label"),
+        ("sometimes", "standalone_fragment_label"),
+        ("13L", "numeric_fragment_label"),
+        ("and MED13L are now all", "leading_fragment_token"),
+        ("Some features are common between the four conditions", "entity_label_too_long"),
+        ("how the Module", "leading_fragment_token"),
+        ("gene expression both positively", "sentence_fragment_modifier"),
+        ("Differentially expressed genes", "sentence_fragment_modifier"),
+    ],
+)
+def test_canonical_entity_label_filter_rejects_fragments(
+    label: str,
+    reason: str,
+) -> None:
+    assert canonical_entity_label_rejection_reason(label) == reason
+    assert not is_canonical_entity_label(label)
+
+
+def test_regex_extraction_drops_fragmentary_review_sentence_subjects() -> None:
+    candidates = extract_relation_candidates(
+        "MED12, MED13, CDK8, and MED13L are now all associated with "
+        "developmental disorders.",
+    )
+
+    assert candidates == []
 
 
 def test_review_helpers_apply_ranked_metadata_to_drafts() -> None:
@@ -297,6 +354,51 @@ def test_draft_builder_assembles_reviewed_proposals_from_candidates() -> None:
     assert drafts[0].payload["proposed_subject"] == "unresolved:med13"
     assert drafts[0].payload["proposed_object"] == "unresolved:egfr"
     assert drafts[0].metadata["proposal_review"]["goal_relevance"] == "direct"
+
+
+def test_draft_builder_skips_non_canonical_subject_labels() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="were",
+        relation_type="ASSOCIATED_WITH",
+        object_label="other congenital anomalies",
+        sentence="They were associated with other congenital anomalies.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=_document(),
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert drafts == ()
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "non_canonical_subject_label"
+    assert skipped[0]["label"] == "were"
+    assert skipped[0]["label_rejection_reason"] == "standalone_fragment_label"
+
+
+def test_draft_builder_skips_non_canonical_object_labels() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13",
+        relation_type="REGULATES",
+        object_label="gene expression both positively",
+        sentence="MED13 regulates gene expression both positively.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=_document(),
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert drafts == ()
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "non_canonical_object_label"
+    assert skipped[0]["label"] == "gene expression both positively"
 
 
 def test_draft_builder_uses_resolved_entities_and_splits_compound_objects() -> None:

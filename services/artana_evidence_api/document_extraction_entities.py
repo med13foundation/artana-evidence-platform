@@ -28,6 +28,8 @@ _TRAILING_CONTEXT_RE = re.compile(
     re.IGNORECASE,
 )
 _PARENTHETICAL_SUFFIX_RE = re.compile(r"\s*\([^)]*\)\s*$")
+_ENTITY_LABEL_TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9+./_-]*")
+_GENE_SYMBOL_RE = re.compile(r"\b([A-Z][A-Z0-9]{1,9}(?:[/-][A-Z0-9]+)?)\b")
 _MIN_COMPOUND_SEGMENT_TOKEN_COUNT = 2
 _MIN_EXACT_SPLIT_MATCH_COUNT = 2
 _SUBJECT_CONTEXT_MARKERS = (
@@ -59,6 +61,115 @@ _ENTITY_LABEL_PREFIXES = (
     "variants in ",
 )
 _MAX_ENTITY_LABEL_WORDS = 4
+_MAX_CANONICAL_ENTITY_LABEL_TOKENS = 6
+_MAX_NUMERIC_FRAGMENT_CHARS = 3
+_LEADING_FRAGMENT_TOKENS = frozenset(
+    {
+        "and",
+        "although",
+        "because",
+        "but",
+        "how",
+        "other",
+        "since",
+        "some",
+        "that",
+        "though",
+        "what",
+        "when",
+        "where",
+        "whether",
+        "which",
+        "while",
+        "who",
+        "whose",
+    },
+)
+_STANDALONE_FRAGMENT_TOKENS = frozenset(
+    {
+        "all",
+        "are",
+        "be",
+        "been",
+        "being",
+        "both",
+        "can",
+        "could",
+        "did",
+        "do",
+        "does",
+        "had",
+        "has",
+        "have",
+        "is",
+        "may",
+        "might",
+        "must",
+        "not",
+        "now",
+        "shall",
+        "should",
+        "sometimes",
+        "there",
+        "was",
+        "were",
+        "will",
+        "would",
+    },
+)
+_CLAUSE_VERB_TOKENS = frozenset(
+    {
+        "are",
+        "be",
+        "been",
+        "being",
+        "causes",
+        "could",
+        "demonstrated",
+        "demonstrates",
+        "did",
+        "does",
+        "found",
+        "had",
+        "has",
+        "have",
+        "indicated",
+        "indicates",
+        "is",
+        "may",
+        "might",
+        "observed",
+        "reported",
+        "reports",
+        "showed",
+        "shows",
+        "suggested",
+        "suggests",
+        "was",
+        "were",
+        "will",
+    },
+)
+_FRAGMENT_ADVERB_TOKENS = frozenset(
+    {
+        "all",
+        "both",
+        "differentially",
+        "negatively",
+        "now",
+        "positively",
+        "sometimes",
+    },
+)
+_GENERIC_CLASS_TOKENS = frozenset(
+    {
+        "features",
+        "genes",
+        "modules",
+        "proteins",
+    },
+)
+_GENE_SYMBOL_STOPWORDS = _LEADING_FRAGMENT_TOKENS | _STANDALONE_FRAGMENT_TOKENS
 
 
 def clean_llm_entity_label(raw: str) -> str:
@@ -66,11 +177,14 @@ def clean_llm_entity_label(raw: str) -> str:
 
     label = raw.strip().strip(".,;:\"'")
     words = label.split()
-    if len(words) <= _MAX_ENTITY_LABEL_WORDS:
+    if (
+        len(words) <= _MAX_ENTITY_LABEL_WORDS
+        and canonical_entity_label_rejection_reason(label) is None
+    ):
         return label
 
-    gene_match = re.search(r"\b([A-Z][A-Z0-9]{1,9}(?:[/-][A-Z0-9]+)?)\b", label)
-    if gene_match:
+    gene_match = _GENE_SYMBOL_RE.search(label)
+    if gene_match and gene_match.group(1).casefold() not in _GENE_SYMBOL_STOPWORDS:
         return gene_match.group(1)
 
     filler = {
@@ -104,9 +218,58 @@ def clean_llm_entity_label(raw: str) -> str:
         "its",
     }
     meaningful = [word for word in words if word.lower() not in filler]
-    if meaningful:
-        return " ".join(meaningful[:_MAX_ENTITY_LABEL_WORDS])
-    return " ".join(words[:_MAX_ENTITY_LABEL_WORDS])
+    cleaned = (
+        " ".join(meaningful[:_MAX_ENTITY_LABEL_WORDS])
+        if meaningful
+        else " ".join(words[:_MAX_ENTITY_LABEL_WORDS])
+    )
+    if canonical_entity_label_rejection_reason(cleaned) is not None:
+        return ""
+    return cleaned
+
+
+def is_canonical_entity_label(label: str) -> bool:
+    """Return whether a label is shaped like one canonical entity name."""
+
+    return canonical_entity_label_rejection_reason(label) is None
+
+
+def canonical_entity_label_rejection_reason(label: str) -> str | None:
+    """Return why one extracted entity label is too fragmentary to stage."""
+
+    raw_label = label.strip()
+    normalized_label = " ".join(raw_label.strip(".,;:\"'").split())
+    tokens = tuple(
+        token.casefold() for token in _ENTITY_LABEL_TOKEN_RE.findall(normalized_label)
+    )
+    reason: str | None = None
+    if normalized_label == "":
+        reason = "empty_entity_label"
+    elif any(character in raw_label for character in "\n\r\t!?;"):
+        reason = "sentence_fragment_punctuation"
+    elif not tokens:
+        reason = "empty_entity_label"
+    elif len(tokens) > _MAX_CANONICAL_ENTITY_LABEL_TOKENS:
+        reason = "entity_label_too_long"
+    elif len(tokens) == 1 and tokens[0] in _STANDALONE_FRAGMENT_TOKENS:
+        reason = "standalone_fragment_label"
+    elif (
+        len(tokens) == 1
+        and tokens[0][0].isdigit()
+        and len(tokens[0]) <= _MAX_NUMERIC_FRAGMENT_CHARS
+    ):
+        reason = "numeric_fragment_label"
+    elif tokens[0] in _LEADING_FRAGMENT_TOKENS:
+        reason = "leading_fragment_token"
+    elif any(token in _CLAUSE_VERB_TOKENS for token in tokens):
+        reason = "sentence_fragment_verb"
+    elif any(token in _FRAGMENT_ADVERB_TOKENS for token in tokens):
+        reason = "sentence_fragment_modifier"
+    elif tokens[-1] in _GENERIC_CLASS_TOKENS and _GENE_SYMBOL_RE.search(
+        normalized_label,
+    ) is None:
+        reason = "generic_entity_class_label"
+    return reason
 
 
 def clean_candidate_label(
@@ -352,8 +515,10 @@ def resolve_entity_label(
 
 __all__ = [
     "build_unresolved_entity_id",
+    "canonical_entity_label_rejection_reason",
     "clean_candidate_label",
     "clean_llm_entity_label",
+    "is_canonical_entity_label",
     "require_match_display_label",
     "require_match_id",
     "resolve_entity_label",

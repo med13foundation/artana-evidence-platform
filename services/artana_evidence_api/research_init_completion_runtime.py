@@ -17,10 +17,6 @@ from artana_evidence_api.queued_run_support import store_primary_result_artifact
 from artana_evidence_api.research_bootstrap_runtime import (
     ResearchBootstrapExecutionResult,
 )
-from artana_evidence_api.research_init_brief_outcome import (
-    ResearchInitBriefLlmStatus,
-    ResearchInitBriefOutcome,
-)
 from artana_evidence_api.research_init_chase import (
     _enabled_chase_source_keys,
     _filtered_chase_reason_counts,
@@ -33,6 +29,8 @@ from artana_evidence_api.research_init_helpers import (
     _build_scope_refinement_questions,
 )
 from artana_evidence_api.research_init_models import (
+    ResearchInitBriefLlmStatus,
+    ResearchInitBriefOutcome,
     ResearchInitExecutionResult,
     ResearchInitProgressObserver,
     ResearchInitPubMedResultRecord,
