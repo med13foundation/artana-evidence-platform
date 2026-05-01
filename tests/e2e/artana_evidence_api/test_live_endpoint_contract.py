@@ -308,6 +308,16 @@ def _operation_set(spec: dict[str, object]) -> set[tuple[str, str]]:
     return operations
 
 
+def _direct_live_operation_set(spec: dict[str, object]) -> set[tuple[str, str]]:
+    """Return canonical operations this black-box live suite must hit directly."""
+
+    return {
+        operation
+        for operation in _operation_set(spec)
+        if operation[1] == "/health" or operation[1].startswith("/v1/")
+    }
+
+
 def _resolve_operation_path(
     spec: dict[str, object],
     actual_path: str,
@@ -912,7 +922,7 @@ def _exercise_chat(ctx: LiveContext, space_id: str) -> None:
     chat_message_response = ctx.request(
         "POST",
         f"/v1/spaces/{space_id}/chat-sessions/{ctx.created_ids['session_id']}/messages",
-        acceptable_statuses={chat_message_success_status, 409},
+        acceptable_statuses={chat_message_success_status, 202, 409},
         headers=ctx.auth_headers(),
         json_body={
             "content": "Summarize the MED13 evidence in the uploaded note.",
@@ -923,7 +933,7 @@ def _exercise_chat(ctx: LiveContext, space_id: str) -> None:
         },
         allow_blocked=True,
     )
-    if chat_message_response.status_code == chat_message_success_status:
+    if chat_message_response.status_code in {chat_message_success_status, 202}:
         chat_message_payload = _as_dict(chat_message_response.json())
         run_payload = _as_dict(chat_message_payload["run"])
         ctx.created_ids["chat_run_id"] = str(run_payload["id"])
@@ -1265,7 +1275,9 @@ def _exercise_graph_explorer(ctx: LiveContext, space_id: str) -> None:
     claims_payload = _as_dict(claims_response.json())
     claims = _as_list(claims_payload.get("claims", []))
     known_claim_id = (
-        str(_as_dict(claims[0])["id"]) if claims and "id" in _as_dict(claims[0]) else str(uuid4())
+        str(_as_dict(claims[0])["id"])
+        if claims and "id" in _as_dict(claims[0])
+        else str(uuid4())
     )
     entities_response = ctx.request(
         "GET",
@@ -1330,7 +1342,9 @@ def _exercise_research_init_and_state(ctx: LiveContext, space_id: str) -> None:
         "POST",
         f"/v1/spaces/{space_id}/research-init",
         acceptable_statuses={
-            _expected_success_status(spec, "/v1/spaces/{space_id}/research-init", "post"),
+            _expected_success_status(
+                spec, "/v1/spaces/{space_id}/research-init", "post"
+            ),
             202,
         },
         headers=ctx.auth_headers(),
@@ -1409,7 +1423,9 @@ def _exercise_marrvel(ctx: LiveContext, space_id: str) -> None:
         "POST",
         f"/v1/spaces/{space_id}/marrvel/ingest",
         acceptable_statuses={
-            _expected_success_status(spec, "/v1/spaces/{space_id}/marrvel/ingest", "post"),
+            _expected_success_status(
+                spec, "/v1/spaces/{space_id}/marrvel/ingest", "post"
+            ),
             422,
         },
         headers=ctx.auth_headers(),
@@ -1421,6 +1437,11 @@ def _exercise_marrvel(ctx: LiveContext, space_id: str) -> None:
 
 def _exercise_typed_runs(ctx: LiveContext, space_id: str) -> None:
     spec = ctx.spec
+    evidence_selection_candidate = {
+        "source_key": "pubmed",
+        "search_id": str(uuid4()),
+        "max_records": 1,
+    }
     typed_run_requests: list[tuple[str, dict[str, object], bool]] = [
         (
             "/v1/spaces/{space_id}/agents/continuous-learning/runs",
@@ -1433,6 +1454,17 @@ def _exercise_typed_runs(ctx: LiveContext, space_id: str) -> None:
         (
             "/v1/spaces/{space_id}/agents/graph-connections/runs",
             {"seed_entity_ids": [LIVE_SEED_ENTITY_ID]},
+            True,
+        ),
+        (
+            "/v1/spaces/{space_id}/agents/evidence-selection/runs",
+            {
+                "goal": "Select MED13 evidence from a saved source-search candidate.",
+                "instructions": "Use deterministic screening for live contract coverage.",
+                "planner_mode": "deterministic",
+                "candidate_searches": [evidence_selection_candidate],
+                "max_records_per_search": 1,
+            },
             True,
         ),
         (
@@ -1516,6 +1548,7 @@ def _exercise_typed_runs(ctx: LiveContext, space_id: str) -> None:
             allow_blocked=allow_blocked,
             timeout=90.0 if "research-onboarding" in path_template else None,
         )
+        typed_run_id: object = None
         if (
             response.status_code < 500
             and path_template
@@ -1523,6 +1556,10 @@ def _exercise_typed_runs(ctx: LiveContext, space_id: str) -> None:
         ):
             typed_payload = _as_dict(response.json())
             typed_run_id = typed_payload.get("id")
+            if not isinstance(typed_run_id, str):
+                raw_run = typed_payload.get("run")
+                if isinstance(raw_run, dict):
+                    typed_run_id = raw_run.get("id")
             if isinstance(typed_run_id, str):
                 ctx.request(
                     "GET",
@@ -1530,6 +1567,26 @@ def _exercise_typed_runs(ctx: LiveContext, space_id: str) -> None:
                     acceptable_statuses={200, 404},
                     headers=ctx.auth_headers(),
                 )
+        if path_template == "/v1/spaces/{space_id}/agents/evidence-selection/runs":
+            parent_run_id = (
+                typed_run_id if isinstance(typed_run_id, str) else str(uuid4())
+            )
+            ctx.request(
+                "POST",
+                (
+                    f"/v1/spaces/{space_id}/agents/evidence-selection/runs/"
+                    f"{parent_run_id}/follow-ups"
+                ),
+                acceptable_statuses={201, 202, 404, 409},
+                headers={**ctx.auth_headers(), "Prefer": "respond-async"},
+                json_body={
+                    "instructions": "Refine the deterministic live evidence slice.",
+                    "planner_mode": "deterministic",
+                    "candidate_searches": [evidence_selection_candidate],
+                    "max_records_per_search": 1,
+                },
+                allow_blocked=True,
+            )
 
 
 def _exercise_schedules(ctx: LiveContext, space_id: str) -> None:
@@ -1724,10 +1781,20 @@ def _exercise_supervisor(ctx: LiveContext, space_id: str) -> None:
 
 
 def _assert_all_operations_seen(ctx: LiveContext) -> None:
-    missing = sorted(_operation_set(ctx.spec) - ctx.seen_operations)
+    missing = sorted(_direct_live_operation_set(ctx.spec) - ctx.seen_operations)
     if missing:
         missing_text = ", ".join(f"{method.upper()} {path}" for method, path in missing)
         raise AssertionError(f"Live suite missed operations: {missing_text}")
+
+
+def _redacted_created_ids(created_ids: dict[str, str]) -> dict[str, str]:
+    """Return created ids with generated credential values removed."""
+
+    sensitive_keys = {"api_key", "secondary_api_key"}
+    return {
+        key: "<redacted>" if key in sensitive_keys else value
+        for key, value in created_ids.items()
+    }
 
 
 def _write_live_report(ctx: LiveContext, base_url: str) -> None:
@@ -1736,7 +1803,7 @@ def _write_live_report(ctx: LiveContext, base_url: str) -> None:
     report_path = report_dir / "artana_evidence_api_live_contract_report.json"
     report_payload = {
         "base_url": base_url,
-        "created_ids": ctx.created_ids,
+        "created_ids": _redacted_created_ids(ctx.created_ids),
         "summary": {
             "passed": sum(result.outcome == "passed" for result in ctx.results),
             "failed": sum(result.outcome == "failed" for result in ctx.results),
@@ -1792,5 +1859,7 @@ def test_live_artana_evidence_api_endpoint_contract() -> None:
         "failed": len(failed),
     }
     _emit_progress(f"live endpoint summary: {json.dumps(summary, indent=2)}")
-    _emit_progress(f"created ids: {json.dumps(ctx.created_ids, indent=2)}")
+    _emit_progress(
+        f"created ids: {json.dumps(_redacted_created_ids(ctx.created_ids), indent=2)}",
+    )
     assert not failed, json.dumps([asdict(result) for result in failed], indent=2)

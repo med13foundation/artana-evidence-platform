@@ -11,6 +11,7 @@ import pytest
 from artana_evidence_api.artifact_store import HarnessArtifactStore
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.proposal_store import HarnessProposalDraft
+from artana_evidence_api.research_init.source_caps import ResearchInitSourceCaps
 from artana_evidence_api.research_init_source_enrichment import (
     _create_alphafold_proposals,
     _create_clinvar_proposals,
@@ -438,6 +439,45 @@ class TestRunClinVarEnrichment:
         assert doc.source_type == "clinvar"
         assert "BRCA1" in doc.title
         assert doc.text_content != ""
+
+    def test_uses_source_caps_for_terms_and_results(
+        self,
+        space_id: UUID,
+        document_store: HarnessDocumentStore,
+        run_registry: HarnessRunRegistry,
+        artifact_store: HarnessArtifactStore,
+        parent_run: object,
+    ) -> None:
+        mock_gateway = MagicMock()
+        mock_gateway.fetch_records = AsyncMock(return_value=[])
+
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_clinvar_gateway",
+            return_value=mock_gateway,
+        ):
+            result = asyncio.run(
+                run_clinvar_enrichment(
+                    space_id=space_id,
+                    seed_terms=["BRCA1", "TP53", "MECP2"],
+                    document_store=document_store,
+                    run_registry=run_registry,
+                    artifact_store=artifact_store,
+                    parent_run=parent_run,
+                    source_caps=ResearchInitSourceCaps(
+                        max_terms_per_source=2,
+                        clinvar_max_results=7,
+                    ),
+                ),
+            )
+
+        assert result.records_processed == 0
+        assert mock_gateway.fetch_records.await_count == 2
+        configs = [
+            call.kwargs["config"]
+            for call in mock_gateway.fetch_records.await_args_list
+        ]
+        assert [config.gene_symbol for config in configs] == ["BRCA1", "TP53"]
+        assert [config.max_results for config in configs] == [7, 7]
 
     def test_handles_gateway_import_error(
         self,
@@ -1620,6 +1660,45 @@ class TestAsyncStructuredEnrichmentGateways:
         gateway.fetch_records_async.assert_awaited()
         assert result.records_processed == 1
         assert len(result.documents_created) == 1
+
+    @pytest.mark.asyncio
+    async def test_clinical_trials_uses_source_caps_for_terms_and_results(
+        self,
+        space_id: UUID,
+        document_store: HarnessDocumentStore,
+        run_registry: HarnessRunRegistry,
+        artifact_store: HarnessArtifactStore,
+        parent_run: object,
+    ) -> None:
+        gateway = MagicMock()
+        gateway.fetch_records_async = AsyncMock(return_value=MagicMock(records=[]))
+
+        with patch(
+            "artana_evidence_api.research_init_source_enrichment.build_clinicaltrials_gateway",
+            return_value=gateway,
+        ):
+            result = await run_clinicaltrials_enrichment(
+                space_id=space_id,
+                seed_terms=["BRCA1", "TP53", "MECP2"],
+                document_store=document_store,
+                run_registry=run_registry,
+                artifact_store=artifact_store,
+                parent_run=parent_run,
+                source_caps=ResearchInitSourceCaps(
+                    max_terms_per_source=2,
+                    clinical_trials_max_results=11,
+                ),
+            )
+
+        assert result.records_processed == 0
+        assert gateway.fetch_records_async.await_count == 2
+        assert [
+            call.kwargs["query"] for call in gateway.fetch_records_async.await_args_list
+        ] == ["BRCA1", "TP53"]
+        assert [
+            call.kwargs["max_results"]
+            for call in gateway.fetch_records_async.await_args_list
+        ] == [11, 11]
 
     @pytest.mark.asyncio
     async def test_mgi_uses_async_gateway_fetch(

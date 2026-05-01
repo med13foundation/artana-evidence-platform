@@ -3410,6 +3410,17 @@
             ],
             "title": "Seed Terms"
           },
+          "source_caps": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchInitSourceCapsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional bounded per-run source caps for the research-init phase."
+          },
           "sources": {
             "anyOf": [
               {
@@ -9938,6 +9949,17 @@
             "title": "Seed Terms",
             "type": "array"
           },
+          "source_caps": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchInitSourceCapsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional bounded per-run source caps. Omitted values keep the backward-compatible research-init defaults."
+          },
           "sources": {
             "anyOf": [
               {
@@ -10040,6 +10062,144 @@
           "errors"
         ],
         "title": "ResearchInitResponse",
+        "type": "object"
+      },
+      "ResearchInitSourceCapsRequest": {
+        "additionalProperties": false,
+        "description": "Optional bounded request overrides for research-init source caps.",
+        "properties": {
+          "alphafold_max_results": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alphafold Max Results"
+          },
+          "clinical_trials_max_results": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Trials Max Results"
+          },
+          "clinvar_max_results": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinvar Max Results"
+          },
+          "drugbank_max_results": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugbank Max Results"
+          },
+          "max_terms_per_source": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Terms Per Source"
+          },
+          "mgi_max_results": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mgi Max Results"
+          },
+          "pubmed_max_previews_per_query": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pubmed Max Previews Per Query"
+          },
+          "pubmed_max_results_per_query": {
+            "anyOf": [
+              {
+                "maximum": 200.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pubmed Max Results Per Query"
+          },
+          "uniprot_resolution_max_results": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uniprot Resolution Max Results"
+          },
+          "zfin_max_results": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zfin Max Results"
+          }
+        },
+        "title": "ResearchInitSourceCapsRequest",
         "type": "object"
       },
       "ResearchOnboardingContinuationRequestModel": {

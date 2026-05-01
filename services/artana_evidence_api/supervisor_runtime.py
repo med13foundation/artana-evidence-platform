@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID  # noqa: TC003
 
@@ -869,28 +870,8 @@ async def execute_supervisor_run(  # noqa: C901, PLR0912, PLR0913, PLR0915
         artifact_store=artifact_store,
     )
     if curation_execution is not None:
-        paused_run = run_registry.set_run_status(
-            space_id=space_id,
-            run_id=run.id,
-            status="paused",
-        )
-        paused_progress = run_registry.set_progress(
-            space_id=space_id,
-            run_id=run.id,
-            phase="approval",
-            message="Supervisor workflow paused pending child curation approval.",
-            progress_percent=_progress_percent(
-                completed_steps=completed_steps,
-                total_steps=total_steps,
-            ),
-            completed_steps=completed_steps,
-            total_steps=total_steps,
-            resume_point=_SUPERVISOR_RESUME_POINT,
-            metadata={
-                "curation_run_id": curation_execution.run.id,
-                "pending_approvals": curation_execution.pending_approval_count,
-            },
-        )
+        paused_at = datetime.now(UTC)
+        final_run = replace(run, status="paused", updated_at=paused_at)
         artifact_store.patch_workspace(
             space_id=space_id,
             run_id=run.id,
@@ -906,22 +887,6 @@ async def execute_supervisor_run(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 "skipped_steps": skipped_steps,
             },
         )
-        run_registry.record_event(
-            space_id=space_id,
-            run_id=run.id,
-            event_type="supervisor.paused",
-            message="Supervisor workflow paused at the child curation approval gate.",
-            payload={
-                "curation_run_id": curation_execution.run.id,
-                "pending_approvals": curation_execution.pending_approval_count,
-            },
-            progress_percent=(
-                paused_progress.progress_percent
-                if paused_progress is not None
-                else None
-            ),
-        )
-        final_run = paused_run or run
         store_primary_result_artifact(
             artifact_store=artifact_store,
             space_id=space_id,
@@ -948,6 +913,43 @@ async def execute_supervisor_run(  # noqa: C901, PLR0912, PLR0913, PLR0915
             status_value="paused",
             result_keys=("supervisor_summary", "child_run_links"),
         )
+        run_registry.set_run_status(
+            space_id=space_id,
+            run_id=run.id,
+            status="paused",
+        )
+        paused_progress = run_registry.set_progress(
+            space_id=space_id,
+            run_id=run.id,
+            phase="approval",
+            message="Supervisor workflow paused pending child curation approval.",
+            progress_percent=_progress_percent(
+                completed_steps=completed_steps,
+                total_steps=total_steps,
+            ),
+            completed_steps=completed_steps,
+            total_steps=total_steps,
+            resume_point=_SUPERVISOR_RESUME_POINT,
+            metadata={
+                "curation_run_id": curation_execution.run.id,
+                "pending_approvals": curation_execution.pending_approval_count,
+            },
+        )
+        run_registry.record_event(
+            space_id=space_id,
+            run_id=run.id,
+            event_type="supervisor.paused",
+            message="Supervisor workflow paused at the child curation approval gate.",
+            payload={
+                "curation_run_id": curation_execution.run.id,
+                "pending_approvals": curation_execution.pending_approval_count,
+            },
+            progress_percent=(
+                paused_progress.progress_percent
+                if paused_progress is not None
+                else None
+            ),
+        )
         return SupervisorExecutionResult(
             run=final_run,
             bootstrap=bootstrap,
@@ -973,15 +975,9 @@ async def execute_supervisor_run(  # noqa: C901, PLR0912, PLR0913, PLR0915
             "skipped_steps": skipped_steps,
         },
     )
-    completed_run = run_registry.set_run_status(
-        space_id=space_id,
-        run_id=run.id,
-        status="completed",
-    )
-    final_run = completed_run or run
-    summary_content["completed_at"] = (
-        completed_run.updated_at.isoformat() if completed_run is not None else None
-    )
+    completed_at = datetime.now(UTC)
+    final_run = replace(run, status="completed", updated_at=completed_at)
+    summary_content["completed_at"] = completed_at.isoformat()
     artifact_store.put_artifact(
         space_id=space_id,
         run_id=run.id,
@@ -1014,6 +1010,11 @@ async def execute_supervisor_run(  # noqa: C901, PLR0912, PLR0913, PLR0915
         ),
         status_value="completed",
         result_keys=("supervisor_summary", "child_run_links"),
+    )
+    run_registry.set_run_status(
+        space_id=space_id,
+        run_id=run.id,
+        status="completed",
     )
     run_registry.set_progress(
         space_id=space_id,

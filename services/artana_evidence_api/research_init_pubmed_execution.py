@@ -10,7 +10,6 @@ from uuid import UUID
 from artana_evidence_api.request_context import build_request_id_headers
 from artana_evidence_api.research_init_helpers import (
     _HTTP_OK,
-    _MAX_PREVIEWS_PER_QUERY,
     _candidate_key,
     _merge_candidate,
     _PubMedCandidate,
@@ -52,6 +51,8 @@ class PubMedQueryRunner(Protocol):
         *,
         query_params: Mapping[str, str | None],
         owner_id: UUID,
+        max_results_per_query: int,
+        max_previews_per_query: int,
     ) -> Awaitable[_PubMedQueryExecutionResult]: ...
 
 
@@ -106,6 +107,8 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
     *,
     query_params: Mapping[str, str | None],
     owner_id: UUID,
+    max_results_per_query: int,
+    max_previews_per_query: int,
 ) -> _PubMedQueryExecutionResult:
     """Execute one PubMed query family and return discovered candidates."""
     from artana_evidence_api.pubmed_discovery import (
@@ -122,7 +125,7 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
         params = AdvancedQueryParameters(
             search_term=query_params.get("search_term"),
             gene_symbol=query_params.get("gene_symbol"),
-            max_results=10,
+            max_results=max_results_per_query,
         )
         search_request = RunPubmedSearchRequest(parameters=params)
         job = await pubmed_service.run_pubmed_search(
@@ -140,7 +143,7 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
 
         pmids = [
             pmid
-            for preview in previews[:_MAX_PREVIEWS_PER_QUERY]
+            for preview in previews[:max_previews_per_query]
             if isinstance((pmid := preview.get("pmid")), str) and pmid.strip() != ""
         ]
         abstracts_by_pmid: dict[str, str] = {}
@@ -210,7 +213,7 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
             except Exception as efetch_exc:  # noqa: BLE001
                 local_errors.append(f"efetch failed: {efetch_exc}")
 
-        for preview in previews[:_MAX_PREVIEWS_PER_QUERY]:
+        for preview in previews[:max_previews_per_query]:
             title_value = preview.get("title")
             title_text = title_value.strip() if isinstance(title_value, str) else ""
             if not title_text:
@@ -313,6 +316,8 @@ async def run_pubmed_query_executions(
     query_runner: PubMedQueryRunner,
     owner_id: UUID,
     concurrency_limit: int,
+    max_results_per_query: int,
+    max_previews_per_query: int,
 ) -> tuple[_PubMedQueryExecutionResult, ...]:
     queries = query_builder(objective, seed_terms)
     if not queries:
@@ -327,6 +332,8 @@ async def run_pubmed_query_executions(
             return await query_runner(
                 query_params=query_params,
                 owner_id=owner_id,
+                max_results_per_query=max_results_per_query,
+                max_previews_per_query=max_previews_per_query,
             )
 
     return tuple(

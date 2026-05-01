@@ -29,11 +29,13 @@ from artana_evidence_api.harness_runtime import (
     HarnessExecutionServices,
     MechanismDiscoveryHarness,
     ResearchBootstrapHarness,
+    ResearchInitHarness,
     ResearchSupervisorHarness,
     _HarnessServicesMixin,
 )
 from artana_evidence_api.proposal_store import HarnessProposalStore
 from artana_evidence_api.pubmed_discovery import PubMedDiscoveryService
+from artana_evidence_api.research_init.source_caps import ResearchInitSourceCaps
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.run_registry import HarnessRunRegistry
 from artana_evidence_api.schedule_store import HarnessScheduleStore
@@ -119,6 +121,7 @@ async def test_full_ai_orchestrator_harness_passes_guarded_planner_mode(
             "planner_mode": "guarded",
             "max_depth": 2,
             "max_hypotheses": 20,
+            "source_caps": {"max_terms_per_source": 2},
         },
         graph_service_status="ok",
         graph_service_version="test-graph",
@@ -151,6 +154,90 @@ async def test_full_ai_orchestrator_harness_passes_guarded_planner_mode(
     assert captured_kwargs["planner_mode"] is FullAIOrchestratorPlannerMode.GUARDED
     assert captured_kwargs["sources"] == {"pubmed": True, "clinvar": True}
     assert captured_kwargs["seed_terms"] == ["MED13"]
+    source_caps = captured_kwargs["source_caps"]
+    assert isinstance(source_caps, ResearchInitSourceCaps)
+    assert source_caps.max_terms_per_source == 2
+
+
+@pytest.mark.asyncio
+async def test_research_init_harness_rejects_invalid_persisted_source_caps(
+    services: HarnessExecutionServices,
+) -> None:
+    space_id = UUID("11111111-1111-1111-1111-111111111111")
+    run = services.run_registry.create_run(
+        space_id=space_id,
+        harness_id="research-init",
+        title="Research init run",
+        input_payload={
+            "objective": "Investigate MED13",
+            "seed_terms": ["MED13"],
+            "sources": {"pubmed": True},
+            "max_depth": 2,
+            "max_hypotheses": 20,
+            "source_caps": {"max_terms_per_source": 999},
+        },
+        graph_service_status="ok",
+        graph_service_version="test-graph",
+    )
+
+    harness = ResearchInitHarness(services=services)
+    with pytest.raises(
+        ValueError,
+        match="Invalid persisted source_caps payload for research-init",
+    ):
+        await harness.step(
+            context=HarnessContext(
+                run_id=run.id,
+                tenant=TenantContext(
+                    tenant_id=str(space_id),
+                    capabilities=frozenset(),
+                    budget_usd_limit=10.0,
+                ),
+                model="test-model",
+                run_created=False,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_full_ai_orchestrator_harness_rejects_non_object_persisted_source_caps(
+    services: HarnessExecutionServices,
+) -> None:
+    space_id = UUID("11111111-1111-1111-1111-111111111111")
+    run = services.run_registry.create_run(
+        space_id=space_id,
+        harness_id="full-ai-orchestrator",
+        title="Full AI orchestrator run",
+        input_payload={
+            "objective": "Investigate MED13",
+            "seed_terms": ["MED13"],
+            "sources": {"pubmed": True},
+            "planner_mode": "shadow",
+            "max_depth": 2,
+            "max_hypotheses": 20,
+            "source_caps": "not-an-object",
+        },
+        graph_service_status="ok",
+        graph_service_version="test-graph",
+    )
+
+    harness = FullAIOrchestratorHarness(services=services)
+    with pytest.raises(
+        ValueError,
+        match="Invalid persisted source_caps payload for full-ai-orchestrator",
+    ):
+        await harness.step(
+            context=HarnessContext(
+                run_id=run.id,
+                tenant=TenantContext(
+                    tenant_id=str(space_id),
+                    capabilities=frozenset(),
+                    budget_usd_limit=10.0,
+                ),
+                model="test-model",
+                run_created=False,
+            ),
+        )
 
 
 @pytest.mark.asyncio

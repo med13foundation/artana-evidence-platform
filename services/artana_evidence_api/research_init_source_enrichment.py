@@ -12,6 +12,10 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCaps,
+    default_source_caps,
+)
 from artana_evidence_api.research_init_literature_source_enrichment import (
     run_clinicaltrials_enrichment_impl,
     run_mgi_enrichment_impl,
@@ -22,7 +26,6 @@ from artana_evidence_api.research_init_marrvel_enrichment import (
     run_marrvel_enrichment_impl,
 )
 from artana_evidence_api.research_init_source_enrichment_common import (
-    _MAX_TERMS_PER_SOURCE,
     _UNREVIEWED_BOOTSTRAP_PROPOSAL_SCORE,
     SourceEnrichmentResult,
     _bootstrap_proposal_metadata,
@@ -66,8 +69,10 @@ async def run_clinvar_enrichment(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query ClinVar for variants related to seed gene symbols."""
+    effective_source_caps = source_caps or default_source_caps()
     gene_symbols = _extract_likely_gene_symbols(seed_terms)
     if not gene_symbols:
         return SourceEnrichmentResult(source_key="clinvar")
@@ -82,12 +87,12 @@ async def run_clinvar_enrichment(
     if gateway is None:
         all_errors.append("ClinVar gateway not available")
     else:
-        for gene_symbol in gene_symbols[:_MAX_TERMS_PER_SOURCE]:
+        for gene_symbol in gene_symbols[: effective_source_caps.max_terms_per_source]:
             try:
                 config = ClinVarQueryConfig(
                     query=f"{gene_symbol} pathogenic variant",
                     gene_symbol=gene_symbol,
-                    max_results=20,
+                    max_results=effective_source_caps.clinvar_max_results,
                 )
                 raw_records = await gateway.fetch_records(config=config)
                 records_processed += len(raw_records)
@@ -271,8 +276,10 @@ async def run_drugbank_enrichment(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query DrugBank for drug-target interactions related to seed terms."""
+    effective_source_caps = source_caps or default_source_caps()
     if not seed_terms:
         return SourceEnrichmentResult(source_key="drugbank")
 
@@ -284,7 +291,7 @@ async def run_drugbank_enrichment(
     if gateway is None:
         all_errors.append("DrugBank gateway not available")
     else:
-        for term in seed_terms[:_MAX_TERMS_PER_SOURCE]:
+        for term in seed_terms[: effective_source_caps.max_terms_per_source]:
             try:
                 # DrugBank gateway.fetch_records() uses asyncio.run() internally,
                 # which fails inside an already-running event loop (research-init).
@@ -294,7 +301,7 @@ async def run_drugbank_enrichment(
                 result = await asyncio.to_thread(
                     gateway.fetch_records,
                     drug_name=term,
-                    max_results=20,
+                    max_results=effective_source_caps.drugbank_max_results,
                 )
                 records_processed += result.fetched_records
                 if result.records:
@@ -342,7 +349,11 @@ _UNIPROT_ACCESSION_PATTERN = re.compile(
 )
 
 
-async def _resolve_gene_to_uniprot(gene_symbol: str) -> str | None:
+async def _resolve_gene_to_uniprot(
+    gene_symbol: str,
+    *,
+    source_caps: ResearchInitSourceCaps | None = None,
+) -> str | None:
     """Resolve a gene symbol to a UniProt accession ID.
 
     If *gene_symbol* already looks like a UniProt accession it is returned
@@ -352,6 +363,7 @@ async def _resolve_gene_to_uniprot(gene_symbol: str) -> str | None:
     """
     if _UNIPROT_ACCESSION_PATTERN.match(gene_symbol):
         return gene_symbol  # Already a UniProt ID
+    effective_source_caps = source_caps or default_source_caps()
 
     try:
         import asyncio
@@ -362,7 +374,7 @@ async def _resolve_gene_to_uniprot(gene_symbol: str) -> str | None:
         result = await asyncio.to_thread(
             gateway.fetch_records,
             query=gene_symbol,
-            max_results=1,
+            max_results=effective_source_caps.uniprot_resolution_max_results,
         )
         if result.records:
             rec = result.records[0]
@@ -389,8 +401,10 @@ async def run_alphafold_enrichment(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query AlphaFold for protein structure predictions by UniProt ID or gene symbol."""
+    effective_source_caps = source_caps or default_source_caps()
     # AlphaFold expects UniProt accession IDs. Gene symbols can sometimes work
     # as search queries but the primary key is UniProt ID.  Accept both.
     candidates = [t for t in seed_terms if t and t.strip()]
@@ -407,11 +421,14 @@ async def run_alphafold_enrichment(
     if gateway is None:
         all_errors.append("AlphaFold gateway not available")
     else:
-        for term in candidates[:_MAX_TERMS_PER_SOURCE]:
+        for term in candidates[: effective_source_caps.max_terms_per_source]:
             try:
                 # Resolve gene symbols to UniProt accession IDs –
                 # AlphaFold API requires UniProt IDs, not gene symbols.
-                uniprot_id = await _resolve_gene_to_uniprot(term)
+                uniprot_id = await _resolve_gene_to_uniprot(
+                    term,
+                    source_caps=effective_source_caps,
+                )
                 if uniprot_id is None:
                     logger.info(
                         "AlphaFold: no UniProt mapping for %s, skipping",
@@ -427,7 +444,7 @@ async def run_alphafold_enrichment(
                 result = await asyncio.to_thread(
                     gateway.fetch_records,
                     uniprot_id=uniprot_id,
-                    max_results=10,
+                    max_results=effective_source_caps.alphafold_max_results,
                 )
                 records_processed += result.fetched_records
                 if result.records:
@@ -747,6 +764,7 @@ async def run_marrvel_enrichment(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query MARRVEL for gene-centric data from seed terms."""
     return await run_marrvel_enrichment_impl(
@@ -756,6 +774,7 @@ async def run_marrvel_enrichment(
         run_registry=run_registry,
         artifact_store=artifact_store,
         parent_run=parent_run,
+        source_caps=source_caps,
         discovery_service_factory=build_marrvel_discovery_service,
     )
 
@@ -768,6 +787,7 @@ async def run_clinicaltrials_enrichment(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query ClinicalTrials.gov for registered trials matching seed terms."""
     return await run_clinicaltrials_enrichment_impl(
@@ -777,6 +797,7 @@ async def run_clinicaltrials_enrichment(
         run_registry=run_registry,
         artifact_store=artifact_store,
         parent_run=parent_run,
+        source_caps=source_caps,
         gateway_factory=build_clinicaltrials_gateway,
     )
 
@@ -789,6 +810,7 @@ async def run_mgi_enrichment(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query MGI for mouse model gene-phenotype evidence."""
     return await run_mgi_enrichment_impl(
@@ -798,6 +820,7 @@ async def run_mgi_enrichment(
         run_registry=run_registry,
         artifact_store=artifact_store,
         parent_run=parent_run,
+        source_caps=source_caps,
         gateway_factory=build_mgi_gateway,
     )
 
@@ -810,6 +833,7 @@ async def run_zfin_enrichment(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     parent_run: HarnessRunRecord,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> SourceEnrichmentResult:
     """Query ZFIN for zebrafish model gene-phenotype evidence."""
     return await run_zfin_enrichment_impl(
@@ -819,6 +843,7 @@ async def run_zfin_enrichment(
         run_registry=run_registry,
         artifact_store=artifact_store,
         parent_run=parent_run,
+        source_caps=source_caps,
         gateway_factory=build_zfin_gateway,
     )
 

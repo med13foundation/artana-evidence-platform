@@ -318,8 +318,6 @@ def _metadata_first_count(metadata: JSONObject, keys: tuple[str, ...]) -> int | 
     return None
 
 
-
-
 __all__ = [
     "SourceEnrichmentResult",
     "_MAX_TERMS_PER_SOURCE",

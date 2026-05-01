@@ -27,6 +27,11 @@ from artana_evidence_api.research_bootstrap_runtime import (
     execute_research_bootstrap_run,
     queue_research_bootstrap_run,
 )
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCaps,
+    default_source_caps,
+    source_caps_to_json,
+)
 from artana_evidence_api.research_init_chase import (
     _prepare_chase_round,
     _run_entity_chase_round,
@@ -184,8 +189,11 @@ def queue_research_init_run(  # noqa: PLR0913
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     execution_services: HarnessExecutionServices,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> HarnessRunRecord:
     """Create a queued research-init run without executing it inline."""
+    effective_source_caps = source_caps or default_source_caps()
+    source_caps_payload = source_caps_to_json(effective_source_caps)
     source_results = _build_source_results(sources=sources)
     run = run_registry.create_run(
         space_id=space_id,
@@ -197,6 +205,7 @@ def queue_research_init_run(  # noqa: PLR0913
             "sources": json_object_or_empty(sources),
             "max_depth": max_depth,
             "max_hypotheses": max_hypotheses,
+            "source_caps": source_caps_payload,
         },
         graph_service_status=graph_service_status,
         graph_service_version=graph_service_version,
@@ -215,6 +224,7 @@ def queue_research_init_run(  # noqa: PLR0913
             "objective": objective,
             "seed_terms": list(seed_terms),
             "sources": json_object_or_empty(sources),
+            "source_caps": source_caps_payload,
             "source_results": source_results,
             "documents_ingested": 0,
             "proposal_count": 0,
@@ -229,6 +239,7 @@ async def _run_pubmed_query_executions(
     *,
     objective: str,
     seed_terms: list[str],
+    source_caps: ResearchInitSourceCaps,
 ) -> tuple[_PubMedQueryExecutionResult, ...]:
     return await run_pubmed_query_executions(
         objective=objective,
@@ -237,6 +248,8 @@ async def _run_pubmed_query_executions(
         query_runner=_execute_pubmed_query,
         owner_id=_SYSTEM_OWNER_ID,
         concurrency_limit=_PUBMED_QUERY_CONCURRENCY_LIMIT,
+        max_results_per_query=source_caps.pubmed_max_results_per_query,
+        max_previews_per_query=source_caps.pubmed_max_previews_per_query,
     )
 
 
@@ -258,6 +271,7 @@ async def _run_structured_enrichment_source(
     source_results: dict[str, JSONObject],
     enrichment_documents: list[HarnessDocumentRecord],
     errors: list[str],
+    source_caps: ResearchInitSourceCaps,
     replay_source: ResearchInitStructuredEnrichmentReplaySource | None = None,
 ) -> int:
     """Compatibility wrapper for the structured-source execution seam."""
@@ -278,6 +292,7 @@ async def _run_structured_enrichment_source(
         source_results=source_results,
         enrichment_documents=enrichment_documents,
         errors=errors,
+        source_caps=source_caps,
         proposal_writer=_store_reviewed_enrichment_proposals,
         replay_source=replay_source,
     )
@@ -318,12 +333,15 @@ async def prepare_pubmed_replay_bundle(
     *,
     objective: str,
     seed_terms: list[str],
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> ResearchInitPubMedReplayBundle:
     """Capture the exact selected PubMed inputs for replay across runs."""
+    effective_source_caps = source_caps or default_source_caps()
 
     query_executions = await _run_pubmed_query_executions(
         objective=objective,
         seed_terms=seed_terms,
+        source_caps=effective_source_caps,
     )
     collected_candidates = _collect_pubmed_candidates(
         query_executions=query_executions,
@@ -358,8 +376,12 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
     structured_enrichment_replay_bundle: (
         ResearchInitStructuredEnrichmentReplayBundle | None
     ) = None,
+    source_caps: ResearchInitSourceCaps | None = None,
+    complete_run_status: bool = True,
 ) -> ResearchInitExecutionResult:
     """Execute one research-init run entirely through the worker path."""
+    effective_source_caps = source_caps or default_source_caps()
+    source_caps_payload = source_caps_to_json(effective_source_caps)
     effective_pubmed_replay_bundle = pubmed_replay_bundle
     if effective_pubmed_replay_bundle is None:
         effective_pubmed_replay_bundle = load_pubmed_replay_bundle_artifact(
@@ -458,7 +480,10 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             ),
             progress_percent=0.10,
             completed_steps=1,
-            metadata={"sources": json_object_or_empty(sources)},
+            metadata={
+                "sources": json_object_or_empty(sources),
+                "source_caps": source_caps_payload,
+            },
             progress_observer=progress_observer,
         )
 
@@ -485,6 +510,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 query_executions = await _run_pubmed_query_executions(
                     objective=objective,
                     seed_terms=seed_terms,
+                    source_caps=effective_source_caps,
                 )
                 collected_candidates = _collect_pubmed_candidates(
                     query_executions=query_executions,
@@ -531,6 +557,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                     }
                     for result in pubmed_results
                 ],
+                "source_caps": source_caps_payload,
                 "source_results": source_results,
             },
         )
@@ -678,6 +705,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             run_id=run.id,
             patch={
                 "documents_ingested": documents_ingested,
+                "source_caps": source_caps_payload,
                 "source_results": source_results,
             },
         )
@@ -960,6 +988,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                     source_results=source_results,
                     enrichment_documents=enrichment_documents,
                     errors=errors,
+                    source_caps=effective_source_caps,
                     replay_source=structured_enrichment_replay_source(
                         structured_enrichment_replay_bundle,
                         source_key,
@@ -995,6 +1024,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                 "driven_terms_count": len(driven_terms),
                 "driven_genes_from_pubmed": driven_genes_from_pubmed,
                 "seed_terms": list(seed_terms),
+                "source_caps": source_caps_payload,
                 "available_enrichment_sources": list(enrichment_sources),
                 "selected_enrichment_sources": list(selected_enrichment_sources),
                 "deferred_enrichment_sources": deferred_enrichment_sources,
@@ -1013,7 +1043,10 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             artifact_store.patch_workspace(
                 space_id=space_id,
                 run_id=run.id,
-                patch={"source_results": source_results},
+                patch={
+                    "source_caps": source_caps_payload,
+                    "source_results": source_results,
+                },
             )
             await maybe_verify_guarded_structured_enrichment(
                 services=services,
@@ -1087,6 +1120,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             research_state_serializer=_serialize_research_state,
             claim_curation_serializer=_serialize_claim_curation_summary,
             result_payload_builder=_research_init_result_payload,
+            complete_run_status=complete_run_status,
             progress_observer=progress_observer,
         )
     except Exception:

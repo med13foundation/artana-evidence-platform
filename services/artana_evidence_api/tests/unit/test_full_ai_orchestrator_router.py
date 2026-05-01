@@ -132,6 +132,18 @@ async def _execute_test_harness_run(
         space_id = kwargs["space_id"]
         existing_run = kwargs["existing_run"]
         artifact_store = kwargs["execution_services"].artifact_store
+        assert kwargs["complete_run_status"] is False
+        services.run_registry.set_run_status(
+            space_id=space_id,
+            run_id=existing_run.id,
+            status="running",
+        )
+        observed_run = services.run_registry.get_run(
+            space_id=space_id,
+            run_id=existing_run.id,
+        )
+        assert observed_run is not None
+        assert observed_run.status == "running"
         artifact_store.patch_workspace(
             space_id=space_id,
             run_id=existing_run.id,
@@ -168,13 +180,8 @@ async def _execute_test_harness_run(
                 "pending_questions": [],
             },
         )
-        updated_run = services.run_registry.set_run_status(
-            space_id=space_id,
-            run_id=existing_run.id,
-            status="completed",
-        )
         return ResearchInitExecutionResult(
-            run=existing_run if updated_run is None else updated_run,
+            run=existing_run,
             pubmed_results=(),
             documents_ingested=3,
             proposal_count=5,

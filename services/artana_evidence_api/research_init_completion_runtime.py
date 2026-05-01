@@ -217,6 +217,7 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
     research_state_serializer: Callable[..., JSONObject | None],
     claim_curation_serializer: Callable[..., JSONObject | None],
     result_payload_builder: Callable[..., JSONObject],
+    complete_run_status: bool = True,
     progress_observer: ResearchInitProgressObserver | None = None,
 ) -> ResearchInitExecutionResult:
     """Complete bootstrap, chase, result-artifact, and deferred-source phases."""
@@ -716,25 +717,28 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
             ],
         },
     )
-    updated_run = run_registry.set_run_status(
-        space_id=space_id,
-        run_id=run.id,
-        status="completed",
-    )
-    progress_reporter(
-        services=services,
-        space_id=space_id,
-        run_id=run.id,
-        phase="completed",
-        message="Research initialization completed.",
-        progress_percent=1.0,
-        completed_steps=_TOTAL_PROGRESS_STEPS,
-        metadata={
-            "documents_ingested": documents_ingested,
-            "proposal_count": final_proposal_count,
-        },
-        progress_observer=progress_observer,
-    )
+    updated_run = run
+    if complete_run_status:
+        updated_status_run = run_registry.set_run_status(
+            space_id=space_id,
+            run_id=run.id,
+            status="completed",
+        )
+        updated_run = run if updated_status_run is None else updated_status_run
+        progress_reporter(
+            services=services,
+            space_id=space_id,
+            run_id=run.id,
+            phase="completed",
+            message="Research initialization completed.",
+            progress_percent=1.0,
+            completed_steps=_TOTAL_PROGRESS_STEPS,
+            metadata={
+                "documents_ingested": documents_ingested,
+                "proposal_count": final_proposal_count,
+            },
+            progress_observer=progress_observer,
+        )
     if mondo_enabled:
         deferred_mondo_scheduler(
             services=services,
@@ -742,7 +746,7 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
             run_id=run.id,
         )
     return ResearchInitExecutionResult(
-        run=run if updated_run is None else updated_run,
+        run=updated_run,
         pubmed_results=tuple(pubmed_results),
         documents_ingested=documents_ingested,
         proposal_count=final_proposal_count,

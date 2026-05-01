@@ -54,6 +54,11 @@ from artana_evidence_api.full_ai_orchestrator_contracts import (
     FullAIOrchestratorGuardedRolloutProfile,
     FullAIOrchestratorPlannerMode,
 )
+from artana_evidence_api.research_init.source_caps import (
+    ResearchInitSourceCaps,
+    default_source_caps,
+    source_caps_to_json,
+)
 from artana_evidence_api.research_init_source_results import build_source_results
 from artana_evidence_api.transparency import (
     ensure_run_transparency_seed as _default_ensure_run_transparency_seed,
@@ -120,8 +125,11 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
         FullAIOrchestratorGuardedRolloutProfile | str | None
     ) = None,
     guarded_rollout_profile_source: str | None = None,
+    source_caps: ResearchInitSourceCaps | None = None,
 ) -> HarnessRunRecord:
     """Create a queued full AI orchestrator run without executing it inline."""
+    effective_source_caps = source_caps or default_source_caps()
+    source_caps_payload = source_caps_to_json(effective_source_caps)
     resolved_guarded_rollout_profile, resolved_guarded_rollout_profile_source = (
         resolve_guarded_rollout_profile(
             planner_mode=planner_mode,
@@ -144,6 +152,7 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
         max_hypotheses=max_hypotheses,
         workspace_snapshot={
             "source_results": source_results,
+            "source_caps": source_caps_payload,
             "current_round": 0,
             "documents_ingested": 0,
             "proposal_count": 0,
@@ -167,6 +176,7 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
             "guarded_chase_rollout_enabled": guarded_chase_rollout_enabled,
             "max_depth": max_depth,
             "max_hypotheses": max_hypotheses,
+            "source_caps": source_caps_payload,
         },
         graph_service_status=graph_service_status,
         graph_service_version=graph_service_version,
@@ -210,6 +220,7 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
             "guarded_chase_rollout_enabled": guarded_chase_rollout_enabled,
             "max_depth": max_depth,
             "max_hypotheses": max_hypotheses,
+            "source_caps": source_caps_payload,
         },
     )
     artifact_store.put_artifact(
@@ -278,6 +289,7 @@ def queue_full_ai_orchestrator_run(  # noqa: PLR0913
             "seed_terms": list(seed_terms),
             "enabled_sources": json_object_or_empty(sources),
             "sources": json_object_or_empty(sources),
+            "source_caps": source_caps_payload,
             "current_round": 0,
             "source_results": source_results,
             "documents_ingested": 0,
