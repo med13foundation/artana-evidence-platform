@@ -1081,6 +1081,50 @@ def _preflight_services(
     )
 
 
+class _StaticEntityQueryGateway:
+    def __init__(self, entities: tuple[KernelEntityResponse, ...]) -> None:
+        self._entities = entities
+
+    def list_entities(
+        self,
+        *,
+        space_id: UUID,
+        q: str | None = None,
+        entity_type: str | None = None,
+        ids: list[str] | None = None,
+        offset: int = 0,
+        limit: int = 5,
+    ) -> KernelEntityListResponse:
+        del q, entity_type, ids, offset, limit
+        return KernelEntityListResponse(
+            entities=list(self._entities),
+            total=len(self._entities),
+            offset=0,
+            limit=5,
+        )
+
+
+def _kernel_entity(
+    *,
+    space_id: UUID,
+    entity_id: UUID,
+    display_label: str,
+    entity_type: str = "GENE",
+    aliases: list[str] | None = None,
+) -> KernelEntityResponse:
+    now = datetime.now(UTC)
+    return KernelEntityResponse(
+        id=entity_id,
+        research_space_id=space_id,
+        entity_type=entity_type,
+        display_label=display_label,
+        aliases=aliases or [],
+        metadata={},
+        created_at=now,
+        updated_at=now,
+    )
+
+
 def _stub_kernel_relation_register_new(
     monkeypatch: pytest.MonkeyPatch,
     *,
@@ -1098,6 +1142,127 @@ def _stub_kernel_relation_register_new(
         "artana_evidence_api.graph_integration.preflight.resolve_relation_with_kernel",
         _resolver,
     )
+
+
+def test_preflight_entity_resolution_rejects_similar_gene_substring() -> None:
+    space_id = uuid4()
+    med13l_id = uuid4()
+    gateway = _StaticEntityQueryGateway(
+        (
+            _kernel_entity(
+                space_id=space_id,
+                entity_id=med13l_id,
+                display_label="MED13L",
+            ),
+        ),
+    )
+
+    resolved = GraphAIPreflightService().resolve_entity_label(
+        space_id=space_id,
+        label="MED13",
+        graph_transport=cast("GraphTransportBundle", gateway),
+    )
+
+    assert resolved is None
+
+
+def test_preflight_entity_resolution_rejects_first_result_fallback() -> None:
+    space_id = uuid4()
+    gateway = _StaticEntityQueryGateway(
+        (
+            _kernel_entity(
+                space_id=space_id,
+                entity_id=uuid4(),
+                display_label="TP53",
+            ),
+        ),
+    )
+
+    resolved = GraphAIPreflightService().resolve_entity_label(
+        space_id=space_id,
+        label="AKT1",
+        graph_transport=cast("GraphTransportBundle", gateway),
+    )
+
+    assert resolved is None
+
+
+def test_preflight_entity_resolution_keeps_exact_alias_resolution() -> None:
+    space_id = uuid4()
+    egfr_id = uuid4()
+    gateway = _StaticEntityQueryGateway(
+        (
+            _kernel_entity(
+                space_id=space_id,
+                entity_id=egfr_id,
+                display_label="EGFR",
+                aliases=["ErbB1"],
+            ),
+        ),
+    )
+
+    resolved = GraphAIPreflightService().resolve_entity_label(
+        space_id=space_id,
+        label="ErbB1",
+        graph_transport=cast("GraphTransportBundle", gateway),
+    )
+
+    assert resolved == {
+        "id": str(egfr_id),
+        "display_label": "EGFR",
+    }
+
+
+@pytest.mark.asyncio
+async def test_preflight_ai_resolution_runs_after_negative_deterministic_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    space_id = uuid4()
+    med13_id = uuid4()
+    gateway = _StaticEntityQueryGateway(
+        (
+            _kernel_entity(
+                space_id=space_id,
+                entity_id=uuid4(),
+                display_label="MED13L",
+            ),
+        ),
+    )
+    preflight_service = GraphAIPreflightService()
+
+    deterministic = preflight_service.resolve_entity_label(
+        space_id=space_id,
+        label="MED13",
+        graph_transport=cast("GraphTransportBundle", gateway),
+    )
+    assert deterministic is None
+
+    seen_labels: list[str] = []
+
+    async def _kernel_resolver(*, space_id, label, graph_api_gateway, space_context):
+        del space_id, graph_api_gateway, space_context
+        seen_labels.append(label)
+        return {
+            "id": str(med13_id),
+            "display_label": "MED13",
+        }
+
+    monkeypatch.setattr(
+        "artana_evidence_api.graph_integration.preflight.resolve_entity_with_kernel",
+        _kernel_resolver,
+    )
+
+    resolved = await preflight_service.resolve_entity_label_with_ai(
+        space_id=space_id,
+        label="MED13",
+        graph_transport=cast("GraphTransportBundle", gateway),
+    )
+
+    assert seen_labels == ["MED13"]
+    assert resolved == {
+        "id": str(med13_id),
+        "display_label": "MED13",
+    }
 
 
 def test_gateway_default_call_context_is_not_admin(

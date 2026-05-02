@@ -322,39 +322,12 @@ class GraphAIPreflightService:
                     value=exact_resolved,
                 )
                 return exact_resolved
-        for entity in response.entities:
-            display_label = entity.display_label or ""
-            if normalized_label in display_label.casefold() or any(
-                normalized_label in alias.casefold() for alias in entity.aliases
-            ):
-                partial_resolved: JSONObject = {
-                    "id": str(entity.id),
-                    "display_label": display_label or str(entity.id),
-                }
-                self._resolution_cache.set_entity(
-                    space_id=space_id,
-                    label=label,
-                    value=partial_resolved,
-                )
-                return partial_resolved
-        if not response.entities:
-            self._resolution_cache.set_entity(
-                space_id=space_id,
-                label=label,
-                value=None,
-            )
-            return None
-        first_entity = response.entities[0]
-        fallback_resolved: JSONObject = {
-            "id": str(first_entity.id),
-            "display_label": first_entity.display_label or str(first_entity.id),
-        }
         self._resolution_cache.set_entity(
             space_id=space_id,
             label=label,
-            value=fallback_resolved,
+            value=None,
         )
-        return fallback_resolved
+        return None
 
     async def resolve_entity_label_with_ai(
         self,

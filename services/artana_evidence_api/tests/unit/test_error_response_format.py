@@ -119,6 +119,7 @@ def test_dict_detail_extracts_message() -> None:
     body = resp.json()
     assert isinstance(body["detail"], str)
     assert body["detail"] == "something went wrong"
+    assert "code" not in body
 
 
 def test_dict_detail_without_message_key_stringifies() -> None:
