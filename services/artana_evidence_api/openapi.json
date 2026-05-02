@@ -719,7 +719,8 @@
               "viewer",
               "researcher",
               "curator",
-              "admin"
+              "admin",
+              "owner"
             ],
             "title": "Role",
             "type": "string"

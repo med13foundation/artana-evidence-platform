@@ -147,7 +147,7 @@ class BootstrapApiKeyRequest(BaseModel):
     email: EmailStr
     username: str | None = Field(default=None, min_length=1, max_length=50)
     full_name: str | None = Field(default=None, min_length=1, max_length=100)
-    role: Literal["viewer", "researcher", "curator", "admin"] = "researcher"
+    role: Literal["viewer", "researcher", "curator", "admin", "owner"] = "researcher"
     api_key_name: str = Field(default="Default SDK Key", min_length=1, max_length=100)
     api_key_description: str = Field(default="", max_length=500)
     create_default_space: bool = True

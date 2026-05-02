@@ -273,6 +273,10 @@ def _graph_call_context_for_harness_user(current_user: HarnessUser) -> GraphCall
         role = "admin"
     elif current_user.role == HarnessUserRole.CURATOR:
         role = "curator"
+    elif current_user.role == HarnessUserRole.OWNER:
+        # Space-scoped flows enforce ACLs separately. Graph RLS has no owner
+        # role, so owner callers use the same downstream role as researchers.
+        role = "researcher"
     elif current_user.role == HarnessUserRole.VIEWER:
         role = "viewer"
     else:

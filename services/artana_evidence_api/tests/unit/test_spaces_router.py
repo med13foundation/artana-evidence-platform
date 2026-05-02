@@ -394,16 +394,17 @@ def test_delete_space_rejects_non_owners() -> None:
         description="Owned by another researcher.",
     )
 
-    response = client.delete(
-        f"/v1/spaces/{record.id}",
-        headers=_auth_headers(role="researcher"),
-    )
+    for role in ("researcher", "owner"):
+        response = client.delete(
+            f"/v1/spaces/{record.id}",
+            headers=_auth_headers(role=role),
+        )
 
-    assert response.status_code == 403
-    assert (
-        response.json()["detail"]
-        == "Only the space owner or an admin can delete this space"
-    )
+        assert response.status_code == 403
+        assert (
+            response.json()["detail"]
+            == "Only the space owner or an admin can delete this space"
+        )
 
 
 def test_delete_space_requires_confirmation_for_non_empty_spaces() -> None:
