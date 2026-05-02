@@ -203,6 +203,75 @@ _ALLOWED_PATH_RELATION_TYPES = frozenset(
 )
 
 
+def _normalize_ids(values: list[str]) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        candidate = str(value).strip()
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        normalized.append(candidate)
+    return normalized
+
+
+class KernelReasoningPathInvalidationService:
+    """Keep derived reasoning paths and mechanism candidates from going stale."""
+
+    def __init__(
+        self,
+        *,
+        reasoning_path_repo: ReasoningPathRepositoryLike,
+        read_model_update_dispatcher: GraphReadModelUpdateDispatcher,
+    ) -> None:
+        self._paths = reasoning_path_repo
+        self._read_model_updates = read_model_update_dispatcher
+
+    def invalidate_for_claim_ids(
+        self,
+        claim_ids: list[str],
+        research_space_id: str,
+    ) -> int:
+        normalized_claim_ids = _normalize_ids(claim_ids)
+        if not normalized_claim_ids:
+            return 0
+        stale_count = self._paths.mark_stale_for_claim_ids(
+            research_space_id=research_space_id,
+            claim_ids=normalized_claim_ids,
+        )
+        self._read_model_updates.dispatch(
+            GraphReadModelUpdate(
+                model_name="entity_mechanism_paths",
+                trigger=GraphReadModelTrigger.CLAIM_CHANGE,
+                claim_ids=tuple(normalized_claim_ids),
+                space_id=research_space_id,
+            ),
+        )
+        return stale_count
+
+    def invalidate_for_claim_relation_ids(
+        self,
+        relation_ids: list[str],
+        research_space_id: str,
+    ) -> int:
+        normalized_relation_ids = _normalize_ids(relation_ids)
+        if not normalized_relation_ids:
+            return 0
+        stale_count = self._paths.mark_stale_for_claim_relation_ids(
+            research_space_id=research_space_id,
+            relation_ids=normalized_relation_ids,
+        )
+        self._read_model_updates.dispatch(
+            GraphReadModelUpdate(
+                model_name="entity_mechanism_paths",
+                trigger=GraphReadModelTrigger.PROJECTION_CHANGE,
+                relation_ids=tuple(normalized_relation_ids),
+                space_id=research_space_id,
+            ),
+        )
+        return stale_count
+
+
 class KernelReasoningPathService:
     """Build and serve derived mechanism paths from grounded claim chains."""
 
@@ -216,6 +285,7 @@ class KernelReasoningPathService:
         claim_relation_service: ClaimRelationServiceLike,
         relation_service: RelationServiceLike,
         read_model_update_dispatcher: GraphReadModelUpdateDispatcher,
+        reasoning_path_invalidation_service: KernelReasoningPathInvalidationService,
         session: Session | None = None,
         space_registry_port: SpaceRegistryPort | None = None,
     ) -> None:
@@ -226,6 +296,7 @@ class KernelReasoningPathService:
         self._claim_relations = claim_relation_service
         self._relations = relation_service
         self._read_model_update_dispatcher = read_model_update_dispatcher
+        self._invalidation = reasoning_path_invalidation_service
         self._session = session
         self._space_registry = space_registry_port
 
@@ -501,42 +572,25 @@ class KernelReasoningPathService:
         claim_ids: list[str],
         research_space_id: str,
     ) -> int:
-        stale_count = self._paths.mark_stale_for_claim_ids(
-            research_space_id=research_space_id,
-            claim_ids=claim_ids,
+        return self._invalidation.invalidate_for_claim_ids(
+            claim_ids,
+            research_space_id,
         )
-        self._read_model_update_dispatcher.dispatch(
-            GraphReadModelUpdate(
-                model_name="entity_mechanism_paths",
-                trigger=GraphReadModelTrigger.CLAIM_CHANGE,
-                claim_ids=tuple(claim_ids),
-                space_id=research_space_id,
-            ),
-        )
-        return stale_count
 
     def mark_stale_for_claim_relation_ids(
         self,
         relation_ids: list[str],
         research_space_id: str,
     ) -> int:
-        stale_count = self._paths.mark_stale_for_claim_relation_ids(
-            research_space_id=research_space_id,
-            relation_ids=relation_ids,
+        return self._invalidation.invalidate_for_claim_relation_ids(
+            relation_ids,
+            research_space_id,
         )
-        self._read_model_update_dispatcher.dispatch(
-            GraphReadModelUpdate(
-                model_name="entity_mechanism_paths",
-                trigger=GraphReadModelTrigger.PROJECTION_CHANGE,
-                relation_ids=tuple(relation_ids),
-                space_id=research_space_id,
-            ),
-        )
-        return stale_count
 
 
 __all__ = [
     "KernelReasoningPathDetail",
+    "KernelReasoningPathInvalidationService",
     "KernelReasoningPathService",
     "ReasoningPathListResult",
     "ReasoningPathRebuildSummary",

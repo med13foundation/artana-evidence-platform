@@ -22,6 +22,16 @@ from artana_evidence_db.relation_claim_models import (
 CertaintyBand = Literal["HIGH", "MEDIUM", "LOW"]
 
 
+class ReasoningPathInvalidationServiceLike(Protocol):
+    """Minimal reasoning-path invalidation surface for claim mutations."""
+
+    def invalidate_for_claim_ids(
+        self,
+        claim_ids: list[str],
+        research_space_id: str,
+    ) -> int: ...
+
+
 class RelationClaimRepositoryLike(Protocol):
     """Minimal repository contract required for relation-claim workflows."""
 
@@ -144,9 +154,11 @@ class KernelRelationClaimService:
         relation_claim_repo: RelationClaimRepositoryLike,
         *,
         read_model_update_dispatcher: GraphReadModelUpdateDispatcher,
+        reasoning_path_invalidation_service: ReasoningPathInvalidationServiceLike,
     ) -> None:
         self._claims = relation_claim_repo
         self._read_model_updates = read_model_update_dispatcher
+        self._reasoning_path_invalidation = reasoning_path_invalidation_service
 
     def get_claim(self, claim_id: str) -> KernelRelationClaim | None:
         return self._claims.get_by_id(claim_id)
@@ -447,18 +459,24 @@ class KernelRelationClaimService:
         return claim
 
     def _dispatch_claim_change(self, claim: KernelRelationClaim) -> None:
+        claim_id = str(claim.id)
+        research_space_id = str(claim.research_space_id)
         self._read_model_updates.dispatch(
             GraphReadModelUpdate(
                 model_name="entity_claim_summary",
                 trigger=GraphReadModelTrigger.CLAIM_CHANGE,
-                claim_ids=(str(claim.id),),
+                claim_ids=(claim_id,),
                 relation_ids=(
                     (str(claim.linked_relation_id),)
                     if claim.linked_relation_id is not None
                     else ()
                 ),
-                space_id=str(claim.research_space_id),
+                space_id=research_space_id,
             ),
+        )
+        self._reasoning_path_invalidation.invalidate_for_claim_ids(
+            [claim_id],
+            research_space_id,
         )
 
     @staticmethod

@@ -104,8 +104,8 @@ class ProjectorBackedGraphReadModelUpdateDispatcher:
         projector = self.projectors.get(update.model_name)
         if projector is None:
             return 0
-        trigger_name = str(getattr(update.trigger, "value", update.trigger))
-        if trigger_name == "FULL_REBUILD":
+        trigger_value = str(getattr(update.trigger, "value", update.trigger))
+        if trigger_value == GraphReadModelTrigger.FULL_REBUILD.value:
             return projector.rebuild(space_id=update.space_id)
         return projector.apply_update(update)
 

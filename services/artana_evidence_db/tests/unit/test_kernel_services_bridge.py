@@ -65,6 +65,10 @@ def test_kernel_services_bridge_exports_lazy_loaded_symbols() -> None:
         == "artana_evidence_db.reasoning_path_service"
     )
     assert (
+        kernel_services.KernelReasoningPathInvalidationService.__module__
+        == "artana_evidence_db.reasoning_path_service"
+    )
+    assert (
         kernel_services.KernelRelationProjectionMaterializationService.__module__
         == "artana_evidence_db.relation_projection_materialization_service"
     )

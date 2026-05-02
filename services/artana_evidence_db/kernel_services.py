@@ -31,7 +31,10 @@ from artana_evidence_db.kernel_relation_suggestion_service import (
 )
 from artana_evidence_db.observation_service import KernelObservationService
 from artana_evidence_db.provenance_service import ProvenanceService
-from artana_evidence_db.reasoning_path_service import KernelReasoningPathService
+from artana_evidence_db.reasoning_path_service import (
+    KernelReasoningPathInvalidationService,
+    KernelReasoningPathService,
+)
 from artana_evidence_db.relation_claim_service import KernelRelationClaimService
 from artana_evidence_db.relation_projection_materialization_service import (
     KernelRelationProjectionMaterializationService,
@@ -55,6 +58,7 @@ __all__ = [
     "KernelGraphViewService",
     "KernelGraphViewValidationError",
     "KernelObservationService",
+    "KernelReasoningPathInvalidationService",
     "KernelReasoningPathService",
     "KernelRelationClaimService",
     "KernelRelationProjectionMaterializationService",

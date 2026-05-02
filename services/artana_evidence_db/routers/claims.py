@@ -39,7 +39,6 @@ from artana_evidence_db.dependencies import (
     get_kernel_claim_participant_service,
     get_kernel_claim_relation_service,
     get_kernel_entity_service,
-    get_kernel_reasoning_path_service,
     get_kernel_relation_claim_service,
     get_kernel_relation_projection_materialization_service,
     get_space_access_port,
@@ -54,7 +53,6 @@ from artana_evidence_db.kernel_services import (
     KernelClaimParticipantService,
     KernelClaimRelationService,
     KernelEntityService,
-    KernelReasoningPathService,
     KernelRelationClaimService,
     KernelRelationProjectionMaterializationService,
 )
@@ -670,9 +668,6 @@ def update_claim_status(  # noqa: PLR0915
     relation_projection_materialization_service: KernelRelationProjectionMaterializationService = Depends(
         get_kernel_relation_projection_materialization_service,
     ),
-    reasoning_path_service: KernelReasoningPathService = Depends(
-        get_kernel_reasoning_path_service,
-    ),
     session: Session = Depends(get_session),
 ) -> KernelRelationClaimResponse:
     require_space_role(
@@ -744,10 +739,6 @@ def update_claim_status(  # noqa: PLR0915
             updated = relation_claim_service.clear_claim_relation_link(
                 str(updated.id),
             )
-        reasoning_path_service.mark_stale_for_claim_ids(
-            [str(updated.id)],
-            str(space_id),
-        )
         session.commit()
         return KernelRelationClaimResponse.from_model(updated)
     except RelationProjectionMaterializationError as exc:
@@ -858,9 +849,6 @@ def create_claim_relation(
     claim_relation_service: KernelClaimRelationService = Depends(
         get_kernel_claim_relation_service,
     ),
-    reasoning_path_service: KernelReasoningPathService = Depends(
-        get_kernel_reasoning_path_service,
-    ),
     session: Session = Depends(get_session),
 ) -> ClaimRelationResponse:
     require_space_role(
@@ -901,10 +889,6 @@ def create_claim_relation(
             evidence_summary=request.evidence_summary,
             metadata={**request.metadata, **confidence_metadata},
         )
-        reasoning_path_service.mark_stale_for_claim_relation_ids(
-            [str(relation.id)],
-            str(space_id),
-        )
         session.commit()
         return ClaimRelationResponse.from_model(relation)
     except ValueError as exc:
@@ -935,9 +919,6 @@ def update_claim_relation_review_status(
     claim_relation_service: KernelClaimRelationService = Depends(
         get_kernel_claim_relation_service,
     ),
-    reasoning_path_service: KernelReasoningPathService = Depends(
-        get_kernel_reasoning_path_service,
-    ),
     session: Session = Depends(get_session),
 ) -> ClaimRelationResponse:
     require_space_role(
@@ -957,10 +938,6 @@ def update_claim_relation_review_status(
         updated = claim_relation_service.update_review_status(
             str(relation_id),
             review_status=normalize_review_status(request.review_status),
-        )
-        reasoning_path_service.mark_stale_for_claim_relation_ids(
-            [str(updated.id)],
-            str(space_id),
         )
         session.commit()
         return ClaimRelationResponse.from_model(updated)
