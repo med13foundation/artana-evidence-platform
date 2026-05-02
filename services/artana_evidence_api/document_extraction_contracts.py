@@ -16,6 +16,12 @@ GoalRelevanceScale = Literal[
     "unscoped",
 ]
 PriorityScale = Literal["prioritize", "review", "background", "ignore"]
+PdfTextExtractionOutcome = Literal[
+    "text",
+    "no_text_image_likely",
+    "partial_text_ocr_needed",
+    "no_pages",
+]
 
 FACTUAL_SUPPORT_SCORES: dict[FactualSupportScale, float] = {
     "strong": 0.92,
@@ -87,6 +93,8 @@ class DocumentTextExtraction:
 
     text_content: str
     page_count: int | None
+    extraction_outcome: PdfTextExtractionOutcome = "text"
+    pages_without_text: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,4 +200,5 @@ __all__ = [
     "PriorityScale",
     "ProposalReviewItemLike",
     "ProposalReviewResultLike",
+    "PdfTextExtractionOutcome",
 ]

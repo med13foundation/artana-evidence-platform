@@ -20,6 +20,7 @@ from artana_evidence_api.document_extraction_contracts import (
     DocumentTextExtraction,
     ExtractedRelationCandidate,
     LLMExtractionResultLike,
+    PdfTextExtractionOutcome,
     ProposalReviewResultLike,
 )
 from artana_evidence_api.document_extraction_diagnostics import (
@@ -226,11 +227,41 @@ def extract_pdf_text(payload: bytes) -> DocumentTextExtraction:
             "PDF upload support requires the optional 'pypdf' dependency.",
         ) from exc
     reader = PdfReader(io.BytesIO(payload))
-    page_texts = [page.extract_text() or "" for page in reader.pages]
+    page_count = len(reader.pages)
+    page_texts: list[str] = []
+    pages_without_text: list[int] = []
+    for page_number, page in enumerate(reader.pages, start=1):
+        page_text = page.extract_text() or ""
+        if page_text.strip() == "":
+            pages_without_text.append(page_number)
+        else:
+            page_texts.append(page_text)
+    text_content = "\n\n".join(page_texts)
     return DocumentTextExtraction(
-        text_content="\n\n".join(text for text in page_texts if text.strip() != ""),
-        page_count=len(reader.pages),
+        text_content=text_content,
+        page_count=page_count,
+        extraction_outcome=_pdf_text_extraction_outcome(
+            page_count=page_count,
+            text_content=text_content,
+            pages_without_text=tuple(pages_without_text),
+        ),
+        pages_without_text=tuple(pages_without_text),
     )
+
+
+def _pdf_text_extraction_outcome(
+    *,
+    page_count: int,
+    text_content: str,
+    pages_without_text: tuple[int, ...],
+) -> PdfTextExtractionOutcome:
+    if page_count == 0:
+        return "no_pages"
+    if text_content.strip() == "":
+        return "no_text_image_likely"
+    if pages_without_text:
+        return "partial_text_ocr_needed"
+    return "text"
 
 
 def normalize_text_document(text: str) -> str:

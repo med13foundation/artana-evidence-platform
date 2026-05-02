@@ -7,10 +7,13 @@ from uuid import UUID
 
 from artana_evidence_api.document_extraction import (
     extract_pdf_text,
-    normalize_text_document,
     sha256_hex,
 )
 from artana_evidence_api.graph_client import GraphServiceClientError
+from artana_evidence_api.runtime.pdf_text_diagnostics import (
+    PdfTextDiagnosticError,
+    require_extracted_pdf_text,
+)
 from artana_evidence_api.storage_types import StorageUseCase
 from artana_evidence_api.types.common import JSONObject
 from fastapi import HTTPException, status
@@ -26,16 +29,7 @@ if TYPE_CHECKING:
     from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
 
 _PDF_SIGNATURE = b"%PDF-"
-
-
-def _require_extracted_pdf_text(text_content: str) -> str:
-    normalized_text = normalize_text_document(text_content)
-    if normalized_text == "":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The uploaded PDF did not contain extractable text",
-        )
-    return normalized_text
+_DOCUMENT_RUN_ERROR_RESERVED_KEYS = frozenset({"error", "status"})
 
 
 def _require_updated_enriched_document(
@@ -119,18 +113,28 @@ def _fail_document_run(
     message: str,
     artifact_store: HarnessArtifactStore,
     run_registry: HarnessRunRegistry,
+    error_metadata: JSONObject | None = None,
 ) -> None:
+    safe_error_metadata = {
+        key: value
+        for key, value in ({} if error_metadata is None else error_metadata).items()
+        if key not in _DOCUMENT_RUN_ERROR_RESERVED_KEYS
+    }
+    error_content: JSONObject = {
+        "error": message,
+        **safe_error_metadata,
+    }
     artifact_store.patch_workspace(
         space_id=space_id,
         run_id=run.id,
-        patch={"status": "failed", "error": message},
+        patch={"status": "failed", **error_content},
     )
     artifact_store.put_artifact(
         space_id=space_id,
         run_id=run.id,
         artifact_key="document_error",
         media_type="application/json",
-        content={"error": message},
+        content=error_content,
     )
     run_registry.set_run_status(space_id=space_id, run_id=run.id, status="failed")
 
@@ -190,7 +194,7 @@ async def _enrich_pdf_document(  # noqa: PLR0913
     try:
         raw_payload = await binary_store.read_bytes(key=document.raw_storage_key)
         extraction = extract_pdf_text(raw_payload)
-        normalized_text = _require_extracted_pdf_text(extraction.text_content)
+        normalized_text = require_extracted_pdf_text(extraction)
         enriched_storage_key = _build_enriched_text_storage_key(
             document_id=document.id,
             text_content=normalized_text,
@@ -240,6 +244,29 @@ async def _enrich_pdf_document(  # noqa: PLR0913
                 "enriched_storage_key": enriched_storage_key,
             },
         )
+    except PdfTextDiagnosticError as exc:
+        document_store.update_document(
+            space_id=space_id,
+            document_id=document.id,
+            last_enrichment_run_id=enrichment_run.id,
+            page_count=exc.diagnostic.page_count,
+            enrichment_status="failed",
+            metadata_patch=exc.diagnostic.as_metadata(),
+        )
+        _fail_document_run(
+            space_id=space_id,
+            run=enrichment_run,
+            message=exc.diagnostic.message,
+            artifact_store=artifact_store,
+            run_registry=run_registry,
+            error_metadata={
+                "reason_code": exc.diagnostic.reason_code,
+                "ocr_required": exc.diagnostic.ocr_required,
+                "page_count": exc.diagnostic.page_count,
+                "pages_without_text": list(exc.diagnostic.pages_without_text),
+            },
+        )
+        raise
     except Exception as exc:
         document_store.update_document(
             space_id=space_id,

@@ -70,8 +70,12 @@ from .routers.supervisor_runs import router as supervisor_runs_router
 from .routers.v2_public import router as v2_public_router
 from .runtime_skill_registry import validate_graph_harness_skill_configuration
 from .source_route_plugins import validate_direct_source_route_plugins
+from .types.common import JSONObject, json_value
 
 logger = logging.getLogger(__name__)
+_STRUCTURED_ERROR_FIELD_KEYS = frozenset(
+    {"reason_code", "ocr_required", "page_count", "pages_without_text"},
+)
 
 
 def _normalize_error_detail(detail: object) -> str:
@@ -86,6 +90,20 @@ def _normalize_error_detail(detail: object) -> str:
     if isinstance(detail, list):
         return "; ".join(str(item) for item in detail)
     return str(detail)
+
+
+def _structured_error_fields(detail: object) -> JSONObject:
+    """Expose machine-readable fields while keeping ``detail`` human-readable."""
+    if not isinstance(detail, dict):
+        return {}
+    message = detail.get("message")
+    if not isinstance(message, str) or message.strip() == "":
+        return {}
+    return {
+        key: json_value(value)
+        for key, value in detail.items()
+        if isinstance(key, str) and key in _STRUCTURED_ERROR_FIELD_KEYS
+    }
 
 
 def _validation_error_detail(error: RequestValidationError) -> str:
@@ -175,12 +193,14 @@ def create_app() -> FastAPI:  # noqa: PLR0915
         request_id = resolve_request_id(request)
         response_headers = dict(exc.headers or {})
         response_headers.setdefault(REQUEST_ID_HEADER, request_id)
+        content: JSONObject = {
+            "detail": _normalize_error_detail(exc.detail),
+            "request_id": request_id,
+        }
+        content.update(_structured_error_fields(exc.detail))
         return JSONResponse(
             status_code=exc.status_code,
-            content={
-                "detail": _normalize_error_detail(exc.detail),
-                "request_id": request_id,
-            },
+            content=content,
             headers=response_headers,
         )
 

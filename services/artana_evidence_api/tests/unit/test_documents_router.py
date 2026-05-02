@@ -28,6 +28,10 @@ from artana_evidence_api.document_extraction import (
     DocumentTextExtraction,
     ExtractedRelationCandidate,
 )
+from artana_evidence_api.document_ingestion_support import (
+    _enrich_pdf_document,
+    _fail_document_run,
+)
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.graph_client import GraphServiceClientError
 from artana_evidence_api.proposal_store import (
@@ -41,6 +45,8 @@ from artana_evidence_api.review_item_store import (
     HarnessReviewItemStore,
 )
 from artana_evidence_api.run_registry import HarnessRunRegistry
+from artana_evidence_api.runtime.pdf_text_diagnostics import pdf_text_diagnostic
+from artana_evidence_api.storage_types import StorageUseCase
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
     KernelEntityResponse,
@@ -59,11 +65,13 @@ from artana_evidence_api.variant_extraction_contracts import (
     ExtractedEntityCandidate,
     ExtractionContract,
 )
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 _TEST_USER_ID: Final[str] = "11111111-1111-1111-1111-111111111111"
 _TEST_USER_EMAIL: Final[str] = "graph-harness-docs@example.com"
 _MED13_ID: Final[str] = "33333333-3333-3333-3333-333333333333"
+_MED13L_ID: Final[str] = "33333333-3333-4333-8333-333333333333"
 _CARDIOMYOPATHY_ID: Final[str] = "44444444-4444-4444-4444-444444444444"
 _FG_SYNDROME_ID: Final[str] = "55555555-5555-5555-5555-555555555555"
 _LUJAN_FRYNS_ID: Final[str] = "66666666-6666-6666-6666-666666666666"
@@ -185,6 +193,55 @@ class _StubEmptyGraphApiGateway(_StubGraphApiGateway):
         return KernelEntityListResponse(entities=[], total=0, offset=0, limit=50)
 
 
+class _SimilarGeneOnlyGraphApiGateway(_StubGraphApiGateway):
+    def list_entities(
+        self,
+        *,
+        space_id: UUID | str,
+        q: str | None = None,
+        entity_type: str | None = None,
+        ids: list[str] | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> KernelEntityListResponse:
+        del entity_type, ids, offset, limit
+        now = datetime.now(UTC)
+        query = q.strip().casefold() if isinstance(q, str) else ""
+        entities: list[KernelEntityResponse] = []
+        if query == "med13":
+            entities.append(
+                KernelEntityResponse(
+                    id=UUID(_MED13L_ID),
+                    research_space_id=UUID(str(space_id)),
+                    entity_type="GENE",
+                    display_label="MED13L",
+                    aliases=[],
+                    metadata={},
+                    created_at=now,
+                    updated_at=now,
+                ),
+            )
+        if query == "cardiomyopathy":
+            entities.append(
+                KernelEntityResponse(
+                    id=UUID(_CARDIOMYOPATHY_ID),
+                    research_space_id=UUID(str(space_id)),
+                    entity_type="DISEASE",
+                    display_label="cardiomyopathy",
+                    aliases=[],
+                    metadata={},
+                    created_at=now,
+                    updated_at=now,
+                ),
+            )
+        return KernelEntityListResponse(
+            entities=entities,
+            total=len(entities),
+            offset=0,
+            limit=50,
+        )
+
+
 class _FailingEntityResolutionGraphApiGateway(_StubGraphApiGateway):
     def list_entities(
         self,
@@ -248,6 +305,55 @@ def _build_client(
         proposal_store,
         run_registry,
         space.id,
+    )
+
+
+def _build_pdf_enrichment_context() -> tuple[
+    HarnessArtifactStore,
+    HarnessDocumentBinaryStore,
+    HarnessDocumentStore,
+    HarnessRunRegistry,
+    str,
+    str,
+]:
+    artifact_store = HarnessArtifactStore()
+    binary_store = HarnessDocumentBinaryStore()
+    document_store = HarnessDocumentStore()
+    run_registry = HarnessRunRegistry()
+    space_id = "99999999-9999-4999-9999-999999999999"
+    raw_storage_key = "documents/test/raw/scanned.pdf"
+    document = document_store.create_document(
+        space_id=space_id,
+        created_by=_TEST_USER_ID,
+        title="Scanned MED13 PDF",
+        source_type="pdf",
+        filename="scanned.pdf",
+        media_type="application/pdf",
+        sha256="scanned-pdf-sha",
+        byte_size=24,
+        page_count=None,
+        text_content="",
+        raw_storage_key=raw_storage_key,
+        ingestion_run_id="pdf-upload-run",
+        enrichment_status="not_started",
+        extraction_status="pending",
+        metadata={},
+    )
+    asyncio.run(
+        binary_store.store_bytes(
+            use_case=StorageUseCase.DOCUMENT_CONTENT,
+            key=raw_storage_key,
+            payload=b"%PDF-1.4\nsynthetic\n%%EOF\n",
+            content_type="application/pdf",
+        ),
+    )
+    return (
+        artifact_store,
+        binary_store,
+        document_store,
+        run_registry,
+        space_id,
+        document.id,
     )
 
 
@@ -1122,6 +1228,50 @@ def test_extract_document_degrades_to_unresolved_entities_when_graph_resolution_
     assert "document_error" not in artifact_keys
 
 
+def test_extract_document_does_not_assign_similar_gene_search_result(
+    monkeypatch,
+) -> None:
+    async def _no_ai_resolution(*args, **kwargs):
+        del args, kwargs
+
+    monkeypatch.setattr(
+        "artana_evidence_api.document_extraction._resolve_entity_label_with_ai",
+        _no_ai_resolution,
+    )
+    client, _, _, _, _, space_id = _build_client(
+        graph_api_gateway_dependency=_SimilarGeneOnlyGraphApiGateway,
+    )
+
+    submit_response = client.post(
+        f"/v1/spaces/{space_id}/documents/text",
+        headers=_auth_headers(),
+        json={
+            "title": "MED13 similar-gene ambiguity note",
+            "text": "MED13 associates with cardiomyopathy.",
+            "metadata": {},
+        },
+    )
+    document_id = submit_response.json()["document"]["id"]
+
+    extract_response = client.post(
+        f"/v1/spaces/{space_id}/documents/{document_id}/extract",
+        headers=_auth_headers(),
+    )
+
+    assert extract_response.status_code == 201
+    payload = extract_response.json()
+    assert payload["proposal_count"] == 1
+    proposal_payload = payload["proposals"][0]["payload"]
+    proposal_metadata = payload["proposals"][0]["metadata"]
+    assert proposal_payload["proposed_subject"] == "unresolved:med13"
+    assert proposal_payload["proposed_object"] == _CARDIOMYOPATHY_ID
+    assert proposal_payload["evidence_entity_ids"] == [_CARDIOMYOPATHY_ID]
+    assert _MED13L_ID not in proposal_payload["evidence_entity_ids"]
+    assert proposal_metadata["subject_resolved"] is False
+    assert proposal_metadata["resolved_subject_label"] == "MED13"
+    assert proposal_metadata["object_resolved"] is True
+
+
 def test_extract_document_creates_deferred_resolution_proposals_for_empty_graph() -> (
     None
 ):
@@ -1286,6 +1436,276 @@ def test_extract_pdf_document_runs_enrichment_before_extraction(monkeypatch) -> 
         "document-enrichment",
         "document-ingestion",
     ]
+
+
+def test_extract_pdf_document_returns_partial_pdf_ocr_needed_detail(monkeypatch) -> None:
+    client, _, document_store, _, _, space_id = _build_client()
+
+    monkeypatch.setattr(
+        "artana_evidence_api.document_ingestion_support.extract_pdf_text",
+        lambda payload: DocumentTextExtraction(
+            text_content="MED13 associates with cardiomyopathy.",
+            page_count=4,
+            extraction_outcome="partial_text_ocr_needed",
+            pages_without_text=(2, 4),
+        ),
+    )
+
+    upload_response = client.post(
+        f"/v1/spaces/{space_id}/documents/pdf",
+        headers=_auth_headers(),
+        data={"title": "Scanned MED13 PDF"},
+        files={
+            "file": (
+                "scanned-med13.pdf",
+                b"%PDF-1.4\nsynthetic scanned payload\n%%EOF\n",
+                "application/pdf",
+            ),
+        },
+    )
+    document_id = upload_response.json()["document"]["id"]
+
+    extract_response = client.post(
+        f"/v1/spaces/{space_id}/documents/{document_id}/extract",
+        headers=_auth_headers(),
+    )
+
+    assert extract_response.status_code == 400
+    payload = extract_response.json()
+    assert payload["detail"] == (
+        "The uploaded PDF includes embedded text on some pages, but pages 2, 4 "
+        "appear to be scanned or image-only. OCR is not currently supported by this "
+        "service; upload a fully text-based PDF or extract the missing pages manually."
+    )
+    assert payload["reason_code"] == "partial_pdf_ocr_needed"
+    assert payload["ocr_required"] is True
+    assert payload["page_count"] == 4
+    assert payload["pages_without_text"] == [2, 4]
+    assert isinstance(payload["request_id"], str)
+    updated_document = document_store.get_document(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert updated_document is not None
+    assert updated_document.page_count == 4
+    assert updated_document.enrichment_status == "failed"
+    assert updated_document.metadata["ocr_required"] is True
+    assert updated_document.metadata["pdf_text_extraction_reason_code"] == (
+        "partial_pdf_ocr_needed"
+    )
+    assert updated_document.metadata["pdf_pages_without_text"] == [2, 4]
+
+
+def test_pdf_enrichment_marks_scanned_pdf_as_ocr_required(monkeypatch) -> None:
+    (
+        artifact_store,
+        binary_store,
+        document_store,
+        run_registry,
+        space_id,
+        document_id,
+    ) = _build_pdf_enrichment_context()
+    document = document_store.get_document(space_id=space_id, document_id=document_id)
+    assert document is not None
+    monkeypatch.setattr(
+        "artana_evidence_api.document_ingestion_support.extract_pdf_text",
+        lambda payload: DocumentTextExtraction(
+            text_content="",
+            page_count=3,
+            extraction_outcome="no_text_image_likely",
+            pages_without_text=(1, 2, 3),
+        ),
+    )
+
+    try:
+        asyncio.run(
+            _enrich_pdf_document(
+                space_id=UUID(space_id),
+                document=document,
+                run_registry=run_registry,
+                artifact_store=artifact_store,
+                binary_store=binary_store,
+                document_store=document_store,
+                graph_api_gateway=_StubGraphApiGateway(),
+            ),
+        )
+    except HTTPException as exc:
+        failure = exc
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("Scanned PDF enrichment should fail with an OCR diagnostic")
+
+    assert failure.status_code == 400
+    assert failure.detail == {
+        "reason_code": "scanned_pdf_no_text",
+        "message": (
+            "The uploaded PDF appears to be scanned or image-only and does not "
+            "include embedded text. OCR is not currently supported by this "
+            "service; upload a text-based PDF or extract the text manually."
+        ),
+        "ocr_required": True,
+        "page_count": 3,
+        "pages_without_text": [1, 2, 3],
+    }
+    updated_document = document_store.get_document(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert updated_document is not None
+    assert updated_document.page_count == 3
+    assert updated_document.enrichment_status == "failed"
+    assert updated_document.metadata["pdf_text_extraction_reason_code"] == (
+        "scanned_pdf_no_text"
+    )
+    assert updated_document.metadata["ocr_required"] is True
+    assert updated_document.metadata["pdf_pages_without_text"] == [1, 2, 3]
+
+    enrichment_run = run_registry.list_runs(space_id=space_id)[0]
+    assert enrichment_run.harness_id == "document-enrichment"
+    assert enrichment_run.status == "failed"
+    error_artifact = artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=enrichment_run.id,
+        artifact_key="document_error",
+    )
+    assert error_artifact is not None
+    assert error_artifact.content["reason_code"] == "scanned_pdf_no_text"
+    assert error_artifact.content["ocr_required"] is True
+    assert error_artifact.content["page_count"] == 3
+    assert error_artifact.content["pages_without_text"] == [1, 2, 3]
+
+
+def test_pdf_enrichment_distinguishes_zero_page_pdf(monkeypatch) -> None:
+    (
+        artifact_store,
+        binary_store,
+        document_store,
+        run_registry,
+        space_id,
+        document_id,
+    ) = _build_pdf_enrichment_context()
+    document = document_store.get_document(space_id=space_id, document_id=document_id)
+    assert document is not None
+    monkeypatch.setattr(
+        "artana_evidence_api.document_ingestion_support.extract_pdf_text",
+        lambda payload: DocumentTextExtraction(
+            text_content="",
+            page_count=0,
+            extraction_outcome="no_pages",
+        ),
+    )
+
+    try:
+        asyncio.run(
+            _enrich_pdf_document(
+                space_id=UUID(space_id),
+                document=document,
+                run_registry=run_registry,
+                artifact_store=artifact_store,
+                binary_store=binary_store,
+                document_store=document_store,
+                graph_api_gateway=_StubGraphApiGateway(),
+            ),
+        )
+    except HTTPException as exc:
+        failure = exc
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("Zero-page PDF enrichment should fail with a diagnostic")
+
+    assert failure.status_code == 400
+    assert failure.detail == {
+        "reason_code": "pdf_no_pages",
+        "message": "The uploaded PDF contains no pages.",
+        "ocr_required": False,
+        "page_count": 0,
+    }
+    updated_document = document_store.get_document(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert updated_document is not None
+    assert updated_document.page_count == 0
+    assert updated_document.enrichment_status == "failed"
+    assert updated_document.metadata["pdf_text_extraction_reason_code"] == "pdf_no_pages"
+    assert updated_document.metadata["ocr_required"] is False
+
+    enrichment_run = run_registry.list_runs(space_id=space_id)[0]
+    error_artifact = artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=enrichment_run.id,
+        artifact_key="document_error",
+    )
+    assert error_artifact is not None
+    assert error_artifact.content["reason_code"] == "pdf_no_pages"
+    assert error_artifact.content["ocr_required"] is False
+    assert error_artifact.content["page_count"] == 0
+    assert error_artifact.content["pages_without_text"] == []
+
+
+def test_pdf_text_diagnostic_handles_unknown_empty_pdf_state() -> None:
+    diagnostic = pdf_text_diagnostic(
+        DocumentTextExtraction(
+            text_content="",
+            page_count=None,
+        ),
+    )
+
+    assert diagnostic.as_detail() == {
+        "reason_code": "pdf_no_extractable_text",
+        "message": "The uploaded PDF did not contain extractable text.",
+        "ocr_required": False,
+    }
+    assert diagnostic.as_metadata() == {
+        "pdf_text_extraction_reason_code": "pdf_no_extractable_text",
+        "pdf_text_extraction_message": (
+            "The uploaded PDF did not contain extractable text."
+        ),
+        "ocr_required": False,
+    }
+
+
+def test_fail_document_run_metadata_cannot_override_reserved_error_fields() -> None:
+    artifact_store = HarnessArtifactStore()
+    run_registry = HarnessRunRegistry()
+    space_id = UUID("99999999-9999-4999-9999-999999999999")
+    run = run_registry.create_run(
+        space_id=space_id,
+        harness_id="document-enrichment",
+        title="Document Enrichment: scanned.pdf",
+        input_payload={},
+        graph_service_status="ok",
+        graph_service_version="documents-test",
+    )
+    artifact_store.seed_for_run(run=run)
+
+    _fail_document_run(
+        space_id=space_id,
+        run=run,
+        message="OCR is required.",
+        artifact_store=artifact_store,
+        run_registry=run_registry,
+        error_metadata={
+            "status": "completed",
+            "error": "overridden",
+            "reason_code": "scanned_pdf_no_text",
+        },
+    )
+
+    workspace = artifact_store.get_workspace(space_id=space_id, run_id=run.id)
+    assert workspace is not None
+    assert workspace.snapshot["status"] == "failed"
+    assert workspace.snapshot["error"] == "OCR is required."
+    assert workspace.snapshot["reason_code"] == "scanned_pdf_no_text"
+
+    error_artifact = artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=run.id,
+        artifact_key="document_error",
+    )
+    assert error_artifact is not None
+    assert error_artifact.content == {
+        "error": "OCR is required.",
+        "reason_code": "scanned_pdf_no_text",
+    }
 
 
 def test_extract_text_document_skips_enrichment_run() -> None:

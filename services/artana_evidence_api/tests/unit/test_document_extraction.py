@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import UTC, datetime
+from io import BytesIO
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
@@ -21,6 +22,7 @@ from artana_evidence_api.document_extraction import (
     build_document_extraction_drafts,
     build_document_review_context,
     discover_relation_candidates,
+    extract_pdf_text,
     extract_relation_candidates,
     extract_relation_candidates_with_diagnostics,
     extract_relation_candidates_with_llm,
@@ -131,6 +133,53 @@ class _FakeKernel:
 class _FakeSingleStepClient:
     def __init__(self, *, kernel) -> None:
         self.kernel = kernel
+
+
+def test_extract_pdf_text_marks_blank_pdf_as_image_likely() -> None:
+    from pypdf import PdfWriter
+
+    buffer = BytesIO()
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    writer.write(buffer)
+
+    extraction = extract_pdf_text(buffer.getvalue())
+
+    assert extraction.page_count == 1
+    assert extraction.text_content == ""
+    assert extraction.extraction_outcome == "no_text_image_likely"
+    assert extraction.pages_without_text == (1,)
+
+
+def test_extract_pdf_text_marks_mixed_pages_as_partial_ocr_needed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _FakePdfPage:
+        def __init__(self, text: str) -> None:
+            self._text = text
+
+        def extract_text(self) -> str:
+            return self._text
+
+    class _FakePdfReader:
+        def __init__(self, payload: BytesIO) -> None:
+            del payload
+            self.pages = [
+                _FakePdfPage("MED13 associates with cardiomyopathy."),
+                _FakePdfPage(""),
+                _FakePdfPage("FG syndrome evidence summary."),
+            ]
+
+    monkeypatch.setattr("pypdf.PdfReader", _FakePdfReader)
+
+    extraction = extract_pdf_text(b"%PDF-1.4\nsynthetic\n%%EOF\n")
+
+    assert extraction.page_count == 3
+    assert extraction.text_content == (
+        "MED13 associates with cardiomyopathy.\n\nFG syndrome evidence summary."
+    )
+    assert extraction.extraction_outcome == "partial_text_ocr_needed"
+    assert extraction.pages_without_text == (2,)
 
 
 @pytest.mark.asyncio
