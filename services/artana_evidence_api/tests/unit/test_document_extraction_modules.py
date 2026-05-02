@@ -217,6 +217,9 @@ def test_entity_helpers_clean_split_and_resolve_labels() -> None:
 
     assert clean_candidate_label("mutation in MED13 in patients") == "MED13"
     assert clean_llm_entity_label("Inherited pathogenic variants in BRCA1") == "BRCA1"
+    assert clean_llm_entity_label("Inherited variants in MED13 or MED13L") == ""
+    assert clean_llm_entity_label("Inherited variants in Med13 or MED13L") == ""
+    assert clean_llm_entity_label("BRCA1/2") == ""
     assert clean_llm_entity_label("were") == ""
     assert clean_llm_entity_label("Some features are common between conditions") == ""
     assert clean_llm_entity_label("and MED13L are now all") == "MED13L"
@@ -235,6 +238,26 @@ def test_entity_helpers_clean_split_and_resolve_labels() -> None:
     assert require_match_display_label(resolved) == "EGFR"
     assert require_match_id(resolved) != ""
 
+    gene_gateway = _GraphGateway(
+        {
+            "MED13": {
+                "id": uuid4(),
+                "display_label": "MED13",
+                "aliases": [],
+            },
+            "MED13L": {
+                "id": uuid4(),
+                "display_label": "MED13L",
+                "aliases": [],
+            },
+        },
+    )
+    assert split_compound_entity_label(
+        space_id=space_id,
+        label="MED13 or MED13L",
+        graph_api_gateway=gene_gateway,
+    ) == ("MED13 or MED13L",)
+
 
 @pytest.mark.parametrize(
     "label",
@@ -247,6 +270,8 @@ def test_entity_helpers_clean_split_and_resolve_labels() -> None:
         "PD-L1",
         "5-FU",
         "1q21",
+        "MED13L",
+        "BRCA2",
         "Cancer associated fibroblasts",
         "BRCA1 regulated genes",
         "T cell effector activity",
@@ -268,6 +293,14 @@ def test_canonical_entity_label_filter_accepts_entity_like_labels(label: str) ->
         ("how the Module", "leading_fragment_token"),
         ("gene expression both positively", "sentence_fragment_modifier"),
         ("Differentially expressed genes", "sentence_fragment_modifier"),
+        ("MED13 or MED13L", "ambiguous_gene_symbol_mention"),
+        ("MED13 and MED13L", "ambiguous_gene_symbol_mention"),
+        ("Med13 or MED13L", "ambiguous_gene_symbol_mention"),
+        ("BRCA1, BRCA2", "ambiguous_gene_symbol_mention"),
+        ("BRCA1/BRCA2", "ambiguous_gene_symbol_mention"),
+        ("BRCA1/2", "ambiguous_gene_symbol_mention"),
+        ("CDK8 and CDK19", "ambiguous_gene_symbol_mention"),
+        ("MED13 vs. MED13L", "ambiguous_gene_symbol_mention"),
     ],
 )
 def test_canonical_entity_label_filter_rejects_fragments(
@@ -276,6 +309,11 @@ def test_canonical_entity_label_filter_rejects_fragments(
 ) -> None:
     assert canonical_entity_label_rejection_reason(label) == reason
     assert not is_canonical_entity_label(label)
+
+
+def test_ambiguous_gene_filter_allows_different_families_joined_with_and() -> None:
+    assert canonical_entity_label_rejection_reason("BRCA1 and TP53") is None
+    assert is_canonical_entity_label("BRCA1 and TP53")
 
 
 def test_regex_extraction_drops_fragmentary_review_sentence_subjects() -> None:
@@ -377,6 +415,29 @@ def test_draft_builder_skips_non_canonical_subject_labels() -> None:
     assert skipped[0]["reason"] == "non_canonical_subject_label"
     assert skipped[0]["label"] == "were"
     assert skipped[0]["label_rejection_reason"] == "standalone_fragment_label"
+
+
+def test_draft_builder_skips_ambiguous_gene_family_subject_labels() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13 or MED13L",
+        relation_type="ASSOCIATED_WITH",
+        object_label="developmental disorder",
+        sentence="MED13 or MED13L was associated with developmental disorder.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=_document(),
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert drafts == ()
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "non_canonical_subject_label"
+    assert skipped[0]["label"] == "MED13 or MED13L"
+    assert skipped[0]["label_rejection_reason"] == "ambiguous_gene_symbol_mention"
 
 
 def test_draft_builder_skips_non_canonical_object_labels() -> None:
