@@ -14,10 +14,12 @@ from uuid import UUID, uuid4
 import pytest
 from artana_evidence_api import (
     full_ai_orchestrator_runtime,
+    research_init_completion_runtime,
     research_init_guarded,
     research_init_helpers,
     research_init_observation_bridge,
     research_init_runtime,
+    research_init_source_results,
 )
 from artana_evidence_api.approval_store import HarnessApprovalStore
 from artana_evidence_api.artifact_store import (
@@ -1310,9 +1312,12 @@ async def test_create_research_init_captures_pubmed_replay_bundle(
     assert replay_artifact.content["selection_errors"] == [
         "captured in research-init router",
     ]
-    assert run_registry.list_runs(space_id=space_record.id)[0].input_payload[
-        "source_caps"
-    ]["pubmed_max_results_per_query"] == 10
+    assert (
+        run_registry.list_runs(space_id=space_record.id)[0].input_payload[
+            "source_caps"
+        ]["pubmed_max_results_per_query"]
+        == 10
+    )
 
 
 @pytest.mark.asyncio
@@ -6884,6 +6889,7 @@ def test_build_source_results_includes_registry_metadata() -> None:
     assert result["drugbank"]["direct_search_enabled"] is True
     assert result["mgi"]["direct_search_enabled"] is True
     assert result["zfin"]["direct_search_enabled"] is True
+    assert result["orphanet"]["direct_search_enabled"] is True
     assert result["mondo"]["direct_search_enabled"] is False
     assert result["clinvar"]["research_plan_enabled"] is True
     assert "source_result_capture" in result["clinvar"]
@@ -6902,6 +6908,25 @@ def test_build_source_results_gnomad_skipped_by_default() -> None:
     result = research_init_runtime._build_source_results(sources={})
     assert result["gnomad"]["status"] == "skipped"
     assert result["gnomad"]["selected"] is False
+
+
+def test_build_source_results_orphanet_skipped_by_default() -> None:
+    """orphanet defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["orphanet"]["status"] == "skipped"
+    assert result["orphanet"]["selected"] is False
+    assert result["orphanet"]["records_processed"] == 0
+
+
+def test_source_result_counters_fall_back_for_registered_search_sources() -> None:
+    assert research_init_source_results._source_result_counters("orphanet") == {
+        "records_processed": 0,
+    }
+
+
+def test_source_result_counters_reject_unknown_sources() -> None:
+    with pytest.raises(ValueError, match="Unknown source key"):
+        research_init_source_results._source_result_counters("custom_source")
 
 
 def test_build_source_results_gnomad_pending_when_enabled() -> None:
@@ -6989,24 +7014,21 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
             "clinical_trials": True,
             "mgi": True,
             "zfin": True,
+            "orphanet": True,
         },
     )
 
     # All sources start as "pending" when enabled.
     for key in source_results:
-        assert (
-            source_results[key]["status"] == "pending"
-        ), f"Expected {key!r} to start as 'pending', got {source_results[key]['status']!r}"
+        assert source_results[key]["status"] == "pending", (
+            f"Expected {key!r} to start as 'pending', got {source_results[key]['status']!r}"
+        )
 
-    # Apply the deferred-marking loop exactly as in execute_research_init_run.
-    for pending_source in (
-        "clinvar",
-        "drugbank",
-        "alphafold",
-        "gnomad",
-        "uniprot",
-        "hgnc",
-    ):
+    # Apply the deferred-marking loop exactly as in complete_research_init_run.
+    pending_sources = research_init_completion_runtime._pending_deferred_source_keys(
+        source_results,
+    )
+    for pending_source in pending_sources:
         if source_results.get(pending_source, {}).get("status") == "pending":
             source_results[pending_source]["status"] = "deferred"
 
@@ -7017,6 +7039,10 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     assert source_results["gnomad"]["status"] == "deferred"
     assert source_results["uniprot"]["status"] == "deferred"
     assert source_results["hgnc"]["status"] == "deferred"
+    assert source_results["clinical_trials"]["status"] == "deferred"
+    assert source_results["mgi"]["status"] == "deferred"
+    assert source_results["zfin"]["status"] == "deferred"
+    assert source_results["orphanet"]["status"] == "deferred"
 
     # Sources outside the deferred loop are unaffected.
     assert source_results["pubmed"]["status"] == "pending"
@@ -7036,27 +7062,40 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
             "gnomad": False,
             "uniprot": False,
             "hgnc": False,
+            "orphanet": False,
         },
     )
 
     # All these are skipped because they are disabled.
-    for key in ("clinvar", "drugbank", "alphafold", "gnomad", "uniprot", "hgnc"):
-        assert source_results[key]["status"] == "skipped"
-
-    # Apply the loop.
-    for pending_source in (
+    for key in (
         "clinvar",
         "drugbank",
         "alphafold",
         "gnomad",
         "uniprot",
         "hgnc",
+        "orphanet",
     ):
+        assert source_results[key]["status"] == "skipped"
+
+    # Apply the loop.
+    pending_sources = research_init_completion_runtime._pending_deferred_source_keys(
+        source_results,
+    )
+    for pending_source in pending_sources:
         if source_results.get(pending_source, {}).get("status") == "pending":
             source_results[pending_source]["status"] = "deferred"
 
     # Still skipped — not upgraded to deferred.
-    for key in ("clinvar", "drugbank", "alphafold", "gnomad", "uniprot", "hgnc"):
+    for key in (
+        "clinvar",
+        "drugbank",
+        "alphafold",
+        "gnomad",
+        "uniprot",
+        "hgnc",
+        "orphanet",
+    ):
         assert source_results[key]["status"] == "skipped"
 
 

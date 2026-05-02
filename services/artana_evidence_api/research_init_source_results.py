@@ -7,6 +7,7 @@ from typing import cast
 
 from artana_evidence_api.source_plugins.registry import evidence_source_plugin_keys
 from artana_evidence_api.source_registry import (
+    SourceCapability,
     SourceDefinition,
     get_source_definition,
 )
@@ -104,7 +105,7 @@ def build_source_results(
         source_key: _source_result_summary(
             sources=sources,
             source_key=source_key,
-            extra=dict(_SOURCE_RESULT_COUNTERS[source_key]),
+            extra=_source_result_counters(source_key),
         )
         for source_key in registry_source_result_keys()
     }
@@ -141,6 +142,20 @@ def _source_registry_summary(source: SourceDefinition) -> JSONObject:
         "source_result_capture": source.result_capture,
         "proposal_flow": source.proposal_flow,
     }
+
+
+def _source_result_counters(source_key: str) -> JSONObject:
+    counters = _SOURCE_RESULT_COUNTERS.get(source_key)
+    if counters is not None:
+        return dict(counters)
+
+    source = get_source_definition(source_key)
+    if source is None:
+        msg = f"Unknown source key in research-init counters: {source_key}"
+        raise ValueError(msg)
+    if SourceCapability.SEARCH in source.capabilities:
+        return {"records_processed": 0}
+    return {}
 
 
 def registry_source_result_keys() -> tuple[str, ...]:

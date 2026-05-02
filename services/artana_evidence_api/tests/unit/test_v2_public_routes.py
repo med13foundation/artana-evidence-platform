@@ -432,6 +432,8 @@ def test_source_search_openapi_keeps_typed_routes_and_capture_contract() -> None
     assert "MGISourceSearchResponse" in schemas
     assert "ZFINSourceSearchRequest" in schemas
     assert "ZFINSourceSearchResponse" in schemas
+    assert "OrphanetSourceSearchRequest" in schemas
+    assert "OrphanetSourceSearchResponse" in schemas
 
     clinvar_post = cast(
         "dict[str, object]",
@@ -478,6 +480,7 @@ def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
         "run_drugbank_direct_search",
         "run_mgi_direct_search",
         "run_zfin_direct_search",
+        "run_orphanet_direct_search",
         "create_clinvar_source_search_payload",
         "create_clinicaltrials_source_search_payload",
         "create_uniprot_source_search_payload",
@@ -485,6 +488,7 @@ def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
         "create_drugbank_source_search_payload",
         "create_mgi_source_search_payload",
         "create_zfin_source_search_payload",
+        "create_orphanet_source_search_payload",
     )
     for snippet in forbidden_snippets:
         assert snippet not in source
@@ -598,13 +602,24 @@ def test_direct_source_typed_route_plugins_define_expected_public_routes() -> No
             ("/v2/spaces/{space_id}/sources/zfin/searches", "POST", 201),
             ("/v2/spaces/{space_id}/sources/zfin/searches/{search_id}", "GET", None),
         ),
+        "orphanet": (
+            ("/v2/spaces/{space_id}/sources/orphanet/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/orphanet/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
     }
 
     assert tuple(expected_routes) == direct_search_source_keys()
     for plugin in direct_source_route_plugins():
-        assert tuple(
-            (route.path, route.method, route.status_code) for route in plugin.routes
-        ) == expected_routes[plugin.source_key]
+        assert (
+            tuple(
+                (route.path, route.method, route.status_code) for route in plugin.routes
+            )
+            == expected_routes[plugin.source_key]
+        )
         assert all(route.response_model is not None for route in plugin.routes)
         assert all(route.dependencies for route in plugin.routes)
 

@@ -62,6 +62,7 @@ def test_source_plugins_do_not_collapse_into_single_monolith() -> None:
     assert (_SOURCE_PLUGINS_ROOT / "clinical_trials.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "mgi.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "zfin.py").exists()
+    assert (_SOURCE_PLUGINS_ROOT / "rare_disease" / "orphanet.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "authority" / "base.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "authority" / "mondo.py").exists()
     assert (_SOURCE_PLUGINS_ROOT / "authority" / "hgnc.py").exists()
@@ -90,7 +91,9 @@ def test_source_plugin_modules_stay_small_and_focused() -> None:
 def test_source_plugin_package_init_has_no_plugin_import_side_effects() -> None:
     tree = ast.parse((_SOURCE_PLUGINS_ROOT / "__init__.py").read_text(encoding="utf-8"))
 
-    imports = [node for node in ast.walk(tree) if isinstance(node, ast.Import | ast.ImportFrom)]
+    imports = [
+        node for node in ast.walk(tree) if isinstance(node, ast.Import | ast.ImportFrom)
+    ]
 
     assert imports == []
 

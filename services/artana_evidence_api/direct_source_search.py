@@ -22,6 +22,12 @@ from artana_evidence_api.direct_sources.gnomad import (
     GnomADSourceSearchResponse,
     run_gnomad_direct_search,
 )
+from artana_evidence_api.direct_sources.orphanet import (
+    OrphanetLanguage,
+    OrphanetSourceSearchRequest,
+    OrphanetSourceSearchResponse,
+    run_orphanet_direct_search,
+)
 from artana_evidence_api.models import SourceSearchRunModel
 from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
 from artana_evidence_api.source_enrichment_bridges import (
@@ -454,6 +460,7 @@ DirectSourceSearchRecord = (
     | ClinicalTrialsSourceSearchResponse
     | MGISourceSearchResponse
     | ZFINSourceSearchResponse
+    | OrphanetSourceSearchResponse
     | MarrvelSourceSearchResponse
 )
 _DirectSourceSearchRecordT = TypeVar(
@@ -1031,6 +1038,7 @@ def _response_model_for_source_key(
         "drugbank": DrugBankSourceSearchResponse,
         "mgi": MGISourceSearchResponse,
         "zfin": ZFINSourceSearchResponse,
+        "orphanet": OrphanetSourceSearchResponse,
         "marrvel": MarrvelSourceSearchResponse,
     }
     return response_models.get(source_key)
@@ -1057,6 +1065,9 @@ __all__ = [
     "MarrvelSourceSearchResponse",
     "MGISourceSearchRequest",
     "MGISourceSearchResponse",
+    "OrphanetLanguage",
+    "OrphanetSourceSearchRequest",
+    "OrphanetSourceSearchResponse",
     "PubMedSourceSearchResponse",
     "SqlAlchemyDirectSourceSearchStore",
     "UniProtSourceSearchRequest",
@@ -1069,6 +1080,7 @@ __all__ = [
     "run_drugbank_direct_search",
     "run_gnomad_direct_search",
     "run_mgi_direct_search",
+    "run_orphanet_direct_search",
     "run_uniprot_direct_search",
     "run_zfin_direct_search",
 ]

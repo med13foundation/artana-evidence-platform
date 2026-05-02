@@ -65,7 +65,9 @@ def test_plugin_record_policy_matches_legacy_policy(source_key: str) -> None:
     assert plugin.request_schema_ref == policy.request_schema_ref
     assert plugin.result_schema_ref == policy.result_schema_ref
     assert plugin.provider_external_id(record) == policy.provider_external_id(record)
-    assert plugin.recommends_variant_aware(record) is policy.recommends_variant_aware(record)
+    assert plugin.recommends_variant_aware(record) is policy.recommends_variant_aware(
+        record
+    )
     assert plugin.normalize_record(record) == policy.normalize_record(record)
 
 
@@ -156,6 +158,12 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             disease="heart development",
             evidence_role="zebrafish model",
             reason="Search zebrafish model evidence.",
+        ),
+        "orphanet": PlannedSourceIntent(
+            source_key="orphanet",
+            disease="Marfan syndrome",
+            evidence_role="rare disease nomenclature",
+            reason="Search Orphanet disease context.",
         ),
     }
     return intents[source_key]
@@ -256,6 +264,17 @@ def _record(source_key: str) -> JSONObject:
             "species": "Danio rerio",
             "phenotype_statements": ["abnormal cardiac ventricle morphology"],
             "expression_terms": ["heart"],
+        },
+        "orphanet": {
+            "orpha_code": "558",
+            "orphanet_id": "ORPHA:558",
+            "preferred_term": "Marfan syndrome",
+            "synonyms": ["MFS"],
+            "definition": "A connective tissue disorder.",
+            "typology": "Disease",
+            "status": "Active",
+            "classification_level": "Disorder",
+            "orphanet_url": "https://orpha.example/558",
         },
     }
     return records[source_key]

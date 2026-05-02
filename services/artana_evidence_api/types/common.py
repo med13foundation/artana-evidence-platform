@@ -117,6 +117,7 @@ class ResearchSpaceSourcePreferences(TypedDict, total=False):
     clinical_trials: bool
     mgi: bool
     zfin: bool
+    orphanet: bool
 
 
 class ResearchSpaceSettings(TypedDict, total=False):

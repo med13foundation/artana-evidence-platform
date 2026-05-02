@@ -33,9 +33,14 @@ from artana_evidence_api.source_plugins.pubmed import (
     PUBMED_PLUGIN,
     build_pubmed_execution_plugin,
 )
+from artana_evidence_api.source_plugins.rare_disease.orphanet import ORPHANET_PLUGIN
 from artana_evidence_api.source_plugins.uniprot import UNIPROT_PLUGIN
 from artana_evidence_api.source_plugins.zfin import ZFIN_PLUGIN
 from artana_evidence_api.source_registry import SourceDefinition, normalize_source_key
+
+PublicSourcePlugin = (
+    EvidenceSourcePlugin | AuthoritySourcePlugin | DocumentIngestionSourcePlugin
+)
 
 _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     PUBMED_PLUGIN,
@@ -48,6 +53,7 @@ _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     CLINICAL_TRIALS_PLUGIN,
     MGI_PLUGIN,
     ZFIN_PLUGIN,
+    ORPHANET_PLUGIN,
 )
 
 _AUTHORITY_SOURCE_PLUGINS: tuple[AuthoritySourcePlugin, ...] = (
@@ -60,10 +66,7 @@ _DOCUMENT_INGESTION_SOURCE_PLUGINS: tuple[DocumentIngestionSourcePlugin, ...] = 
     TEXT_INGESTION_PLUGIN,
 )
 
-_PUBLIC_SOURCE_PLUGINS: tuple[
-    EvidenceSourcePlugin | AuthoritySourcePlugin | DocumentIngestionSourcePlugin,
-    ...,
-] = (
+_PUBLIC_SOURCE_PLUGINS: tuple[PublicSourcePlugin, ...] = (
     PUBMED_PLUGIN,
     MARRVEL_PLUGIN,
     CLINVAR_PLUGIN,
@@ -78,16 +81,9 @@ _PUBLIC_SOURCE_PLUGINS: tuple[
     CLINICAL_TRIALS_PLUGIN,
     MGI_PLUGIN,
     ZFIN_PLUGIN,
+    ORPHANET_PLUGIN,
 )
 
-
-SourceExecutionPluginBuilder = Callable[
-    [
-        Callable[[], AbstractContextManager[PubMedDiscoveryService]] | None,
-        Callable[[], MarrvelDiscoveryServiceProtocol | None] | None,
-    ],
-    EvidenceSourcePlugin,
-]
 
 _SOURCE_EXECUTION_PLUGIN_FACTORIES = (
     (PUBMED_PLUGIN.source_key, build_pubmed_execution_plugin),
@@ -183,7 +179,10 @@ def source_plugin_for_execution(
     """Return a source plugin with runner-scoped execution dependencies."""
 
     normalized_source_key = normalize_source_key(source_key)
-    for factory_source_key, build_execution_plugin in _SOURCE_EXECUTION_PLUGIN_FACTORIES:
+    for (
+        factory_source_key,
+        build_execution_plugin,
+    ) in _SOURCE_EXECUTION_PLUGIN_FACTORIES:
         if factory_source_key == normalized_source_key:
             return build_execution_plugin(
                 pubmed_discovery_service_factory,
@@ -221,10 +220,7 @@ def validate_source_plugin_registry() -> None:
 
 def _validate_plugin_group(
     *,
-    plugins: tuple[
-        EvidenceSourcePlugin | AuthoritySourcePlugin | DocumentIngestionSourcePlugin,
-        ...,
-    ],
+    plugins: tuple[PublicSourcePlugin, ...],
     group_name: str,
     direct_search_expected: bool,
 ) -> None:
@@ -234,7 +230,9 @@ def _validate_plugin_group(
         raise RuntimeError(msg)
     definition_keys = tuple(plugin.source_definition().source_key for plugin in plugins)
     if keys != definition_keys:
-        msg = f"{group_name} source plugin registry keys do not match plugin definitions."
+        msg = (
+            f"{group_name} source plugin registry keys do not match plugin definitions."
+        )
         raise RuntimeError(msg)
     metadata_keys = tuple(plugin.metadata.source_key for plugin in plugins)
     if keys != metadata_keys:
@@ -253,7 +251,7 @@ def _validate_plugin_group(
 
 def _validate_plugin_metadata(
     *,
-    plugin: EvidenceSourcePlugin | AuthoritySourcePlugin | DocumentIngestionSourcePlugin,
+    plugin: PublicSourcePlugin,
     definition: SourceDefinition,
 ) -> None:
     expected = {
@@ -261,7 +259,9 @@ def _validate_plugin_metadata(
         "display_name": definition.display_name,
         "description": definition.description,
         "source_family": definition.source_family,
-        "capabilities": tuple(capability.value for capability in definition.capabilities),
+        "capabilities": tuple(
+            capability.value for capability in definition.capabilities
+        ),
         "direct_search_supported": definition.direct_search_enabled,
         "research_plan_supported": definition.research_plan_enabled,
         "default_research_plan_enabled": definition.default_research_plan_enabled,
@@ -277,10 +277,7 @@ def _validate_plugin_metadata(
     for field_name, expected_value in expected.items():
         if getattr(metadata, field_name) == expected_value:
             continue
-        msg = (
-            f"Plugin metadata field '{field_name}' drifted for "
-            f"'{plugin.source_key}'."
-        )
+        msg = f"Plugin metadata field '{field_name}' drifted for '{plugin.source_key}'."
         raise RuntimeError(msg)
 
 
@@ -325,8 +322,7 @@ def _validated_authority_source_plugins() -> tuple[AuthoritySourcePlugin, ...]:
 
 @lru_cache(maxsize=1)
 def _validated_document_ingestion_source_plugins() -> tuple[
-    DocumentIngestionSourcePlugin,
-    ...,
+    DocumentIngestionSourcePlugin, ...
 ]:
     validate_source_plugin_registry()
     return _DOCUMENT_INGESTION_SOURCE_PLUGINS
@@ -340,8 +336,7 @@ def _source_plugins_by_key() -> dict[str, EvidenceSourcePlugin]:
 @lru_cache(maxsize=1)
 def _authority_source_plugins_by_key() -> dict[str, AuthoritySourcePlugin]:
     return {
-        plugin.source_key: plugin
-        for plugin in _validated_authority_source_plugins()
+        plugin.source_key: plugin for plugin in _validated_authority_source_plugins()
     }
 
 

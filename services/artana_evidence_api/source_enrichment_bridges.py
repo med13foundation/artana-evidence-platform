@@ -143,6 +143,19 @@ class AllianceGeneGatewayProtocol(Protocol):
     ) -> GatewayFetchResultProtocol: ...
 
 
+class OrphanetGatewayProtocol(Protocol):
+    """Orphanet ORPHAcodes gateway contract used by direct source search."""
+
+    async def fetch_records_async(
+        self,
+        *,
+        query: str | None = None,
+        orphacode: int | None = None,
+        language: str = "EN",
+        max_results: int = 20,
+    ) -> GatewayFetchResultProtocol: ...
+
+
 class MarrvelDiscoveryServiceProtocol(Protocol):
     """Local MARRVEL discovery contract used by structured enrichment."""
 
@@ -222,8 +235,27 @@ def build_zfin_gateway() -> AllianceGeneGatewayProtocol | None:
     return cast("AllianceGeneGatewayProtocol", ZFINSourceGateway())
 
 
+def build_orphanet_gateway() -> OrphanetGatewayProtocol | None:
+    """Construct the service-local Orphanet ORPHAcodes gateway."""
+    from artana_evidence_api.direct_sources.orphanet_gateway import (
+        OrphanetSourceGateway,
+    )
+
+    return cast("OrphanetGatewayProtocol", OrphanetSourceGateway())
+
+
 __all__ = [
+    "AllianceGeneGatewayProtocol",
+    "AlphaFoldGatewayProtocol",
+    "ClinicalTrialsGatewayProtocol",
+    "ClinVarGatewayProtocol",
     "ClinVarQueryConfig",
+    "DrugBankGatewayProtocol",
+    "GatewayFetchResultProtocol",
+    "GnomADGatewayProtocol",
+    "MarrvelDiscoveryServiceProtocol",
+    "OrphanetGatewayProtocol",
+    "UniProtGatewayProtocol",
     "build_alphafold_gateway",
     "build_clinicaltrials_gateway",
     "build_clinvar_gateway",
@@ -231,6 +263,7 @@ __all__ = [
     "build_gnomad_gateway",
     "build_marrvel_discovery_service",
     "build_mgi_gateway",
+    "build_orphanet_gateway",
     "build_uniprot_gateway",
     "build_zfin_gateway",
 ]
