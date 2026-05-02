@@ -30,8 +30,16 @@ _TRAILING_CONTEXT_RE = re.compile(
 _PARENTHETICAL_SUFFIX_RE = re.compile(r"\s*\([^)]*\)\s*$")
 _ENTITY_LABEL_TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9+./_-]*")
 _GENE_SYMBOL_RE = re.compile(r"\b([A-Z][A-Z0-9]{1,9}(?:[/-][A-Z0-9]+)?)\b")
+_GENE_SYMBOL_TOKEN_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]{1,9})\b")
+_GENE_SYMBOL_SLASH_SHORTHAND_RE = re.compile(
+    r"\b([A-Z]{2,}[A-Z0-9]*?)(\d+[A-Z]?)/(\d+[A-Z]?)\b",
+    re.IGNORECASE,
+)
+_GENE_SYMBOL_LIST_RE = re.compile(r"(?:\b(?:and|or|versus|vs)\b|[,/])", re.IGNORECASE)
 _MIN_COMPOUND_SEGMENT_TOKEN_COUNT = 2
 _MIN_EXACT_SPLIT_MATCH_COUNT = 2
+_MIN_AMBIGUOUS_GENE_SYMBOL_COUNT = 2
+_MIN_GENE_SYMBOL_FAMILY_CHARS = 3
 _SUBJECT_CONTEXT_MARKERS = (
     " that ",
     " showed ",
@@ -176,6 +184,8 @@ def clean_llm_entity_label(raw: str) -> str:
     """Clean an LLM-generated entity label to a short canonical name."""
 
     label = raw.strip().strip(".,;:\"'")
+    if _is_ambiguous_gene_symbol_mention(label):
+        return ""
     words = label.split()
     if (
         len(words) <= _MAX_ENTITY_LABEL_WORDS
@@ -249,6 +259,8 @@ def canonical_entity_label_rejection_reason(label: str) -> str | None:
         reason = "sentence_fragment_punctuation"
     elif not tokens:
         reason = "empty_entity_label"
+    elif _is_ambiguous_gene_symbol_mention(normalized_label):
+        reason = "ambiguous_gene_symbol_mention"
     elif len(tokens) > _MAX_CANONICAL_ENTITY_LABEL_TOKENS:
         reason = "entity_label_too_long"
     elif len(tokens) == 1 and tokens[0] in _STANDALONE_FRAGMENT_TOKENS:
@@ -309,7 +321,9 @@ def split_compound_entity_label(
     """Split compound object labels only when the split is likely intentional."""
 
     base_label = clean_candidate_label(label)
-    segments, contains_comma, contains_conjunction = _segment_compound_label(label)
+    segments, contains_comma, contains_and, contains_or = _segment_compound_label(
+        label,
+    )
     cleaned_segments: list[str] = []
     seen_labels: set[str] = set()
     for segment in segments:
@@ -321,36 +335,65 @@ def split_compound_entity_label(
             continue
         seen_labels.add(normalized_segment)
         cleaned_segments.append(cleaned_segment)
-    if len(cleaned_segments) <= 1:
-        if base_label != "":
-            return (base_label,)
-        return tuple(cleaned_segments)
-    if contains_comma:
-        return tuple(cleaned_segments)
-    if contains_conjunction and (
-        all(
-            _token_count(segment) >= _MIN_COMPOUND_SEGMENT_TOKEN_COUNT
-            for segment in cleaned_segments
+    if len(cleaned_segments) <= 1 or contains_or:
+        return _base_or_cleaned_entity_labels(
+            base_label=base_label,
+            cleaned_segments=cleaned_segments,
         )
-        or _count_exact_entity_matches(
-            space_id=space_id,
-            labels=cleaned_segments,
-            graph_api_gateway=graph_api_gateway,
-        )
-        >= _MIN_EXACT_SPLIT_MATCH_COUNT
+    if contains_comma or _should_split_conjunction_label(
+        space_id=space_id,
+        cleaned_segments=cleaned_segments,
+        contains_and=contains_and,
+        graph_api_gateway=graph_api_gateway,
     ):
         return tuple(cleaned_segments)
+    return _base_or_cleaned_entity_labels(
+        base_label=base_label,
+        cleaned_segments=cleaned_segments,
+    )
+
+
+def _base_or_cleaned_entity_labels(
+    *,
+    base_label: str,
+    cleaned_segments: list[str],
+) -> tuple[str, ...]:
     if base_label != "":
         return (base_label,)
     return tuple(cleaned_segments)
 
 
-def _segment_compound_label(label: str) -> tuple[list[str], bool, bool]:
+def _should_split_conjunction_label(
+    *,
+    space_id: UUID,
+    cleaned_segments: list[str],
+    contains_and: bool,
+    graph_api_gateway: GraphTransportBundle,
+) -> bool:
+    if not contains_and:
+        return False
+    if all(
+        _token_count(segment) >= _MIN_COMPOUND_SEGMENT_TOKEN_COUNT
+        for segment in cleaned_segments
+    ):
+        return True
+    return (
+        _count_exact_entity_matches(
+            space_id=space_id,
+            labels=cleaned_segments,
+            graph_api_gateway=graph_api_gateway,
+        )
+        >= _MIN_EXACT_SPLIT_MATCH_COUNT
+    )
+
+
+def _segment_compound_label(label: str) -> tuple[list[str], bool, bool, bool]:
     segments: list[str] = []
     current: list[str] = []
     parentheses_depth = 0
     contains_comma = False
-    contains_conjunction = False
+    contains_and = False
+    contains_or = False
     index = 0
     while index < len(label):
         character = label[index]
@@ -378,7 +421,7 @@ def _segment_compound_label(label: str) -> tuple[list[str], bool, bool]:
             if segment != "":
                 segments.append(segment)
             current = []
-            contains_conjunction = True
+            contains_and = True
             index += len(" and ")
             continue
         if parentheses_depth == 0 and normalized_tail.startswith(" or "):
@@ -386,7 +429,7 @@ def _segment_compound_label(label: str) -> tuple[list[str], bool, bool]:
             if segment != "":
                 segments.append(segment)
             current = []
-            contains_conjunction = True
+            contains_or = True
             index += len(" or ")
             continue
         current.append(character)
@@ -394,7 +437,93 @@ def _segment_compound_label(label: str) -> tuple[list[str], bool, bool]:
     final_segment = "".join(current).strip()
     if final_segment != "":
         segments.append(final_segment)
-    return segments, contains_comma, contains_conjunction
+    return segments, contains_comma, contains_and, contains_or
+
+
+def _is_ambiguous_gene_symbol_mention(label: str) -> bool:
+    if _GENE_SYMBOL_LIST_RE.search(label) is None:
+        return False
+
+    symbols = _collect_gene_symbol_mentions(label)
+    if len(symbols) < _MIN_AMBIGUOUS_GENE_SYMBOL_COUNT:
+        return False
+
+    return _contains_similar_gene_symbol_pair(symbols)
+
+
+def _collect_gene_symbol_mentions(label: str) -> tuple[str, ...]:
+    symbols: list[str] = []
+    seen_symbols: set[str] = set()
+
+    for match in _GENE_SYMBOL_SLASH_SHORTHAND_RE.finditer(label):
+        prefix = match.group(1)
+        for suffix in (match.group(2), match.group(3)):
+            _append_gene_symbol(
+                symbols=symbols,
+                seen_symbols=seen_symbols,
+                symbol=f"{prefix}{suffix}",
+            )
+
+    for match in _GENE_SYMBOL_TOKEN_RE.finditer(label):
+        _append_gene_symbol(
+            symbols=symbols,
+            seen_symbols=seen_symbols,
+            symbol=match.group(1),
+        )
+
+    return tuple(symbols)
+
+
+def _append_gene_symbol(
+    *,
+    symbols: list[str],
+    seen_symbols: set[str],
+    symbol: str,
+) -> None:
+    if not _is_gene_symbol_like_token(symbol):
+        return
+    normalized_symbol = symbol.casefold()
+    if normalized_symbol in _GENE_SYMBOL_STOPWORDS:
+        return
+    if normalized_symbol in seen_symbols:
+        return
+    seen_symbols.add(normalized_symbol)
+    symbols.append(symbol.upper())
+
+
+def _is_gene_symbol_like_token(symbol: str) -> bool:
+    return symbol.isupper() or (
+        any(character.isupper() for character in symbol)
+        and any(character.isdigit() for character in symbol)
+    )
+
+
+def _contains_similar_gene_symbol_pair(symbols: tuple[str, ...]) -> bool:
+    for left_index, left_symbol in enumerate(symbols):
+        for right_symbol in symbols[left_index + 1 :]:
+            if _are_similar_gene_symbols(left_symbol, right_symbol):
+                return True
+    return False
+
+
+def _are_similar_gene_symbols(left_symbol: str, right_symbol: str) -> bool:
+    if left_symbol == right_symbol:
+        return False
+
+    shorter, longer = sorted((left_symbol, right_symbol), key=len)
+    if len(shorter) >= _MIN_GENE_SYMBOL_FAMILY_CHARS and longer.startswith(shorter):
+        return True
+
+    left_stem = _gene_symbol_family_stem(left_symbol)
+    right_stem = _gene_symbol_family_stem(right_symbol)
+    return left_stem != "" and left_stem == right_stem
+
+
+def _gene_symbol_family_stem(symbol: str) -> str:
+    stem = re.sub(r"\d+[A-Z]*$", "", symbol)
+    if len(stem) < _MIN_GENE_SYMBOL_FAMILY_CHARS:
+        return ""
+    return stem
 
 
 def _token_count(label: str) -> int:

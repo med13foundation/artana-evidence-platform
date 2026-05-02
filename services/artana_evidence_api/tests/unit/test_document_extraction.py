@@ -1085,6 +1085,66 @@ async def test_pre_resolve_entities_with_ai_caps_ai_budget(
 
 
 @pytest.mark.asyncio
+async def test_pre_resolve_entities_with_ai_skips_ambiguous_gene_family_labels(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exact_labels: list[str] = []
+    ai_labels: list[str] = []
+
+    def _fake_exact_match(*, space_id, label: str, graph_api_gateway):
+        del space_id, graph_api_gateway
+        exact_labels.append(label)
+
+    async def _fake_resolve_entity_with_ai(
+        *,
+        space_id,
+        label: str,
+        graph_api_gateway,
+        space_context: str = "",
+    ) -> dict[str, str] | None:
+        del space_id, graph_api_gateway, space_context
+        ai_labels.append(label)
+        return {
+            "id": f"resolved:{label}",
+            "display_label": f"{label} resolved",
+        }
+
+    monkeypatch.setattr(
+        document_extraction,
+        "resolve_exact_entity_label",
+        _fake_exact_match,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "_resolve_entity_label_with_ai",
+        _fake_resolve_entity_with_ai,
+    )
+
+    resolved = await pre_resolve_entities_with_ai(
+        space_id=uuid4(),
+        candidates=[
+            ExtractedRelationCandidate(
+                subject_label="MED13 or MED13L",
+                relation_type="ASSOCIATED_WITH",
+                object_label="developmental disorder",
+                sentence="MED13 or MED13L was associated with developmental disorder.",
+            ),
+        ],
+        graph_api_gateway=_EmptyGraphApiGateway(),
+        space_context="Investigate MED13 family disorder evidence.",
+    )
+
+    assert exact_labels == ["developmental disorder"]
+    assert ai_labels == ["developmental disorder"]
+    assert resolved == {
+        "developmental disorder": {
+            "id": "resolved:developmental disorder",
+            "display_label": "developmental disorder resolved",
+        },
+    }
+
+
+@pytest.mark.asyncio
 async def test_pre_resolve_entities_with_ai_times_out_and_falls_back(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
