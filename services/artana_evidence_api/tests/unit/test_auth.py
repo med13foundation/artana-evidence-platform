@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
@@ -12,6 +13,7 @@ from artana_evidence_api.auth import (
     HarnessUser,
     HarnessUserRole,
     HarnessUserStatus,
+    _parse_role,
     get_current_harness_user,
     require_harness_write_access,
 )
@@ -30,6 +32,73 @@ def _request_with_headers(headers: dict[str, str] | None = None) -> Request:
         for name, value in (headers or {}).items()
     ]
     return Request({"type": "http", "headers": raw_headers})
+
+
+def test_parse_role_preserves_platform_roles() -> None:
+    assert _parse_role("ADMIN") == HarnessUserRole.ADMIN
+    assert _parse_role("admin") == HarnessUserRole.ADMIN
+    assert _parse_role("curator") == HarnessUserRole.CURATOR
+    assert _parse_role("researcher") == HarnessUserRole.RESEARCHER
+    assert _parse_role("viewer") == HarnessUserRole.VIEWER
+    assert _parse_role("service") == HarnessUserRole.SERVICE
+
+
+def test_parse_role_treats_owner_as_invalid_platform_role(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.WARNING, logger="artana_evidence_api.auth"):
+        role = _parse_role(
+            "OWNER",
+            context="test subject 11111111-1111-1111-1111-111111111111",
+        )
+
+    assert role == HarnessUserRole.VIEWER
+    assert "Unknown harness platform role 'owner' from test subject" in caplog.text
+    assert "falling back to viewer" in caplog.text
+
+
+def test_parse_role_warns_on_non_string_role_claim(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.WARNING, logger="artana_evidence_api.auth"):
+        role = _parse_role(
+            ["admin"],
+            context="access token subject 11111111-1111-1111-1111-111111111111",
+        )
+
+    assert role == HarnessUserRole.VIEWER
+    assert "Unknown harness platform role 'list' from access token subject" in (
+        caplog.text
+    )
+
+
+def test_parse_role_defaults_missing_role_to_viewer_without_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.WARNING, logger="artana_evidence_api.auth"):
+        role = _parse_role(None)
+
+    assert role == HarnessUserRole.VIEWER
+    assert [
+        record
+        for record in caplog.records
+        if record.name == "artana_evidence_api.auth"
+    ] == []
+
+
+def test_parse_role_truncates_long_invalid_role_values(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    role_value = "x" * 80
+
+    with caplog.at_level(logging.WARNING, logger="artana_evidence_api.auth"):
+        role = _parse_role(role_value, context="test subject")
+
+    assert role == HarnessUserRole.VIEWER
+    assert "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx..." in (
+        caplog.text
+    )
+    assert role_value not in caplog.text
 
 
 @pytest.mark.asyncio
@@ -84,6 +153,46 @@ async def test_get_current_harness_user_accepts_platform_access_token(
         str(user.email)
         == "11111111-1111-1111-1111-111111111111@graph-harness.example.com"
     )
+
+
+@pytest.mark.asyncio
+async def test_owner_platform_role_claim_falls_back_to_viewer_and_fails_write_access(
+    monkeypatch: pytest.MonkeyPatch,
+    db_session: Session,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setenv("AUTH_JWT_SECRET", _TEST_SECRET)
+    token = jwt.encode(
+        {
+            "sub": "11111111-1111-1111-1111-111111111111",
+            "role": "owner",
+            "type": "access",
+            "iss": "artana-platform",
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(minutes=15),
+        },
+        _TEST_SECRET,
+        algorithm="HS256",
+    )
+
+    with caplog.at_level(logging.WARNING, logger="artana_evidence_api.auth"):
+        user = await get_current_harness_user(
+            _request_with_headers(),
+            credentials=HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials=token,
+            ),
+            session=db_session,
+        )
+
+    assert user.role == HarnessUserRole.VIEWER
+    assert "Unknown harness platform role 'owner'" in caplog.text
+    assert "access token subject 11111111-1111-1111-1111-111111111111" in caplog.text
+    with pytest.raises(HTTPException) as exc_info:
+        require_harness_write_access(current_user=user)
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail == "Researcher, curator, or admin role required"
 
 
 @pytest.mark.asyncio
