@@ -1,0 +1,56 @@
+{
+  "fixture_name": "thr326lys_worked_example",
+  "safety": {
+    "contains_phi": false,
+    "evidence_scope": "public_only",
+    "medical_claim_boundary": "Regression fixture only; not a clinical interpretation deliverable."
+  },
+  "goal": "Work up public MED13 NM_015335.6:c.977C>A (p.Thr326Lys) variant evidence for source coverage and review staging.",
+  "instructions": "Use public, non-PHI evidence only. Treat source records as review candidates, not clinical conclusions.",
+  "requested_sources": [
+    "clinvar",
+    "gnomad"
+  ],
+  "unsupported_or_skipped_sources": [
+    {
+      "source_key": "gnomad",
+      "reason": "Skipped in this deterministic fixture because Thr326Lys is represented as HGVS/protein notation; the current gnomAD direct search needs a gnomAD variant_id or a gene-level constraint query."
+    },
+    {
+      "source_key": "alphamissense",
+      "reason": "Unsupported until a direct AlphaMissense source plugin exists; record the gap instead of making an unsupported live call."
+    }
+  ],
+  "clinvar_search": {
+    "query": "MED13 Thr326Lys public variant evidence",
+    "gene_symbol": "MED13",
+    "records": [
+      {
+        "accession": "VCV000MED13326",
+        "variation_id": "public-thr326lys",
+        "gene_symbol": "MED13",
+        "title": "MED13 NM_015335.6:c.977C>A (p.Thr326Lys) ClinVar-style public variant record",
+        "clinical_significance": "Uncertain significance",
+        "review_status": "criteria provided, single submitter",
+        "condition": "developmental or congenital heart phenotype context",
+        "hgvs_notation": "NM_015335.6:c.977C>A",
+        "hgvs": "NM_015335.6:c.977C>A",
+        "hgvs_p": "p.Thr326Lys",
+        "summary": "Public fixture record for deterministic evidence-selection staging."
+      },
+      {
+        "accession": "VCV000BRCA1001",
+        "gene_symbol": "BRCA1",
+        "title": "BRCA1 unrelated hereditary cancer variant context",
+        "clinical_significance": "Pathogenic"
+      }
+    ]
+  },
+  "expected": {
+    "selected_source_key": "clinvar",
+    "selected_record_title": "MED13 NM_015335.6:c.977C>A (p.Thr326Lys) ClinVar-style public variant record",
+    "skipped_record_title": "BRCA1 unrelated hereditary cancer variant context",
+    "proposal_type": "variant_evidence_candidate",
+    "review_type": "variant_source_record_review"
+  }
+}
