@@ -8054,7 +8054,8 @@ def test_viewer_can_read_but_cannot_mutate_accessible_space_scoped_routes() -> N
     )
     assert write_response.status_code == 403
     assert (
-        write_response.json()["detail"] == "Researcher, curator, or admin role required"
+        write_response.json()["detail"]
+        == "Owner, researcher, curator, or admin role required"
     )
 
 

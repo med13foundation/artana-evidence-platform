@@ -1,8 +1,8 @@
 """Authentication helpers for the standalone harness service.
 
 Platform roles carried by tokens and API keys are intentionally separate from
-research-space membership roles. For example, ``owner`` is a space role checked
-by the space ACL layer, not a valid platform role for ``HarnessUser``.
+research-space membership checks. ``owner`` satisfies the general write gate,
+but access to a specific space is still checked by the space ACL layer.
 """
 
 from __future__ import annotations
@@ -34,9 +34,11 @@ _FALLBACK_DEV_JWT_SECRET = "artana-platform-dev-jwt-secret-change-in-production-
 _TOKEN_ISSUER = "artana-platform"
 _TOKEN_ALGORITHM = "HS256"
 _UNKNOWN_ROLE_LOG_VALUE_MAX_LENGTH = 64
+# Owner is write-equivalent for harness actions, not admin-equivalent.
 _WRITE_ROLES = frozenset(
     {
         "admin",
+        "owner",
         "curator",
         "researcher",
     },
@@ -55,13 +57,10 @@ class HarnessUserStatus(str, Enum):
 
 
 class HarnessUserRole(str, Enum):
-    """Platform role values used by harness authorization checks.
-
-    Space ownership is represented by research-space membership records, not by
-    this platform role enum.
-    """
+    """Role values used by harness authorization checks."""
 
     ADMIN = "admin"
+    OWNER = "owner"
     CURATOR = "curator"
     RESEARCHER = "researcher"
     VIEWER = "viewer"
@@ -388,7 +387,7 @@ def require_harness_write_access(
     if current_user.role.value not in _WRITE_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Researcher, curator, or admin role required",
+            detail="Owner, researcher, curator, or admin role required",
         )
     return current_user
 

@@ -98,6 +98,58 @@ def test_bootstrap_route_issues_api_key_and_default_space(
         assert create_key_payload["api_key"]["api_key"].startswith("art_sk_")
 
 
+def test_bootstrap_route_accepts_owner_role_api_key(
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv(
+        "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY",
+        "bootstrap-secret",
+    )
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: db_session
+    app.dependency_overrides[get_research_space_store] = (
+        lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
+    )
+
+    with TestClient(app) as client:
+        bootstrap_response = client.post(
+            "/v1/auth/bootstrap",
+            headers={"X-Artana-Bootstrap-Key": "bootstrap-secret"},
+            json={
+                "email": "owner@example.com",
+                "username": "owner",
+                "full_name": "Owner Example",
+                "role": "owner",
+                "api_key_name": "Owner SDK Key",
+                "create_default_space": True,
+            },
+        )
+
+        assert bootstrap_response.status_code == 201
+        bootstrap_payload = bootstrap_response.json()
+        issued_api_key = bootstrap_payload["api_key"]["api_key"]
+        me_response = client.get(
+            "/v1/auth/me",
+            headers={"X-Artana-Key": issued_api_key},
+        )
+        tester_response = client.post(
+            "/v1/auth/testers",
+            headers={"X-Artana-Key": issued_api_key},
+            json={"email": "tester@example.com"},
+        )
+
+    assert bootstrap_payload["user"]["role"] == "owner"
+    assert bootstrap_payload["api_key"]["name"] == "Owner SDK Key"
+    assert bootstrap_payload["default_space"]["role"] == "owner"
+    assert me_response.status_code == 200
+    assert me_response.json()["user"]["role"] == "owner"
+    assert tester_response.status_code == 403
+    assert (
+        tester_response.json()["detail"] == "Admin role required to create tester users"
+    )
+
+
 def test_bootstrap_route_rejects_missing_bootstrap_key_when_configured(
     db_session: Session,
     monkeypatch,
@@ -299,6 +351,28 @@ def test_non_admin_cannot_create_tester_user(
         headers={"X-Artana-Key": api_key},
         json={"email": "tester@example.com"},
     )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin role required to create tester users"
+
+
+def test_owner_jwt_cannot_create_tester_user(db_session: Session) -> None:
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: db_session
+    app.dependency_overrides[get_research_space_store] = (
+        lambda: SqlAlchemyHarnessResearchSpaceStore(db_session)
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/auth/testers",
+            headers=_jwt_auth_headers(
+                user_id="11111111-1111-1111-1111-111111111111",
+                email="owner@example.com",
+                role="owner",
+            ),
+            json={"email": "tester@example.com"},
+        )
 
     assert response.status_code == 403
     assert response.json()["detail"] == "Admin role required to create tester users"
