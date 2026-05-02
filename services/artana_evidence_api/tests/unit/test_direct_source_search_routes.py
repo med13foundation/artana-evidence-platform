@@ -21,6 +21,7 @@ from artana_evidence_api.dependencies import (
     get_drugbank_source_gateway,
     get_gnomad_source_gateway,
     get_mgi_source_gateway,
+    get_orphanet_source_gateway,
     get_pubmed_discovery_service,
     get_research_space_store,
     get_run_registry,
@@ -34,6 +35,9 @@ from artana_evidence_api.direct_source_search import (
     SqlAlchemyDirectSourceSearchStore,
 )
 from artana_evidence_api.direct_sources.gnomad_gateway import GnomADGatewayFetchResult
+from artana_evidence_api.direct_sources.orphanet_gateway import (
+    OrphanetGatewayFetchResult,
+)
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.drugbank_gateway import DrugBankGatewayFetchResult
 from artana_evidence_api.marrvel_discovery import MarrvelDiscoveryResult
@@ -86,7 +90,9 @@ class _StubClinVarGateway:
     def __init__(self) -> None:
         self.configs: list[ClinVarQueryConfig] = []
 
-    async def fetch_records(self, config: ClinVarQueryConfig) -> list[dict[str, object]]:
+    async def fetch_records(
+        self, config: ClinVarQueryConfig
+    ) -> list[dict[str, object]]:
         self.configs.append(config)
         return [
             {
@@ -104,7 +110,9 @@ class _StubClinVarGateway:
 
 
 class _FailingClinVarGateway:
-    async def fetch_records(self, config: ClinVarQueryConfig) -> list[dict[str, object]]:
+    async def fetch_records(
+        self, config: ClinVarQueryConfig
+    ) -> list[dict[str, object]]:
         del config
         raise RuntimeError("clinvar offline")
 
@@ -361,6 +369,35 @@ class _StubAllianceGeneGateway:
         )
 
 
+class _StubOrphanetGateway:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str | None, int | None, str, int]] = []
+
+    async def fetch_records_async(
+        self,
+        *,
+        query: str | None = None,
+        orphacode: int | None = None,
+        language: str = "EN",
+        max_results: int = 20,
+    ) -> OrphanetGatewayFetchResult:
+        assert (query is None) is (orphacode is not None)
+        self.calls.append((query, orphacode, language, max_results))
+        return OrphanetGatewayFetchResult(
+            records=[
+                {
+                    "orpha_code": str(orphacode or 558),
+                    "orphanet_id": f"ORPHA:{orphacode or 558}",
+                    "preferred_term": query or "Marfan syndrome",
+                    "name": query or "Marfan syndrome",
+                    "definition": "A connective tissue disorder.",
+                    "source": "orphanet",
+                },
+            ],
+            fetched_records=1,
+        )
+
+
 class _StubMarrvelDiscoveryService:
     def __init__(self) -> None:
         self.results: dict[UUID, MarrvelDiscoveryResult] = {}
@@ -450,6 +487,7 @@ def _build_client(
     drugbank_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
+    orphanet_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
     pubmed_discovery_service: object | None = None,
 ) -> _BuiltClient:
@@ -476,6 +514,7 @@ def _build_client(
         drugbank_gateway=drugbank_gateway,
         mgi_gateway=mgi_gateway,
         zfin_gateway=zfin_gateway,
+        orphanet_gateway=orphanet_gateway,
         marrvel_discovery_service=marrvel_discovery_service,
         pubmed_discovery_service=pubmed_discovery_service,
     )
@@ -503,6 +542,7 @@ def _build_client_for_space(
     drugbank_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
+    orphanet_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
     pubmed_discovery_service: object | None = None,
 ) -> TestClient:
@@ -529,6 +569,7 @@ def _build_client_for_space(
     app.dependency_overrides[get_drugbank_source_gateway] = lambda: drugbank_gateway
     app.dependency_overrides[get_mgi_source_gateway] = lambda: mgi_gateway
     app.dependency_overrides[get_zfin_source_gateway] = lambda: zfin_gateway
+    app.dependency_overrides[get_orphanet_source_gateway] = lambda: orphanet_gateway
     if marrvel_discovery_service is not None:
         app.dependency_overrides[marrvel.get_marrvel_discovery_service] = (
             lambda: marrvel_discovery_service
@@ -830,6 +871,14 @@ def test_source_search_handoff_creates_non_variant_source_document() -> None:
             "provider_id",
             "ZFIN:1",
         ),
+        (
+            "orphanet",
+            {"orphanet_gateway": _StubOrphanetGateway()},
+            {"query": "Marfan syndrome"},
+            "rare_disease",
+            "orphanet_id",
+            "ORPHA:558",
+        ),
     ],
 )
 def test_non_variant_source_handoffs_create_normalized_source_documents(
@@ -866,8 +915,7 @@ def test_non_variant_source_handoffs_create_normalized_source_documents(
     assert document.source_type == source_key
     assert document.metadata["source_family"] == expected_family
     assert (
-        document.metadata["normalization_profile"]
-        == f"{source_key}_source_document_v1"
+        document.metadata["normalization_profile"] == f"{source_key}_source_document_v1"
     )
     assert document.metadata["normalized_record"][normalized_field] == expected_value
     assert "Normalized Fields" in document.text_content
@@ -1130,7 +1178,9 @@ def test_create_clinvar_source_search_returns_503_when_gateway_fails() -> None:
     assert "clinvar offline" in response.json()["detail"]
 
 
-def test_create_clinicaltrials_source_search_returns_records_and_capture_metadata() -> None:
+def test_create_clinicaltrials_source_search_returns_records_and_capture_metadata() -> (
+    None
+):
     clinicaltrials_gateway = _StubClinicalTrialsGateway()
     built = _build_client(clinicaltrials_gateway=clinicaltrials_gateway)
 
@@ -1192,6 +1242,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         drugbank_gateway=_StubDrugBankGateway(),
         mgi_gateway=_StubAllianceGeneGateway(source_key="mgi"),
         zfin_gateway=_StubAllianceGeneGateway(source_key="zfin"),
+        orphanet_gateway=_StubOrphanetGateway(),
     )
     cases: tuple[tuple[str, dict[str, object], str], ...] = (
         ("ClinVar", {"gene_symbol": "BRCA1"}, "clinvar"),
@@ -1201,6 +1252,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         ("DrugBank", {"drug_name": "Olaparib"}, "drugbank"),
         ("MGI", {"query": "BRCA1"}, "mgi"),
         ("ZFIN", {"query": "BRCA1"}, "zfin"),
+        ("ORPHAcode", {"orphacode": 558}, "orphanet"),
     )
 
     for source_key, request_payload, expected_source_key in cases:
@@ -1329,7 +1381,9 @@ def test_durable_source_search_routes_survive_fresh_app_and_store_instances() ->
     try:
         second_client = _build_client_for_space(
             research_space_store=research_space_store,
-            direct_source_search_store=SqlAlchemyDirectSourceSearchStore(second_session),
+            direct_source_search_store=SqlAlchemyDirectSourceSearchStore(
+                second_session
+            ),
         )
 
         clinvar_get = second_client.get(
@@ -1369,7 +1423,9 @@ def test_create_alphafold_source_search_returns_records_and_capture_metadata() -
     assert payload["source_capture"]["query"] == "P38398"
 
 
-def test_create_gnomad_gene_source_search_returns_records_and_capture_metadata() -> None:
+def test_create_gnomad_gene_source_search_returns_records_and_capture_metadata() -> (
+    None
+):
     gnomad_gateway = _StubGnomADGateway()
     built = _build_client(gnomad_gateway=gnomad_gateway)
 
@@ -1476,7 +1532,9 @@ def test_create_drugbank_source_search_returns_records_and_capture_metadata() ->
     assert payload["source_capture"]["external_id"] == "DB01234"
 
 
-def test_create_alliance_gene_source_searches_return_records_and_capture_metadata() -> None:
+def test_create_alliance_gene_source_searches_return_records_and_capture_metadata() -> (
+    None
+):
     built = _build_client(
         mgi_gateway=_StubAllianceGeneGateway(source_key="mgi"),
         zfin_gateway=_StubAllianceGeneGateway(source_key="zfin"),
@@ -1497,6 +1555,115 @@ def test_create_alliance_gene_source_searches_return_records_and_capture_metadat
         assert payload["source_capture"]["source_key"] == source_key
         assert payload["source_capture"]["query_payload"]["max_results"] == 4
         assert payload["source_capture"]["external_id"] == f"{source_key.upper()}:1"
+
+
+def test_create_orphanet_source_search_requires_configured_credentials() -> None:
+    built = _build_client(orphanet_gateway=None)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/orphanet/searches",
+        headers=_auth_headers(),
+        json={"query": "Marfan syndrome"},
+    )
+
+    assert response.status_code == 503
+    assert "Orphanet credentials are not configured" in response.json()["detail"]
+
+
+def test_orphanet_source_gateway_dependency_requires_api_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ORPHACODE_API_KEY", raising=False)
+
+    assert get_orphanet_source_gateway() is None
+
+    monkeypatch.setenv("ORPHACODE_API_KEY", "test-api-key")
+
+    assert get_orphanet_source_gateway() is not None
+
+
+def test_create_orphanet_source_search_returns_records_and_capture_metadata() -> None:
+    orphanet_gateway = _StubOrphanetGateway()
+    built = _build_client(orphanet_gateway=orphanet_gateway)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/orphanet/searches",
+        headers=_auth_headers(),
+        json={"query": "Marfan syndrome", "max_results": 2},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "orphanet"
+    assert payload["query"] == "Marfan syndrome"
+    assert payload["language"] == "EN"
+    assert payload["records"][0]["orphanet_id"] == "ORPHA:558"
+    assert payload["source_capture"]["source_key"] == "orphanet"
+    assert payload["source_capture"]["result_count"] == 1
+    assert payload["source_capture"]["external_id"] == "ORPHA:558"
+    assert payload["source_capture"]["provenance"]["provider"] == (
+        "ORPHAcodes API / Orphanet Nomenclature Pack"
+    )
+    assert orphanet_gateway.calls == [("Marfan syndrome", None, "EN", 2)]
+
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/orphanet/searches/{payload['id']}",
+        headers=_auth_headers(),
+    )
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == payload["id"]
+
+
+def test_create_orphanet_source_search_fetches_orphacode_only() -> None:
+    orphanet_gateway = _StubOrphanetGateway()
+    built = _build_client(orphanet_gateway=orphanet_gateway)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/orphanet/searches",
+        headers=_auth_headers(),
+        json={"orphacode": 558, "language": "fr", "max_results": 1},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "orphanet"
+    assert payload["query"] == "ORPHA:558"
+    assert payload["orphacode"] == 558
+    assert payload["language"] == "FR"
+    assert payload["records"][0]["orphanet_id"] == "ORPHA:558"
+    assert payload["source_capture"]["query"] == "ORPHA:558"
+    assert payload["source_capture"]["query_payload"] == {
+        "orphacode": 558,
+        "language": "FR",
+        "max_results": 1,
+    }
+    assert orphanet_gateway.calls == [(None, 558, "FR", 1)]
+
+
+@pytest.mark.parametrize(
+    ("request_payload", "expected_message"),
+    [
+        ({}, "Provide one of query or orphacode"),
+        (
+            {"query": "Marfan syndrome", "orphacode": 558},
+            "Provide either query or orphacode, not both",
+        ),
+    ],
+)
+def test_create_orphanet_source_search_rejects_invalid_lookup_shape(
+    request_payload: dict[str, object],
+    expected_message: str,
+) -> None:
+    built = _build_client(orphanet_gateway=_StubOrphanetGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/orphanet/searches",
+        headers=_auth_headers(),
+        json=request_payload,
+    )
+
+    assert response.status_code == 422
+    assert expected_message in response.text
 
 
 def test_get_direct_source_search_rejects_wrong_space() -> None:

@@ -39,12 +39,14 @@ def test_source_plugin_registry_is_explicit_and_consistent() -> None:
         "clinical_trials",
         "mgi",
         "zfin",
+        "orphanet",
     )
 
     assert source_plugin_keys() == expected_keys
-    assert tuple(
-        plugin.source_definition().source_key for plugin in source_plugins()
-    ) == expected_keys
+    assert (
+        tuple(plugin.source_definition().source_key for plugin in source_plugins())
+        == expected_keys
+    )
     assert [plugin.source_key for plugin in source_plugins()] == [
         *expected_keys,
     ]
@@ -82,7 +84,9 @@ def test_execution_registry_wraps_only_when_runner_dependencies_are_supplied() -
     assert wrapped_marrvel.discovery_service_factory is marrvel_factory
 
 
-def test_source_plugin_registry_rejects_metadata_drift(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_source_plugin_registry_rejects_metadata_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     plugin = source_plugin("pubmed")
     assert plugin is not None
     drifted_plugin = _MetadataDriftPlugin(plugin)

@@ -11,6 +11,7 @@ from artana_evidence_api.dependencies import (
     get_drugbank_source_gateway,
     get_gnomad_source_gateway,
     get_mgi_source_gateway,
+    get_orphanet_source_gateway,
     get_pubmed_discovery_service,
     get_uniprot_source_gateway,
     get_zfin_source_gateway,
@@ -25,6 +26,7 @@ from artana_evidence_api.source_enrichment_bridges import (
     ClinVarGatewayProtocol,
     DrugBankGatewayProtocol,
     GnomADGatewayProtocol,
+    OrphanetGatewayProtocol,
     UniProtGatewayProtocol,
 )
 from artana_evidence_api.source_route_contracts import (
@@ -49,6 +51,7 @@ _GNOMAD_SOURCE_GATEWAY_DEPENDENCY = Depends(get_gnomad_source_gateway)
 _DRUGBANK_SOURCE_GATEWAY_DEPENDENCY = Depends(get_drugbank_source_gateway)
 _MGI_SOURCE_GATEWAY_DEPENDENCY = Depends(get_mgi_source_gateway)
 _ZFIN_SOURCE_GATEWAY_DEPENDENCY = Depends(get_zfin_source_gateway)
+_ORPHANET_SOURCE_GATEWAY_DEPENDENCY = Depends(get_orphanet_source_gateway)
 
 
 def direct_source_route_dependencies(
@@ -79,6 +82,9 @@ def direct_source_route_dependencies(
     ),
     mgi_gateway: AllianceGeneGatewayProtocol | None = _MGI_SOURCE_GATEWAY_DEPENDENCY,
     zfin_gateway: AllianceGeneGatewayProtocol | None = _ZFIN_SOURCE_GATEWAY_DEPENDENCY,
+    orphanet_gateway: OrphanetGatewayProtocol | None = (
+        _ORPHANET_SOURCE_GATEWAY_DEPENDENCY
+    ),
 ) -> DirectSourceRouteDependencies:
     """Collect route dependencies without exposing source-specific fields."""
 
@@ -96,6 +102,7 @@ def direct_source_route_dependencies(
             "drugbank": drugbank_gateway,
             "mgi": mgi_gateway,
             "zfin": zfin_gateway,
+            "orphanet": orphanet_gateway,
         },
     )
 

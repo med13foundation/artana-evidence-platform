@@ -106,9 +106,12 @@ def test_generic_route_dependency_keys_match_route_plugin_keys() -> None:
         drugbank_gateway=None,
         mgi_gateway=None,
         zfin_gateway=None,
+        orphanet_gateway=None,
     )
 
-    assert set(dependencies.source_dependencies) == set(direct_source_route_plugin_keys())
+    assert set(dependencies.source_dependencies) == set(
+        direct_source_route_plugin_keys()
+    )
 
 
 def test_typed_route_endpoint_map_is_read_only() -> None:
@@ -280,7 +283,10 @@ def test_gateway_source_get_returns_404_for_missing_stored_result() -> None:
         )
 
     assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert exc_info.value.detail == "Source search was not found for this space and source."
+    assert (
+        exc_info.value.detail
+        == "Source search was not found for this space and source."
+    )
 
 
 @pytest.mark.asyncio

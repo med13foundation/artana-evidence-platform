@@ -124,6 +124,10 @@ _SOURCE_KEY_ALIASES = {
     "clinical_trials.gov": "clinical_trials",
     "clinical-trials": "clinical_trials",
     "clinical-trials-gov": "clinical_trials",
+    "orpha": "orphanet",
+    "orpha_code": "orphanet",
+    "orphacode": "orphanet",
+    "orpha-code": "orphanet",
 }
 
 

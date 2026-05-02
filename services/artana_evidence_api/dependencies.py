@@ -72,6 +72,7 @@ from artana_evidence_api.source_enrichment_bridges import (
     build_drugbank_gateway,
     build_gnomad_gateway,
     build_mgi_gateway,
+    build_orphanet_gateway,
     build_uniprot_gateway,
     build_zfin_gateway,
 )
@@ -123,6 +124,7 @@ if TYPE_CHECKING:
         ClinVarGatewayProtocol,
         DrugBankGatewayProtocol,
         GnomADGatewayProtocol,
+        OrphanetGatewayProtocol,
         UniProtGatewayProtocol,
     )
     from sqlalchemy.orm import Session
@@ -503,6 +505,14 @@ def get_zfin_source_gateway() -> AllianceGeneGatewayProtocol | None:
     return build_zfin_gateway()
 
 
+def get_orphanet_source_gateway() -> OrphanetGatewayProtocol | None:
+    """Return the Orphanet gateway when ORPHAcodes credentials are configured."""
+
+    if not os.getenv("ORPHACODE_API_KEY"):
+        return None
+    return build_orphanet_gateway()
+
+
 def get_graph_search_runner() -> HarnessGraphSearchRunner:
     """Return the harness-owned graph-search runner."""
     return HarnessGraphSearchRunner()
@@ -628,6 +638,7 @@ __all__ = [
     "get_harness_execution_services",
     "get_identity_gateway",
     "get_mgi_source_gateway",
+    "get_orphanet_source_gateway",
     "get_pubmed_discovery_service",
     "get_pubmed_discovery_service_factory",
     "get_proposal_store",

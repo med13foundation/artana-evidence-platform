@@ -9495,6 +9495,170 @@
         "title": "MechanismDiscoveryRunResponse",
         "type": "object"
       },
+      "OrphanetSourceSearchRequest": {
+        "description": "Request payload for a direct Orphanet disease lookup.",
+        "properties": {
+          "language": {
+            "default": "EN",
+            "description": "ORPHAcodes API language code.",
+            "enum": [
+              "CS",
+              "DE",
+              "EN",
+              "ES",
+              "FR",
+              "IT",
+              "NL",
+              "PL",
+              "PT"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "orphacode": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exact ORPHAcode to fetch from Orphanet.",
+            "title": "Orphacode"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rare-disease name or approximate preferred term to search.",
+            "title": "Query"
+          }
+        },
+        "title": "OrphanetSourceSearchRequest",
+        "type": "object"
+      },
+      "OrphanetSourceSearchResponse": {
+        "description": "Response payload for one captured Orphanet direct search.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "default": "EN",
+            "enum": [
+              "CS",
+              "DE",
+              "EN",
+              "ES",
+              "FR",
+              "IT",
+              "NL",
+              "PL",
+              "PT"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "orphacode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orphacode"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "orphanet",
+            "default": "orphanet",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "OrphanetSourceSearchResponse",
+        "type": "object"
+      },
       "ProcessHealth": {
         "description": "Health status of a background process.",
         "properties": {
@@ -11017,6 +11181,10 @@
           },
           "mondo": {
             "title": "Mondo",
+            "type": "boolean"
+          },
+          "orphanet": {
+            "title": "Orphanet",
             "type": "boolean"
           },
           "pdf": {
@@ -25370,6 +25538,130 @@
           }
         ],
         "summary": "Get MGI evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/orphanet/searches": {
+      "post": {
+        "description": "Typed v2 route for Orphanet source search.",
+        "operationId": "create_orphanet_source_search_v2_spaces__space_id__sources_orphanet_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrphanetSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrphanetSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search Orphanet evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/orphanet/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for Orphanet source-search lookup.",
+        "operationId": "get_orphanet_source_search_v2_spaces__space_id__sources_orphanet_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrphanetSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Orphanet evidence source search",
         "tags": [
           "sources"
         ]

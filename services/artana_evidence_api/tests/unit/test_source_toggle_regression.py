@@ -67,6 +67,7 @@ class TestSourcesConfigParsing:
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
+            "orphanet": False,
         }
 
     def test_request_sources_override_saved_settings(self) -> None:
@@ -101,6 +102,7 @@ class TestSourcesConfigParsing:
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
+            "orphanet": False,
         }
 
     def test_partial_request_sources_are_authoritative(self) -> None:
@@ -133,6 +135,7 @@ class TestSourcesConfigParsing:
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
+            "orphanet": False,
         }
 
     def test_saved_settings_apply_when_request_omits_sources(self) -> None:
@@ -162,6 +165,7 @@ class TestSourcesConfigParsing:
             "clinical_trials": False,
             "mgi": False,
             "zfin": False,
+            "orphanet": False,
         }
 
     def test_unknown_source_keys_are_reported_for_request_validation(self) -> None:

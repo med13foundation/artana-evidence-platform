@@ -40,6 +40,7 @@ def test_source_registry_lists_all_research_plan_sources() -> None:
         "clinical_trials",
         "mgi",
         "zfin",
+        "orphanet",
     ]
     assert set(research_plan_source_keys()) == set(source_keys)
 
@@ -56,6 +57,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
         "clinical_trials",
         "mgi",
         "zfin",
+        "orphanet",
     )
 
     pubmed = get_source_definition("pubmed")
@@ -72,6 +74,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
             "uniprot",
             "mgi",
             "zfin",
+            "orphanet",
         )
     ]
 
@@ -104,14 +107,8 @@ def test_source_registry_marks_direct_search_sources() -> None:
     assert clinical_trials.research_plan_enabled is True
     assert clinvar.request_schema_ref == "ClinVarSourceSearchRequest"
     assert clinvar.result_schema_ref == "ClinVarSourceSearchResponse"
-    assert (
-        clinical_trials.request_schema_ref
-        == "ClinicalTrialsSourceSearchRequest"
-    )
-    assert (
-        clinical_trials.result_schema_ref
-        == "ClinicalTrialsSourceSearchResponse"
-    )
+    assert clinical_trials.request_schema_ref == "ClinicalTrialsSourceSearchRequest"
+    assert clinical_trials.result_schema_ref == "ClinicalTrialsSourceSearchResponse"
 
 
 def test_direct_source_schema_refs_resolve_to_public_models() -> None:
@@ -151,7 +148,22 @@ def test_source_registry_defaults_match_research_init_behavior() -> None:
         "clinical_trials": False,
         "mgi": False,
         "zfin": False,
+        "orphanet": False,
     }
+
+
+@pytest.mark.parametrize(
+    "alias",
+    [
+        "orpha",
+        "orpha_code",
+        "orpha-code",
+        "ORPHAcode",
+    ],
+)
+def test_source_registry_normalizes_orphanet_public_aliases(alias: str) -> None:
+    assert normalize_source_key(alias) == "orphanet"
+    assert get_source_definition(alias) == get_source_definition("orphanet")
 
 
 def test_source_registry_normalizes_public_aliases() -> None:

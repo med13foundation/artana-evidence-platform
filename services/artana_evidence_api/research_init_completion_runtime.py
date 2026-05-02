@@ -41,6 +41,7 @@ from artana_evidence_api.research_init_observation_bridge import (
     _append_unique_entity_ids,
     _proposal_payload_entity_ids,
 )
+from artana_evidence_api.source_registry import get_source_definition
 from artana_evidence_api.types.common import (
     JSONObject,
     ResearchSpaceSourcePreferences,
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
 
 _TOTAL_PROGRESS_STEPS = 5
 _MIN_CHASE_ENTITIES = 3
+_CORE_BOOTSTRAP_SOURCE_KEYS = frozenset({"pubmed", "marrvel", "mondo", "pdf", "text"})
 _BootstrapSourceResolver = Callable[..., str | None]
 
 
@@ -71,6 +73,18 @@ def _resolve_bootstrap_source_type(**kwargs: object) -> str | None:
     if candidate is None or candidate is _resolve_bootstrap_source_type:
         candidate = _default_resolve_bootstrap_source_type
     return cast("_BootstrapSourceResolver", candidate)(**kwargs)
+
+
+def _pending_deferred_source_keys(
+    source_results: dict[str, JSONObject],
+) -> tuple[str, ...]:
+    return tuple(
+        source_key
+        for source_key, source_result in source_results.items()
+        if source_key not in _CORE_BOOTSTRAP_SOURCE_KEYS
+        and get_source_definition(source_key) is not None
+        and source_result.get("status") == "pending"
+    )
 
 
 async def _generate_and_store_research_brief(
@@ -511,14 +525,7 @@ async def complete_research_init_run(  # noqa: PLR0912, PLR0913, PLR0915
             errors.append(f"Chase round {chase_round} failed: {exc}")
             break
 
-    for pending_source in (
-        "clinvar",
-        "drugbank",
-        "alphafold",
-        "gnomad",
-        "uniprot",
-        "hgnc",
-    ):
+    for pending_source in _pending_deferred_source_keys(source_results):
         if source_results.get(pending_source, {}).get("status") == "pending":
             source_results[pending_source]["status"] = "deferred"
 

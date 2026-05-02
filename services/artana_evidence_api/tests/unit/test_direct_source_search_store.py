@@ -16,6 +16,7 @@ from artana_evidence_api.direct_source_search import (
     GnomADSourceSearchResponse,
     InMemoryDirectSourceSearchStore,
     MGISourceSearchResponse,
+    OrphanetSourceSearchResponse,
     PubMedSourceSearchResponse,
     SqlAlchemyDirectSourceSearchStore,
     UniProtSourceSearchResponse,
@@ -94,6 +95,7 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
     drugbank_id = uuid4()
     mgi_id = uuid4()
     zfin_id = uuid4()
+    orphanet_id = uuid4()
     return (
         ClinVarSourceSearchResponse(
             id=clinvar_id,
@@ -251,7 +253,27 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
             records=[{"zfin_id": "ZFIN:1"}],
             created_at=created_at,
             completed_at=completed_at,
-            source_capture=_capture(source_key="zfin", search_id=zfin_id, query="brca1"),
+            source_capture=_capture(
+                source_key="zfin", search_id=zfin_id, query="brca1"
+            ),
+        ),
+        OrphanetSourceSearchResponse(
+            id=orphanet_id,
+            space_id=space_id,
+            query="Marfan syndrome",
+            orphacode=None,
+            language="EN",
+            max_results=1,
+            fetched_records=1,
+            record_count=1,
+            records=[{"orphanet_id": "ORPHA:558", "orpha_code": "558"}],
+            created_at=created_at,
+            completed_at=completed_at,
+            source_capture=_capture(
+                source_key="orphanet",
+                search_id=orphanet_id,
+                query="Marfan syndrome",
+            ),
         ),
     )
 
