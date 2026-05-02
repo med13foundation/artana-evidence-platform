@@ -72,6 +72,16 @@ if TYPE_CHECKING:
 _PROMOTABLE_CONSTRAINT_PROFILES = frozenset({"ALLOWED", "EXPECTED"})
 
 
+class ReasoningPathInvalidationServiceLike(Protocol):
+    """Minimal reasoning-path invalidation surface for projection mutations."""
+
+    def invalidate_for_claim_ids(
+        self,
+        claim_ids: list[str],
+        research_space_id: str,
+    ) -> int: ...
+
+
 class RelationRepositoryLike(Protocol):
     """Minimal canonical relation write surface needed for projection materialization."""
 
@@ -270,6 +280,7 @@ class KernelRelationProjectionMaterializationService:
         dictionary_repo: DictionaryRepositoryLike,
         relation_projection_repo: RelationProjectionSourceRepositoryLike,
         read_model_update_dispatcher: GraphReadModelUpdateDispatcher,
+        reasoning_path_invalidation_service: ReasoningPathInvalidationServiceLike,
     ) -> None:
         self._relations = relation_repo
         self._claims = relation_claim_repo
@@ -279,6 +290,7 @@ class KernelRelationProjectionMaterializationService:
         self._dictionary = dictionary_repo
         self._projection_sources = relation_projection_repo
         self._read_model_updates = read_model_update_dispatcher
+        self._reasoning_path_invalidation = reasoning_path_invalidation_service
 
     def materialize_support_claim(
         self,
@@ -873,6 +885,11 @@ class KernelRelationProjectionMaterializationService:
             ),
         )
         self._read_model_updates.dispatch_many(updates)
+        if normalized_claim_ids:
+            self._reasoning_path_invalidation.invalidate_for_claim_ids(
+                list(normalized_claim_ids),
+                research_space_id,
+            )
 
 
 __all__ = [

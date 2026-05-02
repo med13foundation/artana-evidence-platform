@@ -12,6 +12,22 @@ from artana_evidence_db.claim_relation_models import (
 from artana_evidence_db.common_types import JSONObject
 
 
+class ReasoningPathInvalidationServiceLike(Protocol):
+    """Minimal reasoning-path invalidation surface for claim-relation mutations."""
+
+    def invalidate_for_claim_ids(
+        self,
+        claim_ids: list[str],
+        research_space_id: str,
+    ) -> int: ...
+
+    def invalidate_for_claim_relation_ids(
+        self,
+        relation_ids: list[str],
+        research_space_id: str,
+    ) -> int: ...
+
+
 class ClaimRelationRepositoryLike(Protocol):
     """Minimal repository contract required for claim-relation workflows."""
 
@@ -82,8 +98,14 @@ class ClaimRelationRepositoryLike(Protocol):
 class KernelClaimRelationService:
     """Application service for claim-to-claim relation graph workflows."""
 
-    def __init__(self, claim_relation_repo: ClaimRelationRepositoryLike) -> None:
+    def __init__(
+        self,
+        claim_relation_repo: ClaimRelationRepositoryLike,
+        *,
+        reasoning_path_invalidation_service: ReasoningPathInvalidationServiceLike,
+    ) -> None:
         self._claim_relations = claim_relation_repo
+        self._reasoning_path_invalidation = reasoning_path_invalidation_service
 
     def create_claim_relation(  # noqa: PLR0913
         self,
@@ -101,7 +123,7 @@ class KernelClaimRelationService:
         metadata: JSONObject | None = None,
     ) -> KernelClaimRelation:
         """Create one claim relation row."""
-        return self._claim_relations.create(
+        relation = self._claim_relations.create(
             research_space_id=research_space_id,
             source_claim_id=source_claim_id,
             target_claim_id=target_claim_id,
@@ -114,6 +136,8 @@ class KernelClaimRelationService:
             evidence_summary=evidence_summary,
             metadata=metadata,
         )
+        self._invalidate_relation(relation)
+        return relation
 
     def get_claim_relation(self, relation_id: str) -> KernelClaimRelation | None:
         """Fetch one claim relation by ID."""
@@ -184,9 +208,22 @@ class KernelClaimRelationService:
         review_status: ClaimRelationReviewStatus,
     ) -> KernelClaimRelation:
         """Update review status for one claim relation row."""
-        return self._claim_relations.update_review_status(
+        relation = self._claim_relations.update_review_status(
             relation_id,
             review_status=review_status,
+        )
+        self._invalidate_relation(relation)
+        return relation
+
+    def _invalidate_relation(self, relation: KernelClaimRelation) -> None:
+        research_space_id = str(relation.research_space_id)
+        self._reasoning_path_invalidation.invalidate_for_claim_ids(
+            [str(relation.source_claim_id), str(relation.target_claim_id)],
+            research_space_id,
+        )
+        self._reasoning_path_invalidation.invalidate_for_claim_relation_ids(
+            [str(relation.id)],
+            research_space_id,
         )
 
 

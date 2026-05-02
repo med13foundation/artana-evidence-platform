@@ -47,6 +47,10 @@ Current scope:
 - claim-relation write and review endpoints
 - graph-view and mechanism-chain endpoints
 - service-owned maintenance endpoints for participant backfill, projection readiness, projection repair, and reasoning-path rebuilds
+- reasoning paths are derived data: claim, claim-relation, and projection
+  mutations mark affected paths `STALE` and refresh the compact mechanism-path
+  candidate index; admin rebuilds replace stale derived paths with new `ACTIVE`
+  paths
 - service-owned operation history endpoints under `/v1/admin/operations/runs` for readiness, repair, backfill, and rebuild workflows
 - service-owned graph-space registry endpoints under `/v1/admin/spaces/...`
 - service-owned graph-space sync endpoint under `/v1/admin/spaces/{space_id}/sync`

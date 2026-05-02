@@ -35,6 +35,7 @@ from artana_evidence_db.kernel_repositories import (
     SqlAlchemyKernelClaimEvidenceRepository,
     SqlAlchemyKernelClaimParticipantRepository,
     SqlAlchemyKernelEntityRepository,
+    SqlAlchemyKernelReasoningPathRepository,
     SqlAlchemyKernelRelationClaimRepository,
     SqlAlchemyKernelRelationProjectionSourceRepository,
     SqlAlchemyKernelRelationRepository,
@@ -43,7 +44,10 @@ from artana_evidence_db.orm_base import Base
 from artana_evidence_db.product_contract import GRAPH_SERVICE_VERSION
 from artana_evidence_db.provenance_model import ProvenanceModel
 from artana_evidence_db.read_model_support import NullGraphReadModelUpdateDispatcher
-from artana_evidence_db.read_models import EntityNeighborModel
+from artana_evidence_db.read_models import EntityMechanismPathModel, EntityNeighborModel
+from artana_evidence_db.reasoning_path_service import (
+    KernelReasoningPathInvalidationService,
+)
 from artana_evidence_db.relation_autopromotion_policy import AutoPromotionPolicy
 from artana_evidence_db.relation_claim_service import (
     KernelRelationClaimService,
@@ -147,6 +151,10 @@ def _build_projection_materializer(
             session,
         ),
         read_model_update_dispatcher=NullGraphReadModelUpdateDispatcher(),
+        reasoning_path_invalidation_service=KernelReasoningPathInvalidationService(
+            reasoning_path_repo=SqlAlchemyKernelReasoningPathRepository(session),
+            read_model_update_dispatcher=NullGraphReadModelUpdateDispatcher(),
+        ),
     )
 
 
@@ -595,6 +603,10 @@ def _create_hypothesis_claim(
     claim_service = KernelRelationClaimService(
         relation_claim_repo=SqlAlchemyKernelRelationClaimRepository(session),
         read_model_update_dispatcher=NullGraphReadModelUpdateDispatcher(),
+        reasoning_path_invalidation_service=KernelReasoningPathInvalidationService(
+            reasoning_path_repo=SqlAlchemyKernelReasoningPathRepository(session),
+            read_model_update_dispatcher=NullGraphReadModelUpdateDispatcher(),
+        ),
     )
     claim = claim_service.create_hypothesis_claim(
         research_space_id=str(space_id),
@@ -2555,6 +2567,7 @@ def test_graph_service_admin_readiness_and_rebuild_operations(
         },
     )
     assert create_relation.status_code == 200, create_relation.text
+    claim_relation_id = create_relation.json()["id"]
 
     readiness_response = graph_client.get(
         "/v1/admin/projections/readiness",
@@ -2616,6 +2629,56 @@ def test_graph_service_admin_readiness_and_rebuild_operations(
     )
     assert paths_response.status_code == 200, paths_response.text
     assert paths_response.json()["total"] >= 1
+    with graph_database.SessionLocal() as session:
+        mechanism_candidate_count = session.scalar(
+            sa.select(sa.func.count())
+            .select_from(EntityMechanismPathModel)
+            .where(EntityMechanismPathModel.research_space_id == space_id),
+        )
+    assert mechanism_candidate_count is not None
+    assert mechanism_candidate_count >= 1
+
+    reject_relation = graph_client.patch(
+        f"/v1/spaces/{space_id}/claim-relations/{claim_relation_id}",
+        headers=fixture["headers"],
+        json={"review_status": "REJECTED"},
+    )
+    assert reject_relation.status_code == 200, reject_relation.text
+
+    active_paths = graph_client.get(
+        f"/v1/spaces/{space_id}/reasoning-paths",
+        headers=fixture["headers"],
+        params={"status": "ACTIVE"},
+    )
+    assert active_paths.status_code == 200, active_paths.text
+    assert active_paths.json()["total"] == 0
+    with graph_database.SessionLocal() as session:
+        active_candidate_count = session.scalar(
+            sa.select(sa.func.count())
+            .select_from(EntityMechanismPathModel)
+            .where(EntityMechanismPathModel.research_space_id == space_id),
+        )
+    assert active_candidate_count == 0
+
+    stale_paths = graph_client.get(
+        f"/v1/spaces/{space_id}/reasoning-paths",
+        headers=fixture["headers"],
+        params={"status": "STALE"},
+    )
+    assert stale_paths.status_code == 200, stale_paths.text
+    assert stale_paths.json()["total"] >= 1
+
+    post_reject_rebuild = graph_client.post(
+        "/v1/admin/reasoning-paths/rebuild",
+        headers=admin_headers,
+        json={
+            "space_id": str(space_id),
+            "max_depth": 4,
+            "replace_existing": True,
+        },
+    )
+    assert post_reject_rebuild.status_code == 200, post_reject_rebuild.text
+    assert post_reject_rebuild.json()["summaries"][0]["rebuilt_paths"] == 0
 
 
 def test_graph_service_hypothesis_list_and_manual_create(

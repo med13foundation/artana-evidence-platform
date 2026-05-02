@@ -43,6 +43,9 @@ from artana_evidence_db.kernel_services import (
     KernelRelationService,
     ProvenanceService,
 )
+from artana_evidence_db.reasoning_path_service import (
+    KernelReasoningPathInvalidationService,
+)
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -223,6 +226,16 @@ def get_kernel_relation_suggestion_service(
     return create_kernel_relation_suggestion_service(session)
 
 
+def get_kernel_reasoning_path_invalidation_service(
+    session: Session = Depends(get_session),
+) -> KernelReasoningPathInvalidationService:
+    """Return reasoning-path invalidation service bound to the graph session."""
+    return KernelReasoningPathInvalidationService(
+        reasoning_path_repo=SqlAlchemyKernelReasoningPathRepository(session),
+        read_model_update_dispatcher=build_graph_read_model_update_dispatcher(session),
+    )
+
+
 def get_kernel_relation_claim_service(
     session: Session = Depends(get_session),
 ) -> KernelRelationClaimService:
@@ -230,6 +243,9 @@ def get_kernel_relation_claim_service(
     return KernelRelationClaimService(
         relation_claim_repo=SqlAlchemyKernelRelationClaimRepository(session),
         read_model_update_dispatcher=build_graph_read_model_update_dispatcher(session),
+        reasoning_path_invalidation_service=(
+            get_kernel_reasoning_path_invalidation_service(session)
+        ),
     )
 
 
@@ -259,6 +275,9 @@ def get_kernel_claim_relation_service(
     """Return kernel claim-relation service."""
     return KernelClaimRelationService(
         claim_relation_repo=SqlAlchemyKernelClaimRelationRepository(session),
+        reasoning_path_invalidation_service=(
+            get_kernel_reasoning_path_invalidation_service(session)
+        ),
     )
 
 
@@ -275,6 +294,9 @@ def get_kernel_reasoning_path_service(
     session: Session = Depends(get_session),
 ) -> KernelReasoningPathService:
     """Return reasoning-path service bound to the graph service session."""
+    reasoning_path_invalidation_service = (
+        get_kernel_reasoning_path_invalidation_service(session)
+    )
     return KernelReasoningPathService(
         reasoning_path_repo=SqlAlchemyKernelReasoningPathRepository(session),
         relation_claim_service=get_kernel_relation_claim_service(session),
@@ -283,6 +305,7 @@ def get_kernel_reasoning_path_service(
         claim_relation_service=get_kernel_claim_relation_service(session),
         relation_service=get_kernel_relation_service(session),
         read_model_update_dispatcher=build_graph_read_model_update_dispatcher(session),
+        reasoning_path_invalidation_service=reasoning_path_invalidation_service,
         session=session,
         space_registry_port=SqlAlchemyKernelSpaceRegistryRepository(session),
     )
@@ -411,6 +434,9 @@ def get_kernel_relation_projection_materialization_service(
             session,
         ),
         read_model_update_dispatcher=build_graph_read_model_update_dispatcher(session),
+        reasoning_path_invalidation_service=(
+            get_kernel_reasoning_path_invalidation_service(session)
+        ),
     )
 
 
@@ -503,6 +529,7 @@ __all__ = [
     "get_kernel_entity_service",
     "get_kernel_graph_view_service",
     "get_kernel_observation_service",
+    "get_kernel_reasoning_path_invalidation_service",
     "get_kernel_reasoning_path_service",
     "get_kernel_relation_claim_service",
     "get_kernel_relation_projection_materialization_service",
