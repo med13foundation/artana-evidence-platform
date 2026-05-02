@@ -1,7 +1,13 @@
-"""Authentication helpers for the standalone harness service."""
+"""Authentication helpers for the standalone harness service.
+
+Platform roles carried by tokens and API keys are intentionally separate from
+research-space membership roles. For example, ``owner`` is a space role checked
+by the space ACL layer, not a valid platform role for ``HarnessUser``.
+"""
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Mapping
 from enum import Enum
@@ -19,12 +25,15 @@ from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBea
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy.orm import Session
 
+logger = logging.getLogger(__name__)
+
 _AUTH_JWT_SECRET_ENV = "AUTH_JWT_SECRET"
 _AUTH_ALLOW_TEST_HEADERS_ENV = "AUTH_ALLOW_TEST_AUTH_HEADERS"
 _PRODUCTION_LIKE_ENVS = frozenset({"production", "staging"})
 _FALLBACK_DEV_JWT_SECRET = "artana-platform-dev-jwt-secret-change-in-production-2026-01"
 _TOKEN_ISSUER = "artana-platform"
 _TOKEN_ALGORITHM = "HS256"
+_UNKNOWN_ROLE_LOG_VALUE_MAX_LENGTH = 64
 _WRITE_ROLES = frozenset(
     {
         "admin",
@@ -46,7 +55,11 @@ class HarnessUserStatus(str, Enum):
 
 
 class HarnessUserRole(str, Enum):
-    """Platform role values used by harness authorization checks."""
+    """Platform role values used by harness authorization checks.
+
+    Space ownership is represented by research-space membership records, not by
+    this platform role enum.
+    """
 
     ADMIN = "admin"
     CURATOR = "curator"
@@ -101,13 +114,38 @@ def _resolve_jwt_secret() -> str:
     return _FALLBACK_DEV_JWT_SECRET
 
 
-def _parse_role(role_value: object) -> HarnessUserRole:
+def _unknown_role_log_value(role_value: object) -> str:
+    if not isinstance(role_value, str):
+        return type(role_value).__name__
+    normalized = role_value.strip().lower()
+    if len(normalized) <= _UNKNOWN_ROLE_LOG_VALUE_MAX_LENGTH:
+        return normalized
+    return f"{normalized[:_UNKNOWN_ROLE_LOG_VALUE_MAX_LENGTH]}..."
+
+
+def _log_unknown_role(role_value: object, *, context: str | None) -> None:
+    if role_value is None:
+        return
+    logger.warning(
+        "Unknown harness platform role %r from %s; falling back to viewer",
+        _unknown_role_log_value(role_value),
+        context or "unknown auth context",
+    )
+
+
+def _parse_role(
+    role_value: object,
+    *,
+    context: str | None = None,
+) -> HarnessUserRole:
     if isinstance(role_value, str):
         normalized = role_value.strip().lower()
         try:
             return HarnessUserRole(normalized)
         except ValueError:
+            _log_unknown_role(role_value, context=context)
             return HarnessUserRole.VIEWER
+    _log_unknown_role(role_value, context=context)
     return HarnessUserRole.VIEWER
 
 
@@ -186,7 +224,7 @@ def _identity_record_from_harness_user(user: HarnessUser) -> IdentityUserRecord:
 def _build_harness_user_from_identity(record: IdentityUserRecord) -> HarnessUser:
     return _build_harness_user(
         user_id=record.id,
-        role=_parse_role(record.role),
+        role=_parse_role(record.role, context=f"identity user {record.id}"),
         email=record.email,
         username=record.username,
         full_name=record.full_name,
@@ -201,12 +239,16 @@ def _build_user_from_test_headers(request: Request) -> HarnessUser | None:
     test_user_email = request.headers.get("X-TEST-USER-EMAIL")
     if not test_user_id or not test_user_email:
         return None
+    parsed_user_id = _parse_user_id(test_user_id)
     return _build_harness_user(
-        user_id=_parse_user_id(test_user_id),
+        user_id=parsed_user_id,
         email=test_user_email,
         username=test_user_email.split("@", maxsplit=1)[0],
         full_name=test_user_email,
-        role=_parse_role(request.headers.get("X-TEST-USER-ROLE")),
+        role=_parse_role(
+            request.headers.get("X-TEST-USER-ROLE"),
+            context=f"test headers subject {parsed_user_id}",
+        ),
     )
 
 
@@ -291,7 +333,10 @@ async def get_current_harness_user(
             session,
             user=_build_harness_user(
                 user_id=user_id,
-                role=_parse_role(payload.get("role")),
+                role=_parse_role(
+                    payload.get("role"),
+                    context=f"access token subject {user_id}",
+                ),
                 email=email if isinstance(email, str) else None,
                 username=username if isinstance(username, str) else None,
                 full_name=full_name if isinstance(full_name, str) else None,
