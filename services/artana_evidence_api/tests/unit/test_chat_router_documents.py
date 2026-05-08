@@ -346,6 +346,6 @@ def test_send_chat_message_offloads_preflight_to_thread(
 
     assert response.status_code == 201
     assert to_thread_calls
-    assert to_thread_calls[0] is chat_router._prepare_chat_message_run
+    assert to_thread_calls[0] is chat_router.prepare_chat_message_run
     body = response.json()
     assert body["result"]["answer_text"] == "Test answer"

@@ -809,6 +809,70 @@ class HarnessChatSessionModel(Base):
     )
 
 
+class HarnessChatSessionStartModel(Base):
+    """Durable idempotency ledger for first-message chat-session starts."""
+
+    __tablename__ = "harness_chat_session_starts"
+
+    id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+    )
+    space_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=False,
+        index=True,
+    )
+    created_by: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=False,
+        index=True,
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(256), nullable=False)
+    request_signature_payload: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    session_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        ForeignKey(
+            qualify_harness_foreign_key_target("harness_chat_sessions.id"),
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+    run_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        ForeignKey(
+            qualify_harness_foreign_key_target("harness_runs.id"),
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "space_id",
+            "created_by",
+            "idempotency_key",
+            name="uq_harness_chat_session_starts_idempotency",
+        ),
+        Index(
+            "idx_harness_chat_session_starts_space_created",
+            "space_id",
+            "created_at",
+        ),
+        harness_table_options(
+            comment="Idempotent first-message chat-session start requests.",
+        ),
+    )
+
+
 class HarnessChatMessageModel(Base):
     """Durable message history for graph-harness chat sessions."""
 
@@ -868,6 +932,7 @@ __all__ = [
     "HarnessApprovalModel",
     "HarnessChatMessageModel",
     "HarnessChatSessionModel",
+    "HarnessChatSessionStartModel",
     "HarnessDocumentModel",
     "HarnessGraphSnapshotModel",
     "HarnessIntentModel",

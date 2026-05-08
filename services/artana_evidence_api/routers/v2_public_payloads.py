@@ -703,12 +703,12 @@ def _publicize_response_payload(result: object) -> object:
     if isinstance(result, BaseModel):
         return _publicize_json(result.model_dump(mode="json"))
     if isinstance(result, JSONResponse):
-        return _publicize_json(json.loads(result.body))
+        return _publicize_json(json.loads(bytes(result.body)))
     return _publicize_json(result)
 
 
 def _publicized_json_response(result: JSONResponse) -> JSONResponse:
-    content = _publicize_json(json.loads(result.body))
+    content = _publicize_json(json.loads(bytes(result.body)))
     headers = dict(result.headers)
     return JSONResponse(
         status_code=result.status_code,

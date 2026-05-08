@@ -28,6 +28,14 @@ class ChatSessionCreateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=256)
 
 
+class ChatSessionUpdateRequest(BaseModel):
+    """Update one chat session."""
+
+    model_config = ConfigDict(strict=True)
+
+    title: str = Field(..., min_length=1, max_length=256)
+
+
 class ChatMessageCreateRequest(BaseModel):
     """Send one message to a graph chat session."""
 
@@ -178,6 +186,15 @@ class ChatSessionDetailResponse(BaseModel):
     messages: list[ChatMessageResponse]
 
 
+class ChatSessionDiscardResponse(BaseModel):
+    """Response after discarding an empty chat session."""
+
+    model_config = ConfigDict(strict=True)
+
+    id: str
+    status: Literal["discarded"]
+
+
 class ChatMessageRunResponse(BaseModel):
     """Combined graph-chat run result for one sent message."""
 
@@ -215,6 +232,19 @@ class ChatGraphWriteProposalResponse(BaseModel):
     proposal_count: int
 
 
+class ChatGraphWriteReadinessResponse(BaseModel):
+    """Read-only graph-write staging state for the latest chat result."""
+
+    model_config = ConfigDict(strict=True)
+
+    run: HarnessRunResponse
+    session: ChatSessionResponse
+    state: Literal["ready", "empty", "staged", "pending"]
+    candidate_count: int = Field(..., ge=0)
+    proposal_count: int = Field(..., ge=0)
+    message: str
+
+
 class ChatGraphWriteCandidateDecisionResponse(BaseModel):
     """Decision result for one inline chat graph-write candidate."""
 
@@ -238,7 +268,9 @@ __all__ = [
     "ChatMessageResponse",
     "ChatMessageRunResponse",
     "ChatSessionCreateRequest",
+    "ChatSessionDiscardResponse",
     "ChatSessionDetailResponse",
     "ChatSessionListResponse",
     "ChatSessionResponse",
+    "ChatSessionUpdateRequest",
 ]

@@ -12,6 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import Table
 from starlette.middleware.base import RequestResponseEndpoint
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 
 from .config import get_settings
@@ -31,6 +32,11 @@ from .routers.approvals import router as approvals_router
 from .routers.artifacts import router as artifacts_router
 from .routers.authentication import router as authentication_router
 from .routers.chat import router as chat_router
+from .routers.chat_graph_write.readiness import (
+    router as chat_graph_write_readiness_router,
+)
+from .routers.chat_session_lifecycle import router as chat_session_lifecycle_router
+from .routers.chat_session_start import router as chat_session_start_router
 from .routers.continuous_learning_runs import (
     router as continuous_learning_runs_router,
 )
@@ -76,6 +82,23 @@ logger = logging.getLogger(__name__)
 _STRUCTURED_ERROR_FIELD_KEYS = frozenset(
     {"reason_code", "ocr_required", "page_count", "pages_without_text"},
 )
+_CORS_ALLOWED_METHODS = ("DELETE", "GET", "PATCH", "POST", "PUT")
+_CORS_ALLOWED_HEADERS = (
+    "Authorization",
+    "Content-Type",
+    "Idempotency-Key",
+    "Prefer",
+    "X-Artana-Bootstrap-Key",
+    "X-Artana-Key",
+    REQUEST_ID_HEADER,
+)
+_CORS_EXPOSE_HEADERS = (
+    REQUEST_ID_HEADER,
+    "X-RateLimit-Limit",
+    "X-RateLimit-Remaining",
+    "X-RateLimit-Reset",
+)
+_CORS_PREFLIGHT_MAX_AGE_SECONDS = 600
 
 
 def _normalize_error_detail(detail: object) -> str:
@@ -128,6 +151,27 @@ def _validation_error_detail(error: RequestValidationError) -> str:
         "; ".join(deduplicated_messages)
         if deduplicated_messages
         else "Validation error"
+    )
+
+
+def _install_cors_middleware(
+    app: FastAPI,
+    *,
+    allowed_origins: tuple[str, ...],
+) -> None:
+    """Install browser CORS handling for configured frontend origins."""
+    if not allowed_origins:
+        return
+
+    # Keep CORS outermost so preflight requests short-circuit before route auth.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(allowed_origins),
+        allow_methods=list(_CORS_ALLOWED_METHODS),
+        allow_headers=list(_CORS_ALLOWED_HEADERS),
+        allow_credentials=False,
+        expose_headers=list(_CORS_EXPOSE_HEADERS),
+        max_age=_CORS_PREFLIGHT_MAX_AGE_SECONDS,
     )
 
 
@@ -185,6 +229,8 @@ def create_app() -> FastAPI:  # noqa: PLR0915
         finally:
             reset_current_request_id(token)
 
+    _install_cors_middleware(app, allowed_origins=settings.cors_allowed_origins)
+
     @app.exception_handler(HTTPException)
     async def _http_exception_handler(
         request: Request,
@@ -240,6 +286,9 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     app.include_router(health_router)
     app.include_router(artifacts_router)
     app.include_router(chat_router)
+    app.include_router(chat_graph_write_readiness_router)
+    app.include_router(chat_session_lifecycle_router)
+    app.include_router(chat_session_start_router)
     app.include_router(continuous_learning_runs_router)
     app.include_router(documents_router)
     app.include_router(evidence_selection_runs_router)

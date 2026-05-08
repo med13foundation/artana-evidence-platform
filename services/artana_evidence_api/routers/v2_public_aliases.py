@@ -10,6 +10,8 @@ from fastapi.routing import APIRoute
 from . import (
     authentication,
     chat,
+    chat_session_lifecycle,
+    chat_session_start,
     continuous_learning_runs,
     documents,
     full_ai_orchestrator_runs,
@@ -27,6 +29,7 @@ from . import (
     spaces,
     supervisor_runs,
 )
+from .chat_graph_write import readiness as chat_graph_write_readiness
 
 
 def _find_route(source_router: APIRouter, *, path: str, method: str) -> APIRoute:
@@ -373,11 +376,35 @@ _ALIASES = (
         ("chat",),
     ),
     (
+        chat_session_start.router,
+        "POST",
+        "/v1/spaces/{space_id}/chat-sessions/first-message",
+        "/v2/spaces/{space_id}/chat-sessions/first-message",
+        "Create chat session with first message",
+        ("chat",),
+    ),
+    (
         chat.router,
         "GET",
         "/v1/spaces/{space_id}/chat-sessions/{session_id}",
         "/v2/spaces/{space_id}/chat-sessions/{session_id}",
         "Get chat session",
+        ("chat",),
+    ),
+    (
+        chat.router,
+        "PATCH",
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}",
+        "/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        "Update chat session",
+        ("chat",),
+    ),
+    (
+        chat_session_lifecycle.router,
+        "DELETE",
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}",
+        "/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        "Discard empty chat session",
         ("chat",),
     ),
     (
@@ -394,6 +421,14 @@ _ALIASES = (
         "/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write",
         "/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates",
         "Stage suggested updates from chat",
+        ("chat",),
+    ),
+    (
+        chat_graph_write_readiness.router,
+        "GET",
+        "/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write/readiness",
+        "/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates/readiness",
+        "Check suggested update readiness",
         ("chat",),
     ),
     (

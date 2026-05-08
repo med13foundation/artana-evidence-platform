@@ -10,6 +10,11 @@ from pathlib import Path
 
 _DEFAULT_HOST = "0.0.0.0"  # noqa: S104
 _DEFAULT_GRAPH_API_TIMEOUT_SECONDS = 30.0
+_DEFAULT_CORS_ALLOWED_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+)
+_PRODUCTION_LIKE_ENVS = frozenset({"production", "staging"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +40,7 @@ class GraphHarnessServiceSettings:
     sync_wait_poll_seconds: float
     document_storage_base_path: str
     space_acl_mode: str
+    cors_allowed_origins: tuple[str, ...]
 
 
 def _read_bool_env(name: str, *, default: bool) -> bool:
@@ -43,6 +49,27 @@ def _read_bool_env(name: str, *, default: bool) -> bool:
         return default
     normalized = raw_value.strip().lower()
     return normalized in {"1", "true", "yes", "on"}
+
+
+def _read_csv_env(name: str, *, default: tuple[str, ...]) -> tuple[str, ...]:
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    return tuple(
+        value.strip()
+        for value in raw_value.split(",")
+        if value.strip() != ""
+    )
+
+
+def _environment() -> str:
+    return os.getenv("ARTANA_ENV", "development").strip().lower()
+
+
+def _default_cors_allowed_origins() -> tuple[str, ...]:
+    if _environment() in _PRODUCTION_LIKE_ENVS:
+        return ()
+    return _DEFAULT_CORS_ALLOWED_ORIGINS
 
 
 @lru_cache(maxsize=1)
@@ -123,6 +150,10 @@ def get_settings() -> GraphHarnessServiceSettings:
         .strip()
         .lower()
         or "audit",
+        cors_allowed_origins=_read_csv_env(
+            "ARTANA_EVIDENCE_API_CORS_ORIGINS",
+            default=_default_cors_allowed_origins(),
+        ),
     )
 
 

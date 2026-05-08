@@ -17,6 +17,8 @@ from artana_evidence_api.routers import (
     artifacts,
     authentication,
     chat,
+    chat_session_lifecycle,
+    chat_session_start,
     continuous_learning_runs,
     documents,
     evidence_selection_runs,
@@ -41,6 +43,9 @@ from artana_evidence_api.routers import (
     spaces,
     supervisor_runs,
     v2_public,
+)
+from artana_evidence_api.routers.chat_graph_write import (
+    readiness as chat_graph_write_readiness,
 )
 from artana_evidence_api.source_registry import (
     direct_search_source_keys,
@@ -218,6 +223,9 @@ _USER_FACING_V1_ROUTERS = (
     artifacts.router,
     approvals.router,
     chat.router,
+    chat_session_lifecycle.router,
+    chat_session_start.router,
+    chat_graph_write_readiness.router,
     graph_explorer.router,
     evidence_selection_runs.router,
     research_bootstrap_runs.router,

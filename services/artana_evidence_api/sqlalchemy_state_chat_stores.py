@@ -11,6 +11,8 @@ from artana_evidence_api.sqlalchemy_stores import (
     HarnessChatMessageRecord,
     HarnessChatSessionModel,
     HarnessChatSessionRecord,
+    HarnessChatSessionStartModel,
+    HarnessChatSessionStartRecord,
     HarnessChatSessionStore,
     HarnessGraphSnapshotModel,
     HarnessGraphSnapshotRecord,
@@ -20,6 +22,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     HarnessResearchStateStore,
     _chat_message_record_from_model,
     _chat_session_record_from_model,
+    _chat_session_start_record_from_model,
     _graph_snapshot_record_from_model,
     _json_object,
     _json_string_list,
@@ -27,6 +30,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     _SessionBackedStore,
 )
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
 if TYPE_CHECKING:
     from artana_evidence_api.types.common import JSONObject
@@ -195,6 +199,93 @@ class SqlAlchemyHarnessChatSessionStore(HarnessChatSessionStore, _SessionBackedS
     def __init__(self, session: Session | None = None) -> None:
         _SessionBackedStore.__init__(self, session)
 
+    def _get_first_message_start(
+        self,
+        *,
+        space_id: UUID | str,
+        created_by: UUID | str,
+        idempotency_key: str,
+    ) -> HarnessChatSessionStartModel | None:
+        stmt = select(HarnessChatSessionStartModel).where(
+            HarnessChatSessionStartModel.space_id == str(space_id),
+            HarnessChatSessionStartModel.created_by == str(created_by),
+            HarnessChatSessionStartModel.idempotency_key == idempotency_key,
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def reserve_first_message_start(
+        self,
+        *,
+        space_id: UUID | str,
+        created_by: UUID | str,
+        idempotency_key: str,
+        request_signature: JSONObject,
+    ) -> tuple[HarnessChatSessionStartRecord, bool]:
+        model = HarnessChatSessionStartModel(
+            space_id=str(space_id),
+            created_by=str(created_by),
+            idempotency_key=idempotency_key,
+            request_signature_payload=request_signature,
+            session_id=None,
+            run_id=None,
+            status="reserved",
+        )
+        self.session.add(model)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            existing = self._get_first_message_start(
+                space_id=space_id,
+                created_by=created_by,
+                idempotency_key=idempotency_key,
+            )
+            if existing is None:
+                raise
+            return _chat_session_start_record_from_model(existing), False
+        self.session.refresh(model)
+        return _chat_session_start_record_from_model(model), True
+
+    def complete_first_message_start(
+        self,
+        *,
+        space_id: UUID | str,
+        created_by: UUID | str,
+        idempotency_key: str,
+        session_id: UUID | str,
+        run_id: UUID | str,
+    ) -> HarnessChatSessionStartRecord | None:
+        model = self._get_first_message_start(
+            space_id=space_id,
+            created_by=created_by,
+            idempotency_key=idempotency_key,
+        )
+        if model is None:
+            return None
+        model.session_id = str(session_id)
+        model.run_id = str(run_id)
+        model.status = "queued"
+        self.session.commit()
+        self.session.refresh(model)
+        return _chat_session_start_record_from_model(model)
+
+    def delete_first_message_start(
+        self,
+        *,
+        space_id: UUID | str,
+        created_by: UUID | str,
+        idempotency_key: str,
+    ) -> None:
+        model = self._get_first_message_start(
+            space_id=space_id,
+            created_by=created_by,
+            idempotency_key=idempotency_key,
+        )
+        if model is None:
+            return
+        self.session.delete(model)
+        self.session.commit()
+
     def create_session(
         self,
         *,
@@ -290,6 +381,29 @@ class SqlAlchemyHarnessChatSessionStore(HarnessChatSessionStore, _SessionBackedS
         self.session.refresh(message_model)
         return _chat_message_record_from_model(message_model)
 
+    def discard_empty_session(
+        self,
+        *,
+        space_id: UUID | str,
+        session_id: UUID | str,
+    ) -> bool | None:
+        model = self.session.get(HarnessChatSessionModel, str(session_id))
+        if model is None or model.space_id != str(space_id):
+            return None
+        message_count = self.session.execute(
+            select(func.count())
+            .select_from(HarnessChatMessageModel)
+            .where(
+                HarnessChatMessageModel.space_id == str(space_id),
+                HarnessChatMessageModel.session_id == str(session_id),
+            ),
+        ).scalar_one()
+        if int(message_count) > 0 or model.last_run_id is not None:
+            return False
+        self.session.delete(model)
+        self.session.commit()
+        return True
+
     def update_session(
         self,
         *,
@@ -311,4 +425,3 @@ class SqlAlchemyHarnessChatSessionStore(HarnessChatSessionStore, _SessionBackedS
         self.session.commit()
         self.session.refresh(model)
         return _chat_session_record_from_model(model)
-
