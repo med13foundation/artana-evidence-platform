@@ -136,6 +136,7 @@ from artana_evidence_api.research_space_store import (
     HarnessResearchSpaceStore,
 )
 from artana_evidence_api.research_state import HarnessResearchStateStore
+from artana_evidence_api.routers.chat_models import ChatMessageCreateRequest
 from artana_evidence_api.run_budget import (
     HarnessRunBudget,
     HarnessRunBudgetStatus,
@@ -304,6 +305,9 @@ class _SelectiveHarnessResearchSpaceStore(HarnessResearchSpaceStore):
     ) -> None:
         self._accessible_roles_by_space = dict(accessible_roles_by_space or {})
         self._admin_fallback = admin_fallback
+
+    def set_space_role(self, *, space_id: UUID | str, role: str) -> None:
+        self._accessible_roles_by_space[str(space_id)] = role
 
     def get_space(
         self,
@@ -2722,6 +2726,7 @@ def _build_client(
     research_onboarding_runner_dependency: object = _FakeResearchOnboardingRunner,
     graph_api_gateway_dependency: object = _FakeGraphApiGateway,
     research_space_store: HarnessResearchSpaceStore | None = None,
+    chat_session_store: HarnessChatSessionStore | None = None,
     proposal_store: HarnessProposalStore | None = None,
     run_registry: HarnessRunRegistry | None = None,
     execution_override: (
@@ -2753,13 +2758,15 @@ def _build_client(
         if callable(research_onboarding_runner_dependency)
         else research_onboarding_runner_dependency
     )
-    chat_session_store = HarnessChatSessionStore()
+    resolved_chat_session_store = chat_session_store or HarnessChatSessionStore()
     graph_snapshot_store = HarnessGraphSnapshotStore()
     resolved_research_space_store = (
         research_space_store or _PermissiveHarnessResearchSpaceStore()
     )
     research_state_store = HarnessResearchStateStore()
-    app.dependency_overrides[get_chat_session_store] = lambda: chat_session_store
+    app.dependency_overrides[get_chat_session_store] = (
+        lambda: resolved_chat_session_store
+    )
     app.dependency_overrides[get_graph_chat_runner] = lambda: graph_chat_runner
     app.dependency_overrides[get_graph_connection_runner] = (
         lambda: graph_connection_runner
@@ -2798,7 +2805,7 @@ def _build_client(
             runtime=runtime,
             run_registry=resolved_run_registry,
             artifact_store=artifact_store,
-            chat_session_store=chat_session_store,
+            chat_session_store=resolved_chat_session_store,
             document_store=document_store,
             proposal_store=resolved_proposal_store,
             approval_store=approval_store,
@@ -3100,6 +3107,7 @@ def _make_settings(*, workers: int = 1) -> GraphHarnessServiceSettings:
         sync_wait_poll_seconds=0.25,
         document_storage_base_path="/tmp",
         space_acl_mode="owner_only",
+        cors_allowed_origins=("http://localhost:5173",),
     )
 
 
@@ -3172,6 +3180,145 @@ def test_request_id_header_accepts_client_value_on_success() -> None:
 
     assert response.status_code == 200
     assert response.headers[REQUEST_ID_HEADER] == request_id
+
+
+def test_create_app_handles_browser_preflight_for_artana_api_key() -> None:
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/v2/spaces",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "X-Artana-Key",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "GET" in response.headers["access-control-allow-methods"]
+    assert "X-Artana-Key" in response.headers["access-control-allow-headers"]
+
+
+def test_create_app_handles_browser_preflight_for_async_chat_messages() -> None:
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/v2/spaces/46e0af9e-b841-4382-be1c-38001cd15a70/"
+        "chat-sessions/0afbb724-64e9-4904-991f-f2d490254f7d/messages",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "X-Artana-Key, Content-Type, Prefer",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "POST" in response.headers["access-control-allow-methods"]
+    assert "Prefer" in response.headers["access-control-allow-headers"]
+
+
+def test_create_app_handles_browser_preflight_for_first_message_idempotency() -> None:
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/v2/spaces/46e0af9e-b841-4382-be1c-38001cd15a70/"
+        "chat-sessions/first-message",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": (
+                "X-Artana-Key, Content-Type, Prefer, Idempotency-Key"
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "POST" in response.headers["access-control-allow-methods"]
+    assert "Idempotency-Key" in response.headers["access-control-allow-headers"]
+
+
+def test_create_app_adds_cors_headers_to_async_chat_message_responses() -> None:
+    client = _build_client()
+    space_id = str(uuid4())
+    origin = "http://localhost:5173"
+
+    session_response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions",
+        json={},
+        headers={**_auth_headers(), "Origin": origin},
+    )
+    assert session_response.status_code == 201
+    session_id = session_response.json()["id"]
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "What does MED13 do in this graph?"},
+        headers={**_auth_headers(), "Origin": origin, "Prefer": "respond-async"},
+    )
+
+    assert response.status_code == 202
+    assert response.headers["Preference-Applied"] == "respond-async"
+    assert response.headers["access-control-allow-origin"] == origin
+    assert "X-Request-ID" in response.headers["access-control-expose-headers"]
+
+
+def test_create_app_adds_cors_headers_to_actual_artana_api_responses() -> None:
+    client = TestClient(create_app())
+
+    response = client.get(
+        "/health",
+        headers={
+            "Origin": "http://localhost:5173",
+            "X-Artana-Key": "invalid",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "X-Request-ID" in response.headers["access-control-expose-headers"]
+    assert "access-control-allow-credentials" not in response.headers
+
+
+def test_create_app_does_not_allow_unconfigured_cors_origin() -> None:
+    client = TestClient(create_app())
+
+    response = client.get("/health", headers={"Origin": "http://evil.example"})
+
+    assert response.status_code == 200
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_get_settings_disables_default_cors_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_ENV", "production")
+    monkeypatch.delenv("ARTANA_EVIDENCE_API_CORS_ORIGINS", raising=False)
+    get_settings.cache_clear()
+
+    try:
+        settings = get_settings()
+    finally:
+        get_settings.cache_clear()
+
+    assert settings.cors_allowed_origins == ()
+
+
+def test_get_settings_allows_empty_cors_origin_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_ENV", "development")
+    monkeypatch.setenv("ARTANA_EVIDENCE_API_CORS_ORIGINS", " ")
+    get_settings.cache_clear()
+
+    try:
+        settings = get_settings()
+    finally:
+        get_settings.cache_clear()
+
+    assert settings.cors_allowed_origins == ()
 
 
 def test_list_harnesses_returns_registry_templates() -> None:
@@ -6029,6 +6176,312 @@ def test_graph_chat_session_flow_persists_messages_and_artifacts() -> None:
     assert workspace_payload["snapshot"]["pending_question_count"] == 0
 
 
+def test_create_graph_chat_session_with_first_message_is_idempotent_on_v2_alias() -> (
+    None
+):
+    """First-message session creation should be one safe-to-retry API operation."""
+    client = _build_client()
+    space_id = str(uuid4())
+    headers = {**_auth_headers(), "Idempotency-Key": "draft-room-first-message-1"}
+    request_payload = {"content": "What evidence supports MED13?"}
+
+    first_response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions/first-message",
+        json=request_payload,
+        headers=headers,
+    )
+    second_response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions/first-message",
+        json=request_payload,
+        headers=headers,
+    )
+
+    assert first_response.status_code == 202
+    assert second_response.status_code == 202
+    first_payload = first_response.json()
+    second_payload = second_response.json()
+    assert first_payload["session"]["id"] == second_payload["session"]["id"]
+    assert first_payload["run"]["id"] == second_payload["run"]["id"]
+    assert first_payload["session"]["title"] == "What evidence supports MED13?"
+    assert first_payload["run"]["status"] == "queued"
+
+    list_response = client.get(
+        f"/v2/spaces/{space_id}/chat-sessions",
+        headers=_auth_headers(role="viewer"),
+    )
+    assert list_response.json()["total"] == 1
+
+
+def test_create_graph_chat_session_with_first_message_reports_in_progress_replay() -> (
+    None
+):
+    """A retry cannot create a duplicate room while the first request is unfinished."""
+    chat_session_store = HarnessChatSessionStore()
+    client = _build_client(chat_session_store=chat_session_store)
+    space_id = str(uuid4())
+    request_payload = {"content": "What evidence supports MED13?"}
+    idempotency_key = "draft-room-first-message-in-progress"
+
+    chat_session_store.reserve_first_message_start(
+        space_id=space_id,
+        created_by=_TEST_USER_ID,
+        idempotency_key=idempotency_key,
+        request_signature=ChatMessageCreateRequest(
+            **request_payload,
+        ).model_dump(mode="json"),
+    )
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions/first-message",
+        json=request_payload,
+        headers={**_auth_headers(), "Idempotency-Key": idempotency_key},
+    )
+
+    assert response.status_code == 409
+    assert "already in progress" in response.json()["detail"]
+    list_response = client.get(
+        f"/v2/spaces/{space_id}/chat-sessions",
+        headers=_auth_headers(role="viewer"),
+    )
+    assert list_response.json()["total"] == 0
+
+
+def test_create_graph_chat_session_with_first_message_rejects_idempotency_conflict() -> (
+    None
+):
+    """A reused first-message idempotency key cannot create a different room."""
+    client = _build_client()
+    space_id = str(uuid4())
+    headers = {**_auth_headers(), "Idempotency-Key": "draft-room-first-message-2"}
+
+    first_response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions/first-message",
+        json={"content": "What evidence supports MED13?"},
+        headers=headers,
+    )
+    second_response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions/first-message",
+        json={"content": "What evidence supports BRCA1?"},
+        headers=headers,
+    )
+
+    assert first_response.status_code == 202
+    assert second_response.status_code == 409
+    assert "Idempotency key" in second_response.json()["detail"]
+    list_response = client.get(
+        f"/v2/spaces/{space_id}/chat-sessions",
+        headers=_auth_headers(role="viewer"),
+    )
+    assert list_response.json()["total"] == 1
+
+
+def test_create_graph_chat_session_with_first_message_requires_idempotency_key() -> (
+    None
+):
+    """The first-message creation route requires a key so clients can retry safely."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/chat-sessions/first-message",
+        json={"content": "What evidence supports MED13?"},
+        headers=_auth_headers(),
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_graph_chat_session_title_persists_to_detail_and_list() -> None:
+    """Chat sessions can be renamed through the native chat API."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    create_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={},
+        headers=_auth_headers(),
+    )
+    session_id = create_response.json()["id"]
+
+    update_response = client.patch(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}",
+        json={"title": "Renamed MED13 room"},
+        headers=_auth_headers(),
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["title"] == "Renamed MED13 room"
+
+    detail_response = client.get(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}",
+        headers=_auth_headers(role="viewer"),
+    )
+    assert detail_response.json()["session"]["title"] == "Renamed MED13 room"
+
+    list_response = client.get(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        headers=_auth_headers(role="viewer"),
+    )
+    assert list_response.json()["sessions"][0]["title"] == "Renamed MED13 room"
+
+
+def test_update_graph_chat_session_title_is_available_on_v2_alias() -> None:
+    """The public v2 chat-session route exposes the rename contract."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    create_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={"title": "New room"},
+        headers=_auth_headers(),
+    )
+    session_id = create_response.json()["id"]
+
+    update_response = client.patch(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        json={"title": "Evidence question"},
+        headers=_auth_headers(),
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["title"] == "Evidence question"
+
+
+def test_discard_empty_graph_chat_session_removes_it_from_v2_alias() -> None:
+    """A draft chat session can be discarded before any message is attached."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    create_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={"title": "Draft question"},
+        headers=_auth_headers(),
+    )
+    session_id = create_response.json()["id"]
+
+    delete_response = client.delete(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        headers=_auth_headers(),
+    )
+
+    assert delete_response.status_code == 200
+    assert delete_response.json() == {"id": session_id, "status": "discarded"}
+
+    list_response = client.get(
+        f"/v2/spaces/{space_id}/chat-sessions",
+        headers=_auth_headers(role="viewer"),
+    )
+    assert list_response.json()["sessions"] == []
+
+
+def test_discard_graph_chat_session_rejects_non_empty_session() -> None:
+    """A real chat session cannot be discarded once a message/run exists."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    create_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={"title": "Real question"},
+        headers=_auth_headers(),
+    )
+    session_id = create_response.json()["id"]
+    message_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "What does MED13 do?"},
+        headers={**_auth_headers(), "Prefer": "respond-async"},
+    )
+    assert message_response.status_code == 202
+
+    delete_response = client.delete(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        headers=_auth_headers(),
+    )
+
+    assert delete_response.status_code == 409
+    assert delete_response.json()["detail"] == (
+        "Only empty chat sessions can be discarded."
+    )
+
+
+def test_update_graph_chat_session_title_rejects_viewer_and_anonymous() -> None:
+    """Only write-capable space members can rename chat sessions."""
+    space_id = str(uuid4())
+    research_space_store = _SelectiveHarnessResearchSpaceStore(
+        accessible_roles_by_space={space_id: "researcher"},
+    )
+    client = _build_client(research_space_store=research_space_store)
+
+    create_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={"title": "New room"},
+        headers=_auth_headers(),
+    )
+    session_id = create_response.json()["id"]
+    research_space_store.set_space_role(space_id=space_id, role="viewer")
+
+    viewer_response = client.patch(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        json={"title": "Viewer rename"},
+        headers=_auth_headers(role="viewer"),
+    )
+    anonymous_response = client.patch(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        json={"title": "Anonymous rename"},
+    )
+
+    assert viewer_response.status_code == 403
+    assert anonymous_response.status_code == 401
+
+
+def test_update_graph_chat_session_title_rejects_cross_space_session() -> None:
+    """A session cannot be renamed through a different space id."""
+    client = _build_client()
+    source_space_id = str(uuid4())
+    other_space_id = str(uuid4())
+
+    source_response = client.post(
+        f"/v1/spaces/{source_space_id}/chat-sessions",
+        json={"title": "Source room"},
+        headers=_auth_headers(),
+    )
+    session_id = source_response.json()["id"]
+
+    update_response = client.patch(
+        f"/v2/spaces/{other_space_id}/chat-sessions/{session_id}",
+        json={"title": "Cross-space rename"},
+        headers=_auth_headers(),
+    )
+
+    assert update_response.status_code == 404
+    assert update_response.json()["detail"] == "Chat session not found"
+
+
+def test_update_graph_chat_session_title_rejects_blank_title() -> None:
+    """Whitespace-only titles should not be persisted."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    create_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={"title": "New room"},
+        headers=_auth_headers(),
+    )
+    session_id = create_response.json()["id"]
+
+    update_response = client.patch(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}",
+        json={"title": "   "},
+        headers=_auth_headers(),
+    )
+    detail_response = client.get(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}",
+        headers=_auth_headers(role="viewer"),
+    )
+
+    assert update_response.status_code == 422
+    assert detail_response.json()["session"]["title"] == "New room"
+
+
 def test_graph_chat_session_returns_500_and_persists_failed_run_when_runner_crashes() -> (
     None
 ):
@@ -6381,6 +6834,209 @@ def test_chat_graph_write_endpoint_rejects_unverified_chat_result() -> None:
     assert (
         "not verified for graph-write proposals" in proposal_response.json()["detail"]
     )
+
+
+def test_chat_graph_write_readiness_reports_empty_for_unverified_chat_result() -> None:
+    """Readiness should be safe to call when the latest answer is not stageable."""
+    client = _build_client(graph_chat_runner_dependency=_FakeNeedsReviewGraphChatRunner)
+    space_id = str(uuid4())
+
+    session_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={},
+        headers=_auth_headers(),
+    )
+    session_id = session_response.json()["id"]
+
+    chat_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "What does the graph say about MED13?"},
+        headers=_auth_headers(),
+    )
+    assert chat_response.status_code == 201
+    assert chat_response.json()["result"]["verification"]["status"] == "needs_review"
+
+    readiness_response = client.get(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write/readiness",
+        headers=_auth_headers(role="viewer"),
+    )
+
+    assert readiness_response.status_code == 200
+    payload = readiness_response.json()
+    assert payload["state"] == "empty"
+    assert payload["candidate_count"] == 0
+    assert payload["proposal_count"] == 0
+    assert payload["message"] == "No review-ready updates found in the latest chat result."
+
+
+def test_chat_graph_write_readiness_v2_alias_reports_verified_candidates() -> None:
+    """The v2 frontend route should expose whether latest chat findings are stageable."""
+    _FakeSingleDerivationGraphApiGateway.suggest_relations_call_count = 0
+    client = _build_client(
+        graph_api_gateway_dependency=_FakeSingleDerivationGraphApiGateway,
+    )
+    space_id = str(uuid4())
+
+    session_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={},
+        headers=_auth_headers(),
+    )
+    session_id = session_response.json()["id"]
+
+    chat_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "What does the graph say about MED13?"},
+        headers=_auth_headers(),
+    )
+    assert chat_response.status_code == 201
+    chat_payload = chat_response.json()
+    run_id = chat_payload["run"]["id"]
+    assert _FakeSingleDerivationGraphApiGateway.suggest_relations_call_count == 1
+
+    readiness_response = client.get(
+        f"/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates/readiness",
+        headers=_auth_headers(role="viewer"),
+    )
+
+    assert readiness_response.status_code == 200
+    payload = readiness_response.json()
+    assert payload["run"]["id"] == run_id
+    assert payload["session"]["id"] == session_id
+    assert payload["state"] == "ready"
+    assert payload["candidate_count"] == 1
+    assert payload["proposal_count"] == 0
+    assert payload["message"] == "Review-ready updates are available."
+    assert _FakeSingleDerivationGraphApiGateway.suggest_relations_call_count == 1
+
+
+def test_chat_graph_write_readiness_reports_already_staged_proposals() -> None:
+    """Readiness should hide the stage action once proposals already exist."""
+    _FakeSingleDerivationGraphApiGateway.suggest_relations_call_count = 0
+    client = _build_client(
+        graph_api_gateway_dependency=_FakeSingleDerivationGraphApiGateway,
+    )
+    space_id = str(uuid4())
+
+    session_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={},
+        headers=_auth_headers(),
+    )
+    session_id = session_response.json()["id"]
+
+    chat_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "What does the graph say about MED13?"},
+        headers=_auth_headers(),
+    )
+    assert chat_response.status_code == 201
+    run_id = chat_response.json()["run"]["id"]
+
+    proposal_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write",
+        json={},
+        headers=_auth_headers(),
+    )
+    assert proposal_response.status_code == 201
+    assert proposal_response.json()["proposal_count"] == 1
+
+    readiness_response = client.get(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write/readiness",
+        headers=_auth_headers(role="viewer"),
+    )
+
+    assert readiness_response.status_code == 200
+    payload = readiness_response.json()
+    assert payload["run"]["id"] == run_id
+    assert payload["state"] == "staged"
+    assert payload["candidate_count"] == 1
+    assert payload["proposal_count"] == 1
+    assert payload["message"] == "Suggested updates have already been staged for review."
+    assert _FakeSingleDerivationGraphApiGateway.suggest_relations_call_count == 1
+
+
+def test_chat_graph_write_readiness_reports_pending_for_queued_latest_run() -> None:
+    """Readiness should not report empty while async chat work is still queued."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    session_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={},
+        headers=_auth_headers(),
+    )
+    session_id = session_response.json()["id"]
+
+    chat_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "What does the graph say about MED13?"},
+        headers={**_auth_headers(), "Prefer": "respond-async"},
+    )
+    assert chat_response.status_code == 202
+    assert chat_response.json()["run"]["status"] == "queued"
+
+    readiness_response = client.get(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write/readiness",
+        headers=_auth_headers(role="viewer"),
+    )
+
+    assert readiness_response.status_code == 200
+    payload = readiness_response.json()
+    assert payload["state"] == "pending"
+    assert payload["candidate_count"] == 0
+    assert payload["proposal_count"] == 0
+    assert payload["message"] == "Latest chat run is still preparing review readiness."
+
+
+def test_chat_graph_write_readiness_uses_latest_run_after_prior_stage() -> None:
+    """A new chat answer should not inherit staged state from an older chat run."""
+    client = _build_client()
+    space_id = str(uuid4())
+
+    session_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions",
+        json={},
+        headers=_auth_headers(),
+    )
+    session_id = session_response.json()["id"]
+
+    first_chat_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "What does the graph say about MED13?"},
+        headers=_auth_headers(),
+    )
+    assert first_chat_response.status_code == 201
+    first_run_id = first_chat_response.json()["run"]["id"]
+
+    proposal_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write",
+        json={},
+        headers=_auth_headers(),
+    )
+    assert proposal_response.status_code == 201
+    assert proposal_response.json()["run"]["id"] == first_run_id
+    assert proposal_response.json()["proposal_count"] == 1
+
+    second_chat_response = client.post(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/messages",
+        json={"content": "Check the latest review-ready graph update again."},
+        headers=_auth_headers(),
+    )
+    assert second_chat_response.status_code == 201
+    second_run_id = second_chat_response.json()["run"]["id"]
+
+    readiness_response = client.get(
+        f"/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write/readiness",
+        headers=_auth_headers(role="viewer"),
+    )
+
+    assert readiness_response.status_code == 200
+    payload = readiness_response.json()
+    assert payload["run"]["id"] == second_run_id
+    assert payload["state"] == "ready"
+    assert payload["candidate_count"] == 1
+    assert payload["proposal_count"] == 0
 
 
 def test_chat_graph_write_endpoint_auto_derives_proposals_from_latest_chat_run() -> (

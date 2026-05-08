@@ -312,6 +312,105 @@ def test_sqlalchemy_harness_chat_session_store_persists_sessions_and_messages(
     assert messages[0].metadata["message_kind"] == "question"
 
 
+def test_sqlalchemy_harness_chat_session_store_reserves_first_message_start_once(
+    session: Session,
+) -> None:
+    chat_store = SqlAlchemyHarnessChatSessionStore(session)
+    space_id = str(uuid4())
+    user_id = str(uuid4())
+    request_signature = {"content": "What evidence supports MED13?"}
+
+    reserved, created = chat_store.reserve_first_message_start(
+        space_id=space_id,
+        created_by=user_id,
+        idempotency_key="draft-key",
+        request_signature=request_signature,
+    )
+    replayed, replay_created = chat_store.reserve_first_message_start(
+        space_id=space_id,
+        created_by=user_id,
+        idempotency_key="draft-key",
+        request_signature=request_signature,
+    )
+
+    assert created is True
+    assert replay_created is False
+    assert replayed.id == reserved.id
+    assert replayed.request_signature == request_signature
+
+    chat_session = chat_store.create_session(
+        space_id=space_id,
+        title="What evidence supports MED13?",
+        created_by=user_id,
+    )
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="graph-chat",
+        title="What evidence supports MED13?",
+        input_payload={"session_id": chat_session.id},
+    )
+    completed = chat_store.complete_first_message_start(
+        space_id=space_id,
+        created_by=user_id,
+        idempotency_key="draft-key",
+        session_id=chat_session.id,
+        run_id=run.id,
+    )
+    assert completed is not None
+    assert completed.session_id == chat_session.id
+    assert completed.run_id == run.id
+
+    other_user_record, other_user_created = chat_store.reserve_first_message_start(
+        space_id=space_id,
+        created_by=str(uuid4()),
+        idempotency_key="draft-key",
+        request_signature=request_signature,
+    )
+    assert other_user_created is True
+    assert other_user_record.id != reserved.id
+
+
+def test_sqlalchemy_harness_chat_session_store_discards_only_empty_sessions(
+    session: Session,
+) -> None:
+    chat_store = SqlAlchemyHarnessChatSessionStore(session)
+    space_id = str(uuid4())
+    user_id = str(uuid4())
+
+    empty_session = chat_store.create_session(
+        space_id=space_id,
+        title="Draft question",
+        created_by=user_id,
+    )
+    assert chat_store.discard_empty_session(
+        space_id=space_id,
+        session_id=empty_session.id,
+    ) is True
+    assert chat_store.get_session(space_id=space_id, session_id=empty_session.id) is None
+
+    non_empty_session = chat_store.create_session(
+        space_id=space_id,
+        title="Real question",
+        created_by=user_id,
+    )
+    chat_store.add_message(
+        space_id=space_id,
+        session_id=non_empty_session.id,
+        role="user",
+        content="What does MED13 do?",
+    )
+
+    assert chat_store.discard_empty_session(
+        space_id=space_id,
+        session_id=non_empty_session.id,
+    ) is False
+    assert (
+        chat_store.get_session(space_id=space_id, session_id=non_empty_session.id)
+        is not None
+    )
+
+
 def test_sqlalchemy_harness_document_store_persists_and_updates_documents(
     session: Session,
 ) -> None:

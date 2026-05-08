@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from artana_evidence_api.agent_contracts import GraphSearchContract
 from artana_evidence_api.chat_literature import (
     build_chat_literature_answer_supplement,
@@ -65,6 +67,35 @@ def test_build_chat_literature_request_uses_gene_symbol_and_objective() -> None:
     assert request.gene_symbol == "MED13"
     assert request.search_term == "Map mechanism evidence cardiomyopathy"
     assert request.max_results == 5
+
+
+def test_build_chat_literature_request_normalizes_noisy_relative_year_query() -> None:
+    request = build_chat_literature_request(
+        question="med13 cases lats 10 yerars",
+        objective=None,
+        result=_chat_result().model_copy(update={"evidence_bundle": []}),
+        today=date(2026, 5, 8),
+    )
+
+    assert request.gene_symbol == "MED13"
+    assert request.search_term == "case reports"
+    assert request.date_from == date(2016, 5, 8)
+    assert request.date_to == date(2026, 5, 8)
+    assert request.max_results == 5
+
+
+def test_build_chat_literature_request_does_not_default_unknown_query_to_med13() -> None:
+    request = build_chat_literature_request(
+        question="what about the last 5 years",
+        objective=None,
+        result=_chat_result().model_copy(update={"evidence_bundle": []}),
+        today=date(2026, 5, 8),
+    )
+
+    assert request.gene_symbol is None
+    assert request.search_term == "what about the last 5 years"
+    assert request.date_from == date(2021, 5, 8)
+    assert request.date_to == date(2026, 5, 8)
 
 
 def test_build_chat_literature_answer_supplement_formats_preview_records() -> None:

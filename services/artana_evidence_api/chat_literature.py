@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 from artana_evidence_api.tool_catalog import RunPubMedSearchToolArgs
@@ -12,9 +13,13 @@ if TYPE_CHECKING:
     from artana_evidence_api.graph_chat_runtime import GraphChatResult
 
 _GENE_SYMBOL_PATTERN = re.compile(r"^[A-Z0-9-]{2,20}$")
-_NON_WORD_PATTERN = re.compile(r"[^A-Za-z0-9\\s-]+")
+_NON_WORD_PATTERN = re.compile(r"[^A-Za-z0-9\s-]+")
 _MAX_SEARCH_TERM_TOKENS = 8
 _MAX_PREVIEW_LINES = 3
+_MAX_RELATIVE_YEAR_WINDOW = 100
+_CASE_QUERY_TERMS = frozenset({"case", "cases"})
+_RELATIVE_YEAR_START_WORDS = frozenset({"last", "lats"})
+_RELATIVE_YEAR_UNITS = frozenset({"year", "years", "yr", "yrs", "yerar", "yerars"})
 _STOPWORDS = frozenset(
     {
         "a",
@@ -33,6 +38,8 @@ _STOPWORDS = frozenset(
         "into",
         "is",
         "it",
+        "last",
+        "lats",
         "next",
         "of",
         "on",
@@ -46,6 +53,10 @@ _STOPWORDS = frozenset(
         "what",
         "which",
         "with",
+        "year",
+        "years",
+        "yerar",
+        "yerars",
     },
 )
 
@@ -68,12 +79,34 @@ def _candidate_gene_symbol(
             if isinstance(evidence_item.display_label, str)
             else ""
         )
-        if _GENE_SYMBOL_PATTERN.fullmatch(display_label):
-            return display_label
+        gene_symbol = _normalized_gene_symbol(
+            display_label,
+            allow_lowercase_alpha=evidence_item.entity_type == "gene",
+        )
+        if gene_symbol is not None:
+            return gene_symbol
     for token in _normalized_tokens(question):
-        if _GENE_SYMBOL_PATTERN.fullmatch(token):
-            return token
+        gene_symbol = _normalized_gene_symbol(token, allow_lowercase_alpha=False)
+        if gene_symbol is not None:
+            return gene_symbol
     return None
+
+
+def _normalized_gene_symbol(
+    token: str,
+    *,
+    allow_lowercase_alpha: bool,
+) -> str | None:
+    normalized = token.upper()
+    if not _GENE_SYMBOL_PATTERN.fullmatch(normalized):
+        return None
+    if not any(character.isalpha() for character in normalized):
+        return None
+    if token != normalized and not allow_lowercase_alpha:
+        has_digit = any(character.isdigit() for character in normalized)
+        if not has_digit:
+            return None
+    return normalized
 
 
 def _candidate_search_term(
@@ -90,16 +123,56 @@ def _candidate_search_term(
             lowered = token.lower()
             if lowered in _STOPWORDS:
                 continue
-            if gene_symbol is not None and token == gene_symbol:
+            if token.isdigit():
                 continue
-            filtered_tokens.append(token)
+            if gene_symbol is not None and token.upper() == gene_symbol:
+                continue
+            filtered_tokens.append(_search_term_alias(lowered) or token)
             if len(filtered_tokens) >= _MAX_SEARCH_TERM_TOKENS:
                 break
         if filtered_tokens:
             return " ".join(filtered_tokens)
     if gene_symbol is not None:
         return gene_symbol
-    return "MED13"
+    raw_tokens = _normalized_tokens(question)
+    if raw_tokens:
+        return " ".join(raw_tokens[:_MAX_SEARCH_TERM_TOKENS])
+    msg = "Could not derive a PubMed search term from the chat question."
+    raise ValueError(msg)
+
+
+def _search_term_alias(token: str) -> str | None:
+    if token in _CASE_QUERY_TERMS:
+        return "case reports"
+    return None
+
+
+def _relative_publication_window(
+    *,
+    question: str,
+    today: date,
+) -> tuple[date, date] | None:
+    tokens = [token.lower() for token in _normalized_tokens(question)]
+    for index in range(max(len(tokens) - 2, 0)):
+        start_word = tokens[index]
+        year_count = tokens[index + 1]
+        unit = tokens[index + 2]
+        if (
+            start_word in _RELATIVE_YEAR_START_WORDS
+            and year_count.isdigit()
+            and unit in _RELATIVE_YEAR_UNITS
+        ):
+            years = int(year_count)
+            if 1 <= years <= _MAX_RELATIVE_YEAR_WINDOW:
+                return (_subtract_years(today, years), today)
+    return None
+
+
+def _subtract_years(value: date, years: int) -> date:
+    try:
+        return value.replace(year=value.year - years)
+    except ValueError:
+        return value.replace(year=value.year - years, day=28)
 
 
 def build_chat_literature_request(
@@ -108,16 +181,24 @@ def build_chat_literature_request(
     objective: str | None,
     result: GraphChatResult,
     max_results: int = 5,
+    today: date | None = None,
 ) -> RunPubMedSearchToolArgs:
+    effective_today = today or datetime.now(UTC).date()
     gene_symbol = _candidate_gene_symbol(question=question, result=result)
     search_term = _candidate_search_term(
         question=question,
         objective=objective,
         gene_symbol=gene_symbol,
     )
+    publication_window = _relative_publication_window(
+        question=question,
+        today=effective_today,
+    )
     return RunPubMedSearchToolArgs(
         gene_symbol=gene_symbol,
         search_term=search_term,
+        date_from=publication_window[0] if publication_window else None,
+        date_to=publication_window[1] if publication_window else None,
         max_results=max_results,
     )
 

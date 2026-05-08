@@ -1152,6 +1152,51 @@
         "title": "ChatGraphWriteProposalResponse",
         "type": "object"
       },
+      "ChatGraphWriteReadinessResponse": {
+        "description": "Read-only graph-write staging state for the latest chat result.",
+        "properties": {
+          "candidate_count": {
+            "minimum": 0.0,
+            "title": "Candidate Count",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "proposal_count": {
+            "minimum": 0.0,
+            "title": "Proposal Count",
+            "type": "integer"
+          },
+          "run": {
+            "$ref": "#/components/schemas/HarnessRunResponse"
+          },
+          "session": {
+            "$ref": "#/components/schemas/ChatSessionResponse"
+          },
+          "state": {
+            "enum": [
+              "ready",
+              "empty",
+              "staged",
+              "pending"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "session",
+          "state",
+          "candidate_count",
+          "proposal_count",
+          "message"
+        ],
+        "title": "ChatGraphWriteReadinessResponse",
+        "type": "object"
+      },
       "ChatMessageAcceptedResponse": {
         "description": "Accepted async response for one queued chat message.",
         "properties": {
@@ -1385,6 +1430,26 @@
         "title": "ChatSessionDetailResponse",
         "type": "object"
       },
+      "ChatSessionDiscardResponse": {
+        "description": "Response after discarding an empty chat session.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "discarded",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "ChatSessionDiscardResponse",
+        "type": "object"
+      },
       "ChatSessionListResponse": {
         "description": "List response for chat sessions.",
         "properties": {
@@ -1471,6 +1536,22 @@
           "updated_at"
         ],
         "title": "ChatSessionResponse",
+        "type": "object"
+      },
+      "ChatSessionUpdateRequest": {
+        "description": "Update one chat session.",
+        "properties": {
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ChatSessionUpdateRequest",
         "type": "object"
       },
       "ClaimCurationRunRequest": {
@@ -17113,7 +17194,138 @@
         ]
       }
     },
+    "/v1/spaces/{space_id}/chat-sessions/first-message": {
+      "post": {
+        "operationId": "create_chat_session_with_first_message_v1_spaces__space_id__chat_sessions_first_message_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessageAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create chat session with first message",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
     "/v1/spaces/{space_id}/chat-sessions/{session_id}": {
+      "delete": {
+        "operationId": "discard_empty_chat_session_v1_spaces__space_id__chat_sessions__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSessionDiscardResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Discard empty chat session",
+        "tags": [
+          "chat"
+        ]
+      },
       "get": {
         "operationId": "get_chat_session_v1_spaces__space_id__chat_sessions__session_id__get",
         "parameters": [
@@ -17169,6 +17381,75 @@
           }
         ],
         "summary": "Get chat session state",
+        "tags": [
+          "chat"
+        ]
+      },
+      "patch": {
+        "operationId": "update_chat_session_v1_spaces__space_id__chat_sessions__session_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSessionUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update chat session",
         "tags": [
           "chat"
         ]
@@ -17485,6 +17766,67 @@
           }
         ],
         "summary": "Convert chat findings into graph proposals",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/v1/spaces/{space_id}/chat-sessions/{session_id}/proposals/graph-write/readiness": {
+      "get": {
+        "operationId": "get_chat_graph_write_readiness_v1_spaces__space_id__chat_sessions__session_id__proposals_graph_write_readiness_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatGraphWriteReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Check whether latest chat findings can be staged",
         "tags": [
           "chat"
         ]
@@ -21787,7 +22129,138 @@
         ]
       }
     },
+    "/v2/spaces/{space_id}/chat-sessions/first-message": {
+      "post": {
+        "operationId": "v2_create_chat_session_with_first_message_v2_spaces__space_id__chat_sessions_first_message_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessageAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create chat session with first message",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
     "/v2/spaces/{space_id}/chat-sessions/{session_id}": {
+      "delete": {
+        "operationId": "v2_discard_empty_chat_session_v2_spaces__space_id__chat_sessions__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSessionDiscardResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Discard empty chat session",
+        "tags": [
+          "chat"
+        ]
+      },
       "get": {
         "operationId": "v2_get_chat_session_v2_spaces__space_id__chat_sessions__session_id__get",
         "parameters": [
@@ -21843,6 +22316,75 @@
           }
         ],
         "summary": "Get chat session",
+        "tags": [
+          "chat"
+        ]
+      },
+      "patch": {
+        "operationId": "v2_update_chat_session_v2_spaces__space_id__chat_sessions__session_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSessionUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update chat session",
         "tags": [
           "chat"
         ]
@@ -22080,6 +22622,67 @@
           }
         ],
         "summary": "Stage suggested updates from chat",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/chat-sessions/{session_id}/suggested-updates/readiness": {
+      "get": {
+        "operationId": "v2_get_chat_graph_write_readiness_v2_spaces__space_id__chat_sessions__session_id__suggested_updates_readiness_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatGraphWriteReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Check suggested update readiness",
         "tags": [
           "chat"
         ]

@@ -18,6 +18,7 @@ from artana_evidence_api.models import (
     HarnessApprovalModel,
     HarnessChatMessageModel,
     HarnessChatSessionModel,
+    HarnessChatSessionStartModel,
     HarnessDocumentModel,
     HarnessGraphSnapshotModel,
     HarnessIntentModel,
@@ -55,6 +56,7 @@ from sqlalchemy import delete, func, select, update
 from .chat_sessions import (
     HarnessChatMessageRecord,
     HarnessChatSessionRecord,
+    HarnessChatSessionStartRecord,
     HarnessChatSessionStore,
 )
 from .document_store import (
@@ -283,6 +285,23 @@ def _chat_message_record_from_model(
         content=model.content,
         run_id=model.run_id,
         metadata=_json_object(model.metadata_payload),
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+    )
+
+
+def _chat_session_start_record_from_model(
+    model: HarnessChatSessionStartModel,
+) -> HarnessChatSessionStartRecord:
+    return HarnessChatSessionStartRecord(
+        id=model.id,
+        space_id=model.space_id,
+        created_by=model.created_by,
+        idempotency_key=model.idempotency_key,
+        request_signature=_json_object(model.request_signature_payload),
+        session_id=model.session_id,
+        run_id=model.run_id,
+        status=model.status,
         created_at=model.created_at,
         updated_at=model.updated_at,
     )
@@ -887,6 +906,7 @@ from .sqlalchemy_state_chat_stores import (  # noqa: E402,I001
 __all__ = [
     "HarnessChatMessageRecord",
     "HarnessChatSessionRecord",
+    "HarnessChatSessionStartRecord",
     "HarnessChatSessionStore",
     "HarnessDocumentRecord",
     "HarnessDocumentStore",

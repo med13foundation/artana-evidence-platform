@@ -209,25 +209,36 @@ def queue_graph_chat_message_run(  # noqa: PLR0913
     chat_session_store: HarnessChatSessionStore,
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
+    input_metadata: JSONObject | None = None,
 ) -> HarnessRunRecord:
     """Create a queued graph-chat run without executing it yet."""
+    input_payload = build_graph_chat_run_input_payload(
+        session_id=session.id,
+        question=content,
+        current_user_id=str(current_user_id),
+        model_id=model_id,
+        max_depth=max_depth,
+        top_k=top_k,
+        include_evidence_chains=include_evidence_chains,
+        memory_context=memory_context,
+        document_ids=document_ids,
+        document_context=document_context,
+        refresh_pubmed_if_needed=refresh_pubmed_if_needed,
+    )
+    if input_metadata is not None:
+        existing_metadata = input_payload.get("metadata")
+        input_payload = {
+            **input_payload,
+            "metadata": {
+                **(existing_metadata if isinstance(existing_metadata, dict) else {}),
+                **input_metadata,
+            },
+        }
     run = run_registry.create_run(
         space_id=space_id,
         harness_id="graph-chat",
         title=title,
-        input_payload=build_graph_chat_run_input_payload(
-            session_id=session.id,
-            question=content,
-            current_user_id=str(current_user_id),
-            model_id=model_id,
-            max_depth=max_depth,
-            top_k=top_k,
-            include_evidence_chains=include_evidence_chains,
-            memory_context=memory_context,
-            document_ids=document_ids,
-            document_context=document_context,
-            refresh_pubmed_if_needed=refresh_pubmed_if_needed,
-        ),
+        input_payload=input_payload,
         graph_service_status=graph_service_status,
         graph_service_version=graph_service_version,
     )
