@@ -375,6 +375,28 @@ def test_extract_relation_candidates_matches_narrative_scientific_text() -> None
     assert candidates[0].object_label == "cardiomyopathy"
 
 
+def test_extract_relation_candidates_rejects_bare_fragment_subjects() -> None:
+    candidates = extract_relation_candidates(
+        "It inhibits CSF-1R. "
+        "This activates signaling cascade. "
+        "closely interacts with GBM cells. "
+        "drug inhibits normal autophagy. "
+        "RNA interacts with ultimately reducing tumor volume. "
+        "ed causes reduction. "
+        "MED13 inhibits CSF-1R. "
+        "Wnt activates beta-catenin signaling. "
+        "Hh activates Gli1 signaling.",
+    )
+
+    assert [
+        (candidate.subject_label, candidate.relation_type) for candidate in candidates
+    ] == [
+        ("MED13", "INHIBITS"),
+        ("Wnt", "ACTIVATES"),
+        ("Hh", "ACTIVATES"),
+    ]
+
+
 @pytest.mark.asyncio
 async def test_extract_relation_candidates_with_diagnostics_falls_back_to_regex(
     monkeypatch: pytest.MonkeyPatch,
