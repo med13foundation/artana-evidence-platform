@@ -126,6 +126,138 @@ async def test_clinicaltrials_gateway_normalizes_v2_studies() -> None:
 
 
 @pytest.mark.asyncio
+async def test_clinicaltrials_gateway_accepts_patient_matching_filters() -> None:
+    captured_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "studies": [
+                    {
+                        "protocolSection": {
+                            "identificationModule": {
+                                "nctId": "NCT00000002",
+                                "briefTitle": "MGMT-methylated GBM trial",
+                            },
+                            "statusModule": {"overallStatus": "RECRUITING"},
+                            "conditionsModule": {
+                                "conditions": ["Glioblastoma"],
+                            },
+                            "armsInterventionsModule": {
+                                "interventions": [
+                                    {"name": "Temozolomide", "type": "DRUG"},
+                                ],
+                            },
+                            "eligibilityModule": {
+                                "eligibilityCriteria": (
+                                    "Inclusion Criteria: MGMT methylated glioblastoma."
+                                ),
+                                "minimumAge": "18 Years",
+                                "maximumAge": "65 Years",
+                                "sex": "ALL",
+                            },
+                            "contactsLocationsModule": {
+                                "centralContacts": [
+                                    {
+                                        "name": "Trial Office",
+                                        "role": "CONTACT",
+                                        "email": "trials@example.org",
+                                    },
+                                ],
+                                "overallOfficials": [
+                                    {
+                                        "name": "Ada Trialist, MD",
+                                        "role": "PRINCIPAL_INVESTIGATOR",
+                                    },
+                                ],
+                                "locations": [
+                                    {
+                                        "facility": "Boston Cancer Center",
+                                        "status": "RECRUITING",
+                                        "city": "Boston",
+                                        "state": "Massachusetts",
+                                        "country": "United States",
+                                        "contacts": [
+                                            {
+                                                "name": "Boston Trial Office",
+                                                "role": "CONTACT",
+                                                "email": "boston@example.org",
+                                            },
+                                        ],
+                                        "geoPoint": {"lat": 42.36, "lon": -71.06},
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            },
+            request=request,
+        )
+
+    gateway = ClinicalTrialsSourceGateway(
+        timeout_seconds=1.0,
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = await gateway.fetch_records_async(
+        query="MGMT methylated TMZ",
+        condition="Glioblastoma",
+        overall_statuses=("RECRUITING", "NOT_YET_RECRUITING"),
+        location="Boston, US",
+        geo_filter="distance(42.3601,-71.0589,50mi)",
+        max_results=7,
+    )
+
+    params = captured_requests[0].url.params
+    assert params["query.cond"] == "Glioblastoma"
+    assert params["query.term"] == "MGMT methylated TMZ"
+    assert params["query.locn"] == "Boston, US"
+    assert params["filter.overallStatus"] == "RECRUITING|NOT_YET_RECRUITING"
+    assert params["filter.geo"] == "distance(42.3601,-71.0589,50mi)"
+    assert params["pageSize"] == "7"
+    assert result.records[0]["eligibility_criteria"].startswith("Inclusion Criteria")
+    assert result.records[0]["minimum_age"] == "18 Years"
+    assert result.records[0]["maximum_age"] == "65 Years"
+    assert result.records[0]["central_contacts"] == [
+        {
+            "name": "Trial Office",
+            "role": "CONTACT",
+            "phone": "",
+            "email": "trials@example.org",
+        },
+    ]
+    assert result.records[0]["overall_officials"] == [
+        {
+            "name": "Ada Trialist, MD",
+            "role": "PRINCIPAL_INVESTIGATOR",
+            "affiliation": "",
+        },
+    ]
+    assert result.records[0]["locations"] == [
+        {
+            "facility": "Boston Cancer Center",
+            "status": "RECRUITING",
+            "city": "Boston",
+            "state": "Massachusetts",
+            "zip": "",
+            "country": "United States",
+            "contacts": [
+                {
+                    "name": "Boston Trial Office",
+                    "role": "CONTACT",
+                    "phone": "",
+                    "email": "boston@example.org",
+                },
+            ],
+            "geo_point": {"lat": 42.36, "lon": -71.06},
+        },
+    ]
+
+
+@pytest.mark.asyncio
 async def test_mgi_gateway_normalizes_mouse_gene_records() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(

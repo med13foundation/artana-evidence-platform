@@ -81,6 +81,8 @@ from artana_evidence_api.study_outcomes import (
     StudyOutcomeListResponse,
     StudyOutcomeResponse,
 )
+from artana_evidence_api.trial_matching import TrialMatchingResponse
+from artana_evidence_api.trial_matching.routes import match_trials
 from artana_evidence_api.types.common import (
     JSONObject,
     json_object_or_empty,
@@ -454,6 +456,15 @@ def list_study_outcomes(
         offset=offset,
         limit=limit,
     )
+
+
+router.get(
+    "/v2/spaces/{space_id}/trial-matching",
+    response_model=TrialMatchingResponse,
+    summary="Match live ClinicalTrials.gov trials",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["research"],
+)(match_trials)
 
 
 @router.post(

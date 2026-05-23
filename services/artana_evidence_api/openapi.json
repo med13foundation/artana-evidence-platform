@@ -14364,6 +14364,409 @@
         "title": "ToolDecisionRecord",
         "type": "object"
       },
+      "TrialMatchLocation": {
+        "description": "Public location/contact fields for one matching trial site.",
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "country": {
+            "title": "Country",
+            "type": "string"
+          },
+          "facility": {
+            "title": "Facility",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "zip": {
+            "title": "Zip",
+            "type": "string"
+          }
+        },
+        "required": [
+          "facility",
+          "status",
+          "city",
+          "state",
+          "zip",
+          "country"
+        ],
+        "title": "TrialMatchLocation",
+        "type": "object"
+      },
+      "TrialMatchResponse": {
+        "description": "One live ClinicalTrials.gov match ranked against patient context.",
+        "properties": {
+          "conditions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "eligibility_summary": {
+            "title": "Eligibility Summary",
+            "type": "string"
+          },
+          "intervention_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Intervention Names",
+            "type": "array"
+          },
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/TrialMatchLocation"
+            },
+            "title": "Locations",
+            "type": "array"
+          },
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Terms",
+            "type": "array"
+          },
+          "maximum_age": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Age"
+          },
+          "minimum_age": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Age"
+          },
+          "nct_id": {
+            "title": "Nct Id",
+            "type": "string"
+          },
+          "phase": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Phase",
+            "type": "array"
+          },
+          "primary_investigator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Investigator"
+          },
+          "relevance_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Relevance Reasons",
+            "type": "array"
+          },
+          "relevance_score": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Relevance Score",
+            "type": "number"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nct_id",
+          "title",
+          "status",
+          "eligibility_summary",
+          "relevance_score",
+          "source_url"
+        ],
+        "title": "TrialMatchResponse",
+        "type": "object"
+      },
+      "TrialMatchingQuery": {
+        "description": "Patient context used to query and rank live ClinicalTrials.gov matches.",
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "condition": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Condition",
+            "type": "string"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "molecular_markers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Molecular Markers",
+            "type": "array"
+          },
+          "prior_treatments": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prior Treatments",
+            "type": "array"
+          },
+          "reference_city": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference City"
+          },
+          "reference_latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Latitude"
+          },
+          "reference_longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Longitude"
+          },
+          "statuses": {
+            "default": [
+              "RECRUITING",
+              "NOT_YET_RECRUITING"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Statuses",
+            "type": "array"
+          },
+          "within_miles": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Within Miles"
+          }
+        },
+        "required": [
+          "condition"
+        ],
+        "title": "TrialMatchingQuery",
+        "type": "object"
+      },
+      "TrialMatchingResponse": {
+        "description": "Response for request-time live ClinicalTrials.gov trial matching.",
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "query": {
+            "$ref": "#/components/schemas/TrialMatchingQuery"
+          },
+          "source": {
+            "const": "clinical_trials",
+            "default": "clinical_trials",
+            "title": "Source",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "trial_matches": {
+            "items": {
+              "$ref": "#/components/schemas/TrialMatchResponse"
+            },
+            "title": "Trial Matches",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_id",
+          "query",
+          "total",
+          "generated_at"
+        ],
+        "title": "TrialMatchingResponse",
+        "type": "object"
+      },
       "UniProtSourceSearchRequest": {
         "description": "Request payload for a direct UniProt protein search.",
         "properties": {
@@ -27968,6 +28371,240 @@
         "summary": "Get task working state",
         "tags": [
           "tasks"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/trial-matching": {
+      "get": {
+        "description": "Return request-time live ClinicalTrials.gov matches for patient context.",
+        "operationId": "match_trials_v2_spaces__space_id__trial_matching_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "condition",
+            "required": true,
+            "schema": {
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Condition",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "age",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 130,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Age"
+            }
+          },
+          {
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Country"
+            }
+          },
+          {
+            "in": "query",
+            "name": "within_miles",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 500,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Within Miles"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference_city",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference City"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "RECRUITING|NOT_YET_RECRUITING",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "molecular_markers",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Molecular Markers"
+            }
+          },
+          {
+            "in": "query",
+            "name": "prior_treatments",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prior Treatments"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_results",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Max Results",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference_latitude",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 90,
+                  "minimum": -90,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference Latitude"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference_longitude",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 180,
+                  "minimum": -180,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference Longitude"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialMatchingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Match live ClinicalTrials.gov trials",
+        "tags": [
+          "research"
         ]
       }
     },
