@@ -6,7 +6,7 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from typing import Final
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from artana_evidence_api.app import create_app
 from artana_evidence_api.artifact_store import HarnessArtifactStore
@@ -20,6 +20,7 @@ from artana_evidence_api.dependencies import (
     get_research_state_store,
     get_review_item_store,
     get_run_registry,
+    get_study_outcome_store,
 )
 from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
 from artana_evidence_api.document_extraction import (
@@ -47,6 +48,7 @@ from artana_evidence_api.review_item_store import (
 from artana_evidence_api.run_registry import HarnessRunRegistry
 from artana_evidence_api.runtime.pdf_text_diagnostics import pdf_text_diagnostic
 from artana_evidence_api.storage_types import StorageUseCase
+from artana_evidence_api.study_outcomes import HarnessStudyOutcomeStore
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
     KernelEntityResponse,
@@ -279,6 +281,7 @@ def _build_client(
     document_store = HarnessDocumentStore()
     proposal_store = HarnessProposalStore()
     review_item_store = HarnessReviewItemStore()
+    study_outcome_store = HarnessStudyOutcomeStore()
     research_state_store = HarnessResearchStateStore()
     research_space_store = HarnessResearchSpaceStore()
     run_registry = HarnessRunRegistry()
@@ -296,6 +299,7 @@ def _build_client(
     app.dependency_overrides[get_proposal_store] = lambda: proposal_store
     app.dependency_overrides[get_research_state_store] = lambda: research_state_store
     app.dependency_overrides[get_review_item_store] = lambda: review_item_store
+    app.dependency_overrides[get_study_outcome_store] = lambda: study_outcome_store
     app.dependency_overrides[get_research_space_store] = lambda: research_space_store
     app.dependency_overrides[get_run_registry] = lambda: run_registry
     return (
@@ -791,6 +795,57 @@ def test_extract_document_creates_pending_review_proposals_and_supports_filterin
     )
     assert filtered_response.status_code == 200
     assert filtered_response.json()["total"] == 1
+
+
+def test_extract_pubmed_clinical_trial_document_stores_structured_outcomes() -> None:
+    client, _, document_store, _, _, space_id = _build_client(
+        objective="Compare glioblastoma therapy survival evidence.",
+    )
+    document = document_store.create_document(
+        document_id=uuid4(),
+        space_id=space_id,
+        created_by=_TEST_USER_ID,
+        title="Stupp temozolomide trial",
+        source_type="pubmed",
+        filename=None,
+        media_type="text/plain",
+        sha256="2" * 64,
+        byte_size=256,
+        page_count=None,
+        text_content=(
+            "Temozolomide treats glioblastoma. "
+            "Temozolomide plus radiotherapy vs radiotherapy alone median OS "
+            "14.6 vs 12.1 months; HR 0.63 (95% CI 0.52-0.75)."
+        ),
+        ingestion_run_id=uuid4(),
+        enrichment_status="completed",
+        extraction_status="not_started",
+        metadata={
+            "pubmed": {
+                "pmid": "15758009",
+                "publication_types": ["Randomized Controlled Trial"],
+            },
+        },
+    )
+
+    extract_response = client.post(
+        f"/v1/spaces/{space_id}/documents/{document.id}/extract",
+        headers=_auth_headers(),
+    )
+
+    assert extract_response.status_code == 201
+    study_outcome_store = client.app.dependency_overrides[get_study_outcome_store]()
+    assert isinstance(study_outcome_store, HarnessStudyOutcomeStore)
+    outcomes = study_outcome_store.list_outcomes(
+        space_id=space_id,
+        intervention="temozolomide",
+    )
+
+    assert {outcome.outcome_metric for outcome in outcomes} >= {
+        "median_overall_survival",
+        "hazard_ratio",
+    }
+    assert any(outcome.value == 14.6 for outcome in outcomes)
 
 
 def test_extract_document_escalates_to_llm_when_regex_finds_no_candidates(

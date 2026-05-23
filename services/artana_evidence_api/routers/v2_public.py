@@ -28,6 +28,7 @@ from artana_evidence_api.dependencies import (
     get_review_item_store,
     get_run_registry,
     get_source_search_handoff_store,
+    get_study_outcome_store,
     require_harness_space_read_access,
     require_harness_space_write_access,
 )
@@ -74,6 +75,11 @@ from artana_evidence_api.source_search_handoff import (
     SourceSearchHandoffService,
     SourceSearchHandoffStore,
     SourceSearchHandoffUnsupportedError,
+)
+from artana_evidence_api.study_outcomes import (
+    HarnessStudyOutcomeStore,
+    StudyOutcomeListResponse,
+    StudyOutcomeResponse,
 )
 from artana_evidence_api.types.common import (
     JSONObject,
@@ -166,6 +172,7 @@ _DOCUMENT_STORE_DEPENDENCY = Depends(get_document_store)
 _DOCUMENT_BINARY_STORE_DEPENDENCY = Depends(get_document_binary_store)
 _PROPOSAL_STORE_DEPENDENCY = Depends(get_proposal_store)
 _REVIEW_ITEM_STORE_DEPENDENCY = Depends(get_review_item_store)
+_STUDY_OUTCOME_STORE_DEPENDENCY = Depends(get_study_outcome_store)
 _RESEARCH_STATE_STORE_DEPENDENCY = Depends(get_research_state_store)
 _OpenAPIResponses = dict[int | str, dict[str, Any]]
 _SOURCE_NOT_FOUND_RESPONSE: _OpenAPIResponses = {
@@ -330,6 +337,7 @@ async def create_source_search_handoff(
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_DEPENDENCY,
+    study_outcome_store: HarnessStudyOutcomeStore = _STUDY_OUTCOME_STORE_DEPENDENCY,
     binary_store: HarnessDocumentBinaryStore = _DOCUMENT_BINARY_STORE_DEPENDENCY,
     graph_api_gateway: GraphTransportBundle = Depends(get_graph_api_gateway),
     research_state_store: HarnessResearchStateStore = _RESEARCH_STATE_STORE_DEPENDENCY,
@@ -387,6 +395,7 @@ async def create_source_search_handoff(
             document_store=document_store,
             proposal_store=proposal_store,
             review_item_store=review_item_store,
+            study_outcome_store=study_outcome_store,
             run_registry=run_registry,
             artifact_store=artifact_store,
             binary_store=binary_store,
@@ -397,6 +406,54 @@ async def create_source_search_handoff(
             update={"extraction": json_object_or_empty(jsonable_encoder(extraction))},
         )
     return response
+
+
+@router.get(
+    "/v2/spaces/{space_id}/study-outcomes",
+    response_model=StudyOutcomeListResponse,
+    summary="List study outcomes",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["research"],
+)
+def list_study_outcomes(
+    space_id: UUID,
+    intervention: str | None = Query(default=None),
+    population: str | None = Query(default=None),
+    outcome_metric: str | None = Query(default=None),
+    document_id: UUID | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=200, ge=1, le=500),
+    *,
+    study_outcome_store: HarnessStudyOutcomeStore = (
+        _STUDY_OUTCOME_STORE_DEPENDENCY
+    ),
+) -> StudyOutcomeListResponse:
+    """Return quantitative trial outcomes extracted from clinical-trial papers."""
+
+    records = study_outcome_store.list_outcomes(
+        space_id=space_id,
+        intervention=intervention,
+        population=population,
+        outcome_metric=outcome_metric,
+        document_id=document_id,
+        offset=offset,
+        limit=limit,
+    )
+    total = study_outcome_store.count_outcomes(
+        space_id=space_id,
+        intervention=intervention,
+        population=population,
+        outcome_metric=outcome_metric,
+        document_id=document_id,
+    )
+    return StudyOutcomeListResponse(
+        study_outcomes=[
+            StudyOutcomeResponse.from_record(record) for record in records
+        ],
+        total=total,
+        offset=offset,
+        limit=limit,
+    )
 
 
 @router.post(

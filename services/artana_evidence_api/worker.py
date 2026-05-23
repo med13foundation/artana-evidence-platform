@@ -60,6 +60,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessReviewItemStore,
     SqlAlchemyHarnessScheduleStore,
 )
+from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.worker_notifications import (
     WorkerQueueNotificationListener,
@@ -154,6 +155,7 @@ def _build_worker_services(
         document_store=SqlAlchemyHarnessDocumentStore(session),
         proposal_store=SqlAlchemyHarnessProposalStore(session),
         review_item_store=SqlAlchemyHarnessReviewItemStore(session),
+        study_outcome_store=SqlAlchemyStudyOutcomeStore(session),
         approval_store=SqlAlchemyHarnessApprovalStore(session),
         research_state_store=SqlAlchemyHarnessResearchStateStore(session),
         graph_snapshot_store=SqlAlchemyHarnessGraphSnapshotStore(session),

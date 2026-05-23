@@ -1084,6 +1084,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             run_registry=run_registry,
             artifact_store=artifact_store,
             proposal_store=proposal_store,
+            study_outcome_store=services.study_outcome_store,
             research_state_store=research_state_store,
             documents_ingested=documents_ingested,
             ingested_documents=ingested_documents,

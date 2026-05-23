@@ -22,6 +22,7 @@ from artana_evidence_api.dependencies import (
     get_research_state_store,
     get_review_item_store,
     get_run_registry,
+    get_study_outcome_store,
     require_harness_space_read_access,
     require_harness_space_write_access,
 )
@@ -75,6 +76,10 @@ from artana_evidence_api.run_registry import (
     HarnessRunRegistry,
 )  # noqa: TC001
 from artana_evidence_api.storage_types import StorageUseCase
+from artana_evidence_api.study_outcomes import (
+    HarnessStudyOutcomeStore,  # noqa: TC001
+    extract_study_outcome_drafts,
+)
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.variant_aware_document_extraction import (
     document_supports_variant_aware_extraction,
@@ -114,6 +119,7 @@ _DOCUMENT_BINARY_STORE_DEPENDENCY = Depends(get_document_binary_store)
 _DOCUMENT_STORE_DEPENDENCY = Depends(get_document_store)
 _PROPOSAL_STORE_DEPENDENCY = Depends(get_proposal_store)
 _REVIEW_ITEM_STORE_DEPENDENCY = Depends(get_review_item_store)
+_STUDY_OUTCOME_STORE_DEPENDENCY = Depends(get_study_outcome_store)
 _GRAPH_API_GATEWAY_DEPENDENCY = Depends(get_graph_api_gateway)
 _RESEARCH_STATE_STORE_DEPENDENCY = Depends(get_research_state_store)
 _CURRENT_USER_DEPENDENCY = Depends(get_current_harness_user)
@@ -681,6 +687,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_DEPENDENCY,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
     review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_DEPENDENCY,
+    study_outcome_store: HarnessStudyOutcomeStore = _STUDY_OUTCOME_STORE_DEPENDENCY,
     run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
     artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
     binary_store: HarnessDocumentBinaryStore = _DOCUMENT_BINARY_STORE_DEPENDENCY,
@@ -795,6 +802,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 else None
             ),
         )
+        study_outcome_drafts = extract_study_outcome_drafts(document)
         if document_supports_variant_aware_extraction(document=document):
             variant_result = await extract_variant_aware_document(
                 space_id=space_id,
@@ -811,6 +819,12 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 space_id=space_id,
                 run_id=run.id,
                 review_items=variant_result.review_item_drafts,
+            )
+            created_study_outcomes = study_outcome_store.create_outcomes(
+                space_id=space_id,
+                document_id=document.id,
+                run_id=run.id,
+                outcomes=study_outcome_drafts,
             )
             proposals, reused_existing_proposal_count = _effective_proposals_for_drafts(
                 space_id=space_id,
@@ -842,6 +856,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                     ),
                     "proposal_count": len(proposals),
                     "review_item_count": len(effective_review_items),
+                    "study_outcome_count": len(created_study_outcomes),
                     "skipped_candidate_count": len(skipped_candidates),
                     "reused_existing_proposal_count": reused_existing_proposal_count,
                     "reused_existing_review_item_count": (
@@ -876,6 +891,10 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                     "review_item_ids": [
                         review_item.id for review_item in effective_review_items
                     ],
+                    "study_outcome_count": len(created_study_outcomes),
+                    "study_outcome_ids": [
+                        outcome.id for outcome in created_study_outcomes
+                    ],
                     "skipped_candidates": skipped_candidates,
                     "reused_existing_proposal_count": reused_existing_proposal_count,
                     "reused_existing_review_item_count": (
@@ -896,6 +915,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                     "document_id": document.id,
                     "proposal_count": len(proposals),
                     "review_item_count": len(effective_review_items),
+                    "study_outcome_count": len(created_study_outcomes),
                     "skipped_candidate_count": len(skipped_candidates),
                     "reused_existing_proposal_count": reused_existing_proposal_count,
                     "reused_existing_review_item_count": (
@@ -1012,6 +1032,12 @@ async def extract_document(  # noqa: PLR0913, PLR0915
             proposal_drafts=drafts,
             proposal_store=proposal_store,
         )
+        created_study_outcomes = study_outcome_store.create_outcomes(
+            space_id=space_id,
+            document_id=document.id,
+            run_id=run.id,
+            outcomes=study_outcome_drafts,
+        )
         review_item_responses: list[HarnessReviewQueueItemResponse] = []
         updated_document = document_store.update_document(
             space_id=space_id,
@@ -1022,6 +1048,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 "candidate_count": len(candidates),
                 "proposal_count": len(proposals),
                 "review_item_count": len(review_item_responses),
+                "study_outcome_count": len(created_study_outcomes),
                 "skipped_candidate_count": len(skipped_candidates),
                 "reused_existing_proposal_count": reused_existing_proposal_count,
                 "candidate_discovery": candidate_discovery,
@@ -1046,6 +1073,10 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 "proposal_ids": [proposal.id for proposal in proposals],
                 "review_item_count": len(review_item_responses),
                 "review_item_ids": [],
+                "study_outcome_count": len(created_study_outcomes),
+                "study_outcome_ids": [
+                    outcome.id for outcome in created_study_outcomes
+                ],
                 "skipped_candidates": skipped_candidates,
                 "reused_existing_proposal_count": reused_existing_proposal_count,
                 "candidate_discovery": candidate_discovery,
@@ -1062,6 +1093,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 "document_id": document.id,
                 "proposal_count": len(proposals),
                 "review_item_count": len(review_item_responses),
+                "study_outcome_count": len(created_study_outcomes),
                 "skipped_candidate_count": len(skipped_candidates),
                 "reused_existing_proposal_count": reused_existing_proposal_count,
                 "candidate_discovery": candidate_discovery,

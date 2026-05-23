@@ -445,6 +445,90 @@ class HarnessDocumentModel(Base):
     )
 
 
+class HarnessStudyOutcomeModel(Base):
+    """Quantitative clinical-trial outcomes extracted from one harness document."""
+
+    __tablename__ = "harness_study_outcomes"
+
+    id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+    )
+    space_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        nullable=False,
+        index=True,
+    )
+    document_id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False),
+        ForeignKey(
+            qualify_harness_foreign_key_target("harness_documents.id"),
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+    run_id: Mapped[str | None] = mapped_column(
+        PGUUID(as_uuid=False),
+        ForeignKey(
+            qualify_harness_foreign_key_target("harness_runs.id"),
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+    intervention: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
+    comparator: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    outcome_metric: Mapped[str] = mapped_column(String(96), nullable=False, index=True)
+    value: Mapped[float] = mapped_column(Float, nullable=False)
+    unit: Mapped[str] = mapped_column(String(64), nullable=False)
+    confidence_interval_low: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+    confidence_interval_high: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+    population: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
+    n: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_pmid: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    source_quote: Mapped[str] = mapped_column(Text, nullable=False)
+    metadata_payload: Mapped[JSONObject] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    outcome_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "space_id",
+            "outcome_fingerprint",
+            name="uq_harness_study_outcomes_space_outcome_fingerprint",
+        ),
+        Index(
+            "idx_harness_study_outcomes_space_intervention",
+            "space_id",
+            "intervention",
+        ),
+        Index(
+            "idx_harness_study_outcomes_space_metric",
+            "space_id",
+            "outcome_metric",
+        ),
+        Index(
+            "idx_harness_study_outcomes_document_created_at",
+            "document_id",
+            "created_at",
+        ),
+        harness_table_options(
+            comment="Quantitative trial outcomes extracted from harness documents.",
+        ),
+    )
+
+
 class SourceSearchRunModel(Base):
     """Durable captured direct source-search result."""
 
@@ -885,5 +969,6 @@ __all__ = [
     "HarnessResearchStateModel",
     "HarnessRunModel",
     "HarnessScheduleModel",
+    "HarnessStudyOutcomeModel",
     "SourceSearchRunModel",
 ]

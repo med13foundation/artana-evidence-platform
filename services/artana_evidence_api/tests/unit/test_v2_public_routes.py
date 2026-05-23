@@ -8,10 +8,16 @@ import json
 from collections import Counter
 from collections.abc import Iterable
 from typing import cast
+from uuid import uuid4
 
 from artana_evidence_api import source_route_plugins
 from artana_evidence_api.app import create_app
 from artana_evidence_api.auth import require_harness_read_access
+from artana_evidence_api.dependencies import (
+    get_research_space_store,
+    get_study_outcome_store,
+)
+from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.routers import (
     approvals,
     artifacts,
@@ -52,6 +58,10 @@ from artana_evidence_api.source_route_plugins import (
     direct_source_typed_route_endpoint_map,
     validate_direct_source_route_plugins,
 )
+from artana_evidence_api.study_outcomes import (
+    HarnessStudyOutcomeStore,
+    StudyOutcomeDraft,
+)
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
@@ -73,6 +83,7 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
         "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs",
         "POST",
     ): v2_public.create_source_search_handoff,
+    ("/v2/spaces/{space_id}/study-outcomes", "GET"): v2_public.list_study_outcomes,
     ("/v2/spaces/{space_id}/evidence-runs", "POST"): v2_public.create_evidence_run,
     (
         "/v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups",
@@ -659,6 +670,72 @@ def test_v2_source_endpoints_return_registry_entries_over_http() -> None:
     assert source_payload["source_key"] == "clinical_trials"
     assert source_payload["request_schema_ref"] == "ClinicalTrialsSourceSearchRequest"
     assert source_payload["result_schema_ref"] == "ClinicalTrialsSourceSearchResponse"
+
+
+def test_v2_study_outcomes_endpoint_filters_trial_outcomes() -> None:
+    app = create_app()
+    research_space_store = HarnessResearchSpaceStore()
+    space = research_space_store.create_space(
+        owner_id=_UUID,
+        name="Study Outcomes",
+        description="Owned test space for outcome routes.",
+    )
+    study_outcome_store = HarnessStudyOutcomeStore()
+    study_outcome_store.create_outcomes(
+        space_id=space.id,
+        document_id=uuid4(),
+        run_id=uuid4(),
+        outcomes=(
+            StudyOutcomeDraft(
+                intervention="Temozolomide plus radiotherapy",
+                comparator="radiotherapy alone",
+                outcome_metric="median_overall_survival",
+                value=14.6,
+                unit="months",
+                confidence_interval_low=None,
+                confidence_interval_high=None,
+                population="reported trial population",
+                n=None,
+                source_pmid="15758009",
+                source_quote="median OS 14.6 vs 12.1 months",
+                metadata={"extraction_method": "pattern_v1"},
+            ),
+            StudyOutcomeDraft(
+                intervention="Lomustine",
+                comparator="temozolomide",
+                outcome_metric="median_progression_free_survival",
+                value=16.0,
+                unit="months",
+                confidence_interval_low=None,
+                confidence_interval_high=None,
+                population="reported trial population",
+                n=None,
+                source_pmid="30782343",
+                source_quote="median PFS 16.0 months",
+                metadata={"extraction_method": "pattern_v1"},
+            ),
+        ),
+    )
+    app.dependency_overrides[get_research_space_store] = lambda: research_space_store
+    app.dependency_overrides[get_study_outcome_store] = lambda: study_outcome_store
+    client = TestClient(app)
+
+    response = client.get(
+        f"/v2/spaces/{space.id}/study-outcomes",
+        headers=_AUTH_HEADERS,
+        params={
+            "intervention": "temozolomide",
+            "outcome_metric": "median_overall_survival",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert payload["study_outcomes"][0]["intervention"] == (
+        "Temozolomide plus radiotherapy"
+    )
+    assert payload["study_outcomes"][0]["source_pmid"] == "15758009"
 
 
 def test_every_v2_endpoint_resolves_over_http() -> None:

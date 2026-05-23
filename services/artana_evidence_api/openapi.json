@@ -12215,6 +12215,178 @@
         "title": "SpeculationLevel",
         "type": "string"
       },
+      "StudyOutcomeListResponse": {
+        "description": "List response for public study-outcome queries.",
+        "properties": {
+          "limit": {
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "study_outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/StudyOutcomeResponse"
+            },
+            "title": "Study Outcomes",
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "study_outcomes",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "StudyOutcomeListResponse",
+        "type": "object"
+      },
+      "StudyOutcomeResponse": {
+        "description": "Public response model for one quantitative trial outcome.",
+        "properties": {
+          "comparator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparator"
+          },
+          "confidence_interval_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence Interval High"
+          },
+          "confidence_interval_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence Interval Low"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "intervention": {
+            "title": "Intervention",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "n": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N"
+          },
+          "outcome_metric": {
+            "title": "Outcome Metric",
+            "type": "string"
+          },
+          "population": {
+            "title": "Population",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "source_pmid": {
+            "title": "Source Pmid",
+            "type": "string"
+          },
+          "source_quote": {
+            "title": "Source Quote",
+            "type": "string"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "document_id",
+          "run_id",
+          "intervention",
+          "comparator",
+          "outcome_metric",
+          "value",
+          "unit",
+          "confidence_interval_low",
+          "confidence_interval_high",
+          "population",
+          "n",
+          "source_pmid",
+          "source_quote",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "StudyOutcomeResponse",
+        "type": "object"
+      },
       "SupervisorArtifactKeysResponse": {
         "description": "Parent and child artifact keys for one supervisor run.",
         "properties": {
@@ -26660,6 +26832,146 @@
         "summary": "Hand off a captured source search",
         "tags": [
           "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/study-outcomes": {
+      "get": {
+        "description": "Return quantitative trial outcomes extracted from clinical-trial papers.",
+        "operationId": "list_study_outcomes_v2_spaces__space_id__study_outcomes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "intervention",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Intervention"
+            }
+          },
+          {
+            "in": "query",
+            "name": "population",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Population"
+            }
+          },
+          {
+            "in": "query",
+            "name": "outcome_metric",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outcome Metric"
+            }
+          },
+          {
+            "in": "query",
+            "name": "document_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Document Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyOutcomeListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List study outcomes",
+        "tags": [
+          "research"
         ]
       }
     },

@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         HarnessProposalDraft,
     )
     from artana_evidence_api.run_registry import HarnessRunRecord
+    from artana_evidence_api.study_outcomes import StudyOutcomeDraft
 
 
 _TOTAL_PROGRESS_STEPS = 5
@@ -176,6 +177,7 @@ class _PreparedDocumentExtraction:
     drafts: tuple[HarnessProposalDraft, ...]
     errors: tuple[str, ...]
     failed: bool = False
+    study_outcome_drafts: tuple[StudyOutcomeDraft, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

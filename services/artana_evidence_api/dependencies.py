@@ -98,6 +98,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessReviewItemStore,
     SqlAlchemyHarnessScheduleStore,
 )
+from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import desc, select
 
@@ -127,6 +128,7 @@ if TYPE_CHECKING:
         OrphanetGatewayProtocol,
         UniProtGatewayProtocol,
     )
+    from artana_evidence_api.study_outcomes import HarnessStudyOutcomeStore
     from sqlalchemy.orm import Session
 
 _SESSION_DEPENDENCY = Depends(get_session)
@@ -229,6 +231,13 @@ def get_review_item_store(
 ) -> HarnessReviewItemStore:
     """Return the durable review-item store."""
     return SqlAlchemyHarnessReviewItemStore(session)
+
+
+def get_study_outcome_store(
+    session: Session = _SESSION_DEPENDENCY,
+) -> HarnessStudyOutcomeStore:
+    """Return the durable study-outcome store."""
+    return SqlAlchemyStudyOutcomeStore(session)
 
 
 def get_research_space_store(
@@ -539,6 +548,7 @@ _CHAT_SESSION_STORE_PROVIDER = Depends(get_chat_session_store)
 _DOCUMENT_STORE_PROVIDER = Depends(get_document_store)
 _PROPOSAL_STORE_PROVIDER = Depends(get_proposal_store)
 _REVIEW_ITEM_STORE_PROVIDER = Depends(get_review_item_store)
+_STUDY_OUTCOME_STORE_PROVIDER = Depends(get_study_outcome_store)
 _APPROVAL_STORE_PROVIDER = Depends(get_approval_store)
 _RESEARCH_STATE_STORE_PROVIDER = Depends(get_research_state_store)
 _GRAPH_SNAPSHOT_STORE_PROVIDER = Depends(get_graph_snapshot_store)
@@ -562,6 +572,7 @@ def get_harness_execution_services(  # noqa: PLR0913
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_PROVIDER,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_PROVIDER,
     review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_PROVIDER,
+    study_outcome_store: HarnessStudyOutcomeStore = _STUDY_OUTCOME_STORE_PROVIDER,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_PROVIDER,
     research_state_store: HarnessResearchStateStore = _RESEARCH_STATE_STORE_PROVIDER,
     graph_snapshot_store: HarnessGraphSnapshotStore = _GRAPH_SNAPSHOT_STORE_PROVIDER,
@@ -598,6 +609,7 @@ def get_harness_execution_services(  # noqa: PLR0913
         document_store=document_store,
         proposal_store=proposal_store,
         review_item_store=review_item_store,
+        study_outcome_store=study_outcome_store,
         approval_store=approval_store,
         research_state_store=research_state_store,
         graph_snapshot_store=graph_snapshot_store,
@@ -647,6 +659,7 @@ __all__ = [
     "get_run_registry",
     "get_schedule_store",
     "get_source_search_handoff_store",
+    "get_study_outcome_store",
     "get_uniprot_source_gateway",
     "get_zfin_source_gateway",
     "require_harness_space_read_access",
