@@ -8,6 +8,7 @@ import time
 from contextlib import nullcontext
 from dataclasses import replace
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -7203,6 +7204,172 @@ async def test_run_structured_enrichment_source_passes_source_caps_to_runner() -
 
     assert created == 0
     assert captured_caps == [expected_caps]
+
+
+@pytest.mark.asyncio
+async def test_execute_research_init_scopes_clinical_trials_to_plan_seed_terms(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    space_id = uuid4()
+    services = _build_execution_services()
+    clinical_trials_seed_terms: list[list[str]] = []
+
+    def _fake_extract_gene_mentions_from_text(
+        text: str,
+        *,
+        max_count: int = 20,
+    ) -> list[str]:
+        del text, max_count
+        return ["BACKGROUND", "CI", "CNS"]
+
+    async def _fake_run_structured_enrichment_source(**kwargs: object) -> int:
+        if kwargs["source_key"] == "clinical_trials":
+            clinical_trials_seed_terms.append(cast("list[str]", kwargs["seed_terms"]))
+        return 0
+
+    async def _fake_document_extraction(**kwargs: object):
+        del kwargs
+        return SimpleNamespace(
+            document_workset=[],
+            created_proposal_count=0,
+        )
+
+    async def _fake_complete_research_init_run(**kwargs: object):
+        run = cast("HarnessRunRecord", kwargs["run"])
+        return research_init_runtime.ResearchInitExecutionResult(
+            run=run,
+            pubmed_results=(),
+            documents_ingested=0,
+            proposal_count=0,
+            research_state=None,
+            pending_questions=[],
+            errors=[],
+        )
+
+    async def _no_guarded_selection(**kwargs: object) -> None:
+        del kwargs
+
+    monkeypatch.setattr(
+        "artana_evidence_api.research_init_source_enrichment.extract_gene_mentions_from_text",
+        _fake_extract_gene_mentions_from_text,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "_run_structured_enrichment_source",
+        _fake_run_structured_enrichment_source,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "run_research_init_document_extraction",
+        _fake_document_extraction,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "complete_research_init_run",
+        _fake_complete_research_init_run,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "maybe_select_guarded_structured_enrichment_sources",
+        _no_guarded_selection,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "maybe_verify_guarded_structured_enrichment",
+        _no_guarded_selection,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "ensure_run_transparency_seed",
+        lambda **_kwargs: None,
+    )
+
+    replay_candidate = research_init._PubMedCandidate(
+        title="GBM paper with noisy abbreviations",
+        text="BACKGROUND: CI and CNS were discussed in glioblastoma abstracts.",
+        queries=["glioblastoma"],
+        pmid="123",
+    )
+    replay_review = research_init._PubMedCandidateReview(
+        method="heuristic",
+        label="relevant",
+        confidence=0.9,
+        rationale="Relevant GBM abstract.",
+    )
+    replay_bundle = research_init_runtime.ResearchInitPubMedReplayBundle(
+        query_executions=(
+            research_init_runtime._PubMedQueryExecutionResult(
+                query_result=research_init_runtime.ResearchInitPubMedResultRecord(
+                    query="glioblastoma",
+                    total_found=1,
+                    abstracts_ingested=1,
+                ),
+                candidates=(replay_candidate,),
+                errors=(),
+            ),
+        ),
+        selected_candidates=((replay_candidate, replay_review),),
+        selection_errors=(),
+    )
+    queued_run = research_init_runtime.queue_research_init_run(
+        space_id=space_id,
+        title="Research init",
+        objective="Investigate glioblastoma trials",
+        seed_terms=["glioblastoma"],
+        sources={
+            "pubmed": True,
+            "marrvel": False,
+            "pdf": False,
+            "text": False,
+            "mondo": False,
+            "clinvar": False,
+            "drugbank": False,
+            "alphafold": False,
+            "gnomad": False,
+            "clinical_trials": True,
+            "mgi": False,
+            "zfin": False,
+            "uniprot": False,
+            "hgnc": False,
+        },
+        max_depth=1,
+        max_hypotheses=1,
+        graph_service_status="ok",
+        graph_service_version="test",
+        run_registry=services.run_registry,
+        artifact_store=services.artifact_store,
+        execution_services=services,
+    )
+
+    await research_init_runtime.execute_research_init_run(
+        space_id=space_id,
+        title="Research init",
+        objective="Investigate glioblastoma trials",
+        seed_terms=["glioblastoma"],
+        max_depth=1,
+        max_hypotheses=1,
+        sources={
+            "pubmed": True,
+            "marrvel": False,
+            "pdf": False,
+            "text": False,
+            "mondo": False,
+            "clinvar": False,
+            "drugbank": False,
+            "alphafold": False,
+            "gnomad": False,
+            "clinical_trials": True,
+            "mgi": False,
+            "zfin": False,
+            "uniprot": False,
+            "hgnc": False,
+        },
+        execution_services=services,
+        existing_run=queued_run,
+        pubmed_replay_bundle=replay_bundle,
+    )
+
+    assert clinical_trials_seed_terms == [["glioblastoma"]]
 
 
 @pytest.mark.asyncio
