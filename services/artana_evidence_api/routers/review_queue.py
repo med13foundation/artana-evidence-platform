@@ -72,6 +72,7 @@ _STATUS_QUERY = Query(default=None, min_length=1, max_length=32)
 _RUN_ID_QUERY = Query(default=None)
 _DOCUMENT_ID_QUERY = Query(default=None)
 _SOURCE_FAMILY_QUERY = Query(default=None, min_length=1, max_length=64)
+_EVIDENCE_GRADE_QUERY = Query(default=None, min_length=1, max_length=96)
 _OFFSET_QUERY = Query(default=0, ge=0)
 _LIMIT_QUERY = Query(default=200, ge=1, le=1000)
 _MAX_BULK_DECISIONS = 1000
@@ -121,6 +122,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
     available_actions: list[str]
     payload: JSONObject
     metadata: JSONObject
+    evidence_grade: str | None
     evidence_bundle: list[JSONObject]
     decision_reason: str | None
     decided_at: str | None
@@ -154,6 +156,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             ),
             payload=proposal.payload,
             metadata=proposal.metadata,
+            evidence_grade=proposal.evidence_grade,
             evidence_bundle=proposal.evidence_bundle,
             decision_reason=proposal.decision_reason,
             decided_at=(
@@ -190,6 +193,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             available_actions=_review_item_available_actions(review_item),
             payload=review_item.payload,
             metadata=review_item.metadata,
+            evidence_grade=review_item.evidence_grade,
             evidence_bundle=review_item.evidence_bundle,
             decision_reason=review_item.decision_reason,
             decided_at=(
@@ -248,6 +252,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
                 "risk_level": approval.risk_level,
             },
             metadata=approval.metadata,
+            evidence_grade=None,
             evidence_bundle=[],
             decision_reason=approval.decision_reason,
             decided_at=decided_at,
@@ -470,6 +475,10 @@ def _proposal_draft_from_review_item(
             "source_family": review_item.source_family,
         },
         claim_fingerprint=_text_or_none(raw_proposal_draft.get("claim_fingerprint")),
+        evidence_grade=(
+            _text_or_none(raw_proposal_draft.get("evidence_grade"))
+            or review_item.evidence_grade
+        ),
     )
 
 
@@ -641,6 +650,7 @@ def _build_queue_items(
     source_family: str | None,
     run_id: UUID | None,
     document_id: UUID | None,
+    evidence_grade: str | None,
 ) -> list[HarnessReviewQueueItemResponse]:
     items: list[HarnessReviewQueueItemResponse] = []
     normalized_kind = kind.strip() if isinstance(kind, str) else None
@@ -659,6 +669,7 @@ def _build_queue_items(
                 proposal_type=normalized_kind if item_type == "proposal" else None,
                 run_id=run_id,
                 document_id=document_id,
+                evidence_grade=evidence_grade,
             )
             if normalized_kind is None or proposal.proposal_type == normalized_kind
         )
@@ -672,10 +683,11 @@ def _build_queue_items(
                 source_family=source_family,
                 run_id=run_id,
                 document_id=document_id,
+                evidence_grade=evidence_grade,
             )
             if normalized_kind is None or review_item.review_type == normalized_kind
         )
-    if item_type in {None, "approval"} and document_id is None:
+    if item_type in {None, "approval"} and document_id is None and evidence_grade is None:
         items.extend(
             HarnessReviewQueueItemResponse.from_approval(approval)
             for approval in approval_store.list_space_approvals(
@@ -796,6 +808,7 @@ def list_review_queue(
     run_id: UUID | None = _RUN_ID_QUERY,
     document_id: UUID | None = _DOCUMENT_ID_QUERY,
     source_family: str | None = _SOURCE_FAMILY_QUERY,
+    evidence_grade: str | None = _EVIDENCE_GRADE_QUERY,
     offset: int = _OFFSET_QUERY,
     limit: int = _LIMIT_QUERY,
     *,
@@ -819,6 +832,7 @@ def list_review_queue(
         ),
         run_id=run_id,
         document_id=document_id,
+        evidence_grade=evidence_grade,
     )
     total = len(items)
     paged = items[offset : offset + limit]

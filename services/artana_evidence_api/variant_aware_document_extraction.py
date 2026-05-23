@@ -16,6 +16,10 @@ from artana_evidence_api.shared_fact_assessment_helpers import (
     to_json_value,
 )
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+from artana_evidence_api.types.evidence_grade import (
+    evidence_grade_for_document,
+    metadata_with_evidence_grade,
+)
 from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     GroundingLevel,
@@ -525,6 +529,7 @@ def _build_variant_aware_proposal_drafts(  # noqa: PLR0914
     entity_index = _entity_candidate_index(
         contract=contract, variant_entities=variant_entities
     )
+    evidence_grade = evidence_grade_for_document(document)
 
     for index, candidate in enumerate(variant_entities):
         candidate_key = _variant_candidate_key(candidate)
@@ -565,17 +570,23 @@ def _build_variant_aware_proposal_drafts(  # noqa: PLR0914
                     },
                 ],
                 payload=_entity_candidate_payload(candidate),
-                metadata={
-                    "document_id": document.id,
-                    "document_title": document.title,
-                    "document_source_type": document.source_type,
-                    "candidate_kind": "entity",
-                    "candidate_key": candidate_key,
-                    "assessment": fact_assessment_payload(candidate),
-                    "review_required": not _variant_candidate_is_persistable(candidate),
-                    **ranking.metadata,
-                },
+                metadata=metadata_with_evidence_grade(
+                    {
+                        "document_id": document.id,
+                        "document_title": document.title,
+                        "document_source_type": document.source_type,
+                        "candidate_kind": "entity",
+                        "candidate_key": candidate_key,
+                        "assessment": fact_assessment_payload(candidate),
+                        "review_required": not _variant_candidate_is_persistable(
+                            candidate,
+                        ),
+                        **ranking.metadata,
+                    },
+                    evidence_grade,
+                ),
                 claim_fingerprint=fingerprint,
+                evidence_grade=evidence_grade,
             ),
         )
         if not _variant_candidate_is_persistable(candidate):
@@ -692,6 +703,7 @@ def _build_variant_observation_drafts(
     skipped_items: list[JSONObject] = []
     subject_payload = _entity_candidate_payload(candidate)
     confidence = fact_evidence_weight(candidate)
+    evidence_grade = evidence_grade_for_document(document)
     for field_name, variable_id in _GENOMICS_VARIABLE_IDS.items():
         raw_value = candidate.metadata.get(field_name)
         normalized_value = _normalized_metadata_value(raw_value)
@@ -736,16 +748,20 @@ def _build_variant_observation_drafts(
                     "evidence_excerpt": candidate.evidence_excerpt,
                     "evidence_locator": candidate.evidence_locator,
                 },
-                metadata={
-                    "document_id": document.id,
-                    "document_title": document.title,
-                    "document_source_type": document.source_type,
-                    "candidate_kind": "observation",
-                    "candidate_key": candidate_key,
-                    "assessment": fact_assessment_payload(candidate),
-                    "subject_label": candidate.label,
-                },
+                metadata=metadata_with_evidence_grade(
+                    {
+                        "document_id": document.id,
+                        "document_title": document.title,
+                        "document_source_type": document.source_type,
+                        "candidate_kind": "observation",
+                        "candidate_key": candidate_key,
+                        "assessment": fact_assessment_payload(candidate),
+                        "subject_label": candidate.label,
+                    },
+                    evidence_grade,
+                ),
                 claim_fingerprint=fingerprint,
+                evidence_grade=evidence_grade,
             ),
         )
     phenotype_spans = candidate.metadata.get("phenotype_spans")
@@ -775,6 +791,7 @@ def _build_incomplete_variant_review_item(
         "variant_review",
         candidate.label,
     )
+    evidence_grade = evidence_grade_for_document(document)
     return HarnessReviewItemDraft(
         review_type="variant_anchor_review",
         source_family=_REVIEW_ITEM_SOURCE_FAMILY,
@@ -813,15 +830,19 @@ def _build_incomplete_variant_review_item(
             "evidence_locator": candidate.evidence_locator,
             "assessment": fact_assessment_payload(candidate),
         },
-        metadata={
-            "document_id": document.id,
-            "document_title": document.title,
-            "document_source_type": document.source_type,
-            "candidate_kind": "entity_review",
-            "candidate_key": candidate_key,
-            "assessment": fact_assessment_payload(candidate),
-        },
+        metadata=metadata_with_evidence_grade(
+            {
+                "document_id": document.id,
+                "document_title": document.title,
+                "document_source_type": document.source_type,
+                "candidate_kind": "entity_review",
+                "candidate_key": candidate_key,
+                "assessment": fact_assessment_payload(candidate),
+            },
+            evidence_grade,
+        ),
         review_fingerprint=fingerprint,
+        evidence_grade=evidence_grade,
     )
 
 
@@ -834,6 +855,7 @@ def _build_phenotype_review_items(
     confidence: float,
 ) -> list[HarnessReviewItemDraft]:
     review_items: list[HarnessReviewItemDraft] = []
+    evidence_grade = evidence_grade_for_document(document)
     for index, phenotype_span in enumerate(phenotype_spans):
         normalized_span = _normalized_phenotype_review_span(phenotype_span)
         if normalized_span == "":
@@ -903,32 +925,40 @@ def _build_phenotype_review_items(
                             "proposed_object_label": normalized_span,
                             "evidence_entity_ids": [],
                         },
-                        "metadata": {
-                            "document_id": document.id,
-                            "document_title": document.title,
-                            "document_source_type": document.source_type,
-                            "subject_label": candidate.label,
-                            "object_label": normalized_span,
-                            "subject_entity_type": "VARIANT",
-                            "object_entity_type": "PHENOTYPE",
-                            "assessment": fact_assessment_payload(candidate),
-                        },
+                        "metadata": metadata_with_evidence_grade(
+                            {
+                                "document_id": document.id,
+                                "document_title": document.title,
+                                "document_source_type": document.source_type,
+                                "subject_label": candidate.label,
+                                "object_label": normalized_span,
+                                "subject_entity_type": "VARIANT",
+                                "object_entity_type": "PHENOTYPE",
+                                "assessment": fact_assessment_payload(candidate),
+                            },
+                            evidence_grade,
+                        ),
                         "claim_fingerprint": compute_claim_fingerprint(
                             candidate.label,
                             "CAUSES",
                             normalized_span,
                         ),
+                        "evidence_grade": evidence_grade,
                     },
                 },
-                metadata={
-                    "document_id": document.id,
-                    "document_title": document.title,
-                    "document_source_type": document.source_type,
-                    "candidate_kind": "phenotype_review",
-                    "candidate_key": candidate_key,
-                    "assessment": fact_assessment_payload(candidate),
-                },
+                metadata=metadata_with_evidence_grade(
+                    {
+                        "document_id": document.id,
+                        "document_title": document.title,
+                        "document_source_type": document.source_type,
+                        "candidate_kind": "phenotype_review",
+                        "candidate_key": candidate_key,
+                        "assessment": fact_assessment_payload(candidate),
+                    },
+                    evidence_grade,
+                ),
                 review_fingerprint=fingerprint,
+                evidence_grade=evidence_grade,
             ),
         )
     return review_items
@@ -980,6 +1010,7 @@ def _build_review_item_from_rejected_fact(
         relation_type,
         target_label,
     )
+    evidence_grade = evidence_grade_for_document(document)
     return HarnessReviewItemDraft(
         review_type="rejected_relation_review",
         source_family=_REVIEW_ITEM_SOURCE_FAMILY,
@@ -1055,31 +1086,39 @@ def _build_review_item_from_rejected_fact(
                     ),
                     "evidence_entity_ids": [],
                 },
-                "metadata": {
-                    "document_id": document.id,
-                    "document_title": document.title,
-                    "document_source_type": document.source_type,
-                    "subject_label": source_label,
-                    "object_label": target_label,
-                    "subject_entity_type": source_type,
-                    "object_entity_type": target_type,
-                    "subject_anchors": source_anchors,
-                    "object_anchors": target_anchors,
-                    "assessment": fact_assessment_payload(rejected_fact),
-                    **ranking.metadata,
-                },
+                "metadata": metadata_with_evidence_grade(
+                    {
+                        "document_id": document.id,
+                        "document_title": document.title,
+                        "document_source_type": document.source_type,
+                        "subject_label": source_label,
+                        "object_label": target_label,
+                        "subject_entity_type": source_type,
+                        "object_entity_type": target_type,
+                        "subject_anchors": source_anchors,
+                        "object_anchors": target_anchors,
+                        "assessment": fact_assessment_payload(rejected_fact),
+                        **ranking.metadata,
+                    },
+                    evidence_grade,
+                ),
                 "claim_fingerprint": claim_fingerprint,
+                "evidence_grade": evidence_grade,
             },
         },
-        metadata={
-            "document_id": document.id,
-            "document_title": document.title,
-            "document_source_type": document.source_type,
-            "candidate_kind": "rejected_relation_review",
-            "assessment": fact_assessment_payload(rejected_fact),
-            "relation_type": relation_type,
-        },
+        metadata=metadata_with_evidence_grade(
+            {
+                "document_id": document.id,
+                "document_title": document.title,
+                "document_source_type": document.source_type,
+                "candidate_kind": "rejected_relation_review",
+                "assessment": fact_assessment_payload(rejected_fact),
+                "relation_type": relation_type,
+            },
+            evidence_grade,
+        ),
         review_fingerprint=claim_fingerprint,
+        evidence_grade=evidence_grade,
     )
 
 

@@ -5631,6 +5631,17 @@
             "title": "Evidence Bundle",
             "type": "array"
           },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -5714,6 +5725,7 @@
           "evidence_bundle",
           "payload",
           "metadata",
+          "evidence_grade",
           "decision_reason",
           "decided_at",
           "created_at",
@@ -6149,6 +6161,17 @@
             "title": "Evidence Bundle",
             "type": "array"
           },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -6268,6 +6291,7 @@
           "available_actions",
           "payload",
           "metadata",
+          "evidence_grade",
           "evidence_bundle",
           "decision_reason",
           "decided_at",
@@ -18860,6 +18884,24 @@
           },
           {
             "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
+            }
+          },
+          {
+            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -19493,6 +19535,24 @@
                 }
               ],
               "title": "Source Family"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
             }
           },
           {
@@ -23599,6 +23659,24 @@
           },
           {
             "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
+            }
+          },
+          {
+            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -24110,6 +24188,24 @@
                 }
               ],
               "title": "Source Family"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
             }
           },
           {

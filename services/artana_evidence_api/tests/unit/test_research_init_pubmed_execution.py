@@ -96,6 +96,7 @@ def test_pubmed_document_source_capture_includes_review_and_query_metadata() -> 
         doi="10.1000/test",
         pmc_id="PMC123",
         journal="Example Journal",
+        publication_types=["Randomized Controlled Trial"],
     )
     review = _PubMedCandidateReview(
         method="heuristic",
@@ -124,6 +125,7 @@ def test_pubmed_document_source_capture_includes_review_and_query_metadata() -> 
         "pmid": "12345",
         "doi": "10.1000/test",
         "pmc_id": "PMC123",
+        "publication_types": ["Randomized Controlled Trial"],
     }
     assert capture["provenance"] == {
         "source": "research-init-pubmed",

@@ -487,6 +487,7 @@ def test_sqlalchemy_harness_proposal_store_filters_by_document_id(
                 payload={"proposed_subject": str(uuid4())},
                 metadata={"origin": "a"},
                 document_id=target_document_id,
+                evidence_grade="High",
             ),
             HarnessProposalDraft(
                 proposal_type="candidate_claim",
@@ -501,6 +502,7 @@ def test_sqlalchemy_harness_proposal_store_filters_by_document_id(
                 payload={"proposed_subject": str(uuid4())},
                 metadata={"origin": "b"},
                 document_id=str(uuid4()),
+                evidence_grade="Limited",
             ),
         ),
     )
@@ -512,6 +514,12 @@ def test_sqlalchemy_harness_proposal_store_filters_by_document_id(
     )
     assert len(filtered) == 1
     assert filtered[0].document_id == target_document_id
+    grade_filtered = proposal_store.list_proposals(
+        space_id=space_id,
+        evidence_grade="high",
+    )
+    assert len(grade_filtered) == 1
+    assert grade_filtered[0].evidence_grade == "High"
 
 
 def test_sqlalchemy_harness_research_space_store_generates_space_ids(
@@ -1278,6 +1286,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
                 payload={"phenotype": "developmental delay"},
                 metadata={"source": "unit-test"},
                 review_fingerprint="review-fingerprint-1",
+                evidence_grade="Moderate",
             ),
             HarnessReviewItemDraft(
                 review_type="variant_claim_review",
@@ -1294,6 +1303,7 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
                 payload={"variant": "c.1A>G"},
                 metadata={},
                 review_fingerprint=None,
+                evidence_grade="Limited",
             ),
         ),
     )
@@ -1324,6 +1334,12 @@ def test_sqlalchemy_harness_review_item_store_filters_counts_and_decides(
         )
         == 1
     )
+    evidence_filtered = review_store.list_review_items(
+        space_id=space_id,
+        evidence_grade="moderate",
+    )
+    assert len(evidence_filtered) == 1
+    assert evidence_filtered[0].evidence_grade == "Moderate"
 
     fetched = review_store.get_review_item(
         space_id=space_id,

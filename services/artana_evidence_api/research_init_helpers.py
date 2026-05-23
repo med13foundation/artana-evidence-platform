@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
@@ -232,6 +232,7 @@ class _PubMedCandidate:
     doi: str | None = None
     pmc_id: str | None = None
     journal: str | None = None
+    publication_types: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -466,6 +467,9 @@ def _merge_candidate(
         doi=existing.doi or incoming.doi,
         pmc_id=existing.pmc_id or incoming.pmc_id,
         journal=existing.journal or incoming.journal,
+        publication_types=_dedupe_preserving_order(
+            [*existing.publication_types, *incoming.publication_types],
+        ),
     )
 
 

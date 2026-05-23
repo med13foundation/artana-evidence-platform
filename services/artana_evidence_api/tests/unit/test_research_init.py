@@ -4073,6 +4073,7 @@ def test_pubmed_replay_bundle_serialization_round_trips() -> None:
         doi="10.1234/replay",
         pmc_id="PMC123",
         journal="Synthetic Journal",
+        publication_types=["Randomized Controlled Trial"],
     )
     replay_review = research_init._PubMedCandidateReview(
         method="llm",
@@ -4136,6 +4137,7 @@ def test_pubmed_replay_bundle_serialization_round_trips() -> None:
     restored_candidate, restored_review = restored.selected_candidates[0]
     assert restored_candidate.title == "Replay MED13 paper"
     assert restored_candidate.queries == ["MED13", "MED13 syndrome"]
+    assert restored_candidate.publication_types == ["Randomized Controlled Trial"]
     assert restored_review.label == "relevant"
     assert restored_review.agent_run_id == "agent-1"
     assert restored.selection_errors == ("selection warning",)

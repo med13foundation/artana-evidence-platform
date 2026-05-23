@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4
@@ -392,6 +393,38 @@ def test_draft_builder_assembles_reviewed_proposals_from_candidates() -> None:
     assert drafts[0].payload["proposed_subject"] == "unresolved:med13"
     assert drafts[0].payload["proposed_object"] == "unresolved:egfr"
     assert drafts[0].metadata["proposal_review"]["goal_relevance"] == "direct"
+
+
+def test_draft_builder_propagates_document_evidence_grade() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13",
+        relation_type="ACTIVATES",
+        object_label="EGFR",
+        sentence="MED13 activates EGFR in a randomized trial.",
+    )
+    document = replace(
+        _document(),
+        source_type="pubmed",
+        metadata={
+            "pubmed": {
+                "pmid": "12345",
+                "publication_types": ["Randomized Controlled Trial"],
+            },
+        },
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert skipped == []
+    assert len(drafts) == 1
+    assert drafts[0].evidence_grade == "High"
+    assert drafts[0].metadata["evidence_grade"] == "High"
 
 
 def test_draft_builder_skips_non_canonical_subject_labels() -> None:

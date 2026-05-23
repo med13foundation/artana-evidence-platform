@@ -15,6 +15,10 @@ from artana_evidence_api.shared_fact_assessment_helpers import (
     to_json_value,
 )
 from artana_evidence_api.types.common import JSONObject, JSONValue
+from artana_evidence_api.types.evidence_grade import (
+    evidence_grade_for_document,
+    metadata_with_evidence_grade,
+)
 from artana_evidence_api.variant_extraction_contracts import (
     ExtractedEntityCandidate,
     ExtractedRelation,
@@ -129,6 +133,7 @@ def _build_relation_draft(
         or relation.claim_text
         or f"{source_label} {relation.relation_type} {target_label}"
     )
+    evidence_grade = evidence_grade_for_document(document)
     return HarnessProposalDraft(
         proposal_type="candidate_claim",
         source_kind="document_extraction",
@@ -181,24 +186,28 @@ def _build_relation_draft(
                 if not value.startswith("unresolved:")
             ],
         },
-        metadata={
-            "document_id": document.id,
-            "document_title": document.title,
-            "document_source_type": document.source_type,
-            "subject_label": source_label,
-            "object_label": target_label,
-            "resolved_subject_label": resolved_source_label,
-            "resolved_object_label": resolved_target_label,
-            "subject_resolved": source_match is not None,
-            "object_resolved": target_match is not None,
-            "subject_entity_type": relation.source_type,
-            "object_entity_type": relation.target_type,
-            "subject_anchors": relation.source_anchors,
-            "object_anchors": relation.target_anchors,
-            "assessment": fact_assessment_payload(relation),
-            **ranking.metadata,
-        },
+        metadata=metadata_with_evidence_grade(
+            {
+                "document_id": document.id,
+                "document_title": document.title,
+                "document_source_type": document.source_type,
+                "subject_label": source_label,
+                "object_label": target_label,
+                "resolved_subject_label": resolved_source_label,
+                "resolved_object_label": resolved_target_label,
+                "subject_resolved": source_match is not None,
+                "object_resolved": target_match is not None,
+                "subject_entity_type": relation.source_type,
+                "object_entity_type": relation.target_type,
+                "subject_anchors": relation.source_anchors,
+                "object_anchors": relation.target_anchors,
+                "assessment": fact_assessment_payload(relation),
+                **ranking.metadata,
+            },
+            evidence_grade,
+        ),
         claim_fingerprint=claim_fingerprint,
+        evidence_grade=evidence_grade,
     )
 
 

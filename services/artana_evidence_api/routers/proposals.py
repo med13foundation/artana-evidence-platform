@@ -53,6 +53,7 @@ _STATUS_QUERY = Query(default=None, alias="status", min_length=1, max_length=32)
 _PROPOSAL_TYPE_QUERY = Query(default=None, min_length=1, max_length=64)
 _RUN_ID_QUERY = Query(default=None)
 _DOCUMENT_ID_QUERY = Query(default=None)
+_EVIDENCE_GRADE_QUERY = Query(default=None, min_length=1, max_length=96)
 _OFFSET_QUERY = Query(default=0, ge=0)
 _LIMIT_QUERY = Query(default=200, ge=1, le=1000)
 
@@ -78,6 +79,7 @@ class HarnessProposalResponse(BaseModel):
     evidence_bundle: list[JSONObject]
     payload: JSONObject
     metadata: JSONObject
+    evidence_grade: str | None
     decision_reason: str | None
     decided_at: str | None
     created_at: str
@@ -103,6 +105,7 @@ class HarnessProposalResponse(BaseModel):
             evidence_bundle=record.evidence_bundle,
             payload=record.payload,
             metadata=record.metadata,
+            evidence_grade=record.evidence_grade,
             decision_reason=record.decision_reason,
             decided_at=(
                 record.decided_at.isoformat() if record.decided_at is not None else None
@@ -157,6 +160,7 @@ def list_proposals(
     proposal_type: str | None = _PROPOSAL_TYPE_QUERY,
     run_id: UUID | None = _RUN_ID_QUERY,
     document_id: UUID | None = _DOCUMENT_ID_QUERY,
+    evidence_grade: str | None = _EVIDENCE_GRADE_QUERY,
     offset: int = _OFFSET_QUERY,
     limit: int = _LIMIT_QUERY,
     *,
@@ -169,6 +173,7 @@ def list_proposals(
         proposal_type=proposal_type,
         run_id=run_id,
         document_id=document_id,
+        evidence_grade=evidence_grade,
     )
     total = len(proposals)
     paged = proposals[offset : offset + limit]

@@ -9,6 +9,7 @@ from threading import Lock
 from uuid import UUID, uuid4
 
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ class HarnessProposalDraft:
     metadata: JSONObject
     document_id: str | None = None
     claim_fingerprint: str | None = None
+    evidence_grade: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +64,7 @@ class HarnessProposalRecord:
     created_at: datetime
     updated_at: datetime
     claim_fingerprint: str | None = None
+    evidence_grade: str | None = None
 
 
 class HarnessProposalStore:
@@ -109,6 +112,7 @@ class HarnessProposalStore:
         return replace(
             proposal,
             title=cls.normalize_proposal_title(proposal.title),
+            evidence_grade=normalize_evidence_grade(proposal.evidence_grade),
         )
 
     def create_proposals(
@@ -169,6 +173,7 @@ class HarnessProposalStore:
                     payload=normalized_proposal.payload,
                     metadata=normalized_proposal.metadata,
                     claim_fingerprint=normalized_proposal.claim_fingerprint,
+                    evidence_grade=normalized_proposal.evidence_grade,
                     decision_reason=None,
                     decided_at=None,
                     created_at=now,
@@ -192,6 +197,7 @@ class HarnessProposalStore:
         proposal_type: str | None = None,
         run_id: UUID | str | None = None,
         document_id: UUID | str | None = None,
+        evidence_grade: str | None = None,
     ) -> list[HarnessProposalRecord]:
         """List proposals for one space ordered by ranking."""
         normalized_space_id = str(space_id)
@@ -201,6 +207,7 @@ class HarnessProposalStore:
         )
         normalized_run_id = str(run_id) if run_id is not None else None
         normalized_document_id = str(document_id) if document_id is not None else None
+        normalized_evidence_grade = normalize_evidence_grade(evidence_grade)
         with self._lock:
             proposals = [
                 self._proposals[proposal_id]
@@ -221,6 +228,10 @@ class HarnessProposalStore:
                 and (
                     normalized_document_id is None
                     or proposal.document_id == normalized_document_id
+                )
+                and (
+                    normalized_evidence_grade is None
+                    or proposal.evidence_grade == normalized_evidence_grade
                 )
             )
         ]
@@ -295,6 +306,7 @@ class HarnessProposalStore:
                 payload=proposal.payload,
                 metadata={**proposal.metadata, **(metadata or {})},
                 claim_fingerprint=proposal.claim_fingerprint,
+                evidence_grade=proposal.evidence_grade,
                 decision_reason=(
                     decision_reason.strip()
                     if isinstance(decision_reason, str)
@@ -352,6 +364,7 @@ class HarnessProposalStore:
                         payload=p.payload,
                         metadata=p.metadata,
                         claim_fingerprint=p.claim_fingerprint,
+                        evidence_grade=p.evidence_grade,
                         decision_reason=reason,
                         decided_at=now,
                         created_at=p.created_at,

@@ -233,6 +233,11 @@ class HarnessProposalModel(Base):
         nullable=False,
         default=dict,
     )
+    evidence_grade: Mapped[str | None] = mapped_column(
+        String(96),
+        nullable=True,
+        index=True,
+    )
     claim_fingerprint: Mapped[str | None] = mapped_column(String(32), nullable=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
@@ -305,6 +310,11 @@ class HarnessReviewItemModel(Base):
         JSON,
         nullable=False,
         default=dict,
+    )
+    evidence_grade: Mapped[str | None] = mapped_column(
+        String(96),
+        nullable=True,
+        index=True,
     )
     review_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)

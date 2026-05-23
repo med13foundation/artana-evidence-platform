@@ -22,6 +22,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     commit_or_flush,
     normalize_document_title,
 )
+from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -107,6 +108,7 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
                         evidence_bundle_payload=normalized_item.evidence_bundle,
                         payload=normalized_item.payload,
                         metadata_payload=normalized_item.metadata,
+                        evidence_grade=normalized_item.evidence_grade,
                         review_fingerprint=normalized_item.review_fingerprint,
                         decision_reason=None,
                         decided_at=None,
@@ -146,6 +148,7 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
         source_family: str | None = None,
         run_id: UUID | str | None = None,
         document_id: UUID | str | None = None,
+        evidence_grade: str | None = None,
     ) -> list[HarnessReviewItemRecord]:
         stmt = select(HarnessReviewItemModel).where(
             HarnessReviewItemModel.space_id == str(space_id),
@@ -162,6 +165,11 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
             stmt = stmt.where(HarnessReviewItemModel.run_id == str(run_id))
         if document_id is not None:
             stmt = stmt.where(HarnessReviewItemModel.document_id == str(document_id))
+        normalized_evidence_grade = normalize_evidence_grade(evidence_grade)
+        if normalized_evidence_grade is not None:
+            stmt = stmt.where(
+                HarnessReviewItemModel.evidence_grade == normalized_evidence_grade,
+            )
         stmt = stmt.order_by(
             HarnessReviewItemModel.ranking_score.desc(),
             HarnessReviewItemModel.updated_at.desc(),
@@ -456,4 +464,3 @@ class SqlAlchemyHarnessDocumentStore(HarnessDocumentStore, _SessionBackedStore):
         self.session.commit()
         self.session.refresh(model)
         return _document_record_from_model(model)
-

@@ -636,6 +636,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                             "doi": candidate.doi,
                             "pmc_id": candidate.pmc_id,
                             "journal": candidate.journal,
+                            "publication_types": list(candidate.publication_types),
                         },
                         "relevance_review": {
                             "method": review.method,
