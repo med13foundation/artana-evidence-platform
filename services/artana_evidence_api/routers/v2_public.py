@@ -40,6 +40,8 @@ from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.graph_client import GraphTransportBundle
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
 from artana_evidence_api.identity.contracts import IdentityGateway
+from artana_evidence_api.patient_queries import PatientQueryRunResponse
+from artana_evidence_api.patient_queries.routes import create_query_run
 from artana_evidence_api.proposal_store import HarnessProposalStore
 from artana_evidence_api.queued_run import HarnessAcceptedRunResponse
 from artana_evidence_api.research_state import HarnessResearchStateStore
@@ -465,6 +467,16 @@ router.get(
     dependencies=[Depends(require_harness_space_read_access)],
     tags=["research"],
 )(match_trials)
+
+
+router.post(
+    "/v2/spaces/{space_id}/query-runs",
+    response_model=PatientQueryRunResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create patient-context evidence query",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["research"],
+)(create_query_run)
 
 
 @router.post(

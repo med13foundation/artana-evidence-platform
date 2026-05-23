@@ -85,6 +85,7 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
     ): v2_public.create_source_search_handoff,
     ("/v2/spaces/{space_id}/study-outcomes", "GET"): v2_public.list_study_outcomes,
     ("/v2/spaces/{space_id}/trial-matching", "GET"): v2_public.match_trials,
+    ("/v2/spaces/{space_id}/query-runs", "POST"): v2_public.create_query_run,
     ("/v2/spaces/{space_id}/evidence-runs", "POST"): v2_public.create_evidence_run,
     (
         "/v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups",

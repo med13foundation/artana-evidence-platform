@@ -9830,6 +9830,351 @@
         "title": "OrphanetSourceSearchResponse",
         "type": "object"
       },
+      "PatientContext": {
+        "description": "Per-query patient context used to tailor evidence output.",
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "diagnosis": {
+            "default": "",
+            "maxLength": 256,
+            "title": "Diagnosis",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PatientLocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "molecular_markers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Molecular Markers",
+            "type": "object"
+          },
+          "performance_status": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Performance Status"
+          },
+          "prior_treatments": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 25,
+            "title": "Prior Treatments",
+            "type": "array"
+          },
+          "stage_or_grade": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Or Grade"
+          }
+        },
+        "title": "PatientContext",
+        "type": "object"
+      },
+      "PatientLocation": {
+        "description": "Patient location context used for request-time trial matching.",
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "within_miles": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Within Miles"
+          }
+        },
+        "title": "PatientLocation",
+        "type": "object"
+      },
+      "PatientQueryRunRequest": {
+        "description": "Request payload for a patient-context evidence query.",
+        "properties": {
+          "max_claims": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Claims",
+            "type": "integer"
+          },
+          "max_outcomes": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Outcomes",
+            "type": "integer"
+          },
+          "max_trials": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Trials",
+            "type": "integer"
+          },
+          "patient_context": {
+            "$ref": "#/components/schemas/PatientContext"
+          },
+          "query": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query",
+          "patient_context"
+        ],
+        "title": "PatientQueryRunRequest",
+        "type": "object"
+      },
+      "PatientQueryRunResponse": {
+        "description": "Completed patient-context query response.",
+        "properties": {
+          "claim_matches": {
+            "items": {
+              "$ref": "#/components/schemas/PatientRelevantClaimResponse"
+            },
+            "title": "Claim Matches",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "patient_context": {
+            "$ref": "#/components/schemas/PatientContext"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "study_outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/StudyOutcomeResponse"
+            },
+            "title": "Study Outcomes",
+            "type": "array"
+          },
+          "trial_matches": {
+            "items": {
+              "$ref": "#/components/schemas/TrialMatchResponse"
+            },
+            "title": "Trial Matches",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "status",
+          "query",
+          "patient_context",
+          "generated_at"
+        ],
+        "title": "PatientQueryRunResponse",
+        "type": "object"
+      },
+      "PatientRelevantClaimResponse": {
+        "description": "One promoted claim ranked against patient context.",
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "evidence_bundle": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Evidence Bundle",
+            "type": "array"
+          },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
+          },
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Terms",
+            "type": "array"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Payload",
+            "type": "object"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "ranking_score": {
+            "title": "Ranking Score",
+            "type": "number"
+          },
+          "relevance_score": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Relevance Score",
+            "type": "number"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "title",
+          "summary",
+          "source_key",
+          "evidence_grade",
+          "confidence",
+          "ranking_score",
+          "relevance_score",
+          "payload",
+          "metadata",
+          "evidence_bundle"
+        ],
+        "title": "PatientRelevantClaimResponse",
+        "type": "object"
+      },
       "ProcessHealth": {
         "description": "Health status of a background process.",
         "properties": {
@@ -24527,6 +24872,68 @@
         "summary": "Reject proposed update",
         "tags": [
           "review"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/query-runs": {
+      "post": {
+        "description": "Run a patient-context query over reviewed evidence and live trials.",
+        "operationId": "create_query_run_v2_spaces__space_id__query_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientQueryRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientQueryRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create patient-context evidence query",
+        "tags": [
+          "research"
         ]
       }
     },
