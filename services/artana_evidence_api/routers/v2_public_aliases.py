@@ -284,6 +284,14 @@ _ALIASES = (
         ("review",),
     ),
     (
+        review_queue.router,
+        "POST",
+        "/v1/spaces/{space_id}/review-queue:bulk-actions",
+        "/v2/spaces/{space_id}/review-items:bulk-decision",
+        "Decide review items in bulk",
+        ("review",),
+    ),
+    (
         proposals.router,
         "GET",
         "/v1/spaces/{space_id}/proposals",

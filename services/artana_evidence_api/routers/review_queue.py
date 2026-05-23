@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.approval_store import (
@@ -74,6 +74,7 @@ _DOCUMENT_ID_QUERY = Query(default=None)
 _SOURCE_FAMILY_QUERY = Query(default=None, min_length=1, max_length=64)
 _OFFSET_QUERY = Query(default=0, ge=0)
 _LIMIT_QUERY = Query(default=200, ge=1, le=1000)
+_MAX_BULK_DECISIONS = 1000
 
 _PENDING_QUEUE_STATUSES = frozenset({"pending_review", "pending"})
 _RISK_PRIORITY = {"low": "low", "medium": "medium", "high": "high", "critical": "high"}
@@ -274,6 +275,58 @@ class HarnessReviewQueueActionRequest(BaseModel):
     action: str = Field(..., min_length=1, max_length=64)
     reason: str | None = Field(default=None, min_length=1, max_length=2000)
     metadata: JSONObject = Field(default_factory=dict)
+
+
+class HarnessReviewQueueBulkDecisionItem(BaseModel):
+    """One review-queue action inside a bulk decision request."""
+
+    model_config = ConfigDict(strict=True)
+
+    item_id: str = Field(..., min_length=1, max_length=256)
+    action: str = Field(..., min_length=1, max_length=64)
+    reason: str | None = Field(default=None, min_length=1, max_length=2000)
+    metadata: JSONObject = Field(default_factory=dict)
+
+
+class HarnessReviewQueueBulkDecisionRequest(BaseModel):
+    """Apply many review-queue decisions in one request."""
+
+    model_config = ConfigDict(strict=True)
+
+    decisions: list[HarnessReviewQueueBulkDecisionItem] = Field(
+        ...,
+        min_length=1,
+        max_length=_MAX_BULK_DECISIONS,
+    )
+
+
+class HarnessReviewQueueBulkDecisionResult(BaseModel):
+    """Per-item outcome for a bulk review-queue decision request."""
+
+    model_config = ConfigDict(strict=True)
+
+    item_id: str
+    status: Literal["accepted", "failed"]
+    new_state: str | None = None
+    error: str | None = None
+
+
+class HarnessReviewQueueBulkDecisionSummary(BaseModel):
+    """Aggregate outcome counters for a bulk review-queue decision request."""
+
+    model_config = ConfigDict(strict=True)
+
+    accepted: int
+    failed: int
+
+
+class HarnessReviewQueueBulkDecisionResponse(BaseModel):
+    """Bulk decision response for high-volume review cleanup."""
+
+    model_config = ConfigDict(strict=True)
+
+    results: list[HarnessReviewQueueBulkDecisionResult]
+    summary: HarnessReviewQueueBulkDecisionSummary
 
 
 def _linked_resource_for_review_item(
@@ -568,6 +621,12 @@ def _split_review_queue_item_id(item_id: str) -> tuple[str, str]:
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Review queue item '{item_id}' was not found",
     )
+
+
+def _bulk_decision_error_text(detail: object) -> str:
+    if isinstance(detail, str):
+        return detail
+    return str(detail)
 
 
 def _build_queue_items(
@@ -977,10 +1036,98 @@ def act_on_review_queue_item(  # noqa: PLR0913
     return HarnessReviewQueueItemResponse.from_approval(refreshed_approval)
 
 
+@router.post(
+    "/{space_id}/review-queue:bulk-actions",
+    response_model=HarnessReviewQueueBulkDecisionResponse,
+    summary="Apply many review actions",
+    description=(
+        "Apply many review-queue decisions through the same dispatch path as the "
+        "single-item action endpoint. Each decision is isolated so one failed "
+        "item does not block the rest of the batch."
+    ),
+    dependencies=[Depends(require_harness_space_write_access)],
+)
+def act_on_review_queue_items_bulk(  # noqa: PLR0913
+    space_id: UUID,
+    request: HarnessReviewQueueBulkDecisionRequest = Body(...),
+    *,
+    proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
+    review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_DEPENDENCY,
+    approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,
+    run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
+    artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
+    graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
+    execution_services: HarnessExecutionServices = (
+        _HARNESS_EXECUTION_SERVICES_DEPENDENCY
+    ),
+) -> HarnessReviewQueueBulkDecisionResponse:
+    """Apply a bounded batch of queue actions and return per-item outcomes."""
+
+    results: list[HarnessReviewQueueBulkDecisionResult] = []
+    for decision in request.decisions:
+        try:
+            item = act_on_review_queue_item(
+                space_id=space_id,
+                item_id=decision.item_id,
+                request=HarnessReviewQueueActionRequest(
+                    action=decision.action,
+                    reason=decision.reason,
+                    metadata=decision.metadata,
+                ),
+                proposal_store=proposal_store,
+                review_item_store=review_item_store,
+                approval_store=approval_store,
+                run_registry=run_registry,
+                artifact_store=artifact_store,
+                graph_api_gateway=graph_api_gateway,
+                execution_services=execution_services,
+            )
+        except HTTPException as exc:
+            results.append(
+                HarnessReviewQueueBulkDecisionResult(
+                    item_id=decision.item_id,
+                    status="failed",
+                    error=_bulk_decision_error_text(exc.detail),
+                ),
+            )
+            continue
+        except ValueError as exc:
+            results.append(
+                HarnessReviewQueueBulkDecisionResult(
+                    item_id=decision.item_id,
+                    status="failed",
+                    error=str(exc),
+                ),
+            )
+            continue
+        results.append(
+            HarnessReviewQueueBulkDecisionResult(
+                item_id=decision.item_id,
+                status="accepted",
+                new_state=item.status,
+            ),
+        )
+
+    accepted_count = sum(1 for result in results if result.status == "accepted")
+    return HarnessReviewQueueBulkDecisionResponse(
+        results=results,
+        summary=HarnessReviewQueueBulkDecisionSummary(
+            accepted=accepted_count,
+            failed=len(results) - accepted_count,
+        ),
+    )
+
+
 __all__ = [
     "HarnessReviewQueueActionRequest",
+    "HarnessReviewQueueBulkDecisionItem",
+    "HarnessReviewQueueBulkDecisionRequest",
+    "HarnessReviewQueueBulkDecisionResponse",
+    "HarnessReviewQueueBulkDecisionResult",
+    "HarnessReviewQueueBulkDecisionSummary",
     "HarnessReviewQueueItemResponse",
     "HarnessReviewQueueListResponse",
+    "act_on_review_queue_items_bulk",
     "act_on_review_queue_item",
     "get_review_queue_item",
     "list_review_queue",

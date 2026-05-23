@@ -5934,6 +5934,153 @@
         "title": "HarnessReviewQueueActionRequest",
         "type": "object"
       },
+      "HarnessReviewQueueBulkDecisionItem": {
+        "description": "One review-queue action inside a bulk decision request.",
+        "properties": {
+          "action": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          },
+          "item_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Item Id",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Input"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "item_id",
+          "action"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionItem",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionRequest": {
+        "description": "Apply many review-queue decisions in one request.",
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionItem"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Decisions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "decisions"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionRequest",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionResponse": {
+        "description": "Bulk decision response for high-volume review cleanup.",
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionSummary"
+          }
+        },
+        "required": [
+          "results",
+          "summary"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionResponse",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionResult": {
+        "description": "Per-item outcome for a bulk review-queue decision request.",
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "new_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New State"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "status"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionResult",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionSummary": {
+        "description": "Aggregate outcome counters for a bulk review-queue decision request.",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted",
+          "failed"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionSummary",
+        "type": "object"
+      },
       "HarnessReviewQueueItemResponse": {
         "description": "Serialized queue item for the unified review surface.",
         "properties": {
@@ -19540,6 +19687,68 @@
         ]
       }
     },
+    "/v1/spaces/{space_id}/review-queue:bulk-actions": {
+      "post": {
+        "description": "Apply many review-queue decisions through the same dispatch path as the single-item action endpoint. Each decision is isolated so one failed item does not block the rest of the batch.",
+        "operationId": "act_on_review_queue_items_bulk_v1_spaces__space_id__review_queue_bulk_actions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Apply many review actions",
+        "tags": [
+          "review-queue"
+        ]
+      }
+    },
     "/v1/spaces/{space_id}/runs": {
       "get": {
         "description": "Return harness runs for one research space.",
@@ -24090,6 +24299,68 @@
           }
         ],
         "summary": "Decide review item",
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/review-items:bulk-decision": {
+      "post": {
+        "description": "Apply many review-queue decisions through the same dispatch path as the single-item action endpoint. Each decision is isolated so one failed item does not block the rest of the batch.",
+        "operationId": "v2_act_on_review_queue_items_bulk_v2_spaces__space_id__review_items_bulk_decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide review items in bulk",
         "tags": [
           "review"
         ]
