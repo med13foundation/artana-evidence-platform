@@ -6893,6 +6893,7 @@ def test_build_source_results_includes_registry_metadata() -> None:
     assert result["mgi"]["direct_search_enabled"] is True
     assert result["zfin"]["direct_search_enabled"] is True
     assert result["orphanet"]["direct_search_enabled"] is True
+    assert result["dime"]["direct_search_enabled"] is True
     assert result["mondo"]["direct_search_enabled"] is False
     assert result["clinvar"]["research_plan_enabled"] is True
     assert "source_result_capture" in result["clinvar"]
@@ -6919,6 +6920,14 @@ def test_build_source_results_orphanet_skipped_by_default() -> None:
     assert result["orphanet"]["status"] == "skipped"
     assert result["orphanet"]["selected"] is False
     assert result["orphanet"]["records_processed"] == 0
+
+
+def test_build_source_results_dime_skipped_by_default() -> None:
+    """dime defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["dime"]["status"] == "skipped"
+    assert result["dime"]["selected"] is False
+    assert result["dime"]["records_processed"] == 0
 
 
 def test_source_result_counters_fall_back_for_registered_search_sources() -> None:
@@ -7018,6 +7027,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
             "mgi": True,
             "zfin": True,
             "orphanet": True,
+            "dime": True,
         },
     )
 
@@ -7046,6 +7056,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     assert source_results["mgi"]["status"] == "deferred"
     assert source_results["zfin"]["status"] == "deferred"
     assert source_results["orphanet"]["status"] == "deferred"
+    assert source_results["dime"]["status"] == "deferred"
 
     # Sources outside the deferred loop are unaffected.
     assert source_results["pubmed"]["status"] == "pending"
@@ -7066,6 +7077,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
             "uniprot": False,
             "hgnc": False,
             "orphanet": False,
+            "dime": False,
         },
     )
 
@@ -7078,6 +7090,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
         "uniprot",
         "hgnc",
         "orphanet",
+        "dime",
     ):
         assert source_results[key]["status"] == "skipped"
 
@@ -7098,6 +7111,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
         "uniprot",
         "hgnc",
         "orphanet",
+        "dime",
     ):
         assert source_results[key]["status"] == "skipped"
 

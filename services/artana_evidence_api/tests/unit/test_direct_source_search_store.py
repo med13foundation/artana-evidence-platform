@@ -11,6 +11,7 @@ from artana_evidence_api.direct_source_search import (
     AlphaFoldSourceSearchResponse,
     ClinicalTrialsSourceSearchResponse,
     ClinVarSourceSearchResponse,
+    DiMeSourceSearchResponse,
     DirectSourceSearchRecord,
     DrugBankSourceSearchResponse,
     GnomADSourceSearchResponse,
@@ -96,6 +97,7 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
     mgi_id = uuid4()
     zfin_id = uuid4()
     orphanet_id = uuid4()
+    dime_id = uuid4()
     return (
         ClinVarSourceSearchResponse(
             id=clinvar_id,
@@ -273,6 +275,29 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
                 source_key="orphanet",
                 search_id=orphanet_id,
                 query="Marfan syndrome",
+            ),
+        ),
+        DiMeSourceSearchResponse(
+            id=dime_id,
+            space_id=space_id,
+            query="disease:dystonia sensor:wearable",
+            disease="dystonia",
+            therapeutic_area=None,
+            sensor="wearable",
+            max_results=1,
+            fetched_records=1,
+            record_count=1,
+            snapshot_date="2026-04",
+            catalog_url="https://dimesociety.org/library-of-digital-endpoints/",
+            terms_of_use_url="https://dimesociety.org/terms-of-use/",
+            records=[{"trial_registry_id": "NCT05027997"}],
+            methodological_reference={"pmid": "33083687"},
+            created_at=created_at,
+            completed_at=completed_at,
+            source_capture=_capture(
+                source_key="dime",
+                search_id=dime_id,
+                query="disease:dystonia sensor:wearable",
             ),
         ),
     )

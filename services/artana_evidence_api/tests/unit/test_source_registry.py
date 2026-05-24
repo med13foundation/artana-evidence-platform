@@ -41,6 +41,7 @@ def test_source_registry_lists_all_research_plan_sources() -> None:
         "mgi",
         "zfin",
         "orphanet",
+        "dime",
     ]
     assert set(research_plan_source_keys()) == set(source_keys)
 
@@ -58,6 +59,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
         "mgi",
         "zfin",
         "orphanet",
+        "dime",
     )
 
     pubmed = get_source_definition("pubmed")
@@ -75,6 +77,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
             "mgi",
             "zfin",
             "orphanet",
+            "dime",
         )
     ]
 
@@ -149,6 +152,7 @@ def test_source_registry_defaults_match_research_init_behavior() -> None:
         "mgi": False,
         "zfin": False,
         "orphanet": False,
+        "dime": False,
     }
 
 
@@ -169,9 +173,12 @@ def test_source_registry_normalizes_orphanet_public_aliases(alias: str) -> None:
 def test_source_registry_normalizes_public_aliases() -> None:
     assert normalize_source_key("clinical-trials") == "clinical_trials"
     assert normalize_source_key("ClinicalTrials.gov") == "clinical_trials"
+    assert normalize_source_key("DiMe Society") == "dime"
+    assert normalize_source_key("digital-medicine-society") == "dime"
     assert get_source_definition("clinical-trials") == get_source_definition(
         "clinical_trials",
     )
+    assert get_source_definition("DiMe Society") == get_source_definition("dime")
 
 
 def test_unknown_source_preference_keys_reports_bad_keys() -> None:

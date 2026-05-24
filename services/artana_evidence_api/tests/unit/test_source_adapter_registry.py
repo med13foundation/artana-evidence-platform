@@ -202,5 +202,6 @@ def _valid_query_payload(source_key: str) -> JSONObject:
         "mgi": {"query": "Med13"},
         "zfin": {"query": "med13"},
         "orphanet": {"query": "MED13 syndrome"},
+        "dime": {"disease": "dystonia"},
     }
     return payloads[source_key]

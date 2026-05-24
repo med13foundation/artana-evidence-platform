@@ -107,6 +107,7 @@ def test_generic_route_dependency_keys_match_route_plugin_keys() -> None:
         mgi_gateway=None,
         zfin_gateway=None,
         orphanet_gateway=None,
+        dime_gateway=None,
     )
 
     assert set(dependencies.source_dependencies) == set(

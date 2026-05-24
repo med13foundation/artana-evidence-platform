@@ -16,6 +16,7 @@ from artana_evidence_api.dependencies import (
     get_alphafold_source_gateway,
     get_clinicaltrials_source_gateway,
     get_clinvar_source_gateway,
+    get_dime_source_gateway,
     get_direct_source_search_store,
     get_document_store,
     get_drugbank_source_gateway,
@@ -34,6 +35,7 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
     SqlAlchemyDirectSourceSearchStore,
 )
+from artana_evidence_api.direct_sources.dime import DiMeGatewayFetchResult
 from artana_evidence_api.direct_sources.gnomad_gateway import GnomADGatewayFetchResult
 from artana_evidence_api.direct_sources.orphanet_gateway import (
     OrphanetGatewayFetchResult,
@@ -398,6 +400,45 @@ class _StubOrphanetGateway:
         )
 
 
+class _StubDiMeGateway:
+    def __init__(self) -> None:
+        self.calls: list[
+            tuple[str | None, str | None, str | None, str | None, int]
+        ] = []
+
+    async def fetch_records_async(
+        self,
+        *,
+        query: str | None = None,
+        disease: str | None = None,
+        therapeutic_area: str | None = None,
+        sensor: str | None = None,
+        max_results: int = 20,
+    ) -> DiMeGatewayFetchResult:
+        self.calls.append((query, disease, therapeutic_area, sensor, max_results))
+        return DiMeGatewayFetchResult(
+            records=[
+                {
+                    "endpoint_identifier": "3",
+                    "trial_registry_id": "NCT05027997",
+                    "disease": "Blepharospasm, Dystonia",
+                    "therapeutic_area": ["Neurological or sensory"],
+                    "digital_endpoint": "Skintronics wearable analysis of blinking activity",
+                    "concept_of_interest": ["Neurological or sensory"],
+                    "sensor_or_dht": "Wearable",
+                    "sponsor": "Example sponsor",
+                    "endpoint_positioning": "Primary",
+                    "validation_status": "not_reported_in_public_view",
+                    "source": "dime",
+                    "source_url": "https://dimesociety.org/library-of-digital-endpoints/",
+                    "terms_of_use_url": "https://dimesociety.org/terms-of-use/",
+                },
+            ],
+            fetched_records=1,
+            snapshot_date="2026-04",
+        )
+
+
 class _StubMarrvelDiscoveryService:
     def __init__(self) -> None:
         self.results: dict[UUID, MarrvelDiscoveryResult] = {}
@@ -488,6 +529,7 @@ def _build_client(
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     orphanet_gateway: object | None = None,
+    dime_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
     pubmed_discovery_service: object | None = None,
 ) -> _BuiltClient:
@@ -515,6 +557,7 @@ def _build_client(
         mgi_gateway=mgi_gateway,
         zfin_gateway=zfin_gateway,
         orphanet_gateway=orphanet_gateway,
+        dime_gateway=dime_gateway,
         marrvel_discovery_service=marrvel_discovery_service,
         pubmed_discovery_service=pubmed_discovery_service,
     )
@@ -543,6 +586,7 @@ def _build_client_for_space(
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     orphanet_gateway: object | None = None,
+    dime_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
     pubmed_discovery_service: object | None = None,
 ) -> TestClient:
@@ -570,6 +614,7 @@ def _build_client_for_space(
     app.dependency_overrides[get_mgi_source_gateway] = lambda: mgi_gateway
     app.dependency_overrides[get_zfin_source_gateway] = lambda: zfin_gateway
     app.dependency_overrides[get_orphanet_source_gateway] = lambda: orphanet_gateway
+    app.dependency_overrides[get_dime_source_gateway] = lambda: dime_gateway
     if marrvel_discovery_service is not None:
         app.dependency_overrides[marrvel.get_marrvel_discovery_service] = (
             lambda: marrvel_discovery_service
@@ -878,6 +923,14 @@ def test_source_search_handoff_creates_non_variant_source_document() -> None:
             "rare_disease",
             "orphanet_id",
             "ORPHA:558",
+        ),
+        (
+            "dime",
+            {"dime_gateway": _StubDiMeGateway()},
+            {"disease": "dystonia", "sensor": "wearable"},
+            "digital_measurement",
+            "trial_registry_id",
+            "NCT05027997",
         ),
     ],
 )
@@ -1243,6 +1296,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         mgi_gateway=_StubAllianceGeneGateway(source_key="mgi"),
         zfin_gateway=_StubAllianceGeneGateway(source_key="zfin"),
         orphanet_gateway=_StubOrphanetGateway(),
+        dime_gateway=_StubDiMeGateway(),
     )
     cases: tuple[tuple[str, dict[str, object], str], ...] = (
         ("ClinVar", {"gene_symbol": "BRCA1"}, "clinvar"),
@@ -1253,6 +1307,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         ("MGI", {"query": "BRCA1"}, "mgi"),
         ("ZFIN", {"query": "BRCA1"}, "zfin"),
         ("ORPHAcode", {"orphacode": 558}, "orphanet"),
+        ("DiMe Society", {"disease": "dystonia"}, "dime"),
     )
 
     for source_key, request_payload, expected_source_key in cases:
@@ -1664,6 +1719,56 @@ def test_create_orphanet_source_search_rejects_invalid_lookup_shape(
 
     assert response.status_code == 422
     assert expected_message in response.text
+
+
+def test_create_dime_source_search_returns_metadata_records_and_terms() -> None:
+    dime_gateway = _StubDiMeGateway()
+    built = _build_client(dime_gateway=dime_gateway)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/dime/searches",
+        headers=_auth_headers(),
+        json={"disease": "dystonia", "sensor": "wearable", "max_results": 2},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "dime"
+    assert payload["query"] == "disease:dystonia sensor:wearable"
+    assert payload["snapshot_date"] == "2026-04"
+    assert payload["terms_of_use_url"] == "https://dimesociety.org/terms-of-use/"
+    assert payload["records"][0]["trial_registry_id"] == "NCT05027997"
+    assert payload["records"][0]["source"] == "dime"
+    assert payload["methodological_reference"]["pmid"] == "33083687"
+    assert payload["source_capture"]["source_key"] == "dime"
+    assert payload["source_capture"]["result_count"] == 1
+    assert payload["source_capture"]["external_id"] == "NCT05027997"
+    assert payload["source_capture"]["provenance"]["terms_of_use_url"] == (
+        "https://dimesociety.org/terms-of-use/"
+    )
+    assert dime_gateway.calls == [(None, "dystonia", None, "wearable", 2)]
+
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/dime/searches/{payload['id']}",
+        headers=_auth_headers(),
+    )
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == payload["id"]
+
+
+def test_create_dime_source_search_rejects_unbounded_payload() -> None:
+    built = _build_client(dime_gateway=_StubDiMeGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/dime/searches",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert response.status_code == 422
+    assert "Provide at least one of query, disease, therapeutic_area, or sensor" in (
+        response.text
+    )
 
 
 def test_get_direct_source_search_rejects_wrong_space() -> None:

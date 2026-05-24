@@ -26,6 +26,7 @@ from artana_evidence_api.source_route_mgi import mgi_typed_route_plugin
 from artana_evidence_api.source_route_pubmed import pubmed_typed_route_plugin
 from artana_evidence_api.source_route_uniprot import uniprot_typed_route_plugin
 from artana_evidence_api.source_route_zfin import zfin_typed_route_plugin
+from artana_evidence_api.source_routes.dime import dime_typed_route_plugin
 from artana_evidence_api.source_routes.gnomad import gnomad_typed_route_plugin
 from artana_evidence_api.source_routes.orphanet import orphanet_typed_route_plugin
 from artana_evidence_api.types.common import JSONObject
@@ -51,6 +52,7 @@ _DIRECT_SOURCE_ROUTE_PLUGINS = (
     mgi_typed_route_plugin(),
     zfin_typed_route_plugin(),
     orphanet_typed_route_plugin(),
+    dime_typed_route_plugin(),
 )
 
 

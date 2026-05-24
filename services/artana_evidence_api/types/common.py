@@ -118,6 +118,7 @@ class ResearchSpaceSourcePreferences(TypedDict, total=False):
     mgi: bool
     zfin: bool
     orphanet: bool
+    dime: bool
 
 
 class ResearchSpaceSettings(TypedDict, total=False):

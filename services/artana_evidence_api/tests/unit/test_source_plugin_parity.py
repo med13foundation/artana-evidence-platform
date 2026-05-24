@@ -165,6 +165,12 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             evidence_role="rare disease nomenclature",
             reason="Search Orphanet disease context.",
         ),
+        "dime": PlannedSourceIntent(
+            source_key="dime",
+            disease="Dystonia",
+            evidence_role="digital endpoint",
+            reason="Search DiMe endpoints.",
+        ),
     }
     return intents[source_key]
 
@@ -275,6 +281,18 @@ def _record(source_key: str) -> JSONObject:
             "status": "Active",
             "classification_level": "Disorder",
             "orphanet_url": "https://orpha.example/558",
+        },
+        "dime": {
+            "endpoint_identifier": "3",
+            "trial_registry_id": "NCT05027997",
+            "disease": "Blepharospasm, Dystonia",
+            "therapeutic_area": ["Neurological or sensory"],
+            "digital_endpoint": "Skintronics wearable blinking activity",
+            "concept_of_interest": ["Neurological or sensory"],
+            "sensor_or_dht": "Wearable",
+            "sponsor": "Example sponsor",
+            "endpoint_positioning": "Primary",
+            "validation_status": "not_reported_in_public_view",
         },
     }
     return records[source_key]

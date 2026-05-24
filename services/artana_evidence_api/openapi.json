@@ -2215,7 +2215,7 @@
                 "type": "null"
               }
             ],
-            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin).",
+            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime).",
             "title": "Sources"
           }
         },
@@ -2292,6 +2292,207 @@
           "email"
         ],
         "title": "CreateTesterRequest",
+        "type": "object"
+      },
+      "DiMeSourceSearchRequest": {
+        "description": "Request payload for DiMe digital-measures catalog search.",
+        "properties": {
+          "disease": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "sensor": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor"
+          },
+          "therapeutic_area": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Therapeutic Area"
+          }
+        },
+        "title": "DiMeSourceSearchRequest",
+        "type": "object"
+      },
+      "DiMeSourceSearchResponse": {
+        "description": "Response payload for one captured DiMe direct search.",
+        "properties": {
+          "catalog_url": {
+            "title": "Catalog Url",
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disease": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "methodological_reference": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Methodological Reference",
+            "type": "object"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "sensor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor"
+          },
+          "snapshot_date": {
+            "title": "Snapshot Date",
+            "type": "string"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "dime",
+            "default": "dime",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "terms_of_use_url": {
+            "title": "Terms Of Use Url",
+            "type": "string"
+          },
+          "therapeutic_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Therapeutic Area"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "snapshot_date",
+          "catalog_url",
+          "terms_of_use_url",
+          "methodological_reference",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "DiMeSourceSearchResponse",
         "type": "object"
       },
       "DiscoveryProvider": {
@@ -11207,7 +11408,7 @@
                 "type": "null"
               }
             ],
-            "description": "Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin.",
+            "description": "Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime.",
             "title": "Sources"
           },
           "title": {
@@ -12013,6 +12214,10 @@
           },
           "clinvar": {
             "title": "Clinvar",
+            "type": "boolean"
+          },
+          "dime": {
+            "title": "Dime",
             "type": "boolean"
           },
           "drugbank": {
@@ -27043,6 +27248,130 @@
           }
         ],
         "summary": "Get ClinVar evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/dime/searches": {
+      "post": {
+        "description": "Typed v2 route for DiMe source search.",
+        "operationId": "create_dime_source_search_v2_spaces__space_id__sources_dime_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiMeSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiMeSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search DiMe evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/dime/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for DiMe source-search lookup.",
+        "operationId": "get_dime_source_search_v2_spaces__space_id__sources_dime_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiMeSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get DiMe evidence source search",
         "tags": [
           "sources"
         ]
