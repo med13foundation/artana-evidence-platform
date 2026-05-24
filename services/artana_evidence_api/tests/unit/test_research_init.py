@@ -6894,6 +6894,7 @@ def test_build_source_results_includes_registry_metadata() -> None:
     assert result["zfin"]["direct_search_enabled"] is True
     assert result["orphanet"]["direct_search_enabled"] is True
     assert result["dime"]["direct_search_enabled"] is True
+    assert result["dhdr"]["direct_search_enabled"] is True
     assert result["mondo"]["direct_search_enabled"] is False
     assert result["clinvar"]["research_plan_enabled"] is True
     assert "source_result_capture" in result["clinvar"]
@@ -6928,6 +6929,14 @@ def test_build_source_results_dime_skipped_by_default() -> None:
     assert result["dime"]["status"] == "skipped"
     assert result["dime"]["selected"] is False
     assert result["dime"]["records_processed"] == 0
+
+
+def test_build_source_results_dhdr_skipped_by_default() -> None:
+    """dhdr defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["dhdr"]["status"] == "skipped"
+    assert result["dhdr"]["selected"] is False
+    assert result["dhdr"]["records_processed"] == 0
 
 
 def test_source_result_counters_fall_back_for_registered_search_sources() -> None:
@@ -7028,6 +7037,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
             "zfin": True,
             "orphanet": True,
             "dime": True,
+            "dhdr": True,
         },
     )
 
@@ -7057,6 +7067,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     assert source_results["zfin"]["status"] == "deferred"
     assert source_results["orphanet"]["status"] == "deferred"
     assert source_results["dime"]["status"] == "deferred"
+    assert source_results["dhdr"]["status"] == "deferred"
 
     # Sources outside the deferred loop are unaffected.
     assert source_results["pubmed"]["status"] == "pending"
@@ -7078,6 +7089,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
             "hgnc": False,
             "orphanet": False,
             "dime": False,
+            "dhdr": False,
         },
     )
 
@@ -7091,6 +7103,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
         "hgnc",
         "orphanet",
         "dime",
+        "dhdr",
     ):
         assert source_results[key]["status"] == "skipped"
 
@@ -7112,6 +7125,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
         "hgnc",
         "orphanet",
         "dime",
+        "dhdr",
     ):
         assert source_results[key]["status"] == "skipped"
 

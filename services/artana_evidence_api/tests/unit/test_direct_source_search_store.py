@@ -11,6 +11,7 @@ from artana_evidence_api.direct_source_search import (
     AlphaFoldSourceSearchResponse,
     ClinicalTrialsSourceSearchResponse,
     ClinVarSourceSearchResponse,
+    DHDRSourceSearchResponse,
     DiMeSourceSearchResponse,
     DirectSourceSearchRecord,
     DrugBankSourceSearchResponse,
@@ -98,6 +99,7 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
     zfin_id = uuid4()
     orphanet_id = uuid4()
     dime_id = uuid4()
+    dhdr_id = uuid4()
     return (
         ClinVarSourceSearchResponse(
             id=clinvar_id,
@@ -298,6 +300,31 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
                 source_key="dime",
                 search_id=dime_id,
                 query="disease:dystonia sensor:wearable",
+            ),
+        ),
+        DHDRSourceSearchResponse(
+            id=dhdr_id,
+            space_id=space_id,
+            query="condition:Parkinson modality:IMU",
+            condition="Parkinson",
+            modality="IMU",
+            device=None,
+            max_results=1,
+            fetched_records=1,
+            record_count=1,
+            snapshot_date="2026-05-04",
+            catalog_url="https://www.dbdp.org/dhdr",
+            repository_url=(
+                "https://github.com/"
+                "DigitalBiomarkerDiscoveryPipeline/Digital_Health_Data_Repository"
+            ),
+            records=[{"dataset_name": "WearGait-PD"}],
+            created_at=created_at,
+            completed_at=completed_at,
+            source_capture=_capture(
+                source_key="dhdr",
+                search_id=dhdr_id,
+                query="condition:Parkinson modality:IMU",
             ),
         ),
     )

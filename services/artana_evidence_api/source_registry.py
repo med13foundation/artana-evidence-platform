@@ -132,6 +132,10 @@ _SOURCE_KEY_ALIASES = {
     "digital_medicine_society": "dime",
     "digital_endpoints": "dime",
     "library_of_digital_endpoints": "dime",
+    "dbdp": "dhdr",
+    "dbdp_dhdr": "dhdr",
+    "digital_health_data_repository": "dhdr",
+    "digital_biomarker_discovery_pipeline": "dhdr",
 }
 
 

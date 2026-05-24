@@ -28,6 +28,7 @@ from artana_evidence_api.direct_source_search import (
     DirectSourceSearchStore,
     SqlAlchemyDirectSourceSearchStore,
 )
+from artana_evidence_api.direct_sources.dhdr import build_dhdr_gateway
 from artana_evidence_api.direct_sources.dime import build_dime_gateway
 from artana_evidence_api.document_binary_store import (
     HarnessDocumentBinaryStore,
@@ -110,6 +111,7 @@ if TYPE_CHECKING:
     from artana_evidence_api.approval_store import HarnessApprovalStore
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.chat_sessions import HarnessChatSessionStore
+    from artana_evidence_api.direct_sources.dhdr import DHDRGatewayProtocol
     from artana_evidence_api.direct_sources.dime import DiMeGatewayProtocol
     from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
     from artana_evidence_api.document_store import HarnessDocumentStore
@@ -530,6 +532,12 @@ def get_dime_source_gateway() -> DiMeGatewayProtocol | None:
     return build_dime_gateway()
 
 
+def get_dhdr_source_gateway() -> DHDRGatewayProtocol | None:
+    """Return the DHDR public catalog gateway used by direct source search."""
+
+    return build_dhdr_gateway()
+
+
 def get_graph_search_runner() -> HarnessGraphSearchRunner:
     """Return the harness-owned graph-search runner."""
     return HarnessGraphSearchRunner()
@@ -646,6 +654,7 @@ __all__ = [
     "get_clinvar_source_gateway",
     "get_direct_source_search_store",
     "get_document_store",
+    "get_dhdr_source_gateway",
     "get_dime_source_gateway",
     "get_alphafold_source_gateway",
     "get_drugbank_source_gateway",

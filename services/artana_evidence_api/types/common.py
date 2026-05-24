@@ -119,6 +119,7 @@ class ResearchSpaceSourcePreferences(TypedDict, total=False):
     zfin: bool
     orphanet: bool
     dime: bool
+    dhdr: bool
 
 
 class ResearchSpaceSettings(TypedDict, total=False):

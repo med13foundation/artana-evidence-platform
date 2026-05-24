@@ -20,6 +20,7 @@ from artana_evidence_api.source_plugins.contracts import (
     DocumentIngestionSourcePlugin,
     EvidenceSourcePlugin,
 )
+from artana_evidence_api.source_plugins.digital_health.dhdr import DHDR_PLUGIN
 from artana_evidence_api.source_plugins.digital_measurement.dime import DIME_PLUGIN
 from artana_evidence_api.source_plugins.drugbank import DRUGBANK_PLUGIN
 from artana_evidence_api.source_plugins.gnomad import GNOMAD_PLUGIN
@@ -56,6 +57,7 @@ _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     ZFIN_PLUGIN,
     ORPHANET_PLUGIN,
     DIME_PLUGIN,
+    DHDR_PLUGIN,
 )
 
 _AUTHORITY_SOURCE_PLUGINS: tuple[AuthoritySourcePlugin, ...] = (
@@ -85,6 +87,7 @@ _PUBLIC_SOURCE_PLUGINS: tuple[PublicSourcePlugin, ...] = (
     ZFIN_PLUGIN,
     ORPHANET_PLUGIN,
     DIME_PLUGIN,
+    DHDR_PLUGIN,
 )
 
 

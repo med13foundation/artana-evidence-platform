@@ -41,6 +41,7 @@ def test_source_plugin_registry_is_explicit_and_consistent() -> None:
         "zfin",
         "orphanet",
         "dime",
+        "dhdr",
     )
 
     assert source_plugin_keys() == expected_keys

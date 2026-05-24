@@ -171,6 +171,12 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             evidence_role="digital endpoint",
             reason="Search DiMe endpoints.",
         ),
+        "dhdr": PlannedSourceIntent(
+            source_key="dhdr",
+            disease="Parkinson disease",
+            evidence_role="digital biomarker dataset",
+            reason="Search DHDR datasets.",
+        ),
     }
     return intents[source_key]
 
@@ -293,6 +299,17 @@ def _record(source_key: str) -> JSONObject:
             "sponsor": "Example sponsor",
             "endpoint_positioning": "Primary",
             "validation_status": "not_reported_in_public_view",
+        },
+        "dhdr": {
+            "dataset_name": "WearGait-PD",
+            "condition": "Parkinson's disease",
+            "modalities": ["IMU"],
+            "devices": ["sensorized insole"],
+            "cohort_size": "100 individuals with Parkinson's disease",
+            "host_platform": "Synapse",
+            "dataset_url": "https://www.synapse.org/Synapse:syn52540892/wiki/623751",
+            "license": "host-specific; review dataset terms before reuse",
+            "terms_url": "https://www.synapse.org/Synapse:syn52540892/wiki/623751",
         },
     }
     return records[source_key]

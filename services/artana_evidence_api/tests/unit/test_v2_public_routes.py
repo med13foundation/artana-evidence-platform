@@ -455,6 +455,8 @@ def test_source_search_openapi_keeps_typed_routes_and_capture_contract() -> None
     assert "OrphanetSourceSearchResponse" in schemas
     assert "DiMeSourceSearchRequest" in schemas
     assert "DiMeSourceSearchResponse" in schemas
+    assert "DHDRSourceSearchRequest" in schemas
+    assert "DHDRSourceSearchResponse" in schemas
 
     clinvar_post = cast(
         "dict[str, object]",
@@ -503,6 +505,7 @@ def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
         "run_zfin_direct_search",
         "run_orphanet_direct_search",
         "run_dime_direct_search",
+        "run_dhdr_direct_search",
         "create_clinvar_source_search_payload",
         "create_clinicaltrials_source_search_payload",
         "create_uniprot_source_search_payload",
@@ -512,6 +515,7 @@ def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
         "create_zfin_source_search_payload",
         "create_orphanet_source_search_payload",
         "create_dime_source_search_payload",
+        "create_dhdr_source_search_payload",
     )
     for snippet in forbidden_snippets:
         assert snippet not in source
@@ -637,6 +641,14 @@ def test_direct_source_typed_route_plugins_define_expected_public_routes() -> No
             ("/v2/spaces/{space_id}/sources/dime/searches", "POST", 201),
             (
                 "/v2/spaces/{space_id}/sources/dime/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "dhdr": (
+            ("/v2/spaces/{space_id}/sources/dhdr/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/dhdr/searches/{search_id}",
                 "GET",
                 None,
             ),
