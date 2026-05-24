@@ -44,6 +44,12 @@ from artana_evidence_api.patient_queries import PatientQueryRunResponse
 from artana_evidence_api.patient_queries.routes import create_query_run
 from artana_evidence_api.proposal_store import HarnessProposalStore
 from artana_evidence_api.queued_run import HarnessAcceptedRunResponse
+from artana_evidence_api.research_init.convergence import (
+    OntologyConvergenceQueryResponse,
+)
+from artana_evidence_api.research_init.convergence.routes import (
+    create_convergence_query,
+)
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.review_item_store import HarnessReviewItemStore
 from artana_evidence_api.run_registry import HarnessRunRegistry
@@ -467,6 +473,16 @@ router.get(
     dependencies=[Depends(require_harness_space_read_access)],
     tags=["research"],
 )(match_trials)
+
+
+router.post(
+    "/v2/spaces/{space_id}/convergence-queries",
+    response_model=OntologyConvergenceQueryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Run ontology-normalized convergence query",
+    dependencies=[Depends(require_harness_space_read_access)],
+    tags=["research"],
+)(create_convergence_query)
 
 
 router.post(

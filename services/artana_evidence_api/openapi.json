@@ -9666,6 +9666,247 @@
         "title": "MechanismDiscoveryRunResponse",
         "type": "object"
       },
+      "OntologyConvergenceClaimResponse": {
+        "description": "One reviewed claim contributing to a convergent ontology node.",
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
+          },
+          "gene_symbol": {
+            "title": "Gene Symbol",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ontology_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Id"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "provenance": {
+            "enum": [
+              "human",
+              "model_organism"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "gene_symbol",
+          "label",
+          "ontology_id",
+          "provenance",
+          "title",
+          "source_kind",
+          "source_key",
+          "evidence_grade",
+          "confidence"
+        ],
+        "title": "OntologyConvergenceClaimResponse",
+        "type": "object"
+      },
+      "OntologyConvergenceNodeResponse": {
+        "description": "One ontology-normalized node shared across enough genes.",
+        "properties": {
+          "claim_count": {
+            "minimum": 0.0,
+            "title": "Claim Count",
+            "type": "integer"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyConvergenceClaimResponse"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "contributing_genes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Contributing Genes",
+            "type": "array"
+          },
+          "human_claim_count": {
+            "minimum": 0.0,
+            "title": "Human Claim Count",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "model_organism_claim_count": {
+            "minimum": 0.0,
+            "title": "Model Organism Claim Count",
+            "type": "integer"
+          },
+          "normalized_key": {
+            "title": "Normalized Key",
+            "type": "string"
+          },
+          "ontology_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Id"
+          },
+          "specificity": {
+            "enum": [
+              "generic_ndd",
+              "organ_or_module_specific",
+              "unclassified"
+            ],
+            "title": "Specificity",
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ontology_id",
+          "normalized_key",
+          "label",
+          "claim_count",
+          "human_claim_count",
+          "model_organism_claim_count",
+          "specificity"
+        ],
+        "title": "OntologyConvergenceNodeResponse",
+        "type": "object"
+      },
+      "OntologyConvergenceQueryRequest": {
+        "description": "Request payload for a cross-gene ontology convergence query.",
+        "properties": {
+          "gene_set": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 250,
+            "minItems": 1,
+            "title": "Gene Set",
+            "type": "array"
+          },
+          "include_report": {
+            "default": true,
+            "title": "Include Report",
+            "type": "boolean"
+          },
+          "min_gene_count": {
+            "default": 2,
+            "maximum": 250.0,
+            "minimum": 1.0,
+            "title": "Min Gene Count",
+            "type": "integer"
+          },
+          "provenance_filter": {
+            "default": "all",
+            "enum": [
+              "all",
+              "human",
+              "model_organism"
+            ],
+            "title": "Provenance Filter",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gene_set"
+        ],
+        "title": "OntologyConvergenceQueryRequest",
+        "type": "object"
+      },
+      "OntologyConvergenceQueryResponse": {
+        "description": "Response for an ontology-normalized convergence query.",
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyConvergenceNodeResponse"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "query": {
+            "$ref": "#/components/schemas/OntologyConvergenceQueryRequest"
+          },
+          "report_markdown": {
+            "title": "Report Markdown",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "report_markdown",
+          "generated_at"
+        ],
+        "title": "OntologyConvergenceQueryResponse",
+        "type": "object"
+      },
       "OrphanetSourceSearchRequest": {
         "description": "Request payload for a direct Orphanet disease lookup.",
         "properties": {
@@ -23351,6 +23592,68 @@
         "summary": "Decide suggested chat update",
         "tags": [
           "chat"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/convergence-queries": {
+      "post": {
+        "description": "Run a native convergence query over promoted claim proposals.",
+        "operationId": "create_convergence_query_v2_spaces__space_id__convergence_queries_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OntologyConvergenceQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyConvergenceQueryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run ontology-normalized convergence query",
+        "tags": [
+          "research"
         ]
       }
     },
