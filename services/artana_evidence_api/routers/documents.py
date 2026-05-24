@@ -369,8 +369,6 @@ def _build_raw_pdf_storage_key(
     return f"documents/{document_id}/raw/{sha256}.pdf"
 
 
-
-
 @router.get(
     "/{space_id}/documents",
     response_model=HarnessDocumentListResponse,

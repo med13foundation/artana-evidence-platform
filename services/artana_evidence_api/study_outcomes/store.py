@@ -11,13 +11,14 @@ from typing import TYPE_CHECKING, overload
 from uuid import UUID, uuid4
 
 from artana_evidence_api.models import HarnessStudyOutcomeModel
+from artana_evidence_api.sqlalchemy_stores import _result_rowcount
 from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.study_outcomes.contracts import (
     StudyOutcomeDraft,
     StudyOutcomeRecord,
 )
 from artana_evidence_api.types.common import JSONObject
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import InstrumentedAttribute, Session
@@ -192,6 +193,39 @@ class HarnessStudyOutcomeStore:
             ),
         )
 
+    def delete_outcomes_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        """Delete study outcomes linked to any supplied document ids."""
+
+        normalized_space_id = str(space_id)
+        target_ids = {str(document_id) for document_id in document_ids}
+        if not target_ids:
+            return 0
+        deleted_count = 0
+        with self._lock:
+            record_ids = list(self._record_ids_by_space.get(normalized_space_id, []))
+            retained_ids: list[str] = []
+            fingerprints = self._fingerprints_by_space.setdefault(
+                normalized_space_id,
+                set(),
+            )
+            for record_id in record_ids:
+                record = self._records.get(record_id)
+                if record is None:
+                    continue
+                if record.document_id in target_ids:
+                    fingerprints.discard(record.outcome_fingerprint)
+                    del self._records[record_id]
+                    deleted_count += 1
+                    continue
+                retained_ids.append(record_id)
+            self._record_ids_by_space[normalized_space_id] = retained_ids
+        return deleted_count
+
 
 class SqlAlchemyStudyOutcomeStore(HarnessStudyOutcomeStore):
     """SQLAlchemy-backed study-outcome store."""
@@ -311,6 +345,24 @@ class SqlAlchemyStudyOutcomeStore(HarnessStudyOutcomeStore):
             document_id=document_id,
         )
         return int(self.session.execute(stmt).scalar_one())
+
+    def delete_outcomes_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        target_ids = tuple(str(document_id) for document_id in document_ids)
+        if not target_ids:
+            return 0
+        result = self.session.execute(
+            delete(HarnessStudyOutcomeModel).where(
+                HarnessStudyOutcomeModel.space_id == str(space_id),
+                HarnessStudyOutcomeModel.document_id.in_(target_ids),
+            ),
+        )
+        self.session.commit()
+        return _result_rowcount(result)
 
 
 def _required_text(value: str, *, field_name: str) -> str:

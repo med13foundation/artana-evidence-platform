@@ -23,7 +23,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     normalize_document_title,
 )
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
-from sqlalchemy import and_, func, select, update
+from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
 if TYPE_CHECKING:
@@ -199,6 +199,24 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
         if model is None or model.space_id != str(space_id):
             return None
         return _review_item_record_from_model(model)
+
+    def delete_review_items_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        target_ids = tuple(str(document_id) for document_id in document_ids)
+        if not target_ids:
+            return 0
+        result = self.session.execute(
+            delete(HarnessReviewItemModel).where(
+                HarnessReviewItemModel.space_id == str(space_id),
+                HarnessReviewItemModel.document_id.in_(target_ids),
+            ),
+        )
+        self.session.commit()
+        return _result_rowcount(result)
 
     def decide_review_item(
         self,
@@ -411,6 +429,38 @@ class SqlAlchemyHarnessDocumentStore(HarnessDocumentStore, _SessionBackedStore):
         if model is None:
             return None
         return _document_record_from_model(model)
+
+    def delete_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> list[HarnessDocumentRecord]:
+        target_ids = tuple(str(document_id) for document_id in document_ids)
+        if not target_ids:
+            return []
+        stmt = (
+            select(HarnessDocumentModel)
+            .where(
+                HarnessDocumentModel.space_id == str(space_id),
+                HarnessDocumentModel.id.in_(target_ids),
+            )
+            .order_by(HarnessDocumentModel.updated_at.desc())
+        )
+        models = self.session.execute(stmt).scalars().all()
+        deleted_records = [_document_record_from_model(model) for model in models]
+        if not deleted_records:
+            return []
+        self.session.execute(
+            delete(HarnessDocumentModel).where(
+                HarnessDocumentModel.space_id == str(space_id),
+                HarnessDocumentModel.id.in_(
+                    tuple(record.id for record in deleted_records),
+                ),
+            ),
+        )
+        self.session.commit()
+        return deleted_records
 
     def update_document(  # noqa: PLR0913
         self,

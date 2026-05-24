@@ -11,9 +11,11 @@ from artana_evidence_api.approval_store import HarnessApprovalAction
 from artana_evidence_api.db_schema import resolve_harness_db_schema
 from artana_evidence_api.models.base import Base
 from artana_evidence_api.models.harness import (
+    HarnessDocumentModel,
     HarnessProposalModel,
     HarnessReviewItemModel,
     HarnessRunModel,
+    HarnessStudyOutcomeModel,
 )
 from artana_evidence_api.models.research_space import (
     ResearchSpaceMembershipModel,
@@ -33,6 +35,8 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessReviewItemStore,
     SqlAlchemyHarnessScheduleStore,
 )
+from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
+from artana_evidence_api.study_outcomes.contracts import StudyOutcomeDraft
 from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -454,6 +458,126 @@ def test_sqlalchemy_harness_document_store_counts_finds_and_updates_content(
     assert updated.enriched_storage_key == "documents/enriched/evidence.txt"
     assert updated.enrichment_status == "completed"
     assert updated.metadata["page_range"] == "1-2"
+
+
+def test_sqlalchemy_document_delete_contract_removes_document_children(
+    session: Session,
+) -> None:
+    document_store = SqlAlchemyHarnessDocumentStore(session)
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    review_item_store = SqlAlchemyHarnessReviewItemStore(session)
+    outcome_store = SqlAlchemyStudyOutcomeStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-ingestion",
+        title="Document ingestion",
+        input_payload={"title": "DrugMechDB document"},
+    )
+    document = document_store.create_document(
+        space_id=space_id,
+        created_by=str(uuid4()),
+        title="DrugMechDB document",
+        source_type="DrugMechDB",
+        filename=None,
+        media_type="text/plain",
+        sha256="delete-sha",
+        byte_size=128,
+        page_count=None,
+        text_content="DrugMechDB mechanism.",
+        raw_storage_key=None,
+        enriched_storage_key=None,
+        ingestion_run_id=run.id,
+        last_enrichment_run_id=None,
+        enrichment_status="skipped",
+        extraction_status="completed",
+        metadata={},
+    )
+    proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="DrugMechDB",
+                source_key="drugmechdb:proposal",
+                title="DrugMechDB proposal",
+                summary="DrugMechDB proposal.",
+                confidence=0.8,
+                ranking_score=0.8,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={},
+                metadata={},
+                document_id=document.id,
+            ),
+        ),
+    )
+    review_item_store.create_review_items(
+        space_id=space_id,
+        run_id=run.id,
+        review_items=(
+            HarnessReviewItemDraft(
+                review_type="source_review",
+                source_family="DrugMechDB",
+                source_kind="DrugMechDB",
+                source_key="drugmechdb:review",
+                title="DrugMechDB review",
+                summary="DrugMechDB review.",
+                priority="medium",
+                confidence=0.7,
+                ranking_score=0.7,
+                evidence_bundle=[],
+                payload={},
+                metadata={},
+                document_id=document.id,
+            ),
+        ),
+    )
+    outcome_store.create_outcomes(
+        space_id=space_id,
+        document_id=document.id,
+        run_id=run.id,
+        outcomes=(
+            StudyOutcomeDraft(
+                intervention="Drug",
+                comparator=None,
+                outcome_metric="median_os",
+                value=12.0,
+                unit="months",
+                confidence_interval_low=None,
+                confidence_interval_high=None,
+                population="reported trial population",
+                n=10,
+                source_pmid="123",
+                source_quote="Median OS was 12 months.",
+                metadata={},
+            ),
+        ),
+    )
+
+    assert proposal_store.delete_proposals_for_documents(
+        space_id=space_id,
+        document_ids=(document.id,),
+    ) == 1
+    assert review_item_store.delete_review_items_for_documents(
+        space_id=space_id,
+        document_ids=(document.id,),
+    ) == 1
+    assert outcome_store.delete_outcomes_for_documents(
+        space_id=space_id,
+        document_ids=(document.id,),
+    ) == 1
+    assert document_store.delete_documents(
+        space_id=space_id,
+        document_ids=(document.id,),
+    ) == [document]
+
+    assert session.execute(select(HarnessProposalModel)).scalars().all() == []
+    assert session.execute(select(HarnessReviewItemModel)).scalars().all() == []
+    assert session.execute(select(HarnessStudyOutcomeModel)).scalars().all() == []
+    assert session.execute(select(HarnessDocumentModel)).scalars().all() == []
 
 
 def test_sqlalchemy_harness_proposal_store_filters_by_document_id(

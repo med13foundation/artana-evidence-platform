@@ -303,6 +303,35 @@ class HarnessReviewItemStore:
             return None
         return review_item
 
+    def delete_review_items_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        """Delete review items linked to any supplied document ids."""
+        normalized_space_id = str(space_id)
+        target_ids = {str(document_id) for document_id in document_ids}
+        if not target_ids:
+            return 0
+        deleted_count = 0
+        with self._lock:
+            review_item_ids = list(
+                self._review_item_ids_by_space.get(normalized_space_id, []),
+            )
+            retained_ids: list[str] = []
+            for review_item_id in review_item_ids:
+                review_item = self._review_items.get(review_item_id)
+                if review_item is None:
+                    continue
+                if review_item.document_id in target_ids:
+                    del self._review_items[review_item_id]
+                    deleted_count += 1
+                    continue
+                retained_ids.append(review_item_id)
+            self._review_item_ids_by_space[normalized_space_id] = retained_ids
+        return deleted_count
+
     def decide_review_item(
         self,
         *,

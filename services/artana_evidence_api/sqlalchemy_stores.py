@@ -778,6 +778,24 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             return None
         return _proposal_record_from_model(model)
 
+    def delete_proposals_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        target_ids = tuple(str(document_id) for document_id in document_ids)
+        if not target_ids:
+            return 0
+        result = self.session.execute(
+            delete(HarnessProposalModel).where(
+                HarnessProposalModel.space_id == str(space_id),
+                HarnessProposalModel.document_id.in_(target_ids),
+            ),
+        )
+        self.session.commit()
+        return _result_rowcount(result)
+
     def decide_proposal(
         self,
         *,

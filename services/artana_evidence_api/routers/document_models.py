@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from artana_evidence_api.document_deletion.contracts import HarnessDocumentDeleteScope
 from artana_evidence_api.document_store import normalize_document_title
 from artana_evidence_api.routers.proposals import HarnessProposalResponse
 from artana_evidence_api.routers.review_queue import HarnessReviewQueueItemResponse
@@ -12,6 +13,9 @@ from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
+    from artana_evidence_api.document_deletion.contracts import (
+        HarnessDocumentDeleteResult,
+    )
     from artana_evidence_api.document_store import HarnessDocumentRecord
     from artana_evidence_api.run_registry import HarnessRunRecord
 
@@ -114,6 +118,38 @@ class HarnessDocumentIngestionResponse(BaseModel):
 
     run: HarnessRunResponse
     document: HarnessDocumentDetailResponse
+
+
+class HarnessDocumentDeleteResponse(BaseModel):
+    """Response payload for supported document deletion."""
+
+    model_config = ConfigDict(strict=True)
+
+    run: HarnessRunResponse
+    scope: HarnessDocumentDeleteScope
+    deleted_documents: list[HarnessDocumentResponse] = Field(default_factory=list)
+    deleted_document_count: int = Field(ge=0)
+    deleted_proposal_count: int = Field(ge=0)
+    deleted_review_item_count: int = Field(ge=0)
+    deleted_study_outcome_count: int = Field(ge=0)
+
+    @classmethod
+    def from_result(
+        cls,
+        result: HarnessDocumentDeleteResult,
+    ) -> HarnessDocumentDeleteResponse:
+        return cls(
+            run=HarnessRunResponse.from_record(result.run),
+            scope=result.scope,
+            deleted_documents=[
+                HarnessDocumentResponse.from_record(document)
+                for document in result.deleted_documents
+            ],
+            deleted_document_count=result.deleted_document_count,
+            deleted_proposal_count=result.deleted_proposal_count,
+            deleted_review_item_count=result.deleted_review_item_count,
+            deleted_study_outcome_count=result.deleted_study_outcome_count,
+        )
 
 
 class HarnessDocumentExtractionResponse(BaseModel):

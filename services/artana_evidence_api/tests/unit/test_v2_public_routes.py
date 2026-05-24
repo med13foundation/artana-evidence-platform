@@ -24,6 +24,7 @@ from artana_evidence_api.routers import (
     authentication,
     chat,
     continuous_learning_runs,
+    document_deletion,
     documents,
     evidence_selection_runs,
     full_ai_orchestrator_runs,
@@ -224,6 +225,7 @@ _CUSTOM_V1_ROUTE_EQUIVALENTS = {
 _USER_FACING_V1_ROUTERS = (
     authentication.router,
     spaces.router,
+    document_deletion.router,
     documents.router,
     pubmed.router,
     marrvel.router,

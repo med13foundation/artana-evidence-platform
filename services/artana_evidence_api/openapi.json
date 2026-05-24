@@ -4893,6 +4893,105 @@
         "title": "HarnessArtifactResponse",
         "type": "object"
       },
+      "HarnessDocumentDeleteResponse": {
+        "description": "Response payload for supported document deletion.",
+        "properties": {
+          "deleted_document_count": {
+            "minimum": 0.0,
+            "title": "Deleted Document Count",
+            "type": "integer"
+          },
+          "deleted_documents": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessDocumentResponse"
+            },
+            "title": "Deleted Documents",
+            "type": "array"
+          },
+          "deleted_proposal_count": {
+            "minimum": 0.0,
+            "title": "Deleted Proposal Count",
+            "type": "integer"
+          },
+          "deleted_review_item_count": {
+            "minimum": 0.0,
+            "title": "Deleted Review Item Count",
+            "type": "integer"
+          },
+          "deleted_study_outcome_count": {
+            "minimum": 0.0,
+            "title": "Deleted Study Outcome Count",
+            "type": "integer"
+          },
+          "run": {
+            "$ref": "#/components/schemas/HarnessRunResponse"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/HarnessDocumentDeleteScope"
+          }
+        },
+        "required": [
+          "run",
+          "scope",
+          "deleted_document_count",
+          "deleted_proposal_count",
+          "deleted_review_item_count",
+          "deleted_study_outcome_count"
+        ],
+        "title": "HarnessDocumentDeleteResponse",
+        "type": "object"
+      },
+      "HarnessDocumentDeleteScope": {
+        "description": "The resolved document deletion scope.",
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "ingestion_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingestion Run Id"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "title_prefix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Prefix"
+          }
+        },
+        "title": "HarnessDocumentDeleteScope",
+        "type": "object"
+      },
       "HarnessDocumentDetailResponse": {
         "description": "Detailed view for one tracked document.",
         "properties": {
@@ -18823,6 +18922,103 @@
       }
     },
     "/v1/spaces/{space_id}/documents": {
+      "delete": {
+        "operationId": "delete_documents_v1_spaces__space_id__documents_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title_prefix",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Prefix"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ingestion_run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingestion Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete tracked documents by scope",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "list_documents_v1_spaces__space_id__documents_get",
         "parameters": [
@@ -19039,6 +19235,65 @@
       }
     },
     "/v1/spaces/{space_id}/documents/{document_id}": {
+      "delete": {
+        "operationId": "delete_document_v1_spaces__space_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete one tracked document",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "get_document_v1_spaces__space_id__documents__document_id__get",
         "parameters": [
@@ -23658,6 +23913,103 @@
       }
     },
     "/v2/spaces/{space_id}/documents": {
+      "delete": {
+        "operationId": "v2_delete_documents_v2_spaces__space_id__documents_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title_prefix",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Prefix"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ingestion_run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingestion Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete documents by scope",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "v2_list_documents_v2_spaces__space_id__documents_get",
         "parameters": [
@@ -23874,6 +24226,65 @@
       }
     },
     "/v2/spaces/{space_id}/documents/{document_id}": {
+      "delete": {
+        "operationId": "v2_delete_document_v2_spaces__space_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete document",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "v2_get_document_v2_spaces__space_id__documents__document_id__get",
         "parameters": [

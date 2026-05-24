@@ -263,6 +263,33 @@ class HarnessProposalStore:
             return None
         return proposal
 
+    def delete_proposals_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        """Delete proposals linked to any supplied document ids."""
+        normalized_space_id = str(space_id)
+        target_ids = {str(document_id) for document_id in document_ids}
+        if not target_ids:
+            return 0
+        deleted_count = 0
+        with self._lock:
+            proposal_ids = list(self._proposal_ids_by_space.get(normalized_space_id, []))
+            retained_ids: list[str] = []
+            for proposal_id in proposal_ids:
+                proposal = self._proposals.get(proposal_id)
+                if proposal is None:
+                    continue
+                if proposal.document_id in target_ids:
+                    del self._proposals[proposal_id]
+                    deleted_count += 1
+                    continue
+                retained_ids.append(proposal_id)
+            self._proposal_ids_by_space[normalized_space_id] = retained_ids
+        return deleted_count
+
     def decide_proposal(
         self,
         *,

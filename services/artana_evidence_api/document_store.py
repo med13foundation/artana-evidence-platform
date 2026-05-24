@@ -200,6 +200,36 @@ class HarnessDocumentStore:
             return None
         return record
 
+    def delete_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> list[HarnessDocumentRecord]:
+        """Delete tracked documents and return the deleted records."""
+        normalized_space_id = str(space_id)
+        target_ids = {str(document_id) for document_id in document_ids}
+        if not target_ids:
+            return []
+        deleted: list[HarnessDocumentRecord] = []
+        with self._lock:
+            for document_id in tuple(target_ids):
+                record = self._documents.get(document_id)
+                if record is None or record.space_id != normalized_space_id:
+                    continue
+                deleted.append(record)
+                del self._documents[document_id]
+            if deleted:
+                self._document_ids_by_space[normalized_space_id] = [
+                    existing_document_id
+                    for existing_document_id in self._document_ids_by_space.get(
+                        normalized_space_id,
+                        [],
+                    )
+                    if existing_document_id not in target_ids
+                ]
+        return sorted(deleted, key=lambda record: record.updated_at, reverse=True)
+
     def update_document(  # noqa: PLR0913
         self,
         *,
