@@ -447,6 +447,8 @@ def test_source_search_openapi_keeps_typed_routes_and_capture_contract() -> None
     assert "GnomADSourceSearchResponse" in schemas
     assert "DrugBankSourceSearchRequest" in schemas
     assert "DrugBankSourceSearchResponse" in schemas
+    assert "DrugMechDBSourceSearchRequest" in schemas
+    assert "DrugMechDBSourceSearchResponse" in schemas
     assert "MGISourceSearchRequest" in schemas
     assert "MGISourceSearchResponse" in schemas
     assert "ZFINSourceSearchRequest" in schemas
@@ -501,6 +503,7 @@ def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
         "run_uniprot_direct_search",
         "run_alphafold_direct_search",
         "run_drugbank_direct_search",
+        "run_drugmechdb_direct_search",
         "run_mgi_direct_search",
         "run_zfin_direct_search",
         "run_orphanet_direct_search",
@@ -511,6 +514,7 @@ def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
         "create_uniprot_source_search_payload",
         "create_alphafold_source_search_payload",
         "create_drugbank_source_search_payload",
+        "create_drugmechdb_source_search_payload",
         "create_mgi_source_search_payload",
         "create_zfin_source_search_payload",
         "create_orphanet_source_search_payload",
@@ -581,6 +585,14 @@ def test_direct_source_typed_route_plugins_define_expected_public_routes() -> No
             ("/v2/spaces/{space_id}/sources/drugbank/searches", "POST", 201),
             (
                 "/v2/spaces/{space_id}/sources/drugbank/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "drugmechdb": (
+            ("/v2/spaces/{space_id}/sources/drugmechdb/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/drugmechdb/searches/{search_id}",
                 "GET",
                 None,
             ),

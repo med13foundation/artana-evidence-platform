@@ -2131,6 +2131,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -2163,6 +2164,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -4992,6 +4994,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -5022,6 +5025,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -5498,6 +5502,7 @@ async def test_execute_research_init_syncs_pubmed_observations_for_existing_pubm
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -5525,6 +5530,7 @@ async def test_execute_research_init_syncs_pubmed_observations_for_existing_pubm
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -5660,6 +5666,7 @@ async def test_execute_research_init_keeps_llm_candidate_fallback_diagnostics_ou
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -5687,6 +5694,7 @@ async def test_execute_research_init_keeps_llm_candidate_fallback_diagnostics_ou
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -6890,6 +6898,7 @@ def test_build_source_results_includes_registry_metadata() -> None:
     assert result["alphafold"]["direct_search_enabled"] is True
     assert result["gnomad"]["direct_search_enabled"] is True
     assert result["drugbank"]["direct_search_enabled"] is True
+    assert result["drugmechdb"]["direct_search_enabled"] is True
     assert result["mgi"]["direct_search_enabled"] is True
     assert result["zfin"]["direct_search_enabled"] is True
     assert result["orphanet"]["direct_search_enabled"] is True
@@ -6937,6 +6946,14 @@ def test_build_source_results_dhdr_skipped_by_default() -> None:
     assert result["dhdr"]["status"] == "skipped"
     assert result["dhdr"]["selected"] is False
     assert result["dhdr"]["records_processed"] == 0
+
+
+def test_build_source_results_drugmechdb_skipped_by_default() -> None:
+    """drugmechdb defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["drugmechdb"]["status"] == "skipped"
+    assert result["drugmechdb"]["selected"] is False
+    assert result["drugmechdb"]["records_processed"] == 0
 
 
 def test_source_result_counters_fall_back_for_registered_search_sources() -> None:
@@ -7028,6 +7045,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
             "pdf": True,
             "text": True,
             "drugbank": True,
+            "drugmechdb": True,
             "alphafold": True,
             "gnomad": True,
             "uniprot": True,
@@ -7058,6 +7076,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     # These sources should now be "deferred" since we never ran them above.
     assert source_results["clinvar"]["status"] == "deferred"
     assert source_results["drugbank"]["status"] == "deferred"
+    assert source_results["drugmechdb"]["status"] == "deferred"
     assert source_results["alphafold"]["status"] == "deferred"
     assert source_results["gnomad"]["status"] == "deferred"
     assert source_results["uniprot"]["status"] == "deferred"
@@ -7083,6 +7102,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
         sources={
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -7097,6 +7117,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
     for key in (
         "clinvar",
         "drugbank",
+        "drugmechdb",
         "alphafold",
         "gnomad",
         "uniprot",
@@ -7119,6 +7140,7 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
     for key in (
         "clinvar",
         "drugbank",
+        "drugmechdb",
         "alphafold",
         "gnomad",
         "uniprot",
@@ -7354,6 +7376,7 @@ async def test_execute_research_init_scopes_clinical_trials_to_plan_seed_terms(
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": True,
@@ -7386,6 +7409,7 @@ async def test_execute_research_init_scopes_clinical_trials_to_plan_seed_terms(
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": True,
@@ -8163,6 +8187,7 @@ def test_prepare_chase_round_stringifies_graph_entity_ids() -> None:
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -8241,6 +8266,7 @@ def test_prepare_chase_round_filters_low_signal_labels() -> None:
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -8597,6 +8623,7 @@ def test_prepare_chase_round_keeps_taxonomic_candidates_for_organism_objective()
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -8734,6 +8761,7 @@ async def test_maybe_select_guarded_chase_round_selection_uses_observer() -> Non
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,

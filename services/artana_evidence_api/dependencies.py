@@ -30,6 +30,7 @@ from artana_evidence_api.direct_source_search import (
 )
 from artana_evidence_api.direct_sources.dhdr import build_dhdr_gateway
 from artana_evidence_api.direct_sources.dime import build_dime_gateway
+from artana_evidence_api.direct_sources.drugmechdb import build_drugmechdb_gateway
 from artana_evidence_api.document_binary_store import (
     HarnessDocumentBinaryStore,
     LocalFilesystemHarnessDocumentBinaryStore,
@@ -113,6 +114,9 @@ if TYPE_CHECKING:
     from artana_evidence_api.chat_sessions import HarnessChatSessionStore
     from artana_evidence_api.direct_sources.dhdr import DHDRGatewayProtocol
     from artana_evidence_api.direct_sources.dime import DiMeGatewayProtocol
+    from artana_evidence_api.direct_sources.drugmechdb import (
+        DrugMechDBGatewayProtocol,
+    )
     from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
     from artana_evidence_api.document_store import HarnessDocumentStore
     from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
@@ -538,6 +542,12 @@ def get_dhdr_source_gateway() -> DHDRGatewayProtocol | None:
     return build_dhdr_gateway()
 
 
+def get_drugmechdb_source_gateway() -> DrugMechDBGatewayProtocol | None:
+    """Return the pinned DrugMechDB gateway used by direct source search."""
+
+    return build_drugmechdb_gateway()
+
+
 def get_graph_search_runner() -> HarnessGraphSearchRunner:
     """Return the harness-owned graph-search runner."""
     return HarnessGraphSearchRunner()
@@ -656,6 +666,7 @@ __all__ = [
     "get_document_store",
     "get_dhdr_source_gateway",
     "get_dime_source_gateway",
+    "get_drugmechdb_source_gateway",
     "get_alphafold_source_gateway",
     "get_drugbank_source_gateway",
     "get_gnomad_source_gateway",

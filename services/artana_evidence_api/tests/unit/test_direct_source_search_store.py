@@ -15,6 +15,7 @@ from artana_evidence_api.direct_source_search import (
     DiMeSourceSearchResponse,
     DirectSourceSearchRecord,
     DrugBankSourceSearchResponse,
+    DrugMechDBSourceSearchResponse,
     GnomADSourceSearchResponse,
     InMemoryDirectSourceSearchStore,
     MGISourceSearchResponse,
@@ -95,6 +96,7 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
     alphafold_id = uuid4()
     gnomad_id = uuid4()
     drugbank_id = uuid4()
+    drugmechdb_id = uuid4()
     mgi_id = uuid4()
     zfin_id = uuid4()
     orphanet_id = uuid4()
@@ -233,6 +235,32 @@ def _records() -> tuple[DirectSourceSearchRecord, ...]:
                 source_key="drugbank",
                 search_id=drugbank_id,
                 query="DB01234",
+            ),
+        ),
+        DrugMechDBSourceSearchResponse(
+            id=drugmechdb_id,
+            space_id=space_id,
+            query="drugbank_id:DB00619",
+            drug_name=None,
+            drugbank_id="DB00619",
+            disease=None,
+            disease_mesh=None,
+            node_id=None,
+            path_id=None,
+            max_results=1,
+            fetched_records=1,
+            record_count=1,
+            corpus_size=4846,
+            commit_sha="41fea1332cdc56abab1c12761edd2e63a01ef9ca",
+            source_url="https://raw.githubusercontent.com/SuLab/DrugMechDB/main/indication_paths.yaml",
+            repository_url="https://github.com/SuLab/DrugMechDB",
+            records=[{"path_id": "DB00619_MESH_D015464_1"}],
+            created_at=created_at,
+            completed_at=completed_at,
+            source_capture=_capture(
+                source_key="drugmechdb",
+                search_id=drugmechdb_id,
+                query="drugbank_id:DB00619",
             ),
         ),
         MGISourceSearchResponse(

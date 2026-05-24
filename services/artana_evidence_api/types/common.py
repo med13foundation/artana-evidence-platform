@@ -110,6 +110,7 @@ class ResearchSpaceSourcePreferences(TypedDict, total=False):
     pdf: bool
     text: bool
     drugbank: bool
+    drugmechdb: bool
     alphafold: bool
     gnomad: bool
     uniprot: bool

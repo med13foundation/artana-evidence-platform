@@ -21,6 +21,7 @@ from artana_evidence_api.dependencies import (
     get_direct_source_search_store,
     get_document_store,
     get_drugbank_source_gateway,
+    get_drugmechdb_source_gateway,
     get_gnomad_source_gateway,
     get_mgi_source_gateway,
     get_orphanet_source_gateway,
@@ -38,6 +39,7 @@ from artana_evidence_api.direct_source_search import (
 )
 from artana_evidence_api.direct_sources.dhdr import DHDRGatewayFetchResult
 from artana_evidence_api.direct_sources.dime import DiMeGatewayFetchResult
+from artana_evidence_api.direct_sources.drugmechdb import DrugMechDBGatewayFetchResult
 from artana_evidence_api.direct_sources.gnomad_gateway import GnomADGatewayFetchResult
 from artana_evidence_api.direct_sources.orphanet_gateway import (
     OrphanetGatewayFetchResult,
@@ -347,6 +349,52 @@ class _StubDrugBankGateway:
         )
 
 
+class _StubDrugMechDBGateway:
+    async def fetch_records_async(
+        self,
+        *,
+        query: str | None = None,
+        drug_name: str | None = None,
+        drugbank_id: str | None = None,
+        disease: str | None = None,
+        disease_mesh: str | None = None,
+        node_id: str | None = None,
+        path_id: str | None = None,
+        max_results: int = 20,
+    ) -> DrugMechDBGatewayFetchResult:
+        del query, node_id, path_id, max_results
+        return DrugMechDBGatewayFetchResult(
+            records=[
+                {
+                    "source": "drugmechdb",
+                    "path_id": "DB00619_MESH_D015464_1",
+                    "drug_name": drug_name or "imatinib",
+                    "drugbank_id": drugbank_id or "DB00619",
+                    "drugbank_curie": "DB:DB00619",
+                    "disease_name": disease or "CML (ph+)",
+                    "disease_mesh": disease_mesh or "MESH:D015464",
+                    "node_ids": [
+                        "MESH:D000068877",
+                        "UniProt:P00519",
+                        "MESH:D015464",
+                    ],
+                    "edge_count": 2,
+                    "node_count": 3,
+                    "references": ["https://go.drugbank.com/drugs/DB00619"],
+                    "license": "CC0-1.0",
+                    "narrative": (
+                        "DrugMechDB path DB00619_MESH_D015464_1: imatinib "
+                        "(Drug; MESH:D000068877) decreases activity of BCR/ABL "
+                        "(Protein; UniProt:P00519)."
+                    ),
+                },
+            ],
+            fetched_records=1,
+            corpus_size=4846,
+            commit_sha="41fea1332cdc56abab1c12761edd2e63a01ef9ca",
+        )
+
+
 class _StubAllianceGeneGateway:
     def __init__(self, *, source_key: str) -> None:
         self.source_key = source_key
@@ -565,6 +613,7 @@ def _build_client(
     alphafold_gateway: object | None = None,
     gnomad_gateway: object | None = None,
     drugbank_gateway: object | None = None,
+    drugmechdb_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     orphanet_gateway: object | None = None,
@@ -594,6 +643,7 @@ def _build_client(
         alphafold_gateway=alphafold_gateway,
         gnomad_gateway=gnomad_gateway,
         drugbank_gateway=drugbank_gateway,
+        drugmechdb_gateway=drugmechdb_gateway,
         mgi_gateway=mgi_gateway,
         zfin_gateway=zfin_gateway,
         orphanet_gateway=orphanet_gateway,
@@ -624,6 +674,7 @@ def _build_client_for_space(
     alphafold_gateway: object | None = None,
     gnomad_gateway: object | None = None,
     drugbank_gateway: object | None = None,
+    drugmechdb_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     orphanet_gateway: object | None = None,
@@ -653,6 +704,7 @@ def _build_client_for_space(
     app.dependency_overrides[get_alphafold_source_gateway] = lambda: alphafold_gateway
     app.dependency_overrides[get_gnomad_source_gateway] = lambda: gnomad_gateway
     app.dependency_overrides[get_drugbank_source_gateway] = lambda: drugbank_gateway
+    app.dependency_overrides[get_drugmechdb_source_gateway] = lambda: drugmechdb_gateway
     app.dependency_overrides[get_mgi_source_gateway] = lambda: mgi_gateway
     app.dependency_overrides[get_zfin_source_gateway] = lambda: zfin_gateway
     app.dependency_overrides[get_orphanet_source_gateway] = lambda: orphanet_gateway
@@ -942,6 +994,14 @@ def test_source_search_handoff_creates_non_variant_source_document() -> None:
             "drug",
             "drugbank_id",
             "DB01234",
+        ),
+        (
+            "drugmechdb",
+            {"drugmechdb_gateway": _StubDrugMechDBGateway()},
+            {"drugbank_id": "DB00619", "disease_mesh": "MESH:D015464"},
+            "drug_mechanism_path",
+            "path_id",
+            "DB00619_MESH_D015464_1",
         ),
         (
             "mgi",
@@ -1344,6 +1404,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         alphafold_gateway=_StubAlphaFoldGateway(),
         gnomad_gateway=_StubGnomADGateway(),
         drugbank_gateway=_StubDrugBankGateway(),
+        drugmechdb_gateway=_StubDrugMechDBGateway(),
         mgi_gateway=_StubAllianceGeneGateway(source_key="mgi"),
         zfin_gateway=_StubAllianceGeneGateway(source_key="zfin"),
         orphanet_gateway=_StubOrphanetGateway(),
@@ -1356,6 +1417,7 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         ("AlphaFold", {"uniprot_id": "P38398"}, "alphafold"),
         ("GnomAD", {"gene_symbol": "MED13"}, "gnomad"),
         ("DrugBank", {"drug_name": "Olaparib"}, "drugbank"),
+        ("DrugMechDB", {"drugbank_id": "DB00619"}, "drugmechdb"),
         ("MGI", {"query": "BRCA1"}, "mgi"),
         ("ZFIN", {"query": "BRCA1"}, "zfin"),
         ("ORPHAcode", {"orphacode": 558}, "orphanet"),
@@ -1638,6 +1700,41 @@ def test_create_drugbank_source_search_returns_records_and_capture_metadata() ->
     assert payload["source_capture"]["source_key"] == "drugbank"
     assert payload["source_capture"]["result_count"] == 1
     assert payload["source_capture"]["external_id"] == "DB01234"
+
+
+def test_create_drugmechdb_source_search_returns_paths_and_capture_metadata() -> None:
+    built = _build_client(drugmechdb_gateway=_StubDrugMechDBGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/drugmechdb/searches",
+        headers=_auth_headers(),
+        json={"drugbank_id": "DB00619", "disease_mesh": "MESH:D015464"},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "drugmechdb"
+    assert payload["query"] == "drugbank_id:DB00619 disease_mesh:MESH:D015464"
+    assert payload["corpus_size"] == 4846
+    assert payload["records"][0]["path_id"] == "DB00619_MESH_D015464_1"
+    assert payload["records"][0]["license"] == "CC0-1.0"
+    assert payload["source_capture"]["source_key"] == "drugmechdb"
+    assert payload["source_capture"]["result_count"] == 1
+    assert payload["source_capture"]["external_id"] == "DB00619_MESH_D015464_1"
+    assert payload["source_capture"]["provenance"]["license"] == "CC0-1.0"
+
+
+def test_create_drugmechdb_source_search_rejects_unbounded_payload() -> None:
+    built = _build_client(drugmechdb_gateway=_StubDrugMechDBGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/drugmechdb/searches",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert response.status_code == 422
+    assert "Provide at least one" in response.text
 
 
 def test_create_alliance_gene_source_searches_return_records_and_capture_metadata() -> (

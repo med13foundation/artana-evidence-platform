@@ -108,7 +108,7 @@ class ResearchInitRequest(BaseModel):
     )
     sources: dict[str, bool] | None = Field(
         default=None,
-        description="Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr.",
+        description="Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, drugmechdb, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr.",
     )
     orchestration_mode: ResearchInitOrchestrationMode | None = Field(
         default=None,

@@ -33,6 +33,7 @@ def test_source_registry_lists_all_research_plan_sources() -> None:
         "pdf",
         "text",
         "drugbank",
+        "drugmechdb",
         "alphafold",
         "gnomad",
         "uniprot",
@@ -53,6 +54,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
         "marrvel",
         "clinvar",
         "drugbank",
+        "drugmechdb",
         "alphafold",
         "gnomad",
         "uniprot",
@@ -73,6 +75,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
         get_source_definition(source_key)
         for source_key in (
             "drugbank",
+            "drugmechdb",
             "alphafold",
             "gnomad",
             "uniprot",
@@ -147,6 +150,7 @@ def test_source_registry_defaults_match_research_init_behavior() -> None:
         "pdf": True,
         "text": True,
         "drugbank": False,
+        "drugmechdb": False,
         "alphafold": False,
         "gnomad": False,
         "uniprot": False,
@@ -181,11 +185,14 @@ def test_source_registry_normalizes_public_aliases() -> None:
     assert normalize_source_key("digital-medicine-society") == "dime"
     assert normalize_source_key("DBDP DHDR") == "dhdr"
     assert normalize_source_key("digital-health-data-repository") == "dhdr"
+    assert normalize_source_key("DrugMechDB") == "drugmechdb"
+    assert normalize_source_key("drugmech-db") == "drugmechdb"
     assert get_source_definition("clinical-trials") == get_source_definition(
         "clinical_trials",
     )
     assert get_source_definition("DiMe Society") == get_source_definition("dime")
     assert get_source_definition("DBDP DHDR") == get_source_definition("dhdr")
+    assert get_source_definition("drugmech-db") == get_source_definition("drugmechdb")
 
 
 def test_unknown_source_preference_keys_reports_bad_keys() -> None:

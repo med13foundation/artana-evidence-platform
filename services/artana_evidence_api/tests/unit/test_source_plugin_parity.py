@@ -119,6 +119,13 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             evidence_role="drug target context",
             reason="Fetch drug targets.",
         ),
+        "drugmechdb": PlannedSourceIntent(
+            source_key="drugmechdb",
+            drug_name="imatinib",
+            disease="CML",
+            evidence_role="curated drug mechanism path",
+            reason="Search curated mechanism paths.",
+        ),
         "alphafold": PlannedSourceIntent(
             source_key="alphafold",
             uniprot_id="P38398",
@@ -221,6 +228,18 @@ def _record(source_key: str) -> JSONObject:
             "targets": ["ABL1", "KIT"],
             "mechanism_of_action": "Inhibits BCR-ABL.",
             "categories": ["Antineoplastic Agents"],
+        },
+        "drugmechdb": {
+            "path_id": "DB00619_MESH_D015464_1",
+            "drug_name": "imatinib",
+            "drugbank_id": "DB00619",
+            "disease_name": "CML (ph+)",
+            "disease_mesh": "MESH:D015464",
+            "node_ids": ["MESH:D000068877", "UniProt:P00519", "MESH:D015464"],
+            "edge_count": 2,
+            "node_count": 3,
+            "references": ["https://go.drugbank.com/drugs/DB00619"],
+            "license": "CC0-1.0",
         },
         "alphafold": {
             "uniprot_id": "P38398",

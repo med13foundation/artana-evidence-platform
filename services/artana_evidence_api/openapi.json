@@ -2215,7 +2215,7 @@
                 "type": "null"
               }
             ],
-            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr).",
+            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, drugmechdb, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr).",
             "title": "Sources"
           }
         },
@@ -2954,6 +2954,276 @@
           "source_capture"
         ],
         "title": "DrugBankSourceSearchResponse",
+        "type": "object"
+      },
+      "DrugMechDBSourceSearchRequest": {
+        "description": "Request payload for bounded DrugMechDB mechanism-path search.",
+        "properties": {
+          "disease": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "disease_mesh": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease Mesh"
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name"
+          },
+          "drugbank_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugbank Id"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "node_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node Id"
+          },
+          "path_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path Id"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          }
+        },
+        "title": "DrugMechDBSourceSearchRequest",
+        "type": "object"
+      },
+      "DrugMechDBSourceSearchResponse": {
+        "description": "Response payload for one captured DrugMechDB direct search.",
+        "properties": {
+          "commit_sha": {
+            "title": "Commit Sha",
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "corpus_size": {
+            "title": "Corpus Size",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disease": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "disease_mesh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease Mesh"
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name"
+          },
+          "drugbank_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugbank Id"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "node_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node Id"
+          },
+          "path_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path Id"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "repository_url": {
+            "title": "Repository Url",
+            "type": "string"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "drugmechdb",
+            "default": "drugmechdb",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "corpus_size",
+          "commit_sha",
+          "source_url",
+          "repository_url",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "DrugMechDBSourceSearchResponse",
         "type": "object"
       },
       "EvidenceChainItem": {
@@ -11601,7 +11871,7 @@
                 "type": "null"
               }
             ],
-            "description": "Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr.",
+            "description": "Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, drugmechdb, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr.",
             "title": "Sources"
           },
           "title": {
@@ -12419,6 +12689,10 @@
           },
           "drugbank": {
             "title": "Drugbank",
+            "type": "boolean"
+          },
+          "drugmechdb": {
+            "title": "Drugmechdb",
             "type": "boolean"
           },
           "gnomad": {
@@ -27817,6 +28091,130 @@
           }
         ],
         "summary": "Get DrugBank evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/drugmechdb/searches": {
+      "post": {
+        "description": "Typed v2 route for DrugMechDB source search.",
+        "operationId": "create_drugmechdb_source_search_v2_spaces__space_id__sources_drugmechdb_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DrugMechDBSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrugMechDBSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search DrugMechDB evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/drugmechdb/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for DrugMechDB source-search lookup.",
+        "operationId": "get_drugmechdb_source_search_v2_spaces__space_id__sources_drugmechdb_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrugMechDBSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get DrugMechDB evidence source search",
         "tags": [
           "sources"
         ]

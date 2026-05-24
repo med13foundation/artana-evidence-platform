@@ -24,6 +24,11 @@ from artana_evidence_api.direct_sources.dime import (
     DiMeSourceSearchResponse,
     run_dime_direct_search,
 )
+from artana_evidence_api.direct_sources.drugmechdb import (
+    DrugMechDBSourceSearchRequest,
+    DrugMechDBSourceSearchResponse,
+    run_drugmechdb_direct_search,
+)
 from artana_evidence_api.direct_sources.gnomad import (
     GnomADDataset,
     GnomADQueryKind,
@@ -473,6 +478,7 @@ DirectSourceSearchRecord = (
     | OrphanetSourceSearchResponse
     | DiMeSourceSearchResponse
     | DHDRSourceSearchResponse
+    | DrugMechDBSourceSearchResponse
     | MarrvelSourceSearchResponse
 )
 _DirectSourceSearchRecordT = TypeVar(
@@ -1048,6 +1054,7 @@ def _response_model_for_source_key(
         "alphafold": AlphaFoldSourceSearchResponse,
         "gnomad": GnomADSourceSearchResponse,
         "drugbank": DrugBankSourceSearchResponse,
+        "drugmechdb": DrugMechDBSourceSearchResponse,
         "mgi": MGISourceSearchResponse,
         "zfin": ZFINSourceSearchResponse,
         "orphanet": OrphanetSourceSearchResponse,
@@ -1074,6 +1081,8 @@ __all__ = [
     "DiMeSourceSearchResponse",
     "DrugBankSourceSearchRequest",
     "DrugBankSourceSearchResponse",
+    "DrugMechDBSourceSearchRequest",
+    "DrugMechDBSourceSearchResponse",
     "GnomADDataset",
     "GnomADQueryKind",
     "GnomADReferenceGenome",
@@ -1098,6 +1107,7 @@ __all__ = [
     "run_dhdr_direct_search",
     "run_dime_direct_search",
     "run_drugbank_direct_search",
+    "run_drugmechdb_direct_search",
     "run_gnomad_direct_search",
     "run_mgi_direct_search",
     "run_orphanet_direct_search",
