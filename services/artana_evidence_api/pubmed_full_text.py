@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import Literal
 from urllib.parse import quote
 
 import requests
@@ -92,7 +92,7 @@ def fetch_pmc_open_access_full_text(
 def _http_get_text(url: str, *, timeout_seconds: int) -> str:
     response = requests.get(url, timeout=timeout_seconds)
     response.raise_for_status()
-    payload = cast("bytes", response.content)
+    payload: bytes = response.content
     return payload.decode("utf-8", errors="replace")
 
 
