@@ -699,16 +699,21 @@ def _publicize_json_object(value: object) -> JSONObject | None:
     return publicized if isinstance(publicized, dict) else None
 
 
+def _json_response_body_bytes(result: JSONResponse) -> bytes:
+    body = result.body
+    return body.tobytes() if isinstance(body, memoryview) else body
+
+
 def _publicize_response_payload(result: object) -> object:
     if isinstance(result, BaseModel):
         return _publicize_json(result.model_dump(mode="json"))
     if isinstance(result, JSONResponse):
-        return _publicize_json(json.loads(result.body))
+        return _publicize_json(json.loads(_json_response_body_bytes(result)))
     return _publicize_json(result)
 
 
 def _publicized_json_response(result: JSONResponse) -> JSONResponse:
-    content = _publicize_json(json.loads(result.body))
+    content = _publicize_json(json.loads(_json_response_body_bytes(result)))
     headers = dict(result.headers)
     return JSONResponse(
         status_code=result.status_code,

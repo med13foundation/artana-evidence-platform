@@ -65,6 +65,7 @@ from artana_evidence_api.study_outcomes import (
 )
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from starlette.responses import JSONResponse
 
 RouteKey = tuple[str, str]
 
@@ -895,6 +896,18 @@ def test_publicize_json_keeps_generic_user_payload_keys_intact() -> None:
     assert "plan" not in input_payload
     assert "outputs" not in input_payload
     assert "working_state" not in input_payload
+
+
+def test_publicized_json_response_accepts_memoryview_body() -> None:
+    """Starlette may type JSONResponse.body as bytes or memoryview."""
+    response = JSONResponse({"status_url": "/v1/spaces/test-space/tasks/test-task"})
+    response.body = memoryview(b'{"status_url":"/v1/spaces/test-space/tasks/test-task"}')
+
+    publicized = v2_public._publicized_json_response(response)
+
+    assert json.loads(publicized.body)["status_url"] == (
+        "/v2/spaces/test-space/tasks/test-task"
+    )
 
 
 def test_publicize_json_still_renames_known_system_scalar_fields() -> None:
