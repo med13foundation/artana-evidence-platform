@@ -140,3 +140,48 @@ def test_in_memory_harness_proposal_store_normalizes_oversized_titles() -> None:
     assert len(created) == 1
     assert len(created[0].title) == 256
     assert created[0].title.endswith("...")
+
+
+def test_in_memory_harness_proposal_store_filters_by_evidence_grade() -> None:
+    proposal_store = HarnessProposalStore()
+    space_id = str(uuid4())
+    run_id = str(uuid4())
+
+    created = proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run_id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc-high:0",
+                title="High-grade claim",
+                summary="RCT-backed claim.",
+                confidence=0.86,
+                ranking_score=0.86,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={"source_type": "pubmed"},
+                evidence_grade="high",
+            ),
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc-limited:0",
+                title="Limited-grade claim",
+                summary="Case-report-backed claim.",
+                confidence=0.62,
+                ranking_score=0.62,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={"source_type": "pubmed"},
+                evidence_grade="Limited",
+            ),
+        ),
+    )
+
+    assert created[0].evidence_grade == "High"
+    filtered = proposal_store.list_proposals(space_id=space_id, evidence_grade="High")
+    assert [proposal.id for proposal in filtered] == [created[0].id]

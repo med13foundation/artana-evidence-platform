@@ -626,6 +626,78 @@ def test_extract_variant_aware_document_falls_back_to_deterministic_signals(
     assert result.extraction_diagnostics["fallback_from_signals"] is True
 
 
+def test_extract_variant_aware_document_falls_back_for_pubmed_variant_prose(
+    monkeypatch,
+) -> None:
+    document = _document(
+        text=(
+            "A de novo missense variant c.977C>A, p.Thr326Lys in MED13 was "
+            "reported in a patient with developmental delay."
+        ),
+        source_type="pubmed",
+    )
+    contract = ExtractionContract(
+        decision="escalate",
+        confidence_score=0.0,
+        rationale="LLM deferred to deterministic signal extraction.",
+        evidence=[],
+        source_type="pubmed",
+        document_id=document.id,
+        entities=[],
+        observations=[],
+        relations=[],
+        rejected_facts=[],
+        pipeline_payloads=[],
+        shadow_mode=True,
+        agent_run_id="variant-aware-pubmed-prose-fallback-test",
+    )
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+
+    assert document_supports_variant_aware_extraction(document=document) is True
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    entity_drafts = [
+        draft
+        for draft in result.proposal_drafts
+        if draft.proposal_type == "entity_candidate"
+    ]
+    observation_variable_ids = {
+        draft.payload["variable_id"]
+        for draft in result.proposal_drafts
+        if draft.proposal_type == "observation_candidate"
+    }
+
+    assert len(entity_drafts) == 1
+    assert entity_drafts[0].payload["identifiers"] == {
+        "gene_symbol": "MED13",
+        "hgvs_notation": "c.977C>A",
+    }
+    assert observation_variable_ids >= {"VAR_HGVS_CDNA", "VAR_HGVS_PROTEIN"}
+    assert result.extraction_diagnostics["fallback_from_signals"] is True
+
+
 def test_extract_variant_aware_document_defers_incomplete_variant_anchors(
     monkeypatch,
 ) -> None:

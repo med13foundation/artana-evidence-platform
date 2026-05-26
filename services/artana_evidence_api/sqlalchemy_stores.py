@@ -50,6 +50,7 @@ from artana_evidence_api.space_sync_types import (
 )
 from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import json_object_or_empty
+from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 from sqlalchemy import delete, func, select, update
 
 from .chat_sessions import (
@@ -306,6 +307,7 @@ def _proposal_record_from_model(model: HarnessProposalModel) -> HarnessProposalR
         evidence_bundle=_json_object_list(model.evidence_bundle_payload),
         payload=_json_object(model.payload),
         metadata=_json_object(model.metadata_payload),
+        evidence_grade=model.evidence_grade,
         decision_reason=model.decision_reason,
         decided_at=model.decided_at,
         created_at=model.created_at,
@@ -335,6 +337,7 @@ def _review_item_record_from_model(
         evidence_bundle=_json_object_list(model.evidence_bundle_payload),
         payload=_json_object(model.payload),
         metadata=_json_object(model.metadata_payload),
+        evidence_grade=model.evidence_grade,
         decision_reason=model.decision_reason,
         decided_at=model.decided_at,
         linked_proposal_id=model.linked_proposal_id,
@@ -700,6 +703,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 evidence_bundle_payload=normalized_proposal.evidence_bundle,
                 payload=normalized_proposal.payload,
                 metadata_payload=normalized_proposal.metadata,
+                evidence_grade=normalized_proposal.evidence_grade,
                 claim_fingerprint=normalized_proposal.claim_fingerprint,
                 decision_reason=None,
                 decided_at=None,
@@ -722,6 +726,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         proposal_type: str | None = None,
         run_id: UUID | str | None = None,
         document_id: UUID | str | None = None,
+        evidence_grade: str | None = None,
     ) -> list[HarnessProposalRecord]:
         stmt = select(HarnessProposalModel).where(
             HarnessProposalModel.space_id == str(space_id),
@@ -736,6 +741,11 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             stmt = stmt.where(HarnessProposalModel.run_id == str(run_id))
         if document_id is not None:
             stmt = stmt.where(HarnessProposalModel.document_id == str(document_id))
+        normalized_evidence_grade = normalize_evidence_grade(evidence_grade)
+        if normalized_evidence_grade is not None:
+            stmt = stmt.where(
+                HarnessProposalModel.evidence_grade == normalized_evidence_grade,
+            )
         stmt = stmt.order_by(
             HarnessProposalModel.ranking_score.desc(),
             HarnessProposalModel.updated_at.desc(),
@@ -767,6 +777,24 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
         if model is None or model.space_id != str(space_id):
             return None
         return _proposal_record_from_model(model)
+
+    def delete_proposals_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        target_ids = tuple(str(document_id) for document_id in document_ids)
+        if not target_ids:
+            return 0
+        result = self.session.execute(
+            delete(HarnessProposalModel).where(
+                HarnessProposalModel.space_id == str(space_id),
+                HarnessProposalModel.document_id.in_(target_ids),
+            ),
+        )
+        self.session.commit()
+        return _result_rowcount(result)
 
     def decide_proposal(
         self,

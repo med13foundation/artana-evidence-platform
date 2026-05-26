@@ -16,9 +16,12 @@ from artana_evidence_api.dependencies import (
     get_alphafold_source_gateway,
     get_clinicaltrials_source_gateway,
     get_clinvar_source_gateway,
+    get_dhdr_source_gateway,
+    get_dime_source_gateway,
     get_direct_source_search_store,
     get_document_store,
     get_drugbank_source_gateway,
+    get_drugmechdb_source_gateway,
     get_gnomad_source_gateway,
     get_mgi_source_gateway,
     get_orphanet_source_gateway,
@@ -34,6 +37,9 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
     SqlAlchemyDirectSourceSearchStore,
 )
+from artana_evidence_api.direct_sources.dhdr import DHDRGatewayFetchResult
+from artana_evidence_api.direct_sources.dime import DiMeGatewayFetchResult
+from artana_evidence_api.direct_sources.drugmechdb import DrugMechDBGatewayFetchResult
 from artana_evidence_api.direct_sources.gnomad_gateway import GnomADGatewayFetchResult
 from artana_evidence_api.direct_sources.orphanet_gateway import (
     OrphanetGatewayFetchResult,
@@ -343,6 +349,52 @@ class _StubDrugBankGateway:
         )
 
 
+class _StubDrugMechDBGateway:
+    async def fetch_records_async(
+        self,
+        *,
+        query: str | None = None,
+        drug_name: str | None = None,
+        drugbank_id: str | None = None,
+        disease: str | None = None,
+        disease_mesh: str | None = None,
+        node_id: str | None = None,
+        path_id: str | None = None,
+        max_results: int = 20,
+    ) -> DrugMechDBGatewayFetchResult:
+        del query, node_id, path_id, max_results
+        return DrugMechDBGatewayFetchResult(
+            records=[
+                {
+                    "source": "drugmechdb",
+                    "path_id": "DB00619_MESH_D015464_1",
+                    "drug_name": drug_name or "imatinib",
+                    "drugbank_id": drugbank_id or "DB00619",
+                    "drugbank_curie": "DB:DB00619",
+                    "disease_name": disease or "CML (ph+)",
+                    "disease_mesh": disease_mesh or "MESH:D015464",
+                    "node_ids": [
+                        "MESH:D000068877",
+                        "UniProt:P00519",
+                        "MESH:D015464",
+                    ],
+                    "edge_count": 2,
+                    "node_count": 3,
+                    "references": ["https://go.drugbank.com/drugs/DB00619"],
+                    "license": "CC0-1.0",
+                    "narrative": (
+                        "DrugMechDB path DB00619_MESH_D015464_1: imatinib "
+                        "(Drug; MESH:D000068877) decreases activity of BCR/ABL "
+                        "(Protein; UniProt:P00519)."
+                    ),
+                },
+            ],
+            fetched_records=1,
+            corpus_size=4846,
+            commit_sha="41fea1332cdc56abab1c12761edd2e63a01ef9ca",
+        )
+
+
 class _StubAllianceGeneGateway:
     def __init__(self, *, source_key: str) -> None:
         self.source_key = source_key
@@ -395,6 +447,82 @@ class _StubOrphanetGateway:
                 },
             ],
             fetched_records=1,
+        )
+
+
+class _StubDiMeGateway:
+    def __init__(self) -> None:
+        self.calls: list[
+            tuple[str | None, str | None, str | None, str | None, int]
+        ] = []
+
+    async def fetch_records_async(
+        self,
+        *,
+        query: str | None = None,
+        disease: str | None = None,
+        therapeutic_area: str | None = None,
+        sensor: str | None = None,
+        max_results: int = 20,
+    ) -> DiMeGatewayFetchResult:
+        self.calls.append((query, disease, therapeutic_area, sensor, max_results))
+        return DiMeGatewayFetchResult(
+            records=[
+                {
+                    "endpoint_identifier": "3",
+                    "trial_registry_id": "NCT05027997",
+                    "disease": "Blepharospasm, Dystonia",
+                    "therapeutic_area": ["Neurological or sensory"],
+                    "digital_endpoint": "Skintronics wearable analysis of blinking activity",
+                    "concept_of_interest": ["Neurological or sensory"],
+                    "sensor_or_dht": "Wearable",
+                    "sponsor": "Example sponsor",
+                    "endpoint_positioning": "Primary",
+                    "validation_status": "not_reported_in_public_view",
+                    "source": "dime",
+                    "source_url": "https://dimesociety.org/library-of-digital-endpoints/",
+                    "terms_of_use_url": "https://dimesociety.org/terms-of-use/",
+                },
+            ],
+            fetched_records=1,
+            snapshot_date="2026-04",
+        )
+
+
+class _StubDHDRGateway:
+    def __init__(self) -> None:
+        self.calls: list[
+            tuple[str | None, str | None, str | None, str | None, int]
+        ] = []
+
+    async def fetch_records_async(
+        self,
+        *,
+        query: str | None = None,
+        condition: str | None = None,
+        modality: str | None = None,
+        device: str | None = None,
+        max_results: int = 20,
+    ) -> DHDRGatewayFetchResult:
+        self.calls.append((query, condition, modality, device, max_results))
+        return DHDRGatewayFetchResult(
+            records=[
+                {
+                    "dataset_name": "WearGait-PD",
+                    "condition": "Parkinson's disease",
+                    "modalities": ["IMU"],
+                    "devices": ["sensorized insole"],
+                    "cohort_size": "100 individuals with Parkinson's disease",
+                    "host_platform": "Synapse",
+                    "dataset_url": "https://www.synapse.org/Synapse:syn52540892/wiki/623751",
+                    "license": "host-specific; review dataset terms before reuse",
+                    "terms_url": "https://www.synapse.org/Synapse:syn52540892/wiki/623751",
+                    "source": "dhdr",
+                },
+            ],
+            fetched_records=1,
+            snapshot_date="2026-05-04",
+            catalog_url="https://www.dbdp.org/dhdr",
         )
 
 
@@ -485,9 +613,12 @@ def _build_client(
     alphafold_gateway: object | None = None,
     gnomad_gateway: object | None = None,
     drugbank_gateway: object | None = None,
+    drugmechdb_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     orphanet_gateway: object | None = None,
+    dime_gateway: object | None = None,
+    dhdr_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
     pubmed_discovery_service: object | None = None,
 ) -> _BuiltClient:
@@ -512,9 +643,12 @@ def _build_client(
         alphafold_gateway=alphafold_gateway,
         gnomad_gateway=gnomad_gateway,
         drugbank_gateway=drugbank_gateway,
+        drugmechdb_gateway=drugmechdb_gateway,
         mgi_gateway=mgi_gateway,
         zfin_gateway=zfin_gateway,
         orphanet_gateway=orphanet_gateway,
+        dime_gateway=dime_gateway,
+        dhdr_gateway=dhdr_gateway,
         marrvel_discovery_service=marrvel_discovery_service,
         pubmed_discovery_service=pubmed_discovery_service,
     )
@@ -540,9 +674,12 @@ def _build_client_for_space(
     alphafold_gateway: object | None = None,
     gnomad_gateway: object | None = None,
     drugbank_gateway: object | None = None,
+    drugmechdb_gateway: object | None = None,
     mgi_gateway: object | None = None,
     zfin_gateway: object | None = None,
     orphanet_gateway: object | None = None,
+    dime_gateway: object | None = None,
+    dhdr_gateway: object | None = None,
     marrvel_discovery_service: object | None = None,
     pubmed_discovery_service: object | None = None,
 ) -> TestClient:
@@ -567,9 +704,12 @@ def _build_client_for_space(
     app.dependency_overrides[get_alphafold_source_gateway] = lambda: alphafold_gateway
     app.dependency_overrides[get_gnomad_source_gateway] = lambda: gnomad_gateway
     app.dependency_overrides[get_drugbank_source_gateway] = lambda: drugbank_gateway
+    app.dependency_overrides[get_drugmechdb_source_gateway] = lambda: drugmechdb_gateway
     app.dependency_overrides[get_mgi_source_gateway] = lambda: mgi_gateway
     app.dependency_overrides[get_zfin_source_gateway] = lambda: zfin_gateway
     app.dependency_overrides[get_orphanet_source_gateway] = lambda: orphanet_gateway
+    app.dependency_overrides[get_dime_source_gateway] = lambda: dime_gateway
+    app.dependency_overrides[get_dhdr_source_gateway] = lambda: dhdr_gateway
     if marrvel_discovery_service is not None:
         app.dependency_overrides[marrvel.get_marrvel_discovery_service] = (
             lambda: marrvel_discovery_service
@@ -856,6 +996,14 @@ def test_source_search_handoff_creates_non_variant_source_document() -> None:
             "DB01234",
         ),
         (
+            "drugmechdb",
+            {"drugmechdb_gateway": _StubDrugMechDBGateway()},
+            {"drugbank_id": "DB00619", "disease_mesh": "MESH:D015464"},
+            "drug_mechanism_path",
+            "path_id",
+            "DB00619_MESH_D015464_1",
+        ),
+        (
             "mgi",
             {"mgi_gateway": _StubAllianceGeneGateway(source_key="mgi")},
             {"query": "Brca1"},
@@ -878,6 +1026,22 @@ def test_source_search_handoff_creates_non_variant_source_document() -> None:
             "rare_disease",
             "orphanet_id",
             "ORPHA:558",
+        ),
+        (
+            "dime",
+            {"dime_gateway": _StubDiMeGateway()},
+            {"disease": "dystonia", "sensor": "wearable"},
+            "digital_measurement",
+            "trial_registry_id",
+            "NCT05027997",
+        ),
+        (
+            "dhdr",
+            {"dhdr_gateway": _StubDHDRGateway()},
+            {"condition": "Parkinson", "modality": "IMU"},
+            "digital_biomarker_dataset",
+            "dataset_name",
+            "WearGait-PD",
         ),
     ],
 )
@@ -1240,9 +1404,12 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         alphafold_gateway=_StubAlphaFoldGateway(),
         gnomad_gateway=_StubGnomADGateway(),
         drugbank_gateway=_StubDrugBankGateway(),
+        drugmechdb_gateway=_StubDrugMechDBGateway(),
         mgi_gateway=_StubAllianceGeneGateway(source_key="mgi"),
         zfin_gateway=_StubAllianceGeneGateway(source_key="zfin"),
         orphanet_gateway=_StubOrphanetGateway(),
+        dime_gateway=_StubDiMeGateway(),
+        dhdr_gateway=_StubDHDRGateway(),
     )
     cases: tuple[tuple[str, dict[str, object], str], ...] = (
         ("ClinVar", {"gene_symbol": "BRCA1"}, "clinvar"),
@@ -1250,9 +1417,12 @@ def test_mixed_case_source_keys_route_through_generic_dispatch() -> None:
         ("AlphaFold", {"uniprot_id": "P38398"}, "alphafold"),
         ("GnomAD", {"gene_symbol": "MED13"}, "gnomad"),
         ("DrugBank", {"drug_name": "Olaparib"}, "drugbank"),
+        ("DrugMechDB", {"drugbank_id": "DB00619"}, "drugmechdb"),
         ("MGI", {"query": "BRCA1"}, "mgi"),
         ("ZFIN", {"query": "BRCA1"}, "zfin"),
         ("ORPHAcode", {"orphacode": 558}, "orphanet"),
+        ("DiMe Society", {"disease": "dystonia"}, "dime"),
+        ("DBDP DHDR", {"condition": "Parkinson"}, "dhdr"),
     )
 
     for source_key, request_payload, expected_source_key in cases:
@@ -1532,6 +1702,41 @@ def test_create_drugbank_source_search_returns_records_and_capture_metadata() ->
     assert payload["source_capture"]["external_id"] == "DB01234"
 
 
+def test_create_drugmechdb_source_search_returns_paths_and_capture_metadata() -> None:
+    built = _build_client(drugmechdb_gateway=_StubDrugMechDBGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/drugmechdb/searches",
+        headers=_auth_headers(),
+        json={"drugbank_id": "DB00619", "disease_mesh": "MESH:D015464"},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "drugmechdb"
+    assert payload["query"] == "drugbank_id:DB00619 disease_mesh:MESH:D015464"
+    assert payload["corpus_size"] == 4846
+    assert payload["records"][0]["path_id"] == "DB00619_MESH_D015464_1"
+    assert payload["records"][0]["license"] == "CC0-1.0"
+    assert payload["source_capture"]["source_key"] == "drugmechdb"
+    assert payload["source_capture"]["result_count"] == 1
+    assert payload["source_capture"]["external_id"] == "DB00619_MESH_D015464_1"
+    assert payload["source_capture"]["provenance"]["license"] == "CC0-1.0"
+
+
+def test_create_drugmechdb_source_search_rejects_unbounded_payload() -> None:
+    built = _build_client(drugmechdb_gateway=_StubDrugMechDBGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/drugmechdb/searches",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert response.status_code == 422
+    assert "Provide at least one" in response.text
+
+
 def test_create_alliance_gene_source_searches_return_records_and_capture_metadata() -> (
     None
 ):
@@ -1664,6 +1869,108 @@ def test_create_orphanet_source_search_rejects_invalid_lookup_shape(
 
     assert response.status_code == 422
     assert expected_message in response.text
+
+
+def test_create_dime_source_search_returns_metadata_records_and_terms() -> None:
+    dime_gateway = _StubDiMeGateway()
+    built = _build_client(dime_gateway=dime_gateway)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/dime/searches",
+        headers=_auth_headers(),
+        json={"disease": "dystonia", "sensor": "wearable", "max_results": 2},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "dime"
+    assert payload["query"] == "disease:dystonia sensor:wearable"
+    assert payload["snapshot_date"] == "2026-04"
+    assert payload["terms_of_use_url"] == "https://dimesociety.org/terms-of-use/"
+    assert payload["records"][0]["trial_registry_id"] == "NCT05027997"
+    assert payload["records"][0]["source"] == "dime"
+    assert payload["methodological_reference"]["pmid"] == "33083687"
+    assert payload["source_capture"]["source_key"] == "dime"
+    assert payload["source_capture"]["result_count"] == 1
+    assert payload["source_capture"]["external_id"] == "NCT05027997"
+    assert payload["source_capture"]["provenance"]["terms_of_use_url"] == (
+        "https://dimesociety.org/terms-of-use/"
+    )
+    assert dime_gateway.calls == [(None, "dystonia", None, "wearable", 2)]
+
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/dime/searches/{payload['id']}",
+        headers=_auth_headers(),
+    )
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == payload["id"]
+
+
+def test_create_dime_source_search_rejects_unbounded_payload() -> None:
+    built = _build_client(dime_gateway=_StubDiMeGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/dime/searches",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert response.status_code == 422
+    assert "Provide at least one of query, disease, therapeutic_area, or sensor" in (
+        response.text
+    )
+
+
+def test_create_dhdr_source_search_returns_dataset_metadata_and_terms() -> None:
+    dhdr_gateway = _StubDHDRGateway()
+    built = _build_client(dhdr_gateway=dhdr_gateway)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/dhdr/searches",
+        headers=_auth_headers(),
+        json={"condition": "Parkinson", "modality": "IMU", "max_results": 2},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "dhdr"
+    assert payload["query"] == "condition:Parkinson modality:IMU"
+    assert payload["snapshot_date"] == "2026-05-04"
+    assert payload["catalog_url"] == "https://www.dbdp.org/dhdr"
+    assert payload["records"][0]["dataset_name"] == "WearGait-PD"
+    assert payload["records"][0]["host_platform"] == "Synapse"
+    assert payload["records"][0]["terms_url"] == (
+        "https://www.synapse.org/Synapse:syn52540892/wiki/623751"
+    )
+    assert payload["source_capture"]["source_key"] == "dhdr"
+    assert payload["source_capture"]["result_count"] == 1
+    assert payload["source_capture"]["external_id"] == "WearGait-PD"
+    assert payload["source_capture"]["provenance"]["license_policy"] == (
+        "per_dataset_terms_required"
+    )
+    assert dhdr_gateway.calls == [(None, "Parkinson", "IMU", None, 2)]
+
+    get_response = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/dhdr/searches/{payload['id']}",
+        headers=_auth_headers(),
+    )
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == payload["id"]
+
+
+def test_create_dhdr_source_search_rejects_unbounded_payload() -> None:
+    built = _build_client(dhdr_gateway=_StubDHDRGateway())
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/dhdr/searches",
+        headers=_auth_headers(),
+        json={},
+    )
+
+    assert response.status_code == 422
+    assert "Provide at least one of query, condition, modality, or device" in (
+        response.text
+    )
 
 
 def test_get_direct_source_search_rejects_wrong_space() -> None:

@@ -116,6 +116,72 @@ async def test_clinvar_gateway_fetch_records_normalizes_ncbi_summary() -> None:
 
 
 @pytest.mark.asyncio
+async def test_clinvar_gateway_drops_records_whose_title_gene_mismatches_query() -> (
+    None
+):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/esearch.fcgi"):
+            return httpx.Response(
+                200,
+                json={
+                    "esearchresult": {
+                        "count": "2",
+                        "retstart": "0",
+                        "retmax": "5",
+                        "idlist": ["123", "456"],
+                    },
+                },
+                request=request,
+            )
+        if request.url.path.endswith("/esummary.fcgi"):
+            return httpx.Response(
+                200,
+                json={
+                    "result": {
+                        "uids": ["123", "456"],
+                        "123": {
+                            "uid": "123",
+                            "accession": "VCV000000123",
+                            "title": "NM_000045.4(ARG1):c.66dup",
+                            "obj_type": "single nucleotide variant",
+                            "genes": [{"symbol": "MED23"}],
+                            "variation_set": [
+                                {"variation_name": "NM_000045.4(ARG1):c.66dup"},
+                            ],
+                        },
+                        "456": {
+                            "uid": "456",
+                            "accession": "VCV000000456",
+                            "title": "NM_004830.4(MED23):c.2150G>A",
+                            "obj_type": "single nucleotide variant",
+                            "genes": [{"symbol": "MED23"}],
+                            "variation_set": [
+                                {
+                                    "variation_name": (
+                                        "NM_004830.4(MED23):c.2150G>A"
+                                    ),
+                                },
+                            ],
+                        },
+                    },
+                },
+                request=request,
+            )
+        return httpx.Response(404, request=request)
+
+    gateway = ClinVarSourceGateway(
+        api_key="",
+        timeout_seconds=1.0,
+        transport=httpx.MockTransport(handler),
+    )
+
+    records = await gateway.fetch_records(ClinVarQueryConfig(gene_symbol="MED23"))
+
+    assert [record["clinvar_id"] for record in records] == ["456"]
+    assert records[0]["gene_symbol"] == "MED23"
+
+
+@pytest.mark.asyncio
 async def test_clinvar_gateway_returns_empty_when_search_has_no_ids() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(

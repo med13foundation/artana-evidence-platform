@@ -2215,7 +2215,7 @@
                 "type": "null"
               }
             ],
-            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin).",
+            "description": "Enabled data sources (pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, drugmechdb, alphafold, gnomad, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr).",
             "title": "Sources"
           }
         },
@@ -2292,6 +2292,400 @@
           "email"
         ],
         "title": "CreateTesterRequest",
+        "type": "object"
+      },
+      "DHDRSourceSearchRequest": {
+        "description": "Request payload for DBDP DHDR dataset catalog search.",
+        "properties": {
+          "condition": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          }
+        },
+        "title": "DHDRSourceSearchRequest",
+        "type": "object"
+      },
+      "DHDRSourceSearchResponse": {
+        "description": "Response payload for one captured DHDR direct search.",
+        "properties": {
+          "catalog_url": {
+            "title": "Catalog Url",
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "repository_url": {
+            "title": "Repository Url",
+            "type": "string"
+          },
+          "snapshot_date": {
+            "title": "Snapshot Date",
+            "type": "string"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "dhdr",
+            "default": "dhdr",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "snapshot_date",
+          "catalog_url",
+          "repository_url",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "DHDRSourceSearchResponse",
+        "type": "object"
+      },
+      "DiMeSourceSearchRequest": {
+        "description": "Request payload for DiMe digital-measures catalog search.",
+        "properties": {
+          "disease": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "sensor": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor"
+          },
+          "therapeutic_area": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Therapeutic Area"
+          }
+        },
+        "title": "DiMeSourceSearchRequest",
+        "type": "object"
+      },
+      "DiMeSourceSearchResponse": {
+        "description": "Response payload for one captured DiMe direct search.",
+        "properties": {
+          "catalog_url": {
+            "title": "Catalog Url",
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disease": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "methodological_reference": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Methodological Reference",
+            "type": "object"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "sensor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor"
+          },
+          "snapshot_date": {
+            "title": "Snapshot Date",
+            "type": "string"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "dime",
+            "default": "dime",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "terms_of_use_url": {
+            "title": "Terms Of Use Url",
+            "type": "string"
+          },
+          "therapeutic_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Therapeutic Area"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "snapshot_date",
+          "catalog_url",
+          "terms_of_use_url",
+          "methodological_reference",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "DiMeSourceSearchResponse",
         "type": "object"
       },
       "DiscoveryProvider": {
@@ -2560,6 +2954,276 @@
           "source_capture"
         ],
         "title": "DrugBankSourceSearchResponse",
+        "type": "object"
+      },
+      "DrugMechDBSourceSearchRequest": {
+        "description": "Request payload for bounded DrugMechDB mechanism-path search.",
+        "properties": {
+          "disease": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "disease_mesh": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease Mesh"
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name"
+          },
+          "drugbank_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugbank Id"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "node_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node Id"
+          },
+          "path_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path Id"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          }
+        },
+        "title": "DrugMechDBSourceSearchRequest",
+        "type": "object"
+      },
+      "DrugMechDBSourceSearchResponse": {
+        "description": "Response payload for one captured DrugMechDB direct search.",
+        "properties": {
+          "commit_sha": {
+            "title": "Commit Sha",
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "corpus_size": {
+            "title": "Corpus Size",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disease": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease"
+          },
+          "disease_mesh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disease Mesh"
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name"
+          },
+          "drugbank_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugbank Id"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "node_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node Id"
+          },
+          "path_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path Id"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "repository_url": {
+            "title": "Repository Url",
+            "type": "string"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "drugmechdb",
+            "default": "drugmechdb",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "max_results",
+          "fetched_records",
+          "record_count",
+          "corpus_size",
+          "commit_sha",
+          "source_url",
+          "repository_url",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "DrugMechDBSourceSearchResponse",
         "type": "object"
       },
       "EvidenceChainItem": {
@@ -4893,6 +5557,105 @@
         "title": "HarnessArtifactResponse",
         "type": "object"
       },
+      "HarnessDocumentDeleteResponse": {
+        "description": "Response payload for supported document deletion.",
+        "properties": {
+          "deleted_document_count": {
+            "minimum": 0.0,
+            "title": "Deleted Document Count",
+            "type": "integer"
+          },
+          "deleted_documents": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessDocumentResponse"
+            },
+            "title": "Deleted Documents",
+            "type": "array"
+          },
+          "deleted_proposal_count": {
+            "minimum": 0.0,
+            "title": "Deleted Proposal Count",
+            "type": "integer"
+          },
+          "deleted_review_item_count": {
+            "minimum": 0.0,
+            "title": "Deleted Review Item Count",
+            "type": "integer"
+          },
+          "deleted_study_outcome_count": {
+            "minimum": 0.0,
+            "title": "Deleted Study Outcome Count",
+            "type": "integer"
+          },
+          "run": {
+            "$ref": "#/components/schemas/HarnessRunResponse"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/HarnessDocumentDeleteScope"
+          }
+        },
+        "required": [
+          "run",
+          "scope",
+          "deleted_document_count",
+          "deleted_proposal_count",
+          "deleted_review_item_count",
+          "deleted_study_outcome_count"
+        ],
+        "title": "HarnessDocumentDeleteResponse",
+        "type": "object"
+      },
+      "HarnessDocumentDeleteScope": {
+        "description": "The resolved document deletion scope.",
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "ingestion_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingestion Run Id"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "title_prefix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Prefix"
+          }
+        },
+        "title": "HarnessDocumentDeleteScope",
+        "type": "object"
+      },
       "HarnessDocumentDetailResponse": {
         "description": "Detailed view for one tracked document.",
         "properties": {
@@ -5631,6 +6394,17 @@
             "title": "Evidence Bundle",
             "type": "array"
           },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -5714,6 +6488,7 @@
           "evidence_bundle",
           "payload",
           "metadata",
+          "evidence_grade",
           "decision_reason",
           "decided_at",
           "created_at",
@@ -5934,6 +6709,153 @@
         "title": "HarnessReviewQueueActionRequest",
         "type": "object"
       },
+      "HarnessReviewQueueBulkDecisionItem": {
+        "description": "One review-queue action inside a bulk decision request.",
+        "properties": {
+          "action": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          },
+          "item_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Item Id",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Input"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "item_id",
+          "action"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionItem",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionRequest": {
+        "description": "Apply many review-queue decisions in one request.",
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionItem"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Decisions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "decisions"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionRequest",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionResponse": {
+        "description": "Bulk decision response for high-volume review cleanup.",
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionSummary"
+          }
+        },
+        "required": [
+          "results",
+          "summary"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionResponse",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionResult": {
+        "description": "Per-item outcome for a bulk review-queue decision request.",
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "new_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New State"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "status"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionResult",
+        "type": "object"
+      },
+      "HarnessReviewQueueBulkDecisionSummary": {
+        "description": "Aggregate outcome counters for a bulk review-queue decision request.",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted",
+          "failed"
+        ],
+        "title": "HarnessReviewQueueBulkDecisionSummary",
+        "type": "object"
+      },
       "HarnessReviewQueueItemResponse": {
         "description": "Serialized queue item for the unified review surface.",
         "properties": {
@@ -6001,6 +6923,17 @@
             },
             "title": "Evidence Bundle",
             "type": "array"
+          },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
           },
           "id": {
             "title": "Id",
@@ -6121,6 +7054,7 @@
           "available_actions",
           "payload",
           "metadata",
+          "evidence_grade",
           "evidence_bundle",
           "decision_reason",
           "decided_at",
@@ -9495,6 +10429,247 @@
         "title": "MechanismDiscoveryRunResponse",
         "type": "object"
       },
+      "OntologyConvergenceClaimResponse": {
+        "description": "One reviewed claim contributing to a convergent ontology node.",
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
+          },
+          "gene_symbol": {
+            "title": "Gene Symbol",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ontology_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Id"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "provenance": {
+            "enum": [
+              "human",
+              "model_organism"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "gene_symbol",
+          "label",
+          "ontology_id",
+          "provenance",
+          "title",
+          "source_kind",
+          "source_key",
+          "evidence_grade",
+          "confidence"
+        ],
+        "title": "OntologyConvergenceClaimResponse",
+        "type": "object"
+      },
+      "OntologyConvergenceNodeResponse": {
+        "description": "One ontology-normalized node shared across enough genes.",
+        "properties": {
+          "claim_count": {
+            "minimum": 0.0,
+            "title": "Claim Count",
+            "type": "integer"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyConvergenceClaimResponse"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "contributing_genes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Contributing Genes",
+            "type": "array"
+          },
+          "human_claim_count": {
+            "minimum": 0.0,
+            "title": "Human Claim Count",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "model_organism_claim_count": {
+            "minimum": 0.0,
+            "title": "Model Organism Claim Count",
+            "type": "integer"
+          },
+          "normalized_key": {
+            "title": "Normalized Key",
+            "type": "string"
+          },
+          "ontology_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Id"
+          },
+          "specificity": {
+            "enum": [
+              "generic_ndd",
+              "organ_or_module_specific",
+              "unclassified"
+            ],
+            "title": "Specificity",
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ontology_id",
+          "normalized_key",
+          "label",
+          "claim_count",
+          "human_claim_count",
+          "model_organism_claim_count",
+          "specificity"
+        ],
+        "title": "OntologyConvergenceNodeResponse",
+        "type": "object"
+      },
+      "OntologyConvergenceQueryRequest": {
+        "description": "Request payload for a cross-gene ontology convergence query.",
+        "properties": {
+          "gene_set": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 250,
+            "minItems": 1,
+            "title": "Gene Set",
+            "type": "array"
+          },
+          "include_report": {
+            "default": true,
+            "title": "Include Report",
+            "type": "boolean"
+          },
+          "min_gene_count": {
+            "default": 2,
+            "maximum": 250.0,
+            "minimum": 1.0,
+            "title": "Min Gene Count",
+            "type": "integer"
+          },
+          "provenance_filter": {
+            "default": "all",
+            "enum": [
+              "all",
+              "human",
+              "model_organism"
+            ],
+            "title": "Provenance Filter",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gene_set"
+        ],
+        "title": "OntologyConvergenceQueryRequest",
+        "type": "object"
+      },
+      "OntologyConvergenceQueryResponse": {
+        "description": "Response for an ontology-normalized convergence query.",
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyConvergenceNodeResponse"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "query": {
+            "$ref": "#/components/schemas/OntologyConvergenceQueryRequest"
+          },
+          "report_markdown": {
+            "title": "Report Markdown",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "report_markdown",
+          "generated_at"
+        ],
+        "title": "OntologyConvergenceQueryResponse",
+        "type": "object"
+      },
       "OrphanetSourceSearchRequest": {
         "description": "Request payload for a direct Orphanet disease lookup.",
         "properties": {
@@ -9657,6 +10832,351 @@
           "source_capture"
         ],
         "title": "OrphanetSourceSearchResponse",
+        "type": "object"
+      },
+      "PatientContext": {
+        "description": "Per-query patient context used to tailor evidence output.",
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "diagnosis": {
+            "default": "",
+            "maxLength": 256,
+            "title": "Diagnosis",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PatientLocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "molecular_markers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Molecular Markers",
+            "type": "object"
+          },
+          "performance_status": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Performance Status"
+          },
+          "prior_treatments": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 25,
+            "title": "Prior Treatments",
+            "type": "array"
+          },
+          "stage_or_grade": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Or Grade"
+          }
+        },
+        "title": "PatientContext",
+        "type": "object"
+      },
+      "PatientLocation": {
+        "description": "Patient location context used for request-time trial matching.",
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "within_miles": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Within Miles"
+          }
+        },
+        "title": "PatientLocation",
+        "type": "object"
+      },
+      "PatientQueryRunRequest": {
+        "description": "Request payload for a patient-context evidence query.",
+        "properties": {
+          "max_claims": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Claims",
+            "type": "integer"
+          },
+          "max_outcomes": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Outcomes",
+            "type": "integer"
+          },
+          "max_trials": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Trials",
+            "type": "integer"
+          },
+          "patient_context": {
+            "$ref": "#/components/schemas/PatientContext"
+          },
+          "query": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query",
+          "patient_context"
+        ],
+        "title": "PatientQueryRunRequest",
+        "type": "object"
+      },
+      "PatientQueryRunResponse": {
+        "description": "Completed patient-context query response.",
+        "properties": {
+          "claim_matches": {
+            "items": {
+              "$ref": "#/components/schemas/PatientRelevantClaimResponse"
+            },
+            "title": "Claim Matches",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "patient_context": {
+            "$ref": "#/components/schemas/PatientContext"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "study_outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/StudyOutcomeResponse"
+            },
+            "title": "Study Outcomes",
+            "type": "array"
+          },
+          "trial_matches": {
+            "items": {
+              "$ref": "#/components/schemas/TrialMatchResponse"
+            },
+            "title": "Trial Matches",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "status",
+          "query",
+          "patient_context",
+          "generated_at"
+        ],
+        "title": "PatientQueryRunResponse",
+        "type": "object"
+      },
+      "PatientRelevantClaimResponse": {
+        "description": "One promoted claim ranked against patient context.",
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "evidence_bundle": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Evidence Bundle",
+            "type": "array"
+          },
+          "evidence_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Grade"
+          },
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Terms",
+            "type": "array"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "payload": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Payload",
+            "type": "object"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "ranking_score": {
+            "title": "Ranking Score",
+            "type": "number"
+          },
+          "relevance_score": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Relevance Score",
+            "type": "number"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "title",
+          "summary",
+          "source_key",
+          "evidence_grade",
+          "confidence",
+          "ranking_score",
+          "relevance_score",
+          "payload",
+          "metadata",
+          "evidence_bundle"
+        ],
+        "title": "PatientRelevantClaimResponse",
         "type": "object"
       },
       "ProcessHealth": {
@@ -10351,7 +11871,7 @@
                 "type": "null"
               }
             ],
-            "description": "Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin.",
+            "description": "Enabled data sources. Keys: pubmed, marrvel, clinvar, mondo, pdf, text, drugbank, drugmechdb, alphafold, uniprot, hgnc, clinical_trials, mgi, zfin, orphanet, dime, dhdr.",
             "title": "Sources"
           },
           "title": {
@@ -11159,8 +12679,20 @@
             "title": "Clinvar",
             "type": "boolean"
           },
+          "dhdr": {
+            "title": "Dhdr",
+            "type": "boolean"
+          },
+          "dime": {
+            "title": "Dime",
+            "type": "boolean"
+          },
           "drugbank": {
             "title": "Drugbank",
+            "type": "boolean"
+          },
+          "drugmechdb": {
+            "title": "Drugmechdb",
             "type": "boolean"
           },
           "gnomad": {
@@ -12043,6 +13575,178 @@
         ],
         "title": "SpeculationLevel",
         "type": "string"
+      },
+      "StudyOutcomeListResponse": {
+        "description": "List response for public study-outcome queries.",
+        "properties": {
+          "limit": {
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "study_outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/StudyOutcomeResponse"
+            },
+            "title": "Study Outcomes",
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "study_outcomes",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "StudyOutcomeListResponse",
+        "type": "object"
+      },
+      "StudyOutcomeResponse": {
+        "description": "Public response model for one quantitative trial outcome.",
+        "properties": {
+          "comparator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparator"
+          },
+          "confidence_interval_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence Interval High"
+          },
+          "confidence_interval_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence Interval Low"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "intervention": {
+            "title": "Intervention",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "n": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N"
+          },
+          "outcome_metric": {
+            "title": "Outcome Metric",
+            "type": "string"
+          },
+          "population": {
+            "title": "Population",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "source_pmid": {
+            "title": "Source Pmid",
+            "type": "string"
+          },
+          "source_quote": {
+            "title": "Source Quote",
+            "type": "string"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "document_id",
+          "run_id",
+          "intervention",
+          "comparator",
+          "outcome_metric",
+          "value",
+          "unit",
+          "confidence_interval_low",
+          "confidence_interval_high",
+          "population",
+          "n",
+          "source_pmid",
+          "source_quote",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "StudyOutcomeResponse",
+        "type": "object"
       },
       "SupervisorArtifactKeysResponse": {
         "description": "Parent and child artifact keys for one supervisor run.",
@@ -14019,6 +15723,409 @@
           "status"
         ],
         "title": "ToolDecisionRecord",
+        "type": "object"
+      },
+      "TrialMatchLocation": {
+        "description": "Public location/contact fields for one matching trial site.",
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "country": {
+            "title": "Country",
+            "type": "string"
+          },
+          "facility": {
+            "title": "Facility",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "zip": {
+            "title": "Zip",
+            "type": "string"
+          }
+        },
+        "required": [
+          "facility",
+          "status",
+          "city",
+          "state",
+          "zip",
+          "country"
+        ],
+        "title": "TrialMatchLocation",
+        "type": "object"
+      },
+      "TrialMatchResponse": {
+        "description": "One live ClinicalTrials.gov match ranked against patient context.",
+        "properties": {
+          "conditions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "eligibility_summary": {
+            "title": "Eligibility Summary",
+            "type": "string"
+          },
+          "intervention_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Intervention Names",
+            "type": "array"
+          },
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/TrialMatchLocation"
+            },
+            "title": "Locations",
+            "type": "array"
+          },
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Terms",
+            "type": "array"
+          },
+          "maximum_age": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Age"
+          },
+          "minimum_age": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Age"
+          },
+          "nct_id": {
+            "title": "Nct Id",
+            "type": "string"
+          },
+          "phase": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Phase",
+            "type": "array"
+          },
+          "primary_investigator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Investigator"
+          },
+          "relevance_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Relevance Reasons",
+            "type": "array"
+          },
+          "relevance_score": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Relevance Score",
+            "type": "number"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nct_id",
+          "title",
+          "status",
+          "eligibility_summary",
+          "relevance_score",
+          "source_url"
+        ],
+        "title": "TrialMatchResponse",
+        "type": "object"
+      },
+      "TrialMatchingQuery": {
+        "description": "Patient context used to query and rank live ClinicalTrials.gov matches.",
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "condition": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Condition",
+            "type": "string"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "molecular_markers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Molecular Markers",
+            "type": "array"
+          },
+          "prior_treatments": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prior Treatments",
+            "type": "array"
+          },
+          "reference_city": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference City"
+          },
+          "reference_latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Latitude"
+          },
+          "reference_longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Longitude"
+          },
+          "statuses": {
+            "default": [
+              "RECRUITING",
+              "NOT_YET_RECRUITING"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Statuses",
+            "type": "array"
+          },
+          "within_miles": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Within Miles"
+          }
+        },
+        "required": [
+          "condition"
+        ],
+        "title": "TrialMatchingQuery",
+        "type": "object"
+      },
+      "TrialMatchingResponse": {
+        "description": "Response for request-time live ClinicalTrials.gov trial matching.",
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "query": {
+            "$ref": "#/components/schemas/TrialMatchingQuery"
+          },
+          "source": {
+            "const": "clinical_trials",
+            "default": "clinical_trials",
+            "title": "Source",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "trial_matches": {
+            "items": {
+              "$ref": "#/components/schemas/TrialMatchResponse"
+            },
+            "title": "Trial Matches",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_id",
+          "query",
+          "total",
+          "generated_at"
+        ],
+        "title": "TrialMatchingResponse",
         "type": "object"
       },
       "UniProtSourceSearchRequest": {
@@ -17491,6 +19598,103 @@
       }
     },
     "/v1/spaces/{space_id}/documents": {
+      "delete": {
+        "operationId": "delete_documents_v1_spaces__space_id__documents_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title_prefix",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Prefix"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ingestion_run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingestion Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete tracked documents by scope",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "list_documents_v1_spaces__space_id__documents_get",
         "parameters": [
@@ -17707,6 +19911,65 @@
       }
     },
     "/v1/spaces/{space_id}/documents/{document_id}": {
+      "delete": {
+        "operationId": "delete_document_v1_spaces__space_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete one tracked document",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "get_document_v1_spaces__space_id__documents__document_id__get",
         "parameters": [
@@ -18713,6 +20976,24 @@
           },
           {
             "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
+            }
+          },
+          {
+            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -19350,6 +21631,24 @@
           },
           {
             "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
+            }
+          },
+          {
+            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -19535,6 +21834,68 @@
           }
         ],
         "summary": "Apply one review action",
+        "tags": [
+          "review-queue"
+        ]
+      }
+    },
+    "/v1/spaces/{space_id}/review-queue:bulk-actions": {
+      "post": {
+        "description": "Apply many review-queue decisions through the same dispatch path as the single-item action endpoint. Each decision is isolated so one failed item does not block the rest of the batch.",
+        "operationId": "act_on_review_queue_items_bulk_v1_spaces__space_id__review_queue_bulk_actions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Apply many review actions",
         "tags": [
           "review-queue"
         ]
@@ -22165,7 +24526,166 @@
         ]
       }
     },
+    "/v2/spaces/{space_id}/convergence-queries": {
+      "post": {
+        "description": "Run a native convergence query over promoted claim proposals.",
+        "operationId": "create_convergence_query_v2_spaces__space_id__convergence_queries_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OntologyConvergenceQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyConvergenceQueryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run ontology-normalized convergence query",
+        "tags": [
+          "research"
+        ]
+      }
+    },
     "/v2/spaces/{space_id}/documents": {
+      "delete": {
+        "operationId": "v2_delete_documents_v2_spaces__space_id__documents_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title_prefix",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Prefix"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ingestion_run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingestion Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete documents by scope",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "v2_list_documents_v2_spaces__space_id__documents_get",
         "parameters": [
@@ -22382,6 +24902,65 @@
       }
     },
     "/v2/spaces/{space_id}/documents/{document_id}": {
+      "delete": {
+        "operationId": "v2_delete_document_v2_spaces__space_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessDocumentDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete document",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "operationId": "v2_get_document_v2_spaces__space_id__documents__document_id__get",
         "parameters": [
@@ -23390,6 +25969,24 @@
           },
           {
             "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
+            }
+          },
+          {
+            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -23668,6 +26265,68 @@
         ]
       }
     },
+    "/v2/spaces/{space_id}/query-runs": {
+      "post": {
+        "description": "Run a patient-context query over reviewed evidence and live trials.",
+        "operationId": "create_query_run_v2_spaces__space_id__query_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientQueryRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientQueryRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create patient-context evidence query",
+        "tags": [
+          "research"
+        ]
+      }
+    },
     "/v2/spaces/{space_id}/research-plan": {
       "post": {
         "description": "Queue research planning work using public task language.",
@@ -23905,6 +26564,24 @@
           },
           {
             "in": "query",
+            "name": "evidence_grade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Grade"
+            }
+          },
+          {
+            "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
@@ -24090,6 +26767,68 @@
           }
         ],
         "summary": "Decide review item",
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/review-items:bulk-decision": {
+      "post": {
+        "description": "Apply many review-queue decisions through the same dispatch path as the single-item action endpoint. Each decision is isolated so one failed item does not block the rest of the batch.",
+        "operationId": "v2_act_on_review_queue_items_bulk_v2_spaces__space_id__review_items_bulk_decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessReviewQueueBulkDecisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide review items in bulk",
         "tags": [
           "review"
         ]
@@ -24985,6 +27724,254 @@
         ]
       }
     },
+    "/v2/spaces/{space_id}/sources/dhdr/searches": {
+      "post": {
+        "description": "Typed v2 route for DHDR source search.",
+        "operationId": "create_dhdr_source_search_v2_spaces__space_id__sources_dhdr_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DHDRSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DHDRSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search DHDR evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/dhdr/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for DHDR source-search lookup.",
+        "operationId": "get_dhdr_source_search_v2_spaces__space_id__sources_dhdr_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DHDRSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get DHDR evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/dime/searches": {
+      "post": {
+        "description": "Typed v2 route for DiMe source search.",
+        "operationId": "create_dime_source_search_v2_spaces__space_id__sources_dime_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiMeSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiMeSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search DiMe evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/dime/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for DiMe source-search lookup.",
+        "operationId": "get_dime_source_search_v2_spaces__space_id__sources_dime_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiMeSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get DiMe evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
     "/v2/spaces/{space_id}/sources/drugbank/searches": {
       "post": {
         "description": "Typed v2 route for DrugBank source search.",
@@ -25104,6 +28091,130 @@
           }
         ],
         "summary": "Get DrugBank evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/drugmechdb/searches": {
+      "post": {
+        "description": "Typed v2 route for DrugMechDB source search.",
+        "operationId": "create_drugmechdb_source_search_v2_spaces__space_id__sources_drugmechdb_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DrugMechDBSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrugMechDBSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search DrugMechDB evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/drugmechdb/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for DrugMechDB source-search lookup.",
+        "operationId": "get_drugmechdb_source_search_v2_spaces__space_id__sources_drugmechdb_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrugMechDBSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get DrugMechDB evidence source search",
         "tags": [
           "sources"
         ]
@@ -26296,6 +29407,146 @@
         ]
       }
     },
+    "/v2/spaces/{space_id}/study-outcomes": {
+      "get": {
+        "description": "Return quantitative trial outcomes extracted from clinical-trial papers.",
+        "operationId": "list_study_outcomes_v2_spaces__space_id__study_outcomes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "intervention",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Intervention"
+            }
+          },
+          {
+            "in": "query",
+            "name": "population",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Population"
+            }
+          },
+          {
+            "in": "query",
+            "name": "outcome_metric",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outcome Metric"
+            }
+          },
+          {
+            "in": "query",
+            "name": "document_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Document Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyOutcomeListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List study outcomes",
+        "tags": [
+          "research"
+        ]
+      }
+    },
     "/v2/spaces/{space_id}/tasks": {
       "get": {
         "description": "Return tracked tasks for one research space.",
@@ -27289,6 +30540,240 @@
         "summary": "Get task working state",
         "tags": [
           "tasks"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/trial-matching": {
+      "get": {
+        "description": "Return request-time live ClinicalTrials.gov matches for patient context.",
+        "operationId": "match_trials_v2_spaces__space_id__trial_matching_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "condition",
+            "required": true,
+            "schema": {
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Condition",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "age",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 130,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Age"
+            }
+          },
+          {
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Country"
+            }
+          },
+          {
+            "in": "query",
+            "name": "within_miles",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 500,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Within Miles"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference_city",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference City"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "RECRUITING|NOT_YET_RECRUITING",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "molecular_markers",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Molecular Markers"
+            }
+          },
+          {
+            "in": "query",
+            "name": "prior_treatments",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prior Treatments"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_results",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Max Results",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference_latitude",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 90,
+                  "minimum": -90,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference Latitude"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference_longitude",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 180,
+                  "minimum": -180,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference Longitude"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialMatchingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Match live ClinicalTrials.gov trials",
+        "tags": [
+          "research"
         ]
       }
     },

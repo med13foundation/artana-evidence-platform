@@ -20,6 +20,11 @@ from artana_evidence_api.source_plugins.contracts import (
     DocumentIngestionSourcePlugin,
     EvidenceSourcePlugin,
 )
+from artana_evidence_api.source_plugins.digital_health.dhdr import DHDR_PLUGIN
+from artana_evidence_api.source_plugins.digital_measurement.dime import DIME_PLUGIN
+from artana_evidence_api.source_plugins.drug_mechanisms.drugmechdb import (
+    DRUGMECHDB_PLUGIN,
+)
 from artana_evidence_api.source_plugins.drugbank import DRUGBANK_PLUGIN
 from artana_evidence_api.source_plugins.gnomad import GNOMAD_PLUGIN
 from artana_evidence_api.source_plugins.ingestion.pdf import PDF_INGESTION_PLUGIN
@@ -47,6 +52,7 @@ _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     MARRVEL_PLUGIN,
     CLINVAR_PLUGIN,
     DRUGBANK_PLUGIN,
+    DRUGMECHDB_PLUGIN,
     ALPHAFOLD_PLUGIN,
     GNOMAD_PLUGIN,
     UNIPROT_PLUGIN,
@@ -54,6 +60,8 @@ _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     MGI_PLUGIN,
     ZFIN_PLUGIN,
     ORPHANET_PLUGIN,
+    DIME_PLUGIN,
+    DHDR_PLUGIN,
 )
 
 _AUTHORITY_SOURCE_PLUGINS: tuple[AuthoritySourcePlugin, ...] = (
@@ -67,21 +75,13 @@ _DOCUMENT_INGESTION_SOURCE_PLUGINS: tuple[DocumentIngestionSourcePlugin, ...] = 
 )
 
 _PUBLIC_SOURCE_PLUGINS: tuple[PublicSourcePlugin, ...] = (
-    PUBMED_PLUGIN,
-    MARRVEL_PLUGIN,
-    CLINVAR_PLUGIN,
+    *_SOURCE_PLUGINS[:3],
     MONDO_AUTHORITY_PLUGIN,
     PDF_INGESTION_PLUGIN,
     TEXT_INGESTION_PLUGIN,
-    DRUGBANK_PLUGIN,
-    ALPHAFOLD_PLUGIN,
-    GNOMAD_PLUGIN,
-    UNIPROT_PLUGIN,
+    *_SOURCE_PLUGINS[3:8],
     HGNC_AUTHORITY_PLUGIN,
-    CLINICAL_TRIALS_PLUGIN,
-    MGI_PLUGIN,
-    ZFIN_PLUGIN,
-    ORPHANET_PLUGIN,
+    *_SOURCE_PLUGINS[8:],
 )
 
 

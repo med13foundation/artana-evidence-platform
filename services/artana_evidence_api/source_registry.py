@@ -128,13 +128,25 @@ _SOURCE_KEY_ALIASES = {
     "orpha_code": "orphanet",
     "orphacode": "orphanet",
     "orpha-code": "orphanet",
+    "dime_society": "dime",
+    "digital_medicine_society": "dime",
+    "digital_endpoints": "dime",
+    "library_of_digital_endpoints": "dime",
+    "drugmech": "drugmechdb",
+    "drugmech_db": "drugmechdb",
+    "drug_mech_db": "drugmechdb",
+    "drug_mechanism_db": "drugmechdb",
+    "dbdp": "dhdr",
+    "dbdp_dhdr": "dhdr",
+    "digital_health_data_repository": "dhdr",
+    "digital_biomarker_discovery_pipeline": "dhdr",
 }
 
 
 def normalize_source_key(source_key: str) -> str:
     """Normalize public source-key spelling without changing canonical keys."""
 
-    normalized = source_key.strip().casefold().replace("-", "_")
+    normalized = "_".join(source_key.strip().casefold().replace("-", "_").split())
     return _SOURCE_KEY_ALIASES.get(normalized, normalized)
 
 

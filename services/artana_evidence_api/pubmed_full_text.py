@@ -92,11 +92,8 @@ def fetch_pmc_open_access_full_text(
 def _http_get_text(url: str, *, timeout_seconds: int) -> str:
     response = requests.get(url, timeout=timeout_seconds)
     response.raise_for_status()
-    payload = response.content
-    if not isinstance(payload, bytes | bytearray):
-        msg = "Expected bytes payload from HTTP response."
-        raise TypeError(msg)
-    return bytes(payload).decode("utf-8", errors="replace")
+    payload: bytes = response.content
+    return payload.decode("utf-8", errors="replace")
 
 
 def _extract_article_body_text(xml_content: str) -> str | None:

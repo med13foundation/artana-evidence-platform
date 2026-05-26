@@ -33,6 +33,7 @@ def test_source_plugin_registry_is_explicit_and_consistent() -> None:
         "marrvel",
         "clinvar",
         "drugbank",
+        "drugmechdb",
         "alphafold",
         "gnomad",
         "uniprot",
@@ -40,6 +41,8 @@ def test_source_plugin_registry_is_explicit_and_consistent() -> None:
         "mgi",
         "zfin",
         "orphanet",
+        "dime",
+        "dhdr",
     )
 
     assert source_plugin_keys() == expected_keys

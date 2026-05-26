@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID  # noqa: TC003
 
 from artana_evidence_api.approval_store import (
@@ -72,8 +72,10 @@ _STATUS_QUERY = Query(default=None, min_length=1, max_length=32)
 _RUN_ID_QUERY = Query(default=None)
 _DOCUMENT_ID_QUERY = Query(default=None)
 _SOURCE_FAMILY_QUERY = Query(default=None, min_length=1, max_length=64)
+_EVIDENCE_GRADE_QUERY = Query(default=None, min_length=1, max_length=96)
 _OFFSET_QUERY = Query(default=0, ge=0)
 _LIMIT_QUERY = Query(default=200, ge=1, le=1000)
+_MAX_BULK_DECISIONS = 1000
 
 _PENDING_QUEUE_STATUSES = frozenset({"pending_review", "pending"})
 _RISK_PRIORITY = {"low": "low", "medium": "medium", "high": "high", "critical": "high"}
@@ -120,6 +122,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
     available_actions: list[str]
     payload: JSONObject
     metadata: JSONObject
+    evidence_grade: str | None
     evidence_bundle: list[JSONObject]
     decision_reason: str | None
     decided_at: str | None
@@ -153,6 +156,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             ),
             payload=proposal.payload,
             metadata=proposal.metadata,
+            evidence_grade=proposal.evidence_grade,
             evidence_bundle=proposal.evidence_bundle,
             decision_reason=proposal.decision_reason,
             decided_at=(
@@ -189,6 +193,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             available_actions=_review_item_available_actions(review_item),
             payload=review_item.payload,
             metadata=review_item.metadata,
+            evidence_grade=review_item.evidence_grade,
             evidence_bundle=review_item.evidence_bundle,
             decision_reason=review_item.decision_reason,
             decided_at=(
@@ -247,6 +252,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
                 "risk_level": approval.risk_level,
             },
             metadata=approval.metadata,
+            evidence_grade=None,
             evidence_bundle=[],
             decision_reason=approval.decision_reason,
             decided_at=decided_at,
@@ -274,6 +280,58 @@ class HarnessReviewQueueActionRequest(BaseModel):
     action: str = Field(..., min_length=1, max_length=64)
     reason: str | None = Field(default=None, min_length=1, max_length=2000)
     metadata: JSONObject = Field(default_factory=dict)
+
+
+class HarnessReviewQueueBulkDecisionItem(BaseModel):
+    """One review-queue action inside a bulk decision request."""
+
+    model_config = ConfigDict(strict=True)
+
+    item_id: str = Field(..., min_length=1, max_length=256)
+    action: str = Field(..., min_length=1, max_length=64)
+    reason: str | None = Field(default=None, min_length=1, max_length=2000)
+    metadata: JSONObject = Field(default_factory=dict)
+
+
+class HarnessReviewQueueBulkDecisionRequest(BaseModel):
+    """Apply many review-queue decisions in one request."""
+
+    model_config = ConfigDict(strict=True)
+
+    decisions: list[HarnessReviewQueueBulkDecisionItem] = Field(
+        ...,
+        min_length=1,
+        max_length=_MAX_BULK_DECISIONS,
+    )
+
+
+class HarnessReviewQueueBulkDecisionResult(BaseModel):
+    """Per-item outcome for a bulk review-queue decision request."""
+
+    model_config = ConfigDict(strict=True)
+
+    item_id: str
+    status: Literal["accepted", "failed"]
+    new_state: str | None = None
+    error: str | None = None
+
+
+class HarnessReviewQueueBulkDecisionSummary(BaseModel):
+    """Aggregate outcome counters for a bulk review-queue decision request."""
+
+    model_config = ConfigDict(strict=True)
+
+    accepted: int
+    failed: int
+
+
+class HarnessReviewQueueBulkDecisionResponse(BaseModel):
+    """Bulk decision response for high-volume review cleanup."""
+
+    model_config = ConfigDict(strict=True)
+
+    results: list[HarnessReviewQueueBulkDecisionResult]
+    summary: HarnessReviewQueueBulkDecisionSummary
 
 
 def _linked_resource_for_review_item(
@@ -417,6 +475,10 @@ def _proposal_draft_from_review_item(
             "source_family": review_item.source_family,
         },
         claim_fingerprint=_text_or_none(raw_proposal_draft.get("claim_fingerprint")),
+        evidence_grade=(
+            _text_or_none(raw_proposal_draft.get("evidence_grade"))
+            or review_item.evidence_grade
+        ),
     )
 
 
@@ -570,6 +632,12 @@ def _split_review_queue_item_id(item_id: str) -> tuple[str, str]:
     )
 
 
+def _bulk_decision_error_text(detail: object) -> str:
+    if isinstance(detail, str):
+        return detail
+    return str(detail)
+
+
 def _build_queue_items(
     *,
     space_id: UUID,
@@ -582,6 +650,7 @@ def _build_queue_items(
     source_family: str | None,
     run_id: UUID | None,
     document_id: UUID | None,
+    evidence_grade: str | None,
 ) -> list[HarnessReviewQueueItemResponse]:
     items: list[HarnessReviewQueueItemResponse] = []
     normalized_kind = kind.strip() if isinstance(kind, str) else None
@@ -600,6 +669,7 @@ def _build_queue_items(
                 proposal_type=normalized_kind if item_type == "proposal" else None,
                 run_id=run_id,
                 document_id=document_id,
+                evidence_grade=evidence_grade,
             )
             if normalized_kind is None or proposal.proposal_type == normalized_kind
         )
@@ -613,10 +683,11 @@ def _build_queue_items(
                 source_family=source_family,
                 run_id=run_id,
                 document_id=document_id,
+                evidence_grade=evidence_grade,
             )
             if normalized_kind is None or review_item.review_type == normalized_kind
         )
-    if item_type in {None, "approval"} and document_id is None:
+    if item_type in {None, "approval"} and document_id is None and evidence_grade is None:
         items.extend(
             HarnessReviewQueueItemResponse.from_approval(approval)
             for approval in approval_store.list_space_approvals(
@@ -737,6 +808,7 @@ def list_review_queue(
     run_id: UUID | None = _RUN_ID_QUERY,
     document_id: UUID | None = _DOCUMENT_ID_QUERY,
     source_family: str | None = _SOURCE_FAMILY_QUERY,
+    evidence_grade: str | None = _EVIDENCE_GRADE_QUERY,
     offset: int = _OFFSET_QUERY,
     limit: int = _LIMIT_QUERY,
     *,
@@ -760,6 +832,7 @@ def list_review_queue(
         ),
         run_id=run_id,
         document_id=document_id,
+        evidence_grade=evidence_grade,
     )
     total = len(items)
     paged = items[offset : offset + limit]
@@ -977,10 +1050,98 @@ def act_on_review_queue_item(  # noqa: PLR0913
     return HarnessReviewQueueItemResponse.from_approval(refreshed_approval)
 
 
+@router.post(
+    "/{space_id}/review-queue:bulk-actions",
+    response_model=HarnessReviewQueueBulkDecisionResponse,
+    summary="Apply many review actions",
+    description=(
+        "Apply many review-queue decisions through the same dispatch path as the "
+        "single-item action endpoint. Each decision is isolated so one failed "
+        "item does not block the rest of the batch."
+    ),
+    dependencies=[Depends(require_harness_space_write_access)],
+)
+def act_on_review_queue_items_bulk(  # noqa: PLR0913
+    space_id: UUID,
+    request: HarnessReviewQueueBulkDecisionRequest = Body(...),
+    *,
+    proposal_store: HarnessProposalStore = _PROPOSAL_STORE_DEPENDENCY,
+    review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_DEPENDENCY,
+    approval_store: HarnessApprovalStore = _APPROVAL_STORE_DEPENDENCY,
+    run_registry: HarnessRunRegistry = _RUN_REGISTRY_DEPENDENCY,
+    artifact_store: HarnessArtifactStore = _ARTIFACT_STORE_DEPENDENCY,
+    graph_api_gateway: GraphTransportBundle = _GRAPH_API_GATEWAY_DEPENDENCY,
+    execution_services: HarnessExecutionServices = (
+        _HARNESS_EXECUTION_SERVICES_DEPENDENCY
+    ),
+) -> HarnessReviewQueueBulkDecisionResponse:
+    """Apply a bounded batch of queue actions and return per-item outcomes."""
+
+    results: list[HarnessReviewQueueBulkDecisionResult] = []
+    for decision in request.decisions:
+        try:
+            item = act_on_review_queue_item(
+                space_id=space_id,
+                item_id=decision.item_id,
+                request=HarnessReviewQueueActionRequest(
+                    action=decision.action,
+                    reason=decision.reason,
+                    metadata=decision.metadata,
+                ),
+                proposal_store=proposal_store,
+                review_item_store=review_item_store,
+                approval_store=approval_store,
+                run_registry=run_registry,
+                artifact_store=artifact_store,
+                graph_api_gateway=graph_api_gateway,
+                execution_services=execution_services,
+            )
+        except HTTPException as exc:
+            results.append(
+                HarnessReviewQueueBulkDecisionResult(
+                    item_id=decision.item_id,
+                    status="failed",
+                    error=_bulk_decision_error_text(exc.detail),
+                ),
+            )
+            continue
+        except ValueError as exc:
+            results.append(
+                HarnessReviewQueueBulkDecisionResult(
+                    item_id=decision.item_id,
+                    status="failed",
+                    error=str(exc),
+                ),
+            )
+            continue
+        results.append(
+            HarnessReviewQueueBulkDecisionResult(
+                item_id=decision.item_id,
+                status="accepted",
+                new_state=item.status,
+            ),
+        )
+
+    accepted_count = sum(1 for result in results if result.status == "accepted")
+    return HarnessReviewQueueBulkDecisionResponse(
+        results=results,
+        summary=HarnessReviewQueueBulkDecisionSummary(
+            accepted=accepted_count,
+            failed=len(results) - accepted_count,
+        ),
+    )
+
+
 __all__ = [
     "HarnessReviewQueueActionRequest",
+    "HarnessReviewQueueBulkDecisionItem",
+    "HarnessReviewQueueBulkDecisionRequest",
+    "HarnessReviewQueueBulkDecisionResponse",
+    "HarnessReviewQueueBulkDecisionResult",
+    "HarnessReviewQueueBulkDecisionSummary",
     "HarnessReviewQueueItemResponse",
     "HarnessReviewQueueListResponse",
+    "act_on_review_queue_items_bulk",
     "act_on_review_queue_item",
     "get_review_queue_item",
     "list_review_queue",

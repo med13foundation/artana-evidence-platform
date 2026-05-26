@@ -28,6 +28,9 @@ from artana_evidence_api.direct_source_search import (
     DirectSourceSearchStore,
     SqlAlchemyDirectSourceSearchStore,
 )
+from artana_evidence_api.direct_sources.dhdr import build_dhdr_gateway
+from artana_evidence_api.direct_sources.dime import build_dime_gateway
+from artana_evidence_api.direct_sources.drugmechdb import build_drugmechdb_gateway
 from artana_evidence_api.document_binary_store import (
     HarnessDocumentBinaryStore,
     LocalFilesystemHarnessDocumentBinaryStore,
@@ -98,6 +101,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessReviewItemStore,
     SqlAlchemyHarnessScheduleStore,
 )
+from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import desc, select
 
@@ -108,6 +112,11 @@ if TYPE_CHECKING:
     from artana_evidence_api.approval_store import HarnessApprovalStore
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.chat_sessions import HarnessChatSessionStore
+    from artana_evidence_api.direct_sources.dhdr import DHDRGatewayProtocol
+    from artana_evidence_api.direct_sources.dime import DiMeGatewayProtocol
+    from artana_evidence_api.direct_sources.drugmechdb import (
+        DrugMechDBGatewayProtocol,
+    )
     from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
     from artana_evidence_api.document_store import HarnessDocumentStore
     from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
@@ -127,6 +136,7 @@ if TYPE_CHECKING:
         OrphanetGatewayProtocol,
         UniProtGatewayProtocol,
     )
+    from artana_evidence_api.study_outcomes import HarnessStudyOutcomeStore
     from sqlalchemy.orm import Session
 
 _SESSION_DEPENDENCY = Depends(get_session)
@@ -229,6 +239,13 @@ def get_review_item_store(
 ) -> HarnessReviewItemStore:
     """Return the durable review-item store."""
     return SqlAlchemyHarnessReviewItemStore(session)
+
+
+def get_study_outcome_store(
+    session: Session = _SESSION_DEPENDENCY,
+) -> HarnessStudyOutcomeStore:
+    """Return the durable study-outcome store."""
+    return SqlAlchemyStudyOutcomeStore(session)
 
 
 def get_research_space_store(
@@ -513,6 +530,24 @@ def get_orphanet_source_gateway() -> OrphanetGatewayProtocol | None:
     return build_orphanet_gateway()
 
 
+def get_dime_source_gateway() -> DiMeGatewayProtocol | None:
+    """Return the DiMe public catalog gateway used by direct source search."""
+
+    return build_dime_gateway()
+
+
+def get_dhdr_source_gateway() -> DHDRGatewayProtocol | None:
+    """Return the DHDR public catalog gateway used by direct source search."""
+
+    return build_dhdr_gateway()
+
+
+def get_drugmechdb_source_gateway() -> DrugMechDBGatewayProtocol | None:
+    """Return the pinned DrugMechDB gateway used by direct source search."""
+
+    return build_drugmechdb_gateway()
+
+
 def get_graph_search_runner() -> HarnessGraphSearchRunner:
     """Return the harness-owned graph-search runner."""
     return HarnessGraphSearchRunner()
@@ -539,6 +574,7 @@ _CHAT_SESSION_STORE_PROVIDER = Depends(get_chat_session_store)
 _DOCUMENT_STORE_PROVIDER = Depends(get_document_store)
 _PROPOSAL_STORE_PROVIDER = Depends(get_proposal_store)
 _REVIEW_ITEM_STORE_PROVIDER = Depends(get_review_item_store)
+_STUDY_OUTCOME_STORE_PROVIDER = Depends(get_study_outcome_store)
 _APPROVAL_STORE_PROVIDER = Depends(get_approval_store)
 _RESEARCH_STATE_STORE_PROVIDER = Depends(get_research_state_store)
 _GRAPH_SNAPSHOT_STORE_PROVIDER = Depends(get_graph_snapshot_store)
@@ -562,6 +598,7 @@ def get_harness_execution_services(  # noqa: PLR0913
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_PROVIDER,
     proposal_store: HarnessProposalStore = _PROPOSAL_STORE_PROVIDER,
     review_item_store: HarnessReviewItemStore = _REVIEW_ITEM_STORE_PROVIDER,
+    study_outcome_store: HarnessStudyOutcomeStore = _STUDY_OUTCOME_STORE_PROVIDER,
     approval_store: HarnessApprovalStore = _APPROVAL_STORE_PROVIDER,
     research_state_store: HarnessResearchStateStore = _RESEARCH_STATE_STORE_PROVIDER,
     graph_snapshot_store: HarnessGraphSnapshotStore = _GRAPH_SNAPSHOT_STORE_PROVIDER,
@@ -598,6 +635,7 @@ def get_harness_execution_services(  # noqa: PLR0913
         document_store=document_store,
         proposal_store=proposal_store,
         review_item_store=review_item_store,
+        study_outcome_store=study_outcome_store,
         approval_store=approval_store,
         research_state_store=research_state_store,
         graph_snapshot_store=graph_snapshot_store,
@@ -626,6 +664,9 @@ __all__ = [
     "get_clinvar_source_gateway",
     "get_direct_source_search_store",
     "get_document_store",
+    "get_dhdr_source_gateway",
+    "get_dime_source_gateway",
+    "get_drugmechdb_source_gateway",
     "get_alphafold_source_gateway",
     "get_drugbank_source_gateway",
     "get_gnomad_source_gateway",
@@ -647,6 +688,7 @@ __all__ = [
     "get_run_registry",
     "get_schedule_store",
     "get_source_search_handoff_store",
+    "get_study_outcome_store",
     "get_uniprot_source_gateway",
     "get_zfin_source_gateway",
     "require_harness_space_read_access",

@@ -8,16 +8,23 @@ import json
 from collections import Counter
 from collections.abc import Iterable
 from typing import cast
+from uuid import uuid4
 
 from artana_evidence_api import source_route_plugins
 from artana_evidence_api.app import create_app
 from artana_evidence_api.auth import require_harness_read_access
+from artana_evidence_api.dependencies import (
+    get_research_space_store,
+    get_study_outcome_store,
+)
+from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.routers import (
     approvals,
     artifacts,
     authentication,
     chat,
     continuous_learning_runs,
+    document_deletion,
     documents,
     evidence_selection_runs,
     full_ai_orchestrator_runs,
@@ -52,8 +59,13 @@ from artana_evidence_api.source_route_plugins import (
     direct_source_typed_route_endpoint_map,
     validate_direct_source_route_plugins,
 )
+from artana_evidence_api.study_outcomes import (
+    HarnessStudyOutcomeStore,
+    StudyOutcomeDraft,
+)
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from starlette.responses import JSONResponse
 
 RouteKey = tuple[str, str]
 
@@ -73,6 +85,13 @@ _CUSTOM_V2_ROUTE_ENDPOINTS = {
         "/v2/spaces/{space_id}/sources/{source_key}/searches/{search_id}/handoffs",
         "POST",
     ): v2_public.create_source_search_handoff,
+    ("/v2/spaces/{space_id}/study-outcomes", "GET"): v2_public.list_study_outcomes,
+    ("/v2/spaces/{space_id}/trial-matching", "GET"): v2_public.match_trials,
+    (
+        "/v2/spaces/{space_id}/convergence-queries",
+        "POST",
+    ): v2_public.create_convergence_query,
+    ("/v2/spaces/{space_id}/query-runs", "POST"): v2_public.create_query_run,
     ("/v2/spaces/{space_id}/evidence-runs", "POST"): v2_public.create_evidence_run,
     (
         "/v2/spaces/{space_id}/evidence-runs/{evidence_run_id}/follow-ups",
@@ -207,6 +226,7 @@ _CUSTOM_V1_ROUTE_EQUIVALENTS = {
 _USER_FACING_V1_ROUTERS = (
     authentication.router,
     spaces.router,
+    document_deletion.router,
     documents.router,
     pubmed.router,
     marrvel.router,
@@ -428,12 +448,18 @@ def test_source_search_openapi_keeps_typed_routes_and_capture_contract() -> None
     assert "GnomADSourceSearchResponse" in schemas
     assert "DrugBankSourceSearchRequest" in schemas
     assert "DrugBankSourceSearchResponse" in schemas
+    assert "DrugMechDBSourceSearchRequest" in schemas
+    assert "DrugMechDBSourceSearchResponse" in schemas
     assert "MGISourceSearchRequest" in schemas
     assert "MGISourceSearchResponse" in schemas
     assert "ZFINSourceSearchRequest" in schemas
     assert "ZFINSourceSearchResponse" in schemas
     assert "OrphanetSourceSearchRequest" in schemas
     assert "OrphanetSourceSearchResponse" in schemas
+    assert "DiMeSourceSearchRequest" in schemas
+    assert "DiMeSourceSearchResponse" in schemas
+    assert "DHDRSourceSearchRequest" in schemas
+    assert "DHDRSourceSearchResponse" in schemas
 
     clinvar_post = cast(
         "dict[str, object]",
@@ -478,17 +504,23 @@ def test_direct_source_route_plugin_registry_has_no_source_payloads() -> None:
         "run_uniprot_direct_search",
         "run_alphafold_direct_search",
         "run_drugbank_direct_search",
+        "run_drugmechdb_direct_search",
         "run_mgi_direct_search",
         "run_zfin_direct_search",
         "run_orphanet_direct_search",
+        "run_dime_direct_search",
+        "run_dhdr_direct_search",
         "create_clinvar_source_search_payload",
         "create_clinicaltrials_source_search_payload",
         "create_uniprot_source_search_payload",
         "create_alphafold_source_search_payload",
         "create_drugbank_source_search_payload",
+        "create_drugmechdb_source_search_payload",
         "create_mgi_source_search_payload",
         "create_zfin_source_search_payload",
         "create_orphanet_source_search_payload",
+        "create_dime_source_search_payload",
+        "create_dhdr_source_search_payload",
     )
     for snippet in forbidden_snippets:
         assert snippet not in source
@@ -558,6 +590,14 @@ def test_direct_source_typed_route_plugins_define_expected_public_routes() -> No
                 None,
             ),
         ),
+        "drugmechdb": (
+            ("/v2/spaces/{space_id}/sources/drugmechdb/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/drugmechdb/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
         "alphafold": (
             ("/v2/spaces/{space_id}/sources/alphafold/searches", "POST", 201),
             (
@@ -606,6 +646,22 @@ def test_direct_source_typed_route_plugins_define_expected_public_routes() -> No
             ("/v2/spaces/{space_id}/sources/orphanet/searches", "POST", 201),
             (
                 "/v2/spaces/{space_id}/sources/orphanet/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "dime": (
+            ("/v2/spaces/{space_id}/sources/dime/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/dime/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
+        "dhdr": (
+            ("/v2/spaces/{space_id}/sources/dhdr/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/dhdr/searches/{search_id}",
                 "GET",
                 None,
             ),
@@ -659,6 +715,72 @@ def test_v2_source_endpoints_return_registry_entries_over_http() -> None:
     assert source_payload["source_key"] == "clinical_trials"
     assert source_payload["request_schema_ref"] == "ClinicalTrialsSourceSearchRequest"
     assert source_payload["result_schema_ref"] == "ClinicalTrialsSourceSearchResponse"
+
+
+def test_v2_study_outcomes_endpoint_filters_trial_outcomes() -> None:
+    app = create_app()
+    research_space_store = HarnessResearchSpaceStore()
+    space = research_space_store.create_space(
+        owner_id=_UUID,
+        name="Study Outcomes",
+        description="Owned test space for outcome routes.",
+    )
+    study_outcome_store = HarnessStudyOutcomeStore()
+    study_outcome_store.create_outcomes(
+        space_id=space.id,
+        document_id=uuid4(),
+        run_id=uuid4(),
+        outcomes=(
+            StudyOutcomeDraft(
+                intervention="Temozolomide plus radiotherapy",
+                comparator="radiotherapy alone",
+                outcome_metric="median_overall_survival",
+                value=14.6,
+                unit="months",
+                confidence_interval_low=None,
+                confidence_interval_high=None,
+                population="reported trial population",
+                n=None,
+                source_pmid="15758009",
+                source_quote="median OS 14.6 vs 12.1 months",
+                metadata={"extraction_method": "pattern_v1"},
+            ),
+            StudyOutcomeDraft(
+                intervention="Lomustine",
+                comparator="temozolomide",
+                outcome_metric="median_progression_free_survival",
+                value=16.0,
+                unit="months",
+                confidence_interval_low=None,
+                confidence_interval_high=None,
+                population="reported trial population",
+                n=None,
+                source_pmid="30782343",
+                source_quote="median PFS 16.0 months",
+                metadata={"extraction_method": "pattern_v1"},
+            ),
+        ),
+    )
+    app.dependency_overrides[get_research_space_store] = lambda: research_space_store
+    app.dependency_overrides[get_study_outcome_store] = lambda: study_outcome_store
+    client = TestClient(app)
+
+    response = client.get(
+        f"/v2/spaces/{space.id}/study-outcomes",
+        headers=_AUTH_HEADERS,
+        params={
+            "intervention": "temozolomide",
+            "outcome_metric": "median_overall_survival",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert payload["study_outcomes"][0]["intervention"] == (
+        "Temozolomide plus radiotherapy"
+    )
+    assert payload["study_outcomes"][0]["source_pmid"] == "15758009"
 
 
 def test_every_v2_endpoint_resolves_over_http() -> None:
@@ -774,6 +896,18 @@ def test_publicize_json_keeps_generic_user_payload_keys_intact() -> None:
     assert "plan" not in input_payload
     assert "outputs" not in input_payload
     assert "working_state" not in input_payload
+
+
+def test_publicized_json_response_accepts_memoryview_body() -> None:
+    """Starlette may type JSONResponse.body as bytes or memoryview."""
+    response = JSONResponse({"status_url": "/v1/spaces/test-space/tasks/test-task"})
+    response.body = memoryview(b'{"status_url":"/v1/spaces/test-space/tasks/test-task"}')
+
+    publicized = v2_public._publicized_json_response(response)
+
+    assert json.loads(publicized.body)["status_url"] == (
+        "/v2/spaces/test-space/tasks/test-task"
+    )
 
 
 def test_publicize_json_still_renames_known_system_scalar_fields() -> None:

@@ -48,10 +48,21 @@ class ClinicalTrialsSourceGateway:
         *,
         query: str,
         max_results: int = 20,
+        condition: str | None = None,
+        overall_statuses: tuple[str, ...] = (),
+        location: str | None = None,
+        geo_filter: str | None = None,
     ) -> ClinicalTrialsGatewayFetchResult:
         """Fetch clinical trial records matching a free-text query."""
         return asyncio.run(
-            self.fetch_records_async(query=query, max_results=max_results),
+            self.fetch_records_async(
+                query=query,
+                max_results=max_results,
+                condition=condition,
+                overall_statuses=overall_statuses,
+                location=location,
+                geo_filter=geo_filter,
+            ),
         )
 
     async def fetch_records_async(
@@ -59,19 +70,27 @@ class ClinicalTrialsSourceGateway:
         *,
         query: str,
         max_results: int = 20,
+        condition: str | None = None,
+        overall_statuses: tuple[str, ...] = (),
+        location: str | None = None,
+        geo_filter: str | None = None,
     ) -> ClinicalTrialsGatewayFetchResult:
         """Fetch clinical trial records from async callers."""
-        if not query.strip():
+        params = _study_query_params(
+            query=query,
+            max_results=max_results,
+            condition=condition,
+            overall_statuses=overall_statuses,
+            location=location,
+            geo_filter=geo_filter,
+        )
+        if params is None:
             return ClinicalTrialsGatewayFetchResult()
         async with self._build_client() as client:
             payload = await self._get_json(
                 client=client,
                 endpoint="studies",
-                params={
-                    "query.term": query.strip(),
-                    "pageSize": max(1, min(max_results, _MAX_PAGE_SIZE)),
-                    "format": "json",
-                },
+                params=params,
             )
         records, total_count, next_page_token = _normalize_studies_payload(payload)
         return ClinicalTrialsGatewayFetchResult(
@@ -139,6 +158,8 @@ def _normalize_study(study: object) -> dict[str, object] | None:
     interventions = _dict_value(protocol.get("armsInterventionsModule")) or {}
     design = _dict_value(protocol.get("designModule")) or {}
     description = _dict_value(protocol.get("descriptionModule")) or {}
+    eligibility = _dict_value(protocol.get("eligibilityModule")) or {}
+    contacts_locations = _dict_value(protocol.get("contactsLocationsModule")) or {}
 
     nct_id = _first_string(identification, ("nctId",))
     if not nct_id:
@@ -160,8 +181,57 @@ def _normalize_study(study: object) -> dict[str, object] | None:
         "phases": _string_list(design.get("phases")),
         "study_type": _first_string(design, ("studyType",)) or "",
         "brief_summary": _first_string(description, ("briefSummary",)) or "",
+        "eligibility_criteria": _first_string(
+            eligibility,
+            ("eligibilityCriteria",),
+        )
+        or "",
+        "minimum_age": _first_string(eligibility, ("minimumAge",)) or "",
+        "maximum_age": _first_string(eligibility, ("maximumAge",)) or "",
+        "sex": _first_string(eligibility, ("sex",)) or "",
+        "central_contacts": _extract_contacts(
+            contacts_locations.get("centralContacts"),
+        ),
+        "overall_officials": _extract_officials(
+            contacts_locations.get("overallOfficials"),
+        ),
+        "locations": _extract_locations(contacts_locations.get("locations")),
         "source": "clinical_trials",
     }
+
+
+def _study_query_params(
+    *,
+    query: str,
+    max_results: int,
+    condition: str | None,
+    overall_statuses: tuple[str, ...],
+    location: str | None,
+    geo_filter: str | None,
+) -> dict[str, str | int] | None:
+    query_term = " ".join(query.split())
+    condition_term = _clean_optional_string(condition)
+    location_term = _clean_optional_string(location)
+    geo_term = _clean_optional_string(geo_filter)
+    statuses = _normalized_statuses(overall_statuses)
+    if not any((query_term, condition_term, location_term, geo_term, statuses)):
+        return None
+
+    params: dict[str, str | int] = {
+        "pageSize": max(1, min(max_results, _MAX_PAGE_SIZE)),
+        "format": "json",
+    }
+    if query_term:
+        params["query.term"] = query_term
+    if condition_term:
+        params["query.cond"] = condition_term
+    if location_term:
+        params["query.locn"] = location_term
+    if geo_term:
+        params["filter.geo"] = geo_term
+    if statuses:
+        params["filter.overallStatus"] = "|".join(statuses)
+    return params
 
 
 def _extract_interventions(module: Mapping[str, object]) -> list[dict[str, object]]:
@@ -178,6 +248,93 @@ def _extract_interventions(module: Mapping[str, object]) -> list[dict[str, objec
             continue
         records.append({"name": name, "type": _first_string(payload, ("type",)) or ""})
     return records
+
+
+def _extract_contacts(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    records: list[dict[str, object]] = []
+    for item in value:
+        payload = _dict_value(item)
+        if payload is None:
+            continue
+        name = _first_string(payload, ("name",))
+        role = _first_string(payload, ("role",))
+        email = _first_string(payload, ("email",))
+        phone = _first_string(payload, ("phone",))
+        if not any((name, role, email, phone)):
+            continue
+        records.append(
+            {
+                "name": name or "",
+                "role": role or "",
+                "phone": phone or "",
+                "email": email or "",
+            },
+        )
+    return records
+
+
+def _extract_officials(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    records: list[dict[str, object]] = []
+    for item in value:
+        payload = _dict_value(item)
+        if payload is None:
+            continue
+        name = _first_string(payload, ("name",))
+        role = _first_string(payload, ("role",))
+        affiliation = _first_string(payload, ("affiliation",))
+        if not any((name, role, affiliation)):
+            continue
+        records.append(
+            {
+                "name": name or "",
+                "role": role or "",
+                "affiliation": affiliation or "",
+            },
+        )
+    return records
+
+
+def _extract_locations(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    records: list[dict[str, object]] = []
+    for item in value:
+        payload = _dict_value(item)
+        if payload is None:
+            continue
+        facility = _first_string(payload, ("facility",))
+        city = _first_string(payload, ("city",))
+        country = _first_string(payload, ("country",))
+        if not any((facility, city, country)):
+            continue
+        records.append(
+            {
+                "facility": facility or "",
+                "status": _first_string(payload, ("status",)) or "",
+                "city": city or "",
+                "state": _first_string(payload, ("state",)) or "",
+                "zip": _first_string(payload, ("zip",)) or "",
+                "country": country or "",
+                "contacts": _extract_contacts(payload.get("contacts")),
+                "geo_point": _geo_point(payload.get("geoPoint")),
+            },
+        )
+    return records
+
+
+def _geo_point(value: object) -> dict[str, float] | None:
+    payload = _dict_value(value)
+    if payload is None:
+        return None
+    lat = _float_value(payload.get("lat"))
+    lon = _float_value(payload.get("lon"))
+    if lat is None or lon is None:
+        return None
+    return {"lat": lat, "lon": lon}
 
 
 def _date_struct(value: object) -> str:
@@ -210,6 +367,30 @@ def _string_list(value: object) -> list[str]:
     if not isinstance(value, list | tuple):
         return []
     return [" ".join(item.split()) for item in value if isinstance(item, str) and item.strip()]
+
+
+def _clean_optional_string(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = " ".join(value.split())
+    return normalized or None
+
+
+def _normalized_statuses(values: tuple[str, ...]) -> tuple[str, ...]:
+    normalized = tuple(
+        " ".join(value.split()).upper()
+        for value in values
+        if " ".join(value.split())
+    )
+    return tuple(dict.fromkeys(normalized))
+
+
+def _float_value(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    return None
 
 
 __all__ = [

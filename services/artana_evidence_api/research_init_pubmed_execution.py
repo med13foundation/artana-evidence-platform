@@ -83,6 +83,7 @@ def pubmed_document_source_capture(
             "pmid": candidate.pmid,
             "doi": candidate.doi,
             "pmc_id": candidate.pmc_id,
+            "publication_types": list(candidate.publication_types),
         },
         result_count=1,
         provenance=compact_provenance(
@@ -101,6 +102,33 @@ def _pubmed_candidate_citation(candidate: _PubMedCandidate) -> str | None:
         citation_parts.append(candidate.journal.strip())
     citation = ". ".join(part for part in citation_parts if part)
     return citation or None
+
+
+def _publication_types_from_preview(preview: JSONObject) -> list[str]:
+    raw_publication_types = preview.get("publication_types")
+    if isinstance(raw_publication_types, str):
+        return [raw_publication_types] if raw_publication_types.strip() != "" else []
+    if not isinstance(raw_publication_types, Sequence):
+        return []
+    return _dedupe_string_list(
+        [
+            publication_type
+            for publication_type in raw_publication_types
+            if isinstance(publication_type, str) and publication_type.strip() != ""
+        ],
+    )
+
+
+def _dedupe_string_list(values: Sequence[str]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        normalized = " ".join(value.casefold().split())
+        if normalized == "" or normalized in seen:
+            continue
+        deduped.append(value.strip())
+        seen.add(normalized)
+    return deduped
 
 
 async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
@@ -147,6 +175,7 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
             if isinstance((pmid := preview.get("pmid")), str) and pmid.strip() != ""
         ]
         abstracts_by_pmid: dict[str, str] = {}
+        publication_types_by_pmid: dict[str, list[str]] = {}
         if pmids:
             try:
                 import httpx
@@ -207,6 +236,17 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
                             if keywords:
                                 doc_parts.append(
                                     f"Keywords: {', '.join(keywords)}",
+                                )
+                            publication_types = [
+                                "".join(publication_type.itertext()).strip()
+                                for publication_type in article.findall(
+                                    ".//PublicationTypeList/PublicationType",
+                                )
+                                if "".join(publication_type.itertext()).strip() != ""
+                            ]
+                            if publication_types:
+                                publication_types_by_pmid[pmid_val] = (
+                                    _dedupe_string_list(publication_types)
                                 )
                             if doc_parts:
                                 abstracts_by_pmid[pmid_val] = "\n\n".join(doc_parts)
@@ -275,6 +315,12 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
                 doi=doi_value if isinstance(doi_value, str) else None,
                 pmc_id=pmc_id if isinstance(pmc_id, str) else None,
                 journal=(journal_value if isinstance(journal_value, str) else None),
+                publication_types=_dedupe_string_list(
+                    [
+                        *_publication_types_from_preview(preview),
+                        *publication_types_by_pmid.get(pmid or "", []),
+                    ],
+                ),
             )
             key = _candidate_key(
                 pmid=candidate.pmid,

@@ -92,6 +92,7 @@ from artana_evidence_api.run_budget import (
     resolve_continuous_learning_run_budget,
 )
 from artana_evidence_api.run_registry import HarnessRunRecord
+from artana_evidence_api.study_outcomes import HarnessStudyOutcomeStore
 from artana_evidence_api.supervisor_runtime import (
     SupervisorExecutionResult,
     execute_supervisor_run,
@@ -173,6 +174,9 @@ class HarnessExecutionServices:
     source_search_handoff_store: SourceSearchHandoffStore | None = None
     review_item_store: HarnessReviewItemStore = field(
         default_factory=HarnessReviewItemStore,
+    )
+    study_outcome_store: HarnessStudyOutcomeStore = field(
+        default_factory=HarnessStudyOutcomeStore,
     )
     source_search_runner: EvidenceSelectionSourceSearchRunner = field(
         default_factory=EvidenceSelectionSourceSearchRunner,

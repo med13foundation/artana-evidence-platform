@@ -298,6 +298,19 @@ async def _run_structured_enrichment_source(
     )
 
 
+def _seed_terms_for_structured_enrichment_source(
+    *,
+    source_key: str,
+    seed_terms: list[str],
+    driven_terms: list[str],
+) -> list[str]:
+    """Return the scoped query terms one structured source should receive."""
+
+    if source_key == "clinical_trials":
+        return [term for term in seed_terms if term]
+    return list(driven_terms)
+
+
 async def _execute_deferred_mondo_load(
     *,
     services: HarnessExecutionServices,
@@ -623,6 +636,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                             "doi": candidate.doi,
                             "pmc_id": candidate.pmc_id,
                             "journal": candidate.journal,
+                            "publication_types": list(candidate.publication_types),
                         },
                         "relevance_review": {
                             "method": review.method,
@@ -977,7 +991,11 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
                     log_message=log_message,
                     runner=runner,
                     space_id=space_id,
-                    seed_terms=driven_terms,
+                    seed_terms=_seed_terms_for_structured_enrichment_source(
+                        source_key=source_key,
+                        seed_terms=seed_terms,
+                        driven_terms=driven_terms,
+                    ),
                     document_store=document_store,
                     run_registry=run_registry,
                     artifact_store=artifact_store,
@@ -1066,6 +1084,7 @@ async def execute_research_init_run(  # noqa: PLR0912, PLR0915
             run_registry=run_registry,
             artifact_store=artifact_store,
             proposal_store=proposal_store,
+            study_outcome_store=services.study_outcome_store,
             research_state_store=research_state_store,
             documents_ingested=documents_ingested,
             ingested_documents=ingested_documents,

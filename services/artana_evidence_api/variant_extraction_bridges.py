@@ -91,6 +91,33 @@ _GENE_VARIANT_PATTERN = re.compile(
     r"(?:\s+(?P<transcript_inline>NM_\d+(?:\.\d+)?))?"
     r"(?:\s+|:\s*)(?P<hgvs>(?:c|p|g)\.[A-Za-z0-9_().:+\-=>*?]+)\b",
 )
+_PRECEDING_GENE_CONTEXT_PATTERN = re.compile(
+    r"\b(?P<gene>[A-Z][A-Z0-9-]{1,15})\b"
+    r"(?:\s+(?:gene|variant|variants|mutation|mutations|missense|nonsense|"
+    r"frameshift|splice|splice-site|de\s+novo|heterozygous|homozygous|"
+    r"compound|pathogenic|likely|benign|reported|identified|harboring|"
+    r"carrying|with|and|the|a|an)){0,8}"
+    r"\s*[,;:]?\s*$",
+)
+_FOLLOWING_GENE_CONTEXT_PATTERN = re.compile(
+    r"^(?:[\s,;()]+|(?:c|p|g)\.[A-Za-z0-9_().:+\-=>*?]+)*"
+    r"\s*(?:variant\s+)?"
+    r"(?:in|of|within|from)\s+(?:the\s+)?(?P<gene>[A-Z][A-Z0-9-]{1,15})\b",
+)
+_GENE_SYMBOL_STOPWORDS = frozenset(
+    {
+        "CDNA",
+        "DNA",
+        "DOI",
+        "HGVS",
+        "MRNA",
+        "OMIM",
+        "PMID",
+        "PROTEIN",
+        "RNA",
+        "VUS",
+    },
+)
 _CDNA_HGVS_PATTERN = re.compile(
     r"\bc\.[0-9*_\-+]+"
     r"(?:[ACGT]>[ACGT]|del(?:[ACGT]+)?|dup(?:[ACGT]+)?|ins(?:[ACGT]+)|"
@@ -103,6 +130,12 @@ _PROTEIN_HGVS_PATTERN = re.compile(
 _GENOMIC_HGVS_PATTERN = re.compile(
     r"\bg\.[0-9_]+(?:[ACGT]>[ACGT]|del|dup|ins[ACGT]+)\b",
     re.IGNORECASE,
+)
+_PRIMARY_HGVS_PATTERNS = (_CDNA_HGVS_PATTERN, _GENOMIC_HGVS_PATTERN)
+_CONTEXTUAL_HGVS_PATTERNS = (
+    _CDNA_HGVS_PATTERN,
+    _GENOMIC_HGVS_PATTERN,
+    _PROTEIN_HGVS_PATTERN,
 )
 _COORDINATE_PATTERN = re.compile(
     r"\b(?P<coordinate>(?:chr)?[0-9XYM]{1,2}:[0-9,]+(?:-[0-9,]+)?)\b",
@@ -230,6 +263,8 @@ def _extract_variant_candidates(
 
     for match in _GENE_VARIANT_PATTERN.finditer(text):
         gene_symbol = match.group("gene").strip()
+        if not _usable_gene_symbol(gene_symbol):
+            continue
         transcript = _normalize_transcript(
             match.group("transcript_paren")
             or match.group("transcript_inline")
@@ -247,6 +282,17 @@ def _extract_variant_candidates(
             match_start=match.start(),
             match_end=match.end(),
         )
+        key = _variant_candidate_key(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        candidates.append(candidate)
+
+    for candidate in _extract_contextual_variant_candidates(
+        raw_record=raw_record,
+        text=text,
+        raw_transcript=raw_transcript,
+    ):
         key = _variant_candidate_key(candidate)
         if key in seen:
             continue
@@ -271,6 +317,75 @@ def _extract_variant_candidates(
                 candidates.append(raw_variant_candidate)
 
     return candidates
+
+
+def _extract_contextual_variant_candidates(
+    *,
+    raw_record: JSONObject,
+    text: str,
+    raw_transcript: str | None,
+) -> list[JSONObject]:
+    candidates: list[JSONObject] = []
+    for pattern in _CONTEXTUAL_HGVS_PATTERNS:
+        for match in pattern.finditer(text):
+            hgvs = _normalize_hgvs(match.group(0))
+            if hgvs is None:
+                continue
+            window_text = _surrounding_text(text, match.start(), match.end())
+            if hgvs.startswith("p.") and _has_primary_hgvs(window_text):
+                continue
+            gene_symbol = _gene_symbol_for_contextual_hgvs(
+                text=text,
+                match_start=match.start(),
+                match_end=match.end(),
+            )
+            if gene_symbol is None:
+                continue
+            transcript = _normalize_transcript(
+                _first_match(_TRANSCRIPT_PATTERN, window_text) or raw_transcript,
+            )
+            candidates.append(
+                _build_variant_candidate(
+                    gene_symbol=gene_symbol,
+                    transcript=transcript,
+                    raw_hgvs=hgvs,
+                    raw_record=raw_record,
+                    window_text=window_text,
+                    match_start=match.start(),
+                    match_end=match.end(),
+                ),
+            )
+    return candidates
+
+
+def _gene_symbol_for_contextual_hgvs(
+    *,
+    text: str,
+    match_start: int,
+    match_end: int,
+    radius: int = 90,
+) -> str | None:
+    after = text[match_end : min(len(text), match_end + radius)]
+    following_match = _FOLLOWING_GENE_CONTEXT_PATTERN.search(after)
+    if following_match is not None:
+        gene_symbol = following_match.group("gene").strip()
+        if _usable_gene_symbol(gene_symbol):
+            return gene_symbol
+
+    before = text[max(0, match_start - radius) : match_start]
+    preceding_match = _PRECEDING_GENE_CONTEXT_PATTERN.search(before)
+    if preceding_match is None:
+        return None
+    gene_symbol = preceding_match.group("gene").strip()
+    return gene_symbol if _usable_gene_symbol(gene_symbol) else None
+
+
+def _has_primary_hgvs(text: str) -> bool:
+    return any(pattern.search(text) is not None for pattern in _PRIMARY_HGVS_PATTERNS)
+
+
+def _usable_gene_symbol(value: str) -> bool:
+    return bool(value.strip()) and value.strip().upper() not in _GENE_SYMBOL_STOPWORDS
 
 
 def _variant_candidate_key(candidate: JSONObject) -> tuple[str, str]:

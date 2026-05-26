@@ -31,6 +31,7 @@ from artana_evidence_api.research_init_models import (
 from artana_evidence_api.research_init_observation_bridge import (
     _append_unique_entity_ids,
 )
+from artana_evidence_api.study_outcomes import extract_study_outcome_drafts
 from artana_evidence_api.types.common import (
     JSONObject,
     ResearchSpaceSourcePreferences,
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
     from artana_evidence_api.proposal_store import HarnessProposalStore
     from artana_evidence_api.research_state import HarnessResearchStateStore
     from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
+    from artana_evidence_api.study_outcomes import HarnessStudyOutcomeStore
 
 _DOCUMENT_EXTRACTION_CONCURRENCY_LIMIT = 4
 _DOCUMENT_EXTRACTION_STAGE_TIMEOUT_SECONDS = 30.0
@@ -91,6 +93,7 @@ class ResearchInitDocumentExtractionResult:
 
     document_workset: list[HarnessDocumentRecord]
     created_proposal_count: int
+    created_study_outcome_count: int
 
 
 async def run_research_init_document_extraction(
@@ -105,6 +108,7 @@ async def run_research_init_document_extraction(
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     proposal_store: HarnessProposalStore,
+    study_outcome_store: HarnessStudyOutcomeStore,
     research_state_store: HarnessResearchStateStore,
     documents_ingested: int,
     ingested_documents: list[HarnessDocumentRecord],
@@ -150,6 +154,7 @@ async def run_research_init_document_extraction(
     pubmed_observations_created = 0
     text_observations_created = 0
     pdf_observations_created = 0
+    created_study_outcome_count = 0
 
     if document_workset:
         pubmed_observations_created = await _sync_pubmed_observation_documents(
@@ -231,29 +236,42 @@ async def run_research_init_document_extraction(
                 "document_extraction_draft_count": sum(
                     len(prepared.drafts) for prepared in prepared_extractions
                 ),
+                "study_outcome_draft_count": sum(
+                    len(prepared.study_outcome_drafts)
+                    for prepared in prepared_extractions
+                ),
                 "source_results": source_results,
             },
             progress_observer=progress_observer,
         )
 
-        created_proposal_count = _store_prepared_extractions(
-            space_id=space_id,
-            run=run,
-            graph_api_gateway=graph_api_gateway,
-            document_store=document_store,
-            proposal_store=proposal_store,
-            prepared_extractions=prepared_extractions,
-            errors=errors,
-            created_entity_ids=created_entity_ids,
-            chase_entity_ids=chase_entity_ids,
-            created_proposal_count=created_proposal_count,
+        created_proposal_count, created_study_outcome_count = (
+            _store_prepared_extractions(
+                space_id=space_id,
+                run=run,
+                graph_api_gateway=graph_api_gateway,
+                document_store=document_store,
+                proposal_store=proposal_store,
+                study_outcome_store=study_outcome_store,
+                prepared_extractions=prepared_extractions,
+                errors=errors,
+                created_entity_ids=created_entity_ids,
+                chase_entity_ids=chase_entity_ids,
+                created_proposal_count=created_proposal_count,
+                created_study_outcome_count=created_study_outcome_count,
+            )
         )
 
+    source_results["study_outcomes"] = {
+        "status": "completed" if document_workset else "skipped",
+        "outcomes_created": created_study_outcome_count,
+    }
     artifact_store.patch_workspace(
         space_id=space_id,
         run_id=run.id,
         patch={
             "proposal_count": created_proposal_count,
+            "study_outcome_count": created_study_outcome_count,
             "source_results": source_results,
         },
     )
@@ -279,6 +297,7 @@ async def run_research_init_document_extraction(
         metadata={
             "created_entity_count": len(created_entity_ids),
             "proposal_count": created_proposal_count,
+            "study_outcome_count": created_study_outcome_count,
             "documents_ingested": documents_ingested,
             "selected_document_count": len(document_workset),
             "source_results": source_results,
@@ -288,6 +307,7 @@ async def run_research_init_document_extraction(
     return ResearchInitDocumentExtractionResult(
         document_workset=document_workset,
         created_proposal_count=created_proposal_count,
+        created_study_outcome_count=created_study_outcome_count,
     )
 
 
@@ -684,12 +704,18 @@ async def _prepare_document_extractions(
                                     "metadata could be stored.",
                                 ),
                                 failed=True,
+                                study_outcome_drafts=extract_study_outcome_drafts(
+                                    current_document,
+                                ),
                             )
                         current_document = updated_document
                         return _PreparedDocumentExtraction(
                             document=current_document,
                             drafts=variant_result.proposal_drafts,
                             errors=tuple(doc_errors),
+                            study_outcome_drafts=extract_study_outcome_drafts(
+                                current_document,
+                            ),
                         )
 
                     (
@@ -704,6 +730,9 @@ async def _prepare_document_extractions(
                             document=current_document,
                             drafts=(),
                             errors=tuple(doc_errors),
+                            study_outcome_drafts=extract_study_outcome_drafts(
+                                current_document,
+                            ),
                         )
 
                     ai_resolved_entities = await _document_extraction.pre_resolve_entities_with_ai(
@@ -731,6 +760,9 @@ async def _prepare_document_extractions(
                         document=current_document,
                         drafts=tuple(reviewed_drafts),
                         errors=tuple(doc_errors),
+                        study_outcome_drafts=extract_study_outcome_drafts(
+                            current_document,
+                        ),
                     )
 
                 timeout_seconds = _document_extraction_stage_timeout_seconds()
@@ -1024,12 +1056,14 @@ def _store_prepared_extractions(
     graph_api_gateway: GraphTransportBundle,
     document_store: HarnessDocumentStore,
     proposal_store: HarnessProposalStore,
+    study_outcome_store: HarnessStudyOutcomeStore,
     prepared_extractions: list[_PreparedDocumentExtraction],
     errors: list[str],
     created_entity_ids: list[str],
     chase_entity_ids: list[str],
     created_proposal_count: int,
-) -> int:
+    created_study_outcome_count: int,
+) -> tuple[int, int]:
     for prepared in prepared_extractions:
         errors.extend(prepared.errors)
         if prepared.failed:
@@ -1069,13 +1103,23 @@ def _store_prepared_extractions(
             )
             created_proposal_count += len(grounded_drafts)
 
+        created_outcomes = study_outcome_store.create_outcomes(
+            space_id=space_id,
+            document_id=prepared.document.id,
+            run_id=run.id,
+            outcomes=prepared.study_outcome_drafts,
+        )
+        created_study_outcome_count += len(created_outcomes)
         document_store.update_document(
             space_id=space_id,
             document_id=prepared.document.id,
             last_extraction_run_id=run.id,
             extraction_status="completed",
+            metadata_patch={
+                "study_outcome_count": len(created_outcomes),
+            },
         )
-    return created_proposal_count
+    return created_proposal_count, created_study_outcome_count
 
 
 def _refresh_created_entity_embeddings(

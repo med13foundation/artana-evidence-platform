@@ -8,6 +8,7 @@ import time
 from contextlib import nullcontext
 from dataclasses import replace
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -2130,6 +2131,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -2162,6 +2164,7 @@ async def test_execute_research_init_batches_pubmed_observation_bridge_progress(
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -4072,6 +4075,7 @@ def test_pubmed_replay_bundle_serialization_round_trips() -> None:
         doi="10.1234/replay",
         pmc_id="PMC123",
         journal="Synthetic Journal",
+        publication_types=["Randomized Controlled Trial"],
     )
     replay_review = research_init._PubMedCandidateReview(
         method="llm",
@@ -4135,6 +4139,7 @@ def test_pubmed_replay_bundle_serialization_round_trips() -> None:
     restored_candidate, restored_review = restored.selected_candidates[0]
     assert restored_candidate.title == "Replay MED13 paper"
     assert restored_candidate.queries == ["MED13", "MED13 syndrome"]
+    assert restored_candidate.publication_types == ["Randomized Controlled Trial"]
     assert restored_review.label == "relevant"
     assert restored_review.agent_run_id == "agent-1"
     assert restored.selection_errors == ("selection warning",)
@@ -4989,6 +4994,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -5019,6 +5025,7 @@ async def test_execute_research_init_persists_pubmed_results_before_document_ing
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "clinical_trials": False,
@@ -5495,6 +5502,7 @@ async def test_execute_research_init_syncs_pubmed_observations_for_existing_pubm
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -5522,6 +5530,7 @@ async def test_execute_research_init_syncs_pubmed_observations_for_existing_pubm
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -5657,6 +5666,7 @@ async def test_execute_research_init_keeps_llm_candidate_fallback_diagnostics_ou
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -5684,6 +5694,7 @@ async def test_execute_research_init_keeps_llm_candidate_fallback_diagnostics_ou
             "mondo": False,
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "pdf": False,
@@ -6887,9 +6898,12 @@ def test_build_source_results_includes_registry_metadata() -> None:
     assert result["alphafold"]["direct_search_enabled"] is True
     assert result["gnomad"]["direct_search_enabled"] is True
     assert result["drugbank"]["direct_search_enabled"] is True
+    assert result["drugmechdb"]["direct_search_enabled"] is True
     assert result["mgi"]["direct_search_enabled"] is True
     assert result["zfin"]["direct_search_enabled"] is True
     assert result["orphanet"]["direct_search_enabled"] is True
+    assert result["dime"]["direct_search_enabled"] is True
+    assert result["dhdr"]["direct_search_enabled"] is True
     assert result["mondo"]["direct_search_enabled"] is False
     assert result["clinvar"]["research_plan_enabled"] is True
     assert "source_result_capture" in result["clinvar"]
@@ -6916,6 +6930,30 @@ def test_build_source_results_orphanet_skipped_by_default() -> None:
     assert result["orphanet"]["status"] == "skipped"
     assert result["orphanet"]["selected"] is False
     assert result["orphanet"]["records_processed"] == 0
+
+
+def test_build_source_results_dime_skipped_by_default() -> None:
+    """dime defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["dime"]["status"] == "skipped"
+    assert result["dime"]["selected"] is False
+    assert result["dime"]["records_processed"] == 0
+
+
+def test_build_source_results_dhdr_skipped_by_default() -> None:
+    """dhdr defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["dhdr"]["status"] == "skipped"
+    assert result["dhdr"]["selected"] is False
+    assert result["dhdr"]["records_processed"] == 0
+
+
+def test_build_source_results_drugmechdb_skipped_by_default() -> None:
+    """drugmechdb defaults to skipped (False) when not specified."""
+    result = research_init_runtime._build_source_results(sources={})
+    assert result["drugmechdb"]["status"] == "skipped"
+    assert result["drugmechdb"]["selected"] is False
+    assert result["drugmechdb"]["records_processed"] == 0
 
 
 def test_source_result_counters_fall_back_for_registered_search_sources() -> None:
@@ -7007,6 +7045,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
             "pdf": True,
             "text": True,
             "drugbank": True,
+            "drugmechdb": True,
             "alphafold": True,
             "gnomad": True,
             "uniprot": True,
@@ -7015,6 +7054,8 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
             "mgi": True,
             "zfin": True,
             "orphanet": True,
+            "dime": True,
+            "dhdr": True,
         },
     )
 
@@ -7035,6 +7076,7 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     # These sources should now be "deferred" since we never ran them above.
     assert source_results["clinvar"]["status"] == "deferred"
     assert source_results["drugbank"]["status"] == "deferred"
+    assert source_results["drugmechdb"]["status"] == "deferred"
     assert source_results["alphafold"]["status"] == "deferred"
     assert source_results["gnomad"]["status"] == "deferred"
     assert source_results["uniprot"]["status"] == "deferred"
@@ -7043,6 +7085,8 @@ def test_pending_sources_are_marked_deferred_at_end_of_run() -> None:
     assert source_results["mgi"]["status"] == "deferred"
     assert source_results["zfin"]["status"] == "deferred"
     assert source_results["orphanet"]["status"] == "deferred"
+    assert source_results["dime"]["status"] == "deferred"
+    assert source_results["dhdr"]["status"] == "deferred"
 
     # Sources outside the deferred loop are unaffected.
     assert source_results["pubmed"]["status"] == "pending"
@@ -7058,11 +7102,14 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
         sources={
             "clinvar": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
             "hgnc": False,
             "orphanet": False,
+            "dime": False,
+            "dhdr": False,
         },
     )
 
@@ -7070,11 +7117,14 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
     for key in (
         "clinvar",
         "drugbank",
+        "drugmechdb",
         "alphafold",
         "gnomad",
         "uniprot",
         "hgnc",
         "orphanet",
+        "dime",
+        "dhdr",
     ):
         assert source_results[key]["status"] == "skipped"
 
@@ -7090,11 +7140,14 @@ def test_skipped_sources_are_not_changed_to_deferred() -> None:
     for key in (
         "clinvar",
         "drugbank",
+        "drugmechdb",
         "alphafold",
         "gnomad",
         "uniprot",
         "hgnc",
         "orphanet",
+        "dime",
+        "dhdr",
     ):
         assert source_results[key]["status"] == "skipped"
 
@@ -7203,6 +7256,174 @@ async def test_run_structured_enrichment_source_passes_source_caps_to_runner() -
 
     assert created == 0
     assert captured_caps == [expected_caps]
+
+
+@pytest.mark.asyncio
+async def test_execute_research_init_scopes_clinical_trials_to_plan_seed_terms(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    space_id = uuid4()
+    services = _build_execution_services()
+    clinical_trials_seed_terms: list[list[str]] = []
+
+    def _fake_extract_gene_mentions_from_text(
+        text: str,
+        *,
+        max_count: int = 20,
+    ) -> list[str]:
+        del text, max_count
+        return ["BACKGROUND", "CI", "CNS"]
+
+    async def _fake_run_structured_enrichment_source(**kwargs: object) -> int:
+        if kwargs["source_key"] == "clinical_trials":
+            clinical_trials_seed_terms.append(cast("list[str]", kwargs["seed_terms"]))
+        return 0
+
+    async def _fake_document_extraction(**kwargs: object):
+        del kwargs
+        return SimpleNamespace(
+            document_workset=[],
+            created_proposal_count=0,
+        )
+
+    async def _fake_complete_research_init_run(**kwargs: object):
+        run = cast("HarnessRunRecord", kwargs["run"])
+        return research_init_runtime.ResearchInitExecutionResult(
+            run=run,
+            pubmed_results=(),
+            documents_ingested=0,
+            proposal_count=0,
+            research_state=None,
+            pending_questions=[],
+            errors=[],
+        )
+
+    async def _no_guarded_selection(**kwargs: object) -> None:
+        del kwargs
+
+    monkeypatch.setattr(
+        "artana_evidence_api.research_init_source_enrichment.extract_gene_mentions_from_text",
+        _fake_extract_gene_mentions_from_text,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "_run_structured_enrichment_source",
+        _fake_run_structured_enrichment_source,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "run_research_init_document_extraction",
+        _fake_document_extraction,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "complete_research_init_run",
+        _fake_complete_research_init_run,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "maybe_select_guarded_structured_enrichment_sources",
+        _no_guarded_selection,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "maybe_verify_guarded_structured_enrichment",
+        _no_guarded_selection,
+    )
+    monkeypatch.setattr(
+        research_init_runtime,
+        "ensure_run_transparency_seed",
+        lambda **_kwargs: None,
+    )
+
+    replay_candidate = research_init._PubMedCandidate(
+        title="GBM paper with noisy abbreviations",
+        text="BACKGROUND: CI and CNS were discussed in glioblastoma abstracts.",
+        queries=["glioblastoma"],
+        pmid="123",
+    )
+    replay_review = research_init._PubMedCandidateReview(
+        method="heuristic",
+        label="relevant",
+        confidence=0.9,
+        rationale="Relevant GBM abstract.",
+    )
+    replay_bundle = research_init_runtime.ResearchInitPubMedReplayBundle(
+        query_executions=(
+            research_init_runtime._PubMedQueryExecutionResult(
+                query_result=research_init_runtime.ResearchInitPubMedResultRecord(
+                    query="glioblastoma",
+                    total_found=1,
+                    abstracts_ingested=1,
+                ),
+                candidates=(replay_candidate,),
+                errors=(),
+            ),
+        ),
+        selected_candidates=((replay_candidate, replay_review),),
+        selection_errors=(),
+    )
+    queued_run = research_init_runtime.queue_research_init_run(
+        space_id=space_id,
+        title="Research init",
+        objective="Investigate glioblastoma trials",
+        seed_terms=["glioblastoma"],
+        sources={
+            "pubmed": True,
+            "marrvel": False,
+            "pdf": False,
+            "text": False,
+            "mondo": False,
+            "clinvar": False,
+            "drugbank": False,
+            "drugmechdb": False,
+            "alphafold": False,
+            "gnomad": False,
+            "clinical_trials": True,
+            "mgi": False,
+            "zfin": False,
+            "uniprot": False,
+            "hgnc": False,
+        },
+        max_depth=1,
+        max_hypotheses=1,
+        graph_service_status="ok",
+        graph_service_version="test",
+        run_registry=services.run_registry,
+        artifact_store=services.artifact_store,
+        execution_services=services,
+    )
+
+    await research_init_runtime.execute_research_init_run(
+        space_id=space_id,
+        title="Research init",
+        objective="Investigate glioblastoma trials",
+        seed_terms=["glioblastoma"],
+        max_depth=1,
+        max_hypotheses=1,
+        sources={
+            "pubmed": True,
+            "marrvel": False,
+            "pdf": False,
+            "text": False,
+            "mondo": False,
+            "clinvar": False,
+            "drugbank": False,
+            "drugmechdb": False,
+            "alphafold": False,
+            "gnomad": False,
+            "clinical_trials": True,
+            "mgi": False,
+            "zfin": False,
+            "uniprot": False,
+            "hgnc": False,
+        },
+        execution_services=services,
+        existing_run=queued_run,
+        pubmed_replay_bundle=replay_bundle,
+    )
+
+    assert clinical_trials_seed_terms == [["glioblastoma"]]
 
 
 @pytest.mark.asyncio
@@ -7966,6 +8187,7 @@ def test_prepare_chase_round_stringifies_graph_entity_ids() -> None:
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -8044,6 +8266,7 @@ def test_prepare_chase_round_filters_low_signal_labels() -> None:
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -8400,6 +8623,7 @@ def test_prepare_chase_round_keeps_taxonomic_candidates_for_organism_objective()
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -8537,6 +8761,7 @@ async def test_maybe_select_guarded_chase_round_selection_uses_observer() -> Non
             "text": False,
             "clinvar": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,

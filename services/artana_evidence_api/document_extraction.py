@@ -173,6 +173,35 @@ _LEMMA_RELATION_TYPES = {
     "were correlated with": "ASSOCIATED_WITH",
     "were linked to": "ASSOCIATED_WITH",
 }
+_MIN_HEURISTIC_SUBJECT_CHARS = 3
+_SHORT_BIOMEDICAL_SUBJECT_LABELS = frozenset({"Hh"})
+_BAD_STANDALONE_SUBJECT_LABELS = frozenset(
+    {
+        "a",
+        "all",
+        "an",
+        "both",
+        "closely",
+        "drug",
+        "each",
+        "forms",
+        "it",
+        "many",
+        "most",
+        "one",
+        "plays",
+        "rna",
+        "several",
+        "some",
+        "such",
+        "the",
+        "these",
+        "they",
+        "this",
+        "we",
+    },
+)
+_BAD_STANDALONE_SUBJECT_LEMMAS = frozenset({"acts", "binds"})
 
 
 def sha256_hex(payload: bytes) -> str:
@@ -272,6 +301,26 @@ def normalize_text_document(text: str) -> str:
     return "\n".join(normalized_lines).strip()
 
 
+def _is_bad_heuristic_subject_label(label: str) -> bool:
+    """Return whether a regex subject is too fragmentary to stage."""
+
+    normalized_label = " ".join(label.strip(".,;:\"'").split())
+    if normalized_label == "":
+        return True
+    normalized_token = normalized_label.casefold()
+    if (
+        " " not in normalized_label
+        and normalized_token in _BAD_STANDALONE_SUBJECT_LABELS
+    ):
+        return True
+    if normalized_token in _BAD_STANDALONE_SUBJECT_LEMMAS:
+        return True
+    return (
+        len(normalized_label) < _MIN_HEURISTIC_SUBJECT_CHARS
+        and normalized_label not in _SHORT_BIOMEDICAL_SUBJECT_LABELS
+    )
+
+
 def extract_relation_candidates(text: str) -> list[ExtractedRelationCandidate]:
     """Extract lightweight relation candidates from document text."""
     normalized_text = normalize_text_document(text)
@@ -297,6 +346,8 @@ def extract_relation_candidates(text: str) -> list[ExtractedRelationCandidate]:
                 "ASSOCIATED_WITH",
             )
             if subject_label == "" or object_label == "":
+                continue
+            if _is_bad_heuristic_subject_label(subject_label):
                 continue
             if canonical_entity_label_rejection_reason(subject_label) is not None:
                 continue

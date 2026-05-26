@@ -220,6 +220,84 @@ def test_review_queue_lists_proposals_review_items_and_approvals() -> None:
     }
 
 
+def test_review_queue_filters_by_evidence_grade() -> None:
+    (
+        client,
+        _approval_store,
+        proposal_store,
+        review_item_store,
+        research_space_store,
+        run_registry,
+    ) = _build_client()
+    space = research_space_store.create_space(
+        owner_id=_TEST_USER_ID,
+        name="Review Queue Evidence Grade Space",
+        description="Used for evidence-grade review queue filters.",
+    )
+    run_id = _create_run(space_id=space.id, run_registry=run_registry)
+    proposal = proposal_store.create_proposals(
+        space_id=space.id,
+        run_id=run_id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc:claim:high",
+                title="High evidence claim",
+                summary="RCT-backed candidate claim",
+                confidence=0.91,
+                ranking_score=0.91,
+                reasoning_path={"source": "unit-test"},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={"source": "unit-test"},
+                evidence_grade="High",
+            ),
+        ),
+    )[0]
+    review_item = review_item_store.create_review_items(
+        space_id=space.id,
+        run_id=run_id,
+        review_items=(
+            HarnessReviewItemDraft(
+                review_type="phenotype_claim_review",
+                source_family="document_extraction",
+                source_kind="document_extraction",
+                source_key="doc:review:moderate",
+                title="Review moderate phenotype link",
+                summary="developmental delay",
+                priority="medium",
+                confidence=0.73,
+                ranking_score=0.73,
+                evidence_bundle=[],
+                payload={"phenotype_span": "developmental delay"},
+                metadata={"source": "unit-test"},
+                evidence_grade="Moderate",
+            ),
+        ),
+    )[0]
+
+    high_response = client.get(
+        f"/v2/spaces/{space.id}/review-items?evidence_grade=High",
+        headers=_auth_headers(),
+    )
+    moderate_response = client.get(
+        f"/v2/spaces/{space.id}/review-items?evidence_grade=moderate",
+        headers=_auth_headers(),
+    )
+
+    assert high_response.status_code == 200
+    high_payload = high_response.json()
+    assert high_payload["total"] == 1
+    assert high_payload["items"][0]["id"] == f"proposal:{proposal.id}"
+    assert high_payload["items"][0]["evidence_grade"] == "High"
+    assert moderate_response.status_code == 200
+    moderate_payload = moderate_response.json()
+    assert moderate_payload["total"] == 1
+    assert moderate_payload["items"][0]["id"] == f"review_item:{review_item.id}"
+    assert moderate_payload["items"][0]["evidence_grade"] == "Moderate"
+
+
 def test_review_queue_action_rejects_proposal_via_unified_surface() -> None:
     (
         client,
@@ -271,6 +349,122 @@ def test_review_queue_action_rejects_proposal_via_unified_surface() -> None:
     assert payload["item_type"] == "proposal"
     assert payload["status"] == "rejected"
     assert payload["decision_reason"] == "Not strong enough"
+
+
+def test_review_queue_bulk_decision_rejects_proposals_and_reports_item_failures() -> None:
+    (
+        client,
+        _approval_store,
+        proposal_store,
+        _review_item_store,
+        research_space_store,
+        run_registry,
+    ) = _build_client()
+    space = research_space_store.create_space(
+        owner_id=_TEST_USER_ID,
+        name="Bulk Decision Space",
+        description="Used for bulk review decision tests.",
+    )
+    run_id = _create_run(space_id=space.id, run_registry=run_registry)
+    first_proposal, second_proposal = proposal_store.create_proposals(
+        space_id=space.id,
+        run_id=run_id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc:claim:bulk:1",
+                title="First rejectable proposal",
+                summary="First synthetic candidate claim",
+                confidence=0.71,
+                ranking_score=0.77,
+                reasoning_path={"source": "unit-test"},
+                evidence_bundle=[],
+                payload={
+                    "proposed_subject": str(uuid4()),
+                    "proposed_object": str(uuid4()),
+                    "proposed_claim_type": "ASSOCIATED_WITH",
+                    "evidence_entity_ids": [],
+                },
+                metadata={"source": "unit-test"},
+            ),
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc:claim:bulk:2",
+                title="Second rejectable proposal",
+                summary="Second synthetic candidate claim",
+                confidence=0.68,
+                ranking_score=0.73,
+                reasoning_path={"source": "unit-test"},
+                evidence_bundle=[],
+                payload={
+                    "proposed_subject": str(uuid4()),
+                    "proposed_object": str(uuid4()),
+                    "proposed_claim_type": "ASSOCIATED_WITH",
+                    "evidence_entity_ids": [],
+                },
+                metadata={"source": "unit-test"},
+            ),
+        ),
+    )
+    missing_item_id = f"proposal:{uuid4()}"
+
+    response = client.post(
+        f"/v2/spaces/{space.id}/review-items:bulk-decision",
+        headers=_auth_headers(),
+        json={
+            "decisions": [
+                {
+                    "item_id": f"proposal:{first_proposal.id}",
+                    "action": "reject",
+                    "reason": "off-domain",
+                },
+                {
+                    "item_id": missing_item_id,
+                    "action": "reject",
+                    "reason": "off-domain",
+                },
+                {
+                    "item_id": f"proposal:{second_proposal.id}",
+                    "action": "reject",
+                    "reason": "off-domain",
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["summary"] == {"accepted": 2, "failed": 1}
+    assert payload["results"] == [
+        {
+            "item_id": f"proposal:{first_proposal.id}",
+            "status": "accepted",
+            "new_state": "rejected",
+            "error": None,
+        },
+        {
+            "item_id": missing_item_id,
+            "status": "failed",
+            "new_state": None,
+            "error": f"Proposal '{missing_item_id.removeprefix('proposal:')}' not found in space '{space.id}'",
+        },
+        {
+            "item_id": f"proposal:{second_proposal.id}",
+            "status": "accepted",
+            "new_state": "rejected",
+            "error": None,
+        },
+    ]
+    for proposal in (first_proposal, second_proposal):
+        refreshed = proposal_store.get_proposal(
+            space_id=space.id,
+            proposal_id=proposal.id,
+        )
+        assert refreshed is not None
+        assert refreshed.status == "rejected"
+        assert refreshed.decision_reason == "off-domain"
 
 
 def test_review_queue_action_resolves_review_item() -> None:

@@ -26,6 +26,10 @@ from artana_evidence_api.document_extraction_review import (
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from artana_evidence_api.types.common import JSONObject
+from artana_evidence_api.types.evidence_grade import (
+    evidence_grade_for_document,
+    metadata_with_evidence_grade,
+)
 
 if TYPE_CHECKING:
     from artana_evidence_api.graph_client import GraphTransportBundle
@@ -45,6 +49,7 @@ def build_document_extraction_drafts(
     drafts: list[HarnessProposalDraft] = []
     skipped_candidates: list[JSONObject] = []
     normalized_review_context = review_context or build_document_review_context()
+    evidence_grade = evidence_grade_for_document(document)
     for index, candidate in enumerate(candidates):
         subject_rejection_reason = canonical_entity_label_rejection_reason(
             candidate.subject_label,
@@ -181,21 +186,25 @@ def build_document_extraction_drafts(
                             if not entity_id.startswith("unresolved:")
                         ],
                     },
-                    metadata={
-                        "document_id": document.id,
-                        "document_title": document.title,
-                        "document_source_type": document.source_type,
-                        "subject_label": candidate.subject_label,
-                        "object_label": object_label,
-                        "original_object_label": candidate.object_label,
-                        "resolved_subject_label": resolved_subject_label,
-                        "resolved_object_label": resolved_object_label,
-                        "subject_resolved": subject_match is not None,
-                        "object_resolved": object_match is not None,
-                        "object_split_applied": split_applied,
-                        "origin": "document_extraction",
-                    },
+                    metadata=metadata_with_evidence_grade(
+                        {
+                            "document_id": document.id,
+                            "document_title": document.title,
+                            "document_source_type": document.source_type,
+                            "subject_label": candidate.subject_label,
+                            "object_label": object_label,
+                            "original_object_label": candidate.object_label,
+                            "resolved_subject_label": resolved_subject_label,
+                            "resolved_object_label": resolved_object_label,
+                            "subject_resolved": subject_match is not None,
+                            "object_resolved": object_match is not None,
+                            "object_split_applied": split_applied,
+                            "origin": "document_extraction",
+                        },
+                        evidence_grade,
+                    ),
                     claim_fingerprint=claim_fingerprint,
+                    evidence_grade=evidence_grade,
                 ),
             )
             drafts[-1] = apply_document_proposal_review(

@@ -8,6 +8,7 @@ from threading import Lock
 from uuid import UUID, uuid4
 
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 
 _PENDING_REVIEW_STATUS = "pending_review"
 _DECISION_STATUSES = frozenset({"resolved", "dismissed"})
@@ -34,6 +35,7 @@ class HarnessReviewItemDraft:
     metadata: JSONObject
     document_id: str | None = None
     review_fingerprint: str | None = None
+    evidence_grade: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +66,7 @@ class HarnessReviewItemRecord:
     created_at: datetime
     updated_at: datetime
     review_fingerprint: str | None = None
+    evidence_grade: str | None = None
 
 
 class HarnessReviewItemStore:
@@ -127,6 +130,7 @@ class HarnessReviewItemStore:
             ),
             title=cls.normalize_review_item_title(review_item.title),
             priority=cls.normalize_priority(review_item.priority),
+            evidence_grade=normalize_evidence_grade(review_item.evidence_grade),
         )
 
     def _existing_review_item(
@@ -192,6 +196,7 @@ class HarnessReviewItemStore:
                     evidence_bundle=list(normalized_item.evidence_bundle),
                     payload=normalized_item.payload,
                     metadata=normalized_item.metadata,
+                    evidence_grade=normalized_item.evidence_grade,
                     decision_reason=None,
                     decided_at=None,
                     linked_proposal_id=None,
@@ -221,6 +226,7 @@ class HarnessReviewItemStore:
         source_family: str | None = None,
         run_id: UUID | str | None = None,
         document_id: UUID | str | None = None,
+        evidence_grade: str | None = None,
     ) -> list[HarnessReviewItemRecord]:
         """List review items for one space ordered by ranking."""
         normalized_space_id = str(space_id)
@@ -231,6 +237,7 @@ class HarnessReviewItemStore:
         )
         normalized_run_id = str(run_id) if run_id is not None else None
         normalized_document_id = str(document_id) if document_id is not None else None
+        normalized_evidence_grade = normalize_evidence_grade(evidence_grade)
         with self._lock:
             review_items = [
                 self._review_items[review_item_id]
@@ -258,6 +265,10 @@ class HarnessReviewItemStore:
                 and (
                     normalized_document_id is None
                     or review_item.document_id == normalized_document_id
+                )
+                and (
+                    normalized_evidence_grade is None
+                    or review_item.evidence_grade == normalized_evidence_grade
                 )
             )
         ]
@@ -291,6 +302,35 @@ class HarnessReviewItemStore:
         if review_item is None or review_item.space_id != str(space_id):
             return None
         return review_item
+
+    def delete_review_items_for_documents(
+        self,
+        *,
+        space_id: UUID | str,
+        document_ids: tuple[UUID | str, ...],
+    ) -> int:
+        """Delete review items linked to any supplied document ids."""
+        normalized_space_id = str(space_id)
+        target_ids = {str(document_id) for document_id in document_ids}
+        if not target_ids:
+            return 0
+        deleted_count = 0
+        with self._lock:
+            review_item_ids = list(
+                self._review_item_ids_by_space.get(normalized_space_id, []),
+            )
+            retained_ids: list[str] = []
+            for review_item_id in review_item_ids:
+                review_item = self._review_items.get(review_item_id)
+                if review_item is None:
+                    continue
+                if review_item.document_id in target_ids:
+                    del self._review_items[review_item_id]
+                    deleted_count += 1
+                    continue
+                retained_ids.append(review_item_id)
+            self._review_item_ids_by_space[normalized_space_id] = retained_ids
+        return deleted_count
 
     def decide_review_item(
         self,
@@ -337,6 +377,7 @@ class HarnessReviewItemStore:
                 evidence_bundle=review_item.evidence_bundle,
                 payload=review_item.payload,
                 metadata={**review_item.metadata, **(metadata or {})},
+                evidence_grade=review_item.evidence_grade,
                 decision_reason=(
                     decision_reason.strip()
                     if isinstance(decision_reason, str)

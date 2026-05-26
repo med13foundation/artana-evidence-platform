@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,9 @@ _NCBI_RETRY_DELAY_SECONDS = 2.0
 _HTTP_TOO_MANY_REQUESTS = 429
 _HTTP_SERVER_ERROR_MIN = 500
 _USER_AGENT = "artana-evidence-platform/clinvar-gateway"
+_TITLE_GENE_PATTERN = re.compile(
+    r"\((?P<gene>[A-Za-z][A-Za-z0-9-]{1,20})\)\s*:",
+)
 
 
 class ClinVarGatewayError(RuntimeError):
@@ -189,13 +193,13 @@ def _normalize_esummary_records(
         raw_record = _dict_value(result.get(uid))
         if raw_record is None:
             continue
-        records.append(
-            _normalize_esummary_record(
-                uid=uid,
-                record=raw_record,
-                fallback_gene_symbol=fallback_gene_symbol,
-            ),
+        normalized_record = _normalize_esummary_record(
+            uid=uid,
+            record=raw_record,
+            fallback_gene_symbol=fallback_gene_symbol,
         )
+        if normalized_record is not None:
+            records.append(normalized_record)
     return records
 
 
@@ -204,9 +208,21 @@ def _normalize_esummary_record(
     uid: str,
     record: Mapping[str, object],
     fallback_gene_symbol: str,
-) -> dict[str, object]:
-    gene_symbol = _extract_gene_symbol(record) or fallback_gene_symbol
+) -> dict[str, object] | None:
     hgvs_notations = _extract_hgvs_notations(record)
+    title = (
+        _first_string(record, ("title", "name"))
+        or (hgvs_notations[0] if hgvs_notations else None)
+        or f"ClinVar {uid}"
+    )
+    title_gene_symbol = _extract_title_gene_symbol(title)
+    normalized_fallback_gene_symbol = fallback_gene_symbol.upper()
+    if (
+        title_gene_symbol is not None
+        and title_gene_symbol != normalized_fallback_gene_symbol
+    ):
+        return None
+    gene_symbol = title_gene_symbol or _extract_gene_symbol(record) or fallback_gene_symbol
     clinical_significance = _extract_clinical_significance(record)
     conditions = _extract_conditions(record)
     review_status = _extract_review_status(record)
@@ -215,14 +231,10 @@ def _normalize_esummary_record(
         or "unknown"
     )
     accession = _first_string(record, ("accession", "accession_version")) or uid
-    title = (
-        _first_string(record, ("title", "name"))
-        or (hgvs_notations[0] if hgvs_notations else None)
-        or f"ClinVar {accession}"
-    )
 
     parsed_data: dict[str, object] = {
         "gene_symbol": gene_symbol,
+        "title_gene_symbol": title_gene_symbol,
         "variant_type": variation_type,
         "clinical_significance": clinical_significance,
         "hgvs_notations": hgvs_notations,
@@ -252,6 +264,13 @@ def _extract_gene_symbol(record: Mapping[str, object]) -> str | None:
         if symbol:
             return symbol.upper()
     return _first_string(record, ("gene_symbol", "gene"))
+
+
+def _extract_title_gene_symbol(title: str) -> str | None:
+    match = _TITLE_GENE_PATTERN.search(title)
+    if match is None:
+        return None
+    return match.group("gene").upper()
 
 
 def _extract_clinical_significance(record: Mapping[str, object]) -> str:

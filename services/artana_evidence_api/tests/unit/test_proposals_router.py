@@ -410,6 +410,74 @@ def _create_observation_candidate_proposal(
     return proposal.id
 
 
+def test_proposals_route_surfaces_and_filters_evidence_grade() -> None:
+    client, proposal_store, research_space_store, run_registry, _gateway = _build_client()
+    space = research_space_store.create_space(
+        owner_id=_TEST_USER_ID,
+        name="Evidence grade proposal space",
+        description="Used for proposal evidence-grade routing tests.",
+    )
+    run = run_registry.create_run(
+        space_id=space.id,
+        harness_id="document-extraction",
+        title="Evidence grade proposal run",
+        input_payload={"objective": "grade proposals"},
+        graph_service_status="ok",
+        graph_service_version="tests",
+    )
+    high_proposal, _limited_proposal = proposal_store.create_proposals(
+        space_id=space.id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc-high:0",
+                title="High evidence claim",
+                summary="RCT-backed claim.",
+                confidence=0.9,
+                ranking_score=0.9,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={"source": "unit-test"},
+                evidence_grade="High",
+            ),
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc-limited:0",
+                title="Limited evidence claim",
+                summary="Case-report-backed claim.",
+                confidence=0.6,
+                ranking_score=0.6,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={"source": "unit-test"},
+                evidence_grade="Limited",
+            ),
+        ),
+    )
+
+    list_response = client.get(
+        f"/v2/spaces/{space.id}/proposed-updates?evidence_grade=High",
+        headers=_auth_headers(),
+    )
+    detail_response = client.get(
+        f"/v1/spaces/{space.id}/proposals/{high_proposal.id}",
+        headers=_auth_headers(),
+    )
+
+    assert list_response.status_code == 200
+    list_payload = list_response.json()
+    assert list_payload["total"] == 1
+    assert list_payload["proposals"][0]["id"] == high_proposal.id
+    assert list_payload["proposals"][0]["evidence_grade"] == "High"
+    assert detail_response.status_code == 200
+    assert detail_response.json()["evidence_grade"] == "High"
+
+
 def test_promote_proposal_accepts_omitted_body_and_preserves_explicit_body() -> None:
     client, proposal_store, research_space_store, run_registry, graph_api_gateway = (
         _build_client()

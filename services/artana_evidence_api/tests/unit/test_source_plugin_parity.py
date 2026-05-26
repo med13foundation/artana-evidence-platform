@@ -119,6 +119,13 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             evidence_role="drug target context",
             reason="Fetch drug targets.",
         ),
+        "drugmechdb": PlannedSourceIntent(
+            source_key="drugmechdb",
+            drug_name="imatinib",
+            disease="CML",
+            evidence_role="curated drug mechanism path",
+            reason="Search curated mechanism paths.",
+        ),
         "alphafold": PlannedSourceIntent(
             source_key="alphafold",
             uniprot_id="P38398",
@@ -165,6 +172,18 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             evidence_role="rare disease nomenclature",
             reason="Search Orphanet disease context.",
         ),
+        "dime": PlannedSourceIntent(
+            source_key="dime",
+            disease="Dystonia",
+            evidence_role="digital endpoint",
+            reason="Search DiMe endpoints.",
+        ),
+        "dhdr": PlannedSourceIntent(
+            source_key="dhdr",
+            disease="Parkinson disease",
+            evidence_role="digital biomarker dataset",
+            reason="Search DHDR datasets.",
+        ),
     }
     return intents[source_key]
 
@@ -209,6 +228,18 @@ def _record(source_key: str) -> JSONObject:
             "targets": ["ABL1", "KIT"],
             "mechanism_of_action": "Inhibits BCR-ABL.",
             "categories": ["Antineoplastic Agents"],
+        },
+        "drugmechdb": {
+            "path_id": "DB00619_MESH_D015464_1",
+            "drug_name": "imatinib",
+            "drugbank_id": "DB00619",
+            "disease_name": "CML (ph+)",
+            "disease_mesh": "MESH:D015464",
+            "node_ids": ["MESH:D000068877", "UniProt:P00519", "MESH:D015464"],
+            "edge_count": 2,
+            "node_count": 3,
+            "references": ["https://go.drugbank.com/drugs/DB00619"],
+            "license": "CC0-1.0",
         },
         "alphafold": {
             "uniprot_id": "P38398",
@@ -275,6 +306,29 @@ def _record(source_key: str) -> JSONObject:
             "status": "Active",
             "classification_level": "Disorder",
             "orphanet_url": "https://orpha.example/558",
+        },
+        "dime": {
+            "endpoint_identifier": "3",
+            "trial_registry_id": "NCT05027997",
+            "disease": "Blepharospasm, Dystonia",
+            "therapeutic_area": ["Neurological or sensory"],
+            "digital_endpoint": "Skintronics wearable blinking activity",
+            "concept_of_interest": ["Neurological or sensory"],
+            "sensor_or_dht": "Wearable",
+            "sponsor": "Example sponsor",
+            "endpoint_positioning": "Primary",
+            "validation_status": "not_reported_in_public_view",
+        },
+        "dhdr": {
+            "dataset_name": "WearGait-PD",
+            "condition": "Parkinson's disease",
+            "modalities": ["IMU"],
+            "devices": ["sensorized insole"],
+            "cohort_size": "100 individuals with Parkinson's disease",
+            "host_platform": "Synapse",
+            "dataset_url": "https://www.synapse.org/Synapse:syn52540892/wiki/623751",
+            "license": "host-specific; review dataset terms before reuse",
+            "terms_url": "https://www.synapse.org/Synapse:syn52540892/wiki/623751",
         },
     }
     return records[source_key]

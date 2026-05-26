@@ -129,6 +129,10 @@ class ClinicalTrialsGatewayProtocol(Protocol):
         *,
         query: str,
         max_results: int = 20,
+        condition: str | None = None,
+        overall_statuses: tuple[str, ...] = (),
+        location: str | None = None,
+        geo_filter: str | None = None,
     ) -> GatewayFetchResultProtocol: ...
 
 

@@ -60,6 +60,7 @@ class TestSourcesConfigParsing:
             "pdf": True,
             "text": True,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -68,6 +69,8 @@ class TestSourcesConfigParsing:
             "mgi": False,
             "zfin": False,
             "orphanet": False,
+            "dime": False,
+            "dhdr": False,
         }
 
     def test_request_sources_override_saved_settings(self) -> None:
@@ -95,6 +98,7 @@ class TestSourcesConfigParsing:
             "pdf": False,
             "text": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -103,6 +107,8 @@ class TestSourcesConfigParsing:
             "mgi": False,
             "zfin": False,
             "orphanet": False,
+            "dime": False,
+            "dhdr": False,
         }
 
     def test_partial_request_sources_are_authoritative(self) -> None:
@@ -128,6 +134,7 @@ class TestSourcesConfigParsing:
             "pdf": False,
             "text": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -136,6 +143,8 @@ class TestSourcesConfigParsing:
             "mgi": False,
             "zfin": False,
             "orphanet": False,
+            "dime": False,
+            "dhdr": False,
         }
 
     def test_saved_settings_apply_when_request_omits_sources(self) -> None:
@@ -158,6 +167,7 @@ class TestSourcesConfigParsing:
             "pdf": False,
             "text": False,
             "drugbank": False,
+            "drugmechdb": False,
             "alphafold": False,
             "gnomad": False,
             "uniprot": False,
@@ -166,6 +176,8 @@ class TestSourcesConfigParsing:
             "mgi": False,
             "zfin": False,
             "orphanet": False,
+            "dime": False,
+            "dhdr": False,
         }
 
     def test_unknown_source_keys_are_reported_for_request_validation(self) -> None:
