@@ -478,9 +478,9 @@ class _StubOrphanetGateway:
 
 class _StubDiMeGateway:
     def __init__(self) -> None:
-        self.calls: list[tuple[str | None, str | None, str | None, str | None, int]] = (
-            []
-        )
+        self.calls: list[
+            tuple[str | None, str | None, str | None, str | None, int]
+        ] = []
 
     async def fetch_records_async(
         self,
@@ -517,9 +517,9 @@ class _StubDiMeGateway:
 
 class _StubDHDRGateway:
     def __init__(self) -> None:
-        self.calls: list[tuple[str | None, str | None, str | None, str | None, int]] = (
-            []
-        )
+        self.calls: list[
+            tuple[str | None, str | None, str | None, str | None, int]
+        ] = []
 
     async def fetch_records_async(
         self,

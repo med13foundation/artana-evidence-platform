@@ -1057,7 +1057,9 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 "review_item_count": len(review_item_responses),
                 "review_item_ids": [],
                 "study_outcome_count": len(created_study_outcomes),
-                "study_outcome_ids": [outcome.id for outcome in created_study_outcomes],
+                "study_outcome_ids": [
+                    outcome.id for outcome in created_study_outcomes
+                ],
                 "skipped_candidates": skipped_candidates,
                 "reused_existing_proposal_count": reused_existing_proposal_count,
                 "candidate_discovery": candidate_discovery,

@@ -2257,7 +2257,9 @@ def test_extract_document_routes_pubmed_variant_prose_through_bridge(
                         "hgvs_notation": "c.977C>A",
                     },
                     metadata={"hgvs_protein": "p.Thr326Lys"},
-                    evidence_excerpt=("c.977C>A, p.Thr326Lys in MED13 was reported"),
+                    evidence_excerpt=(
+                        "c.977C>A, p.Thr326Lys in MED13 was reported"
+                    ),
                     evidence_locator="text_span:28-65",
                     assessment=_strong_assessment(),
                 ),

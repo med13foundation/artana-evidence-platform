@@ -438,7 +438,9 @@ def list_study_outcomes(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=200, ge=1, le=500),
     *,
-    study_outcome_store: HarnessStudyOutcomeStore = (_STUDY_OUTCOME_STORE_DEPENDENCY),
+    study_outcome_store: HarnessStudyOutcomeStore = (
+        _STUDY_OUTCOME_STORE_DEPENDENCY
+    ),
 ) -> StudyOutcomeListResponse:
     """Return quantitative trial outcomes extracted from clinical-trial papers."""
 
@@ -459,7 +461,9 @@ def list_study_outcomes(
         document_id=document_id,
     )
     return StudyOutcomeListResponse(
-        study_outcomes=[StudyOutcomeResponse.from_record(record) for record in records],
+        study_outcomes=[
+            StudyOutcomeResponse.from_record(record) for record in records
+        ],
         total=total,
         offset=offset,
         limit=limit,
