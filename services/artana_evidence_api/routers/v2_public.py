@@ -370,14 +370,18 @@ async def create_source_search_handoff(
             request=request,
         )
     except SourceSearchHandoffNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
     except SourceSearchHandoffUnsupportedError as exc:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail=str(exc),
         ) from exc
     except SourceSearchHandoffConflictError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
     except SourceSearchHandoffSelectionError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -434,9 +438,7 @@ def list_study_outcomes(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=200, ge=1, le=500),
     *,
-    study_outcome_store: HarnessStudyOutcomeStore = (
-        _STUDY_OUTCOME_STORE_DEPENDENCY
-    ),
+    study_outcome_store: HarnessStudyOutcomeStore = (_STUDY_OUTCOME_STORE_DEPENDENCY),
 ) -> StudyOutcomeListResponse:
     """Return quantitative trial outcomes extracted from clinical-trial papers."""
 
@@ -457,9 +459,7 @@ def list_study_outcomes(
         document_id=document_id,
     )
     return StudyOutcomeListResponse(
-        study_outcomes=[
-            StudyOutcomeResponse.from_record(record) for record in records
-        ],
+        study_outcomes=[StudyOutcomeResponse.from_record(record) for record in records],
         total=total,
         offset=offset,
         limit=limit,

@@ -31,6 +31,7 @@ def test_source_plugin_registry_is_explicit_and_consistent() -> None:
     expected_keys = (
         "pubmed",
         "marrvel",
+        "monarch",
         "clinvar",
         "drugbank",
         "drugmechdb",

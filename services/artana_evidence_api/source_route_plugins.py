@@ -32,6 +32,7 @@ from artana_evidence_api.source_routes.drugmechdb import (
     drugmechdb_typed_route_plugin,
 )
 from artana_evidence_api.source_routes.gnomad import gnomad_typed_route_plugin
+from artana_evidence_api.source_routes.monarch import monarch_typed_route_plugin
 from artana_evidence_api.source_routes.orphanet import orphanet_typed_route_plugin
 from artana_evidence_api.types.common import JSONObject
 from fastapi import APIRouter
@@ -47,6 +48,7 @@ class DirectSourceRoutePluginRegistryError(LookupError):
 _DIRECT_SOURCE_ROUTE_PLUGINS = (
     pubmed_typed_route_plugin(),
     marrvel_typed_route_plugin(),
+    monarch_typed_route_plugin(),
     clinvar_typed_route_plugin(),
     drugbank_typed_route_plugin(),
     drugmechdb_typed_route_plugin(),

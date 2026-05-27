@@ -98,8 +98,8 @@ reaches the review gate.
 ## Source Capability Note
 
 `GET /v2/sources` is the source of truth for which sources can be searched
-directly. PubMed, MARRVEL, ClinVar, AlphaFold, UniProt, ClinicalTrials.gov,
-MGI, and ZFIN support direct search. DrugBank supports direct search when
+directly. PubMed, MARRVEL, Monarch KG, ClinVar, AlphaFold, UniProt,
+ClinicalTrials.gov, MGI, and ZFIN support direct search. DrugBank supports direct search when
 `DRUGBANK_API_KEY` is configured. MONDO and HGNC are background
 ontology/authority-grounding sources, while text and PDF are document-capture
 sources.
@@ -111,8 +111,8 @@ review workflow promotes them.
 
 Use the handoff endpoint when a user selects one captured source-search record
 for downstream extraction or normalization. ClinVar and MARRVEL variant records
-enter the variant-aware extraction path. PubMed, ClinicalTrials.gov, UniProt,
-AlphaFold, DrugBank, MGI, and ZFIN handoffs create durable source documents with
+enter the variant-aware extraction path. PubMed, Monarch KG, ClinicalTrials.gov,
+UniProt, AlphaFold, DrugBank, MGI, and ZFIN handoffs create durable source documents with
 source-capture metadata, normalized record fields, and the original selected
 record for auditability. Handoff is idempotent: replaying the same request with
 the same idempotency key returns the existing outcome instead of creating

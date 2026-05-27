@@ -112,6 +112,12 @@ def _planning_intent(source_key: str) -> PlannedSourceIntent:
             evidence_role="variant assertion",
             reason="Search ClinVar.",
         ),
+        "monarch": PlannedSourceIntent(
+            source_key="monarch",
+            gene_symbol="MED13",
+            evidence_role="knowledge graph association",
+            reason="Search Monarch KG.",
+        ),
         "drugbank": PlannedSourceIntent(
             source_key="drugbank",
             drug_name="imatinib",
@@ -220,6 +226,17 @@ def _record(source_key: str) -> JSONObject:
             "variation_type": "duplication",
             "hgvs": "NM_007294.4:c.5266dupC",
             "source": "clinvar",
+        },
+        "monarch": {
+            "id": "uuid:association-1",
+            "category": "biolink:GeneToPhenotypicFeatureAssociation",
+            "subject": "HGNC:7670",
+            "subject_label": "MED13",
+            "predicate": "biolink:has_phenotype",
+            "object": "HP:0001263",
+            "object_label": "Global developmental delay",
+            "primary_knowledge_source": "infores:hpo-annotations",
+            "publications": ["PMID:41663567"],
         },
         "drugbank": {
             "drugbank_id": "DB00619",

@@ -75,6 +75,7 @@ from artana_evidence_api.source_enrichment_bridges import (
     build_drugbank_gateway,
     build_gnomad_gateway,
     build_mgi_gateway,
+    build_monarch_gateway,
     build_orphanet_gateway,
     build_uniprot_gateway,
     build_zfin_gateway,
@@ -133,6 +134,7 @@ if TYPE_CHECKING:
         ClinVarGatewayProtocol,
         DrugBankGatewayProtocol,
         GnomADGatewayProtocol,
+        MonarchGatewayProtocol,
         OrphanetGatewayProtocol,
         UniProtGatewayProtocol,
     )
@@ -530,6 +532,12 @@ def get_orphanet_source_gateway() -> OrphanetGatewayProtocol | None:
     return build_orphanet_gateway()
 
 
+def get_monarch_source_gateway() -> MonarchGatewayProtocol | None:
+    """Return the Monarch KG gateway used by direct source search."""
+
+    return build_monarch_gateway()
+
+
 def get_dime_source_gateway() -> DiMeGatewayProtocol | None:
     """Return the DiMe public catalog gateway used by direct source search."""
 
@@ -679,6 +687,7 @@ __all__ = [
     "get_harness_execution_services",
     "get_identity_gateway",
     "get_mgi_source_gateway",
+    "get_monarch_source_gateway",
     "get_orphanet_source_gateway",
     "get_pubmed_discovery_service",
     "get_pubmed_discovery_service_factory",

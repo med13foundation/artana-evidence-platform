@@ -9,13 +9,16 @@ implemented locally so research-init does not depend on the old top-level
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, cast
+from typing import TYPE_CHECKING, Protocol, cast
 from uuid import UUID
 
 from artana_evidence_api.marrvel_discovery import (
     MarrvelDiscoveryResult,
     MarrvelDiscoveryService,
 )
+
+if TYPE_CHECKING:
+    from artana_evidence_api.direct_sources.monarch import MonarchSourceSearchRequest
 
 
 def _normalize_optional_list(values: list[str] | None) -> list[str] | None:
@@ -160,6 +163,15 @@ class OrphanetGatewayProtocol(Protocol):
     ) -> GatewayFetchResultProtocol: ...
 
 
+class MonarchGatewayProtocol(Protocol):
+    """Monarch KG gateway contract used by direct source search."""
+
+    async def fetch_records_async(
+        self,
+        request: MonarchSourceSearchRequest,
+    ) -> GatewayFetchResultProtocol: ...
+
+
 class MarrvelDiscoveryServiceProtocol(Protocol):
     """Local MARRVEL discovery contract used by structured enrichment."""
 
@@ -248,6 +260,13 @@ def build_orphanet_gateway() -> OrphanetGatewayProtocol | None:
     return cast("OrphanetGatewayProtocol", OrphanetSourceGateway())
 
 
+def build_monarch_gateway() -> MonarchGatewayProtocol | None:
+    """Construct the service-local Monarch KG gateway."""
+    from artana_evidence_api.direct_sources.monarch import MonarchSourceGateway
+
+    return cast("MonarchGatewayProtocol", MonarchSourceGateway())
+
+
 __all__ = [
     "AllianceGeneGatewayProtocol",
     "AlphaFoldGatewayProtocol",
@@ -258,6 +277,7 @@ __all__ = [
     "GatewayFetchResultProtocol",
     "GnomADGatewayProtocol",
     "MarrvelDiscoveryServiceProtocol",
+    "MonarchGatewayProtocol",
     "OrphanetGatewayProtocol",
     "UniProtGatewayProtocol",
     "build_alphafold_gateway",
@@ -267,6 +287,7 @@ __all__ = [
     "build_gnomad_gateway",
     "build_marrvel_discovery_service",
     "build_mgi_gateway",
+    "build_monarch_gateway",
     "build_orphanet_gateway",
     "build_uniprot_gateway",
     "build_zfin_gateway",

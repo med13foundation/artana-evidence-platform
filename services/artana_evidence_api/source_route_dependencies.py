@@ -14,6 +14,7 @@ from artana_evidence_api.dependencies import (
     get_drugmechdb_source_gateway,
     get_gnomad_source_gateway,
     get_mgi_source_gateway,
+    get_monarch_source_gateway,
     get_orphanet_source_gateway,
     get_pubmed_discovery_service,
     get_uniprot_source_gateway,
@@ -32,6 +33,7 @@ from artana_evidence_api.source_enrichment_bridges import (
     ClinVarGatewayProtocol,
     DrugBankGatewayProtocol,
     GnomADGatewayProtocol,
+    MonarchGatewayProtocol,
     OrphanetGatewayProtocol,
     UniProtGatewayProtocol,
 )
@@ -57,6 +59,7 @@ _GNOMAD_SOURCE_GATEWAY_DEPENDENCY = Depends(get_gnomad_source_gateway)
 _DRUGBANK_SOURCE_GATEWAY_DEPENDENCY = Depends(get_drugbank_source_gateway)
 _DRUGMECHDB_SOURCE_GATEWAY_DEPENDENCY = Depends(get_drugmechdb_source_gateway)
 _MGI_SOURCE_GATEWAY_DEPENDENCY = Depends(get_mgi_source_gateway)
+_MONARCH_SOURCE_GATEWAY_DEPENDENCY = Depends(get_monarch_source_gateway)
 _ZFIN_SOURCE_GATEWAY_DEPENDENCY = Depends(get_zfin_source_gateway)
 _ORPHANET_SOURCE_GATEWAY_DEPENDENCY = Depends(get_orphanet_source_gateway)
 _DIME_SOURCE_GATEWAY_DEPENDENCY = Depends(get_dime_source_gateway)
@@ -93,6 +96,7 @@ def direct_source_route_dependencies(
         _DRUGMECHDB_SOURCE_GATEWAY_DEPENDENCY
     ),
     mgi_gateway: AllianceGeneGatewayProtocol | None = _MGI_SOURCE_GATEWAY_DEPENDENCY,
+    monarch_gateway: MonarchGatewayProtocol | None = _MONARCH_SOURCE_GATEWAY_DEPENDENCY,
     zfin_gateway: AllianceGeneGatewayProtocol | None = _ZFIN_SOURCE_GATEWAY_DEPENDENCY,
     orphanet_gateway: OrphanetGatewayProtocol | None = (
         _ORPHANET_SOURCE_GATEWAY_DEPENDENCY
@@ -116,6 +120,7 @@ def direct_source_route_dependencies(
             "drugbank": drugbank_gateway,
             "drugmechdb": drugmechdb_gateway,
             "mgi": mgi_gateway,
+            "monarch": monarch_gateway,
             "zfin": zfin_gateway,
             "orphanet": orphanet_gateway,
             "dime": dime_gateway,
