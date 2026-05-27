@@ -41,6 +41,19 @@ curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/documents/<document_id>/extrac
 
 PDFs are enriched during extraction, not at upload time.
 
+### Call-Prep Annotation Metadata
+
+For outreach/call-prep notes, set `metadata.doc_type` to
+`call_prep_annotation`. These documents must use one of the canonical
+`outreach_status` values: `annotation_prepared`, `outreach_drafted`,
+`email_sent`, `awaiting_response`, `call_scheduled`, `call_completed`,
+`collaboration_active`, or `declined`.
+
+```bash
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/documents?doc_type=call_prep_annotation&outreach_status=email_sent" \
+  -H "X-Artana-Key: $ARTANA_API_KEY"
+```
+
 ## 2. Search External Sources Directly
 
 Use this when you want discovery before review.
@@ -53,7 +66,7 @@ curl -s "$ARTANA_API_BASE_URL/v2/sources" \
 ```
 
 Direct source search currently supports sources whose capability record has
-`"direct_search_enabled": true`: PubMed, MARRVEL, ClinVar, AlphaFold,
+`"direct_search_enabled": true`: PubMed, MARRVEL, Monarch KG, ClinVar, AlphaFold,
 UniProt, ClinicalTrials.gov, MGI, and ZFIN. DrugBank also supports direct
 search when `DRUGBANK_API_KEY` is configured. MONDO and HGNC are
 ontology/authority-grounding sources, not bounded direct-search endpoints. Text
@@ -99,6 +112,20 @@ curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/clinvar/searches" \
   -d '{
     "gene_symbol": "MED13",
     "clinical_significance": ["Pathogenic"],
+    "max_results": 20
+  }'
+```
+
+Search Monarch KG:
+
+```bash
+curl -s "$ARTANA_API_BASE_URL/v2/spaces/$SPACE_ID/sources/monarch/searches" \
+  -H "X-Artana-Key: $ARTANA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "association_kind": "gene_phenotype",
+    "gene_symbols": ["MED13"],
+    "include_mediator_coverage_gaps": true,
     "max_results": 20
   }'
 ```

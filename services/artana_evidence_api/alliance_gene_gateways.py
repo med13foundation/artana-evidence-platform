@@ -9,6 +9,7 @@ import httpx
 
 _DEFAULT_BASE_URL = "https://www.alliancegenome.org/api"
 _DEFAULT_TIMEOUT_SECONDS = 30.0
+_GENE_SEARCH_CATEGORY = "gene_search_result"
 _MAX_PAGE_SIZE = 50
 _USER_AGENT = "artana-evidence-platform/alliance-gene-gateway"
 
@@ -61,7 +62,7 @@ class _AllianceGeneSourceGateway:
                 endpoint="search",
                 params={
                     "q": query.strip(),
-                    "category": "gene",
+                    "category": _GENE_SEARCH_CATEGORY,
                     "species": self.species,
                     "limit": max(1, min(max_results, _MAX_PAGE_SIZE)),
                 },

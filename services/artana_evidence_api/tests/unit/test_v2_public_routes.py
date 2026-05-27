@@ -574,6 +574,14 @@ def test_direct_source_typed_route_plugins_define_expected_public_routes() -> No
                 None,
             ),
         ),
+        "monarch": (
+            ("/v2/spaces/{space_id}/sources/monarch/searches", "POST", 201),
+            (
+                "/v2/spaces/{space_id}/sources/monarch/searches/{search_id}",
+                "GET",
+                None,
+            ),
+        ),
         "clinvar": (
             ("/v2/spaces/{space_id}/sources/clinvar/searches", "POST", 201),
             (

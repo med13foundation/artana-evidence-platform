@@ -259,7 +259,10 @@ async def test_clinicaltrials_gateway_accepts_patient_matching_filters() -> None
 
 @pytest.mark.asyncio
 async def test_mgi_gateway_normalizes_mouse_gene_records() -> None:
+    seen_categories: list[str] = []
+
     def handler(request: httpx.Request) -> httpx.Response:
+        seen_categories.extend(request.url.params.get_list("category"))
         return httpx.Response(
             200,
             json={
@@ -288,6 +291,7 @@ async def test_mgi_gateway_normalizes_mouse_gene_records() -> None:
 
     result = await gateway.fetch_records_async(query="BRCA1", max_results=5)
 
+    assert seen_categories == ["gene_search_result"]
     assert result.fetched_records == 1
     assert result.records[0]["mgi_id"] == "MGI:1919711"
     assert result.records[0]["gene_symbol"] == "Brca1"

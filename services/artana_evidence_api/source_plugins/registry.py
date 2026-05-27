@@ -29,6 +29,7 @@ from artana_evidence_api.source_plugins.drugbank import DRUGBANK_PLUGIN
 from artana_evidence_api.source_plugins.gnomad import GNOMAD_PLUGIN
 from artana_evidence_api.source_plugins.ingestion.pdf import PDF_INGESTION_PLUGIN
 from artana_evidence_api.source_plugins.ingestion.text import TEXT_INGESTION_PLUGIN
+from artana_evidence_api.source_plugins.knowledge_graph.monarch import MONARCH_PLUGIN
 from artana_evidence_api.source_plugins.marrvel import (
     MARRVEL_PLUGIN,
     build_marrvel_execution_plugin,
@@ -50,6 +51,7 @@ PublicSourcePlugin = (
 _SOURCE_PLUGINS: tuple[EvidenceSourcePlugin, ...] = (
     PUBMED_PLUGIN,
     MARRVEL_PLUGIN,
+    MONARCH_PLUGIN,
     CLINVAR_PLUGIN,
     DRUGBANK_PLUGIN,
     DRUGMECHDB_PLUGIN,
@@ -321,9 +323,9 @@ def _validated_authority_source_plugins() -> tuple[AuthoritySourcePlugin, ...]:
 
 
 @lru_cache(maxsize=1)
-def _validated_document_ingestion_source_plugins() -> tuple[
-    DocumentIngestionSourcePlugin, ...
-]:
+def _validated_document_ingestion_source_plugins() -> (
+    tuple[DocumentIngestionSourcePlugin, ...]
+):
     validate_source_plugin_registry()
     return _DOCUMENT_INGESTION_SOURCE_PLUGINS
 

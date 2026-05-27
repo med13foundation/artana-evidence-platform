@@ -37,6 +37,11 @@ from artana_evidence_api.direct_sources.gnomad import (
     GnomADSourceSearchResponse,
     run_gnomad_direct_search,
 )
+from artana_evidence_api.direct_sources.monarch import (
+    MonarchSourceSearchRequest,
+    MonarchSourceSearchResponse,
+    run_monarch_direct_search,
+)
 from artana_evidence_api.direct_sources.orphanet import (
     OrphanetLanguage,
     OrphanetSourceSearchRequest,
@@ -480,6 +485,7 @@ DirectSourceSearchRecord = (
     | DHDRSourceSearchResponse
     | DrugMechDBSourceSearchResponse
     | MarrvelSourceSearchResponse
+    | MonarchSourceSearchResponse
 )
 _DirectSourceSearchRecordT = TypeVar(
     "_DirectSourceSearchRecordT",
@@ -1061,6 +1067,7 @@ def _response_model_for_source_key(
         "dime": DiMeSourceSearchResponse,
         "dhdr": DHDRSourceSearchResponse,
         "marrvel": MarrvelSourceSearchResponse,
+        "monarch": MonarchSourceSearchResponse,
     }
     return response_models.get(source_key)
 
@@ -1090,6 +1097,8 @@ __all__ = [
     "GnomADSourceSearchResponse",
     "InMemoryDirectSourceSearchStore",
     "MarrvelSourceSearchResponse",
+    "MonarchSourceSearchRequest",
+    "MonarchSourceSearchResponse",
     "MGISourceSearchRequest",
     "MGISourceSearchResponse",
     "OrphanetLanguage",
@@ -1110,6 +1119,7 @@ __all__ = [
     "run_drugmechdb_direct_search",
     "run_gnomad_direct_search",
     "run_mgi_direct_search",
+    "run_monarch_direct_search",
     "run_orphanet_direct_search",
     "run_uniprot_direct_search",
     "run_zfin_direct_search",

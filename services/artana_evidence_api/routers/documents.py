@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from uuid import (
     UUID,  # noqa: TC003
     uuid4,
@@ -40,6 +39,14 @@ from artana_evidence_api.document_extraction import (
     review_document_extraction_drafts_with_diagnostics,
     sha256_hex,
 )
+from artana_evidence_api.document_extraction_support.dismech_structured import (
+    build_dismech_structured_extraction_drafts,
+    document_supports_dismech_structured_extraction,
+)
+from artana_evidence_api.document_extraction_support.draft_reuse import (
+    effective_proposals_for_drafts,
+    effective_review_items_for_drafts,
+)
 from artana_evidence_api.document_ingestion_support import (
     _complete_document_run,
     _create_document_run,
@@ -68,6 +75,7 @@ from artana_evidence_api.routers.document_models import (
     HarnessDocumentResponse,
     TextDocumentSubmitRequest,
     _document_extraction_response,
+    normalize_document_metadata,
 )
 from artana_evidence_api.routers.proposals import HarnessProposalResponse
 from artana_evidence_api.routers.review_queue import HarnessReviewQueueItemResponse
@@ -96,16 +104,6 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
-
-if TYPE_CHECKING:
-    from artana_evidence_api.proposal_store import (
-        HarnessProposalDraft,
-        HarnessProposalRecord,
-    )
-    from artana_evidence_api.review_item_store import (
-        HarnessReviewItemDraft,
-        HarnessReviewItemRecord,
-    )
 
 router = APIRouter(
     prefix="/v1/spaces",
@@ -163,155 +161,6 @@ def _candidate_discovery_metadata(
     return payload
 
 
-def _match_effective_proposal(
-    *,
-    proposals: list[HarnessProposalRecord],
-    draft: HarnessProposalDraft,
-) -> HarnessProposalRecord | None:
-    if draft.claim_fingerprint:
-        fingerprint_matches = [
-            proposal
-            for proposal in proposals
-            if proposal.claim_fingerprint == draft.claim_fingerprint
-        ]
-        preferred_match = next(
-            (
-                proposal
-                for proposal in fingerprint_matches
-                if proposal.status in {"pending_review", "promoted"}
-            ),
-            None,
-        )
-        if preferred_match is not None:
-            return preferred_match
-        if fingerprint_matches:
-            return fingerprint_matches[0]
-    source_matches = [
-        proposal
-        for proposal in proposals
-        if proposal.proposal_type == draft.proposal_type
-        and proposal.source_key == draft.source_key
-    ]
-    preferred_source_match = next(
-        (
-            proposal
-            for proposal in source_matches
-            if proposal.status in {"pending_review", "promoted"}
-        ),
-        None,
-    )
-    if preferred_source_match is not None:
-        return preferred_source_match
-    if source_matches:
-        return source_matches[0]
-    return None
-
-
-def _effective_proposals_for_drafts(
-    *,
-    space_id: UUID,
-    document_id: str,
-    created_proposals: list[HarnessProposalRecord],
-    proposal_drafts: tuple[HarnessProposalDraft, ...],
-    proposal_store: HarnessProposalStore,
-) -> tuple[list[HarnessProposalRecord], int]:
-    if not proposal_drafts:
-        return [], 0
-    available_proposals = proposal_store.list_proposals(
-        space_id=space_id,
-        document_id=document_id,
-    )
-    created_ids = {proposal.id for proposal in created_proposals}
-    ordered_records: list[HarnessProposalRecord] = []
-    seen_ids: set[str] = set()
-    reused_existing_count = 0
-    for draft in proposal_drafts:
-        matched = _match_effective_proposal(proposals=available_proposals, draft=draft)
-        if matched is None or matched.id in seen_ids:
-            continue
-        seen_ids.add(matched.id)
-        ordered_records.append(matched)
-        if matched.id not in created_ids:
-            reused_existing_count += 1
-    return ordered_records, reused_existing_count
-
-
-def _match_effective_review_item(
-    *,
-    review_items: list[HarnessReviewItemRecord],
-    draft: HarnessReviewItemDraft,
-) -> HarnessReviewItemRecord | None:
-    if draft.review_fingerprint:
-        fingerprint_matches = [
-            review_item
-            for review_item in review_items
-            if review_item.review_fingerprint == draft.review_fingerprint
-        ]
-        preferred_match = next(
-            (
-                review_item
-                for review_item in fingerprint_matches
-                if review_item.status == "pending_review"
-            ),
-            None,
-        )
-        if preferred_match is not None:
-            return preferred_match
-        if fingerprint_matches:
-            return fingerprint_matches[0]
-    source_matches = [
-        review_item
-        for review_item in review_items
-        if review_item.review_type == draft.review_type
-        and review_item.source_key == draft.source_key
-    ]
-    preferred_source_match = next(
-        (
-            review_item
-            for review_item in source_matches
-            if review_item.status == "pending_review"
-        ),
-        None,
-    )
-    if preferred_source_match is not None:
-        return preferred_source_match
-    if source_matches:
-        return source_matches[0]
-    return None
-
-
-def _effective_review_items_for_drafts(
-    *,
-    space_id: UUID,
-    document_id: str,
-    created_review_items: list[HarnessReviewItemRecord],
-    review_item_drafts: tuple[HarnessReviewItemDraft, ...],
-    review_item_store: HarnessReviewItemStore,
-) -> tuple[list[HarnessReviewItemRecord], int]:
-    if not review_item_drafts:
-        return [], 0
-    available_review_items = review_item_store.list_review_items(
-        space_id=space_id,
-        document_id=document_id,
-    )
-    created_ids = {review_item.id for review_item in created_review_items}
-    ordered_records: list[HarnessReviewItemRecord] = []
-    seen_ids: set[str] = set()
-    reused_existing_count = 0
-    for draft in review_item_drafts:
-        matched = _match_effective_review_item(
-            review_items=available_review_items,
-            draft=draft,
-        )
-        if matched is None or matched.id in seen_ids:
-            continue
-        seen_ids.add(matched.id)
-        ordered_records.append(matched)
-        if matched.id not in created_ids:
-            reused_existing_count += 1
-    return ordered_records, reused_existing_count
-
-
 def _require_document(
     *,
     space_id: UUID,
@@ -358,7 +207,39 @@ def _parse_metadata_json(raw_value: str | None) -> JSONObject:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="metadata_json must decode to an object",
         )
-    return decoded
+    try:
+        return normalize_document_metadata(decoded)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
+
+
+def _filtered_documents(
+    documents: list[HarnessDocumentRecord],
+    *,
+    doc_type: str | None,
+    outreach_status: str | None,
+) -> list[HarnessDocumentRecord]:
+    """Return documents matching supported metadata filters."""
+
+    normalized_doc_type = doc_type.strip() if isinstance(doc_type, str) else None
+    normalized_outreach_status = (
+        outreach_status.strip() if isinstance(outreach_status, str) else None
+    )
+    return [
+        document
+        for document in documents
+        if (
+            normalized_doc_type is None
+            or document.metadata.get("doc_type") == normalized_doc_type
+        )
+        and (
+            normalized_outreach_status is None
+            or document.metadata.get("outreach_status") == normalized_outreach_status
+        )
+    ]
 
 
 def _build_raw_pdf_storage_key(
@@ -379,10 +260,16 @@ def list_documents(
     space_id: UUID,
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=200, ge=1, le=1000),
+    doc_type: str | None = Query(default=None, min_length=1, max_length=64),
+    outreach_status: str | None = Query(default=None, min_length=1, max_length=64),
     *,
     document_store: HarnessDocumentStore = _DOCUMENT_STORE_DEPENDENCY,
 ) -> HarnessDocumentListResponse:
-    documents = document_store.list_documents(space_id=space_id)
+    documents = _filtered_documents(
+        document_store.list_documents(space_id=space_id),
+        doc_type=doc_type,
+        outreach_status=outreach_status,
+    )
     total = len(documents)
     paged = documents[offset : offset + limit]
     return HarnessDocumentListResponse(
@@ -801,6 +688,104 @@ async def extract_document(  # noqa: PLR0913, PLR0915
             ),
         )
         study_outcome_drafts = extract_study_outcome_drafts(document)
+        if document_supports_dismech_structured_extraction(document):
+            dismech_result = build_dismech_structured_extraction_drafts(
+                document=document,
+            )
+            created_proposals = proposal_store.create_proposals(
+                space_id=space_id,
+                run_id=run.id,
+                proposals=dismech_result.proposal_drafts,
+            )
+            proposals, reused_existing_proposal_count = effective_proposals_for_drafts(
+                space_id=space_id,
+                document_id=document.id,
+                created_proposals=created_proposals,
+                proposal_drafts=dismech_result.proposal_drafts,
+                proposal_store=proposal_store,
+            )
+            created_study_outcomes = study_outcome_store.create_outcomes(
+                space_id=space_id,
+                document_id=document.id,
+                run_id=run.id,
+                outcomes=study_outcome_drafts,
+            )
+            skipped_candidates = dismech_result.skipped_items
+            updated_document = document_store.update_document(
+                space_id=space_id,
+                document_id=document.id,
+                last_extraction_run_id=run.id,
+                extraction_status="completed",
+                metadata_patch={
+                    "candidate_count": dismech_result.candidate_count,
+                    "proposal_count": len(proposals),
+                    "review_item_count": 0,
+                    "study_outcome_count": len(created_study_outcomes),
+                    "skipped_candidate_count": len(skipped_candidates),
+                    "reused_existing_proposal_count": reused_existing_proposal_count,
+                    "candidate_discovery": dismech_result.candidate_discovery,
+                    "extraction_diagnostics": dismech_result.extraction_diagnostics,
+                    "dismech_structured_extraction": True,
+                    "last_enrichment_run_id": document.last_enrichment_run_id,
+                },
+            )
+            if updated_document is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to update extracted document state",
+                )
+            artifact_store.put_artifact(
+                space_id=space_id,
+                run_id=run.id,
+                artifact_key="document_extraction_result",
+                media_type="application/json",
+                content={
+                    "document_id": document.id,
+                    "candidate_count": dismech_result.candidate_count,
+                    "proposal_count": len(proposals),
+                    "proposal_ids": [proposal.id for proposal in proposals],
+                    "review_item_count": 0,
+                    "review_item_ids": [],
+                    "study_outcome_count": len(created_study_outcomes),
+                    "study_outcome_ids": [
+                        outcome.id for outcome in created_study_outcomes
+                    ],
+                    "skipped_candidates": skipped_candidates,
+                    "reused_existing_proposal_count": reused_existing_proposal_count,
+                    "candidate_discovery": dismech_result.candidate_discovery,
+                    "extraction_diagnostics": dismech_result.extraction_diagnostics,
+                    "dismech_structured_extraction": True,
+                    "last_enrichment_run_id": document.last_enrichment_run_id,
+                },
+            )
+            updated_run = _complete_document_run(
+                space_id=space_id,
+                run=run,
+                artifact_store=artifact_store,
+                run_registry=run_registry,
+                workspace_patch={
+                    "document_id": document.id,
+                    "proposal_count": len(proposals),
+                    "review_item_count": 0,
+                    "study_outcome_count": len(created_study_outcomes),
+                    "skipped_candidate_count": len(skipped_candidates),
+                    "reused_existing_proposal_count": reused_existing_proposal_count,
+                    "candidate_discovery": dismech_result.candidate_discovery,
+                    "extraction_diagnostics": dismech_result.extraction_diagnostics,
+                    "dismech_structured_extraction": True,
+                    "last_enrichment_run_id": document.last_enrichment_run_id,
+                    "last_document_extraction_result_key": "document_extraction_result",
+                },
+            )
+            return _document_extraction_response(
+                run=updated_run,
+                document=updated_document,
+                proposals=[
+                    HarnessProposalResponse.from_record(record) for record in proposals
+                ],
+                review_items=[],
+                skipped_candidates=skipped_candidates,
+            )
         if document_supports_variant_aware_extraction(document=document):
             variant_result = await extract_variant_aware_document(
                 space_id=space_id,
@@ -824,7 +809,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 run_id=run.id,
                 outcomes=study_outcome_drafts,
             )
-            proposals, reused_existing_proposal_count = _effective_proposals_for_drafts(
+            proposals, reused_existing_proposal_count = effective_proposals_for_drafts(
                 space_id=space_id,
                 document_id=document.id,
                 created_proposals=created_proposals,
@@ -832,7 +817,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 proposal_store=proposal_store,
             )
             effective_review_items, reused_existing_review_item_count = (
-                _effective_review_items_for_drafts(
+                effective_review_items_for_drafts(
                     space_id=space_id,
                     document_id=document.id,
                     created_review_items=created_review_items,
@@ -1023,7 +1008,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
             run_id=run.id,
             proposals=drafts,
         )
-        proposals, reused_existing_proposal_count = _effective_proposals_for_drafts(
+        proposals, reused_existing_proposal_count = effective_proposals_for_drafts(
             space_id=space_id,
             document_id=document.id,
             created_proposals=created_proposals,

@@ -10429,6 +10429,266 @@
         "title": "MechanismDiscoveryRunResponse",
         "type": "object"
       },
+      "MonarchSourceSearchRequest": {
+        "description": "Request payload for bounded Monarch association search.",
+        "properties": {
+          "association_kind": {
+            "description": "Association family to query from the Monarch KG.",
+            "enum": [
+              "gene_phenotype",
+              "disease_gene",
+              "variant_disease"
+            ],
+            "title": "Association Kind",
+            "type": "string"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "gene_symbols": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Gene Symbols",
+            "type": "array"
+          },
+          "include_mediator_coverage_gaps": {
+            "default": false,
+            "title": "Include Mediator Coverage Gaps",
+            "type": "boolean"
+          },
+          "max_results": {
+            "default": 20,
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "object_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object Id"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "use_kghub_cache": {
+            "default": false,
+            "description": "Prefer a local KGX cache when a future cache provider is configured.",
+            "title": "Use Kghub Cache",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "association_kind"
+        ],
+        "title": "MonarchSourceSearchRequest",
+        "type": "object"
+      },
+      "MonarchSourceSearchResponse": {
+        "description": "Response payload for one captured Monarch direct search.",
+        "properties": {
+          "association_kind": {
+            "enum": [
+              "gene_phenotype",
+              "disease_gene",
+              "variant_disease"
+            ],
+            "title": "Association Kind",
+            "type": "string"
+          },
+          "cache_manifest": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JSONValue-Output"
+            },
+            "title": "Cache Manifest",
+            "type": "object"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "fetched_records": {
+            "title": "Fetched Records",
+            "type": "integer"
+          },
+          "gene_symbols": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gene Symbols",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "include_mediator_coverage_gaps": {
+            "title": "Include Mediator Coverage Gaps",
+            "type": "boolean"
+          },
+          "kgx_dump_url": {
+            "title": "Kgx Dump Url",
+            "type": "string"
+          },
+          "max_results": {
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "object_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object Id"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JSONValue-Output"
+              },
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "source_capture": {
+            "$ref": "#/components/schemas/SourceResultCapture"
+          },
+          "source_key": {
+            "const": "monarch",
+            "default": "monarch",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "completed",
+            "default": "completed",
+            "title": "Status",
+            "type": "string"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "use_kghub_cache": {
+            "title": "Use Kghub Cache",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "space_id",
+          "query",
+          "association_kind",
+          "category",
+          "max_results",
+          "include_mediator_coverage_gaps",
+          "use_kghub_cache",
+          "kgx_dump_url",
+          "cache_manifest",
+          "fetched_records",
+          "total",
+          "record_count",
+          "created_at",
+          "completed_at",
+          "source_capture"
+        ],
+        "title": "MonarchSourceSearchResponse",
+        "type": "object"
+      },
       "OntologyConvergenceClaimResponse": {
         "description": "One reviewed claim contributing to a convergent ontology node.",
         "properties": {
@@ -19730,6 +19990,42 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "doc_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Doc Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "outreach_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outreach Status"
+            }
           }
         ],
         "responses": {
@@ -24721,6 +25017,42 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "doc_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Doc Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "outreach_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outreach Status"
+            }
           }
         ],
         "responses": {
@@ -28649,6 +28981,130 @@
           }
         ],
         "summary": "Get MGI evidence source search",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/monarch/searches": {
+      "post": {
+        "description": "Typed v2 route for Monarch source search.",
+        "operationId": "create_monarch_source_search_v2_spaces__space_id__sources_monarch_searches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MonarchSourceSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonarchSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search Monarch KG evidence source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v2/spaces/{space_id}/sources/monarch/searches/{search_id}": {
+      "get": {
+        "description": "Typed v2 route for Monarch source-search lookup.",
+        "operationId": "get_monarch_source_search_v2_spaces__space_id__sources_monarch_searches__search_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonarchSourceSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Monarch KG evidence source search",
         "tags": [
           "sources"
         ]

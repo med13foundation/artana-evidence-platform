@@ -24,6 +24,7 @@ from artana_evidence_api.dependencies import (
     get_drugmechdb_source_gateway,
     get_gnomad_source_gateway,
     get_mgi_source_gateway,
+    get_monarch_source_gateway,
     get_orphanet_source_gateway,
     get_pubmed_discovery_service,
     get_research_space_store,
@@ -41,6 +42,7 @@ from artana_evidence_api.direct_sources.dhdr import DHDRGatewayFetchResult
 from artana_evidence_api.direct_sources.dime import DiMeGatewayFetchResult
 from artana_evidence_api.direct_sources.drugmechdb import DrugMechDBGatewayFetchResult
 from artana_evidence_api.direct_sources.gnomad_gateway import GnomADGatewayFetchResult
+from artana_evidence_api.direct_sources.monarch import MonarchGatewayFetchResult
 from artana_evidence_api.direct_sources.orphanet_gateway import (
     OrphanetGatewayFetchResult,
 )
@@ -327,6 +329,30 @@ class _StubGnomADGateway:
         return GnomADGatewayFetchResult(records=records, fetched_records=len(records))
 
 
+class _StubMonarchGateway:
+    def __init__(self) -> None:
+        self.queries: list[object] = []
+
+    async def fetch_records_async(self, request) -> MonarchGatewayFetchResult:
+        self.queries.append(request)
+        return MonarchGatewayFetchResult(
+            records=[
+                {
+                    "id": "uuid:association-1",
+                    "category": request.category,
+                    "subject_label": "MED13",
+                    "predicate": "biolink:has_phenotype",
+                    "object": "HP:0001263",
+                    "object_label": "Global developmental delay",
+                    "primary_knowledge_source": "infores:hpo-annotations",
+                    "source": "monarch",
+                },
+            ],
+            fetched_records=1,
+            total=1,
+        )
+
+
 class _StubDrugBankGateway:
     def fetch_records(
         self,
@@ -545,9 +571,7 @@ class _StubMarrvelDiscoveryService:
         query_mode = (
             "variant_hgvs"
             if variant_hgvs is not None
-            else "protein_variant"
-            if protein_variant is not None
-            else "gene"
+            else "protein_variant" if protein_variant is not None else "gene"
         )
         selected_panels = list(panels or ["clinvar", "omim"])
         panel_payloads: dict[str, object] = {}
@@ -612,6 +636,7 @@ def _build_client(
     uniprot_gateway: object | None = None,
     alphafold_gateway: object | None = None,
     gnomad_gateway: object | None = None,
+    monarch_gateway: object | None = None,
     drugbank_gateway: object | None = None,
     drugmechdb_gateway: object | None = None,
     mgi_gateway: object | None = None,
@@ -642,6 +667,7 @@ def _build_client(
         uniprot_gateway=uniprot_gateway,
         alphafold_gateway=alphafold_gateway,
         gnomad_gateway=gnomad_gateway,
+        monarch_gateway=monarch_gateway,
         drugbank_gateway=drugbank_gateway,
         drugmechdb_gateway=drugmechdb_gateway,
         mgi_gateway=mgi_gateway,
@@ -673,6 +699,7 @@ def _build_client_for_space(
     uniprot_gateway: object | None = None,
     alphafold_gateway: object | None = None,
     gnomad_gateway: object | None = None,
+    monarch_gateway: object | None = None,
     drugbank_gateway: object | None = None,
     drugmechdb_gateway: object | None = None,
     mgi_gateway: object | None = None,
@@ -703,6 +730,7 @@ def _build_client_for_space(
     app.dependency_overrides[get_uniprot_source_gateway] = lambda: uniprot_gateway
     app.dependency_overrides[get_alphafold_source_gateway] = lambda: alphafold_gateway
     app.dependency_overrides[get_gnomad_source_gateway] = lambda: gnomad_gateway
+    app.dependency_overrides[get_monarch_source_gateway] = lambda: monarch_gateway
     app.dependency_overrides[get_drugbank_source_gateway] = lambda: drugbank_gateway
     app.dependency_overrides[get_drugmechdb_source_gateway] = lambda: drugmechdb_gateway
     app.dependency_overrides[get_mgi_source_gateway] = lambda: mgi_gateway
@@ -760,6 +788,39 @@ def test_create_clinvar_source_search_returns_records_and_capture_metadata() -> 
     assert get_response.status_code == 200
     assert get_response.json()["id"] == search_id
     assert get_response.json()["source_capture"]["search_id"] == search_id
+
+
+def test_create_monarch_source_search_returns_biolink_records_and_coverage_gaps() -> (
+    None
+):
+    monarch_gateway = _StubMonarchGateway()
+    built = _build_client(monarch_gateway=monarch_gateway)
+
+    response = built.client.post(
+        f"/v2/spaces/{built.space_id}/sources/monarch/searches",
+        headers=_auth_headers(),
+        json={
+            "association_kind": "gene_phenotype",
+            "gene_symbols": ["MED8"],
+            "include_mediator_coverage_gaps": True,
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source_key"] == "monarch"
+    assert payload["category"] == "biolink:GeneToPhenotypicFeatureAssociation"
+    assert payload["records"][0]["predicate"] == "biolink:has_phenotype"
+    assert payload["source_capture"]["provenance"]["provider"] == "Monarch KG API"
+    assert payload["kgx_dump_url"] == "https://data.monarchinitiative.org/monarch-kg/"
+    assert monarch_gateway.queries[0].gene_symbols == ["MED8"]
+
+    fetched = built.client.get(
+        f"/v2/spaces/{built.space_id}/sources/monarch/searches/{payload['id']}",
+        headers=_auth_headers(),
+    )
+    assert fetched.status_code == 200
+    assert fetched.json() == payload
 
 
 def test_clinvar_source_search_handoff_creates_variant_aware_document() -> None:

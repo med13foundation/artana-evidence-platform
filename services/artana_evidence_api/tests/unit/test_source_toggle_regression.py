@@ -55,6 +55,7 @@ class TestSourcesConfigParsing:
         assert resolved == {
             "pubmed": True,
             "marrvel": True,
+            "monarch": True,
             "clinvar": True,
             "mondo": True,
             "pdf": True,
@@ -93,6 +94,7 @@ class TestSourcesConfigParsing:
         assert resolved == {
             "pubmed": False,
             "marrvel": True,
+            "monarch": False,
             "clinvar": False,
             "mondo": False,
             "pdf": False,
@@ -129,6 +131,7 @@ class TestSourcesConfigParsing:
         assert resolved == {
             "pubmed": True,
             "marrvel": False,
+            "monarch": False,
             "clinvar": False,
             "mondo": False,
             "pdf": False,
@@ -162,6 +165,7 @@ class TestSourcesConfigParsing:
         assert resolved == {
             "pubmed": False,
             "marrvel": True,
+            "monarch": True,
             "clinvar": True,
             "mondo": True,
             "pdf": False,

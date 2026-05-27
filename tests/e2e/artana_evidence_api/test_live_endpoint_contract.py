@@ -781,6 +781,59 @@ def _exercise_documents(ctx: LiveContext, space_id: str) -> None:
     pdf_document_payload = _as_dict(pdf_document_response.json())
     pdf_document = _as_dict(pdf_document_payload["document"])
     ctx.created_ids["pdf_document_id"] = str(pdf_document["id"])
+    delete_document_response = ctx.request(
+        "POST",
+        f"/v1/spaces/{space_id}/documents/text",
+        expected_status=_expected_success_status(
+            spec,
+            "/v1/spaces/{space_id}/documents/text",
+            "post",
+        ),
+        headers=ctx.auth_headers(),
+        json_body={
+            "title": "Live delete-by-id note",
+            "text": "Temporary document for live deletion contract coverage.",
+            "metadata": {"source": "codex-live-delete"},
+        },
+    )
+    delete_document_payload = _as_dict(delete_document_response.json())
+    delete_document = _as_dict(delete_document_payload["document"])
+    ctx.request(
+        "DELETE",
+        f"/v1/spaces/{space_id}/documents/{delete_document['id']}",
+        expected_status=_expected_success_status(
+            spec,
+            "/v1/spaces/{space_id}/documents/{document_id}",
+            "delete",
+        ),
+        headers=ctx.auth_headers(),
+    )
+    ctx.request(
+        "POST",
+        f"/v1/spaces/{space_id}/documents/text",
+        expected_status=_expected_success_status(
+            spec,
+            "/v1/spaces/{space_id}/documents/text",
+            "post",
+        ),
+        headers=ctx.auth_headers(),
+        json_body={
+            "title": "Live scoped-delete note",
+            "text": "Temporary document for scoped live deletion contract coverage.",
+            "metadata": {"source": "codex-live-scoped-delete"},
+        },
+    )
+    ctx.request(
+        "DELETE",
+        f"/v1/spaces/{space_id}/documents",
+        expected_status=_expected_success_status(
+            spec,
+            "/v1/spaces/{space_id}/documents",
+            "delete",
+        ),
+        headers=ctx.auth_headers(),
+        params={"title_prefix": "Live scoped-delete"},
+    )
     extract_response = ctx.request(
         "POST",
         f"/v1/spaces/{space_id}/documents/{ctx.created_ids['document_id']}/extract",
@@ -1242,7 +1295,6 @@ def _exercise_review_queue(ctx: LiveContext, space_id: str) -> None:
                 },
                 allow_blocked=True,
             )
-            return
     missing_item_id = f"review_item:{uuid4()}"
     ctx.request(
         "GET",
@@ -1256,6 +1308,26 @@ def _exercise_review_queue(ctx: LiveContext, space_id: str) -> None:
         acceptable_statuses={404},
         headers=ctx.auth_headers(),
         json_body={"action": "dismiss", "reason": "Missing item check"},
+    )
+    ctx.request(
+        "POST",
+        f"/v1/spaces/{space_id}/review-queue:bulk-actions",
+        expected_status=_expected_success_status(
+            spec,
+            "/v1/spaces/{space_id}/review-queue:bulk-actions",
+            "post",
+        ),
+        headers=ctx.auth_headers(),
+        json_body={
+            "decisions": [
+                {
+                    "item_id": missing_item_id,
+                    "action": "dismiss",
+                    "reason": "Missing bulk item check",
+                    "metadata": {"source": "codex-live"},
+                },
+            ],
+        },
     )
 
 

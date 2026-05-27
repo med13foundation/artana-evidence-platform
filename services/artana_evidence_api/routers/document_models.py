@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from artana_evidence_api.document_deletion.contracts import HarnessDocumentDeleteScope
 from artana_evidence_api.document_store import normalize_document_title
@@ -10,7 +10,14 @@ from artana_evidence_api.routers.proposals import HarnessProposalResponse
 from artana_evidence_api.routers.review_queue import HarnessReviewQueueItemResponse
 from artana_evidence_api.routers.runs import HarnessRunResponse
 from artana_evidence_api.types.common import JSONObject
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 if TYPE_CHECKING:
     from artana_evidence_api.document_deletion.contracts import (
@@ -18,6 +25,92 @@ if TYPE_CHECKING:
     )
     from artana_evidence_api.document_store import HarnessDocumentRecord
     from artana_evidence_api.run_registry import HarnessRunRecord
+
+
+CallPrepOutreachStatus = Literal[
+    "annotation_prepared",
+    "outreach_drafted",
+    "email_sent",
+    "awaiting_response",
+    "call_scheduled",
+    "call_completed",
+    "collaboration_active",
+    "declined",
+]
+
+
+class CallPrepOutreachTarget(BaseModel):
+    """One contact target attached to a call-prep annotation document."""
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    name: str = Field(..., min_length=1, max_length=256)
+    email: EmailStr | None = None
+    affiliation: str | None = Field(default=None, max_length=256)
+    role: str | None = Field(default=None, max_length=128)
+
+    @field_validator("name", "affiliation", "role")
+    @classmethod
+    def normalize_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+
+class CallPrepAnnotationMetadata(BaseModel):
+    """Document metadata convention for scientific call-prep annotations."""
+
+    model_config = ConfigDict(strict=True, extra="allow")
+
+    doc_type: Literal["call_prep_annotation"]
+    outreach_status: CallPrepOutreachStatus
+    ingest_source: str | None = Field(default=None, max_length=256)
+    links_to_paper_pmid: str | None = Field(default=None, max_length=32)
+    links_to_paper_doc_id: str | None = Field(default=None, max_length=64)
+    links_to_workspace_claim: str | None = Field(default=None, max_length=64)
+    patient_variant: str | None = Field(default=None, max_length=256)
+    patient_name: str | None = Field(default=None, max_length=256)
+    outreach_targets: list[CallPrepOutreachTarget] = Field(default_factory=list)
+    related_workspace_claims: list[str] = Field(default_factory=list)
+    sibling_papers_to_ingest: list[str] = Field(default_factory=list)
+
+    @field_validator(
+        "ingest_source",
+        "links_to_paper_pmid",
+        "links_to_paper_doc_id",
+        "links_to_workspace_claim",
+        "patient_variant",
+        "patient_name",
+    )
+    @classmethod
+    def normalize_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+    @field_validator("related_workspace_claims", "sibling_papers_to_ingest")
+    @classmethod
+    def normalize_string_list(cls, values: list[str]) -> list[str]:
+        return [value for value in (" ".join(item.split()) for item in values) if value]
+
+
+def normalize_document_metadata(metadata: JSONObject) -> JSONObject:
+    """Validate and normalize source-specific document metadata conventions."""
+
+    doc_type = metadata.get("doc_type")
+    if doc_type != "call_prep_annotation":
+        return dict(metadata)
+    try:
+        return CallPrepAnnotationMetadata.model_validate(metadata).model_dump(
+            mode="json",
+            exclude_none=True,
+        )
+    except ValueError as exc:
+        msg = f"Invalid call_prep_annotation metadata: {exc}"
+        raise ValueError(msg) from exc
+
 
 class TextDocumentSubmitRequest(BaseModel):
     """Request payload for raw text document submission."""
@@ -32,6 +125,11 @@ class TextDocumentSubmitRequest(BaseModel):
     @classmethod
     def normalize_title(cls, value: str) -> str:
         return normalize_document_title(value)
+
+    @model_validator(mode="after")
+    def normalize_metadata(self) -> TextDocumentSubmitRequest:
+        self.metadata = normalize_document_metadata(self.metadata)
+        return self
 
 
 class HarnessDocumentResponse(BaseModel):
@@ -184,12 +282,17 @@ def _document_extraction_response(
         skipped_candidates=skipped_candidates,
     )
 
+
 __all__ = [
+    "CallPrepAnnotationMetadata",
+    "CallPrepOutreachStatus",
+    "CallPrepOutreachTarget",
     "HarnessDocumentDetailResponse",
     "HarnessDocumentExtractionResponse",
     "HarnessDocumentIngestionResponse",
     "HarnessDocumentListResponse",
     "HarnessDocumentResponse",
     "TextDocumentSubmitRequest",
+    "normalize_document_metadata",
     "_document_extraction_response",
 ]

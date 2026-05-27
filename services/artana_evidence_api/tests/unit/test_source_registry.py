@@ -28,16 +28,17 @@ def test_source_registry_lists_all_research_plan_sources() -> None:
     assert source_keys == [
         "pubmed",
         "marrvel",
-        "clinvar",
+        "monarch",
         "mondo",
         "pdf",
         "text",
+        "clinvar",
         "drugbank",
         "drugmechdb",
         "alphafold",
         "gnomad",
-        "uniprot",
         "hgnc",
+        "uniprot",
         "clinical_trials",
         "mgi",
         "zfin",
@@ -52,6 +53,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
     assert direct_search_source_keys() == (
         "pubmed",
         "marrvel",
+        "monarch",
         "clinvar",
         "drugbank",
         "drugmechdb",
@@ -68,6 +70,7 @@ def test_source_registry_marks_direct_search_sources() -> None:
 
     pubmed = get_source_definition("pubmed")
     marrvel = get_source_definition("marrvel")
+    monarch = get_source_definition("monarch")
     clinvar = get_source_definition("clinvar")
     clinical_trials = get_source_definition("clinical_trials")
     mondo = get_source_definition("mondo")
@@ -89,12 +92,14 @@ def test_source_registry_marks_direct_search_sources() -> None:
 
     assert pubmed is not None
     assert marrvel is not None
+    assert monarch is not None
     assert clinvar is not None
     assert clinical_trials is not None
     assert mondo is not None
     assert all(source is not None for source in direct_extra_sources)
     assert SourceCapability.SEARCH in pubmed.capabilities
     assert SourceCapability.SEARCH in marrvel.capabilities
+    assert SourceCapability.SEARCH in monarch.capabilities
     assert SourceCapability.SEARCH in clinvar.capabilities
     assert SourceCapability.SEARCH in clinical_trials.capabilities
     for source in direct_extra_sources:
@@ -106,6 +111,8 @@ def test_source_registry_marks_direct_search_sources() -> None:
     assert pubmed.direct_search_enabled is True
     assert pubmed.source_family == "literature"
     assert marrvel.direct_search_enabled is True
+    assert monarch.direct_search_enabled is True
+    assert monarch.source_family == "knowledge_graph"
     assert clinvar.direct_search_enabled is True
     assert clinvar.source_family == "variant"
     assert clinical_trials.direct_search_enabled is True
@@ -145,6 +152,7 @@ def test_source_registry_defaults_match_research_init_behavior() -> None:
     assert default_research_plan_source_preferences() == {
         "pubmed": True,
         "marrvel": True,
+        "monarch": True,
         "clinvar": True,
         "mondo": True,
         "pdf": True,

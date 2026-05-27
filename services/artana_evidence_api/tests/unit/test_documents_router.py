@@ -397,6 +397,85 @@ def test_submit_text_document_creates_tracked_document_and_run() -> None:
     assert stored_documents[0].metadata["origin"] == "unit-test"
 
 
+def test_submit_text_document_validates_call_prep_metadata_and_filters_status() -> None:
+    client, _, document_store, _, _, space_id = _build_client()
+
+    response = client.post(
+        f"/v1/spaces/{space_id}/documents/text",
+        headers=_auth_headers(),
+        json={
+            "title": "Ding Hu call prep",
+            "text": "Call-prep annotation for MED13 p.Thr326Lys outreach.",
+            "metadata": {
+                "doc_type": "call_prep_annotation",
+                "links_to_paper_pmid": "41663567",
+                "links_to_paper_doc_id": "ca545283-9804-4730-b272-9450de0f6f1a",
+                "patient_variant": "MED13 p.Thr326Lys",
+                "outreach_status": "email_sent",
+                "outreach_targets": [
+                    {
+                        "name": "Yu-Qiang Ding",
+                        "email": "dingyuqiang@example.edu",
+                        "affiliation": "Fudan University",
+                        "role": "corresponding author",
+                    },
+                ],
+                "related_workspace_claims": ["M7", "M2"],
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    stored_documents = document_store.list_documents(space_id=space_id)
+    assert stored_documents[0].metadata["outreach_status"] == "email_sent"
+
+    filtered = client.get(
+        f"/v2/spaces/{space_id}/documents",
+        headers=_auth_headers(),
+        params={
+            "doc_type": "call_prep_annotation",
+            "outreach_status": "email_sent",
+        },
+    )
+    assert filtered.status_code == 200
+    assert filtered.json()["total"] == 1
+    assert filtered.json()["documents"][0]["metadata"]["patient_variant"] == (
+        "MED13 p.Thr326Lys"
+    )
+
+    awaiting = client.get(
+        f"/v2/spaces/{space_id}/documents",
+        headers=_auth_headers(),
+        params={
+            "doc_type": "call_prep_annotation",
+            "outreach_status": "awaiting_response",
+        },
+    )
+    assert awaiting.status_code == 200
+    assert awaiting.json()["total"] == 0
+
+
+def test_submit_text_document_rejects_invalid_call_prep_outreach_status() -> None:
+    client, _, document_store, _, _, space_id = _build_client()
+
+    response = client.post(
+        f"/v1/spaces/{space_id}/documents/text",
+        headers=_auth_headers(),
+        json={
+            "title": "Legacy call prep",
+            "text": "Legacy status should be rejected.",
+            "metadata": {
+                "doc_type": "call_prep_annotation",
+                "outreach_status": "annotation_prepared_email_not_yet_sent",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+    assert "outreach_status" in response.json()["detail"]
+    assert document_store.list_documents(space_id=space_id) == []
+
+
 def test_submit_text_document_sanitizes_title_across_read_paths_and_run_state() -> None:
     client, _, document_store, _, run_registry, space_id = _build_client()
 
@@ -795,6 +874,50 @@ def test_extract_document_creates_pending_review_proposals_and_supports_filterin
     )
     assert filtered_response.status_code == 200
     assert filtered_response.json()["total"] == 1
+
+
+def test_extract_document_uses_dismech_structured_yaml_path() -> None:
+    client, _, _, proposal_store, _, space_id = _build_client(
+        graph_api_gateway_dependency=_StubEmptyGraphApiGateway,
+    )
+    response = client.post(
+        f"/v1/spaces/{space_id}/documents/text",
+        headers=_auth_headers(),
+        json={
+            "title": "Mediator DisMech YAML",
+            "text": (
+                "pathophysiology_nodes:\n"
+                "  - id: mechanism:cdk8\n"
+                "    causal_chain:\n"
+                "      - subject: MED13 p.Thr326Lys\n"
+                "        predicate: increases kinase-module activity\n"
+                "        object: altered transcriptional elongation\n"
+                "        evidence:\n"
+                "          pmids: ['41663567']\n"
+                "phenotype_associations:\n"
+                "  - phenotype_id: HP:0001263\n"
+                "    phenotype_label: Global developmental delay\n"
+                "    gene: MED13\n"
+            ),
+            "metadata": {"source_kind": "dismech"},
+        },
+    )
+    document_id = response.json()["document"]["id"]
+
+    extraction = client.post(
+        f"/v1/spaces/{space_id}/documents/{document_id}/extract",
+        headers=_auth_headers(),
+    )
+
+    assert extraction.status_code == 201
+    payload = extraction.json()
+    assert payload["proposal_count"] == 2
+    assert payload["document"]["metadata"]["dismech_structured_extraction"] is True
+    assert payload["document"]["metadata"]["candidate_discovery"]["method"] == (
+        "dismech_linkml_yaml"
+    )
+    proposals = proposal_store.list_proposals(space_id=space_id)
+    assert {proposal.source_kind for proposal in proposals} == {"dismech_extraction"}
 
 
 def test_extract_pubmed_clinical_trial_document_stores_structured_outcomes() -> None:
@@ -1493,7 +1616,9 @@ def test_extract_pdf_document_runs_enrichment_before_extraction(monkeypatch) -> 
     ]
 
 
-def test_extract_pdf_document_returns_partial_pdf_ocr_needed_detail(monkeypatch) -> None:
+def test_extract_pdf_document_returns_partial_pdf_ocr_needed_detail(
+    monkeypatch,
+) -> None:
     client, _, document_store, _, _, space_id = _build_client()
 
     monkeypatch.setattr(
@@ -1587,7 +1712,9 @@ def test_pdf_enrichment_marks_scanned_pdf_as_ocr_required(monkeypatch) -> None:
     except HTTPException as exc:
         failure = exc
     else:  # pragma: no cover - defensive assertion
-        raise AssertionError("Scanned PDF enrichment should fail with an OCR diagnostic")
+        raise AssertionError(
+            "Scanned PDF enrichment should fail with an OCR diagnostic"
+        )
 
     assert failure.status_code == 400
     assert failure.detail == {
@@ -1680,7 +1807,9 @@ def test_pdf_enrichment_distinguishes_zero_page_pdf(monkeypatch) -> None:
     assert updated_document is not None
     assert updated_document.page_count == 0
     assert updated_document.enrichment_status == "failed"
-    assert updated_document.metadata["pdf_text_extraction_reason_code"] == "pdf_no_pages"
+    assert (
+        updated_document.metadata["pdf_text_extraction_reason_code"] == "pdf_no_pages"
+    )
     assert updated_document.metadata["ocr_required"] is False
 
     enrichment_run = run_registry.list_runs(space_id=space_id)[0]
@@ -2416,7 +2545,11 @@ def test_extract_document_variant_aware_reuses_existing_deduped_outputs(
         == 1
     )
     assert (
-        len(review_item_store.list_review_items(space_id=space_id, document_id=document_id))
+        len(
+            review_item_store.list_review_items(
+                space_id=space_id, document_id=document_id
+            )
+        )
         == 1
     )
 

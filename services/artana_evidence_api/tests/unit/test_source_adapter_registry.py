@@ -193,6 +193,7 @@ def _valid_query_payload(source_key: str) -> JSONObject:
     payloads: dict[str, JSONObject] = {
         "pubmed": {"parameters": pubmed_parameters},
         "marrvel": {"gene_symbol": "MED13"},
+        "monarch": {"association_kind": "gene_phenotype", "gene_symbols": ["MED13"]},
         "clinvar": {"gene_symbol": "MED13"},
         "clinical_trials": {"query": "MED13 congenital heart disease"},
         "uniprot": {"uniprot_id": "Q9UHV7"},
