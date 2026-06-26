@@ -361,7 +361,7 @@ class SqlAlchemyStudyOutcomeStore(HarnessStudyOutcomeStore):
                 HarnessStudyOutcomeModel.document_id.in_(target_ids),
             ),
         )
-        self.session.commit()
+        commit_or_flush(self.session)
         return _result_rowcount(result)
 
 

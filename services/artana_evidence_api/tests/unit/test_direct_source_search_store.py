@@ -38,6 +38,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from tests.sqlite_utils import attach_sqlite_schemas_for_metadata
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
@@ -52,6 +54,7 @@ def session_factory() -> Iterator[sessionmaker[Session]]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+    attach_sqlite_schemas_for_metadata(engine, Base.metadata)
     Base.metadata.create_all(engine)
     local_session_factory = sessionmaker(
         bind=engine,

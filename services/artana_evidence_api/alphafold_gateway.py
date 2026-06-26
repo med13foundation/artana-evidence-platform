@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 
 logger = logging.getLogger(__name__)
 
@@ -97,14 +98,19 @@ class AlphaFoldSourceGateway:
         endpoint: str,
     ) -> object:
         try:
-            response = await client.get(endpoint)
-            if response.status_code in {_HTTP_BAD_REQUEST, _HTTP_NOT_FOUND}:
+            return await async_get_limited_json(
+                client,
+                endpoint,
+                context=f"AlphaFold API response for {endpoint}",
+            )
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in {_HTTP_BAD_REQUEST, _HTTP_NOT_FOUND}:
                 return []
-            response.raise_for_status()
+            msg = f"AlphaFold API request failed for {endpoint}: {exc}"
+            raise AlphaFoldGatewayError(msg) from exc
         except httpx.HTTPError as exc:
             msg = f"AlphaFold API request failed for {endpoint}: {exc}"
             raise AlphaFoldGatewayError(msg) from exc
-        return response.json()
 
 
 def _normalize_prediction_payload(

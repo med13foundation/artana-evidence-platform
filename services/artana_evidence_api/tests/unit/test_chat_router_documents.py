@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Final
+from uuid import uuid4
 
 import artana_evidence_api.routers.chat as chat_router
 from artana_evidence_api.agent_contracts import GraphSearchContract
@@ -30,6 +31,9 @@ from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
 from artana_evidence_api.queued_run_support import QueuedRunWaitOutcome
 from artana_evidence_api.research_space_store import HarnessResearchSpaceStore
 from artana_evidence_api.research_state import HarnessResearchStateStore
+from artana_evidence_api.routers.chat_message_queue import (
+    preparation as chat_run_preparation,
+)
 from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
 from fastapi.testclient import TestClient
 
@@ -346,6 +350,161 @@ def test_send_chat_message_offloads_preflight_to_thread(
 
     assert response.status_code == 201
     assert to_thread_calls
-    assert to_thread_calls[0] is chat_router._prepare_chat_message_run
+    assert to_thread_calls[0] is chat_router._prepare_chat_message_run_threadsafe
     body = response.json()
     assert body["result"]["answer_text"] == "Test answer"
+
+
+def test_prepare_chat_message_run_threadsafe_rebuilds_session_backed_stores(
+    monkeypatch,
+) -> None:
+    thread_session = object()
+    created: dict[str, object] = {}
+    captured: dict[str, object] = {}
+    sentinel = object()
+    runtime = object()
+
+    class _SessionBackedProbe:
+        def __init__(self) -> None:
+            self._session = object()
+
+    class _ThreadSessionContext:
+        exited = False
+
+        def __enter__(self):
+            return thread_session
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            del exc_type, exc, traceback
+            self.exited = True
+
+    thread_context = _ThreadSessionContext()
+    graph_api_gateway = SimpleNamespace(name="graph_api_gateway")
+    monkeypatch.setattr(chat_run_preparation, "SessionLocal", lambda: thread_context)
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "set_session_rls_context",
+        lambda session, **kwargs: captured.update(
+            rls_session=session,
+            rls_kwargs=kwargs,
+        ),
+    )
+
+    def _store_factory(name: str):
+        def _factory(session):
+            store = SimpleNamespace(name=name, session=session)
+            created[name] = store
+            return store
+
+        return _factory
+
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "ArtanaBackedHarnessRunRegistry",
+        lambda *, session, runtime: (
+            captured.update(run_registry_runtime=runtime)
+            or _store_factory("run_registry")(session)
+        ),
+    )
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "ArtanaBackedHarnessArtifactStore",
+        lambda *, runtime: (
+            captured.update(artifact_store_runtime=runtime)
+            or _store_factory("artifact_store")(thread_session)
+        ),
+    )
+
+    def _chat_session_store_factory(session):
+        store = SimpleNamespace(name="chat_session_store", session=session)
+        created["chat_session_store"] = store
+
+        def _get_session(**kwargs):
+            captured["required_session_store"] = store
+            return SimpleNamespace(id=kwargs["session_id"])
+
+        store.get_session = _get_session
+        return store
+
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "SqlAlchemyHarnessChatSessionStore",
+        _chat_session_store_factory,
+    )
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "SqlAlchemyHarnessDocumentStore",
+        _store_factory("document_store"),
+    )
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "SqlAlchemyHarnessGraphSnapshotStore",
+        _store_factory("graph_snapshot_store"),
+    )
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "SqlAlchemyHarnessResearchStateStore",
+        _store_factory("research_state_store"),
+    )
+
+    def _fake_prepare_chat_message_run(**kwargs):
+        captured.update(kwargs)
+        return sentinel
+
+    monkeypatch.setattr(
+        chat_run_preparation,
+        "prepare_chat_message_run",
+        _fake_prepare_chat_message_run,
+    )
+
+    result = chat_run_preparation.prepare_chat_message_run_threadsafe(
+        space_id=uuid4(),
+        session_id=uuid4(),
+        session=SimpleNamespace(id=uuid4()),
+        request=SimpleNamespace(),
+        current_user=SimpleNamespace(id=_TEST_USER_ID),
+        runtime=runtime,
+        graph_api_gateway=graph_api_gateway,
+        chat_session_store=_SessionBackedProbe(),
+        run_registry=_SessionBackedProbe(),
+        artifact_store=SimpleNamespace(),
+        research_state_store=_SessionBackedProbe(),
+        graph_snapshot_store=_SessionBackedProbe(),
+        document_store=_SessionBackedProbe(),
+    )
+
+    assert result is sentinel
+    assert captured["rls_session"] is thread_session
+    assert captured["rls_kwargs"] == {"bypass_rls": False}
+    assert captured["run_registry_runtime"] is runtime
+    assert captured["artifact_store_runtime"] is runtime
+    assert captured["required_session_store"] is created["chat_session_store"]
+    assert captured["chat_session_store"] is created["chat_session_store"]
+    assert captured["run_registry"] is created["run_registry"]
+    assert captured["artifact_store"] is created["artifact_store"]
+    assert captured["research_state_store"] is created["research_state_store"]
+    assert captured["graph_snapshot_store"] is created["graph_snapshot_store"]
+    assert captured["document_store"] is created["document_store"]
+    assert captured["graph_api_gateway"] is graph_api_gateway
+    assert thread_context.exited is True
+
+
+def test_uses_sqlite_session_bound_store_detects_injected_sqlite_session() -> None:
+    class _FakeSession:
+        def __init__(self, dialect_name: str) -> None:
+            self._dialect_name = dialect_name
+
+        def get_bind(self) -> object:
+            return SimpleNamespace(
+                dialect=SimpleNamespace(name=self._dialect_name),
+            )
+
+    assert chat_run_preparation.uses_sqlite_session_bound_store(
+        SimpleNamespace(_session=_FakeSession("sqlite")),
+    )
+    assert not chat_run_preparation.uses_sqlite_session_bound_store(
+        SimpleNamespace(_session=_FakeSession("postgresql")),
+    )
+    assert not chat_run_preparation.uses_sqlite_session_bound_store(
+        SimpleNamespace(),
+    )

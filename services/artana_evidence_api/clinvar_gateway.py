@@ -10,6 +10,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 
 if TYPE_CHECKING:
     from artana_evidence_api.source_enrichment_bridges import ClinVarQueryConfig
@@ -135,10 +136,15 @@ class ClinVarSourceGateway:
         endpoint: str,
         params: Mapping[str, str | int],
     ) -> dict[str, object]:
+        payload: object | None = None
         for attempt in range(_NCBI_RETRY_ATTEMPTS):
             try:
-                response = await client.get(endpoint, params=params)
-                response.raise_for_status()
+                payload = await async_get_limited_json(
+                    client,
+                    endpoint,
+                    params=params,
+                    context=f"ClinVar API response for {endpoint}",
+                )
             except httpx.HTTPStatusError as exc:
                 status_code = exc.response.status_code
                 should_retry = (
@@ -159,7 +165,6 @@ class ClinVarSourceGateway:
             else:
                 break
 
-        payload: object = response.json()
         if not isinstance(payload, dict):
             msg = f"ClinVar API response for {endpoint} was not a JSON object"
             raise ClinVarGatewayError(msg)

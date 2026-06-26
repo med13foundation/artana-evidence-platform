@@ -81,6 +81,7 @@ def _decode_access_token(token: str) -> dict[str, object]:
             settings.jwt_secret,
             algorithms=[settings.jwt_algorithm],
             issuer=settings.jwt_issuer,
+            options={"require": ["exp"]},
         )
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(

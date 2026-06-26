@@ -85,6 +85,36 @@ def test_entity_create_resolves_by_label_alias_and_alias_search(graph_client) ->
     assert "THRAP1" in search_payload["entities"][0]["aliases"]
 
 
+def test_entity_list_type_total_reports_all_matches_not_page_size(graph_client) -> None:
+    fixture = build_seeded_space_fixture(slug_prefix="entity-list-total")
+    headers = fixture["headers"]
+    space_id = fixture["space_id"]
+
+    for label in ("MED13", "MED13L", "CDK8"):
+        create_response = graph_client.post(
+            f"/v1/spaces/{space_id}/entities",
+            headers=headers,
+            json={
+                "entity_type": "GENE",
+                "display_label": label,
+                "metadata": {},
+                "identifiers": {},
+            },
+        )
+        assert create_response.status_code == 201, create_response.text
+
+    list_response = graph_client.get(
+        f"/v1/spaces/{space_id}/entities",
+        headers=headers,
+        params={"type": "GENE", "offset": 0, "limit": 2},
+    )
+
+    assert list_response.status_code == 200, list_response.text
+    payload = list_response.json()
+    assert len(payload["entities"]) == 2
+    assert payload["total"] == 3
+
+
 def test_entity_create_rejects_missing_required_strict_match_anchors(
     graph_client,
 ) -> None:

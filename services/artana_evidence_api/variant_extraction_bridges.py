@@ -219,7 +219,11 @@ def build_genomics_signal_bundle(
     """Return a JSON-safe structured genomics hint bundle for extraction."""
     text_blobs = _collect_text_blobs(raw_record)
     text = "\n".join(blob["text"] for blob in text_blobs if blob["text"]).strip()
-    variant_candidates = _extract_variant_candidates(raw_record=raw_record, text=text)
+    scan_text = _deterministic_variant_scan_text(text)
+    variant_candidates = _extract_variant_candidates(
+        raw_record=raw_record,
+        text=scan_text,
+    )
     source_grounding_present = any(
         isinstance(raw_record.get(key), dict)
         for key in ("clinvar_grounding", "marrvel_grounding")
@@ -228,9 +232,9 @@ def build_genomics_signal_bundle(
     genomics_tagged_source = normalized_source_type in {"clinvar", "marrvel"}
     variant_language_present = bool(
         variant_candidates
-        or _CDNA_HGVS_PATTERN.search(text)
-        or _PROTEIN_HGVS_PATTERN.search(text)
-        or _GENOMIC_HGVS_PATTERN.search(text)
+        or _CDNA_HGVS_PATTERN.search(scan_text)
+        or _PROTEIN_HGVS_PATTERN.search(scan_text)
+        or _GENOMIC_HGVS_PATTERN.search(scan_text)
         or raw_record.get("gene_symbol")
         or raw_record.get("hgvs_notation")
     )
@@ -245,6 +249,10 @@ def build_genomics_signal_bundle(
         "text_blob_count": len(text_blobs),
         "variant_candidates": variant_candidates,
     }
+
+
+def _deterministic_variant_scan_text(text: str) -> str:
+    return text[:_VARIANT_EXTRACTION_TEXT_LIMIT]
 
 
 def _extract_variant_candidates(

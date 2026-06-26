@@ -26,6 +26,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     _research_state_record_from_model,
     _SessionBackedStore,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from sqlalchemy import func, select
 
 if TYPE_CHECKING:
@@ -113,7 +114,7 @@ class SqlAlchemyHarnessResearchStateStore(
                     **_json_object(model.metadata_payload),
                     **metadata,
                 }
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _research_state_record_from_model(model)
 
@@ -148,7 +149,7 @@ class SqlAlchemyHarnessGraphSnapshotStore(
             metadata_payload=metadata or {},
         )
         self.session.add(model)
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _graph_snapshot_record_from_model(model)
 
@@ -211,7 +212,7 @@ class SqlAlchemyHarnessChatSessionStore(HarnessChatSessionStore, _SessionBackedS
             status=status,
         )
         self.session.add(model)
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _chat_session_record_from_model(model)
 
@@ -286,7 +287,7 @@ class SqlAlchemyHarnessChatSessionStore(HarnessChatSessionStore, _SessionBackedS
         self.session.add(message_model)
         if run_id is not None:
             session_model.last_run_id = str(run_id)
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(message_model)
         return _chat_message_record_from_model(message_model)
 
@@ -308,7 +309,6 @@ class SqlAlchemyHarnessChatSessionStore(HarnessChatSessionStore, _SessionBackedS
             model.last_run_id = str(last_run_id)
         if isinstance(status, str) and status.strip() != "":
             model.status = status
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _chat_session_record_from_model(model)
-

@@ -13,6 +13,9 @@ from artana_evidence_api.runtime.artana_imports import (
     _ARTANA_IMPORT_ERROR,
     PostgresStore,
 )
+from artana_evidence_api.runtime.database_url_security import (
+    validate_database_url_security,
+)
 from artana_evidence_api.runtime.logging_support import logger
 
 if TYPE_CHECKING:
@@ -124,10 +127,12 @@ def _read_positive_float_env(env_name: str, *, default_value: float) -> float:
 
 
 def _resolve_database_url() -> str:
-    return os.getenv(
+    url = os.getenv(
         "ARTANA_EVIDENCE_API_DATABASE_URL",
         os.getenv("DATABASE_URL", _DEFAULT_DATABASE_URL),
     )
+    validate_database_url_security(url)
+    return url
 
 
 def resolve_artana_state_uri() -> str:

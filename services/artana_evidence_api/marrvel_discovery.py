@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
@@ -60,6 +60,7 @@ class MarrvelDiscoveryResult:
     panels: JSONObject
     available_panels: list[str]
     created_at: datetime
+    panel_errors: dict[str, str] = field(default_factory=dict)
 
 
 class MarrvelDiscoveryService:
@@ -97,6 +98,7 @@ class MarrvelDiscoveryService:
         try:
             async with client:
                 panels_payload: JSONObject = {}
+                panel_errors: dict[str, str] = {}
                 requested_gene_symbol = _normalize_gene_symbol(gene_symbol)
                 resolved_gene_symbol = None
                 resolved_variant = None
@@ -199,7 +201,9 @@ class MarrvelDiscoveryService:
                         gene_panel_tasks["pharos"] = asyncio.create_task(
                             client.fetch_pharos_targets(entrez_id),
                         )
-                    panels_payload.update(await _gather_panels(gene_panel_tasks))
+                    gene_payload, gene_errors = await _gather_panels(gene_panel_tasks)
+                    panels_payload.update(gene_payload)
+                    panel_errors.update(gene_errors)
 
                 if resolved_variant is not None:
                     variant_panel_tasks: dict[
@@ -222,7 +226,22 @@ class MarrvelDiscoveryService:
                         variant_panel_tasks["decipher_variant"] = asyncio.create_task(
                             client.fetch_decipher_variant_data(resolved_variant),
                         )
-                    panels_payload.update(await _gather_panels(variant_panel_tasks))
+                    variant_payload, variant_errors = await _gather_panels(
+                        variant_panel_tasks,
+                    )
+                    panels_payload.update(variant_payload)
+                    panel_errors.update(variant_errors)
+
+                panel_errors.update(
+                    _panel_errors_from_client(
+                        client=client,
+                        gene_symbol=normalized_symbol,
+                        entrez_id=entrez_id,
+                        resolved_variant=resolved_variant,
+                    ),
+                )
+                for failed_panel in panel_errors:
+                    panels_payload.pop(failed_panel, None)
 
                 panel_counts = {
                     panel_name: _count_panel_items(panel_value)
@@ -254,6 +273,7 @@ class MarrvelDiscoveryService:
                         resolved_gene_symbol=resolved_gene_symbol,
                         resolved_variant=resolved_variant,
                         panel_counts=panel_counts,
+                        panel_errors=panel_errors,
                     ),
                     gene_found=resolved_gene_symbol is not None,
                     gene_info=gene_info,
@@ -263,6 +283,7 @@ class MarrvelDiscoveryService:
                     panels=panels_payload,
                     available_panels=list(SUPPORTED_MARRVEL_PANELS),
                     created_at=now,
+                    panel_errors=panel_errors,
                 )
                 self._results[result_id] = result
                 return result
@@ -287,6 +308,7 @@ class MarrvelDiscoveryService:
                 panels={},
                 available_panels=list(SUPPORTED_MARRVEL_PANELS),
                 created_at=now,
+                panel_errors={},
             )
             self._results[result_id] = failed_result
             return failed_result
@@ -346,18 +368,93 @@ async def _gather_panels(
         | asyncio.Task[JSONObject | None]
         | asyncio.Task[list[JSONObject]],
     ],
-) -> JSONObject:
+) -> tuple[JSONObject, dict[str, str]]:
     if not panel_tasks:
-        return {}
+        return {}, {}
 
     panel_names = list(panel_tasks)
-    panel_results = await asyncio.gather(*(panel_tasks[name] for name in panel_names))
+    panel_results = await asyncio.gather(
+        *(panel_tasks[name] for name in panel_names),
+        return_exceptions=True,
+    )
 
     payload: JSONObject = {}
+    errors: dict[str, str] = {}
     for panel_name, panel_result in zip(panel_names, panel_results, strict=True):
+        if isinstance(panel_result, Exception):
+            errors[panel_name] = str(panel_result)
+            logger.warning("MARRVEL panel %s failed: %s", panel_name, panel_result)
+            continue
+        if isinstance(panel_result, BaseException):
+            raise panel_result
         if panel_result is not None:
             payload[panel_name] = panel_result
-    return payload
+    return payload, errors
+
+
+def _panel_errors_from_client(
+    *,
+    client: object,
+    gene_symbol: str | None,
+    entrez_id: int | None,
+    resolved_variant: str | None,
+) -> dict[str, str]:
+    fetch_errors = _client_fetch_errors(client)
+    if not fetch_errors:
+        return {}
+    context_to_panel = _panel_error_contexts(
+        gene_symbol=gene_symbol,
+        entrez_id=entrez_id,
+        resolved_variant=resolved_variant,
+    )
+    return {
+        panel_name: message
+        for context, message in fetch_errors.items()
+        for panel_name in (context_to_panel.get(context),)
+        if panel_name is not None
+    }
+
+
+def _client_fetch_errors(client: object) -> dict[str, str]:
+    fetch_errors = getattr(client, "fetch_errors", None)
+    if not callable(fetch_errors):
+        return {}
+    raw_errors = fetch_errors()
+    if not isinstance(raw_errors, dict):
+        return {}
+    return {
+        str(context): str(message)
+        for context, message in raw_errors.items()
+        if str(context) and str(message)
+    }
+
+
+def _panel_error_contexts(
+    *,
+    gene_symbol: str | None,
+    entrez_id: int | None,
+    resolved_variant: str | None,
+) -> dict[str, str]:
+    contexts: dict[str, str] = {}
+    if gene_symbol is not None:
+        contexts[f"OMIM data for {gene_symbol}"] = "omim"
+        contexts[f"dbNSFP data for {gene_symbol}"] = "dbnsfp"
+    if entrez_id is not None:
+        contexts[f"ClinVar data for entrez {entrez_id}"] = "clinvar"
+        contexts[f"Geno2MP data for entrez {entrez_id}"] = "geno2mp"
+        contexts[f"gnomAD gene data for entrez {entrez_id}"] = "gnomad"
+        contexts[f"DGV data for entrez {entrez_id}"] = "dgv"
+        contexts[f"DIOPT ortholog data for entrez {entrez_id}"] = "diopt_orthologs"
+        contexts[f"DIOPT alignment data for entrez {entrez_id}"] = "diopt_alignment"
+        contexts[f"GTEx data for entrez {entrez_id}"] = "gtex"
+        contexts[f"ortholog expression data for entrez {entrez_id}"] = "expression"
+        contexts[f"Pharos data for entrez {entrez_id}"] = "pharos"
+    if resolved_variant is not None:
+        contexts[f"gnomAD variant data for {resolved_variant}"] = "gnomad_variant"
+        contexts[f"Geno2MP variant data for {resolved_variant}"] = "geno2mp_variant"
+        contexts[f"DGV variant data for {resolved_variant}"] = "dgv_variant"
+        contexts[f"DECIPHER data for {resolved_variant}"] = "decipher_variant"
+    return contexts
 
 
 def _resolve_query_input(
@@ -524,7 +621,17 @@ def _resolve_status(
     resolved_gene_symbol: str | None,
     resolved_variant: str | None,
     panel_counts: dict[str, int],
+    panel_errors: dict[str, str],
 ) -> str:
+    if panel_errors and (
+        gene_info is not None
+        or resolved_gene_symbol is not None
+        or resolved_variant is not None
+        or any(count > 0 for count in panel_counts.values())
+    ):
+        return "partial"
+    if panel_errors:
+        return "failed"
     if (
         gene_info is not None
         or resolved_gene_symbol is not None

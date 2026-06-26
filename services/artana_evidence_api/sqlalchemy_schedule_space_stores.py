@@ -40,6 +40,7 @@ from artana_evidence_api.sqlalchemy_stores import (
     json_object_or_empty,
     normalize_schedule_cadence,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 _DateTimeNormalizer = Callable[[datetime | None], datetime]
+_CREATE_SPACE_SLUG_RETRY_LIMIT = 3
 
 
 def _current_normalized_utc_datetime(value: datetime | None = None) -> datetime:
@@ -56,6 +58,18 @@ def _current_normalized_utc_datetime(value: datetime | None = None) -> datetime:
     if candidate is None or candidate is _current_normalized_utc_datetime:
         return _normalized_utc_datetime(value)
     return cast("_DateTimeNormalizer", candidate)(value)
+
+
+def _is_research_space_slug_conflict(exc: IntegrityError) -> bool:
+    constraint_name = getattr(
+        getattr(getattr(exc, "orig", None), "diag", None),
+        "constraint_name",
+        None,
+    )
+    if isinstance(constraint_name, str) and "slug" in constraint_name.casefold():
+        return True
+    message = str(exc).casefold()
+    return "research_spaces" in message and "slug" in message
 
 
 class SqlAlchemyHarnessScheduleStore(HarnessScheduleStore, _SessionBackedStore):
@@ -92,7 +106,7 @@ class SqlAlchemyHarnessScheduleStore(HarnessScheduleStore, _SessionBackedStore):
             active_trigger_claimed_at=None,
         )
         self.session.add(model)
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _schedule_record_from_model(model)
 
@@ -177,7 +191,7 @@ class SqlAlchemyHarnessScheduleStore(HarnessScheduleStore, _SessionBackedStore):
             model.last_run_id = str(last_run_id)
         if last_run_at is not None:
             model.last_run_at = last_run_at
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _schedule_record_from_model(model)
 
@@ -210,7 +224,7 @@ class SqlAlchemyHarnessScheduleStore(HarnessScheduleStore, _SessionBackedStore):
             )
         )
         result = self.session.execute(stmt)
-        self.session.commit()
+        commit_or_flush(self.session)
         if _result_rowcount(result) != 1:
             return None
         model = self.session.get(HarnessScheduleModel, str(schedule_id))
@@ -237,7 +251,7 @@ class SqlAlchemyHarnessScheduleStore(HarnessScheduleStore, _SessionBackedStore):
             )
         )
         result = self.session.execute(stmt)
-        self.session.commit()
+        commit_or_flush(self.session)
         if _result_rowcount(result) != 1:
             return None
         model = self.session.get(HarnessScheduleModel, str(schedule_id))
@@ -522,43 +536,57 @@ class SqlAlchemyHarnessResearchSpaceStore(
         normalized_description = (
             description.strip() if isinstance(description, str) else ""
         )
-        owner_uuid = _as_uuid(owner_id)
-        owner_uuid = self._ensure_owner_user(
-            owner_id=owner_uuid,
-            owner_email=owner_email,
-            owner_username=owner_username,
-            owner_full_name=owner_full_name,
-            owner_role=owner_role,
-            owner_status=owner_status,
-        )
-
-        existing_slugs = set(
-            self.session.execute(select(ResearchSpaceModel.slug)).scalars().all(),
-        )
-        model = ResearchSpaceModel(
-            slug=build_unique_space_slug(normalized_name, existing_slugs),
-            name=normalized_name,
-            description=normalized_description,
-            owner_id=owner_uuid,
-            status=SpaceStatusEnum.ACTIVE,
-            settings=settings or {},
-            tags=[],
-        )
-        self.session.add(model)
-        try:
-            self.session.flush()
-            self._ensure_owner_membership(space_id=_as_uuid(model.id), owner_id=owner_uuid)
-            self.session.flush()
-            self._sync_space_model(model)
-            self.session.commit()
-        except Exception:
-            self.session.rollback()
-            raise
-        self.session.refresh(model)
-        return _research_space_record_from_model(
-            model,
-            role=MembershipRoleEnum.OWNER.value,
-        )
+        raw_owner_uuid = _as_uuid(owner_id)
+        last_slug_conflict: IntegrityError | None = None
+        for _attempt in range(_CREATE_SPACE_SLUG_RETRY_LIMIT):
+            owner_uuid = self._ensure_owner_user(
+                owner_id=raw_owner_uuid,
+                owner_email=owner_email,
+                owner_username=owner_username,
+                owner_full_name=owner_full_name,
+                owner_role=owner_role,
+                owner_status=owner_status,
+            )
+            existing_slugs = set(
+                self.session.execute(select(ResearchSpaceModel.slug)).scalars().all(),
+            )
+            model = ResearchSpaceModel(
+                slug=build_unique_space_slug(normalized_name, existing_slugs),
+                name=normalized_name,
+                description=normalized_description,
+                owner_id=owner_uuid,
+                status=SpaceStatusEnum.ACTIVE,
+                settings=settings or {},
+                tags=[],
+            )
+            self.session.add(model)
+            try:
+                self.session.flush()
+                self._ensure_owner_membership(
+                    space_id=_as_uuid(model.id),
+                    owner_id=owner_uuid,
+                )
+                self.session.flush()
+                self._sync_space_model(model)
+                commit_or_flush(self.session)
+            except IntegrityError as exc:
+                self.session.rollback()
+                if not _is_research_space_slug_conflict(exc):
+                    raise
+                last_slug_conflict = exc
+                continue
+            except Exception:
+                self.session.rollback()
+                raise
+            self.session.refresh(model)
+            return _research_space_record_from_model(
+                model,
+                role=MembershipRoleEnum.OWNER.value,
+            )
+        if last_slug_conflict is not None:
+            raise last_slug_conflict
+        msg = "Failed to create research space"
+        raise RuntimeError(msg)
 
     def ensure_default_space(  # noqa: PLR0913
         self,
@@ -606,7 +634,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
             self._ensure_owner_membership(space_id=_as_uuid(model.id), owner_id=owner_uuid)
             self.session.flush()
             self._sync_space_model(model)
-            self.session.commit()
+            commit_or_flush(self.session)
         except Exception:
             self.session.rollback()
             raise
@@ -630,7 +658,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
         model.settings = json_object_or_empty(settings)
         try:
             self.session.flush()
-            self.session.commit()
+            commit_or_flush(self.session)
         except Exception:
             self.session.rollback()
             raise
@@ -687,7 +715,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
             msg = "Space not found"
             raise KeyError(msg)
         model.status = SpaceStatusEnum.ARCHIVED
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _research_space_record_from_model(
             model,
@@ -776,7 +804,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
             existing.is_active = True
             if existing.joined_at is None:
                 existing.joined_at = now
-            self.session.commit()
+            commit_or_flush(self.session)
             self.session.refresh(existing)
             model = existing
         else:
@@ -790,7 +818,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
                 is_active=True,
             )
             self.session.add(model)
-            self.session.commit()
+            commit_or_flush(self.session)
             self.session.refresh(model)
 
         return HarnessSpaceMemberRecord(
@@ -832,7 +860,7 @@ class SqlAlchemyHarnessResearchSpaceStore(
             return None
 
         existing.is_active = False
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(existing)
         return HarnessSpaceMemberRecord(
             id=str(existing.id),

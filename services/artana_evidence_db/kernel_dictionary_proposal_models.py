@@ -20,9 +20,15 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+
+_OPEN_RELATION_CONSTRAINT_PROPOSAL_PREDICATE = (
+    "proposal_type = 'RELATION_CONSTRAINT' "
+    "AND status IN ('SUBMITTED', 'CHANGES_REQUESTED')"
+)
 
 
 class _TimestampAuditMixin:
@@ -341,6 +347,15 @@ class DictionaryProposalModel(_TimestampAuditMixin, Base):
             "source_type",
             "relation_type",
             "target_type",
+        ),
+        Index(
+            "uq_dictionary_proposals_open_relation_constraint_triple",
+            "source_type",
+            "relation_type",
+            "target_type",
+            unique=True,
+            postgresql_where=text(_OPEN_RELATION_CONSTRAINT_PROPOSAL_PREDICATE),
+            sqlite_where=text(_OPEN_RELATION_CONSTRAINT_PROPOSAL_PREDICATE),
         ),
         graph_table_options(comment="Governed dictionary change proposals"),
     )

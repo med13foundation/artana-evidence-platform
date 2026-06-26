@@ -9960,6 +9960,13 @@
             "title": "Panel Counts",
             "type": "object"
           },
+          "panel_errors": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Panel Errors",
+            "type": "object"
+          },
           "panels": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JSONValue-Output"
@@ -10100,6 +10107,13 @@
             "title": "Panel Counts",
             "type": "object"
           },
+          "panel_errors": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Panel Errors",
+            "type": "object"
+          },
           "panels": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JSONValue-Output"
@@ -10175,8 +10189,13 @@
             "type": "string"
           },
           "status": {
-            "const": "completed",
             "default": "completed",
+            "enum": [
+              "completed",
+              "partial",
+              "failed",
+              "no_results"
+            ],
             "title": "Status",
             "type": "string"
           },

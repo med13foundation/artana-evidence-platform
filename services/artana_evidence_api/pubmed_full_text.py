@@ -8,11 +8,16 @@ from typing import Literal
 from urllib.parse import quote
 
 import requests
+from artana_evidence_api.runtime.http_response_limits import (
+    UpstreamResponseTooLargeError,
+    limited_bytes_from_chunks,
+)
 from defusedxml import ElementTree
 
 FullTextAcquisitionMethod = Literal["pmc_oa", "skipped"]
 
 _MIN_FULL_TEXT_CHARS = 400
+_STREAM_CHUNK_SIZE_BYTES = 65_536
 _WHITESPACE_PATTERN = re.compile(r"\s+")
 
 
@@ -52,7 +57,12 @@ def fetch_pmc_open_access_full_text(
     attempt = f"pmc_oa:{normalized_pmcid}"
     try:
         xml_content = _http_get_text(url, timeout_seconds=timeout_seconds)
-    except (requests.RequestException, OSError, UnicodeDecodeError) as exc:
+    except (
+        requests.RequestException,
+        OSError,
+        UnicodeDecodeError,
+        UpstreamResponseTooLargeError,
+    ) as exc:
         return FullTextFetchResult(
             found=False,
             acquisition_method="pmc_oa",
@@ -90,9 +100,16 @@ def fetch_pmc_open_access_full_text(
 
 
 def _http_get_text(url: str, *, timeout_seconds: int) -> str:
-    response = requests.get(url, timeout=timeout_seconds)
-    response.raise_for_status()
-    payload: bytes = response.content
+    response = requests.get(url, timeout=timeout_seconds, stream=True)
+    try:
+        response.raise_for_status()
+        payload = limited_bytes_from_chunks(
+            response.iter_content(chunk_size=_STREAM_CHUNK_SIZE_BYTES),
+            headers=response.headers,
+            context="PMC OA",
+        )
+    finally:
+        response.close()
     return payload.decode("utf-8", errors="replace")
 
 

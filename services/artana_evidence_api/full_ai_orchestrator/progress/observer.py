@@ -70,5 +70,7 @@ class _FullAIOrchestratorProgressObserver(
     guarded_rollout_profile_source: str = "resolved"
     guarded_chase_rollout_enabled: bool = False
     _shadow_planner_task: asyncio.Task[None] | None = None
+    _shadow_planner_tasks: set[asyncio.Task[None]] = field(default_factory=set)
+    _emitting_shadow_checkpoints: set[str] = field(default_factory=set)
     _progress_artifact_backoff_until: float | None = None
     _progress_decision_backoff_until: float | None = None

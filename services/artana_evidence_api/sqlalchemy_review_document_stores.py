@@ -127,7 +127,7 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
                 if existing_after_conflict is None:
                     raise
                 effective_models.append(existing_after_conflict)
-        self.session.commit()
+        commit_or_flush(self.session)
         unique_models_by_id: dict[str, HarnessReviewItemModel] = {
             model.id: model for model in effective_models
         }
@@ -215,7 +215,7 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
                 HarnessReviewItemModel.document_id.in_(target_ids),
             ),
         )
-        self.session.commit()
+        commit_or_flush(self.session)
         return _result_rowcount(result)
 
     def decide_review_item(
@@ -296,7 +296,7 @@ class SqlAlchemyHarnessReviewItemStore(HarnessReviewItemStore, _SessionBackedSto
                 f"'{refreshed_status_row[0]}'"
             )
             raise ValueError(msg)
-        self.session.commit()
+        commit_or_flush(self.session)
         refreshed_stmt = select(HarnessReviewItemModel).where(
             HarnessReviewItemModel.id == normalized_review_item_id,
             HarnessReviewItemModel.space_id == normalized_space_id,
@@ -459,7 +459,7 @@ class SqlAlchemyHarnessDocumentStore(HarnessDocumentStore, _SessionBackedStore):
                 ),
             ),
         )
-        self.session.commit()
+        commit_or_flush(self.session)
         return deleted_records
 
     def update_document(  # noqa: PLR0913
@@ -511,6 +511,6 @@ class SqlAlchemyHarnessDocumentStore(HarnessDocumentStore, _SessionBackedStore):
                 **_json_object(model.metadata_payload),
                 **dict(metadata_patch),
             }
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _document_record_from_model(model)

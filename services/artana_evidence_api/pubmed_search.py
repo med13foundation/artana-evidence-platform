@@ -13,6 +13,9 @@ from typing import TYPE_CHECKING, Protocol
 
 import httpx
 from artana_evidence_api.request_context import build_request_id_headers
+from artana_evidence_api.runtime.http_response_limits import (
+    async_limited_json_from_response,
+)
 from artana_evidence_api.types.common import JSONObject, JSONValue
 
 if TYPE_CHECKING:
@@ -29,6 +32,8 @@ _PUBMED_REQUESTS_PER_SECOND_WITH_API_KEY = 10.0
 _MIN_TOKEN_BUCKET_CAPACITY = 1.0
 _RETRY_AFTER_HEADER = "Retry-After"
 _HTTP_TOO_MANY_REQUESTS = 429
+_HTTP_SERVER_ERROR_MIN = 500
+_HTTP_SERVER_ERROR_MAX = 599
 _BACKEND_DETERMINISTIC = "deterministic"
 _BACKEND_NCBI = "ncbi"
 _ENV_PUBMED_SEARCH_BACKEND = "ARTANA_PUBMED_SEARCH_BACKEND"
@@ -290,14 +295,14 @@ class NCBIPubMedSearchGateway(PubMedSearchGateway):
             timeout=self._timeout_seconds,
             transport=self._transport,
         ) as client:
-            search_response = await self._request_with_retry(
-                client,
-                "GET",
-                "esearch.fcgi",
-                params=self._build_search_params(query, parameters),
-            )
             search_payload = _coerce_object(
-                search_response.json(),
+                await self._request_json_with_retry(
+                    client,
+                    "GET",
+                    "esearch.fcgi",
+                    params=self._build_search_params(query, parameters),
+                    context="PubMed ESearch response",
+                ),
                 context="PubMed ESearch response",
             )
             search_result = search_payload.get("esearchresult")
@@ -354,14 +359,14 @@ class NCBIPubMedSearchGateway(PubMedSearchGateway):
         preview_ids = article_ids[:_PREVIEW_RECORD_LIMIT]
         if not preview_ids:
             return []
-        summary_response = await self._request_with_retry(
-            client,
-            "GET",
-            "esummary.fcgi",
-            params=self._build_summary_params(preview_ids),
-        )
         summary_payload = _coerce_object(
-            summary_response.json(),
+            await self._request_json_with_retry(
+                client,
+                "GET",
+                "esummary.fcgi",
+                params=self._build_summary_params(preview_ids),
+                context="PubMed ESummary response",
+            ),
             context="PubMed ESummary response",
         )
         result_payload = summary_payload.get("result")
@@ -381,34 +386,58 @@ class NCBIPubMedSearchGateway(PubMedSearchGateway):
                 )
         return preview_records
 
-    async def _request_with_retry(
+    async def _request_json_with_retry(
         self,
         client: httpx.AsyncClient,
         method: str,
         path: str,
         *,
         params: Mapping[str, str | int],
-    ) -> httpx.Response:
+        context: str,
+    ) -> object:
         for delay_seconds in _PUBMED_429_RETRY_DELAYS_SECONDS:
             await self._rate_limiter.acquire()
-            response = await client.request(method, path, params=params)
-            if response.status_code != _HTTP_TOO_MANY_REQUESTS:
-                response.raise_for_status()
-                return response
-            await asyncio.sleep(self._retry_delay_seconds(response, delay_seconds))
+            try:
+                async with client.stream(method, path, params=params) as response:
+                    if not self._is_retryable_response(response):
+                        response.raise_for_status()
+                        return await async_limited_json_from_response(
+                            response,
+                            context=context,
+                        )
+                    retry_delay_seconds = self._retry_delay_seconds(
+                        response,
+                        delay_seconds,
+                    )
+            except httpx.RequestError:
+                retry_delay_seconds = self._fallback_retry_delay_seconds(delay_seconds)
+            await asyncio.sleep(retry_delay_seconds)
 
         await self._rate_limiter.acquire()
-        final_response = await client.request(method, path, params=params)
-        if final_response.status_code == _HTTP_TOO_MANY_REQUESTS:
-            retry_after_seconds = self._retry_delay_seconds(
+        async with client.stream(method, path, params=params) as final_response:
+            if final_response.status_code == _HTTP_TOO_MANY_REQUESTS:
+                retry_after_seconds = self._retry_delay_seconds(
+                    final_response,
+                    _PUBMED_429_RETRY_DELAYS_SECONDS[-1],
+                )
+                raise PubMedSearchRateLimitError(
+                    retry_after_seconds=retry_after_seconds,
+                )
+            final_response.raise_for_status()
+            return await async_limited_json_from_response(
                 final_response,
-                _PUBMED_429_RETRY_DELAYS_SECONDS[-1],
+                context=context,
             )
-            raise PubMedSearchRateLimitError(
-                retry_after_seconds=retry_after_seconds,
-            )
-        final_response.raise_for_status()
-        return final_response
+
+    @staticmethod
+    def _is_retryable_response(response: httpx.Response) -> bool:
+        if response.status_code == _HTTP_TOO_MANY_REQUESTS:
+            return True
+        return _HTTP_SERVER_ERROR_MIN <= response.status_code <= _HTTP_SERVER_ERROR_MAX
+
+    @staticmethod
+    def _fallback_retry_delay_seconds(delay_seconds: float) -> int:
+        return max(1, int(round(delay_seconds)))
 
     @staticmethod
     def _retry_delay_seconds(

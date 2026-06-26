@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 import pytest
 from artana_evidence_api.direct_sources.orphanet_gateway import (
@@ -83,6 +85,59 @@ async def test_orphanet_gateway_search_normalizes_summaries() -> None:
             },
             "source": "orphanet",
         },
+    ]
+
+
+@pytest.mark.asyncio
+async def test_orphanet_gateway_search_summaries_are_concurrent_and_partial() -> None:
+    active_summary_requests = 0
+    max_active_summary_requests = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active_summary_requests, max_active_summary_requests
+        if "/ApproximateName/" in request.url.path:
+            return httpx.Response(
+                200,
+                json=[
+                    {"ORPHAcode": 111, "Preferred term": "First candidate"},
+                    {"ORPHAcode": 222, "Preferred term": "Second candidate"},
+                    {"ORPHAcode": 333, "Preferred term": "Third candidate"},
+                ],
+            )
+
+        active_summary_requests += 1
+        max_active_summary_requests = max(
+            max_active_summary_requests,
+            active_summary_requests,
+        )
+        await asyncio.sleep(0.01)
+        active_summary_requests -= 1
+
+        if request.url.path.endswith("/orphacode/222"):
+            return httpx.Response(503, json={"detail": "temporarily unavailable"})
+        orphacode = request.url.path.rsplit("/", maxsplit=1)[-1]
+        return httpx.Response(
+            200,
+            json={
+                "ORPHAcode": int(orphacode),
+                "Preferred term": f"Summary {orphacode}",
+                "Definition": f"Summary detail for {orphacode}",
+            },
+        )
+
+    gateway = OrphanetSourceGateway(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = await gateway.fetch_records_async(query="rare disease", max_results=3)
+
+    assert max_active_summary_requests > 1
+    assert result.fetched_records == 3
+    assert [record["preferred_term"] for record in result.records] == [
+        "Summary 111",
+        "Second candidate",
+        "Summary 333",
     ]
 
 

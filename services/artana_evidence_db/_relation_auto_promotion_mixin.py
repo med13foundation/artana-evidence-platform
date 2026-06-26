@@ -38,6 +38,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_PROMOTABLE_CONSTRAINT_PROFILES = frozenset({"ALLOWED", "EXPECTED"})
+
 
 class _KernelRelationAutoPromotionMixin:
     """Mixins for relation auto-promotion policy resolution and evaluation."""
@@ -236,10 +238,13 @@ class _KernelRelationAutoPromotionMixin:
         required_sources = policy.min_distinct_sources
         required_confidence = policy.min_aggregate_confidence
 
-        if self._is_review_only_constraint(relation_model):
+        constraint_block_reason = (
+            self._relation_constraint_auto_promotion_block_reason(relation_model)
+        )
+        if constraint_block_reason is not None:
             return AutoPromotionDecision(
                 outcome="kept",
-                reason="review_only_constraint",
+                reason=constraint_block_reason,
                 previous_status=normalized_status,
                 current_status=normalized_status,
                 all_computational=all_computational,
@@ -294,6 +299,7 @@ class _KernelRelationAutoPromotionMixin:
 
         if policy.block_if_conflicting_evidence and self._has_linked_refute_claim(
             relation_model,
+            confidence_threshold=policy.conflicting_confidence_threshold,
         ):
             return AutoPromotionDecision(
                 outcome="kept",
@@ -448,15 +454,16 @@ class _KernelRelationAutoPromotionMixin:
             for evidence in evidences
         )
 
-    def _is_review_only_constraint(
+    def _relation_constraint_auto_promotion_block_reason(
         self,
         relation_model: RelationModel,
-    ) -> bool:
-        """Check if the relation's triple matches a REVIEW_ONLY constraint."""
+    ) -> str | None:
+        """Return a governance block reason unless the triple can auto-promote."""
         source_entity = self._session.get(GraphEntityModel, relation_model.source_id)
         target_entity = self._session.get(GraphEntityModel, relation_model.target_id)
         if source_entity is None or target_entity is None:
-            return False
+            return "relation_endpoint_missing"
+
         stmt = select(RelationConstraintModel).where(
             RelationConstraintModel.source_type == source_entity.entity_type,
             RelationConstraintModel.relation_type == relation_model.relation_type,
@@ -466,12 +473,20 @@ class _KernelRelationAutoPromotionMixin:
         )
         constraint = self._session.scalars(stmt).first()
         if constraint is None:
-            return False
-        return getattr(constraint, "profile", "ALLOWED") == "REVIEW_ONLY"
+            return "promotable_constraint_missing"
+
+        profile = _normalize_constraint_profile(constraint)
+        if profile == "REVIEW_ONLY":
+            return "review_only_constraint"
+        if not bool(constraint.is_allowed) or profile not in _PROMOTABLE_CONSTRAINT_PROFILES:
+            return "constraint_not_promotable"
+        return None
 
     def _has_linked_refute_claim(
         self,
         relation_model: RelationModel,
+        *,
+        confidence_threshold: float,
     ) -> bool:
         refute_claim_id = self._session.scalar(
             select(RelationClaimModel.id)
@@ -482,7 +497,15 @@ class _KernelRelationAutoPromotionMixin:
                 RelationClaimModel.claim_status != "REJECTED",
                 RelationClaimModel.polarity == "REFUTE",
                 RelationClaimModel.assertion_class != "COMPUTATIONAL",
+                RelationClaimModel.confidence >= confidence_threshold,
             )
             .limit(1),
         )
         return refute_claim_id is not None
+
+
+def _normalize_constraint_profile(constraint: RelationConstraintModel) -> str:
+    profile = (constraint.profile or "").strip().upper()
+    if profile:
+        return profile
+    return "ALLOWED" if constraint.is_allowed else "FORBIDDEN"

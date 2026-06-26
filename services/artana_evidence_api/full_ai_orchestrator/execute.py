@@ -127,6 +127,22 @@ async def execute_research_init_run(**kwargs: object) -> ResearchInitExecutionRe
     return await cast("_ResearchInitExecutor", candidate)(**kwargs)
 
 
+def _orchestrator_terminal_status(
+    research_init_result: ResearchInitExecutionResult,
+) -> str:
+    if not research_init_result.errors:
+        return "completed"
+    has_usable_output = (
+        research_init_result.documents_ingested > 0
+        or research_init_result.proposal_count > 0
+        or bool(research_init_result.pubmed_results)
+        or research_init_result.research_state is not None
+        or research_init_result.claim_curation is not None
+        or bool(research_init_result.research_brief_markdown)
+    )
+    return "completed" if has_usable_output else "failed"
+
+
 async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
     *,
     space_id: UUID,
@@ -415,9 +431,10 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
             _GUARDED_DECISION_PROOF_SUMMARY_ARTIFACT_KEY
         )
         workspace_summary["guarded_decision_proofs"] = guarded_decision_proof_summary
+    terminal_status = _orchestrator_terminal_status(research_init_result)
     run_record = replace(
         research_init_result.run,
-        status="completed",
+        status=terminal_status,
     )
     result = FullAIOrchestratorExecutionResult(
         run=run_record,
@@ -536,14 +553,14 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
         run_id=run_record.id,
         artifact_key=_RESULT_ARTIFACT_KEY,
         content=response_payload,
-        status_value="completed",
+        status_value=terminal_status,
         result_keys=result_keys,
         workspace_patch=workspace_patch,
     )
     completed_run = execution_services.run_registry.set_run_status(
         space_id=space_id,
         run_id=run_record.id,
-        status="completed",
+        status=terminal_status,
     )
     completed_run = run_record if completed_run is None else completed_run
     result = replace(result, run=completed_run)
@@ -557,7 +574,7 @@ async def execute_full_ai_orchestrator_run(  # noqa: PLR0913, PLR0915
         run_id=completed_run.id,
         artifact_key=_RESULT_ARTIFACT_KEY,
         content=response_payload,
-        status_value="completed",
+        status_value=terminal_status,
         result_keys=result_keys,
         workspace_patch=workspace_patch,
     )

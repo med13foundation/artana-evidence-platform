@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 
 _DEFAULT_BASE_URL = "https://www.alliancegenome.org/api"
 _DEFAULT_TIMEOUT_SECONDS = 30.0
@@ -95,12 +96,15 @@ class _AllianceGeneSourceGateway:
         params: Mapping[str, str | int],
     ) -> object:
         try:
-            response = await client.get(endpoint, params=params)
-            response.raise_for_status()
+            return await async_get_limited_json(
+                client,
+                endpoint,
+                params=params,
+                context=f"Alliance API response for {endpoint}",
+            )
         except httpx.HTTPError as exc:
             msg = f"Alliance API request failed for {endpoint}: {exc}"
             raise AllianceGeneGatewayError(msg) from exc
-        return response.json()
 
     def _normalize_gene(self, entry: Mapping[str, object]) -> dict[str, object] | None:
         species = _first_string(entry, ("species", "taxon"))

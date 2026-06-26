@@ -159,6 +159,7 @@ class SqlAlchemyKernelRelationRepository(
             )
         self._session.flush()
         self._recompute_relation_aggregate(relation_uuid)
+        self._demote_auto_promoted_relation_for_recheck(relation)
         auto_promotion_decision = self._apply_auto_promotion(relation_uuid)
         self._log_auto_promotion_decision(
             relation=relation,
@@ -166,6 +167,18 @@ class SqlAlchemyKernelRelationRepository(
         )
         self._session.flush()
         return KernelRelation.model_validate(relation)
+
+    def _demote_auto_promoted_relation_for_recheck(
+        self,
+        relation: RelationModel,
+    ) -> None:
+        if (
+            relation.curation_status.strip().upper() == "APPROVED"
+            and relation.reviewed_by is None
+        ):
+            relation.curation_status = "UNDER_REVIEW"
+            relation.reviewed_at = None
+            self._session.flush()
 
     def list_evidence_for_relation(
         self,

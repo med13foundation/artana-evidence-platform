@@ -52,6 +52,7 @@ from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import json_object_or_empty
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 from sqlalchemy import delete, func, select, update
+from sqlalchemy.exc import IntegrityError
 
 from .chat_sessions import (
     HarnessChatMessageRecord,
@@ -89,6 +90,9 @@ from .schedule_store import (
 _ASSIGNABLE_MEMBER_ROLE_VALUES = frozenset(
     role.value for role in MembershipRoleEnum if role is not MembershipRoleEnum.OWNER
 )
+_ACTIVE_PROPOSAL_FINGERPRINT_UNIQUE_INDEX = (
+    "uq_harness_proposals_active_space_claim_fingerprint"
+)
 
 if TYPE_CHECKING:
     from artana_evidence_api.types.common import JSONObject, ResearchSpaceSettings
@@ -108,6 +112,15 @@ def _json_object_list(value: object) -> list[JSONObject]:
 def _result_rowcount(result: object) -> int:
     rowcount = getattr(result, "rowcount", 0)
     return rowcount if isinstance(rowcount, int) else 0
+
+
+def _is_active_proposal_fingerprint_conflict(exc: IntegrityError) -> bool:
+    message = f"{exc.orig} {exc}".lower()
+    if _ACTIVE_PROPOSAL_FINGERPRINT_UNIQUE_INDEX in message:
+        return True
+    if "unique" not in message and "duplicate" not in message:
+        return False
+    return "claim_fingerprint" in message or "fingerprint" in message
 
 
 def _normalize_assignable_member_role(role: str) -> str:
@@ -534,7 +547,7 @@ class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
                 ),
             )
 
-        self.session.commit()
+        commit_or_flush(self.session)
         self.session.refresh(model)
         return _intent_record_from_model(model)
 
@@ -640,7 +653,7 @@ class SqlAlchemyHarnessApprovalStore(HarnessApprovalStore, _SessionBackedStore):
                 f"'{refreshed_status}'"
             )
             raise ValueError(message)
-        self.session.commit()
+        commit_or_flush(self.session)
         stmt = select(HarnessApprovalModel).where(
             HarnessApprovalModel.space_id == normalized_space_id,
             HarnessApprovalModel.run_id == normalized_run_id,
@@ -710,7 +723,13 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
             )
             self.session.add(model)
             created_models.append(model)
-        self.session.commit()
+        try:
+            commit_or_flush(self.session)
+        except IntegrityError as exc:
+            self.session.rollback()
+            if not _is_active_proposal_fingerprint_conflict(exc):
+                raise
+            return []
         for model in created_models:
             self.session.refresh(model)
         return sorted(
@@ -793,7 +812,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 HarnessProposalModel.document_id.in_(target_ids),
             ),
         )
-        self.session.commit()
+        commit_or_flush(self.session)
         return _result_rowcount(result)
 
     def decide_proposal(
@@ -860,7 +879,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 f"'{refreshed_status_row[0]}'"
             )
             raise ValueError(message)
-        self.session.commit()
+        commit_or_flush(self.session)
         refreshed_stmt = select(HarnessProposalModel).where(
             HarnessProposalModel.id == normalized_proposal_id,
             HarnessProposalModel.space_id == normalized_space_id,
@@ -894,7 +913,7 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 decided_at=decision_timestamp,
             ),
         )
-        self.session.commit()
+        commit_or_flush(self.session)
         return _result_rowcount(result)
 
 

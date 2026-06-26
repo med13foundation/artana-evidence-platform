@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from .artana_store_records import (
     _fallback_events,
@@ -207,7 +207,11 @@ def _append_run_summary_once(  # noqa: PLR0913
         step_key=step_key,
         parent_step_key=parent_step_key,
     )
-    raise TimeoutError("Run summary write failed without a captured timeout error.")
+
+
+def _rowcount(result: object) -> int:
+    value = getattr(result, "rowcount", 0)
+    return int(value) if isinstance(value, int) else 0
 
 
 def _summary_updated_at(payload: JSONObject | None) -> datetime | None:
@@ -703,7 +707,7 @@ class ArtanaBackedHarnessRunRegistry(HarnessRunRegistry):
         model.input_payload = input_payload
         model.updated_at = _utcnow()
         self._session.add(model)
-        self._session.commit()
+        commit_or_flush(self._session)
         self._session.refresh(model)
         return self._hydrate_run(model=model)
 
@@ -781,12 +785,18 @@ class ArtanaBackedHarnessRunRegistry(HarnessRunRegistry):
         if run is None:
             return None
         now = _utcnow()
-        model = self._get_run_model(run_id=run.id)
-        if model is not None:
-            model.status = status
-            model.updated_at = now
-            self._session.add(model)
-            commit_or_flush(self._session)
+        update_result = self._session.execute(
+            update(HarnessRunModel)
+            .where(
+                HarnessRunModel.id == run.id,
+                HarnessRunModel.space_id == run.space_id,
+                HarnessRunModel.status == run.status,
+            )
+            .values(status=status, updated_at=now),
+        )
+        if _rowcount(update_result) != 1:
+            return None
+        commit_or_flush(self._session)
         updated_run = HarnessRunRecord(
             id=run.id,
             space_id=run.space_id,
@@ -951,7 +961,7 @@ class ArtanaBackedHarnessRunRegistry(HarnessRunRegistry):
         if model is not None:
             model.updated_at = now
             self._session.add(model)
-            self._session.commit()
+            commit_or_flush(self._session)
         if not self._progress_persistence_backoff_active(
             run_id=run.id,
             kind="summary",
@@ -1149,7 +1159,7 @@ class ArtanaBackedHarnessRunRegistry(HarnessRunRegistry):
         if model is None or model.space_id != str(space_id):
             return False
         self._session.delete(model)
-        self._session.commit()
+        commit_or_flush(self._session)
         return True
 
 

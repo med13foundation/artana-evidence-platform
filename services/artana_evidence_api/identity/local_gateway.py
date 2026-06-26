@@ -30,6 +30,7 @@ from artana_evidence_api.research_space_store import (
     HarnessUserIdentityConflictError,
 )
 from artana_evidence_api.sqlalchemy_stores import SqlAlchemyHarnessResearchSpaceStore
+from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import ResearchSpaceSettings
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -212,7 +213,7 @@ class LocalIdentityGateway:
         )
         session = self._require_session()
         session.add(model)
-        session.commit()
+        commit_or_flush(session)
         session.refresh(model)
         return _user_record_from_model(model)
 

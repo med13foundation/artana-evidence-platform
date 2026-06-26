@@ -69,6 +69,14 @@ class EntityRepositoryLike(Protocol):
         limit: int = 20,
     ) -> list[KernelEntity]: ...
 
+    def count_search(
+        self,
+        research_space_id: str,
+        query: str,
+        *,
+        entity_type: str | None = None,
+    ) -> int: ...
+
     def count_by_type(self, research_space_id: str) -> dict[str, int]: ...
 
     def delete(self, entity_id: str) -> bool: ...
@@ -491,6 +499,22 @@ class KernelEntityService:
                 None if entity_type is None else _normalize_entity_type(entity_type)
             ),
             limit=limit,
+        )
+
+    def count_search(
+        self,
+        research_space_id: str,
+        query: str,
+        *,
+        entity_type: str | None = None,
+    ) -> int:
+        """Count entities matching a canonical label or alias search."""
+        return self._entities.count_search(
+            research_space_id,
+            query,
+            entity_type=(
+                None if entity_type is None else _normalize_entity_type(entity_type)
+            ),
         )
 
     def get_research_space_summary(self, research_space_id: str) -> dict[str, int]:

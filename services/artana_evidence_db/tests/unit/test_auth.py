@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import jwt
+import pytest
 from artana_evidence_db.auth import (
     GraphServiceUser,
     get_current_user,
@@ -58,10 +59,39 @@ async def test_get_current_user_accepts_jwt_subject_as_valid_email(monkeypatch) 
     assert graph_service_capability_for_user(user, "space_sync") is False
 
 
+async def test_get_current_user_rejects_jwt_without_exp(monkeypatch) -> None:
+    secret = "test-jwt-secret-0123456789abcdefghijklmnopqrstuvwxyz"
+    monkeypatch.setenv("GRAPH_JWT_SECRET", secret)
+    monkeypatch.setenv("GRAPH_JWT_ISSUER", "graph-biomedical")
+    token = str(
+        jwt.encode(
+            {
+                "sub": "11111111-1111-1111-1111-111111111111",
+                "role": UserRole.RESEARCHER.value,
+                "type": "access",
+                "iat": datetime.now(UTC),
+                "iss": "graph-biomedical",
+            },
+            secret,
+            algorithm="HS256",
+        ),
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        await get_current_user(
+            Request({"type": "http", "headers": []}),
+            HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
+        )
+
+    assert getattr(exc_info.value, "status_code", None) == 401
+    assert "exp" in str(getattr(exc_info.value, "detail", ""))
+
+
 async def test_get_current_user_accepts_test_graph_ai_principal_header(
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("TESTING", "true")
+    monkeypatch.setenv("ARTANA_ENV", "development")
     request = Request(
         {
             "type": "http",
@@ -77,6 +107,33 @@ async def test_get_current_user_accepts_test_graph_ai_principal_header(
     user = await get_current_user(request, None)
 
     assert user.graph_ai_principal == "agent:test-governor"
+
+
+async def test_get_current_user_rejects_test_headers_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("ARTANA_ENV", "production")
+    monkeypatch.setenv("TESTING", "true")
+    monkeypatch.setenv("GRAPH_ALLOW_TEST_AUTH_HEADERS", "true")
+    monkeypatch.setenv(
+        "GRAPH_JWT_SECRET",
+        "test-jwt-secret-0123456789abcdefghijklmnopqrstuvwxyz",
+    )
+    request = Request(
+        {
+            "type": "http",
+            "headers": [
+                (b"x-test-user-id", b"11111111-1111-1111-1111-111111111111"),
+                (b"x-test-user-email", b"graph-admin@example.com"),
+                (b"x-test-user-role", b"admin"),
+                (b"x-test-graph-admin", b"true"),
+            ],
+        },
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        await get_current_user(request, None)
+
+    assert getattr(exc_info.value, "status_code", None) == 401
+    assert getattr(exc_info.value, "detail", None) == "Authentication required"
 
 
 async def test_get_current_user_reads_graph_service_capabilities_from_jwt(

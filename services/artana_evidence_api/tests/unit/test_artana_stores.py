@@ -16,16 +16,17 @@ from artana_evidence_api.artana_stores import (
     ArtanaBackedHarnessRunRegistry,
 )
 from artana_evidence_api.composition import GraphHarnessKernelRuntime
-from artana_evidence_api.db_schema import resolve_harness_db_schema
 from artana_evidence_api.models.base import Base
 from artana_evidence_api.tests.support import (
     FakeStepToolResult,
     fake_tool_allowlist,
     fake_tool_result_payload,
 )
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
+
+from tests.sqlite_utils import attach_sqlite_schemas_for_metadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -519,18 +520,7 @@ def session() -> Iterator[Session]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    harness_schema = resolve_harness_db_schema("graph_harness")
-    public_schema = "public"
-
-    @event.listens_for(engine, "connect")
-    def _attach_harness_schema(dbapi_connection, _connection_record) -> None:
-        cursor = dbapi_connection.cursor()
-        try:
-            cursor.execute(f"ATTACH DATABASE ':memory:' AS {public_schema}")
-            cursor.execute(f"ATTACH DATABASE ':memory:' AS {harness_schema}")
-        finally:
-            cursor.close()
-
+    attach_sqlite_schemas_for_metadata(engine, Base.metadata)
     Base.metadata.create_all(engine)
     session_local = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)
     db_session = session_local()
@@ -605,6 +595,49 @@ def test_artana_backed_run_registry_persists_catalog_and_kernel_lifecycle(
         "run.progress",
         "run.summary_written",
     ]
+
+
+def test_artana_backed_run_registry_does_not_clobber_concurrent_status(
+    session: Session,
+) -> None:
+    class _RacingStatusRegistry(ArtanaBackedHarnessRunRegistry):
+        def __init__(self, *, session: Session, runtime: _FakeKernelRuntime) -> None:
+            super().__init__(session=session, runtime=runtime)
+            self._raced = False
+
+        def _catalog_run_record(self, *, space_id, run_id):
+            run = super()._catalog_run_record(space_id=space_id, run_id=run_id)
+            if run is not None and not self._raced:
+                self._raced = True
+                model = self._get_run_model(run_id=run.id)
+                assert model is not None
+                model.status = "cancelled"
+                session.add(model)
+                session.commit()
+            return run
+
+    runtime = _FakeKernelRuntime()
+    registry = _RacingStatusRegistry(session=session, runtime=runtime)
+    space_id = str(uuid4())
+    run = registry.create_run(
+        space_id=space_id,
+        harness_id="graph-chat",
+        title="Chat run",
+        input_payload={"question": "What is known?"},
+        graph_service_status="ok",
+        graph_service_version="graph-v1",
+    )
+
+    updated = registry.set_run_status(
+        space_id=space_id,
+        run_id=run.id,
+        status="completed",
+    )
+
+    assert updated is None
+    refreshed = registry.get_run_fast(space_id=space_id, run_id=run.id)
+    assert refreshed is not None
+    assert refreshed.status == "cancelled"
 
 
 def test_artana_backed_run_registry_writes_do_not_hydrate_run_state(

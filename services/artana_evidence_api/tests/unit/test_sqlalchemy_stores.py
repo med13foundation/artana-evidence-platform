@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import sys
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 import pytest
 from artana_evidence_api.approval_store import HarnessApprovalAction
-from artana_evidence_api.db_schema import resolve_harness_db_schema
 from artana_evidence_api.models.base import Base
 from artana_evidence_api.models.harness import (
     HarnessDocumentModel,
@@ -35,15 +35,26 @@ from artana_evidence_api.sqlalchemy_stores import (
     SqlAlchemyHarnessReviewItemStore,
     SqlAlchemyHarnessScheduleStore,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import session_unit_of_work
 from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from artana_evidence_api.study_outcomes.contracts import StudyOutcomeDraft
-from sqlalchemy import create_engine, event, select
+from sqlalchemy import create_engine, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
+
+from tests.sqlite_utils import attach_sqlite_schemas_for_metadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
+
+
+def _sqlite_schema_paths(tmp_path: Path) -> dict[str, Path]:
+    return {
+        schema: tmp_path / f"sqlalchemy_store_{schema}.db"
+        for schema in {table.schema for table in Base.metadata.tables.values() if table.schema}
+    }
 
 
 @pytest.fixture
@@ -54,18 +65,7 @@ def session() -> Iterator[Session]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    harness_schema = resolve_harness_db_schema("graph_harness")
-    public_schema = "public"
-
-    @event.listens_for(engine, "connect")
-    def _attach_harness_schema(dbapi_connection, _connection_record) -> None:
-        cursor = dbapi_connection.cursor()
-        try:
-            cursor.execute(f"ATTACH DATABASE ':memory:' AS {public_schema}")
-            cursor.execute(f"ATTACH DATABASE ':memory:' AS {harness_schema}")
-        finally:
-            cursor.close()
-
+    attach_sqlite_schemas_for_metadata(engine, Base.metadata)
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)
     db_session = SessionLocal()
@@ -81,29 +81,16 @@ def shared_session_factory(
     tmp_path: Path,
 ) -> Iterator[sessionmaker[Session]]:
     database_path = tmp_path / "sqlalchemy_store_shared.db"
-    harness_schema_path = tmp_path / "sqlalchemy_store_harness.db"
-    public_schema_path = tmp_path / "sqlalchemy_store_public.db"
     engine = create_engine(
         f"sqlite:///{database_path}",
         future=True,
         connect_args={"check_same_thread": False},
     )
-    harness_schema = resolve_harness_db_schema("graph_harness")
-    public_schema = "public"
-
-    @event.listens_for(engine, "connect")
-    def _attach_harness_schema(dbapi_connection, _connection_record) -> None:
-        cursor = dbapi_connection.cursor()
-        try:
-            cursor.execute(
-                f"ATTACH DATABASE '{public_schema_path}' AS {public_schema}",
-            )
-            cursor.execute(
-                f"ATTACH DATABASE '{harness_schema_path}' AS {harness_schema}",
-            )
-        finally:
-            cursor.close()
-
+    attach_sqlite_schemas_for_metadata(
+        engine,
+        Base.metadata,
+        schema_paths=_sqlite_schema_paths(tmp_path),
+    )
     Base.metadata.create_all(engine)
     session_local = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)
     try:
@@ -133,6 +120,82 @@ def _create_run_catalog_entry(
     session.commit()
     session.refresh(model)
     return model
+
+
+def test_harness_proposal_model_has_unique_active_fingerprint_index() -> None:
+    index = next(
+        index
+        for index in HarnessProposalModel.__table__.indexes
+        if index.name == "uq_harness_proposals_active_space_claim_fingerprint"
+    )
+
+    assert index.unique is True
+    assert [column.name for column in index.columns] == [
+        "space_id",
+        "claim_fingerprint",
+    ]
+    assert "pending_review" in str(index.dialect_options["postgresql"]["where"])
+    assert "promoted" in str(index.dialect_options["postgresql"]["where"])
+
+
+def test_sqlalchemy_harness_proposal_store_skips_unique_conflict_race() -> None:
+    class _NoDuplicateResult:
+        def first(self) -> None:
+            return None
+
+    class _UniqueConflictSession:
+        added: list[HarnessProposalModel]
+        rolled_back: bool
+
+        def __init__(self) -> None:
+            self.added = []
+            self.rolled_back = False
+
+        def execute(self, _stmt) -> _NoDuplicateResult:
+            return _NoDuplicateResult()
+
+        def add(self, model: HarnessProposalModel) -> None:
+            self.added.append(model)
+
+        def commit(self) -> None:
+            raise IntegrityError(
+                statement="INSERT INTO harness_proposals",
+                params={},
+                orig=Exception("duplicate active fingerprint"),
+            )
+
+        def rollback(self) -> None:
+            self.rolled_back = True
+
+        def refresh(self, _model: HarnessProposalModel) -> None:
+            raise AssertionError("duplicate conflict should not refresh models")
+
+    session = _UniqueConflictSession()
+    store = SqlAlchemyHarnessProposalStore(cast("Session", session))
+    created = store.create_proposals(
+        space_id=str(uuid4()),
+        run_id=str(uuid4()),
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="duplicate-race",
+                title="Duplicate candidate",
+                summary="A concurrent insert won the fingerprint race.",
+                confidence=0.83,
+                ranking_score=0.91,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={},
+                claim_fingerprint="duplicatefingerprint000000000001",
+            ),
+        ),
+    )
+
+    assert created == []
+    assert session.added
+    assert session.rolled_back is True
 
 
 def test_sqlalchemy_harness_approval_store_persists_intents_and_decisions(
@@ -742,6 +805,69 @@ def test_sqlalchemy_harness_research_space_store_rolls_back_when_sync_fails(
     )
     assert persisted_spaces == []
     assert persisted_memberships == []
+
+
+def test_sqlalchemy_harness_research_space_store_retries_slug_collision(
+    session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    research_space_store = SqlAlchemyHarnessResearchSpaceStore(session)
+    existing_owner_id = UUID("00000000-0000-4000-a000-000000e27003")
+    new_owner_id = UUID("00000000-0000-4000-a000-000000e27004")
+    existing_space = research_space_store.create_space(
+        owner_id=existing_owner_id,
+        owner_email="existing-slug@example.com",
+        owner_role="researcher",
+        name="Collision",
+        description="Existing space occupying the first slug.",
+    )
+    attempts: list[set[str]] = []
+
+    def _colliding_slug(name: str, existing_slugs: set[str]) -> str:
+        del name
+        attempts.append(set(existing_slugs))
+        if len(attempts) == 1:
+            return existing_space.slug
+        return "collision-retry"
+
+    monkeypatch.setattr(
+        sys.modules["artana_evidence_api.sqlalchemy_schedule_space_stores"],
+        "build_unique_space_slug",
+        _colliding_slug,
+    )
+
+    created_space = research_space_store.create_space(
+        owner_id=new_owner_id,
+        owner_email="new-slug@example.com",
+        owner_role="researcher",
+        name="Collision",
+        description="Creation should retry after a slug uniqueness conflict.",
+    )
+
+    assert created_space.slug == "collision-retry"
+    assert len(attempts) == 2
+
+
+def test_sqlalchemy_chat_session_store_participates_in_unit_of_work(
+    session: Session,
+) -> None:
+    chat_store = SqlAlchemyHarnessChatSessionStore(session)
+    space_id = uuid4()
+    created_by = uuid4()
+
+    def _create_session_then_fail() -> None:
+        with session_unit_of_work(session):
+            chat_store.create_session(
+                space_id=space_id,
+                title="Rollback candidate",
+                created_by=created_by,
+            )
+            raise RuntimeError("rollback requested")
+
+    with pytest.raises(RuntimeError, match="rollback requested"):
+        _create_session_then_fail()
+
+    assert chat_store.list_sessions(space_id=space_id) == []
 
 
 def test_sqlalchemy_harness_research_space_store_ensures_one_personal_default(

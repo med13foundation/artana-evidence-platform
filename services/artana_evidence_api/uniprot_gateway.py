@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 
 _DEFAULT_BASE_URL = "https://rest.uniprot.org"
 _DEFAULT_TIMEOUT_SECONDS = 30.0
@@ -111,14 +112,20 @@ class UniProtSourceGateway:
         params: Mapping[str, str | int],
     ) -> object:
         try:
-            response = await client.get(endpoint, params=params)
-            if response.status_code == _HTTP_NOT_FOUND:
+            return await async_get_limited_json(
+                client,
+                endpoint,
+                params=params,
+                context=f"UniProt API response for {endpoint}",
+            )
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == _HTTP_NOT_FOUND:
                 return {}
-            response.raise_for_status()
+            msg = f"UniProt API request failed for {endpoint}: {exc}"
+            raise UniProtGatewayError(msg) from exc
         except httpx.HTTPError as exc:
             msg = f"UniProt API request failed for {endpoint}: {exc}"
             raise UniProtGatewayError(msg) from exc
-        return response.json()
 
 
 def _normalize_uniprot_payload(payload: object) -> list[dict[str, object]]:

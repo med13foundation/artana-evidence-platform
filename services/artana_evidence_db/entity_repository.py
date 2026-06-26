@@ -202,6 +202,41 @@ class SqlAlchemyKernelEntityRepository:
         ).all()
         return self._to_domain_entities(models)
 
+    def count_search(
+        self,
+        research_space_id: str,
+        query: str,
+        *,
+        entity_type: str | None = None,
+    ) -> int:
+        canonical_query = canonicalize_entity_match_text(query)
+        if not canonical_query:
+            return 0
+        normalized_query = normalize_entity_match_text(canonical_query)
+        stmt = (
+            select(func.count(func.distinct(EntityModel.id)))
+            .select_from(EntityModel)
+            .outerjoin(
+                EntityAliasModel,
+                and_(
+                    EntityAliasModel.entity_id == EntityModel.id,
+                    EntityAliasModel.is_active.is_(True),
+                ),
+            )
+            .where(
+                EntityModel.research_space_id == _as_uuid(research_space_id),
+                or_(
+                    EntityModel.display_label.ilike(f"%{canonical_query}%"),
+                    EntityModel.display_label_normalized.like(f"%{normalized_query}%"),
+                    EntityAliasModel.alias_label.ilike(f"%{canonical_query}%"),
+                    EntityAliasModel.alias_normalized.like(f"%{normalized_query}%"),
+                ),
+            )
+        )
+        if entity_type is not None:
+            stmt = stmt.where(EntityModel.entity_type == entity_type)
+        return int(self._session.scalar(stmt) or 0)
+
     def count_by_type(self, research_space_id: str) -> dict[str, int]:
         rows = self._session.execute(
             select(EntityModel.entity_type, func.count())
@@ -251,6 +286,12 @@ class SqlAlchemyKernelEntityRepository:
 
         normalized_sensitivity = sensitivity.strip().upper() or "INTERNAL"
         uses_phi_encryption = self._uses_phi_encryption(normalized_sensitivity)
+        if normalized_sensitivity == "PHI" and not uses_phi_encryption:
+            message = (
+                "PHI encryption is disabled; refusing to persist plaintext PHI "
+                "identifier."
+            )
+            raise RuntimeError(message)
         blind_index: str | None = None
         normalized_identifier: str | None = None
         stored_identifier_value = canonical_identifier_value

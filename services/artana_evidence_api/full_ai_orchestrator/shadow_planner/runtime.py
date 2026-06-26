@@ -16,6 +16,7 @@ from artana_evidence_api.full_ai_orchestrator.shadow_planner.fallbacks import (
 )
 from artana_evidence_api.full_ai_orchestrator.shadow_planner.models import (
     _REPAIRABLE_VALIDATION_ERRORS,
+    ShadowPlannerRecommendationOutput,
     ShadowPlannerRecommendationResult,
 )
 from artana_evidence_api.full_ai_orchestrator.shadow_planner.prompts import (
@@ -61,6 +62,9 @@ if TYPE_CHECKING:
     from artana.store.base import EventStore
 
 _MISSING_FACADE_DEPENDENCY = object()
+_DEFAULT_SHADOW_PLANNER_BUDGET_USD = 0.25
+_MIN_SHADOW_PLANNER_CALL_BUDGET_USD = 0.01
+_SHADOW_PLANNER_BUDGET_EXHAUSTED = "shadow_planner_budget_exhausted"
 
 
 def _shadow_planner_facade_dependency(name: str, default: object) -> object:
@@ -100,6 +104,93 @@ def create_artana_postgres_store() -> EventStore:
     if candidate is create_artana_postgres_store:
         candidate = _default_create_artana_postgres_store
     return cast("Callable[[], EventStore]", candidate)()
+
+
+def _shadow_planner_budget_limit_usd() -> float:
+    budget_limit = GovernanceConfig.from_environment().usage_limits.total_cost_usd
+    if budget_limit is None:
+        return _DEFAULT_SHADOW_PLANNER_BUDGET_USD
+    return max(float(budget_limit), 0.0)
+
+
+def _prior_shadow_planner_cost_usd(workspace_summary: JSONObject) -> float:
+    for cost_payload in _shadow_planner_cost_payloads(workspace_summary):
+        cost = _optional_positive_float(cost_payload.get("planner_total_cost_usd"))
+        if cost is not None:
+            return cost
+    return 0.0
+
+
+def _shadow_planner_cost_payloads(
+    workspace_summary: JSONObject,
+) -> tuple[JSONObject, ...]:
+    payloads: list[JSONObject] = []
+    for key in ("shadow_planner_cost_tracking", "cost_tracking"):
+        value = workspace_summary.get(key)
+        if isinstance(value, dict):
+            payloads.append(cast("JSONObject", value))
+    shadow_planner = workspace_summary.get("shadow_planner")
+    if isinstance(shadow_planner, dict):
+        for key in ("cost_tracking", "summary", "evaluation"):
+            value = shadow_planner.get(key)
+            if isinstance(value, dict):
+                payloads.append(cast("JSONObject", value))
+    return tuple(payloads)
+
+
+def _optional_positive_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        parsed = float(value)
+        return max(0.0, parsed)
+    return None
+
+
+def _budget_limited_shadow_planner_result(
+    *,
+    fallback_output: ShadowPlannerRecommendationOutput,
+    checkpoint_key: str,
+    agent_run_id: str,
+    prompt_version: str,
+    harness_id: str,
+    step_key_version: str,
+    budget_limit_usd: float,
+    prior_cost_usd: float,
+    remaining_budget_usd: float,
+) -> ShadowPlannerRecommendationResult:
+    telemetry = _unavailable_shadow_planner_telemetry()
+    output = fallback_output.model_copy(
+        update={
+            "fallback_reason": "budget_violation",
+            "budget_estimate": {
+                "budget_limit_usd": round(budget_limit_usd, 8),
+                "prior_cost_usd": round(prior_cost_usd, 8),
+                "remaining_budget_usd": round(max(remaining_budget_usd, 0.0), 8),
+            },
+        },
+    )
+    return ShadowPlannerRecommendationResult(
+        decision=_build_shadow_decision(
+            output=output,
+            checkpoint_key=checkpoint_key,
+            planner_status="budget_limited",
+            model_id=None,
+            agent_run_id=agent_run_id,
+            prompt_version=prompt_version,
+            harness_id=harness_id,
+            step_key_version=step_key_version,
+            telemetry=telemetry,
+        ),
+        planner_status="budget_limited",
+        model_id=None,
+        agent_run_id=agent_run_id,
+        prompt_version=prompt_version,
+        used_fallback=True,
+        validation_error=None,
+        error=_SHADOW_PLANNER_BUDGET_EXHAUSTED,
+        telemetry=telemetry,
+    )
 
 
 async def recommend_shadow_planner_action(  # noqa: PLR0913, PLR0915
@@ -157,6 +248,22 @@ async def recommend_shadow_planner_action(  # noqa: PLR0913, PLR0915
             telemetry=telemetry,
         )
 
+    budget_limit_usd = _shadow_planner_budget_limit_usd()
+    prior_cost_usd = _prior_shadow_planner_cost_usd(normalized_workspace_summary)
+    remaining_budget_usd = round(budget_limit_usd - prior_cost_usd, 8)
+    if remaining_budget_usd < _MIN_SHADOW_PLANNER_CALL_BUDGET_USD:
+        return _budget_limited_shadow_planner_result(
+            fallback_output=fallback_output,
+            checkpoint_key=checkpoint_key,
+            agent_run_id=agent_run_id,
+            prompt_version=prompt_version,
+            harness_id=harness_id,
+            step_key_version=step_key_version,
+            budget_limit_usd=budget_limit_usd,
+            prior_cost_usd=prior_cost_usd,
+            remaining_budget_usd=remaining_budget_usd,
+        )
+
     store = None
     kernel = None
     model_id: str | None = None
@@ -174,11 +281,10 @@ async def recommend_shadow_planner_action(  # noqa: PLR0913, PLR0915
         model_spec = registry.get_default_model(ModelCapability.QUERY_GENERATION)
         model_id = normalize_litellm_model_id(model_spec.model_id)
         timeout_seconds = float(model_spec.timeout_seconds)
-        budget_limit = GovernanceConfig.from_environment().usage_limits.total_cost_usd
         tenant = TenantContext(
             tenant_id="full_ai_orchestrator_shadow_planner",
             capabilities=frozenset(),
-            budget_usd_limit=max(float(budget_limit or 0.25), 0.01),
+            budget_usd_limit=remaining_budget_usd,
         )
         store = create_artana_postgres_store()
         kernel = ArtanaKernel(

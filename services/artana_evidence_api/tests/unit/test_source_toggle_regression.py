@@ -249,7 +249,7 @@ class TestMarrvelEnrichmentHelpers:
 
     def test_marrvel_api_base_url_correct(self) -> None:
         assert MARRVEL_API_BASE_URL == "https://api.marrvel.org/data"
-        assert MARRVEL_API_FALLBACK_BASE_URL == "http://api.marrvel.org/data"
+        assert MARRVEL_API_FALLBACK_BASE_URL is None
 
     def test_prioritize_marrvel_gene_labels_filters_non_gene_noise(self) -> None:
         prioritized = prioritize_marrvel_gene_labels(

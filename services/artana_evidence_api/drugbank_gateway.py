@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 
 logger = logging.getLogger(__name__)
 
@@ -150,12 +151,15 @@ class DrugBankSourceGateway:
         params: Mapping[str, str | int],
     ) -> object:
         try:
-            response = await client.get(endpoint, params=params)
-            response.raise_for_status()
+            return await async_get_limited_json(
+                client,
+                endpoint,
+                params=params,
+                context=f"DrugBank API response for {endpoint}",
+            )
         except httpx.HTTPError as exc:
             msg = f"DrugBank API request failed for {endpoint}: {exc}"
             raise DrugBankGatewayError(msg) from exc
-        return response.json()
 
 
 def _normalize_drug_search_payload(payload: object) -> list[dict[str, object]]:

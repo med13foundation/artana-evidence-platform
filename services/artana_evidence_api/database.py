@@ -8,6 +8,9 @@ from typing import Protocol, cast
 from uuid import UUID
 
 from artana_evidence_api.db_schema import harness_runtime_postgres_search_path
+from artana_evidence_api.runtime.database_url_security import (
+    validate_database_url_security,
+)
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, sessionmaker
@@ -28,10 +31,12 @@ _DEFAULT_DATABASE_URL = (
 
 
 def _resolve_database_url() -> str:
-    return os.getenv(
+    url = os.getenv(
         "ARTANA_EVIDENCE_API_DATABASE_URL",
         os.getenv("DATABASE_URL", _DEFAULT_DATABASE_URL),
     )
+    validate_database_url_security(url)
+    return url
 
 
 def _env_int(name: str, default: int) -> int:

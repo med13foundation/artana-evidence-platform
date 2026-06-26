@@ -40,6 +40,11 @@ from artana_evidence_api.source_plugins.contracts import (
     SourceSearchExecutionContext,
     SourceSearchInput,
 )
+from artana_evidence_api.source_plugins.normalization.marrvel import (
+    direct_response_status,
+    is_variant_panel,
+    panel_records,
+)
 from artana_evidence_api.source_registry import SourceCapability, SourceDefinition
 from artana_evidence_api.source_result_capture import (
     SourceCaptureStage,
@@ -47,7 +52,7 @@ from artana_evidence_api.source_result_capture import (
     compact_provenance,
     source_result_capture_metadata,
 )
-from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 _DEFAULT_PLANNING_PANELS = ("omim", "clinvar", "gnomad", "geno2mp", "expression")
@@ -88,14 +93,6 @@ _REVIEW_POLICY = SourceReviewPolicy(
     ),
     normalized_fields=("gene_symbol", "panel", "title", "phenotype", "variant", "source"),
 )
-
-_VARIANT_PANEL_KEYS = frozenset(
-    (
-        "clinvar", "mutalyzer", "transvar", "gnomad_variant",
-        "geno2mp_variant", "dgv_variant", "decipher_variant",
-    ),
-)
-
 
 class _MarrvelQueryPayload(BaseModel):
     """Validated MARRVEL direct-search payload."""
@@ -307,7 +304,7 @@ class MarrvelSourcePlugin:
         if record.get("variant_aware_recommended") is True:
             return True
         panel_name = string_field(record, "panel_name")
-        if panel_name is not None and panel_name in _VARIANT_PANEL_KEYS:
+        if panel_name is not None and is_variant_panel(panel_name):
             return True
         panel_family = string_field(record, "panel_family")
         return panel_family == "variant"
@@ -376,7 +373,7 @@ def _direct_source_record(
     created_at: datetime,
     completed_at: datetime,
 ) -> MarrvelSourceSearchResponse:
-    records = _panel_records(result)
+    records = panel_records(result)
     source_capture = source_result_capture_metadata(
         source_key="marrvel",
         capture_stage=SourceCaptureStage.SEARCH_RESULT,
@@ -398,11 +395,13 @@ def _direct_source_record(
             resolved_gene_symbol=result.resolved_gene_symbol,
             resolved_variant=result.resolved_variant,
             panel_counts=result.panel_counts,
+            panel_errors=result.panel_errors,
         ),
     )
     return MarrvelSourceSearchResponse(
         id=result.id,
         space_id=result.space_id,
+        status=direct_response_status(result.status),
         query=result.query_value,
         query_mode=result.query_mode,
         query_value=result.query_value,
@@ -415,6 +414,7 @@ def _direct_source_record(
         omim_count=result.omim_count,
         variant_count=result.variant_count,
         panel_counts=result.panel_counts,
+        panel_errors=result.panel_errors,
         panels=result.panels,
         available_panels=result.available_panels,
         record_count=len(records),
@@ -423,56 +423,6 @@ def _direct_source_record(
         completed_at=completed_at,
         source_capture=SourceResultCapture.model_validate(source_capture),
     )
-
-
-def _panel_records(result: MarrvelDiscoveryResult) -> list[JSONObject]:
-    records: list[JSONObject] = []
-    for panel_name, payload in result.panels.items():
-        panel_items = payload if isinstance(payload, list) else [payload]
-        for item_index, item in enumerate(panel_items):
-            panel_payload = json_object_or_empty(item)
-            if not panel_payload:
-                continue
-            variant_panel = panel_name in _VARIANT_PANEL_KEYS
-            record: JSONObject = {
-                **panel_payload,
-                "marrvel_record_id": f"{result.id}:{panel_name}:{item_index}",
-                "panel_name": panel_name,
-                "panel_family": "variant" if variant_panel else "context",
-                "variant_aware_recommended": variant_panel,
-                "query_mode": result.query_mode,
-                "query_value": result.query_value,
-                "gene_symbol": result.resolved_gene_symbol or result.gene_symbol,
-                "resolved_gene_symbol": result.resolved_gene_symbol,
-                "resolved_variant": result.resolved_variant,
-                "taxon_id": result.taxon_id,
-                "panel_payload": panel_payload,
-            }
-            hgvs_notation = _hgvs_notation(result=result, record=panel_payload)
-            if hgvs_notation is not None:
-                record["hgvs_notation"] = hgvs_notation
-            records.append(record)
-    return records
-
-
-def _hgvs_notation(
-    *,
-    result: MarrvelDiscoveryResult,
-    record: JSONObject,
-) -> str | None:
-    for value in (
-        record.get("hgvs_notation"),
-        record.get("hgvs"),
-        record.get("variant"),
-        record.get("cdna_change"),
-        record.get("protein_change"),
-        result.resolved_variant,
-        result.query_value if result.query_mode != "gene" else None,
-    ):
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return None
-
 
 MARRVEL_PLUGIN = MarrvelSourcePlugin()
 

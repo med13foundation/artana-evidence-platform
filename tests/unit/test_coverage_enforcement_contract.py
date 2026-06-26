@@ -43,6 +43,33 @@ def test_makefile_exposes_coverage_gate_for_service_code() -> None:
     assert "$(ARTANA_EVIDENCE_API_TEST_PATHS)" in coverage_paths
 
 
+def test_isolated_postgres_runner_overrides_service_database_urls() -> None:
+    runner = (REPO_ROOT / "scripts/run_isolated_postgres_tests.py").read_text()
+
+    assert "import artana_evidence_api.models.api_key" in runner
+    assert "import artana_evidence_api.models.discovery" in runner
+    assert "import artana_evidence_api.models.harness" in runner
+    assert "import artana_evidence_api.models.research_space" in runner
+    assert "import artana_evidence_api.models.user" in runner
+    assert 'child_env["DATABASE_URL"] = urls.sync_url' in runner
+    assert 'child_env["ASYNC_DATABASE_URL"] = urls.async_url' in runner
+    assert 'child_env["ARTANA_EVIDENCE_API_DATABASE_URL"] = urls.sync_url' in runner
+    assert 'child_env["ARTANA_EVIDENCE_API_TEST_USE_POSTGRES"] = "1"' in runner
+    assert 'child_env["GRAPH_DATABASE_URL"] = urls.sync_url' in runner
+
+
+def test_api_postgres_session_fixture_teardown_leaves_shared_schema_ready() -> None:
+    conftest = (
+        REPO_ROOT / "services/artana_evidence_api/tests/conftest.py"
+    ).read_text()
+
+    assert "def _drop_schema() -> None:" in conftest
+    assert (
+        "Base.metadata.drop_all(bind=engine)\n"
+        "    Base.metadata.create_all(bind=engine)"
+    ) in conftest
+
+
 def test_aggregate_service_checks_run_coverage_gate() -> None:
     makefile = (REPO_ROOT / "Makefile").read_text()
     service_checks_target = _make_target_body(makefile, "service-checks")

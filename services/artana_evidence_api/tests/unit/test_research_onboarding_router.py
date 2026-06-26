@@ -412,6 +412,7 @@ def _jwt_auth_headers(
             "email": email,
             "username": username,
             "full_name": full_name,
+            "exp": 4_102_444_800,
         },
         _AUTH_TEST_SECRET,
         algorithm="HS256",

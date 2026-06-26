@@ -89,6 +89,7 @@ def _drop_schema() -> None:
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
         return
     Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
 
 @pytest.fixture

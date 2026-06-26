@@ -39,7 +39,11 @@ for path in (repo_root, repo_root / "services"):
     if resolved not in sys.path:
         sys.path.insert(0, resolved)
 
+import artana_evidence_api.models.api_key  # noqa: F401
+import artana_evidence_api.models.discovery  # noqa: F401
 import artana_evidence_api.models.harness  # noqa: F401
+import artana_evidence_api.models.research_space  # noqa: F401
+import artana_evidence_api.models.user  # noqa: F401
 from artana_evidence_api.db_schema import harness_schema_name
 from artana_evidence_api.models import Base as HarnessBase
 import artana_evidence_db.claim_relation_persistence_model  # noqa: F401
@@ -233,6 +237,9 @@ def main(argv: list[str]) -> int:
     child_env["DATABASE_URL"] = urls.sync_url
     child_env["ASYNC_DATABASE_URL"] = urls.async_url
     child_env["ALEMBIC_DATABASE_URL"] = urls.alembic_url
+    child_env["ARTANA_EVIDENCE_API_DATABASE_URL"] = urls.sync_url
+    child_env["ARTANA_EVIDENCE_API_TEST_USE_POSTGRES"] = "1"
+    child_env["GRAPH_DATABASE_URL"] = urls.sync_url
     child_env["ARTANA_REPOSITORY_ROOT"] = str(REPO_ROOT)
     child_env["PYTHONUNBUFFERED"] = "1"
 

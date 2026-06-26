@@ -179,6 +179,9 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
         if pmids:
             try:
                 import httpx
+                from artana_evidence_api.runtime.http_response_limits import (
+                    limited_text_from_response,
+                )
                 from defusedxml import ElementTree
 
                 async with httpx.AsyncClient(timeout=15.0) as efetch_client:
@@ -195,7 +198,10 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
                     )
                     if efetch_response.status_code == _HTTP_OK:
                         root = ElementTree.fromstring(
-                            efetch_response.content,
+                            limited_text_from_response(
+                                efetch_response,
+                                context="PubMed EFetch XML response",
+                            ),
                         )
                         for article in root.findall(".//PubmedArticle"):
                             pmid_el = article.find(".//PMID")

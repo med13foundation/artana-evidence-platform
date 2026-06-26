@@ -248,6 +248,20 @@ class HarnessProposalModel(Base):
     )
 
     __table_args__ = (
+        Index(
+            "uq_harness_proposals_active_space_claim_fingerprint",
+            "space_id",
+            "claim_fingerprint",
+            unique=True,
+            postgresql_where=text(
+                "claim_fingerprint IS NOT NULL "
+                "AND status IN ('pending_review', 'promoted')",
+            ),
+            sqlite_where=text(
+                "claim_fingerprint IS NOT NULL "
+                "AND status IN ('pending_review', 'promoted')",
+            ),
+        ),
         Index("idx_harness_proposals_space_status", "space_id", "status"),
         Index("idx_harness_proposals_space_rank", "space_id", "ranking_score"),
         Index("idx_harness_proposals_document_id", "document_id"),

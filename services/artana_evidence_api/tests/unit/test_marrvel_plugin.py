@@ -270,6 +270,47 @@ async def test_marrvel_plugin_runs_direct_search_and_preserves_panel_shape() -> 
 
 
 @pytest.mark.asyncio
+async def test_marrvel_plugin_coerces_unknown_discovery_status_to_failed() -> None:
+    service = _FakeMarrvelDiscoveryService(
+        result=MarrvelDiscoveryResult(
+            id=uuid4(),
+            space_id=uuid4(),
+            owner_id=uuid4(),
+            query_mode="gene",
+            query_value="MED13",
+            gene_symbol="MED13",
+            resolved_gene_symbol=None,
+            resolved_variant=None,
+            taxon_id=9606,
+            status="unexpected",
+            gene_found=False,
+            gene_info=None,
+            omim_count=0,
+            variant_count=0,
+            panel_counts={},
+            panels={},
+            available_panels=[],
+            created_at=datetime.now(UTC),
+        ),
+    )
+    plugin = MarrvelSourcePlugin(discovery_service_factory=lambda: service)
+
+    result = await plugin.run_direct_search(
+        context=SourceSearchExecutionContext(
+            space_id=uuid4(),
+            created_by=uuid4(),
+            store=InMemoryDirectSourceSearchStore(),
+        ),
+        search=_LiveSearch(
+            source_key="marrvel",
+            query_payload={"gene_symbol": "MED13"},
+        ),
+    )
+
+    assert result.status == "failed"
+
+
+@pytest.mark.asyncio
 async def test_marrvel_plugin_reports_unavailable_discovery_service() -> None:
     plugin = MarrvelSourcePlugin(discovery_service_factory=lambda: None)
 

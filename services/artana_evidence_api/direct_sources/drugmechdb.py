@@ -15,6 +15,7 @@ from artana_evidence_api.direct_sources.capture import (
     json_records,
     single_record_external_id,
 )
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_text
 from artana_evidence_api.source_result_capture import SourceResultCapture
 from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -263,12 +264,14 @@ class DrugMechDBSourceGateway:
     @staticmethod
     async def _read_url(client: httpx.AsyncClient, url: str) -> str:
         try:
-            response = await client.get(url)
-            response.raise_for_status()
+            return await async_get_limited_text(
+                client,
+                url,
+                context=f"DrugMechDB response for {url}",
+            )
         except httpx.HTTPError as exc:
             msg = f"DrugMechDB request failed for {url}: {exc}"
             raise DrugMechDBGatewayError(msg) from exc
-        return response.text
 
 
 def build_drugmechdb_gateway() -> DrugMechDBGatewayProtocol:

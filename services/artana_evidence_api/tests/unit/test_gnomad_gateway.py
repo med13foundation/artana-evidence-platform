@@ -246,3 +246,43 @@ def test_gnomad_gateway_preserves_missing_numeric_values_and_zero_af() -> None:
     assert population["ac"] is None
     assert population["an"] is None
     assert population["af"] is None
+
+
+@pytest.mark.parametrize(
+    "genome_payload",
+    [
+        {"ac": 2, "an": 1, "af": 0.5},
+        {"ac": -1, "an": 100, "af": 0.0},
+        {"ac": 1, "an": 100, "af": 1.5},
+        {"ac": 1, "an": 100, "af": -0.1},
+        {"ac": 1, "an": 100, "populations": [{"id": "bad", "ac": 3, "an": 2}]},
+    ],
+)
+def test_gnomad_gateway_rejects_invalid_variant_frequency_invariants(
+    genome_payload: dict[str, object],
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "variant": {
+                        "variant_id": "17-5982158-C-T",
+                        "chrom": "17",
+                        "pos": 5982158,
+                        "ref": "C",
+                        "alt": "T",
+                        "genome": genome_payload,
+                    },
+                },
+            },
+            request=request,
+        )
+
+    gateway = GnomADSourceGateway(
+        timeout_seconds=1.0,
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(GnomADGatewayError, match="invalid allele frequency"):
+        gateway.fetch_records(variant_id="17-5982158-C-T")
