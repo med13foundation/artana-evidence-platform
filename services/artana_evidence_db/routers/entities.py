@@ -109,14 +109,13 @@ def list_entities(
         )
 
     if ids is not None:
-        matched_entities = []
-        for entity_id in entity_ids:
-            entity = entity_service.get_entity(entity_id)
-            if entity is None or str(entity.research_space_id) != str(space_id):
-                continue
-            matched_entities.append(entity)
-        total = len(matched_entities)
-        entities = matched_entities[offset : offset + limit]
+        total = entity_service.count_by_ids(str(space_id), entity_ids)
+        entities = entity_service.list_by_ids(
+            str(space_id),
+            entity_ids,
+            limit=limit,
+            offset=offset,
+        )
     elif q:
         batch = entity_service.search(
             str(space_id),
@@ -142,13 +141,7 @@ def list_entities(
             limit=limit,
             offset=offset,
         )
-        normalized_entity_type = (
-            entity_type.strip().upper().replace("-", "_").replace("/", "_")
-        ).replace(" ", "_")
-        total = entity_service.get_research_space_summary(str(space_id)).get(
-            normalized_entity_type,
-            0,
-        )
+        total = entity_service.count_by_type(str(space_id), entity_type)
 
     return KernelEntityListResponse(
         entities=[KernelEntityResponse.from_model(entity) for entity in entities],

@@ -30,7 +30,7 @@ from artana_evidence_db.phi_encryption_support import (
     build_phi_encryption_service_from_env,
     is_phi_encryption_enabled,
 )
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy import insert as sa_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -43,6 +43,18 @@ logger = logging.getLogger(__name__)
 
 def _as_uuid(value: str | UUID) -> UUID:
     return value if isinstance(value, UUID) else UUID(str(value))
+
+
+def _unique_uuids(values: Sequence[str]) -> list[UUID]:
+    uuids: list[UUID] = []
+    seen: set[UUID] = set()
+    for value in values:
+        entity_uuid = _as_uuid(value)
+        if entity_uuid in seen:
+            continue
+        seen.add(entity_uuid)
+        uuids.append(entity_uuid)
+    return uuids
 
 
 class SqlAlchemyKernelEntityRepository:
@@ -131,6 +143,39 @@ class SqlAlchemyKernelEntityRepository:
                 EntityModel.entity_type == entity_type,
             )
             .order_by(EntityModel.created_at.desc())
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        if offset is not None:
+            stmt = stmt.offset(offset)
+        return self._to_domain_entities(self._session.scalars(stmt).all())
+
+    def find_by_ids(
+        self,
+        research_space_id: str,
+        entity_ids: Sequence[str],
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[KernelEntity]:
+        entity_uuids = _unique_uuids(entity_ids)
+        if not entity_uuids:
+            return []
+
+        requested_order = case(
+            *[
+                (EntityModel.id == entity_uuid, index)
+                for index, entity_uuid in enumerate(entity_uuids)
+            ],
+            else_=len(entity_uuids),
+        )
+        stmt = (
+            select(EntityModel)
+            .where(
+                EntityModel.research_space_id == _as_uuid(research_space_id),
+                EntityModel.id.in_(entity_uuids),
+            )
+            .order_by(requested_order)
         )
         if limit is not None:
             stmt = stmt.limit(limit)
@@ -235,6 +280,31 @@ class SqlAlchemyKernelEntityRepository:
         )
         if entity_type is not None:
             stmt = stmt.where(EntityModel.entity_type == entity_type)
+        return int(self._session.scalar(stmt) or 0)
+
+    def count_by_ids(self, research_space_id: str, entity_ids: Sequence[str]) -> int:
+        entity_uuids = _unique_uuids(entity_ids)
+        if not entity_uuids:
+            return 0
+        stmt = (
+            select(func.count())
+            .select_from(EntityModel)
+            .where(
+                EntityModel.research_space_id == _as_uuid(research_space_id),
+                EntityModel.id.in_(entity_uuids),
+            )
+        )
+        return int(self._session.scalar(stmt) or 0)
+
+    def count_type(self, research_space_id: str, entity_type: str) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(EntityModel)
+            .where(
+                EntityModel.research_space_id == _as_uuid(research_space_id),
+                EntityModel.entity_type == entity_type,
+            )
+        )
         return int(self._session.scalar(stmt) or 0)
 
     def count_by_type(self, research_space_id: str) -> dict[str, int]:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import Protocol
 
 from artana_evidence_db.common_types import JSONObject
@@ -60,6 +61,15 @@ class EntityRepositoryLike(Protocol):
         offset: int | None = None,
     ) -> list[KernelEntity]: ...
 
+    def find_by_ids(
+        self,
+        research_space_id: str,
+        entity_ids: Sequence[str],
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[KernelEntity]: ...
+
     def search(
         self,
         research_space_id: str,
@@ -76,6 +86,14 @@ class EntityRepositoryLike(Protocol):
         *,
         entity_type: str | None = None,
     ) -> int: ...
+
+    def count_by_ids(self, research_space_id: str, entity_ids: Sequence[str]) -> int:
+        """Count entities from the requested id set inside one research space."""
+        ...
+
+    def count_type(self, research_space_id: str, entity_type: str) -> int:
+        """Count entities of one type inside one research space."""
+        ...
 
     def count_by_type(self, research_space_id: str) -> dict[str, int]: ...
 
@@ -483,6 +501,22 @@ class KernelEntityService:
             offset=offset,
         )
 
+    def list_by_ids(
+        self,
+        research_space_id: str,
+        entity_ids: Sequence[str],
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[KernelEntity]:
+        """List a requested entity id page scoped to one research space."""
+        return self._entities.find_by_ids(
+            research_space_id,
+            entity_ids,
+            limit=limit,
+            offset=offset,
+        )
+
     def search(
         self,
         research_space_id: str,
@@ -515,6 +549,17 @@ class KernelEntityService:
             entity_type=(
                 None if entity_type is None else _normalize_entity_type(entity_type)
             ),
+        )
+
+    def count_by_ids(self, research_space_id: str, entity_ids: Sequence[str]) -> int:
+        """Count requested entity ids that exist in one research space."""
+        return self._entities.count_by_ids(research_space_id, entity_ids)
+
+    def count_by_type(self, research_space_id: str, entity_type: str) -> int:
+        """Count entities of a specific type in one research space."""
+        return self._entities.count_type(
+            research_space_id,
+            _normalize_entity_type(entity_type),
         )
 
     def get_research_space_summary(self, research_space_id: str) -> dict[str, int]:

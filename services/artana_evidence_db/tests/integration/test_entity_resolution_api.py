@@ -115,6 +115,60 @@ def test_entity_list_type_total_reports_all_matches_not_page_size(graph_client) 
     assert payload["total"] == 3
 
 
+def test_entity_list_ids_total_counts_matching_space_before_paging(
+    graph_client,
+) -> None:
+    fixture = build_seeded_space_fixture(slug_prefix="entity-list-ids")
+    headers = fixture["headers"]
+    space_id = fixture["space_id"]
+    other_fixture = build_seeded_space_fixture(slug_prefix="entity-list-ids-other")
+
+    entity_ids: list[str] = []
+    for label in ("MED13", "MED13L", "CDK8"):
+        create_response = graph_client.post(
+            f"/v1/spaces/{space_id}/entities",
+            headers=headers,
+            json={
+                "entity_type": "GENE",
+                "display_label": label,
+                "metadata": {},
+                "identifiers": {},
+            },
+        )
+        assert create_response.status_code == 201, create_response.text
+        entity_ids.append(create_response.json()["entity"]["id"])
+
+    other_response = graph_client.post(
+        f"/v1/spaces/{other_fixture['space_id']}/entities",
+        headers=other_fixture["headers"],
+        json={
+            "entity_type": "GENE",
+            "display_label": "OTHER-SPACE-GENE",
+            "metadata": {},
+            "identifiers": {},
+        },
+    )
+    assert other_response.status_code == 201, other_response.text
+    other_entity_id = other_response.json()["entity"]["id"]
+
+    list_response = graph_client.get(
+        f"/v1/spaces/{space_id}/entities",
+        headers=headers,
+        params=[
+            ("ids", entity_ids[0]),
+            ("ids", other_entity_id),
+            ("ids", f"{entity_ids[1]},{entity_ids[2]}"),
+            ("offset", "1"),
+            ("limit", "2"),
+        ],
+    )
+
+    assert list_response.status_code == 200, list_response.text
+    payload = list_response.json()
+    assert payload["total"] == 3
+    assert [entity["id"] for entity in payload["entities"]] == entity_ids[1:]
+
+
 def test_entity_create_rejects_missing_required_strict_match_anchors(
     graph_client,
 ) -> None:
