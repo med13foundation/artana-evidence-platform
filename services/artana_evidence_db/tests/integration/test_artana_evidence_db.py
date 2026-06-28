@@ -2063,6 +2063,33 @@ def test_graph_service_entity_and_observation_crud(graph_client: TestClient) -> 
     assert missing_get.status_code == 404, missing_get.text
 
 
+def test_entity_repository_rejects_phi_identifier_without_encryption(
+    graph_client: TestClient,
+) -> None:
+    _ = graph_client
+    with graph_database.SessionLocal() as session:
+        seed_entity_resolution_policies(session)
+        repository = SqlAlchemyKernelEntityRepository(
+            session,
+            phi_encryption_service=None,
+            enable_phi_encryption=False,
+        )
+        entity = repository.create(
+            research_space_id=str(uuid4()),
+            entity_type="PATIENT",
+            display_label="Patient A",
+            metadata={},
+        )
+
+        with pytest.raises(RuntimeError, match="PHI encryption is disabled"):
+            repository.add_identifier(
+                entity_id=str(entity.id),
+                namespace="mrn",
+                identifier_value="MRN-123",
+                sensitivity="PHI",
+            )
+
+
 def test_graph_service_normalizes_entity_type_case_for_entity_routes(
     graph_client: TestClient,
 ) -> None:
@@ -5627,6 +5654,77 @@ def test_graph_service_phase9_ai_full_mode_auto_merge_and_rejections(
         == "AI decision principal does not match authenticated AI principal"
         for decision in decisions
     )
+
+
+def test_graph_service_ai_decision_application_error_rolls_back(
+    graph_client: TestClient,
+) -> None:
+    fixture = _seed_space_with_projection()
+    headers = fixture["headers"]
+    ai_headers = {**headers, "X-TEST-GRAPH-AI-PRINCIPAL": "agent:phase9"}
+    space_id = fixture["space_id"]
+    suffix = uuid4().hex[:8]
+    with graph_database.SessionLocal() as session:
+        space = session.get(GraphSpaceModel, space_id)
+        assert space is not None
+        space.settings = {
+            "ai_full_mode": {
+                "governance_mode": "ai_full",
+                "trusted_principals": ["agent:phase9"],
+                "min_confidence": 0.85,
+            },
+        }
+        session.commit()
+
+    concept_response = graph_client.post(
+        f"/v1/spaces/{space_id}/concepts/proposals",
+        headers=headers,
+        json={
+            "domain_context": "general",
+            "entity_type": "PHENOTYPE",
+            "canonical_label": f"Rollback concept {suffix}",
+            "evidence_payload": {"source": "ai-decision-rollback-test"},
+            "source_ref": f"ai-decision-rollback-{suffix}",
+        },
+    )
+    assert concept_response.status_code == 201, concept_response.text
+    concept_payload = concept_response.json()
+
+    invalid_application_response = graph_client.post(
+        f"/v1/spaces/{space_id}/ai-decisions",
+        headers=ai_headers,
+        json={
+            "target_type": "concept_proposal",
+            "target_id": concept_payload["id"],
+            "action": "MERGE",
+            "ai_principal": "agent:phase9",
+            "confidence_assessment": _DECISION_CONFIDENCE_ASSESSMENT,
+            "risk_tier": "low",
+            "input_hash": concept_payload["proposal_hash"],
+            "evidence_payload": {"rationale": "Application should be atomic."},
+            "decision_payload": {},
+        },
+    )
+    assert invalid_application_response.status_code == 400
+    assert "target_concept_member_id" in invalid_application_response.text
+
+    decisions_response = graph_client.get(
+        f"/v1/spaces/{space_id}/ai-decisions",
+        headers=headers,
+        params={
+            "target_type": "concept_proposal",
+            "target_id": concept_payload["id"],
+        },
+    )
+    assert decisions_response.status_code == 200, decisions_response.text
+    assert decisions_response.json()["total"] == 0
+
+    unchanged_concept_response = graph_client.get(
+        f"/v1/spaces/{space_id}/concepts/proposals/{concept_payload['id']}",
+        headers=headers,
+    )
+    assert unchanged_concept_response.status_code == 200, unchanged_concept_response.text
+    assert unchanged_concept_response.json()["status"] == "SUBMITTED"
 
 
 def test_graph_service_phase9_connector_metadata_workflow(

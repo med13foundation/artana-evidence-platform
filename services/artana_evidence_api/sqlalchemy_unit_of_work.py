@@ -17,7 +17,10 @@ _LOGGER = logging.getLogger(__name__)
 def in_unit_of_work(session: Session) -> bool:
     """Return whether the session is inside an explicit service transaction."""
 
-    depth = session.info.get(_DEPTH_KEY, 0)
+    info = getattr(session, "info", None)
+    if not isinstance(info, dict):
+        return False
+    depth = info.get(_DEPTH_KEY, 0)
     return isinstance(depth, int) and depth > 0
 
 

@@ -12,12 +12,20 @@ _DEFAULT_GRAPH_JWT_SECRET = "artana-platform-dev-jwt-secret-for-development-2026
 _DEFAULT_GRAPH_SERVICE_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 _JWT_ALGORITHM = "HS256"
 _DEFAULT_GRAPH_JWT_ISSUER = "graph-biomedical"
+_PRODUCTION_LIKE_ENVS = frozenset({"production", "staging"})
+
+
+def _environment() -> str:
+    return os.getenv("ARTANA_ENV", "development").strip().lower()
 
 
 def _resolve_graph_jwt_secret() -> str:
     raw_secret = os.getenv("GRAPH_JWT_SECRET")
     if isinstance(raw_secret, str) and raw_secret.strip():
         return raw_secret.strip()
+    if _environment() in _PRODUCTION_LIKE_ENVS:
+        msg = "GRAPH_JWT_SECRET must be set when ARTANA_ENV is production or staging."
+        raise RuntimeError(msg)
     return _DEFAULT_GRAPH_JWT_SECRET
 
 

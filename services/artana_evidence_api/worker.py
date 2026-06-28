@@ -10,7 +10,7 @@ import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager, contextmanager, suppress
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -18,6 +18,7 @@ from artana_evidence_api.artana_stores import (
     ArtanaBackedHarnessArtifactStore,
     ArtanaBackedHarnessRunRegistry,
 )
+from artana_evidence_api.artifact_store import HarnessArtifactStore
 from artana_evidence_api.composition import (
     GraphHarnessKernelRuntime,
     get_graph_harness_kernel_runtime,
@@ -203,6 +204,48 @@ def _run_result_message(*, exc: Exception) -> str:
     return str(exc)
 
 
+def _parse_retry_not_before(value: object) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    normalized_value = value.strip()
+    if normalized_value == "":
+        return None
+    if normalized_value.endswith("Z"):
+        normalized_value = f"{normalized_value[:-1]}+00:00"
+    try:
+        retry_at = datetime.fromisoformat(normalized_value)
+    except ValueError:
+        return None
+    if retry_at.tzinfo is None:
+        return retry_at.replace(tzinfo=UTC)
+    return retry_at.astimezone(UTC)
+
+
+def _retry_not_before_for_run(
+    *,
+    run: HarnessRunRecord,
+    artifact_store: HarnessArtifactStore,
+) -> datetime | None:
+    workspace = artifact_store.get_workspace(space_id=run.space_id, run_id=run.id)
+    if workspace is None:
+        return None
+    return _parse_retry_not_before(workspace.snapshot.get("_retry_not_before"))
+
+
+def _retry_delayed_result(
+    *,
+    run: HarnessRunRecord,
+    retry_not_before: datetime,
+) -> WorkerRunResult:
+    return WorkerRunResult(
+        run_id=run.id,
+        space_id=run.space_id,
+        harness_id=run.harness_id,
+        outcome="retry_delayed",
+        message=f"Retry delayed until {retry_not_before.isoformat()}.",
+    )
+
+
 def _result_from_run(
     *,
     run: HarnessRunRecord,
@@ -238,6 +281,15 @@ def _require_queued_run(
 
 _MAX_RETRIES = 3
 _RETRY_BACKOFF_MINUTES = [5, 15, 45]
+
+
+def _workspace_retry_count(snapshot: JSONObject | None) -> int:
+    if snapshot is None:
+        return 0
+    retry_count_value = snapshot.get("_retry_count", 0)
+    if type(retry_count_value) is not int:
+        return 0
+    return max(retry_count_value, 0)
 
 
 def _resolved_worker_failure_payload(
@@ -322,25 +374,7 @@ def _mark_failed_run_after_worker_exception(
     if current_run is None:
         return run
     current_status = current_run.status.strip().lower()
-    if current_status not in {"queued", "running"}:
-        if current_status == "failed":
-            workspace = services.artifact_store.get_workspace(
-                space_id=run.space_id,
-                run_id=run.id,
-            )
-            retry_count = 0
-            if workspace is not None:
-                raw_retry_count = workspace.snapshot.get("_retry_count")
-                if isinstance(raw_retry_count, int):
-                    retry_count = raw_retry_count
-            _persist_worker_failure_metadata(
-                run=run,
-                services=services,
-                error_message=error_message,
-                exc=exc,
-                retry_count=retry_count,
-                preserve_existing_error=True,
-            )
+    if current_status not in {"queued", "running", "failed"}:
         return current_run
 
     # --- Retry logic: only retry scheduled runs (have schedule_id) ---
@@ -348,15 +382,24 @@ def _mark_failed_run_after_worker_exception(
         space_id=run.space_id,
         run_id=run.id,
     )
-    retry_count = 0
+    retry_count = _workspace_retry_count(workspace.snapshot if workspace else None)
     is_scheduled_run = False
     if workspace and isinstance(workspace.snapshot, dict):
-        retry_count_value = workspace.snapshot.get("_retry_count", 0)
-        retry_count = retry_count_value if type(retry_count_value) is int else 0
         is_scheduled_run = bool(workspace.snapshot.get("schedule_id"))
     # Also check input_payload for schedule_id
     if not is_scheduled_run and isinstance(run.input_payload, dict):
         is_scheduled_run = bool(run.input_payload.get("schedule_id"))
+
+    if current_status == "failed" and not is_scheduled_run:
+        _persist_worker_failure_metadata(
+            run=run,
+            services=services,
+            error_message=error_message,
+            exc=exc,
+            retry_count=retry_count,
+            preserve_existing_error=True,
+        )
+        return current_run
 
     if is_scheduled_run and retry_count < _MAX_RETRIES:
         backoff_minutes = _RETRY_BACKOFF_MINUTES[
@@ -377,8 +420,7 @@ def _mark_failed_run_after_worker_exception(
             patch={
                 "_retry_count": retry_count,
                 "_retry_not_before": (
-                    datetime.now(UTC)
-                    + __import__("datetime").timedelta(minutes=backoff_minutes)
+                    datetime.now(UTC) + timedelta(minutes=backoff_minutes)
                 ).isoformat(),
                 "_last_error": error_message,
             },
@@ -462,6 +504,7 @@ def _service_worker_tick_context() -> Iterator[_ServiceWorkerTickContext]:
         candidate_runs = list_queued_worker_runs(
             session=session,
             run_registry=services.run_registry,
+            artifact_store=services.artifact_store,
         )
         yield _ServiceWorkerTickContext(
             candidate_runs=candidate_runs,
@@ -474,6 +517,7 @@ def list_queued_worker_runs(
     *,
     session: Session,
     run_registry: HarnessRunRegistry,
+    artifact_store: HarnessArtifactStore | None = None,
 ) -> list[HarnessRunRecord]:
     """Return queued runs eligible for worker execution."""
     del run_registry
@@ -484,7 +528,7 @@ def list_queued_worker_runs(
         .order_by(HarnessRunModel.created_at.asc())
     )
     models = session.execute(stmt).scalars().all()
-    return [
+    runs = [
         HarnessRunRecord(
             id=model.id,
             space_id=model.space_id,
@@ -500,6 +544,21 @@ def list_queued_worker_runs(
             updated_at=model.updated_at,
         )
         for model in models
+    ]
+    if artifact_store is None:
+        return runs
+    now = datetime.now(UTC)
+    return [
+        run
+        for run in runs
+        if (
+            (retry_not_before := _retry_not_before_for_run(
+                run=run,
+                artifact_store=artifact_store,
+            ))
+            is None
+            or retry_not_before <= now
+        )
     ]
 
 
@@ -542,7 +601,7 @@ async def execute_worker_run(  # noqa: PLR0913
         )
 
 
-async def run_worker_tick(  # noqa: PLR0913
+async def run_worker_tick(  # noqa: PLR0913, PLR0915
     *,
     candidate_runs: list[HarnessRunRecord],
     runtime: GraphHarnessKernelRuntime,
@@ -563,6 +622,19 @@ async def run_worker_tick(  # noqa: PLR0913
     errors: list[str] = []
 
     for run in candidate_runs:
+        retry_not_before = _retry_not_before_for_run(
+            run=run,
+            artifact_store=services.artifact_store,
+        )
+        if retry_not_before is not None and retry_not_before > datetime.now(UTC):
+            skipped_run_count += 1
+            results.append(
+                _retry_delayed_result(
+                    run=run,
+                    retry_not_before=retry_not_before,
+                ),
+            )
+            continue
         try:
             acquired = runtime.acquire_run_lease(
                 run_id=run.id,

@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Literal, cast
 from uuid import UUID
 
+from artana_evidence_db.ai_full_mode_decision_connector_service import (
+    AIDecisionPolicyRejectedError,
+)
 from artana_evidence_db.ai_full_mode_service import (
     AIFullModeService,
     resolve_ai_full_source_ref,
@@ -623,8 +626,11 @@ def submit_ai_decision(
             created_by=_manual_actor(current_user),
         )
         session.commit()
-    except ValueError as exc:
+    except AIDecisionPolicyRejectedError as exc:
         session.commit()
+        raise _http_phase9_error(exc) from exc
+    except ValueError as exc:
+        session.rollback()
         raise _http_phase9_error(exc) from exc
     return AIDecisionResponse.from_model(decision)
 

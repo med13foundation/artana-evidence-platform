@@ -200,6 +200,74 @@ async def test_ncbi_pubmed_gateway_retries_rate_limit_and_succeeds(
 
 
 @pytest.mark.asyncio
+async def test_ncbi_pubmed_gateway_retries_transient_server_errors(
+    monkeypatch,
+) -> None:
+    search_attempts = 0
+    summary_attempts = 0
+    sleep_calls: list[float] = []
+
+    async def fake_sleep(delay_seconds: float) -> None:
+        sleep_calls.append(delay_seconds)
+
+    class _NoOpLimiter:
+        async def acquire(self) -> None:
+            return None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal search_attempts, summary_attempts
+        if request.url.path.endswith("/esearch.fcgi"):
+            search_attempts += 1
+            if search_attempts == 1:
+                return httpx.Response(
+                    status_code=503,
+                    request=request,
+                    json={"error": "temporarily unavailable"},
+                )
+            return httpx.Response(
+                status_code=200,
+                request=request,
+                json={
+                    "esearchresult": {
+                        "count": "1",
+                        "idlist": ["111"],
+                    },
+                },
+            )
+        if request.url.path.endswith("/esummary.fcgi"):
+            summary_attempts += 1
+            return httpx.Response(
+                status_code=200,
+                request=request,
+                json={
+                    "result": {
+                        "uids": ["111"],
+                        "111": {"title": "First result"},
+                    },
+                },
+            )
+        raise AssertionError(f"Unexpected request path: {request.url.path}")
+
+    from artana_evidence_api import pubmed_search
+
+    monkeypatch.setattr(pubmed_search.asyncio, "sleep", fake_sleep)
+    gateway = NCBIPubMedSearchGateway(
+        settings=NCBIPubMedGatewaySettings(timeout_seconds=1.0),
+        transport=httpx.MockTransport(handler),
+    )
+    gateway._rate_limiter = _NoOpLimiter()
+
+    payload = await gateway.run_search(
+        AdvancedQueryParameters(search_term="angiosarcoma"),
+    )
+
+    assert search_attempts == 2
+    assert summary_attempts == 1
+    assert sleep_calls == [1.0]
+    assert payload.article_ids == ["111"]
+
+
+@pytest.mark.asyncio
 async def test_ncbi_pubmed_gateway_uses_retry_after_for_final_rate_limit(
     monkeypatch,
 ) -> None:

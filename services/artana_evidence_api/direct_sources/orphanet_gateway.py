@@ -10,12 +10,14 @@ from dataclasses import dataclass, field
 from urllib.parse import quote
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 
 logger = logging.getLogger(__name__)
 
 _DEFAULT_BASE_URL = "https://api.orphacode.org"
 _DEFAULT_TIMEOUT_SECONDS = 30.0
 _MAX_RESULTS_LIMIT = 50
+_SUMMARY_FETCH_CONCURRENCY = 5
 _SUPPORTED_LANGUAGES = frozenset({"CS", "DE", "EN", "ES", "FR", "IT", "NL", "PL", "PT"})
 _USER_AGENT = "artana-evidence-platform/orphanet-gateway"
 
@@ -140,23 +142,64 @@ class OrphanetSourceGateway:
         candidates = _candidate_records(payload)[
             : max(1, min(max_results, _MAX_RESULTS_LIMIT))
         ]
-        records: list[dict[str, object]] = []
-        for candidate in candidates:
-            orphacode = _orpha_code(candidate)
-            if orphacode is None:
-                normalized = _normalize_record(candidate, matched_query=query)
-            else:
-                normalized = await self._fetch_summary(
+        return await self._normalize_candidates(
+            client=client,
+            language=language,
+            query=query,
+            candidates=candidates,
+        )
+
+    async def _normalize_candidates(
+        self,
+        *,
+        client: httpx.AsyncClient,
+        language: str,
+        query: str,
+        candidates: list[dict[str, object]],
+    ) -> list[dict[str, object]]:
+        semaphore = asyncio.Semaphore(_SUMMARY_FETCH_CONCURRENCY)
+
+        async def normalize(candidate: dict[str, object]) -> dict[str, object] | None:
+            async with semaphore:
+                return await self._normalize_candidate(
                     client=client,
                     language=language,
-                    orphacode=orphacode,
-                    matched_query=query,
+                    query=query,
+                    candidate=candidate,
                 )
-                if normalized is None:
-                    normalized = _normalize_record(candidate, matched_query=query)
-            if normalized is not None:
-                records.append(normalized)
-        return records
+
+        normalized_records = await asyncio.gather(
+            *(normalize(candidate) for candidate in candidates),
+        )
+        return [record for record in normalized_records if record is not None]
+
+    async def _normalize_candidate(
+        self,
+        *,
+        client: httpx.AsyncClient,
+        language: str,
+        query: str,
+        candidate: dict[str, object],
+    ) -> dict[str, object] | None:
+        orphacode = _orpha_code(candidate)
+        if orphacode is None:
+            return _normalize_record(candidate, matched_query=query)
+        try:
+            normalized = await self._fetch_summary(
+                client=client,
+                language=language,
+                orphacode=orphacode,
+                matched_query=query,
+            )
+        except OrphanetGatewayError as exc:
+            logger.warning(
+                "ORPHAcodes summary fetch failed; using search candidate",
+                extra={"orpha_code": orphacode, "error": str(exc)},
+            )
+            normalized = None
+        if normalized is not None:
+            return normalized
+        return _normalize_record(candidate, matched_query=query)
 
     async def _fetch_summary(
         self,
@@ -179,12 +222,14 @@ class OrphanetSourceGateway:
         endpoint: str,
     ) -> object:
         try:
-            response = await client.get(endpoint)
-            response.raise_for_status()
+            return await async_get_limited_json(
+                client,
+                endpoint,
+                context=f"ORPHAcodes API response for {endpoint}",
+            )
         except httpx.HTTPError as exc:
             msg = f"ORPHAcodes API request failed for {endpoint}: {exc}"
             raise OrphanetGatewayError(msg) from exc
-        return response.json()
 
 
 def _candidate_records(payload: object) -> list[dict[str, object]]:

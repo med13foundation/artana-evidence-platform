@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from uuid import UUID, uuid4
 
 import pytest
@@ -1536,6 +1537,125 @@ async def test_shadow_checkpoint_queue_skips_duplicate_checkpoint_replay(
     assert recommendations == ["after_bootstrap"]
     assert observer.shadow_timeline[-1]["checkpoint_key"] == "after_bootstrap"
     assert "after_bootstrap" in observer.emitted_shadow_checkpoints
+
+
+@pytest.mark.asyncio
+async def test_shadow_checkpoint_emit_reserves_checkpoint_across_recommender_await(
+    services: HarnessExecutionServices,
+) -> None:
+    from artana_evidence_api import full_ai_orchestrator_runtime
+
+    space_id = uuid4()
+    sources: ResearchSpaceSourcePreferences = {"pubmed": True, "clinvar": True}
+    run = queue_full_ai_orchestrator_run(
+        space_id=space_id,
+        title="Full AI Orchestrator Harness",
+        objective="Investigate MED13 syndrome",
+        seed_terms=["MED13"],
+        sources=sources,
+        max_depth=2,
+        max_hypotheses=5,
+        graph_service_status="ok",
+        graph_service_version="test",
+        run_registry=services.run_registry,
+        artifact_store=services.artifact_store,
+        execution_services=services,
+    )
+
+    shadow_workspace_artifact = services.artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=run.id,
+        artifact_key="full_ai_orchestrator_shadow_planner_workspace",
+    )
+    assert shadow_workspace_artifact is not None
+
+    recommendations: list[str] = []
+
+    async def _fake_recommend_shadow_planner_action(**kwargs):
+        checkpoint_key = kwargs["checkpoint_key"]
+        recommendations.append(checkpoint_key)
+        await asyncio.sleep(0.01)
+        return ShadowPlannerRecommendationResult(
+            decision=ResearchOrchestratorDecision(
+                decision_id=f"planner-{checkpoint_key}",
+                round_number=0,
+                action_type=ResearchOrchestratorActionType.RUN_CHASE_ROUND,
+                action_input={"checkpoint_key": checkpoint_key},
+                source_key=None,
+                evidence_basis="The current workspace supports continuing to the next chase round.",
+                stop_reason=None,
+                step_key=f"full-ai-orchestrator.v1.shadow.{checkpoint_key}",
+                status="recommended",
+                expected_value_band="medium",
+                qualitative_rationale=(
+                    "The workspace has enough evidence to continue with the next deterministic step."
+                ),
+                risk_level="low",
+                requires_approval=False,
+                metadata={"checkpoint_key": checkpoint_key},
+            ),
+            planner_status="completed",
+            model_id="fixture-shadow-model",
+            agent_run_id=f"agent-{checkpoint_key}",
+            prompt_version="test-shadow-prompt",
+            used_fallback=False,
+            validation_error=None,
+            error=None,
+        )
+
+    observer = full_ai_orchestrator_runtime._FullAIOrchestratorProgressObserver(
+        artifact_store=services.artifact_store,
+        space_id=space_id,
+        run_id=run.id,
+        objective="Investigate MED13 syndrome",
+        seed_terms=["MED13"],
+        max_depth=2,
+        max_hypotheses=5,
+        sources=sources,
+        planner_mode=FullAIOrchestratorPlannerMode.SHADOW,
+        action_registry=orchestrator_action_registry(),
+        decisions=full_ai_orchestrator_runtime._build_initial_decision_history(
+            objective="Investigate MED13 syndrome",
+            seed_terms=["MED13"],
+            sources=sources,
+            max_depth=2,
+            max_hypotheses=5,
+        ),
+        initial_workspace_summary=dict(shadow_workspace_artifact.content),
+        phase_records={},
+    )
+
+    original_recommend = full_ai_orchestrator_runtime.recommend_shadow_planner_action
+    full_ai_orchestrator_runtime.recommend_shadow_planner_action = (
+        _fake_recommend_shadow_planner_action
+    )
+    try:
+        results = await asyncio.gather(
+            observer._emit_shadow_checkpoint(
+                checkpoint_key="after_bootstrap",
+                workspace_summary=dict(shadow_workspace_artifact.content),
+                deterministic_decisions=[
+                    decision.model_copy(deep=True) for decision in observer.decisions
+                ],
+            ),
+            observer._emit_shadow_checkpoint(
+                checkpoint_key="after_bootstrap",
+                workspace_summary=dict(shadow_workspace_artifact.content),
+                deterministic_decisions=[
+                    decision.model_copy(deep=True) for decision in observer.decisions
+                ],
+            ),
+            return_exceptions=True,
+        )
+    finally:
+        full_ai_orchestrator_runtime.recommend_shadow_planner_action = (
+            original_recommend
+        )
+
+    assert recommendations == ["after_bootstrap"]
+    assert len(observer.shadow_timeline) == 1
+    assert sum(not isinstance(result, Exception) for result in results) == 1
+    assert any(isinstance(result, RuntimeError) for result in results)
 
 
 @pytest.mark.asyncio
@@ -4813,6 +4933,80 @@ async def test_execute_run_can_finalize_from_replayed_research_init_result(
     assert workspace.snapshot["primary_result_key"] == "full_ai_orchestrator_result"
     assert (
         "full_ai_orchestrator_decision_history" in workspace.snapshot["artifact_keys"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_execute_run_marks_failed_when_replayed_research_init_has_errors(
+    services: HarnessExecutionServices,
+) -> None:
+    space_id = uuid4()
+    run = queue_full_ai_orchestrator_run(
+        space_id=space_id,
+        title="Full AI Orchestrator Harness",
+        objective="Investigate MED13 syndrome",
+        seed_terms=["MED13"],
+        sources={"pubmed": True},
+        max_depth=1,
+        max_hypotheses=5,
+        graph_service_status="ok",
+        graph_service_version="test",
+        run_registry=services.run_registry,
+        artifact_store=services.artifact_store,
+        execution_services=services,
+    )
+    failed_run = services.run_registry.set_run_status(
+        space_id=space_id,
+        run_id=run.id,
+        status="failed",
+    )
+    assert failed_run is not None
+    replayed_result = ResearchInitExecutionResult(
+        run=failed_run,
+        pubmed_results=(),
+        documents_ingested=0,
+        proposal_count=0,
+        research_state=None,
+        pending_questions=[],
+        errors=["Research initialization failed before producing usable output."],
+        claim_curation=None,
+        research_brief_markdown=None,
+    )
+    replayed_snapshot = {
+        "status": "failed",
+        "documents_ingested": 0,
+        "proposal_count": 0,
+        "pending_questions": [],
+        "errors": list(replayed_result.errors),
+        "source_results": {"pubmed": {"selected": True, "status": "failed"}},
+        "artifact_keys": ["research_init_result"],
+        "result_keys": ["research_init_result"],
+        "primary_result_key": "research_init_result",
+    }
+
+    result = await execute_full_ai_orchestrator_run(
+        space_id=space_id,
+        title=run.title,
+        objective="Investigate MED13 syndrome",
+        seed_terms=["MED13"],
+        max_depth=1,
+        max_hypotheses=5,
+        sources={"pubmed": True},
+        execution_services=services,
+        existing_run=run,
+        replayed_research_init_result=replayed_result,
+        replayed_workspace_snapshot=replayed_snapshot,
+    )
+
+    workspace = services.artifact_store.get_workspace(space_id=space_id, run_id=run.id)
+    assert workspace is not None
+    assert result.run.status == "failed"
+    assert result.errors == [
+        "Research initialization failed before producing usable output.",
+    ]
+    assert workspace.snapshot["status"] == "failed"
+    assert workspace.snapshot["full_ai_orchestrator_result"]["run"]["status"] == (
+        "failed"
     )
 
 

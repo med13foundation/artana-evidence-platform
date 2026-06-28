@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import logging
 import os
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
 
 import httpx
 from artana_evidence_api.request_context import build_request_id_headers
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 from artana_evidence_api.types.common import JSONObject, JSONValue
 
 logger = logging.getLogger(__name__)
@@ -17,16 +18,14 @@ MARRVEL_API_BASE_URL = os.getenv(
     "ARTANA_MARRVEL_API_BASE_URL",
     _DEFAULT_MARRVEL_API_BASE_URL,
 )
-MARRVEL_API_FALLBACK_BASE_URL = os.getenv(
-    "ARTANA_MARRVEL_API_FALLBACK_BASE_URL",
-    "http://api.marrvel.org/data",
+_RAW_MARRVEL_API_FALLBACK_BASE_URL = os.getenv("ARTANA_MARRVEL_API_FALLBACK_BASE_URL")
+MARRVEL_API_FALLBACK_BASE_URL = (
+    _RAW_MARRVEL_API_FALLBACK_BASE_URL.strip()
+    if isinstance(_RAW_MARRVEL_API_FALLBACK_BASE_URL, str)
+    and _RAW_MARRVEL_API_FALLBACK_BASE_URL.strip()
+    else None
 )
 _DEFAULT_TIMEOUT_SECONDS = 30.0
-_TLS_FAILURE_MARKERS = (
-    "CERTIFICATE_VERIFY_FAILED",
-    "Hostname mismatch",
-    "certificate verify failed",
-)
 
 
 class MarrvelClient:
@@ -41,26 +40,14 @@ class MarrvelClient:
         transport: httpx.AsyncBaseTransport | None = None,
         fallback_transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
+        del fallback_base_url, fallback_transport
         self._base_url = base_url
-        self._fallback_base_url = fallback_base_url
+        self._fetch_errors: dict[str, str] = {}
         self._client = self._build_client(
             base_url=base_url,
             timeout_seconds=timeout_seconds,
             transport=transport,
         )
-        self._fallback_client = (
-            self._build_client(
-                base_url=fallback_base_url or "",
-                timeout_seconds=timeout_seconds,
-                transport=fallback_transport,
-            )
-            if self._can_use_http_fallback(
-                primary_base_url=base_url,
-                fallback_base_url=fallback_base_url,
-            )
-            else None
-        )
-        self._active_client = self._client
 
     async def __aenter__(self) -> MarrvelClient:
         return self
@@ -76,8 +63,10 @@ class MarrvelClient:
 
     async def close(self) -> None:
         await self._client.aclose()
-        if self._fallback_client is not None:
-            await self._fallback_client.aclose()
+
+    def fetch_errors(self) -> dict[str, str]:
+        """Return fetch failures observed by this client, keyed by request context."""
+        return dict(self._fetch_errors)
 
     async def fetch_gene_info(self, taxon_id: int, symbol: str) -> JSONObject | None:
         return await self._fetch_record(
@@ -236,43 +225,15 @@ class MarrvelClient:
         failure_log_level: int = logging.WARNING,
     ) -> JSONValue | None:
         try:
-            response = await self._active_client.get(
+            payload = await async_get_limited_json(
+                self._client,
                 endpoint,
+                context=context,
                 headers=build_request_id_headers(),
             )
-            response.raise_for_status()
-            return self._coerce_json_value(response.json())
+            return self._coerce_json_value(payload)
         except Exception as exc:  # noqa: BLE001
-            if (
-                self._active_client is self._client
-                and self._fallback_client is not None
-                and self._is_tls_verification_failure(exc)
-            ):
-                self._active_client = self._fallback_client
-                logger.warning(
-                    "MARRVEL HTTPS endpoint failed TLS validation; switching to HTTP fallback",
-                    extra={
-                        "marrvel_base_url": self._base_url,
-                        "marrvel_fallback_base_url": self._fallback_base_url,
-                        "marrvel_context": context,
-                        "exception_type": type(exc).__name__,
-                    },
-                )
-                try:
-                    response = await self._active_client.get(
-                        endpoint,
-                        headers=build_request_id_headers(),
-                    )
-                    response.raise_for_status()
-                    return self._coerce_json_value(response.json())
-                except Exception as fallback_exc:  # noqa: BLE001
-                    logger.log(
-                        failure_log_level,
-                        "Failed to fetch %s: %s",
-                        context,
-                        fallback_exc,
-                    )
-                    return None
+            self._fetch_errors[context] = str(exc)
             logger.log(
                 failure_log_level,
                 "Failed to fetch %s: %s",
@@ -293,23 +254,6 @@ class MarrvelClient:
             timeout=timeout_seconds,
             headers={"User-Agent": "Artana-Resource-Library/1.0"},
             transport=transport,
-        )
-
-    @staticmethod
-    def _can_use_http_fallback(
-        *,
-        primary_base_url: str,
-        fallback_base_url: str | None,
-    ) -> bool:
-        if fallback_base_url is None or fallback_base_url.strip() == "":
-            return False
-        primary = urlparse(primary_base_url)
-        fallback = urlparse(fallback_base_url)
-        return (
-            primary.scheme == "https"
-            and fallback.scheme == "http"
-            and primary.hostname == fallback.hostname == "api.marrvel.org"
-            and primary.path == fallback.path
         )
 
     @staticmethod
@@ -341,14 +285,6 @@ class MarrvelClient:
     @staticmethod
     def _encode_path_segment(value: str) -> str:
         return quote(value.strip(), safe="")
-
-    @staticmethod
-    def _is_tls_verification_failure(error: Exception) -> bool:
-        message = str(error)
-        return isinstance(error, httpx.ConnectError) and any(
-            marker in message for marker in _TLS_FAILURE_MARKERS
-        )
-
 
 __all__ = [
     "MARRVEL_API_BASE_URL",

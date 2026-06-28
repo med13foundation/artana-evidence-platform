@@ -25,6 +25,7 @@ from artana_evidence_api.pubmed_search import (
     SimplePubMedPdfGateway,
     create_pubmed_search_gateway,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import JSONObject, JSONValue
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy.orm import Session
@@ -290,7 +291,7 @@ def _create_session_model(
         is_active=True,
     )
     session.add(model)
-    session.commit()
+    commit_or_flush(session)
     session.refresh(model)
     return model
 
@@ -312,7 +313,7 @@ def _persist_search_job(
     job: DiscoverySearchJob,
 ) -> DiscoverySearchJob:
     session.merge(_search_job_to_model(job))
-    session.commit()
+    commit_or_flush(session)
     return job
 
 

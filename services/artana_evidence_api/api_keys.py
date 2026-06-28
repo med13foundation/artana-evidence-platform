@@ -11,6 +11,7 @@ from uuid import UUID
 
 from artana_evidence_api.models.api_key import HarnessApiKeyModel
 from artana_evidence_api.models.user import HarnessUserModel
+from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -89,7 +90,7 @@ def issue_api_key(
         raw_key=raw_key,
     )
     session.add(model)
-    session.commit()
+    commit_or_flush(session)
     session.refresh(model)
     return IssuedApiKey(raw_key=raw_key, model=model)
 
@@ -166,7 +167,7 @@ def revoke_api_key(
         return None
     model.status = API_KEY_REVOKED_STATUS
     model.revoked_at = datetime.now(UTC)
-    session.commit()
+    commit_or_flush(session)
     session.refresh(model)
     return model
 
@@ -202,7 +203,7 @@ def rotate_api_key(
     )
     session.add(new_model)
     try:
-        session.commit()
+        commit_or_flush(session)
         session.refresh(old_model)
         session.refresh(new_model)
     except Exception:

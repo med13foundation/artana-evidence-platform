@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID  # noqa: TC003
 
@@ -33,9 +32,6 @@ from artana_evidence_api.chat_sessions import (
 from artana_evidence_api.chat_workflow import (
     DEFAULT_CHAT_SESSION_TITLE,
     GraphChatMessageExecution,
-    load_chat_memory_context,
-    memory_context_artifact,
-    queue_graph_chat_message_run,
 )
 from artana_evidence_api.config import get_settings
 from artana_evidence_api.dependencies import (
@@ -52,7 +48,6 @@ from artana_evidence_api.dependencies import (
     require_harness_space_write_access,
 )
 from artana_evidence_api.document_store import (
-    HarnessDocumentRecord,  # noqa: TC001
     HarnessDocumentStore,  # noqa: TC001
 )
 from artana_evidence_api.graph_chat_runtime import (
@@ -90,6 +85,18 @@ from artana_evidence_api.response_serialization import (
     serialize_chat_message_record,
     serialize_run_record,
 )
+from artana_evidence_api.routers.chat_message_queue.preparation import (
+    prepare_chat_message_run as _prepare_chat_message_run,
+)
+from artana_evidence_api.routers.chat_message_queue.preparation import (
+    prepare_chat_message_run_threadsafe as _prepare_chat_message_run_threadsafe,
+)
+from artana_evidence_api.routers.chat_message_queue.preparation import (
+    require_documents as _require_documents,
+)
+from artana_evidence_api.routers.chat_message_queue.preparation import (
+    uses_sqlite_session_bound_store as _uses_sqlite_session_bound_store,
+)
 from artana_evidence_api.routers.chat_models import (
     ChatGraphWriteCandidateDecisionRequest,
     ChatGraphWriteCandidateDecisionResponse,
@@ -117,7 +124,6 @@ from artana_evidence_api.transparency import (
 )
 from artana_evidence_api.types.common import (  # noqa: TC001
     JSONObject,
-    json_array_or_empty,
 )
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -149,13 +155,6 @@ _PROPOSAL_STORE_DEPENDENCY = Depends(get_proposal_store)
 _RESEARCH_STATE_STORE_DEPENDENCY = Depends(get_research_state_store)
 _HARNESS_EXECUTION_SERVICES_DEPENDENCY = Depends(get_harness_execution_services)
 _CHAT_STREAM_TERMINAL_STATUSES = frozenset({"completed", "failed", "paused"})
-
-
-@dataclass(frozen=True, slots=True)
-class _PreparedChatMessageRun:
-    """Prepared chat run state built off the event loop."""
-
-    queued_run: HarnessRunRecord
 
 
 def build_chat_message_run_response(
@@ -290,27 +289,6 @@ def _require_session(
             detail=f"Chat session '{session_id}' not found in space '{space_id}'",
         )
     return session
-
-
-def _require_documents(
-    *,
-    space_id: UUID,
-    document_ids: list[UUID],
-    document_store: HarnessDocumentStore,
-) -> tuple[HarnessDocumentRecord, ...]:
-    documents: list[HarnessDocumentRecord] = []
-    for document_id in document_ids:
-        document = document_store.get_document(
-            space_id=space_id,
-            document_id=document_id,
-        )
-        if document is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Document '{document_id}' not found in space '{space_id}'",
-            )
-        documents.append(document)
-    return tuple(documents)
 
 
 def _require_latest_chat_run(
@@ -476,75 +454,8 @@ def _ensure_pending_chat_graph_write_proposal(  # noqa: PLR0913
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to stage chat graph-write proposal for direct review",
-        )
+    )
     return execution.proposals[0]
-
-
-def _prepare_chat_message_run(  # noqa: PLR0913
-    *,
-    space_id: UUID,
-    session: HarnessChatSessionRecord,
-    request: ChatMessageCreateRequest,
-    current_user: HarnessUser,
-    chat_session_store: HarnessChatSessionStore,
-    run_registry: HarnessRunRegistry,
-    artifact_store: HarnessArtifactStore,
-    graph_api_gateway: GraphTransportBundle,
-    research_state_store: HarnessResearchStateStore,
-    graph_snapshot_store: HarnessGraphSnapshotStore,
-    document_store: HarnessDocumentStore,
-) -> _PreparedChatMessageRun:
-    """Build the queued chat run using a sync preflight path."""
-    research_state, graph_snapshot = load_chat_memory_context(
-        space_id=space_id,
-        research_state_store=research_state_store,
-        graph_snapshot_store=graph_snapshot_store,
-    )
-    memory_context = memory_context_artifact(
-        research_state=research_state,
-        graph_snapshot=graph_snapshot,
-    )
-    referenced_documents = _require_documents(
-        space_id=space_id,
-        document_ids=request.document_ids,
-        document_store=document_store,
-    )
-    if referenced_documents:
-        memory_context["referenced_documents"] = [
-            {
-                "document_id": document.id,
-                "title": document.title,
-                "source_type": document.source_type,
-                "text_excerpt": document.text_excerpt,
-            }
-            for document in referenced_documents
-        ]
-    graph_health = graph_api_gateway.get_health()
-    queued_run = queue_graph_chat_message_run(
-        space_id=space_id,
-        session=session,
-        title=session.title,
-        content=request.content,
-        current_user_id=current_user.id,
-        model_id=request.model_id,
-        max_depth=request.max_depth,
-        top_k=request.top_k,
-        include_evidence_chains=request.include_evidence_chains,
-        memory_context=memory_context,
-        document_ids=[str(document_id) for document_id in request.document_ids],
-        document_context=[
-            item
-            for item in json_array_or_empty(memory_context.get("referenced_documents"))
-            if isinstance(item, dict)
-        ],
-        refresh_pubmed_if_needed=request.refresh_pubmed_if_needed,
-        graph_service_status=graph_health.status,
-        graph_service_version=graph_health.version,
-        chat_session_store=chat_session_store,
-        run_registry=run_registry,
-        artifact_store=artifact_store,
-    )
-    return _PreparedChatMessageRun(queued_run=queued_run)
 
 
 @router.get(
@@ -659,20 +570,43 @@ async def send_chat_message(  # noqa: C901, PLR0912, PLR0913, PLR0915
     try:
         if should_require_worker_ready(execution_services=execution_services):
             require_worker_ready(operation_name="Graph chat")
-        prepared_run = await asyncio.to_thread(
-            _prepare_chat_message_run,
-            space_id=space_id,
-            session=session,
-            request=message_request,
-            current_user=current_user,
-            chat_session_store=chat_session_store,
-            run_registry=run_registry,
-            artifact_store=artifact_store,
-            graph_api_gateway=graph_api_gateway,
-            research_state_store=research_state_store,
-            graph_snapshot_store=graph_snapshot_store,
-            document_store=document_store,
-        )
+        if _uses_sqlite_session_bound_store(
+            chat_session_store,
+            run_registry,
+            research_state_store,
+            graph_snapshot_store,
+            document_store,
+        ):
+            prepared_run = _prepare_chat_message_run(
+                space_id=space_id,
+                session=session,
+                request=message_request,
+                current_user=current_user,
+                chat_session_store=chat_session_store,
+                run_registry=run_registry,
+                artifact_store=artifact_store,
+                graph_api_gateway=graph_api_gateway,
+                research_state_store=research_state_store,
+                graph_snapshot_store=graph_snapshot_store,
+                document_store=document_store,
+            )
+        else:
+            prepared_run = await asyncio.to_thread(
+                _prepare_chat_message_run_threadsafe,
+                space_id=space_id,
+                session_id=session_id,
+                session=session,
+                request=message_request,
+                current_user=current_user,
+                runtime=execution_services.runtime,
+                graph_api_gateway=graph_api_gateway,
+                chat_session_store=chat_session_store,
+                run_registry=run_registry,
+                artifact_store=artifact_store,
+                research_state_store=research_state_store,
+                graph_snapshot_store=graph_snapshot_store,
+                document_store=document_store,
+            )
         ensure_run_transparency_seed(
             run=prepared_run.queued_run,
             artifact_store=artifact_store,

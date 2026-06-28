@@ -56,8 +56,21 @@ class DictionaryProposalService:
         self._dictionary = dictionary_service
         self._merge_targets = DictionaryProposalMergeTargetResolver(dictionary_service)
 
-    def _get_model(self, proposal_id: str) -> DictionaryProposalModel:
-        model = self._session.get(DictionaryProposalModel, proposal_id)
+    def _get_model(
+        self,
+        proposal_id: str,
+        *,
+        for_update: bool = False,
+    ) -> DictionaryProposalModel:
+        if for_update:
+            stmt = (
+                select(DictionaryProposalModel)
+                .where(DictionaryProposalModel.id == proposal_id)
+                .with_for_update()
+            )
+            model = self._session.scalars(stmt).one_or_none()
+        else:
+            model = self._session.get(DictionaryProposalModel, proposal_id)
         if model is None:
             msg = f"Dictionary proposal '{proposal_id}' not found"
             raise ValueError(msg)
@@ -872,7 +885,7 @@ class DictionaryProposalService:
         decision_reason: str | None = None,
     ) -> tuple[DictionaryProposal, AppliedDictionaryObject]:
         """Approve a submitted proposal and apply it to official dictionary state."""
-        model = self._get_model(proposal_id)
+        model = self._get_model(proposal_id, for_update=True)
         self._require_reviewable_status(model)
         before_snapshot = snapshot_proposal_model(model)
         applied: AppliedDictionaryObject
@@ -931,7 +944,7 @@ class DictionaryProposalService:
         decision_reason: str,
     ) -> DictionaryProposal:
         """Reject a submitted dictionary proposal."""
-        model = self._get_model(proposal_id)
+        model = self._get_model(proposal_id, for_update=True)
         self._require_reviewable_status(model)
         before_snapshot = snapshot_proposal_model(model)
         normalized_reason = decision_reason.strip()
@@ -961,7 +974,7 @@ class DictionaryProposalService:
         decision_reason: str,
     ) -> DictionaryProposal:
         """Move a proposal into changes-requested state with reviewer guidance."""
-        model = self._get_model(proposal_id)
+        model = self._get_model(proposal_id, for_update=True)
         self._require_reviewable_status(model)
         before_snapshot = snapshot_proposal_model(model)
         normalized_reason = decision_reason.strip()
@@ -992,7 +1005,7 @@ class DictionaryProposalService:
         decision_reason: str,
     ) -> DictionaryProposal:
         """Merge a proposal into an existing approved dictionary entry."""
-        model = self._get_model(proposal_id)
+        model = self._get_model(proposal_id, for_update=True)
         self._require_reviewable_status(model)
         before_snapshot = snapshot_proposal_model(model)
         normalized_reason = decision_reason.strip()

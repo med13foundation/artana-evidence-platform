@@ -52,6 +52,10 @@ from artana_evidence_db.space_models import GraphSpaceModel
 from sqlalchemy import select
 
 
+class AIDecisionPolicyRejectedError(ValueError):
+    """Raised when an AI decision is rejected by policy and should be audited."""
+
+
 class AIFullModeDecisionConnectorMixin:
     """AI decision envelope and connector governance behavior."""
 
@@ -136,7 +140,7 @@ class AIFullModeDecisionConnectorMixin:
         self._session.flush()
         if rejection_reason is not None:
             self._record_ai_decision(model)
-            raise ValueError(rejection_reason)
+            raise AIDecisionPolicyRejectedError(rejection_reason)
 
         if target_type == "concept_proposal":
             self._apply_concept_ai_decision(
@@ -613,4 +617,3 @@ class AIFullModeDecisionConnectorMixin:
             ),
         )
         self._session.flush()
-

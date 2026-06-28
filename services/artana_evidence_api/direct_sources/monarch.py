@@ -16,6 +16,7 @@ from artana_evidence_api.direct_sources.capture import (
 from artana_evidence_api.direct_sources.monarch_coverage import (
     mediator_hpo_coverage_gap_records,
 )
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_json
 from artana_evidence_api.source_result_capture import SourceResultCapture
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -261,12 +262,15 @@ class MonarchSourceGateway:
         if request.entity_id:
             params["entity"] = [request.entity_id]
         try:
-            response = await client.get("api/association", params=params)
-            response.raise_for_status()
+            return await async_get_limited_json(
+                client,
+                "api/association",
+                params=params,
+                context="Monarch KG API response for association",
+            )
         except httpx.HTTPError as exc:
             msg = f"Monarch KG API request failed for association: {exc}"
             raise MonarchGatewayError(msg) from exc
-        return response.json()
 
 
 async def run_monarch_direct_search(

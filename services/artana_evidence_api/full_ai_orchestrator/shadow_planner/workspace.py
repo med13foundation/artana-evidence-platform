@@ -851,6 +851,9 @@ def build_shadow_planner_workspace_summary(  # noqa: PLR0913
     deterministic_selection = json_object_or_empty(
         pending_chase_round.get("deterministic_selection"),
     )
+    shadow_planner_cost_tracking = _shadow_planner_cost_tracking(
+        workspace_snapshot=workspace_snapshot,
+    )
 
     summary: JSONObject = {
         "mode": mode,
@@ -912,6 +915,7 @@ def build_shadow_planner_workspace_summary(  # noqa: PLR0913
             ),
         },
         "objective_routing_hints": json_value(objective_routing_hints),
+        "shadow_planner_cost_tracking": shadow_planner_cost_tracking,
     }
     summary["chase_decision_posture"] = _chase_decision_posture(
         workspace_summary=summary,
@@ -922,6 +926,16 @@ def build_shadow_planner_workspace_summary(  # noqa: PLR0913
         ),
     )
     return summary
+
+
+def _shadow_planner_cost_tracking(*, workspace_snapshot: JSONObject) -> JSONObject:
+    direct_cost_tracking = json_object_or_empty(
+        workspace_snapshot.get("shadow_planner_cost_tracking"),
+    )
+    if direct_cost_tracking:
+        return direct_cost_tracking
+    shadow_planner_summary = json_object_or_empty(workspace_snapshot.get("shadow_planner"))
+    return json_object_or_empty(shadow_planner_summary.get("cost_tracking"))
 
 
 def _normalize_shadow_planner_workspace_summary(

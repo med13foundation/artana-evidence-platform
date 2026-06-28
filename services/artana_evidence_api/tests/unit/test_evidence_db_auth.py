@@ -201,3 +201,16 @@ def test_graph_service_token_contract_matches_expected_graph_service_claims(
     assert payload["type"] == "access"
     assert payload["graph_admin"] is True
     assert payload["jti"]
+
+
+def test_build_graph_service_bearer_token_requires_secret_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_ENV", "production")
+    monkeypatch.delenv("GRAPH_JWT_SECRET", raising=False)
+
+    with pytest.raises(
+        RuntimeError,
+        match="GRAPH_JWT_SECRET must be set",
+    ):
+        build_graph_service_bearer_token_for_service(role="researcher")

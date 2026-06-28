@@ -125,6 +125,7 @@ class MarrvelSearchResponse(BaseModel):
     omim_count: int
     variant_count: int
     panel_counts: dict[str, int] = Field(default_factory=dict)
+    panel_errors: dict[str, str] = Field(default_factory=dict)
     panels: dict[str, JSONValue] = Field(default_factory=dict)
     available_panels: list[str] = Field(default_factory=list)
 
@@ -168,6 +169,7 @@ async def create_marrvel_search(
             omim_count=result.omim_count,
             variant_count=result.variant_count,
             panel_counts=result.panel_counts,
+            panel_errors=result.panel_errors,
             panels=result.panels,
             available_panels=result.available_panels,
         )
@@ -220,6 +222,7 @@ def get_marrvel_search(
         omim_count=result.omim_count,
         variant_count=result.variant_count,
         panel_counts=result.panel_counts,
+        panel_errors=result.panel_errors,
         panels=result.panels,
         available_panels=result.available_panels,
     )
@@ -261,7 +264,7 @@ class MarrvelIngestResponse(BaseModel):
     summary="Fetch MARRVEL gene data and seed graph entities",
     dependencies=[Depends(require_harness_space_write_access)],
 )
-async def ingest_marrvel_genes(
+def ingest_marrvel_genes(
     space_id: UUID,
     request: MarrvelIngestRequest,
     *,

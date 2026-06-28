@@ -66,6 +66,8 @@ async def recommend_shadow_planner_action(
 
 class _FullAIOrchestratorShadowCheckpointMixin:
     _shadow_planner_task: asyncio.Task[None] | None
+    _shadow_planner_tasks: set[asyncio.Task[None]]
+    _emitting_shadow_checkpoints: set[str]
 
     def enqueue_initial_shadow_checkpoint(self) -> None:
         self._enqueue_shadow_checkpoint(
@@ -129,9 +131,18 @@ class _FullAIOrchestratorShadowCheckpointMixin:
         return list(self.shadow_timeline)
 
     async def wait_for_shadow_planner_updates(self) -> None:
-        if self._shadow_planner_task is None:
+        if not self._shadow_planner_tasks:
+            if self._shadow_planner_task is not None:
+                await self._shadow_planner_task
             return
-        await self._shadow_planner_task
+        while self._shadow_planner_tasks:
+            tasks = tuple(self._shadow_planner_tasks)
+            try:
+                await asyncio.gather(*tasks)
+            finally:
+                for task in tasks:
+                    if task.done():
+                        self._shadow_planner_tasks.discard(task)
 
     def _enqueue_shadow_checkpoint_updates(
         self,
@@ -196,7 +207,9 @@ class _FullAIOrchestratorShadowCheckpointMixin:
                 deterministic_decisions=decisions_copy,
             )
 
-        self._shadow_planner_task = loop.create_task(_run_after_previous())
+        task = loop.create_task(_run_after_previous())
+        self._shadow_planner_task = task
+        self._shadow_planner_tasks.add(task)
 
     async def _emit_shadow_checkpoint(
         self,
@@ -205,71 +218,83 @@ class _FullAIOrchestratorShadowCheckpointMixin:
         workspace_summary: JSONObject,
         deterministic_decisions: list[ResearchOrchestratorDecision],
     ) -> tuple[ShadowPlannerRecommendationResult, JSONObject]:
-        if checkpoint_key in self.emitted_shadow_checkpoints:
-            raise RuntimeError(
-                f"Checkpoint '{checkpoint_key}' was already emitted and cannot be replayed synchronously.",
-            )
-        planner_result = await recommend_shadow_planner_action(
-            checkpoint_key=checkpoint_key,
-            objective=self.objective,
-            workspace_summary=workspace_summary,
-            sources=self.sources,
-            action_registry=self.action_registry,
-            harness_id=_HARNESS_ID,
-            step_key_version=_STEP_KEY_VERSION,
-        )
-        comparison = build_shadow_planner_comparison(
-            checkpoint_key=checkpoint_key,
-            planner_result=planner_result,
-            deterministic_target=_checkpoint_target_decision(
+        self._reserve_shadow_checkpoint(checkpoint_key)
+        try:
+            planner_result = await recommend_shadow_planner_action(
                 checkpoint_key=checkpoint_key,
-                decisions=deterministic_decisions,
+                objective=self.objective,
                 workspace_summary=workspace_summary,
-            ),
-            workspace_summary=workspace_summary,
-            mode=_planner_mode_value(self.planner_mode),
-        )
-        self.shadow_timeline.append(
-            {
-                "checkpoint_key": checkpoint_key,
-                "workspace_summary": workspace_summary,
-                "recommendation": _shadow_planner_recommendation_payload(
-                    planner_result=planner_result,
-                    mode=_planner_mode_value(self.planner_mode),
+                sources=self.sources,
+                action_registry=self.action_registry,
+                harness_id=_HARNESS_ID,
+                step_key_version=_STEP_KEY_VERSION,
+            )
+            comparison = build_shadow_planner_comparison(
+                checkpoint_key=checkpoint_key,
+                planner_result=planner_result,
+                deterministic_target=_checkpoint_target_decision(
+                    checkpoint_key=checkpoint_key,
+                    decisions=deterministic_decisions,
+                    workspace_summary=workspace_summary,
                 ),
-                "comparison": comparison,
-            }
-        )
-        self.emitted_shadow_checkpoints.add(checkpoint_key)
-        shadow_planner_summary = _build_shadow_planner_summary(
-            timeline=self.shadow_timeline,
-            mode=_planner_mode_value(self.planner_mode),
-        )
-        _put_shadow_planner_artifacts(
-            artifact_store=self.artifact_store,
-            space_id=self.space_id,
-            run_id=self.run_id,
-            timeline=self.shadow_timeline,
-            latest_summary=shadow_planner_summary,
-            mode=_planner_mode_value(self.planner_mode),
-        )
-        self.artifact_store.patch_workspace(
-            space_id=self.space_id,
-            run_id=self.run_id,
-            patch={
-                "shadow_planner": shadow_planner_summary,
-                "shadow_planner_mode": _planner_mode_value(self.planner_mode),
-                "planner_execution_mode": _planner_mode_value(self.planner_mode),
-                "shadow_planner_timeline_key": _SHADOW_PLANNER_TIMELINE_ARTIFACT_KEY,
-                "shadow_planner_recommendation_key": (
-                    _SHADOW_PLANNER_RECOMMENDATION_ARTIFACT_KEY
-                ),
-                "shadow_planner_comparison_key": (
-                    _SHADOW_PLANNER_COMPARISON_ARTIFACT_KEY
-                ),
-            },
-        )
-        return planner_result, comparison
+                workspace_summary=workspace_summary,
+                mode=_planner_mode_value(self.planner_mode),
+            )
+            self.shadow_timeline.append(
+                {
+                    "checkpoint_key": checkpoint_key,
+                    "workspace_summary": workspace_summary,
+                    "recommendation": _shadow_planner_recommendation_payload(
+                        planner_result=planner_result,
+                        mode=_planner_mode_value(self.planner_mode),
+                    ),
+                    "comparison": comparison,
+                }
+            )
+            self.emitted_shadow_checkpoints.add(checkpoint_key)
+            shadow_planner_summary = _build_shadow_planner_summary(
+                timeline=self.shadow_timeline,
+                mode=_planner_mode_value(self.planner_mode),
+            )
+            _put_shadow_planner_artifacts(
+                artifact_store=self.artifact_store,
+                space_id=self.space_id,
+                run_id=self.run_id,
+                timeline=self.shadow_timeline,
+                latest_summary=shadow_planner_summary,
+                mode=_planner_mode_value(self.planner_mode),
+            )
+            self.artifact_store.patch_workspace(
+                space_id=self.space_id,
+                run_id=self.run_id,
+                patch={
+                    "shadow_planner": shadow_planner_summary,
+                    "shadow_planner_mode": _planner_mode_value(self.planner_mode),
+                    "planner_execution_mode": _planner_mode_value(self.planner_mode),
+                    "shadow_planner_timeline_key": (
+                        _SHADOW_PLANNER_TIMELINE_ARTIFACT_KEY
+                    ),
+                    "shadow_planner_recommendation_key": (
+                        _SHADOW_PLANNER_RECOMMENDATION_ARTIFACT_KEY
+                    ),
+                    "shadow_planner_comparison_key": (
+                        _SHADOW_PLANNER_COMPARISON_ARTIFACT_KEY
+                    ),
+                },
+            )
+            return planner_result, comparison
+        finally:
+            self._emitting_shadow_checkpoints.discard(checkpoint_key)
+
+    def _reserve_shadow_checkpoint(self, checkpoint_key: str) -> None:
+        if (
+            checkpoint_key in self.emitted_shadow_checkpoints
+            or checkpoint_key in self._emitting_shadow_checkpoints
+        ):
+            raise RuntimeError(
+                f"Checkpoint '{checkpoint_key}' was already emitted or is already in progress.",
+            )
+        self._emitting_shadow_checkpoints.add(checkpoint_key)
 
     def _shadow_timeline_entry(self, checkpoint_key: str) -> JSONObject | None:
         for entry in reversed(self.shadow_timeline):

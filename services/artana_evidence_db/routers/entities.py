@@ -109,13 +109,13 @@ def list_entities(
         )
 
     if ids is not None:
-        paged_ids = entity_ids[offset : offset + limit]
-        entities = []
-        for entity_id in paged_ids:
-            entity = entity_service.get_entity(entity_id)
-            if entity is None or str(entity.research_space_id) != str(space_id):
-                continue
-            entities.append(entity)
+        total = entity_service.count_by_ids(str(space_id), entity_ids)
+        entities = entity_service.list_by_ids(
+            str(space_id),
+            entity_ids,
+            limit=limit,
+            offset=offset,
+        )
     elif q:
         batch = entity_service.search(
             str(space_id),
@@ -124,6 +124,11 @@ def list_entities(
             limit=offset + limit,
         )
         entities = batch[offset : offset + limit]
+        total = entity_service.count_search(
+            str(space_id),
+            q,
+            entity_type=entity_type,
+        )
     else:
         if entity_type is None or not entity_type.strip():
             raise HTTPException(
@@ -136,10 +141,11 @@ def list_entities(
             limit=limit,
             offset=offset,
         )
+        total = entity_service.count_by_type(str(space_id), entity_type)
 
     return KernelEntityListResponse(
         entities=[KernelEntityResponse.from_model(entity) for entity in entities],
-        total=len(entities),
+        total=total,
         offset=offset,
         limit=limit,
     )

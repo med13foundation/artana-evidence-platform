@@ -16,6 +16,7 @@ from artana_evidence_api.direct_sources.capture import (
     json_records,
     single_record_external_id,
 )
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_text
 from artana_evidence_api.source_result_capture import SourceResultCapture
 from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -224,12 +225,15 @@ class DiMePublicCatalogGateway:
         headers: Mapping[str, str] | None = None,
     ) -> str:
         try:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
+            return await async_get_limited_text(
+                client,
+                url,
+                headers=headers,
+                context=f"DiMe catalog response for {url}",
+            )
         except httpx.HTTPError as exc:
             msg = f"DiMe catalog request failed for {url}: {exc}"
             raise DiMeGatewayError(msg) from exc
-        return response.text
 
 
 def build_dime_gateway() -> DiMeGatewayProtocol:

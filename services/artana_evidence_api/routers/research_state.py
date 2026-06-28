@@ -52,7 +52,7 @@ class ResearchStateResponse(BaseModel):
     status_code=status.HTTP_200_OK,
     summary="Get the current research state for a space",
 )
-async def get_research_state(
+def get_research_state(
     space_id: UUID,
     _access: None = _SPACE_READ_ACCESS_DEPENDENCY,
     research_state_store: HarnessResearchStateStore = _RESEARCH_STATE_STORE_DEPENDENCY,

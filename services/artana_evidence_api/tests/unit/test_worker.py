@@ -7,7 +7,7 @@ import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
@@ -102,6 +102,13 @@ from artana_evidence_api.worker import run_worker_tick
 if TYPE_CHECKING:
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
     from sqlalchemy.orm import Session
+
+
+def _future_retry_timestamp(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    retry_at = datetime.fromisoformat(value)
+    return retry_at > datetime.now(UTC)
 
 
 class _FakeGraphApiGateway(GraphTransportBundle):
@@ -412,6 +419,63 @@ def test_list_queued_worker_runs_uses_catalog_records_without_runtime_hydration(
 
     assert [run.id for run in runs] == ["queued-run"]
     assert runs[0].status == "queued"
+
+
+def test_list_queued_worker_runs_skips_retry_delayed_runs() -> None:
+    model = SimpleNamespace(
+        id="queued-run",
+        space_id="space-1",
+        harness_id="full-ai-orchestrator",
+        title="Queued run",
+        status="queued",
+        input_payload={"objective": "Study MED13"},
+        graph_service_status="ok",
+        graph_service_version="graph-v1",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    artifact_store = HarnessArtifactStore()
+    artifact_store.seed_for_run(
+        run=HarnessRunRecord(
+            id=model.id,
+            space_id=model.space_id,
+            harness_id=model.harness_id,
+            title=model.title,
+            status=model.status,
+            input_payload=model.input_payload,
+            graph_service_status=model.graph_service_status,
+            graph_service_version=model.graph_service_version,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        ),
+    )
+    artifact_store.patch_workspace(
+        space_id=model.space_id,
+        run_id=model.id,
+        patch={
+            "_retry_not_before": (datetime.now(UTC) + timedelta(minutes=5)).isoformat()
+        },
+    )
+
+    class _FakeScalars:
+        def all(self) -> list[SimpleNamespace]:
+            return [model]
+
+    class _FakeResult:
+        def scalars(self) -> _FakeScalars:
+            return _FakeScalars()
+
+    class _FakeSession:
+        def execute(self, _stmt) -> _FakeResult:
+            return _FakeResult()
+
+    runs = worker_module.list_queued_worker_runs(
+        session=cast("object", _FakeSession()),
+        run_registry=HarnessRunRegistry(),
+        artifact_store=artifact_store,
+    )
+
+    assert runs == []
 
 
 def test_build_worker_services_use_graph_admin_transport_for_background_runs(
@@ -1221,6 +1285,228 @@ def test_run_worker_tick_releases_failed_run_lease_for_retry() -> None:
         (str(space_id), run.id, "worker-1"),
         (str(space_id), run.id, "worker-1"),
     ]
+
+
+def test_scheduled_run_retries_when_harness_marks_failed_before_raising() -> None:
+    runtime = _FakeKernelRuntime()
+    run_registry = HarnessRunRegistry()
+    artifact_store = HarnessArtifactStore()
+    chat_session_store = HarnessChatSessionStore()
+    document_store = HarnessDocumentStore()
+    proposal_store = HarnessProposalStore()
+    approval_store = HarnessApprovalStore()
+    research_state_store = HarnessResearchStateStore()
+    graph_snapshot_store = HarnessGraphSnapshotStore()
+    schedule_store = HarnessScheduleStore()
+    space_id = uuid4()
+    run = run_registry.create_run(
+        space_id=space_id,
+        harness_id="graph-chat",
+        title="Scheduled recoverable worker run",
+        input_payload={"question": "Recover after failure", "schedule_id": "daily"},
+        graph_service_status="queued",
+        graph_service_version="pending",
+    )
+    artifact_store.seed_for_run(run=run)
+    services = HarnessExecutionServices(
+        runtime=cast("GraphHarnessKernelRuntime", runtime),
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        chat_session_store=chat_session_store,
+        document_store=document_store,
+        proposal_store=proposal_store,
+        approval_store=approval_store,
+        research_state_store=research_state_store,
+        graph_snapshot_store=graph_snapshot_store,
+        schedule_store=schedule_store,
+        graph_connection_runner=_FakeGraphConnectionRunner(),
+        graph_chat_runner=_FakeGraphChatRunner(),
+        graph_api_gateway_factory=_FakeGraphApiGateway,
+        pubmed_discovery_service_factory=_fake_pubmed_discovery_context,
+    )
+
+    async def _mark_failed_then_raise(
+        current_run: HarnessRunRecord,
+        current_services: HarnessExecutionServices,
+    ) -> HarnessExecutionResult:
+        current_services.run_registry.set_run_status(
+            space_id=current_run.space_id,
+            run_id=current_run.id,
+            status="failed",
+        )
+        raise RuntimeError("Synthetic scheduled worker failure.")
+
+    result = asyncio.run(
+        run_worker_tick(
+            candidate_runs=[run],
+            runtime=cast("GraphHarnessKernelRuntime", runtime),
+            services=services,
+            worker_id="worker-1",
+            lease_ttl_seconds=120,
+            execute_run=_mark_failed_then_raise,
+        ),
+    )
+
+    assert result.executed_run_count == 1
+    assert result.failed_run_count == 1
+    assert result.results[0].outcome == "queued"
+
+    updated_run = run_registry.get_run(space_id=space_id, run_id=run.id)
+    assert updated_run is not None
+    assert updated_run.status == "queued"
+    workspace = artifact_store.get_workspace(space_id=space_id, run_id=run.id)
+    assert workspace is not None
+    assert workspace.snapshot["_retry_count"] == 1
+    assert _future_retry_timestamp(workspace.snapshot["_retry_not_before"])
+
+
+def test_scheduled_run_retry_count_clamps_corrupt_negative_workspace_value() -> None:
+    runtime = _FakeKernelRuntime()
+    run_registry = HarnessRunRegistry()
+    artifact_store = HarnessArtifactStore()
+    chat_session_store = HarnessChatSessionStore()
+    document_store = HarnessDocumentStore()
+    proposal_store = HarnessProposalStore()
+    approval_store = HarnessApprovalStore()
+    research_state_store = HarnessResearchStateStore()
+    graph_snapshot_store = HarnessGraphSnapshotStore()
+    schedule_store = HarnessScheduleStore()
+    space_id = uuid4()
+    run = run_registry.create_run(
+        space_id=space_id,
+        harness_id="graph-chat",
+        title="Scheduled retry with corrupt count",
+        input_payload={"question": "Recover after failure", "schedule_id": "daily"},
+        graph_service_status="queued",
+        graph_service_version="pending",
+    )
+    artifact_store.seed_for_run(run=run)
+    artifact_store.patch_workspace(
+        space_id=space_id,
+        run_id=run.id,
+        patch={"_retry_count": -3},
+    )
+    services = HarnessExecutionServices(
+        runtime=cast("GraphHarnessKernelRuntime", runtime),
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        chat_session_store=chat_session_store,
+        document_store=document_store,
+        proposal_store=proposal_store,
+        approval_store=approval_store,
+        research_state_store=research_state_store,
+        graph_snapshot_store=graph_snapshot_store,
+        schedule_store=schedule_store,
+        graph_connection_runner=_FakeGraphConnectionRunner(),
+        graph_chat_runner=_FakeGraphChatRunner(),
+        graph_api_gateway_factory=_FakeGraphApiGateway,
+        pubmed_discovery_service_factory=_fake_pubmed_discovery_context,
+    )
+
+    async def _mark_failed_then_raise(
+        current_run: HarnessRunRecord,
+        current_services: HarnessExecutionServices,
+    ) -> HarnessExecutionResult:
+        current_services.run_registry.set_run_status(
+            space_id=current_run.space_id,
+            run_id=current_run.id,
+            status="failed",
+        )
+        raise RuntimeError("Synthetic scheduled worker failure.")
+
+    result = asyncio.run(
+        run_worker_tick(
+            candidate_runs=[run],
+            runtime=cast("GraphHarnessKernelRuntime", runtime),
+            services=services,
+            worker_id="worker-1",
+            lease_ttl_seconds=120,
+            execute_run=_mark_failed_then_raise,
+        ),
+    )
+
+    workspace = artifact_store.get_workspace(space_id=space_id, run_id=run.id)
+    assert workspace is not None
+    assert result.results[0].outcome == "queued"
+    assert workspace.snapshot["_retry_count"] == 1
+
+
+def test_run_worker_tick_skips_retry_delayed_run_without_lease() -> None:
+    runtime = _FakeKernelRuntime()
+    run_registry = HarnessRunRegistry()
+    artifact_store = HarnessArtifactStore()
+    chat_session_store = HarnessChatSessionStore()
+    document_store = HarnessDocumentStore()
+    proposal_store = HarnessProposalStore()
+    approval_store = HarnessApprovalStore()
+    research_state_store = HarnessResearchStateStore()
+    graph_snapshot_store = HarnessGraphSnapshotStore()
+    schedule_store = HarnessScheduleStore()
+    space_id = uuid4()
+    run = run_registry.create_run(
+        space_id=space_id,
+        harness_id="graph-chat",
+        title="Backoff worker run",
+        input_payload={"question": "Retry later", "schedule_id": "schedule-1"},
+        graph_service_status="queued",
+        graph_service_version="pending",
+    )
+    artifact_store.seed_for_run(run=run)
+    artifact_store.patch_workspace(
+        space_id=space_id,
+        run_id=run.id,
+        patch={
+            "_retry_not_before": (datetime.now(UTC) + timedelta(minutes=5)).isoformat()
+        },
+    )
+    services = HarnessExecutionServices(
+        runtime=cast("GraphHarnessKernelRuntime", runtime),
+        run_registry=run_registry,
+        artifact_store=artifact_store,
+        chat_session_store=chat_session_store,
+        document_store=document_store,
+        proposal_store=proposal_store,
+        approval_store=approval_store,
+        research_state_store=research_state_store,
+        graph_snapshot_store=graph_snapshot_store,
+        schedule_store=schedule_store,
+        graph_connection_runner=_FakeGraphConnectionRunner(),
+        graph_chat_runner=_FakeGraphChatRunner(),
+        graph_api_gateway_factory=_FakeGraphApiGateway,
+        pubmed_discovery_service_factory=_fake_pubmed_discovery_context,
+    )
+
+    async def _unexpected_execute(
+        current_run: HarnessRunRecord,
+        current_services: HarnessExecutionServices,
+    ) -> HarnessExecutionResult:
+        _ = current_run, current_services
+        raise AssertionError("delayed retry should not execute")
+
+    result = asyncio.run(
+        run_worker_tick(
+            candidate_runs=[run],
+            runtime=cast("GraphHarnessKernelRuntime", runtime),
+            services=services,
+            worker_id="worker-1",
+            lease_ttl_seconds=120,
+            execute_run=_unexpected_execute,
+        ),
+    )
+
+    assert result.scanned_run_count == 1
+    assert result.leased_run_count == 0
+    assert result.executed_run_count == 0
+    assert result.completed_run_count == 0
+    assert result.failed_run_count == 0
+    assert result.skipped_run_count == 1
+    assert result.results[0].outcome == "retry_delayed"
+    assert runtime.acquired == []
+    assert runtime.released == []
+
+    updated_run = run_registry.get_run(space_id=space_id, run_id=run.id)
+    assert updated_run is not None
+    assert updated_run.status == "queued"
 
 
 def test_run_worker_tick_recovers_after_stale_lease_expires() -> None:

@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import post_limited_json
 
 logger = logging.getLogger(__name__)
 
@@ -237,16 +238,16 @@ class GnomADSourceGateway:
                 timeout=self._timeout_seconds,
                 transport=self._transport,
             ) as client:
-                response = client.post(
+                payload: object = post_limited_json(
+                    client,
                     self._base_url,
-                    json={"query": query, "variables": dict(variables)},
+                    context="gnomAD GraphQL response",
+                    json_payload={"query": query, "variables": dict(variables)},
                 )
-                response.raise_for_status()
         except httpx.HTTPError as exc:
             msg = f"gnomAD GraphQL request failed: {exc}"
             raise GnomADGatewayError(msg) from exc
 
-        payload: object = response.json()
         if not isinstance(payload, dict):
             msg = "gnomAD GraphQL response was not a JSON object"
             raise GnomADGatewayError(msg)
@@ -339,9 +340,11 @@ def _normalize_sequencing_data(value: object) -> dict[str, object] | None:
         return None
     ac = _first_int(data, ("ac",))
     an = _first_int(data, ("an",))
+    _validate_allele_frequency_invariants(ac=ac, an=an, af=None)
     af = _first_number(data, ("af",))
     if af is None:
         af = _allele_frequency(ac=ac, an=an)
+    _validate_allele_frequency_invariants(ac=ac, an=an, af=af)
     return {
         "ac": ac,
         "an": an,
@@ -359,11 +362,14 @@ def _normalize_sequencing_data(value: object) -> dict[str, object] | None:
 def _normalize_population(population: Mapping[str, object]) -> dict[str, object]:
     ac = _first_int(population, ("ac",))
     an = _first_int(population, ("an",))
+    _validate_allele_frequency_invariants(ac=ac, an=an, af=None)
+    af = _allele_frequency(ac=ac, an=an)
+    _validate_allele_frequency_invariants(ac=ac, an=an, af=af)
     return {
         "id": _first_string(population, ("id",)) or "",
         "ac": ac,
         "an": an,
-        "af": _allele_frequency(ac=ac, an=an),
+        "af": af,
         "homozygote_count": _first_int(population, ("homozygote_count", "ac_hom")),
         "hemizygote_count": _first_int(population, ("hemizygote_count", "ac_hemi")),
     }
@@ -416,6 +422,26 @@ def _allele_frequency(*, ac: int | None, an: int | None) -> float | None:
     if ac is None or an is None:
         return None
     return 0.0 if an <= 0 else ac / an
+
+
+def _validate_allele_frequency_invariants(
+    *,
+    ac: int | None,
+    an: int | None,
+    af: float | None,
+) -> None:
+    if ac is not None and ac < 0:
+        msg = "gnomAD response contained invalid allele frequency values: ac < 0"
+        raise GnomADGatewayError(msg)
+    if an is not None and an < 0:
+        msg = "gnomAD response contained invalid allele frequency values: an < 0"
+        raise GnomADGatewayError(msg)
+    if ac is not None and an is not None and ac > an:
+        msg = "gnomAD response contained invalid allele frequency values: ac > an"
+        raise GnomADGatewayError(msg)
+    if af is not None and not 0.0 <= af <= 1.0:
+        msg = "gnomAD response contained invalid allele frequency values: af outside 0..1"
+        raise GnomADGatewayError(msg)
 
 
 def _dict_value(value: object) -> dict[str, object] | None:

@@ -5,12 +5,16 @@ from __future__ import annotations
 import sqlite3
 from datetime import date, datetime
 from functools import lru_cache
+from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 from sqlalchemy import event
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
     from sqlalchemy.engine import Engine
+    from sqlalchemy.schema import MetaData
 
 DEFAULT_BUSY_TIMEOUT_MS = 5_000
 
@@ -79,6 +83,58 @@ def configure_sqlite_engine(
         cursor.close()
 
 
+def _quote_sqlite_identifier(identifier: str) -> str:
+    escaped = identifier.replace('"', '""')
+    return f'"{escaped}"'
+
+
+def _quote_sqlite_literal(value: str) -> str:
+    escaped = value.replace("'", "''")
+    return f"'{escaped}'"
+
+
+def attach_sqlite_schemas_for_metadata(
+    engine: "Engine",  # noqa: UP037
+    metadata: "MetaData",  # noqa: UP037
+    *,
+    extra_schemas: Iterable[str | None] = (),
+    schema_paths: Mapping[str, str | Path] | None = None,
+) -> None:
+    """Attach SQLite databases for every schema referenced by metadata."""
+    if engine.dialect.name != "sqlite":
+        return
+
+    schemas = {
+        schema
+        for schema in (
+            *(table.schema for table in metadata.tables.values()),
+            *extra_schemas,
+        )
+        if schema
+    }
+    if not schemas:
+        return
+
+    resolved_schema_paths = schema_paths or {}
+
+    @event.listens_for(engine, "connect")
+    def _attach_sqlite_schemas(
+        dbapi_connection: SQLiteConnection,
+        _: object,
+    ) -> None:
+        cursor = dbapi_connection.cursor()
+        try:
+            for schema in sorted(schemas):
+                database_path = str(resolved_schema_paths.get(schema, ":memory:"))
+                cursor.execute(
+                    "ATTACH DATABASE "
+                    f"{_quote_sqlite_literal(database_path)} "
+                    f"AS {_quote_sqlite_identifier(schema)}",
+                )
+        finally:
+            cursor.close()
+
+
 def build_sqlite_connect_args(
     timeout_seconds: int = 5,
     *,
@@ -93,6 +149,7 @@ def build_sqlite_connect_args(
 
 __all__ = [
     "DEFAULT_BUSY_TIMEOUT_MS",
+    "attach_sqlite_schemas_for_metadata",
     "build_sqlite_connect_args",
     "configure_sqlite_engine",
     "register_sqlite_datetime_adapters",

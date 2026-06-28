@@ -5,12 +5,13 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from artana_evidence_db.runtime.env import (
+    allow_graph_test_auth_headers,
+    resolve_graph_jwt_secret,
+)
 from artana_evidence_db.runtime.pack_registry import resolve_graph_domain_pack
 from artana_evidence_db.schema_support import resolve_graph_db_schema
 
-_DEFAULT_GRAPH_JWT_SECRET = (
-    "artana-platform-dev-jwt-secret-for-development-2026-01"  # noqa: S105
-)
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 
 
@@ -45,13 +46,6 @@ def _bool_env(name: str, *, default: bool = False) -> bool:
     return value.strip().lower() in _TRUE_VALUES
 
 
-def _resolve_graph_jwt_secret() -> str:
-    graph_secret = os.getenv("GRAPH_JWT_SECRET")
-    if isinstance(graph_secret, str) and graph_secret.strip():
-        return graph_secret.strip()
-    return _DEFAULT_GRAPH_JWT_SECRET
-
-
 def get_settings() -> GraphServiceSettings:
     """Resolve graph service settings from environment variables."""
     database_url = _require_env("GRAPH_DATABASE_URL")
@@ -67,17 +61,14 @@ def get_settings() -> GraphServiceSettings:
         host=os.getenv("GRAPH_SERVICE_HOST", "0.0.0.0"),  # noqa: S104
         port=int(os.getenv("GRAPH_SERVICE_PORT", "8090")),
         reload=_bool_env("GRAPH_SERVICE_RELOAD", default=False),
-        jwt_secret=_resolve_graph_jwt_secret(),
+        jwt_secret=resolve_graph_jwt_secret(),
         jwt_algorithm=os.getenv("GRAPH_JWT_ALGORITHM", "HS256"),
         jwt_issuer=os.getenv(
             "GRAPH_JWT_ISSUER",
             graph_domain_pack.runtime_identity.jwt_issuer,
         ).strip()
         or graph_domain_pack.runtime_identity.jwt_issuer,
-        allow_test_auth_headers=(
-            os.getenv("TESTING") == "true"
-            or _bool_env("GRAPH_ALLOW_TEST_AUTH_HEADERS", default=False)
-        ),
+        allow_test_auth_headers=allow_graph_test_auth_headers(),
     )
 
 

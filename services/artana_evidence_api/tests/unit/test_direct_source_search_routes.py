@@ -73,6 +73,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from tests.sqlite_utils import attach_sqlite_schemas_for_metadata
+
 _TEST_USER_ID: Final[str] = "11111111-1111-1111-1111-111111111111"
 _TEST_USER_EMAIL: Final[str] = "direct-source-search@example.com"
 
@@ -1573,6 +1575,7 @@ def test_durable_source_search_routes_survive_fresh_app_and_store_instances() ->
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+    attach_sqlite_schemas_for_metadata(engine, Base.metadata)
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)
     research_space_store = HarnessResearchSpaceStore()

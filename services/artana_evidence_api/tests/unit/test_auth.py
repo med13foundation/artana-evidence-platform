@@ -111,6 +111,7 @@ def test_parse_role_truncates_long_invalid_role_values(
 @pytest.mark.asyncio
 async def test_get_current_harness_user_accepts_test_headers(monkeypatch) -> None:
     monkeypatch.setenv("TESTING", "true")
+    monkeypatch.setenv("ARTANA_ENV", "development")
     request = _request_with_headers(
         {
             "X-TEST-USER-ID": "11111111-1111-1111-1111-111111111111",
@@ -124,6 +125,33 @@ async def test_get_current_harness_user_accepts_test_headers(monkeypatch) -> Non
     assert user.id == UUID("11111111-1111-1111-1111-111111111111")
     assert str(user.email) == "harness-tester@example.com"
     assert user.role == HarnessUserRole.CURATOR
+
+
+@pytest.mark.asyncio
+async def test_get_current_harness_user_rejects_test_headers_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+    db_session: Session,
+) -> None:
+    monkeypatch.setenv("ARTANA_ENV", "production")
+    monkeypatch.setenv("TESTING", "true")
+    monkeypatch.setenv("AUTH_ALLOW_TEST_AUTH_HEADERS", "true")
+    request = _request_with_headers(
+        {
+            "X-TEST-USER-ID": "11111111-1111-1111-1111-111111111111",
+            "X-TEST-USER-EMAIL": "harness-tester@example.com",
+            "X-TEST-USER-ROLE": "admin",
+        },
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_harness_user(
+            request,
+            credentials=None,
+            session=db_session,
+        )
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Authentication required"
 
 
 @pytest.mark.asyncio
@@ -160,6 +188,38 @@ async def test_get_current_harness_user_accepts_platform_access_token(
         str(user.email)
         == "11111111-1111-1111-1111-111111111111@graph-harness.example.com"
     )
+
+
+@pytest.mark.asyncio
+async def test_get_current_harness_user_rejects_access_token_without_exp(
+    monkeypatch: pytest.MonkeyPatch,
+    db_session: Session,
+) -> None:
+    monkeypatch.setenv("AUTH_JWT_SECRET", _TEST_SECRET)
+    token = jwt.encode(
+        {
+            "sub": "11111111-1111-1111-1111-111111111111",
+            "role": "researcher",
+            "type": "access",
+            "iss": "artana-platform",
+            "iat": datetime.now(UTC),
+        },
+        _TEST_SECRET,
+        algorithm="HS256",
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_harness_user(
+            _request_with_headers(),
+            credentials=HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials=token,
+            ),
+            session=db_session,
+        )
+
+    assert exc_info.value.status_code == 401
+    assert "exp" in str(exc_info.value.detail)
 
 
 @pytest.mark.asyncio
@@ -393,6 +453,8 @@ async def test_get_current_harness_user_reuses_existing_shared_user_for_matching
             "email": "shared-user@example.com",
             "username": "shared-user",
             "full_name": "Shared User",
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(minutes=15),
         },
         _TEST_SECRET,
         algorithm="HS256",
@@ -443,6 +505,8 @@ async def test_get_current_harness_user_rejects_username_conflict_for_different_
             "email": "shared-user@different.example.com",
             "username": "shared-user",
             "full_name": "Shared User",
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(minutes=15),
         },
         _TEST_SECRET,
         algorithm="HS256",

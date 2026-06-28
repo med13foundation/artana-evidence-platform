@@ -145,6 +145,12 @@ def test_workspace_summary_is_checkpoint_scoped_and_size_bounded() -> None:
             "errors": [],
             "evidence_gaps": ["gap1", "gap2", "gap3", "gap4", "gap5", "gap6"],
             "contradictions": ["conflict1", "conflict2"],
+            "shadow_planner": {
+                "cost_tracking": {
+                    "planner_total_cost_usd": 0.03,
+                    "cost_available_checkpoints": 1,
+                },
+            },
             "source_results": {
                 "pubmed": {
                     "status": "completed",
@@ -198,6 +204,10 @@ def test_workspace_summary_is_checkpoint_scoped_and_size_bounded() -> None:
     assert summary["synthesis_readiness"]["ready_for_brief"] is False
     assert summary["synthesis_readiness"]["no_pending_questions"] is False
     assert summary["synthesis_readiness"]["no_evidence_gaps"] is False
+    assert summary["shadow_planner_cost_tracking"] == {
+        "planner_total_cost_usd": 0.03,
+        "cost_available_checkpoints": 1,
+    }
     assert summary["chase_decision_posture"]["posture"] == "stop_threshold_not_met"
 
 
@@ -1306,6 +1316,99 @@ async def test_shadow_planner_harness_path_returns_structured_decision(
     assert result.used_fallback is False
     assert result.decision.action_type is ResearchOrchestratorActionType.QUERY_PUBMED
     assert result.decision.source_key == "pubmed"
+
+
+@pytest.mark.asyncio
+async def test_shadow_planner_harness_budget_is_reduced_by_prior_run_cost(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_USAGE_COST_LIMIT", "0.05")
+    monkeypatch.setattr(
+        "artana_evidence_api.full_ai_orchestrator_shadow_planner.has_configured_openai_api_key",
+        lambda: True,
+    )
+    observed_budgets: list[float] = []
+
+    class _BudgetRecordingHarness:
+        def __init__(self, **kwargs: object) -> None:
+            tenant = kwargs["tenant"]
+            observed_budgets.append(tenant.budget_usd_limit)
+
+        async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
+            return ShadowPlannerRecommendationOutput(
+                action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
+                source_key="pubmed",
+                evidence_basis="Literature should lead the run.",
+                qualitative_rationale=(
+                    "Begin with PubMed so the next deterministic step is grounded in "
+                    "retrieved evidence."
+                ),
+            )
+
+    _install_shadow_planner_test_doubles(
+        monkeypatch,
+        harness_cls=_BudgetRecordingHarness,
+    )
+
+    result = await recommend_shadow_planner_action(
+        checkpoint_key="before_first_action",
+        objective="Investigate MED13 syndrome",
+        workspace_summary={
+            "objective": "Investigate MED13 syndrome",
+            "counts": {"documents_ingested": 0, "proposal_count": 0},
+            "shadow_planner_cost_tracking": {
+                "planner_total_cost_usd": 0.03,
+            },
+        },
+        sources={"pubmed": True, "clinvar": True},
+        action_registry=orchestrator_action_registry(),
+        harness_id="full-ai-orchestrator",
+        step_key_version="v1",
+    )
+
+    assert result.planner_status == "completed"
+    assert observed_budgets == [pytest.approx(0.02)]
+
+
+@pytest.mark.asyncio
+async def test_shadow_planner_skips_model_when_prior_run_cost_exhausts_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_USAGE_COST_LIMIT", "0.05")
+    monkeypatch.setattr(
+        "artana_evidence_api.full_ai_orchestrator_shadow_planner.has_configured_openai_api_key",
+        lambda: True,
+    )
+
+    class _UnexpectedHarness:
+        def __init__(self, **_: object) -> None:
+            raise AssertionError("shadow planner harness should not run")
+
+    _install_shadow_planner_test_doubles(
+        monkeypatch,
+        harness_cls=_UnexpectedHarness,
+    )
+
+    result = await recommend_shadow_planner_action(
+        checkpoint_key="before_first_action",
+        objective="Investigate MED13 syndrome",
+        workspace_summary={
+            "objective": "Investigate MED13 syndrome",
+            "counts": {"documents_ingested": 0, "proposal_count": 0},
+            "shadow_planner_cost_tracking": {
+                "planner_total_cost_usd": 0.05,
+            },
+        },
+        sources={"pubmed": True, "clinvar": True},
+        action_registry=orchestrator_action_registry(),
+        harness_id="full-ai-orchestrator",
+        step_key_version="v1",
+    )
+
+    assert result.planner_status == "budget_limited"
+    assert result.used_fallback is True
+    assert result.decision.fallback_reason == "budget_violation"
+    assert result.error == "shadow_planner_budget_exhausted"
 
 
 @pytest.mark.asyncio

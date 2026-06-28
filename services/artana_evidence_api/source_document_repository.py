@@ -16,6 +16,7 @@ from artana_evidence_api.source_document_models import (
     SourceDocumentRepositoryProtocol,
     SourceType,
 )
+from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import JSONObject
 from sqlalchemy import (
     JSON,
@@ -25,10 +26,14 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    UniqueConstraint,
     func,
     select,
 )
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.engine import Result
+from sqlalchemy.orm import Session
 
 SOURCE_DOCUMENT_METADATA = MetaData()
 SOURCE_DOCUMENTS = Table(
@@ -53,6 +58,11 @@ SOURCE_DOCUMENTS = Table(
     Column("metadata_payload", JSON, nullable=False),
     Column("created_at", DateTime(), nullable=False),
     Column("updated_at", DateTime(), nullable=False),
+    UniqueConstraint(
+        "source_id",
+        "external_record_id",
+        name="uq_source_documents_source_external_record",
+    ),
 )
 
 
@@ -159,7 +169,19 @@ class SqlAlchemySourceDocumentRepository(SourceDocumentRepositoryProtocol):
     def _commit(self) -> None:
         commit = getattr(self.session, "commit", None)
         if callable(commit):
+            if hasattr(self.session, "info"):
+                commit_or_flush(cast("Session", self.session))
+                return
             commit()
+
+    def _dialect_name(self) -> str | None:
+        get_bind = getattr(self.session, "get_bind", None)
+        if not callable(get_bind):
+            return None
+        bind = get_bind()
+        dialect = getattr(bind, "dialect", None)
+        name = getattr(dialect, "name", None)
+        return str(name) if isinstance(name, str) else None
 
     def get_by_id(self, document_id: UUID) -> SourceDocument | None:
         stmt = select(SOURCE_DOCUMENTS).where(
@@ -186,31 +208,9 @@ class SqlAlchemySourceDocumentRepository(SourceDocumentRepositoryProtocol):
         ]
         persisted_ids: list[str] = []
         for document in source_documents:
-            existing_id = self._execute(
-                select(SOURCE_DOCUMENTS.c.id).where(
-                    SOURCE_DOCUMENTS.c.source_id == str(document.source_id),
-                    SOURCE_DOCUMENTS.c.external_record_id
-                    == document.external_record_id,
-                ),
-            ).scalar_one_or_none()
             row = source_document_to_row(document)
-            if existing_id is None:
-                self._execute(SOURCE_DOCUMENTS.insert().values(**row))
-                persisted_ids.append(str(document.id))
-                continue
-            persisted_id = str(existing_id)
-            row["id"] = persisted_id
-            update_row = {
-                key: value
-                for key, value in row.items()
-                if key not in {"id", "created_at"}
-            }
-            self._execute(
-                SOURCE_DOCUMENTS.update()
-                .where(SOURCE_DOCUMENTS.c.id == persisted_id)
-                .values(**update_row),
-            )
-            persisted_ids.append(persisted_id)
+            self._execute(self._upsert_statement(row))
+            persisted_ids.append(self._source_document_id_for_unique_key(row))
 
         self._commit()
         persisted_documents: list[SourceDocument] = []
@@ -219,6 +219,48 @@ class SqlAlchemySourceDocumentRepository(SourceDocumentRepositoryProtocol):
             if persisted is not None:
                 persisted_documents.append(persisted)
         return persisted_documents
+
+    def _upsert_statement(self, row: dict[str, object]) -> object:
+        update_row = {
+            key: value
+            for key, value in row.items()
+            if key not in {"id", "created_at", "source_id", "external_record_id"}
+        }
+        dialect_name = self._dialect_name()
+        if dialect_name == "sqlite":
+            return (
+                sqlite_insert(SOURCE_DOCUMENTS)
+                .values(**row)
+                .on_conflict_do_update(
+                    index_elements=[
+                        SOURCE_DOCUMENTS.c.source_id,
+                        SOURCE_DOCUMENTS.c.external_record_id,
+                    ],
+                    set_=update_row,
+                )
+            )
+        if dialect_name == "postgresql":
+            return (
+                postgresql_insert(SOURCE_DOCUMENTS)
+                .values(**row)
+                .on_conflict_do_update(
+                    index_elements=[
+                        SOURCE_DOCUMENTS.c.source_id,
+                        SOURCE_DOCUMENTS.c.external_record_id,
+                    ],
+                    set_=update_row,
+                )
+            )
+        return SOURCE_DOCUMENTS.insert().values(**row)
+
+    def _source_document_id_for_unique_key(self, row: Mapping[str, object]) -> str:
+        persisted_id = self._execute(
+            select(SOURCE_DOCUMENTS.c.id).where(
+                SOURCE_DOCUMENTS.c.source_id == str(row["source_id"]),
+                SOURCE_DOCUMENTS.c.external_record_id == str(row["external_record_id"]),
+            ),
+        ).scalar_one()
+        return str(persisted_id)
 
     def list_pending_extraction(
         self,

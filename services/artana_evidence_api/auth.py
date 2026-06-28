@@ -98,6 +98,8 @@ def _is_truthy(value: str | None) -> bool:
 
 
 def _allow_test_auth_headers() -> bool:
+    if _environment() in _PRODUCTION_LIKE_ENVS:
+        return False
     return os.getenv("TESTING") == "true" or _is_truthy(
         os.getenv(_AUTH_ALLOW_TEST_HEADERS_ENV),
     )
@@ -276,6 +278,7 @@ def _decode_access_token(token: str) -> Mapping[str, object]:
             _resolve_jwt_secret(),
             algorithms=[_TOKEN_ALGORITHM],
             issuer=_TOKEN_ISSUER,
+            options={"require": ["exp"]},
         )
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(

@@ -9,6 +9,7 @@ from typing import Protocol, cast
 from uuid import UUID, uuid4
 
 import httpx
+from artana_evidence_api.runtime.http_response_limits import async_get_limited_text
 from artana_evidence_api.types.common import JSONObject
 from artana_evidence_api.types.graph_contracts import KernelRelationCreateRequest
 from artana_evidence_api.types.graph_fact_assessment import (
@@ -197,18 +198,23 @@ class MondoGateway:
         resolved_version = version or "latest"
         async with httpx.AsyncClient(timeout=120) as client:
             try:
-                response = await client.get(
+                content = await async_get_limited_text(
+                    client,
                     _MONDO_STABLE_OBO_URL,
+                    context="MONDO stable OBO response",
                     follow_redirects=True,
                 )
-                response.raise_for_status()
             except httpx.HTTPError:
                 logger.warning("MONDO stable URL failed; trying GitHub fallback")
             else:
-                return response.text, resolved_version, _MONDO_STABLE_OBO_URL
-            response = await client.get(_MONDO_FALLBACK_URL, follow_redirects=True)
-            response.raise_for_status()
-            return response.text, resolved_version, _MONDO_FALLBACK_URL
+                return content, resolved_version, _MONDO_STABLE_OBO_URL
+            content = await async_get_limited_text(
+                client,
+                _MONDO_FALLBACK_URL,
+                context="MONDO fallback OBO response",
+                follow_redirects=True,
+            )
+            return content, resolved_version, _MONDO_FALLBACK_URL
 
 
 class MondoIngestionService:

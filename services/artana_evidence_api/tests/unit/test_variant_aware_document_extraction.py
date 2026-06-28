@@ -76,6 +76,22 @@ class _EmptyGraphGateway:
         return KernelEntityListResponse(entities=[], total=0, offset=0, limit=50)
 
 
+def test_genomics_signal_bundle_limits_deterministic_variant_scan_to_prompt_budget() -> None:
+    text = (
+        "No variant mention in the bounded prefix. "
+        + ("background " * 1300)
+        + " MED13 c.977C>T appears only after the deterministic scan limit."
+    )
+
+    signals = variant_extraction_bridges.build_genomics_signal_bundle(
+        raw_record={"abstract": text},
+        source_type="pubmed",
+    )
+
+    assert signals["variant_candidates"] == []
+    assert signals["variant_aware_recommended"] is False
+
+
 def _assessment(
     *,
     support_band: SupportBand = SupportBand.STRONG,

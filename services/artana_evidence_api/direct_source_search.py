@@ -430,7 +430,7 @@ class MarrvelSourceSearchResponse(BaseModel):
     id: UUID
     space_id: UUID
     source_key: Literal["marrvel"] = "marrvel"
-    status: Literal["completed"] = "completed"
+    status: Literal["completed", "partial", "failed", "no_results"] = "completed"
     query: str
     query_mode: Literal["gene", "variant_hgvs", "protein_variant"]
     query_value: str
@@ -443,6 +443,7 @@ class MarrvelSourceSearchResponse(BaseModel):
     omim_count: int
     variant_count: int
     panel_counts: dict[str, int] = Field(default_factory=dict)
+    panel_errors: dict[str, str] = Field(default_factory=dict)
     panels: dict[str, JSONValue] = Field(default_factory=dict)
     available_panels: list[str] = Field(default_factory=list)
     record_count: int
