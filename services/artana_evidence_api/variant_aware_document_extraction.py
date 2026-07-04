@@ -7,6 +7,12 @@ from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
+from artana_evidence_api.document_extraction_relation_taxonomy import (
+    canonicalize_extraction_relation_type,
+)
+from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
+    with_variant_aware_trust_metadata,
+)
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from artana_evidence_api.ranking import rank_candidate_claim
 from artana_evidence_api.review_item_store import HarnessReviewItemDraft
@@ -80,29 +86,6 @@ _REVIEW_ITEM_SOURCE_FAMILY = "document_extraction"
 _REVIEWABLE_REJECTED_SUPPORT_BANDS = frozenset(
     {SupportBand.STRONG, SupportBand.SUPPORTED},
 )
-_MIN_PROTEIN_ALIAS_LENGTH = 7
-_THREE_TO_ONE_AMINO_ACID_CODES: dict[str, str] = {
-    "Ala": "A",
-    "Arg": "R",
-    "Asn": "N",
-    "Asp": "D",
-    "Cys": "C",
-    "Gln": "Q",
-    "Glu": "E",
-    "Gly": "G",
-    "His": "H",
-    "Ile": "I",
-    "Leu": "L",
-    "Lys": "K",
-    "Met": "M",
-    "Phe": "F",
-    "Pro": "P",
-    "Ser": "S",
-    "Thr": "T",
-    "Trp": "W",
-    "Tyr": "Y",
-    "Val": "V",
-}
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,6 +196,10 @@ async def extract_variant_aware_document(
             "completed" if contract.decision == "generated" else contract.decision
         ),
     }
+    signal_variant_keys = _signal_variant_keys(genomics_signals=signals)
+    fallback_from_signals = bool(variant_entities) and (
+        contract.decision != "generated" or bool(signal_variant_keys)
+    )
     extraction_diagnostics: JSONObject = {
         "extraction_mode": "variant_aware",
         "agent_decision": contract.decision,
@@ -232,16 +219,18 @@ async def extract_variant_aware_document(
     }
     if contract.rationale.strip():
         extraction_diagnostics["agent_rationale"] = contract.rationale.strip()
-    if contract.decision != "generated":
-        extraction_diagnostics["fallback_from_signals"] = bool(variant_entities)
+    if fallback_from_signals:
+        extraction_diagnostics["fallback_from_signals"] = True
 
-    return VariantAwareDocumentExtractionResult(
-        contract=contract,
-        proposal_drafts=proposal_drafts,
-        review_item_drafts=review_item_drafts,
-        skipped_items=skipped_items,
-        candidate_discovery=json_object_or_empty(candidate_discovery),
-        extraction_diagnostics=extraction_diagnostics,
+    return with_variant_aware_trust_metadata(
+        VariantAwareDocumentExtractionResult(
+            contract=contract,
+            proposal_drafts=proposal_drafts,
+            review_item_drafts=review_item_drafts,
+            skipped_items=skipped_items,
+            candidate_discovery=json_object_or_empty(candidate_discovery),
+            extraction_diagnostics=extraction_diagnostics,
+        ),
     )
 
 
@@ -344,6 +333,13 @@ def _merge_variant_entities(
             merged_metadata.setdefault("suggested_aliases", aliases)
         merged.append(candidate.model_copy(update={"metadata": merged_metadata}))
     return tuple(merged)
+
+
+def _signal_variant_keys(*, genomics_signals: JSONObject) -> set[str]:
+    return {
+        _variant_candidate_key(candidate)
+        for candidate in _fallback_variant_candidates_from_signals(genomics_signals)
+    }
 
 
 def _merge_variant_candidate_with_signal(
@@ -612,7 +608,24 @@ def _build_variant_aware_proposal_drafts(  # noqa: PLR0914
         review_item_drafts.extend(observation_review_items)
         skipped_items.extend(observation_skips)
 
-    for index, relation in enumerate(contract.relations):
+    for index, raw_relation in enumerate(contract.relations):
+        canonical_relation_type = canonicalize_extraction_relation_type(
+            raw_relation.relation_type,
+        )
+        if canonical_relation_type is None:
+            skipped_items.append(
+                {
+                    "kind": "relation_skipped",
+                    "relation_type": raw_relation.relation_type,
+                    "source_label": raw_relation.source_label,
+                    "target_label": raw_relation.target_label,
+                    "reason": "Relation type requires governed dictionary review.",
+                },
+            )
+            continue
+        relation = raw_relation.model_copy(
+            update={"relation_type": canonical_relation_type},
+        )
         draft = _build_relation_draft(
             space_id=space_id,
             document=document,
@@ -977,7 +990,7 @@ def _build_review_item_from_rejected_fact(
     rejected_payload = {
         str(key): to_json_value(value) for key, value in rejected_fact.payload.items()
     }
-    relation_type = _clean_text(
+    raw_relation_type = _clean_text(
         rejected_payload.get("relation_type")
         or rejected_payload.get("proposed_claim_type"),
     )
@@ -987,7 +1000,10 @@ def _build_review_item_from_rejected_fact(
     target_label = _clean_text(
         rejected_payload.get("target_label") or rejected_payload.get("object_label"),
     )
-    if relation_type is None or source_label is None or target_label is None:
+    if raw_relation_type is None or source_label is None or target_label is None:
+        return None
+    relation_type = canonicalize_extraction_relation_type(raw_relation_type)
+    if relation_type is None:
         return None
     source_type = _clean_text(rejected_payload.get("source_type")) or "ENTITY"
     target_type = _clean_text(rejected_payload.get("target_type")) or "ENTITY"

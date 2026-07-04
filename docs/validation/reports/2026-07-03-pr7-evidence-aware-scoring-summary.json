@@ -1,0 +1,24 @@
+{
+  "report": "PR-7 Evidence-Aware Scoring Evidence Snapshot",
+  "date": "2026-07-03",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "planned_branch": "alvaro/evidence-pr7-evidence-aware-scoring",
+  "scope": [
+    "Add grounded sentence, both-arguments-present, entailment, and relation-specificity components to reviewed candidate ranking.",
+    "Pass document extraction grounding and support metadata into reviewed proposal ranking.",
+    "Expose evidence-quality components in proposal ranking metadata."
+  ],
+  "focused_result": {
+    "strong_evidence_score": 0.922,
+    "weak_evidence_score": 0.722,
+    "strong_evidence_quality_component": 1.0,
+    "weak_evidence_quality_component": 0.0
+  },
+  "validation": {
+    "focused_red_green_tests": "2 passed",
+    "focused_affected_bundle": "passed",
+    "ruff_touched_files": "passed",
+    "artana_evidence_api_service_checks": "passed; live external API, running-service, and OpenAI-key integration tests skipped"
+  },
+  "known_remaining_risk": "This slice improves proposal ordering after extraction but does not prove live-agent extraction quality, CURIE linking, or trusted-tier precision."
+}

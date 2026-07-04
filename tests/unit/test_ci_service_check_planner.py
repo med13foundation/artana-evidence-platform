@@ -70,6 +70,20 @@ def test_ci_planner_change_runs_repo_control_checks() -> None:
     assert not plan.full
 
 
+def test_relation_feasibility_quality_code_runs_evidence_api_and_repo_control() -> None:
+    plan = plan_checks(
+        ["scripts/validation/relation_feasibility/scoring.py"],
+        event_name="pull_request",
+        ref="refs/pull/19/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
 def test_workflow_or_shared_config_pr_uses_full_gate() -> None:
     for changed_file in (
         ".github/workflows/evidence-api-service-checks.yml",

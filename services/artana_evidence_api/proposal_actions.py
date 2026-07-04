@@ -87,6 +87,36 @@ def _metadata_text(
         return value.strip()
     return default
 
+
+def _merge_promotion_metadata(
+    *,
+    proposal_metadata: JSONObject,
+    request_metadata: JSONObject,
+) -> JSONObject:
+    return {
+        **proposal_metadata,
+        **{
+            key: value
+            for key, value in request_metadata.items()
+            if key not in _VERIFIER_OWNED_PROMOTION_METADATA_KEYS
+        },
+    }
+
+
+_VERIFIER_OWNED_PROMOTION_METADATA_KEYS = frozenset(
+    {
+        "agent_extraction_completed",
+        "evidence_grounding",
+        "fallback_output_used",
+        "support_verification",
+        "support_verification_floor",
+        "trust_floor_failures",
+        "trust_tier",
+        "trusted_evidence_eligible",
+    },
+)
+
+
 _RELATION_CONSTRAINT_ERROR_RE = re.compile(
     r"relation \((?P<triple>[^)]+)\) is not allowed by ACTIVE relation constraints",
     re.IGNORECASE,
@@ -400,8 +430,10 @@ def build_graph_claim_request(
             tool_trace_ref=f"harness-run:{proposal.run_id}",
         ),
         metadata={
-            **proposal.metadata,
-            **request_metadata,
+            **_merge_promotion_metadata(
+                proposal_metadata=proposal.metadata,
+                request_metadata=request_metadata,
+            ),
             **assessment_confidence_metadata(assessment),
             "proposal_id": proposal.id,
             "document_id": proposal.document_id,
@@ -473,8 +505,10 @@ def build_graph_relation_request(
         evidence_sentence_confidence="medium",
         source_document_ref=f"harness_proposal:{proposal.id}",
         metadata={
-            **proposal.metadata,
-            **request_metadata,
+            **_merge_promotion_metadata(
+                proposal_metadata=proposal.metadata,
+                request_metadata=request_metadata,
+            ),
             **assessment_confidence_metadata(assessment),
             "proposal_id": proposal.id,
             "document_id": proposal.document_id,

@@ -21,18 +21,27 @@ def candidate_not_needed() -> DocumentCandidateExtractionDiagnostics:
 def candidate_completed(
     *,
     candidate_count: int,
+    pruned_generic_relation_count: int = 0,
+    llm_extraction_chunk_count: int = 0,
+    llm_extraction_text_char_count: int = 0,
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics for a successful LLM candidate extraction."""
 
     return DocumentCandidateExtractionDiagnostics(
         llm_candidate_status="completed",
         llm_candidate_count=candidate_count,
+        pruned_generic_relation_count=pruned_generic_relation_count,
+        llm_extraction_chunk_count=llm_extraction_chunk_count,
+        llm_extraction_text_char_count=llm_extraction_text_char_count,
     )
 
 
 def candidate_llm_empty(
     *,
     fallback_candidate_count: int,
+    pruned_generic_relation_count: int = 0,
+    llm_extraction_chunk_count: int = 0,
+    llm_extraction_text_char_count: int = 0,
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics when the LLM succeeded but produced no usable claims."""
 
@@ -40,6 +49,9 @@ def candidate_llm_empty(
         llm_candidate_status="llm_empty",
         llm_candidate_error="LLM succeeded but returned zero usable candidates",
         fallback_candidate_count=fallback_candidate_count,
+        pruned_generic_relation_count=pruned_generic_relation_count,
+        llm_extraction_chunk_count=llm_extraction_chunk_count,
+        llm_extraction_text_char_count=llm_extraction_text_char_count,
     )
 
 
@@ -48,6 +60,7 @@ def candidate_fallback(
     status: CandidateFallbackStatus,
     error: str,
     fallback_candidate_count: int,
+    pruned_generic_relation_count: int = 0,
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return normalized diagnostics for candidate fallback paths."""
 
@@ -55,6 +68,7 @@ def candidate_fallback(
         llm_candidate_status=status,
         llm_candidate_error=error,
         fallback_candidate_count=fallback_candidate_count,
+        pruned_generic_relation_count=pruned_generic_relation_count,
     )
 
 

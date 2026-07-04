@@ -319,6 +319,7 @@ async def _run_kernel_agent(
 class RelationTypeAction(str, Enum):
     MAP_TO_EXISTING = "map_to_existing"
     REGISTER_NEW = "register_new"
+    REQUIRES_REVIEW = "requires_review"
     TYPO_CORRECTION = "typo_correction"
 
 
@@ -335,7 +336,8 @@ class RelationTypeDecision(BaseModel):
         description=(
             "The resolved canonical relation type ID (UPPER_SNAKE_CASE). "
             "For map_to_existing / typo_correction this is the existing type. "
-            "For register_new this is the clean new type to register."
+            "For register_new / requires_review this is the clean new type "
+            "that must enter governed review before use."
         ),
     )
     reasoning: str = Field(
@@ -531,14 +533,17 @@ async def resolve_relation_type(
 
     except Exception:
         logger.exception(
-            "Failed to resolve relation type '%s' via kernel agent, "
-            "passing through as-is",
+            "Failed to resolve relation type '%s' via kernel agent; "
+            "requiring governed review",
             normalized,
         )
         fallback = RelationTypeDecision(
-            action=RelationTypeAction.REGISTER_NEW,
+            action=RelationTypeAction.REQUIRES_REVIEW,
             canonical_type=normalized,
-            reasoning="Kernel agent resolution failed; defaulting to register_new.",
+            reasoning=(
+                "Kernel agent resolution failed; relation type requires governed "
+                "review before use."
+            ),
         )
         _relation_cache[cache_key] = fallback
         return fallback

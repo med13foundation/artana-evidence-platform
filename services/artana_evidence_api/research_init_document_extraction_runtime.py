@@ -11,6 +11,9 @@ from artana_evidence_api import document_extraction as _document_extraction
 from artana_evidence_api.document_extraction import (
     build_document_review_context,
 )
+from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
+    with_variant_aware_trust_metadata,
+)
 from artana_evidence_api.research_init_document_extraction_dependencies import (
     _enrich_pdf_document,
     _ground_candidate_claim_drafts,
@@ -660,11 +663,13 @@ async def _prepare_document_extractions(
                     if document_supports_variant_aware_extraction(
                         document=current_document,
                     ):
-                        variant_result = await extract_variant_aware_document(
-                            space_id=space_id,
-                            document=current_document,
-                            graph_api_gateway=doc_gateway,
-                            review_context=review_context,
+                        variant_result = with_variant_aware_trust_metadata(
+                            await extract_variant_aware_document(
+                                space_id=space_id,
+                                document=current_document,
+                                graph_api_gateway=doc_gateway,
+                                review_context=review_context,
+                            ),
                         )
                         updated_document = document_store.update_document(
                             space_id=space_id,
@@ -720,7 +725,7 @@ async def _prepare_document_extractions(
 
                     (
                         candidates,
-                        _candidate_diagnostics,
+                        candidate_diagnostics,
                     ) = await _document_extraction.extract_relation_candidates_with_diagnostics(
                         current_document.text_content,
                         space_context=objective,
@@ -753,7 +758,12 @@ async def _prepare_document_extractions(
                     reviewed_drafts = await _document_extraction.review_document_extraction_drafts(
                         document=current_document,
                         candidates=candidates,
-                        drafts=drafts,
+                        drafts=(
+                            _document_extraction.with_candidate_extraction_trust_metadata(
+                                drafts=drafts,
+                                diagnostics=candidate_diagnostics,
+                            )
+                        ),
                         review_context=review_context,
                     )
                     return _PreparedDocumentExtraction(

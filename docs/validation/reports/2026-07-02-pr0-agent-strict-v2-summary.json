@@ -1,0 +1,47 @@
+{
+  "report_id": "2026-07-02-pr0-agent-strict-v2",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "command": "uv run --python python3.13 python scripts/run_relation_feasibility_audit.py --extractor agent --output-dir reports/relation_feasibility/2026-07-02-pr0-agent-strict-v2-fixed",
+  "environment_note": "Local strict-agent run on 2026-07-02. OpenAI API key was unavailable to the extractor, so all agent-mode cases used unavailable/fallback diagnostics and the verdict is RED.",
+  "fixture": {
+    "path": "scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json",
+    "sha256": "0be3c497378645a69038655818b65dc88af17f029679a3d6590eaa95164fbc70",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "provenance": "curated_synthetic_seed"
+  },
+  "ignored_local_artifacts": {
+    "json_path": "reports/relation_feasibility/2026-07-02-pr0-agent-strict-v2-fixed/relation_feasibility_report.json",
+    "json_sha256": "933d81f9a2648c28480a2507a5de97d28f4cf03076b23a68e7dd27700902116e",
+    "markdown_path": "reports/relation_feasibility/2026-07-02-pr0-agent-strict-v2-fixed/relation_feasibility_report.md",
+    "markdown_sha256": "218182612913a04f8eaff24d73349fea140ec0073e044d99060027132ba55057"
+  },
+  "summary": {
+    "verdict": "RED",
+    "verdict_reason": "30/30 cases are invalid because agent extraction did not complete without fallback.",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "candidate_count": 9,
+    "completed_agent_candidate_count": 0,
+    "completed_agent_precision_against_gold": 0.0,
+    "completed_agent_recall_against_gold": 0.0,
+    "completed_agent_valuable_candidate_rate": 0.0,
+    "agent_completed_case_count": 0,
+    "fallback_case_count": 30,
+    "fallback_candidate_count": 9,
+    "fallback_credited_as_agent_count": 6,
+    "invalid_agent_case_count": 30,
+    "precision_against_gold": 0.7778,
+    "recall_against_gold": 0.28,
+    "valuable_candidate_rate": 0.6667,
+    "generic_relation_rate": 0.1111,
+    "grounded_sentence_rate": 1.0,
+    "support_sentence_alignment_rate": 0.7778
+  },
+  "adversarial_findings": [
+    "fallback_only_report",
+    "fallback_candidates_look_valuable",
+    "substring_grounding_only",
+    "generic_relation_rate_high"
+  ]
+}

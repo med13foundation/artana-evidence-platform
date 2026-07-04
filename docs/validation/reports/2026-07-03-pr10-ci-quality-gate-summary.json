@@ -1,0 +1,27 @@
+{
+  "report": "PR-10 CI Quality Gate Evidence Snapshot",
+  "date": "2026-07-03",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "planned_branch": "alvaro/evidence-pr10-ci-quality-gate",
+  "scope": [
+    "Add relation-feasibility-quality-gate to the Makefile.",
+    "Run the relation feasibility quality gate from normal make service-checks.",
+    "Route relation-feasibility audit-methodology changes through Evidence API and repo-control CI paths.",
+    "Run tests/unit/test_relation_feasibility_audit.py from both repo-control workflow jobs.",
+    "Clean machine-specific absolute paths from validation docs."
+  ],
+  "focused_result": {
+    "quality_code_triggers_evidence_api_ci": true,
+    "quality_code_triggers_repo_control_ci": true,
+    "service_checks_runs_quality_gate": true,
+    "repo_control_workflows_run_relation_feasibility_audit_tests": true,
+    "docs_have_no_users_alvaro_paths": true
+  },
+  "validation": {
+    "focused_red_green_tests": "3 failed before implementation, then passed",
+    "relation_feasibility_quality_gate": "passed",
+    "ruff_touched_python_files": "passed",
+    "repo_control_bundle": "passed after docs path cleanup"
+  },
+  "known_remaining_risk": "The CI quality gate covers deterministic audit-methodology regressions. The strict live-agent audit still requires model credentials and remains opt-in."
+}

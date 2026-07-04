@@ -47,6 +47,8 @@ logs/
 # QA output
 tmp/
 reports/
+!docs/validation/reports/
+!docs/validation/reports/**
 bandit-results.json
 pip-audit-results.json
 safety-results.json

@@ -1,0 +1,93 @@
+{
+  "report_id": "2026-07-02-pr3-entailment-verifier",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "planned_branch": "alvaro/evidence-pr3-entailment-verifier",
+  "command": "uv run --python python3.13 python scripts/run_relation_feasibility_audit.py --extractor agent --cases scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json --output-dir reports/relation_feasibility/2026-07-02-pr3-entailment-verifier-agent-strict",
+  "environment_note": "Local strict-agent run on 2026-07-02. OpenAI API key was unavailable to the extractor, so all agent-mode cases used unavailable/fallback diagnostics and the verdict is RED. PR-3 treats that as expected evidence that live agent quality is still unproven while the support-verification gate itself is now measurable and fail-closed.",
+  "fixture": {
+    "path": "scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json",
+    "sha256": "0be3c497378645a69038655818b65dc88af17f029679a3d6590eaa95164fbc70",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "provenance": "curated_synthetic_seed"
+  },
+  "ignored_local_artifacts": {
+    "json_path": "reports/relation_feasibility/2026-07-02-pr3-entailment-verifier-agent-strict/relation_feasibility_report.json",
+    "json_sha256": "ff687b274783f712034c6c5f0f0a85f608223a36c223d4da3c2d81a41d4aba2d",
+    "markdown_path": "reports/relation_feasibility/2026-07-02-pr3-entailment-verifier-agent-strict/relation_feasibility_report.md",
+    "markdown_sha256": "391cb4b1297a2d724c94a254eef3ba6df0a5a3424d3657cda1338ce11b964d0c"
+  },
+  "focused_validation": {
+    "support_verifier_tests": "7 passed",
+    "document_extraction_module_tests": "52 passed",
+    "proposal_actions_tests": "22 passed",
+    "relation_feasibility_audit_tests": "15 passed",
+    "claim_ai_evidence_validation_tests": "8 passed",
+    "graph_support_hard_floor_integration_tests": "4 passed",
+    "ruff_touched_files": "passed",
+    "graph_service_checks": "passed",
+    "artana_evidence_api_service_checks": "passed",
+    "service_checks": "passed; total coverage 86.83% against 86% requirement"
+  },
+  "summary": {
+    "verdict": "RED",
+    "verdict_reason": "30/30 cases are invalid because agent extraction did not complete without fallback.",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "candidate_count": 9,
+    "completed_agent_candidate_count": 0,
+    "completed_agent_precision_against_gold": 0.0,
+    "completed_agent_recall_against_gold": 0.0,
+    "completed_agent_valuable_candidate_rate": 0.0,
+    "agent_completed_case_count": 0,
+    "fallback_case_count": 30,
+    "fallback_candidate_count": 9,
+    "fallback_credited_as_agent_count": 6,
+    "invalid_agent_case_count": 30,
+    "precision_against_gold": 0.7778,
+    "recall_against_gold": 0.28,
+    "valuable_candidate_rate": 0.6667,
+    "generic_relation_rate": 0.1111,
+    "grounded_sentence_rate": 1.0,
+    "both_arguments_present_count": 9,
+    "both_arguments_present_rate": 1.0,
+    "support_sentence_alignment_rate": 0.7778,
+    "entailment_required_count": 8,
+    "entailment_checked_count": 8,
+    "entailment_supported_count": 8,
+    "entailment_checked_rate": 1.0,
+    "entailment_supported_rate": 1.0
+  },
+  "implementation_evidence": {
+    "support_verifier": "Document extraction support now exposes a fail-closed, direction-aware triple support verifier with ENTAILS, NEUTRAL, and CONTRADICTS outcomes plus a model-adapter port.",
+    "proposal_metadata": "Document extraction proposals now include metadata.support_verification only when the PR-2 grounding gate passes; ungrounded candidates omit the key instead of pretending support was checked.",
+    "contradiction_floor": "Contradicted candidate support floors confidence and ranking_score to 0.1 and annotates metadata.support_verification_floor=contradiction.",
+    "trust_floor": "Candidate extraction trust metadata now requires support_verification.support=ENTAILS before trusted_evidence_eligible can remain true.",
+    "graph_hard_floor": "The graph service now rejects AI-authored evidence-requiring claim and canonical relation writes unless metadata.support_verification.support=ENTAILS.",
+    "audit_gate": "The feasibility audit counts entailment_required, entailment_checked, and entailment_supported candidates, and a required candidate is valuable only when support verification returns ENTAILS."
+  },
+  "adversarial_review": {
+    "initial_verdict": "BLOCK",
+    "blocking_findings": [
+      "Role-blind heuristic support could treat reversed active triples as ENTAILS.",
+      "Ungrounded candidates received NEUTRAL support_verification metadata, making skipped checks look like completed checks.",
+      "Graph promotion and validation enforced grounding but not entailing support at the persistence boundary.",
+      "Passive-direction evidence could still entail the reversed triple.",
+      "Promotion request metadata could overwrite verifier-owned evidence_grounding or support_verification fields."
+    ],
+    "fixes": [
+      "Direction-aware support verification plus reversed-direction regression coverage.",
+      "Support metadata is omitted when structured grounding fails.",
+      "Graph AI evidence validation now requires support_verification.support=ENTAILS for claim and relation writes.",
+      "Passive cue spans can no longer take the active subject-to-cue-to-object path.",
+      "Promotion request metadata is filtered so reviewer-supplied metadata cannot replace verifier-owned fields."
+    ],
+    "final_verdict": "PASS",
+    "residual_non_blocking_risk": "The verifier remains deterministic and heuristic unless a model adapter is supplied, so broader semantic nuance remains a later quality problem. No remaining route was found for unsupported, co-mentioned, reversed, or request-overridden evidence to become valuable or trusted under the PR-3 invariants."
+  },
+  "adversarial_findings": [
+    "fallback_only_report",
+    "generic_relation_rate_high"
+  ],
+  "known_remaining_risk": "The support verifier in this slice is conservative and deterministic unless a model adapter is supplied. It closes the measurement and trust-gating hole, but live agent quality remains unproven until agent extraction completes without fallback."
+}

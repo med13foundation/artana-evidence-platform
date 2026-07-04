@@ -1,0 +1,25 @@
+{
+  "report": "PR-8 Trust Ladder Hard Floors Evidence Snapshot",
+  "date": "2026-07-03",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "planned_branch": "alvaro/evidence-pr8-trust-ladder-hard-floors",
+  "scope": [
+    "Derive document-extraction proposal trust_tier, trust_floor_failures, and final trusted_evidence_eligible from hard floors.",
+    "Reject graph AI writes that claim trusted status without completed agent extraction, no fallback output, grounded evidence, entailing support, and linked subject/object CURIEs.",
+    "Prevent review-request metadata from overriding verifier-owned trust metadata."
+  ],
+  "focused_result": {
+    "trusted_cases_accepted_when_all_floors_pass": "1/1",
+    "spoofed_trusted_cases_rejected": "2/2",
+    "focused_adversarial_trusted_tier_precision": 1.0,
+    "promotion_metadata_trust_override_successes": "0/2"
+  },
+  "validation": {
+    "focused_red_green_tests": "7 failed before implementation, then passed",
+    "focused_affected_bundle": "passed",
+    "ruff_touched_files": "passed",
+    "artana_evidence_api_service_checks": "passed; live external API, running-service, and OpenAI-key integration tests skipped",
+    "graph_service_checks": "passed"
+  },
+  "known_remaining_risk": "This slice prevents false trusted claims but does not prove live-agent gold precision because local agent extraction still has not completed in the strict audit environment."
+}

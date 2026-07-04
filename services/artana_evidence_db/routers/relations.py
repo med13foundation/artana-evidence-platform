@@ -745,6 +745,15 @@ def create_relation(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=_build_validation_error_detail(validation),
             )
+        ai_validation = validation_service.validate_ai_authored_relation_request(
+            request=request,
+            triple_validation=validation,
+        )
+        if ai_validation is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_build_validation_error_detail(ai_validation),
+            )
         confidence_metadata = fact_assessment_metadata(request.assessment)
         request_metadata = dict(request.metadata)
         derived_confidence = request.derived_confidence

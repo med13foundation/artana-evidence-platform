@@ -1,0 +1,517 @@
+{
+  "benchmark_name": "biomedical_relation_feasibility_v2",
+  "description": "Expanded synthetic seed corpus for agent-first relation quality evaluation. This is not production-representative until replaced or extended with expert-reviewed real documents.",
+  "provenance": "curated_synthetic_seed",
+  "cases": [
+    {
+      "case_id": "strong_med13_activates_septal_development",
+      "title": "MED13 activates cardiac septal development",
+      "category": "strong_specific",
+      "text": "MED13 activates cardiac septal development in the embryonic heart.",
+      "gold_relations": [
+        {
+          "subject": "MED13",
+          "relation_type": "ACTIVATES",
+          "object": "cardiac septal development",
+          "support_sentence": "MED13 activates cardiac septal development in the embryonic heart.",
+          "value_level": "high",
+          "rationale": "Direct gene-to-process activation claim.",
+          "subject_curie": "HGNC:22474",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_osimertinib_targets_egfr_t790m",
+      "title": "Osimertinib targets EGFR T790M",
+      "category": "strong_specific",
+      "text": "Osimertinib targets EGFR T790M in resistant lung cancer cells.",
+      "gold_relations": [
+        {
+          "subject": "Osimertinib",
+          "relation_type": "TARGETS",
+          "object": "EGFR T790M",
+          "support_sentence": "Osimertinib targets EGFR T790M in resistant lung cancer cells.",
+          "value_level": "high",
+          "rationale": "Direct drug-to-variant target relation.",
+          "subject_curie": "DrugBank:DB09330",
+          "object_curie": "ClinVar:EGFR_T790M",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_brca1_regulates_dna_repair",
+      "title": "BRCA1 regulates DNA repair",
+      "category": "strong_specific",
+      "text": "BRCA1 regulates homologous recombination DNA repair after double-strand breaks.",
+      "gold_relations": [
+        {
+          "subject": "BRCA1",
+          "relation_type": "REGULATES",
+          "object": "homologous recombination DNA repair",
+          "support_sentence": "BRCA1 regulates homologous recombination DNA repair after double-strand breaks.",
+          "value_level": "high",
+          "rationale": "Specific gene-to-process regulatory relation.",
+          "subject_curie": "HGNC:1100",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_olaparib_treats_ovarian_cancer",
+      "title": "Olaparib treats BRCA-mutated ovarian cancer",
+      "category": "strong_specific",
+      "text": "Olaparib treats BRCA-mutated ovarian cancer by exploiting homologous recombination deficiency.",
+      "gold_relations": [
+        {
+          "subject": "Olaparib",
+          "relation_type": "TREATS",
+          "object": "BRCA-mutated ovarian cancer",
+          "support_sentence": "Olaparib treats BRCA-mutated ovarian cancer by exploiting homologous recombination deficiency.",
+          "value_level": "high",
+          "rationale": "Specific therapeutic relation.",
+          "subject_curie": "DrugBank:DB09074",
+          "object_curie": "MONDO:0008170",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_sotorasib_targets_kras_g12c",
+      "title": "Sotorasib targets KRAS G12C",
+      "category": "strong_specific",
+      "text": "Sotorasib targets KRAS G12C by binding the mutant cysteine pocket.",
+      "gold_relations": [
+        {
+          "subject": "Sotorasib",
+          "relation_type": "TARGETS",
+          "object": "KRAS G12C",
+          "support_sentence": "Sotorasib targets KRAS G12C by binding the mutant cysteine pocket.",
+          "value_level": "high",
+          "rationale": "Direct drug-to-variant target relation.",
+          "subject_curie": "DrugBank:DB15569",
+          "object_curie": "ClinVar:KRAS_G12C",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_tp53_loss_predisposes_cancer",
+      "title": "TP53 loss predisposes to cancer",
+      "category": "strong_specific",
+      "text": "TP53 loss predisposes carriers to early-onset breast cancer.",
+      "gold_relations": [
+        {
+          "subject": "TP53 loss",
+          "relation_type": "PREDISPOSES_TO",
+          "object": "early-onset breast cancer",
+          "support_sentence": "TP53 loss predisposes carriers to early-onset breast cancer.",
+          "value_level": "high",
+          "rationale": "Specific variant/function-loss disease-risk relation.",
+          "subject_curie": "HGNC:11998",
+          "object_curie": "MONDO:0007254",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_mek_inhibits_erk",
+      "title": "MEK inhibitor inhibits ERK phosphorylation",
+      "category": "strong_specific",
+      "text": "Trametinib inhibits ERK phosphorylation downstream of MEK.",
+      "gold_relations": [
+        {
+          "subject": "Trametinib",
+          "relation_type": "INHIBITS",
+          "object": "ERK phosphorylation",
+          "support_sentence": "Trametinib inhibits ERK phosphorylation downstream of MEK.",
+          "value_level": "high",
+          "rationale": "Specific inhibitory drug-to-process claim.",
+          "subject_curie": "DrugBank:DB08911",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_pdl1_biomarker_immunotherapy",
+      "title": "PD-L1 is a biomarker for immunotherapy response",
+      "category": "strong_specific",
+      "text": "PD-L1 expression is a biomarker for response to pembrolizumab.",
+      "gold_relations": [
+        {
+          "subject": "PD-L1 expression",
+          "relation_type": "BIOMARKER_FOR",
+          "object": "response to pembrolizumab",
+          "support_sentence": "PD-L1 expression is a biomarker for response to pembrolizumab.",
+          "value_level": "high",
+          "rationale": "Specific biomarker-to-response relation.",
+          "subject_curie": "HGNC:17635",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_braf_v600e_activates_mapk",
+      "title": "BRAF V600E activates MAPK signaling",
+      "category": "strong_specific",
+      "text": "BRAF V600E activates MAPK signaling in melanoma cells.",
+      "gold_relations": [
+        {
+          "subject": "BRAF V600E",
+          "relation_type": "ACTIVATES",
+          "object": "MAPK signaling",
+          "support_sentence": "BRAF V600E activates MAPK signaling in melanoma cells.",
+          "value_level": "high",
+          "rationale": "Specific variant-to-pathway activation.",
+          "subject_curie": "ClinVar:BRAF_V600E",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "strong_cisplatin_treats_tnbc",
+      "title": "Cisplatin treats triple-negative breast cancer",
+      "category": "strong_specific",
+      "text": "Cisplatin treats triple-negative breast cancer in platinum-sensitive tumors.",
+      "gold_relations": [
+        {
+          "subject": "Cisplatin",
+          "relation_type": "TREATS",
+          "object": "triple-negative breast cancer",
+          "support_sentence": "Cisplatin treats triple-negative breast cancer in platinum-sensitive tumors.",
+          "value_level": "high",
+          "rationale": "Specific drug-to-disease treatment relation.",
+          "subject_curie": "DrugBank:DB00515",
+          "object_curie": "MONDO:0007254",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "weak_med13_may_link_chd",
+      "title": "Hedged MED13 association",
+      "category": "weak_association",
+      "text": "MED13 may be linked to congenital heart disease in a subset of families.",
+      "gold_relations": [
+        {
+          "subject": "MED13",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "congenital heart disease",
+          "support_sentence": "MED13 may be linked to congenital heart disease in a subset of families.",
+          "value_level": "low",
+          "rationale": "Hedged and broad association, useful for triage but not trusted construction.",
+          "subject_curie": "HGNC:22474",
+          "object_curie": "MONDO:0005267",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "weak_met_correlated_resistance",
+      "title": "MET amplification correlated with resistance",
+      "category": "weak_association",
+      "text": "MET amplification was correlated with resistance in a small exploratory cohort.",
+      "gold_relations": [
+        {
+          "subject": "MET amplification",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "resistance",
+          "support_sentence": "MET amplification was correlated with resistance in a small exploratory cohort.",
+          "value_level": "low",
+          "rationale": "Exploratory correlation without a specific therapy or mechanism.",
+          "subject_curie": "HGNC:7029",
+          "object_curie": null,
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "weak_hrd_possible_biomarker",
+      "title": "HRD possible biomarker",
+      "category": "weak_association",
+      "text": "HRD score may serve as a biomarker for platinum sensitivity.",
+      "gold_relations": [
+        {
+          "subject": "HRD score",
+          "relation_type": "BIOMARKER_FOR",
+          "object": "platinum sensitivity",
+          "support_sentence": "HRD score may serve as a biomarker for platinum sensitivity.",
+          "value_level": "low",
+          "rationale": "Potential biomarker language is hedged.",
+          "subject_curie": null,
+          "object_curie": null,
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "weak_il6_may_regulate_inflammation",
+      "title": "IL6 may regulate inflammation",
+      "category": "weak_association",
+      "text": "IL6 may regulate inflammatory signaling in stressed epithelial cells.",
+      "gold_relations": [
+        {
+          "subject": "IL6",
+          "relation_type": "REGULATES",
+          "object": "inflammatory signaling",
+          "support_sentence": "IL6 may regulate inflammatory signaling in stressed epithelial cells.",
+          "value_level": "low",
+          "rationale": "Hedged regulatory relation.",
+          "subject_curie": "HGNC:6018",
+          "object_curie": null,
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "weak_akt_trend_survival",
+      "title": "AKT trend with survival",
+      "category": "weak_association",
+      "text": "AKT activation showed a trend toward association with reduced survival.",
+      "gold_relations": [
+        {
+          "subject": "AKT activation",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "reduced survival",
+          "support_sentence": "AKT activation showed a trend toward association with reduced survival.",
+          "value_level": "low",
+          "rationale": "Trend language should not be treated as strong evidence.",
+          "subject_curie": "HGNC:391",
+          "object_curie": null,
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "negative_methods_rna_seq",
+      "title": "Methods-only RNA sequencing text",
+      "category": "negative_control",
+      "text": "We performed RNA sequencing and normalized read counts before statistical analysis.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "negative_funding_acknowledgment",
+      "title": "Funding acknowledgment",
+      "category": "negative_control",
+      "text": "This work was supported by institutional funds and a regional training grant.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "negative_author_contribution",
+      "title": "Author contribution",
+      "category": "negative_control",
+      "text": "A.B. designed the study, C.D. performed experiments, and E.F. wrote the manuscript.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "negative_database_search",
+      "title": "Database search protocol",
+      "category": "negative_control",
+      "text": "PubMed, ClinVar, and UniProt were searched using predefined keywords.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "negative_cell_culture_protocol",
+      "title": "Cell culture protocol",
+      "category": "negative_control",
+      "text": "Cells were cultured in RPMI medium and passaged every three days.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "complex_sotorasib_mispairing",
+      "title": "Sotorasib support sentence must contain KRAS G12C",
+      "category": "complex_mispairing",
+      "text": "KRAS G12C is targeted by sotorasib in lung cancer models. The drug covalently binds the mutant cysteine residue.",
+      "gold_relations": [
+        {
+          "subject": "Sotorasib",
+          "relation_type": "TARGETS",
+          "object": "KRAS G12C",
+          "support_sentence": "KRAS G12C is targeted by sotorasib in lung cancer models.",
+          "value_level": "high",
+          "rationale": "The second sentence should not be accepted as full support because it omits the named subject and object pair.",
+          "subject_curie": "DrugBank:DB15569",
+          "object_curie": "ClinVar:KRAS_G12C",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "complex_ret_variant_alias",
+      "title": "RET variant alias normalization",
+      "category": "complex_mispairing",
+      "text": "RET p.Arg1174* activates MAPK signaling in engineered cells. The R1174* variant was also observed in a separate family.",
+      "gold_relations": [
+        {
+          "subject": "RET p.Arg1174*",
+          "relation_type": "ACTIVATES",
+          "object": "MAPK signaling",
+          "support_sentence": "RET p.Arg1174* activates MAPK signaling in engineered cells.",
+          "value_level": "high",
+          "rationale": "Variant aliases should not fragment the entity identity.",
+          "subject_curie": "ClinVar:RET_ARG1174TER",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "complex_nsclc_alias",
+      "title": "NSCLC alias resolution",
+      "category": "complex_mispairing",
+      "text": "MET amplification confers resistance to erlotinib in non-small cell lung cancer (NSCLC). NSCLC samples were profiled by targeted sequencing.",
+      "gold_relations": [
+        {
+          "subject": "MET amplification",
+          "relation_type": "CONFERS_RESISTANCE_TO",
+          "object": "erlotinib",
+          "support_sentence": "MET amplification confers resistance to erlotinib in non-small cell lung cancer (NSCLC).",
+          "value_level": "high",
+          "rationale": "The support sentence contains the mechanism and therapy; the alias sentence alone is insufficient.",
+          "subject_curie": "HGNC:7029",
+          "object_curie": "DrugBank:DB00530",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "complex_her2_amplification_growth",
+      "title": "HER2 amplification causes aggressive growth",
+      "category": "complex_mispairing",
+      "text": "HER2 amplification causes aggressive tumor growth in this model. Amplified tumors were larger at endpoint.",
+      "gold_relations": [
+        {
+          "subject": "HER2 amplification",
+          "relation_type": "CAUSES",
+          "object": "aggressive tumor growth",
+          "support_sentence": "HER2 amplification causes aggressive tumor growth in this model.",
+          "value_level": "high",
+          "rationale": "Specific causal claim should outrank generic amplification mentions.",
+          "subject_curie": "HGNC:3430",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "generic_sibling_met_resistance",
+      "title": "MET generic sibling should be pruned",
+      "category": "generic_sibling",
+      "text": "MET amplification confers resistance to erlotinib and is associated with EGFR-mutant lung adenocarcinoma.",
+      "gold_relations": [
+        {
+          "subject": "MET amplification",
+          "relation_type": "CONFERS_RESISTANCE_TO",
+          "object": "erlotinib",
+          "support_sentence": "MET amplification confers resistance to erlotinib and is associated with EGFR-mutant lung adenocarcinoma.",
+          "value_level": "high",
+          "rationale": "Specific resistance relation is the valuable claim; generic association is lower value.",
+          "subject_curie": "HGNC:7029",
+          "object_curie": "DrugBank:DB00530",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "generic_sibling_egfr_t790m_resistance",
+      "title": "EGFR T790M specific resistance",
+      "category": "generic_sibling",
+      "text": "EGFR T790M causes resistance to gefitinib and is associated with disease progression.",
+      "gold_relations": [
+        {
+          "subject": "EGFR T790M",
+          "relation_type": "CAUSES",
+          "object": "resistance to gefitinib",
+          "support_sentence": "EGFR T790M causes resistance to gefitinib and is associated with disease progression.",
+          "value_level": "high",
+          "rationale": "Specific resistance cause should suppress a redundant generic association.",
+          "subject_curie": "ClinVar:EGFR_T790M",
+          "object_curie": "DrugBank:DB00317",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "generic_sibling_brca1_loss_cisplatin",
+      "title": "BRCA1 loss sensitizes tumors to cisplatin",
+      "category": "generic_sibling",
+      "text": "BRCA1 loss sensitizes triple-negative breast cancer to cisplatin and is associated with DNA repair defects.",
+      "gold_relations": [
+        {
+          "subject": "BRCA1 loss",
+          "relation_type": "SENSITIZES_TO",
+          "object": "cisplatin",
+          "support_sentence": "BRCA1 loss sensitizes triple-negative breast cancer to cisplatin and is associated with DNA repair defects.",
+          "value_level": "high",
+          "rationale": "Specific drug-sensitivity relation is more valuable than generic association.",
+          "subject_curie": "HGNC:1100",
+          "object_curie": "DrugBank:DB00515",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "long_document_tail_relation_braf",
+      "title": "Long document with tail BRAF relation",
+      "category": "long_document",
+      "text": "Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. Background methods were reviewed for cohort selection. BRAF V600E activates MAPK signaling in melanoma cells.",
+      "gold_relations": [
+        {
+          "subject": "BRAF V600E",
+          "relation_type": "ACTIVATES",
+          "object": "MAPK signaling",
+          "support_sentence": "BRAF V600E activates MAPK signaling in melanoma cells.",
+          "value_level": "high",
+          "rationale": "Tail relation should remain measurable as long-document coverage expands.",
+          "subject_curie": "ClinVar:BRAF_V600E",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "long_document_tail_relation_jak2",
+      "title": "Long document with tail JAK2 relation",
+      "category": "long_document",
+      "text": "The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. The introduction summarized prior observational studies without making a new claim. Ruxolitinib inhibits JAK2 signaling in myelofibrosis cells.",
+      "gold_relations": [
+        {
+          "subject": "Ruxolitinib",
+          "relation_type": "INHIBITS",
+          "object": "JAK2 signaling",
+          "support_sentence": "Ruxolitinib inhibits JAK2 signaling in myelofibrosis cells.",
+          "value_level": "high",
+          "rationale": "Long-document fixture with a specific inhibitor relation near the tail.",
+          "subject_curie": "DrugBank:DB08877",
+          "object_curie": "HGNC:6192",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "long_document_tail_relation_vegf",
+      "title": "Long document with tail VEGF relation",
+      "category": "long_document",
+      "text": "The review section listed background terminology and assay descriptions. The review section listed background terminology and assay descriptions. The review section listed background terminology and assay descriptions. The review section listed background terminology and assay descriptions. The review section listed background terminology and assay descriptions. The review section listed background terminology and assay descriptions. The review section listed background terminology and assay descriptions. The review section listed background terminology and assay descriptions. Bevacizumab targets VEGF-A in angiogenic tumors.",
+      "gold_relations": [
+        {
+          "subject": "Bevacizumab",
+          "relation_type": "TARGETS",
+          "object": "VEGF-A",
+          "support_sentence": "Bevacizumab targets VEGF-A in angiogenic tumors.",
+          "value_level": "high",
+          "rationale": "Long-document fixture with a specific target relation near the tail.",
+          "subject_curie": "DrugBank:DB00112",
+          "object_curie": "HGNC:12680",
+          "requires_entailment": true
+        }
+      ]
+    }
+  ]
+}

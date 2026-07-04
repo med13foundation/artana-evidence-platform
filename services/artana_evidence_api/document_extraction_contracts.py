@@ -16,6 +16,8 @@ GoalRelevanceScale = Literal[
     "unscoped",
 ]
 PriorityScale = Literal["prioritize", "review", "background", "ignore"]
+RelationGovernanceStatus = Literal["canonical", "requires_relation_review"]
+CurieSource = Literal["none", "model", "verified_linker"]
 PdfTextExtractionOutcome = Literal[
     "text",
     "no_text_image_likely",
@@ -48,8 +50,12 @@ class LLMRelationLike(Protocol):
     """Typed relation payload returned by an LLM extraction schema."""
 
     subject: str
+    subject_curie: str | None
     relation_type: str
+    proposed_relation_type: str | None
+    new_relation_type_rationale: str | None
     object: str
+    object_curie: str | None
     sentence: str
 
 
@@ -85,6 +91,19 @@ class ExtractedRelationCandidate:
     relation_type: str
     object_label: str
     sentence: str
+    subject_curie: str | None = None
+    object_curie: str | None = None
+    subject_curie_source: CurieSource = "none"
+    object_curie_source: CurieSource = "none"
+    proposed_relation_type: str | None = None
+    new_relation_type_rationale: str | None = None
+    relation_governance_status: RelationGovernanceStatus = "canonical"
+
+    @property
+    def trusted_evidence_eligible(self) -> bool:
+        """Return whether this candidate can be treated as a trusted graph edge."""
+
+        return self.relation_governance_status == "canonical"
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +182,31 @@ class DocumentCandidateExtractionDiagnostics:
     llm_candidate_error: str | None = None
     llm_candidate_count: int = 0
     fallback_candidate_count: int = 0
+    pruned_generic_relation_count: int = 0
+    llm_extraction_chunk_count: int = 0
+    llm_extraction_text_char_count: int = 0
+
+    @property
+    def agent_extraction_completed(self) -> bool:
+        """Return whether the agent path completed relation extraction."""
+
+        return self.llm_candidate_status == "completed"
+
+    @property
+    def fallback_output_used(self) -> bool:
+        """Return whether candidates came from a fallback/non-agent source."""
+
+        return (
+            self.llm_candidate_status
+            in {"fallback", "fallback_error", "unavailable"}
+            or self.fallback_candidate_count > 0
+        )
+
+    @property
+    def trusted_evidence_eligible(self) -> bool:
+        """Return whether candidate output may enter trusted-evidence gates."""
+
+        return self.agent_extraction_completed and not self.fallback_output_used
 
     def as_metadata(self) -> JSONObject:
         """Serialize diagnostics into JSON-safe metadata."""
@@ -173,11 +217,24 @@ class DocumentCandidateExtractionDiagnostics:
             in {"completed", "llm_empty", "fallback", "fallback_error"},
             "llm_candidate_failed": self.llm_candidate_status
             in {"fallback", "fallback_error", "unavailable"},
+            "agent_extraction_completed": self.agent_extraction_completed,
+            "fallback_output_used": self.fallback_output_used,
+            "trusted_evidence_eligible": self.trusted_evidence_eligible,
         }
         if self.llm_candidate_count > 0:
             payload["llm_candidate_count"] = self.llm_candidate_count
         if self.fallback_candidate_count > 0:
             payload["fallback_candidate_count"] = self.fallback_candidate_count
+        if self.pruned_generic_relation_count > 0:
+            payload["pruned_generic_relation_count"] = (
+                self.pruned_generic_relation_count
+            )
+        if self.llm_extraction_chunk_count > 0:
+            payload["llm_extraction_chunk_count"] = self.llm_extraction_chunk_count
+        if self.llm_extraction_text_char_count > 0:
+            payload["llm_extraction_text_char_count"] = (
+                self.llm_extraction_text_char_count
+            )
         if self.llm_candidate_error is not None:
             payload["llm_candidate_error"] = self.llm_candidate_error
         return payload
@@ -192,6 +249,7 @@ __all__ = [
     "ExtractedRelationCandidate",
     "FACTUAL_SUPPORT_SCORES",
     "FactualSupportScale",
+    "CurieSource",
     "GOAL_RELEVANCE_SCORES",
     "GoalRelevanceScale",
     "LLMExtractionResultLike",
@@ -200,5 +258,6 @@ __all__ = [
     "PriorityScale",
     "ProposalReviewItemLike",
     "ProposalReviewResultLike",
+    "RelationGovernanceStatus",
     "PdfTextExtractionOutcome",
 ]

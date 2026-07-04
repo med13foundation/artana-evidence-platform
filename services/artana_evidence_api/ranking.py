@@ -53,6 +53,10 @@ def rank_reviewed_candidate_claim(
     priority: float,
     supporting_document_count: int,
     evidence_reference_count: int,
+    grounded_sentence: bool | None = None,
+    both_arguments_present: bool | None = None,
+    entailment_supported: bool | None = None,
+    relation_specific: bool | None = None,
 ) -> ProposalRanking:
     """Compute a ranking score for one reviewed document-extraction claim."""
     factual_component = max(0.0, min(factual_confidence, 1.0))
@@ -60,14 +64,26 @@ def rank_reviewed_candidate_claim(
     priority_component = max(0.0, min(priority, 1.0))
     document_component = min(max(supporting_document_count, 0), 5) / 5
     evidence_component = min(max(evidence_reference_count, 0), 5) / 5
+    grounded_component = _optional_binary_component(grounded_sentence)
+    both_arguments_component = _optional_binary_component(both_arguments_present)
+    entailment_component = _optional_binary_component(entailment_supported)
+    relation_specificity_component = _optional_binary_component(relation_specific)
+    evidence_quality_component = round(
+        (grounded_component * 0.25)
+        + (both_arguments_component * 0.25)
+        + (entailment_component * 0.35)
+        + (relation_specificity_component * 0.15),
+        6,
+    )
     score = round(
         min(
             1.0,
-            (relevance_component * 0.4)
-            + (priority_component * 0.3)
+            (relevance_component * 0.3)
+            + (priority_component * 0.25)
             + (factual_component * 0.2)
-            + (document_component * 0.05)
-            + (evidence_component * 0.05),
+            + (evidence_quality_component * 0.2)
+            + (document_component * 0.025)
+            + (evidence_component * 0.025),
         ),
         6,
     )
@@ -81,8 +97,19 @@ def rank_reviewed_candidate_claim(
             "supporting_document_component": document_component,
             "evidence_reference_count": evidence_reference_count,
             "evidence_reference_component": evidence_component,
+            "evidence_grounded_component": grounded_component,
+            "both_arguments_present_component": both_arguments_component,
+            "entailment_component": entailment_component,
+            "relation_specificity_component": relation_specificity_component,
+            "evidence_quality_component": evidence_quality_component,
         },
     )
+
+
+def _optional_binary_component(value: bool | None) -> float:
+    if value is None:
+        return 0.5
+    return 1.0 if value else 0.0
 
 
 def rank_chat_graph_write_candidate(

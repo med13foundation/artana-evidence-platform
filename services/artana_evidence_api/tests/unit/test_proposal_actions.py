@@ -19,6 +19,7 @@ from artana_evidence_api.proposal_store import HarnessProposalRecord
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
     KernelEntityResponse,
+    KernelGraphValidationResponse,
     KernelRelationClaimCreateRequest,
     KernelRelationClaimResponse,
 )
@@ -223,6 +224,62 @@ def test_build_graph_claim_request_resolves_deferred_entity_labels() -> None:
     assert isinstance(confidence_derivation, dict)
     assert assessment_payload["support_band"] == "TENTATIVE"
     assert confidence_derivation["method"] == "qualitative_assessment_v1"
+
+
+def test_build_graph_claim_request_preserves_verifier_owned_metadata() -> None:
+    proposal = _proposal_with_unresolved_entities()
+    proposal.metadata.update(
+        {
+            "evidence_grounding": {
+                "grounded": False,
+                "subject_present": True,
+                "object_present": False,
+            },
+            "support_verification": {
+                "support": "NEUTRAL",
+                "rationale": "Grounding failed.",
+                "model_id": "artana-heuristic-support-v1",
+            },
+            "trust_tier": "agent_candidate",
+            "trust_floor_failures": ["support_entails_claim"],
+            "trusted_evidence_eligible": False,
+        },
+    )
+
+    request = build_graph_claim_request(
+        space_id=uuid4(),
+        proposal=proposal,
+        request_metadata={
+            "reviewed_by": "tester",
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "rationale": "Reviewer override should not replace verifier data.",
+                "model_id": "reviewer",
+            },
+            "trust_tier": "trusted",
+            "trust_floor_failures": [],
+            "trusted_evidence_eligible": True,
+        },
+        graph_api_gateway=_ResolvingGraphApiGateway(entity_id=uuid4(), label="MED13"),
+    )
+
+    assert request.metadata["reviewed_by"] == "tester"
+    assert request.metadata["evidence_grounding"] == proposal.metadata[
+        "evidence_grounding"
+    ]
+    assert request.metadata["support_verification"] == proposal.metadata[
+        "support_verification"
+    ]
+    assert request.metadata["trust_tier"] == proposal.metadata["trust_tier"]
+    assert request.metadata["trust_floor_failures"] == proposal.metadata[
+        "trust_floor_failures"
+    ]
+    assert request.metadata["trusted_evidence_eligible"] is False
 
 
 def test_build_graph_claim_request_rejects_invalid_entity_creation_response() -> None:
@@ -614,6 +671,67 @@ def test_build_graph_relation_request_maps_fields_correctly() -> None:
     assert request.metadata["evidence_bundle"] == []
 
 
+def test_build_graph_relation_request_preserves_verifier_owned_metadata() -> None:
+    subject_id = uuid4()
+    object_id = uuid4()
+    proposal = _proposal_with_resolved_entities(subject_id, object_id)
+    proposal.metadata.update(
+        {
+            "evidence_grounding": {
+                "grounded": False,
+                "subject_present": True,
+                "object_present": False,
+            },
+            "support_verification": {
+                "support": "NEUTRAL",
+                "rationale": "Grounding failed.",
+                "model_id": "artana-heuristic-support-v1",
+            },
+            "trust_tier": "agent_candidate",
+            "trust_floor_failures": ["support_entails_claim"],
+            "trusted_evidence_eligible": False,
+        },
+    )
+
+    request = build_graph_relation_request(
+        space_id=uuid4(),
+        proposal=proposal,
+        request_metadata={
+            "reviewed_by": "tester",
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "rationale": "Reviewer override should not replace verifier data.",
+                "model_id": "reviewer",
+            },
+            "trust_tier": "trusted",
+            "trust_floor_failures": [],
+            "trusted_evidence_eligible": True,
+        },
+        graph_api_gateway=_ResolvingGraphApiGateway(
+            entity_id=subject_id,
+            label="MED13",
+        ),
+    )
+
+    assert request.metadata["reviewed_by"] == "tester"
+    assert request.metadata["evidence_grounding"] == proposal.metadata[
+        "evidence_grounding"
+    ]
+    assert request.metadata["support_verification"] == proposal.metadata[
+        "support_verification"
+    ]
+    assert request.metadata["trust_tier"] == proposal.metadata["trust_tier"]
+    assert request.metadata["trust_floor_failures"] == proposal.metadata[
+        "trust_floor_failures"
+    ]
+    assert request.metadata["trusted_evidence_eligible"] is False
+
+
 def _proposal_with_no_reasoning(
     subject_id: UUID | None = None,
     object_id: UUID | None = None,
@@ -742,6 +860,40 @@ class _MockRelationGateway:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
+
+    def validate_claim_create(
+        self,
+        *,
+        space_id: UUID | str,
+        request: KernelRelationClaimCreateRequest,
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        return _allowed_relation_validation(request.relation_type)
+
+    def validate_relation_materialization(
+        self,
+        *,
+        space_id: UUID | str,
+        payload: dict[str, object],
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        relation_type = str(payload.get("relation_type", "")).strip()
+        return _allowed_relation_validation(relation_type)
+
+
+def _allowed_relation_validation(relation_type: str) -> KernelGraphValidationResponse:
+    normalized = relation_type.strip().upper().replace(" ", "_")
+    return KernelGraphValidationResponse(
+        valid=True,
+        code="allowed",
+        message="Test graph validation allows relation write.",
+        severity="info",
+        next_actions=[],
+        normalized_relation_type=normalized,
+        validation_state="ALLOWED",
+        validation_reason="test_validation",
+        persistability="PERSISTABLE",
+    )
 
 
 def test_promote_to_graph_claim_calls_create_relation() -> None:

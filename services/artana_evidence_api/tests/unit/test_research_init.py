@@ -32,6 +32,7 @@ from artana_evidence_api.chat_sessions import HarnessChatSessionStore
 from artana_evidence_api.document_binary_store import HarnessDocumentBinaryStore
 from artana_evidence_api.document_extraction import (
     DocumentCandidateExtractionDiagnostics,
+    ExtractedRelationCandidate,
 )
 from artana_evidence_api.document_store import (
     HarnessDocumentRecord,
@@ -84,6 +85,15 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationClaimResponse,
 )
 from fastapi import HTTPException
+
+
+def _synthetic_extracted_relation_candidate() -> ExtractedRelationCandidate:
+    return ExtractedRelationCandidate(
+        subject_label="MED13",
+        relation_type="ACTIVATES",
+        object_label="developmental phenotypes",
+        sentence="MED13 activates developmental phenotypes.",
+    )
 
 
 def test_build_pubmed_queries_preserves_objective_anchor_terms() -> None:
@@ -1808,9 +1818,9 @@ async def test_execute_research_init_processes_existing_text_documents_without_s
         *,
         max_relations: int = 10,
         space_context: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[ExtractedRelationCandidate]:
         del text, max_relations, space_context
-        return [{"candidate": "synthetic"}]
+        return [_synthetic_extracted_relation_candidate()]
 
     async def _fake_pre_resolve_entities_with_ai(**_kwargs: object) -> dict[str, str]:
         return {}
@@ -2248,9 +2258,9 @@ async def test_execute_research_init_times_out_one_document_extraction_without_s
         *,
         max_relations: int = 10,
         space_context: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[ExtractedRelationCandidate]:
         del text, max_relations, space_context
-        return [{"candidate": "synthetic"}]
+        return [_synthetic_extracted_relation_candidate()]
 
     async def _fake_pre_resolve_entities_with_ai(**_kwargs: object) -> dict[str, str]:
         return {}
@@ -2409,7 +2419,7 @@ async def test_execute_research_init_times_out_one_document_extraction_without_s
 
 
 @pytest.mark.asyncio
-async def test_execute_research_init_emits_incremental_document_extraction_progress(
+async def test_execute_research_init_emits_progress_and_marks_fallback_drafts_untrusted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     space_id = uuid4()
@@ -2507,8 +2517,9 @@ async def test_execute_research_init_emits_incremental_document_extraction_progr
         return (
             [{"candidate": "synthetic"}],
             DocumentCandidateExtractionDiagnostics(
-                llm_candidate_status="completed",
-                llm_candidate_count=1,
+                llm_candidate_status="fallback_error",
+                llm_candidate_error="synthetic extraction outage",
+                fallback_candidate_count=1,
             ),
         )
 
@@ -2626,6 +2637,14 @@ async def test_execute_research_init_emits_incremental_document_extraction_progr
     assert observer.last_metadata is not None
     assert observer.last_metadata["document_extraction_total_count"] == 2
     assert observer.last_metadata["document_extraction_draft_count"] == 2
+    proposals = proposal_store.list_proposals(space_id=space_id)
+    assert len(proposals) == 2
+    assert all(
+        proposal.metadata["agent_extraction_completed"] is False
+        and proposal.metadata["fallback_output_used"] is True
+        and proposal.metadata["trusted_evidence_eligible"] is False
+        for proposal in proposals
+    )
 
 
 @pytest.mark.asyncio
@@ -2693,9 +2712,9 @@ async def test_execute_research_init_times_out_blocking_document_draft_build_wit
         *,
         max_relations: int = 10,
         space_context: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[ExtractedRelationCandidate]:
         del text, max_relations, space_context
-        return [{"candidate": "synthetic"}]
+        return [_synthetic_extracted_relation_candidate()]
 
     async def _fake_pre_resolve_entities_with_ai(**_kwargs: object) -> dict[str, str]:
         return {}
@@ -2910,9 +2929,9 @@ async def test_execute_research_init_passes_parent_run_id_and_filters_soft_boots
         *,
         max_relations: int = 10,
         space_context: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[ExtractedRelationCandidate]:
         del text, max_relations, space_context
-        return [{"candidate": "synthetic"}]
+        return [_synthetic_extracted_relation_candidate()]
 
     async def _fake_pre_resolve_entities_with_ai(**_kwargs: object) -> dict[str, str]:
         return {}
@@ -3108,9 +3127,9 @@ async def test_execute_research_init_enables_bootstrap_claim_curation_and_surfac
         *,
         max_relations: int = 10,
         space_context: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[ExtractedRelationCandidate]:
         del text, max_relations, space_context
-        return [{"candidate": "synthetic"}]
+        return [_synthetic_extracted_relation_candidate()]
 
     async def _fake_pre_resolve_entities_with_ai(**_kwargs: object) -> dict[str, str]:
         return {}
@@ -3348,9 +3367,9 @@ async def test_execute_research_init_auto_creates_entities_with_improved_types(
         *,
         max_relations: int = 10,
         space_context: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[ExtractedRelationCandidate]:
         del text, max_relations, space_context
-        return [{"candidate": "synthetic"}]
+        return [_synthetic_extracted_relation_candidate()]
 
     async def _fake_pre_resolve_entities_with_ai(**_kwargs: object) -> dict[str, str]:
         return {}
@@ -3585,9 +3604,9 @@ async def test_execute_research_init_processes_pdf_documents_when_pdf_source_sel
         *,
         max_relations: int = 10,
         space_context: str,
-    ) -> list[dict[str, str]]:
+    ) -> list[ExtractedRelationCandidate]:
         del text, max_relations, space_context
-        return [{"candidate": "synthetic"}]
+        return [_synthetic_extracted_relation_candidate()]
 
     async def _fake_pre_resolve_entities_with_ai(**_kwargs: object) -> dict[str, str]:
         return {}

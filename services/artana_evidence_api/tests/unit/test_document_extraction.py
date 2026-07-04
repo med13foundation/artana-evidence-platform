@@ -29,6 +29,9 @@ from artana_evidence_api.document_extraction import (
     pre_resolve_entities_with_ai,
     review_document_extraction_drafts_with_diagnostics,
 )
+from artana_evidence_api.document_extraction_support.strict_relation_discovery import (
+    discover_relation_candidates_strict,
+)
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from artana_evidence_api.types.graph_contracts import (
@@ -228,6 +231,9 @@ async def test_discover_relation_candidates_prefers_llm_candidates(
         "llm_candidate_status": "completed",
         "llm_candidate_attempted": True,
         "llm_candidate_failed": False,
+        "agent_extraction_completed": True,
+        "fallback_output_used": False,
+        "trusted_evidence_eligible": True,
         "llm_candidate_count": 1,
     }
 
@@ -275,9 +281,59 @@ async def test_discover_relation_candidates_falls_back_to_regex_with_llm_empty_s
         "llm_candidate_status": "llm_empty",
         "llm_candidate_attempted": True,
         "llm_candidate_failed": False,
+        "agent_extraction_completed": False,
+        "fallback_output_used": True,
+        "trusted_evidence_eligible": False,
         "fallback_candidate_count": 1,
         "llm_candidate_error": "LLM succeeded but returned zero usable candidates",
     }
+
+
+@pytest.mark.parametrize(
+    "diagnostics",
+    [
+        DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="unavailable",
+            llm_candidate_error="OPENAI_API_KEY not configured",
+            fallback_candidate_count=1,
+        ),
+        DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="fallback",
+            fallback_candidate_count=1,
+        ),
+        DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="fallback_error",
+            llm_candidate_error="synthetic llm outage",
+            fallback_candidate_count=1,
+        ),
+        DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="llm_empty",
+            llm_candidate_error="LLM succeeded but returned zero usable candidates",
+            fallback_candidate_count=1,
+        ),
+    ],
+)
+def test_candidate_extraction_metadata_blocks_fallback_from_trusted_evidence(
+    diagnostics: DocumentCandidateExtractionDiagnostics,
+) -> None:
+    metadata = diagnostics.as_metadata()
+
+    assert metadata["agent_extraction_completed"] is False
+    assert metadata["fallback_output_used"] is True
+    assert metadata["trusted_evidence_eligible"] is False
+
+
+def test_candidate_extraction_metadata_marks_agent_completion_as_trusted_eligible() -> (
+    None
+):
+    metadata = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="completed",
+        llm_candidate_count=1,
+    ).as_metadata()
+
+    assert metadata["agent_extraction_completed"] is True
+    assert metadata["fallback_output_used"] is False
+    assert metadata["trusted_evidence_eligible"] is True
 
 
 @pytest.mark.asyncio
@@ -319,6 +375,72 @@ async def test_discover_relation_candidates_marks_unavailable_on_config_error(
         llm_candidate_error="OPENAI_API_KEY not configured",
         fallback_candidate_count=1,
     )
+
+
+@pytest.mark.asyncio
+async def test_strict_relation_discovery_propagates_unavailable_without_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _missing_api_key(
+        text: str,
+        *,
+        max_relations: int = 10,
+        space_context: str = "",
+    ) -> list[ExtractedRelationCandidate]:
+        del text, max_relations, space_context
+        raise RuntimeError("OPENAI_API_KEY not configured")
+
+    def _unexpected_fallback(text: str) -> list[ExtractedRelationCandidate]:
+        del text
+        raise AssertionError("strict extraction must not call heuristic fallback")
+
+    monkeypatch.setattr(
+        "artana_evidence_api.document_extraction_support.strict_relation_discovery."
+        "extract_relation_candidates_with_llm",
+        _missing_api_key,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "extract_relation_candidates",
+        _unexpected_fallback,
+    )
+
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY not configured"):
+        await discover_relation_candidates_strict(
+            "The study found that MED13 was associated with cardiomyopathy.",
+        )
+
+
+@pytest.mark.asyncio
+async def test_strict_relation_discovery_reports_empty_agent_without_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _empty_agent_candidates(
+        text: str,
+        *,
+        max_relations: int = 10,
+        space_context: str = "",
+    ) -> list[ExtractedRelationCandidate]:
+        del text, max_relations, space_context
+        return []
+
+    monkeypatch.setattr(
+        "artana_evidence_api.document_extraction_support.strict_relation_discovery."
+        "extract_relation_candidates_with_llm",
+        _empty_agent_candidates,
+    )
+
+    candidates, diagnostics = await discover_relation_candidates_strict(
+        "No relation is asserted here.",
+    )
+
+    assert candidates == []
+    assert diagnostics == DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="llm_empty",
+        llm_candidate_error="LLM succeeded but returned zero usable candidates",
+    )
+    assert diagnostics.fallback_output_used is False
+    assert diagnostics.as_metadata()["fallback_output_used"] is False
 
 
 @pytest.mark.asyncio
@@ -375,6 +497,14 @@ def test_extract_relation_candidates_matches_narrative_scientific_text() -> None
     assert candidates[0].object_label == "cardiomyopathy"
 
 
+def test_extract_relation_candidates_suppresses_weak_generic_correlations() -> None:
+    candidates = extract_relation_candidates(
+        "MET amplification was correlated with resistance in a small exploratory cohort.",
+    )
+
+    assert candidates == []
+
+
 def test_extract_relation_candidates_rejects_bare_fragment_subjects() -> None:
     candidates = extract_relation_candidates(
         "It inhibits CSF-1R. "
@@ -426,6 +556,9 @@ async def test_extract_relation_candidates_with_diagnostics_falls_back_to_regex(
         "llm_candidate_status": "fallback_error",
         "llm_candidate_attempted": True,
         "llm_candidate_failed": True,
+        "agent_extraction_completed": False,
+        "fallback_output_used": True,
+        "trusted_evidence_eligible": False,
         "fallback_candidate_count": 1,
         "llm_candidate_error": "synthetic llm outage",
     }
@@ -532,6 +665,480 @@ async def test_extract_relation_candidates_with_llm_uses_fresh_store_and_closes(
 
 
 @pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_preserves_valid_curies_and_abstains_invalid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MED13",
+                        "subject_curie": "hgnc:22474",
+                        "relation_type": "CAUSES",
+                        "object": "developmental delay",
+                        "object_curie": "HP:0001263",
+                        "sentence": "MED13 causes developmental delay.",
+                    },
+                    {
+                        "subject": "MED13",
+                        "subject_curie": "MONDO:0000001",
+                        "relation_type": "ACTIVATES",
+                        "object": "EGFR",
+                        "object_curie": "hgnc:3236",
+                        "sentence": "MED13 activates EGFR.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MED13 causes developmental delay. MED13 activates EGFR.",
+    )
+
+    assert len(candidates) == 2
+    assert candidates[0].subject_curie == "HGNC:22474"
+    assert candidates[0].subject_curie_source == "model"
+    assert candidates[0].object_curie == "HP:0001263"
+    assert candidates[0].object_curie_source == "model"
+    assert candidates[1].subject_curie is None
+    assert candidates[1].subject_curie_source == "none"
+    assert candidates[1].object_curie == "HGNC:3236"
+    assert candidates[1].object_curie_source == "model"
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_keeps_structured_new_type_proposals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MET amplification",
+                        "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+                        "proposed_relation_type": "CONFERS_RESISTANCE_TO",
+                        "new_relation_type_rationale": (
+                            "Specific resistance relation not covered by canonical types."
+                        ),
+                        "object": "erlotinib",
+                        "sentence": "MET amplification confers resistance to erlotinib.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MET amplification confers resistance to erlotinib.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MET amplification"
+    assert candidates[0].relation_type == "PROPOSE_NEW_RELATION_TYPE"
+    assert candidates[0].proposed_relation_type == "CONFERS_RESISTANCE_TO"
+    assert candidates[0].new_relation_type_rationale == (
+        "Specific resistance relation not covered by canonical types."
+    )
+    assert candidates[0].object_label == "erlotinib"
+    assert candidates[0].relation_governance_status == "requires_relation_review"
+    assert candidates[0].trusted_evidence_eligible is False
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_filters_review_required_raw_types(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from artana_evidence_api.relation_type_resolver import (
+        RelationTypeAction,
+        RelationTypeDecision,
+    )
+
+    class _PermissiveExtractionSchema:
+        @classmethod
+        def model_validate(cls, payload):
+            return SimpleNamespace(
+                relations=[
+                    SimpleNamespace(
+                        subject=relation["subject"],
+                        relation_type=relation["relation_type"],
+                        object=relation["object"],
+                        sentence=relation["sentence"],
+                    )
+                    for relation in payload["relations"]
+                ],
+            )
+
+    class _ReviewRequiredPreflight:
+        async def resolve_relation_type(self, **kwargs):
+            assert kwargs["relation_type"] == "CONFERS_RESISTANCE_TO"
+            return RelationTypeDecision(
+                action=RelationTypeAction.REQUIRES_REVIEW,
+                canonical_type="CONFERS_RESISTANCE_TO",
+                reasoning="Governed review required before use.",
+            )
+
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MET amplification",
+                        "relation_type": "CONFERS_RESISTANCE_TO",
+                        "object": "erlotinib",
+                        "sentence": "MET amplification confers resistance to erlotinib.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "build_llm_extraction_output_schema",
+        lambda _max_relations: _PermissiveExtractionSchema,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "_graph_ai_preflight_service",
+        _ReviewRequiredPreflight,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MET amplification confers resistance to erlotinib.",
+    )
+
+    assert candidates == []
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_prunes_redundant_generic_siblings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MED13",
+                        "relation_type": "ASSOCIATED_WITH",
+                        "object": "EGFR",
+                        "sentence": "MED13 activates EGFR and is associated with EGFR.",
+                    },
+                    {
+                        "subject": "MED13",
+                        "relation_type": "ACTIVATES",
+                        "object": "EGFR",
+                        "sentence": "MED13 activates EGFR and is associated with EGFR.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MED13 activates EGFR and is associated with EGFR.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].relation_type == "ACTIVATES"
+    assert candidates[0].subject_label == "MED13"
+    assert candidates[0].object_label == "EGFR"
+
+
+@pytest.mark.asyncio
+async def test_discover_relation_candidates_reports_llm_pruned_generic_siblings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    llm_candidates = [
+        ExtractedRelationCandidate(
+            subject_label="MED13",
+            relation_type="ASSOCIATED_WITH",
+            object_label="EGFR",
+            sentence="MED13 activates EGFR and is associated with EGFR.",
+        ),
+        ExtractedRelationCandidate(
+            subject_label="MED13",
+            relation_type="ACTIVATES",
+            object_label="EGFR",
+            sentence="MED13 activates EGFR and is associated with EGFR.",
+        ),
+    ]
+
+    async def _fake_extract_relation_candidates_with_llm(*_args, **_kwargs):
+        return llm_candidates
+
+    monkeypatch.setattr(
+        document_extraction,
+        "extract_relation_candidates_with_llm",
+        _fake_extract_relation_candidates_with_llm,
+    )
+
+    candidates, diagnostics = await discover_relation_candidates(
+        "MED13 activates EGFR and is associated with EGFR.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].relation_type == "ACTIVATES"
+    assert diagnostics.llm_candidate_status == "completed"
+    assert diagnostics.llm_candidate_count == 1
+    assert diagnostics.pruned_generic_relation_count == 1
+    assert diagnostics.as_metadata()["pruned_generic_relation_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_suppresses_weak_generic_correlations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MET amplification",
+                        "relation_type": "ASSOCIATED_WITH",
+                        "object": "resistance",
+                        "sentence": (
+                            "MET amplification was correlated with resistance "
+                            "in a small exploratory cohort."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MET amplification was correlated with resistance in a small exploratory cohort.",
+    )
+
+    assert candidates == []
+
+
+def test_llm_extraction_step_key_uses_full_text_beyond_prefix() -> None:
+    shared_prefix = "Background sentence. " * 250
+    first_text = f"{shared_prefix} BRCA1 activates EGFR."
+    second_text = f"{shared_prefix} MED13 regulates cardiomyopathy."
+
+    assert first_text[:4000] == second_text[:4000]
+    assert document_extraction._llm_extraction_step_key(
+        text=first_text,
+        max_relations=10,
+        model_id="openai/gpt-5.4-mini",
+    ) != document_extraction._llm_extraction_step_key(
+        text=second_text,
+        max_relations=10,
+        model_id="openai/gpt-5.4-mini",
+    )
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_reads_beyond_first_chunk(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_prompts: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = kwargs["prompt"]
+        captured_prompts.append(prompt)
+        if "MED13 causes developmental delay." not in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MED13",
+                        "relation_type": "CAUSES",
+                        "object": "developmental delay",
+                        "sentence": "MED13 causes developmental delay.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    long_text = (
+        ("Background sentence without extractable relations. " * 120)
+        + "MED13 causes developmental delay."
+    )
+
+    candidates, diagnostics = await extract_relation_candidates_with_diagnostics(
+        long_text,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MED13"
+    assert candidates[0].relation_type == "CAUSES"
+    assert diagnostics.llm_candidate_status == "completed"
+    assert diagnostics.llm_extraction_chunk_count >= 2
+    assert diagnostics.as_metadata()["llm_extraction_chunk_count"] >= 2
+    assert len(captured_prompts) >= 2
+
+
+@pytest.mark.asyncio
 async def test_extract_relation_candidates_with_llm_scopes_step_key_to_document_payload(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -590,14 +1197,17 @@ async def test_extract_relation_candidates_with_llm_scopes_step_key_to_document_
         document_extraction._llm_extraction_step_key(
             text=first_text,
             max_relations=10,
+            model_id="openai:gpt-5.4-mini",
         ),
         document_extraction._llm_extraction_step_key(
             text=first_text,
             max_relations=10,
+            model_id="openai:gpt-5.4-mini",
         ),
         document_extraction._llm_extraction_step_key(
             text=second_text,
             max_relations=10,
+            model_id="openai:gpt-5.4-mini",
         ),
     ]
     assert captured_step_keys[0] == captured_step_keys[1]

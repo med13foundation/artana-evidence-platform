@@ -54,6 +54,20 @@ _NOT_FOUND_STATUS = 404
 _BAD_REQUEST_STATUS = 400
 _RELATION_CACHE_MAX_SIZE = 2000
 _ENTITY_CACHE_MAX_SIZE = 5000
+_GRAPH_TRANSPORT_UNAVAILABLE_EXCEPTIONS = (
+    GraphServiceClientError,
+    AttributeError,
+    TypeError,
+    ValueError,
+)
+
+
+def _has_admin_dictionary_context(graph_transport: object) -> bool:
+    return isinstance(graph_transport, GraphTransportBundle) or hasattr(
+        graph_transport,
+        "_runtime",
+    )
+
 
 class GraphResolutionCache(Protocol):
     """Cache contract for space-scoped entity and relation resolution decisions."""
@@ -187,9 +201,24 @@ def _legacy_allowed_validation(
 ) -> KernelGraphValidationResponse:
     normalized_relation_type = (
         relation_type.strip().upper().replace(" ", "_")
-        if isinstance(relation_type, str) and relation_type.strip()
-        else None
+    if isinstance(relation_type, str) and relation_type.strip()
+    else None
     )
+    if normalized_relation_type is not None:
+        return KernelGraphValidationResponse(
+            valid=False,
+            code="unknown_relation_type",
+            message=(
+                "Legacy flat graph gateway does not expose relation validation; "
+                f"relation type {normalized_relation_type} requires governed review."
+            ),
+            severity="blocking",
+            next_actions=[],
+            normalized_relation_type=normalized_relation_type,
+            validation_state="UNDEFINED",
+            validation_reason="legacy_flat_gateway_without_relation_validation",
+            persistability="NON_PERSISTABLE",
+        )
     return KernelGraphValidationResponse(
         valid=True,
         code="allowed",
@@ -391,58 +420,77 @@ class GraphAIPreflightService:
             )
             return decision
 
-        admin_dictionary_transport = (
-            self._admin_dictionary_transport_for_graph_transport(graph_transport)
-            if graph_transport is not None
-            else self._admin_dictionary_transport_factory()
-        )
-        with admin_dictionary_transport as admin_dictionary:
-            live_relation_types: list[str] = []
-            live_relation_synonyms: list[str] = []
-            search_match: str | None = None
-            try:
-                resolved_payload = admin_dictionary.resolve_dictionary_relation_synonym(
-                    synonym=normalized,
-                )
-                relation_type_id = resolved_payload.id
-                if relation_type_id.strip():
-                    decision = RelationTypeDecision(
-                        action=RelationTypeAction.MAP_TO_EXISTING,
-                        canonical_type=relation_type_id.strip().upper(),
-                        reasoning="Resolved against an active graph dictionary synonym.",
+        live_relation_types: list[str] = []
+        live_relation_synonyms: list[str] = []
+        search_match: str | None = None
+        if graph_transport is None or _has_admin_dictionary_context(graph_transport):
+            admin_dictionary_transport = (
+                self._admin_dictionary_transport_for_graph_transport(graph_transport)
+                if graph_transport is not None
+                else self._admin_dictionary_transport_factory()
+            )
+            with admin_dictionary_transport as admin_dictionary:
+                try:
+                    resolved_payload = (
+                        admin_dictionary.resolve_dictionary_relation_synonym(
+                            synonym=normalized,
+                        )
                     )
-                    self._resolution_cache.set_relation(
-                        space_id=space_id,
-                        relation_type=relation_type,
-                        value=decision,
-                    )
-                    return decision
-            except GraphServiceClientError:
-                pass
+                    relation_type_id = resolved_payload.id
+                    if relation_type_id.strip():
+                        decision = RelationTypeDecision(
+                            action=RelationTypeAction.MAP_TO_EXISTING,
+                            canonical_type=relation_type_id.strip().upper(),
+                            reasoning=(
+                                "Resolved against an active graph dictionary synonym."
+                            ),
+                        )
+                        self._resolution_cache.set_relation(
+                            space_id=space_id,
+                            relation_type=relation_type,
+                            value=decision,
+                        )
+                        return decision
+                except GraphServiceClientError:
+                    pass
 
-            try:
-                live_relation_types = _extract_relation_type_ids(
-                    admin_dictionary.list_dictionary_relation_types(
-                        domain_context=domain_context,
-                    ),
-                )
-            except GraphServiceClientError:
-                logger.debug("Graph relation-type listing failed during preflight", exc_info=True)
-            try:
-                live_relation_synonyms = _extract_relation_synonyms(
-                    admin_dictionary.list_dictionary_relation_synonyms(),
-                )
-            except GraphServiceClientError:
-                logger.debug("Graph relation-synonym listing failed during preflight", exc_info=True)
-            try:
-                search_match = _extract_relation_search_match(
-                    payload=admin_dictionary.search_dictionary_entries_by_domain(
-                        domain_context=domain_context,
-                    ),
-                    relation_type=normalized,
-                )
-            except GraphServiceClientError:
-                logger.debug("Graph dictionary search failed during preflight", exc_info=True)
+                try:
+                    live_relation_types = _extract_relation_type_ids(
+                        admin_dictionary.list_dictionary_relation_types(
+                            domain_context=domain_context,
+                        ),
+                    )
+                except GraphServiceClientError:
+                    logger.debug(
+                        "Graph relation-type listing failed during preflight",
+                        exc_info=True,
+                    )
+                try:
+                    live_relation_synonyms = _extract_relation_synonyms(
+                        admin_dictionary.list_dictionary_relation_synonyms(),
+                    )
+                except GraphServiceClientError:
+                    logger.debug(
+                        "Graph relation-synonym listing failed during preflight",
+                        exc_info=True,
+                    )
+                try:
+                    search_match = _extract_relation_search_match(
+                        payload=admin_dictionary.search_dictionary_entries_by_domain(
+                            domain_context=domain_context,
+                        ),
+                        relation_type=normalized,
+                    )
+                except GraphServiceClientError:
+                    logger.debug(
+                        "Graph dictionary search failed during preflight",
+                        exc_info=True,
+                    )
+        else:
+            logger.debug(
+                "Skipping live dictionary lookup for flat graph gateway without "
+                "admin dictionary context",
+            )
 
         merged_known_types = sorted(set(live_relation_types) | known_upper)
         if normalized in set(merged_known_types):
@@ -764,17 +812,6 @@ class GraphAIPreflightService:
                 )
 
         commands: list[GovernedGraphCommand] = []
-        if validation.code == "unknown_relation_type":
-            commands.append(
-                GovernedGraphCommand(
-                    kind="propose_relation_type",
-                    payload=_relation_type_proposal_payload(
-                        request=normalized_request,
-                        validation=validation,
-                    ),
-                    detail=validation.message,
-                ),
-            )
         if validation.code == "relation_constraint_not_allowed":
             proposal_payload = _relation_constraint_proposal_payload(validation=validation)
             if proposal_payload is not None:
@@ -806,7 +843,8 @@ class GraphAIPreflightService:
             normalized_payload=cast("JSONObject", normalized_request.model_dump(mode="json")),
             validation=validation,
             commands=tuple(commands),
-            requires_review=any(command.kind.startswith("propose_") for command in commands),
+            requires_review=validation.code == "unknown_relation_type"
+            or any(command.kind.startswith("propose_") for command in commands),
             blocked_detail=(
                 None
                 if commands or (
@@ -832,11 +870,11 @@ class GraphAIPreflightService:
         query_client = _query_client(graph_transport)
         try:
             entity_list = query_client.list_entities(
-                space_id=space_id,
+                space_id=str(space_id),
                 ids=[source_entity_id, target_entity_id],
                 limit=2,
             )
-        except GraphServiceClientError:
+        except _GRAPH_TRANSPORT_UNAVAILABLE_EXCEPTIONS:
             return []
         target_type = None
         for entity in entity_list.entities:
@@ -854,7 +892,7 @@ class GraphAIPreflightService:
                     limit_per_source=25,
                 ),
             )
-        except GraphServiceClientError:
+        except _GRAPH_TRANSPORT_UNAVAILABLE_EXCEPTIONS:
             return []
         return sorted({item.relation_type for item in suggestions.suggestions})
 

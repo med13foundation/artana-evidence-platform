@@ -121,8 +121,6 @@ def _graph_runtime_metadata() -> sa.MetaData:
     runtime_metadata = sa.MetaData(naming_convention=metadata.naming_convention)
     excluded_tables = {
         "source_documents",
-        "reasoning_paths",
-        "reasoning_path_steps",
         "entity_mechanism_paths",
     }
     for table in metadata.tables.values():

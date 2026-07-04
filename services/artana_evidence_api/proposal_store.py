@@ -8,6 +8,9 @@ from datetime import UTC, datetime
 from threading import Lock
 from uuid import UUID, uuid4
 
+from artana_evidence_api.document_extraction_support.proposal_relation_type_guard import (
+    normalize_candidate_claim_relation_payload,
+)
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
 
@@ -109,9 +112,14 @@ class HarnessProposalStore:
         proposal: HarnessProposalDraft,
     ) -> HarnessProposalDraft:
         """Return a normalized draft with persistence-safe presentation fields."""
+        payload = normalize_candidate_claim_relation_payload(
+            proposal_type=proposal.proposal_type,
+            payload=proposal.payload,
+        )
         return replace(
             proposal,
             title=cls.normalize_proposal_title(proposal.title),
+            payload=payload,
             evidence_grade=normalize_evidence_grade(proposal.evidence_grade),
         )
 

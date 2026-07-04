@@ -1,0 +1,96 @@
+{
+  "report_id": "2026-07-03-pr4-relation-type-hardening",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "planned_branch": "alvaro/evidence-pr4-relation-type-hardening",
+  "command": "uv run --python python3.13 python scripts/run_relation_feasibility_audit.py --extractor agent --cases scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json --output-dir reports/relation_feasibility/2026-07-03-pr4-relation-type-hardening-agent-strict",
+  "environment_note": "Local strict-agent run on 2026-07-03. The LLM/agent extractor did not complete locally, so all agent-mode cases used unavailable/fallback diagnostics and the verdict is RED. PR-4 treats that as expected while proving raw unknown relation types are now rejected, skipped, or sent to governed review.",
+  "fixture": {
+    "path": "scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json",
+    "sha256": "0be3c497378645a69038655818b65dc88af17f029679a3d6590eaa95164fbc70",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "provenance": "curated_synthetic_seed"
+  },
+  "ignored_local_artifacts": {
+    "json_path": "reports/relation_feasibility/2026-07-03-pr4-relation-type-hardening-agent-strict/relation_feasibility_report.json",
+    "json_sha256": "e4282496d49616c081e7cd8d0c7574c9ea357bf157bd5da8164c39d1bf7444d5",
+    "markdown_path": "reports/relation_feasibility/2026-07-03-pr4-relation-type-hardening-agent-strict/relation_feasibility_report.md",
+    "markdown_sha256": "50f1c759308013277a09aeaba124aeab78c5fde2e4d085e4b0f62349d8db00d8"
+  },
+  "focused_validation": {
+    "pr4_focused_tests": "6 passed before adversarial review",
+    "post_adversarial_raw_type_boundary_regressions": "7 passed",
+    "post_re_review_rejected_relation_store_and_legacy_migration_regressions": "28 passed",
+    "related_extraction_resolver_graph_client_suites": "passed",
+    "graph_validation_integration_file": "38 passed",
+    "relation_feasibility_audit_tests": "17 passed",
+    "ruff_touched_files": "passed",
+    "artana_evidence_api_service_checks": "passed after final proposal-store compatibility fixes",
+    "graph_service_checks": "passed",
+    "aggregate_service_checks": "passed with captured exit code 0; coverage 86.83% against the 86% floor"
+  },
+  "summary": {
+    "verdict": "RED",
+    "verdict_reason": "30/30 cases are invalid because agent extraction did not complete without fallback.",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "candidate_count": 9,
+    "completed_agent_candidate_count": 0,
+    "completed_agent_precision_against_gold": 0.0,
+    "completed_agent_recall_against_gold": 0.0,
+    "completed_agent_valuable_candidate_rate": 0.0,
+    "agent_completed_case_count": 0,
+    "fallback_case_count": 30,
+    "fallback_candidate_count": 9,
+    "fallback_credited_as_agent_count": 6,
+    "invalid_agent_case_count": 30,
+    "precision_against_gold": 0.7778,
+    "recall_against_gold": 0.28,
+    "valuable_candidate_rate": 0.6667,
+    "generic_relation_rate": 0.1111,
+    "raw_unknown_relation_type_count": 0,
+    "raw_unknown_relation_type_rate": 0.0,
+    "relation_type_surface_count": 9,
+    "raw_unknown_relation_type_surface_count": 0,
+    "raw_unknown_relation_type_surface_rate": 0.0,
+    "grounded_sentence_rate": 1.0,
+    "both_arguments_present_rate": 1.0,
+    "entailment_checked_rate": 1.0,
+    "entailment_supported_rate": 1.0
+  },
+  "implementation_evidence": {
+    "llm_schema": "LLM relation_type is constrained to canonical relation types or PROPOSE_NEW_RELATION_TYPE.",
+    "structured_new_type_proposal": "New relation proposals must use proposed_relation_type plus new_relation_type_rationale and are skipped by normal candidate creation.",
+    "resolver_failure": "Kernel resolver failure now returns requires_review instead of register_new.",
+    "candidate_filter": "Malformed or legacy raw types that reach resolver decisions are retained only for map_to_existing or typo_correction; review/register decisions are dropped from normal candidates.",
+    "legacy_preflight": "Flat graph gateways without validation no longer silently allow relation writes; successful test gateways expose explicit validation authority.",
+    "proposal_store_guard": "Candidate-claim proposal persistence now normalizes governed relation-type synonyms and rejects raw unknown relation types in both in-memory and SQLAlchemy stores.",
+    "audit_gate": "The relation feasibility audit counts candidate-level raw_unknown_relation_type_count plus inventory-level raw_unknown_relation_type_surface_count and treats surviving raw unknown candidate or surface types as RED-quality issues.",
+    "boundary_regressions": "Post-adversarial regressions cover normal proposal drafts, variant-aware proposal drafts, rejected-relation review items, review-queue conversion, proposal stores, preflight dictionary side effects, and graph claim persistence."
+  },
+  "adversarial_review": {
+    "external_initial_verdict": "BLOCK",
+    "fixes": [
+      "Graph /claims now rejects unknown relation types before claim persistence.",
+      "Variant-aware extraction maps AFFECTS to MODULATES and skips raw EXPLAINS from normal candidate_claim staging.",
+      "build_document_extraction_drafts skips raw unknown and PROPOSE_NEW_RELATION_TYPE candidates defensively.",
+      "Preflight no longer auto-submits relation-type dictionary proposals as a side effect of raw unknown graph writes."
+    ],
+    "external_re_review_verdict": "BLOCK",
+    "re_review_fixes": [
+      "Rejected relation review items canonicalize relation types and skip raw unknown labels before nested proposal-draft creation.",
+      "Candidate-claim proposal persistence has a shared relation-type guard for in-memory and SQLAlchemy stores.",
+      "Review-queue conversion returns conflict instead of creating a proposal from legacy raw unknown relation payloads.",
+      "The relation feasibility audit can score supplied review/proposal/graph/dictionary relation-type inventory surfaces.",
+      "Legacy proposal payloads using relation_type, proposed_relation, or SUGGESTS are migrated to governed proposed_claim_type values."
+    ],
+    "external_final_re_review": "PASS",
+    "external_final_re_review_caveat": "The strict audit currently populates candidate relation-type inventory surfaces; proposal, graph, and dictionary surfaces are covered by boundary tests until a live agent-path inventory artifact exists."
+  },
+  "adversarial_findings": [
+    "fallback_only_report",
+    "fallback_candidates_look_valuable",
+    "generic_relation_rate_high"
+  ],
+  "known_remaining_risk": "The strict audit remains RED because no local agent run completed. PR-4 closes tested raw relation-type leakage and adds a relation-type surface inventory contract, but a live agent-path inventory artifact is still required to prove the live LLM path is clean."
+}

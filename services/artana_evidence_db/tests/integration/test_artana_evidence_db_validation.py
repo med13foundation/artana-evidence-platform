@@ -541,7 +541,7 @@ def test_graph_service_validate_claim_requires_evidence_for_allowed_triple(
     assert payload["next_actions"][0]["action"] == "attach_evidence"
 
 
-def test_graph_service_create_claim_uses_validator_for_unknown_relation_type(
+def test_graph_service_create_claim_rejects_unknown_relation_type(
     graph_client: TestClient,
 ) -> None:
     space_id, admin_headers = _create_space(graph_client)
@@ -573,12 +573,11 @@ def test_graph_service_create_claim_uses_validator_for_unknown_relation_type(
         },
     )
 
-    assert response.status_code == 201, response.text
+    assert response.status_code == 400, response.text
     payload = response.json()
-    assert payload["relation_type"] == "PROTECTS_AGAINST"
-    assert payload["validation_state"] == "UNDEFINED"
-    assert payload["validation_reason"] == "relation_type_not_found_in_dictionary"
-    assert payload["persistability"] == "NON_PERSISTABLE"
+    assert payload["detail"]["code"] == "unknown_relation_type"
+    assert payload["detail"]["validation_state"] == "UNDEFINED"
+    assert payload["detail"]["persistability"] == "NON_PERSISTABLE"
 
 
 def test_graph_service_validate_relation_constraint_existing_block_requests_review(
@@ -774,6 +773,20 @@ def test_graph_service_ai_claim_requires_provenance_envelope(
         "rationale": "The sentence supports the relation.",
         "evidence_references": ["pmid:123456"],
     }
+    request_payload["metadata"]["evidence_grounding"] = {
+        "anchor_start": 0,
+        "anchor_end": 47,
+        "match_kind": "exact",
+        "score": 1.0,
+        "subject_present": True,
+        "object_present": True,
+        "grounded": True,
+    }
+    request_payload["metadata"]["support_verification"] = {
+        "support": "ENTAILS",
+        "rationale": "The sentence directly supports the relation.",
+        "model_id": "artana-heuristic-support-v1",
+    }
     accepted_response = graph_client.post(
         f"/v1/spaces/{space_id}/claims",
         headers=admin_headers,
@@ -782,6 +795,152 @@ def test_graph_service_ai_claim_requires_provenance_envelope(
     assert accepted_response.status_code == 201, accepted_response.text
     accepted_payload = accepted_response.json()
     assert accepted_payload["metadata"]["ai_provenance"]["model_id"] == "artana-kernel"
+
+
+def test_graph_service_ai_claim_requires_entailing_support_verification(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    request_payload = {
+        "source_entity_id": source_id,
+        "target_entity_id": target_id,
+        "relation_type": "ASSOCIATED_WITH",
+        "assessment": _SUPPORTED_ASSESSMENT,
+        "claim_text": "MED13 is associated with developmental delay.",
+        "evidence_sentence": "MED13 was associated with developmental delay.",
+        "evidence_sentence_source": "artana_generated",
+        "source_document_ref": "pmid:123456",
+        "agent_run_id": "ai-run-support-test",
+        "ai_provenance": {
+            "model_id": "artana-kernel",
+            "model_version": "test",
+            "prompt_id": "graph-validation-ai-claim",
+            "prompt_version": "v1",
+            "input_hash": uuid4().hex,
+            "rationale": "The sentence supports the relation.",
+            "evidence_references": ["pmid:123456"],
+        },
+        "metadata": {
+            "origin": "graph_harness",
+            "evidence_grounding": {
+                "anchor_start": 0,
+                "anchor_end": 47,
+                "match_kind": "exact",
+                "score": 1.0,
+                "subject_present": True,
+                "object_present": True,
+                "grounded": True,
+            },
+            "support_verification": {
+                "support": "NEUTRAL",
+                "rationale": "The sentence co-mentions both endpoints.",
+                "model_id": "artana-heuristic-support-v1",
+            },
+        },
+    }
+
+    validation_response = graph_client.post(
+        f"/v1/spaces/{space_id}/validate/claim",
+        headers=admin_headers,
+        json=request_payload,
+    )
+
+    assert validation_response.status_code == 200, validation_response.text
+    validation_payload = validation_response.json()
+    assert validation_payload["valid"] is False
+    assert validation_payload["code"] == "insufficient_evidence"
+    assert validation_payload["message"] == (
+        "AI-authored claims require support verification with support=ENTAILS."
+    )
+
+
+def test_graph_service_ai_claim_requires_structured_grounding(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    request_payload = {
+        "source_entity_id": source_id,
+        "target_entity_id": target_id,
+        "relation_type": "ASSOCIATED_WITH",
+        "assessment": _SUPPORTED_ASSESSMENT,
+        "claim_text": "MED13 is associated with developmental delay.",
+        "evidence_sentence": "MED13 was associated with developmental delay.",
+        "evidence_sentence_source": "artana_generated",
+        "source_document_ref": "pmid:123456",
+        "agent_run_id": "ai-run-grounding-test",
+        "ai_provenance": {
+            "model_id": "artana-kernel",
+            "model_version": "test",
+            "prompt_id": "graph-validation-ai-claim",
+            "prompt_version": "v1",
+            "input_hash": uuid4().hex,
+            "rationale": "The sentence supports the relation.",
+            "evidence_references": ["pmid:123456"],
+        },
+        "metadata": {
+            "origin": "graph_harness",
+            "evidence_grounding": {
+                "anchor_start": 0,
+                "anchor_end": 47,
+                "match_kind": "exact",
+                "score": 1.0,
+                "subject_present": True,
+                "object_present": False,
+                "grounded": False,
+            },
+        },
+    }
+
+    validation_response = graph_client.post(
+        f"/v1/spaces/{space_id}/validate/claim",
+        headers=admin_headers,
+        json=request_payload,
+    )
+
+    assert validation_response.status_code == 200, validation_response.text
+    validation_payload = validation_response.json()
+    assert validation_payload["valid"] is False
+    assert validation_payload["code"] == "insufficient_evidence"
+    assert validation_payload["message"] == (
+        "AI-authored claims require structured evidence grounding with "
+        "subject and object present."
+    )
+
+    create_response = graph_client.post(
+        f"/v1/spaces/{space_id}/claims",
+        headers=admin_headers,
+        json=request_payload,
+    )
+    assert create_response.status_code == 400, create_response.text
+    assert create_response.json()["detail"]["code"] == "insufficient_evidence"
 
 
 def test_graph_service_create_claim_rejects_duplicate_without_replay_key(
@@ -987,7 +1146,7 @@ def test_graph_service_validate_claim_reports_conflicting_existing_claim(
     )
 
 
-def test_graph_service_non_persistable_claim_is_queryable_but_not_promotable(
+def test_graph_service_unknown_relation_type_claim_is_not_persisted(
     graph_client: TestClient,
 ) -> None:
     space_id, admin_headers = _create_space(graph_client)
@@ -1018,9 +1177,10 @@ def test_graph_service_non_persistable_claim_is_queryable_but_not_promotable(
             "metadata": {"origin": "test"},
         },
     )
-    assert create_response.status_code == 201, create_response.text
-    claim_id = create_response.json()["id"]
-    assert create_response.json()["persistability"] == "NON_PERSISTABLE"
+    assert create_response.status_code == 400, create_response.text
+    payload = create_response.json()["detail"]
+    assert payload["code"] == "unknown_relation_type"
+    assert payload["persistability"] == "NON_PERSISTABLE"
 
     list_response = graph_client.get(
         f"/v1/spaces/{space_id}/claims",
@@ -1028,19 +1188,8 @@ def test_graph_service_non_persistable_claim_is_queryable_but_not_promotable(
         params={"relation_type": "PROTECTS_AGAINST"},
     )
     assert list_response.status_code == 200, list_response.text
-    assert list_response.json()["total"] == 1
-    assert list_response.json()["claims"][0]["id"] == claim_id
-
-    resolve_response = graph_client.patch(
-        f"/v1/spaces/{space_id}/claims/{claim_id}",
-        headers=admin_headers,
-        json={"claim_status": "RESOLVED"},
-    )
-    assert resolve_response.status_code == 400, resolve_response.text
-    assert (
-        resolve_response.json()["detail"]
-        == "Claim cannot be resolved yet because it is NON_PERSISTABLE. Use Needs Mapping or Reject."
-    )
+    assert list_response.json()["total"] == 0
+    assert list_response.json()["claims"] == []
 
 
 def test_graph_service_create_relation_rejects_unknown_relation_type(
@@ -1121,6 +1270,117 @@ def test_graph_service_create_relation_rejects_missing_required_evidence(
     assert payload["validation_state"] == "INVALID_COMPONENTS"
     assert payload["persistability"] == "NON_PERSISTABLE"
     assert payload["next_actions"][0]["action"] == "attach_evidence"
+
+
+def test_graph_service_create_relation_rejects_ai_generated_ungrounded_evidence(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+
+    response = graph_client.post(
+        f"/v1/spaces/{space_id}/relations",
+        headers=admin_headers,
+        json={
+            "source_id": source_id,
+            "target_id": target_id,
+            "relation_type": "ASSOCIATED_WITH",
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "evidence_sentence": "MED13 was associated with developmental delay.",
+            "evidence_sentence_source": "artana_generated",
+            "source_document_ref": "harness_proposal:proposal-1",
+            "metadata": {
+                "origin": "graph_harness",
+                "evidence_grounding": {
+                    "anchor_start": 0,
+                    "anchor_end": 47,
+                    "match_kind": "exact",
+                    "score": 1.0,
+                    "subject_present": True,
+                    "object_present": False,
+                    "grounded": False,
+                },
+            },
+        },
+    )
+
+    assert response.status_code == 400, response.text
+    payload = response.json()["detail"]
+    assert payload["code"] == "insufficient_evidence"
+    assert payload["validation_state"] == "INVALID_COMPONENTS"
+    assert payload["persistability"] == "NON_PERSISTABLE"
+    assert payload["next_actions"][0]["action"] == "attach_grounded_evidence"
+
+
+def test_graph_service_create_relation_rejects_ai_generated_non_entailing_support(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+
+    response = graph_client.post(
+        f"/v1/spaces/{space_id}/relations",
+        headers=admin_headers,
+        json={
+            "source_id": source_id,
+            "target_id": target_id,
+            "relation_type": "ASSOCIATED_WITH",
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "evidence_sentence": "MED13 was associated with developmental delay.",
+            "evidence_sentence_source": "artana_generated",
+            "source_document_ref": "harness_proposal:proposal-1",
+            "metadata": {
+                "origin": "graph_harness",
+                "evidence_grounding": {
+                    "anchor_start": 0,
+                    "anchor_end": 47,
+                    "match_kind": "exact",
+                    "score": 1.0,
+                    "subject_present": True,
+                    "object_present": True,
+                    "grounded": True,
+                },
+                "support_verification": {
+                    "support": "NEUTRAL",
+                    "rationale": "The sentence co-mentions both endpoints.",
+                    "model_id": "artana-heuristic-support-v1",
+                },
+            },
+        },
+    )
+
+    assert response.status_code == 400, response.text
+    payload = response.json()["detail"]
+    assert payload["code"] == "insufficient_evidence"
+    assert payload["validation_state"] == "INVALID_COMPONENTS"
+    assert payload["persistability"] == "NON_PERSISTABLE"
+    assert payload["next_actions"][0]["action"] == "attach_support_verification"
 
 
 def test_graph_service_create_relation_rejects_review_only_triple(

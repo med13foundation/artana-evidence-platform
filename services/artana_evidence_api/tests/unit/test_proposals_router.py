@@ -28,6 +28,7 @@ from artana_evidence_api.tests.support import FakeKernelRuntime
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
     KernelEntityResponse,
+    KernelGraphValidationResponse,
     KernelObservationResponse,
 )
 from fastapi.testclient import TestClient
@@ -103,6 +104,26 @@ class _StubGraphApiGateway:
         del space_id
         self.created_relation_requests.append(request)
         return _FakeGraphRelationResponse(id=uuid4())
+
+    def validate_claim_create(
+        self,
+        *,
+        space_id: str,
+        request: object,
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        relation_type = str(getattr(request, "relation_type", "")).strip()
+        return _allowed_relation_validation(relation_type)
+
+    def validate_relation_materialization(
+        self,
+        *,
+        space_id: str,
+        payload: dict[str, object],
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        relation_type = str(payload.get("relation_type", "")).strip()
+        return _allowed_relation_validation(relation_type)
 
     def create_entity(
         self,
@@ -199,6 +220,21 @@ class _StubGraphApiGateway:
 
     def close(self) -> None:
         return None
+
+
+def _allowed_relation_validation(relation_type: str) -> KernelGraphValidationResponse:
+    normalized = relation_type.strip().upper().replace(" ", "_")
+    return KernelGraphValidationResponse(
+        valid=True,
+        code="allowed",
+        message="Test graph validation allows relation write.",
+        severity="info",
+        next_actions=[],
+        normalized_relation_type=normalized,
+        validation_state="ALLOWED",
+        validation_reason="test_validation",
+        persistability="PERSISTABLE",
+    )
 
 
 def _auth_headers(*, role: str = "researcher") -> dict[str, str]:

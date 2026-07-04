@@ -20,7 +20,10 @@ from artana_evidence_api.graph_client import (
     GraphTransportConfig,
 )
 from artana_evidence_api.graph_integration.context import GraphCallContext
-from artana_evidence_api.graph_integration.preflight import GraphAIPreflightService
+from artana_evidence_api.graph_integration.preflight import (
+    GraphAIPreflightService,
+    _legacy_allowed_validation,
+)
 from artana_evidence_api.graph_integration.submission import (
     GraphWorkflowSubmissionService,
 )
@@ -1063,6 +1066,16 @@ def _raw_mutation_transport_factory_with_client(
     return _factory
 
 
+def test_legacy_relation_validation_fails_closed_for_relation_writes() -> None:
+    validation = _legacy_allowed_validation(relation_type="PROTECTS_AGAINST")
+
+    assert validation.valid is False
+    assert validation.code == "unknown_relation_type"
+    assert validation.normalized_relation_type == "PROTECTS_AGAINST"
+    assert validation.validation_state == "UNDEFINED"
+    assert validation.persistability == "NON_PERSISTABLE"
+
+
 def _preflight_services(
     gateway: GraphTransportBundle,
 ) -> tuple[GraphAIPreflightService, GraphWorkflowSubmissionService]:
@@ -1986,7 +1999,7 @@ def test_create_claim_posts_after_allowed_preflight() -> None:
     assert response.persistability == "PERSISTABLE"
 
 
-def test_create_claim_proposes_missing_relation_type_without_mutation(
+def test_create_claim_blocks_missing_relation_type_without_side_effects(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _stub_kernel_relation_register_new(
@@ -2039,26 +2052,8 @@ def test_create_claim_proposes_missing_relation_type_without_mutation(
 
     assert "not approved" in str(exc_info.value)
     assert fake_client.calls[0][1].endswith("/validate/claim")
-    assert ("POST", "/v1/dictionary/proposals/relation-types") in fake_client.calls
-    assert fake_client.relation_type_proposal_payload == {
-        "id": "PROTECTS_AGAINST",
-        "display_name": "Protects Against",
-        "description": (
-            "Proposed relation type discovered during graph relation validation."
-        ),
-        "domain_context": "general",
-        "rationale": (
-            "Relation preflight found no approved relation type for PROTECTS_AGAINST."
-        ),
-        "evidence_payload": {
-            "source": "graph_preflight",
-            "source_document_ref": "pmid:123",
-            "claim_text": "MED13 protects against developmental delay.",
-        },
-        "is_directional": True,
-        "inverse_label": None,
-        "source_ref": "graph-preflight:proposal:relation-type:protects_against",
-    }
+    assert ("POST", "/v1/dictionary/proposals/relation-types") not in fake_client.calls
+    assert fake_client.relation_type_proposal_payload is None
     assert all(not url.endswith("/claims") for _, url in fake_client.calls)
 
 
@@ -2199,7 +2194,7 @@ def test_create_claim_fuzzy_matches_known_relation_type_before_write() -> None:
     assert response.relation_type in {"REPRESSS", "REPRESSES"}
 
 
-def test_create_claim_dictionary_fetch_failure_proposes_and_stops(
+def test_create_claim_dictionary_fetch_failure_blocks_without_side_effects(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _stub_kernel_relation_register_new(
@@ -2252,7 +2247,7 @@ def test_create_claim_dictionary_fetch_failure_proposes_and_stops(
 
     assert "not approved" in str(exc_info.value)
     assert fake_client.calls[0][1].endswith("/validate/claim")
-    assert fake_client.relation_type_proposal_payload is not None
+    assert fake_client.relation_type_proposal_payload is None
     assert all(not url.endswith("/claims") for _, url in fake_client.calls)
 
 
@@ -2326,7 +2321,7 @@ def test_create_relation_posts_after_allowed_preflight() -> None:
     assert response.relation_type == "ASSOCIATED_WITH"
 
 
-def test_create_relation_proposes_missing_relation_type_without_mutation(
+def test_create_relation_blocks_missing_relation_type_without_side_effects(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _stub_kernel_relation_register_new(
@@ -2376,26 +2371,8 @@ def test_create_relation_proposes_missing_relation_type_without_mutation(
 
     assert "not approved" in str(exc_info.value)
     assert fake_client.calls[0][1].endswith("/validate/triple")
-    assert ("POST", "/v1/dictionary/proposals/relation-types") in fake_client.calls
-    assert fake_client.relation_type_proposal_payload == {
-        "id": "PROTECTS_AGAINST",
-        "display_name": "Protects Against",
-        "description": (
-            "Proposed relation type discovered during graph relation validation."
-        ),
-        "domain_context": "general",
-        "rationale": (
-            "Relation preflight found no approved relation type for PROTECTS_AGAINST."
-        ),
-        "evidence_payload": {
-            "source": "graph_preflight",
-            "source_document_ref": "pmid:123",
-            "claim_text": "MED13 protects against developmental delay.",
-        },
-        "is_directional": True,
-        "inverse_label": None,
-        "source_ref": "graph-preflight:proposal:relation-type:protects_against",
-    }
+    assert ("POST", "/v1/dictionary/proposals/relation-types") not in fake_client.calls
+    assert fake_client.relation_type_proposal_payload is None
     assert all(not url.endswith("/relations") for _, url in fake_client.calls)
 
 

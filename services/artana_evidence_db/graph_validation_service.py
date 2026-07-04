@@ -24,6 +24,7 @@ from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
     GraphValidationSeverity,
     KernelGraphValidationResponse,
     KernelRelationClaimCreateRequest,
+    KernelRelationCreateRequest,
     KernelRelationTripleValidationRequest,
 )
 from artana_evidence_db.graph_core_models import KernelProvenanceRecord
@@ -35,6 +36,9 @@ from artana_evidence_db.observation_value_support import (
 )
 from artana_evidence_db.relation_claim_models import KernelRelationClaim
 from artana_evidence_db.semantic_ports import DictionaryPort
+from artana_evidence_db.validation.claim_ai_evidence_validation import (
+    validate_ai_claim_evidence,
+)
 
 _VALIDATION_REASON_BY_CODE: dict[GraphValidationCode, str] = {
     "allowed": "created_via_claim_api",
@@ -150,24 +154,12 @@ class GraphValidationService:
                 source_document_ref=request.source_document_ref,
             ),
         )
-        ai_provenance_error = self._claim_ai_provenance_error(request)
-        if (
-            ai_provenance_error is not None
-            and triple_validation.normalized_relation_type is not None
-        ):
-            return self._response(
-                valid=False,
-                code="missing_ai_provenance",
-                message=ai_provenance_error,
-                severity="blocking",
-                normalized_relation_type=triple_validation.normalized_relation_type,
-                source_type=triple_validation.source_type,
-                target_type=triple_validation.target_type,
-                requires_evidence=triple_validation.requires_evidence,
-                profile=triple_validation.profile,
-                validation_state="INVALID_COMPONENTS",
-                persistability="NON_PERSISTABLE",
-            )
+        ai_validation = self._ai_evidence_validation_response(
+            request=request,
+            triple_validation=triple_validation,
+        )
+        if ai_validation is not None:
+            return ai_validation
         if (
             not check_existing_claims
             or self._relation_claim_service is None
@@ -1075,51 +1067,47 @@ class GraphValidationService:
             persistability=persistability,
         )
 
-    @staticmethod
-    def _claim_ai_provenance_error(
-        request: KernelRelationClaimCreateRequest,
-    ) -> str | None:
-        if not GraphValidationService._is_ai_authored_claim(request):
-            return None
-        if _normalize_optional_text(request.agent_run_id) is None:
-            return "AI-authored claims require agent_run_id."
-        if request.ai_provenance is None:
-            return "AI-authored claims require ai_provenance audit metadata."
-        if (
-            not request.ai_provenance.evidence_references
-            and _normalize_optional_text(request.source_document_ref) is None
-        ):
-            return (
-                "AI-authored claims require evidence_references or "
-                "source_document_ref in the provenance envelope."
-            )
-        return None
+    def validate_ai_authored_relation_request(
+        self,
+        *,
+        request: KernelRelationCreateRequest,
+        triple_validation: KernelGraphValidationResponse,
+    ) -> KernelGraphValidationResponse | None:
+        """Return fail-closed AI evidence validation for canonical relation writes."""
 
-    @staticmethod
-    def _is_ai_authored_claim(request: KernelRelationClaimCreateRequest) -> bool:
-        if request.ai_provenance is not None:
-            return True
-        if _normalize_optional_text(request.agent_run_id) is not None:
-            return True
-        evidence_source = _normalize_optional_text(request.evidence_sentence_source)
-        if evidence_source is not None and evidence_source.lower() in {
-            "ai_generated",
-            "artana_generated",
-            "llm_generated",
-        }:
-            return True
-        for key in ("origin", "source", "author_type", "created_by"):
-            marker = request.metadata.get(key)
-            if isinstance(marker, str) and marker.strip().lower() in {
-                "ai",
-                "agent",
-                "artana",
-                "artana_kernel",
-                "graph_harness",
-                "llm",
-            }:
-                return True
-        return "artana_idempotency_key" in request.metadata
+        return self._ai_evidence_validation_response(
+            request=request,
+            triple_validation=triple_validation,
+        )
+
+    def _ai_evidence_validation_response(
+        self,
+        *,
+        request: KernelRelationClaimCreateRequest | KernelRelationCreateRequest,
+        triple_validation: KernelGraphValidationResponse,
+    ) -> KernelGraphValidationResponse | None:
+        if triple_validation.normalized_relation_type is None:
+            return None
+        issue = validate_ai_claim_evidence(
+            request,
+            requires_evidence=triple_validation.requires_evidence,
+        )
+        if issue is None:
+            return None
+        return self._response(
+            valid=False,
+            code=issue.code,
+            message=issue.message,
+            severity="blocking",
+            normalized_relation_type=triple_validation.normalized_relation_type,
+            source_type=triple_validation.source_type,
+            target_type=triple_validation.target_type,
+            requires_evidence=triple_validation.requires_evidence,
+            profile=triple_validation.profile,
+            validation_state="INVALID_COMPONENTS",
+            persistability="NON_PERSISTABLE",
+            next_actions=list(issue.next_actions),
+        )
 
     @staticmethod
     def _has_evidence(request: KernelRelationTripleValidationRequest) -> bool:

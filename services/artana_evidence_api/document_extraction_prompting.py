@@ -7,7 +7,13 @@ from artana_evidence_api.document_extraction_contracts import (
     GoalRelevanceScale,
     PriorityScale,
 )
-from pydantic import BaseModel, ConfigDict, Field
+from artana_evidence_api.document_extraction_relation_taxonomy import (
+    LLM_EXTRACTION_RELATION_TYPES,
+    LLM_PROPOSE_NEW_RELATION_TYPE,
+    LLM_RELATION_SYNONYMS,
+    LLM_VALID_RELATION_TYPES,
+)
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
@@ -25,7 +31,42 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
                 "(e.g. BRCA1, cisplatin, EGFR T790M)"
             ),
         )
-        relation_type: str = Field(..., min_length=1, max_length=50)
+        subject_curie: str | None = Field(
+            default=None,
+            min_length=1,
+            max_length=160,
+            description=(
+                "Stable biomedical CURIE for subject when directly knowable "
+                "from the entity name, otherwise null."
+            ),
+        )
+        relation_type: str = Field(
+            ...,
+            min_length=1,
+            max_length=64,
+            description=(
+                "One canonical relation type, or PROPOSE_NEW_RELATION_TYPE "
+                "when proposing a new relation type in proposed_relation_type."
+            ),
+        )
+        proposed_relation_type: str | None = Field(
+            default=None,
+            min_length=1,
+            max_length=64,
+            description=(
+                "UPPER_SNAKE_CASE proposed relation type. Required only when "
+                "relation_type is PROPOSE_NEW_RELATION_TYPE."
+            ),
+        )
+        new_relation_type_rationale: str | None = Field(
+            default=None,
+            min_length=1,
+            max_length=400,
+            description=(
+                "Short explanation for why the proposed relation type is not "
+                "covered by the canonical taxonomy."
+            ),
+        )
         object: str = Field(
             ...,
             min_length=1,
@@ -35,7 +76,63 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
                 "(e.g. TNBC, osimertinib, DNA damage repair)"
             ),
         )
+        object_curie: str | None = Field(
+            default=None,
+            min_length=1,
+            max_length=160,
+            description=(
+                "Stable biomedical CURIE for object when directly knowable "
+                "from the entity name, otherwise null."
+            ),
+        )
         sentence: str = Field(..., min_length=1, max_length=1000)
+
+        @field_validator("relation_type")
+        @classmethod
+        def _validate_relation_type(cls, value: str) -> str:
+            normalized = _normalize_relation_type(value)
+            canonical = LLM_RELATION_SYNONYMS.get(normalized, normalized)
+            if canonical not in LLM_EXTRACTION_RELATION_TYPES:
+                raise ValueError(
+                    "relation_type must be a canonical relation type or "
+                    f"{LLM_PROPOSE_NEW_RELATION_TYPE}",
+                )
+            return canonical
+
+        @field_validator("proposed_relation_type")
+        @classmethod
+        def _validate_proposed_relation_type(cls, value: str | None) -> str | None:
+            if value is None:
+                return None
+            normalized = _normalize_relation_type(value)
+            canonical = LLM_RELATION_SYNONYMS.get(normalized, normalized)
+            if normalized == LLM_PROPOSE_NEW_RELATION_TYPE:
+                raise ValueError("proposed_relation_type must be a concrete type")
+            return canonical
+
+        @model_validator(mode="after")
+        def _validate_new_relation_contract(self) -> LLMRelation:
+            if self.relation_type == LLM_PROPOSE_NEW_RELATION_TYPE:
+                if self.proposed_relation_type is None:
+                    raise ValueError(
+                        "proposed_relation_type is required for new relation proposals",
+                    )
+                if self.proposed_relation_type in LLM_VALID_RELATION_TYPES:
+                    self.relation_type = self.proposed_relation_type
+                    self.proposed_relation_type = None
+                    self.new_relation_type_rationale = None
+                    return self
+                if self.new_relation_type_rationale is None:
+                    raise ValueError(
+                        "new_relation_type_rationale is required for new "
+                        "relation proposals",
+                    )
+            elif self.proposed_relation_type is not None:
+                raise ValueError(
+                    "proposed_relation_type is only allowed when relation_type is "
+                    f"{LLM_PROPOSE_NEW_RELATION_TYPE}",
+                )
+            return self
 
     class LLMExtractionResult(BaseModel):
         model_config = ConfigDict(strict=True)
@@ -46,6 +143,19 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
         )
 
     return LLMExtractionResult
+
+
+def _normalize_relation_type(value: str) -> str:
+    return value.strip().upper().replace(" ", "_")
+
+
+def _relation_type_prompt_lines() -> str:
+    """Return the canonical extraction relation types for prompt injection."""
+
+    return "\n".join(
+        f"    {relation_type}"
+        for relation_type in sorted(LLM_VALID_RELATION_TYPES)
+    )
 
 
 def build_proposal_review_output_schema() -> type[BaseModel]:
@@ -70,7 +180,7 @@ def build_proposal_review_output_schema() -> type[BaseModel]:
     return ProposalReviewResult
 
 
-LLM_EXTRACTION_SYSTEM_PROMPT = """You are a biomedical knowledge extraction system. Your task is to identify concrete biological relationships from research text and return them as structured triples.
+LLM_EXTRACTION_SYSTEM_PROMPT = f"""You are a biomedical knowledge extraction system. Your task is to identify concrete biological relationships from research text and return them as structured triples.
 
 Each triple has:
 - subject: a single named biomedical entity. This MUST be a short canonical name, not a sentence fragment.
@@ -78,32 +188,24 @@ Each triple has:
   BAD: "Inherited pathogenic variants in BRCA1", "In order to examine whether", "there are DNA repair functions", "the compound was found to"
   Rules: max 4 words. Use gene symbols (BRCA1 not "breast cancer gene 1"). Use drug names (cisplatin not "the platinum agent"). Use standard abbreviations (TNBC, NSCLC, HRD). For mutations, use the notation (T790M, V600E).
 - relation_type: exactly one of these canonical types:
+{_relation_type_prompt_lines()}
 
-  Core causal relations:
-    ASSOCIATED_WITH — generic biomedical association
-    CAUSES — directional causal relationship
-    TREATS — therapeutic relationship (intervention → condition)
-    TARGETS — directed targeting (intervention → molecular entity)
-    BIOMARKER_FOR — measurable signal linked to a condition
-    PHYSICALLY_INTERACTS_WITH — physical interaction between molecules
-    ACTIVATES — positive regulatory relationship
-    REGULATES — generic regulatory relationship
-    INHIBITS — negative regulatory relationship
-
-  Extended scientific relations:
-    UPSTREAM_OF — mechanistic ordering in pathway chains
-    DOWNSTREAM_OF — inverse mechanistic ordering
-    PART_OF — compositional relationship
-    EXPRESSED_IN — expression in tissue/cell context
-    PARTICIPATES_IN — entity participates in a process
-
-  Evidence relations:
-    SUPPORTS — evidence supporting a claim
-    REFINES — more specific statement or mechanism
-
-  If none of these fit, you may propose a new relation type using UPPER_SNAKE_CASE (e.g., CONFERS_RESISTANCE_TO, SENSITIZES_TO, CO_EXPRESSED_WITH). New types will be evaluated and registered by the system's ontology resolver.
+  If none of these fit, set relation_type to PROPOSE_NEW_RELATION_TYPE and put the UPPER_SNAKE_CASE proposal in proposed_relation_type with a concise new_relation_type_rationale. Do not put a raw new type in relation_type.
+  Use ASSOCIATED_WITH only when no more specific canonical relation fits the
+  same subject/object pair. If one sentence supports both a generic association
+  and a specific mechanism, output only the specific mechanism.
+  Use PREDISPOSES_TO for risk or susceptibility language.
+  Use SENSITIZES_TO for drug-sensitivity language.
+  Use BIOMARKER_FOR when an expression, score, variant, or signature predicts
+  a condition or treatment response.
 
 - object: the target entity. Same rules as subject: short canonical name, max 4 words, no sentence fragments.
+  Preserve modifiers that define the biomedical entity or clinical subgroup.
+  Do not shorten "BRCA-mutated ovarian cancer" to "ovarian cancer".
+  Do not shorten "early-onset breast cancer" to "breast cancer".
+  Do not shorten "response to pembrolizumab" to "pembrolizumab response"
+  unless both arguments remain explicit in the sentence.
+- subject_curie and object_curie: stable biomedical identifiers for the subject/object when directly knowable from the exact entity name. Use CURIEs such as HGNC:22474, HP:0001263, MONDO:0000001, CHEBI:63637, GO:0006281, or MESH:D009369. If uncertain, ambiguous, unsupported by the name, or unavailable, return null rather than guessing.
 - sentence: the verbatim sentence from the input text that supports this relationship. Copy it exactly, do not paraphrase.
 
 IMPORTANT — do NOT extract:
@@ -122,6 +224,10 @@ Focus on:
 - Pathway interactions (BRCA1 REGULATES DNA damage repair)
 - Gene expression (PD-L1 EXPRESSED_IN tumor microenvironment)
 - Therapeutic relationships (cisplatin TREATS triple-negative breast cancer)
+- Risk relationships (TP53 loss PREDISPOSES_TO early-onset breast cancer)
+- Sensitivity relationships (BRCA1 loss SENSITIZES_TO cisplatin)
+- Treatment-response biomarkers (PD-L1 expression BIOMARKER_FOR response to pembrolizumab)
+- Governed relation proposals (MET amplification PROPOSE_NEW_RELATION_TYPE CONFERS_RESISTANCE_TO erlotinib)
 
 Return up to 10 of the strongest, most specific relationships. Quality over quantity."""
 

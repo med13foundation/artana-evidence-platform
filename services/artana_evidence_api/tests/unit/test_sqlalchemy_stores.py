@@ -571,7 +571,7 @@ def test_sqlalchemy_document_delete_contract_removes_document_children(
                 ranking_score=0.8,
                 reasoning_path={},
                 evidence_bundle=[],
-                payload={},
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
                 metadata={},
                 document_id=document.id,
             ),
@@ -671,7 +671,10 @@ def test_sqlalchemy_harness_proposal_store_filters_by_document_id(
                 ranking_score=0.91,
                 reasoning_path={},
                 evidence_bundle=[],
-                payload={"proposed_subject": str(uuid4())},
+                payload={
+                    "proposed_subject": str(uuid4()),
+                    "proposed_claim_type": "ASSOCIATED_WITH",
+                },
                 metadata={"origin": "a"},
                 document_id=target_document_id,
                 evidence_grade="High",
@@ -686,7 +689,10 @@ def test_sqlalchemy_harness_proposal_store_filters_by_document_id(
                 ranking_score=0.75,
                 reasoning_path={},
                 evidence_bundle=[],
-                payload={"proposed_subject": str(uuid4())},
+                payload={
+                    "proposed_subject": str(uuid4()),
+                    "proposed_claim_type": "ASSOCIATED_WITH",
+                },
                 metadata={"origin": "b"},
                 document_id=str(uuid4()),
                 evidence_grade="Limited",
@@ -972,27 +978,27 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
             HarnessProposalDraft(
                 proposal_type="candidate_claim",
                 source_kind="hypothesis_run",
-                source_key="entity-1:entity-1:SUGGESTS:target-1",
+                source_key="entity-1:entity-1:ASSOCIATED_WITH:target-1",
                 title="Candidate claim A",
                 summary="First ranked candidate.",
                 confidence=0.81,
                 ranking_score=0.91,
                 reasoning_path={"seed_entity_id": "entity-1"},
                 evidence_bundle=[{"source_type": "db", "locator": "entity-1"}],
-                payload={"proposed_claim_type": "SUGGESTS"},
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
                 metadata={"source_type": "pubmed"},
             ),
             HarnessProposalDraft(
                 proposal_type="candidate_claim",
                 source_kind="hypothesis_run",
-                source_key="entity-1:entity-1:SUGGESTS:target-2",
+                source_key="entity-1:entity-1:ASSOCIATED_WITH:target-2",
                 title="Candidate claim B",
                 summary="Second ranked candidate.",
                 confidence=0.72,
                 ranking_score=0.65,
                 reasoning_path={"seed_entity_id": "entity-1"},
                 evidence_bundle=[{"source_type": "db", "locator": "entity-2"}],
-                payload={"proposed_claim_type": "SUGGESTS"},
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
                 metadata={"source_type": "pubmed"},
             ),
         ),
@@ -1098,6 +1104,161 @@ def test_sqlalchemy_harness_proposal_store_normalizes_oversized_titles(
     persisted_model = session.get(HarnessProposalModel, created[0].id)
     assert persisted_model is not None
     assert persisted_model.title == created[0].title
+
+
+def test_sqlalchemy_harness_proposal_store_rejects_raw_unknown_candidate_claim_type(
+    session: Session,
+) -> None:
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-extraction",
+        title="Raw relation proposal guard",
+        input_payload={"document_id": str(uuid4())},
+    )
+
+    with pytest.raises(ValueError, match="unknown relation type"):
+        proposal_store.create_proposals(
+            space_id=space_id,
+            run_id=run.id,
+            proposals=(
+                HarnessProposalDraft(
+                    proposal_type="candidate_claim",
+                    source_kind="document_extraction",
+                    source_key="doc-raw:0",
+                    title="Raw unknown claim",
+                    summary="This claim should not persist.",
+                    confidence=0.74,
+                    ranking_score=0.74,
+                    reasoning_path={"document_id": "doc-raw"},
+                    evidence_bundle=[],
+                    payload={"proposed_claim_type": "PROTECTS_AGAINST"},
+                    metadata={"source_type": "pubmed"},
+                ),
+            ),
+        )
+
+    assert session.query(HarnessProposalModel).count() == 0
+
+
+def test_sqlalchemy_harness_proposal_store_canonicalizes_candidate_claim_type(
+    session: Session,
+) -> None:
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-extraction",
+        title="Canonical relation proposal guard",
+        input_payload={"document_id": str(uuid4())},
+    )
+
+    created = proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc-synonym:0",
+                title="Synonym claim",
+                summary="This claim should persist with canonical relation type.",
+                confidence=0.74,
+                ranking_score=0.74,
+                reasoning_path={"document_id": "doc-synonym"},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "AFFECTS"},
+                metadata={"source_type": "pubmed"},
+            ),
+        ),
+    )
+
+    assert created[0].payload["proposed_claim_type"] == "MODULATES"
+    persisted_model = session.get(HarnessProposalModel, created[0].id)
+    assert persisted_model is not None
+    assert persisted_model.payload["proposed_claim_type"] == "MODULATES"
+
+
+def test_sqlalchemy_harness_proposal_store_migrates_legacy_relation_type_key(
+    session: Session,
+) -> None:
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="hypotheses",
+        title="Legacy relation key proposal guard",
+        input_payload={"seed_entity_ids": ["entity-1"]},
+    )
+
+    created = proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="hypothesis_run",
+                source_key="legacy-relation-key:0",
+                title="Legacy relation key claim",
+                summary="This claim uses the old relation_type payload key.",
+                confidence=0.74,
+                ranking_score=0.74,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"relation_type": "REGULATES"},
+                metadata={"source_type": "pubmed"},
+            ),
+        ),
+    )
+
+    assert created[0].payload["relation_type"] == "REGULATES"
+    assert created[0].payload["proposed_claim_type"] == "REGULATES"
+    persisted_model = session.get(HarnessProposalModel, created[0].id)
+    assert persisted_model is not None
+    assert persisted_model.payload["proposed_claim_type"] == "REGULATES"
+
+
+def test_sqlalchemy_harness_proposal_store_maps_legacy_suggests_relation(
+    session: Session,
+) -> None:
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="graph-suggestions",
+        title="Legacy suggestion proposal guard",
+        input_payload={"seed_entity_ids": ["entity-1"]},
+    )
+
+    created = proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="graph_suggestion",
+                source_key="legacy-suggests:0",
+                title="Legacy suggestion claim",
+                summary="This claim uses an older graph suggestion placeholder.",
+                confidence=0.74,
+                ranking_score=0.74,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "SUGGESTS"},
+                metadata={"source_type": "pubmed"},
+            ),
+        ),
+    )
+
+    assert created[0].payload["proposed_claim_type"] == "ASSOCIATED_WITH"
+    persisted_model = session.get(HarnessProposalModel, created[0].id)
+    assert persisted_model is not None
+    assert persisted_model.payload["proposed_claim_type"] == "ASSOCIATED_WITH"
 
 
 def test_sqlalchemy_harness_schedule_store_persists_and_updates_schedules(

@@ -16,6 +16,9 @@ from artana_evidence_api.document_extraction_contracts import (
     GoalRelevanceScale,
     PriorityScale,
 )
+from artana_evidence_api.document_extraction_relation_taxonomy import (
+    canonicalize_extraction_relation_type,
+)
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from artana_evidence_api.ranking import rank_reviewed_candidate_claim
 from artana_evidence_api.types.common import JSONObject
@@ -305,12 +308,14 @@ def apply_document_proposal_review(
     factual_score = FACTUAL_SUPPORT_SCORES[review.factual_support]
     relevance_score = GOAL_RELEVANCE_SCORES[review.goal_relevance]
     priority_score = PRIORITY_SCORES[review.priority]
+    evidence_ranking = _draft_evidence_ranking_inputs(draft)
     ranking = rank_reviewed_candidate_claim(
         factual_confidence=factual_score,
         goal_relevance=relevance_score,
         priority=priority_score,
         supporting_document_count=1,
         evidence_reference_count=1,
+        **evidence_ranking,
     )
     proposal_review_metadata: JSONObject = {
         "scale_version": "v1",
@@ -352,6 +357,41 @@ def apply_document_proposal_review(
             "proposal_review": proposal_review_metadata,
         },
     )
+
+
+def _draft_evidence_ranking_inputs(
+    draft: HarnessProposalDraft,
+) -> dict[str, bool | None]:
+    grounding = _metadata_object(draft.metadata.get("evidence_grounding"))
+    support = _metadata_object(draft.metadata.get("support_verification"))
+    return {
+        "grounded_sentence": _metadata_bool(grounding, "grounded"),
+        "both_arguments_present": (
+            _metadata_bool(grounding, "subject_present") is True
+            and _metadata_bool(grounding, "object_present") is True
+        ),
+        "entailment_supported": support.get("support") == "ENTAILS",
+        "relation_specific": _draft_relation_specific(draft),
+    }
+
+
+def _draft_relation_specific(draft: HarnessProposalDraft) -> bool | None:
+    relation_type = draft.payload.get("proposed_claim_type")
+    if not isinstance(relation_type, str):
+        return None
+    canonical_relation = canonicalize_extraction_relation_type(relation_type)
+    if canonical_relation is None:
+        return None
+    return canonical_relation != "ASSOCIATED_WITH"
+
+
+def _metadata_object(value: object) -> JSONObject:
+    return value if isinstance(value, dict) else {}
+
+
+def _metadata_bool(payload: JSONObject, key: str) -> bool | None:
+    value = payload.get(key)
+    return value if isinstance(value, bool) else None
 
 
 def review_from_draft_metadata(
