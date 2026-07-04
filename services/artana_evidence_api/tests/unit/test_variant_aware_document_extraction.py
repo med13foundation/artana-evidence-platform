@@ -640,6 +640,357 @@ def test_extract_variant_aware_document_falls_back_to_deterministic_signals(
     }
     assert "phenotype_claim_review" in review_item_types
     assert result.extraction_diagnostics["fallback_from_signals"] is True
+    assert result.extraction_diagnostics["agent_extraction_completed"] is False
+    assert result.extraction_diagnostics["fallback_output_used"] is True
+    assert result.extraction_diagnostics["trusted_evidence_eligible"] is False
+    assert all(
+        draft.metadata["agent_extraction_completed"] is False
+        and draft.metadata["fallback_output_used"] is True
+        and draft.metadata["trusted_evidence_eligible"] is False
+        for draft in result.proposal_drafts
+    )
+    assert all(
+        draft.metadata["agent_extraction_completed"] is False
+        and draft.metadata["fallback_output_used"] is True
+        and draft.metadata["trusted_evidence_eligible"] is False
+        and draft.payload["proposal_draft"]["metadata"][
+            "agent_extraction_completed"
+        ]
+        is False
+        and draft.payload["proposal_draft"]["metadata"]["fallback_output_used"]
+        is True
+        and draft.payload["proposal_draft"]["metadata"][
+            "trusted_evidence_eligible"
+        ]
+        is False
+        for draft in result.review_item_drafts
+        if draft.review_type == "phenotype_claim_review"
+    )
+
+
+def test_extract_variant_aware_document_treats_signal_only_generated_output_as_fallback(
+    monkeypatch,
+) -> None:
+    document = _document(
+        text=(
+            "Trio exome sequencing identified heterozygous de novo MED13 "
+            "NM_015335.6:c.977C>A (p.Thr326Lys), classified as Likely "
+            "Pathogenic in exon 7."
+        ),
+    )
+    contract = ExtractionContract(
+        decision="generated",
+        confidence_score=0.0,
+        rationale="Agent completed but emitted no structured variant entities.",
+        evidence=[],
+        source_type="pubmed",
+        document_id=document.id,
+        entities=[],
+        observations=[],
+        relations=[],
+        rejected_facts=[],
+        pipeline_payloads=[],
+        shadow_mode=True,
+        agent_run_id="variant-aware-signal-only-generated-test",
+    )
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    assert result.proposal_drafts
+    assert result.extraction_diagnostics["agent_extraction_completed"] is False
+    assert result.extraction_diagnostics["fallback_output_used"] is True
+    assert result.extraction_diagnostics["trusted_evidence_eligible"] is False
+    assert all(
+        draft.metadata["agent_extraction_completed"] is False
+        and draft.metadata["fallback_output_used"] is True
+        and draft.metadata["trusted_evidence_eligible"] is False
+        for draft in result.proposal_drafts
+    )
+
+
+def test_extract_variant_aware_document_treats_same_key_signal_enrichment_as_untrusted(
+    monkeypatch,
+) -> None:
+    document = _document(text="MED13 c.977C>A was reported with p.Thr326Lys.")
+    contract = ExtractionContract(
+        decision="generated",
+        confidence_score=0.0,
+        rationale="Agent emitted the variant anchors only.",
+        evidence=[],
+        source_type="pubmed",
+        document_id=document.id,
+        entities=[
+            ExtractedEntityCandidate(
+                entity_type="VARIANT",
+                label="MED13 c.977C>A",
+                anchors={
+                    "gene_symbol": "MED13",
+                    "hgvs_notation": "c.977C>A",
+                },
+                metadata={},
+                evidence_excerpt="MED13 c.977C>A",
+                evidence_locator="text_span:0-14",
+                assessment=_assessment(),
+            ),
+        ],
+        observations=[],
+        relations=[],
+        rejected_facts=[],
+        pipeline_payloads=[],
+        shadow_mode=True,
+        agent_run_id="variant-aware-same-key-signal-enrichment-test",
+    )
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    def _fake_signal_bundle(*, raw_record: object, source_type: str):
+        del raw_record, source_type
+        return {
+            "variant_aware_recommended": True,
+            "variant_candidates": [
+                {
+                    "anchors": {
+                        "gene_symbol": "MED13",
+                        "hgvs_notation": "c.977C>A",
+                    },
+                    "metadata": {
+                        "classification": "Likely Pathogenic",
+                        "hgvs_protein": "p.Thr326Lys",
+                    },
+                    "evidence_excerpt": "MED13 c.977C>A",
+                    "evidence_locator": "text_span:0-14",
+                },
+            ],
+        }
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.build_genomics_signal_bundle",
+        _fake_signal_bundle,
+    )
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    observation_drafts = [
+        draft
+        for draft in result.proposal_drafts
+        if draft.proposal_type == "observation_candidate"
+    ]
+    observation_variable_ids = {draft.payload["variable_id"] for draft in observation_drafts}
+    assert observation_variable_ids >= {"VAR_HGVS_PROTEIN", "VAR_CLINVAR_CLASS"}
+    assert result.extraction_diagnostics["fallback_from_signals"] is True
+    assert result.extraction_diagnostics["agent_extraction_completed"] is False
+    assert result.extraction_diagnostics["fallback_output_used"] is True
+    assert result.extraction_diagnostics["trusted_evidence_eligible"] is False
+    assert all(
+        draft.metadata["trusted_evidence_eligible"] is False
+        for draft in observation_drafts
+    )
+
+
+def test_extract_variant_aware_document_treats_mixed_signal_fallback_as_untrusted(
+    monkeypatch,
+) -> None:
+    document = _document(
+        text=(
+            "Report mentions MED13 c.977C>A and a separate MED13 c.1000G>T "
+            "variant."
+        ),
+    )
+    contract = _single_variant_contract(document_id=document.id)
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    def _fake_signal_bundle(*, raw_record: object, source_type: str):
+        del raw_record, source_type
+        return {
+            "variant_aware_recommended": True,
+            "variant_candidates": [
+                {
+                    "anchors": {
+                        "gene_symbol": "MED13",
+                        "hgvs_notation": "c.977C>A",
+                    },
+                    "metadata": {"hgvs_protein": "p.Thr326Lys"},
+                    "evidence_excerpt": "MED13 c.977C>A",
+                    "evidence_locator": "text_span:17-30",
+                },
+                {
+                    "anchors": {
+                        "gene_symbol": "MED13",
+                        "hgvs_notation": "c.1000G>T",
+                    },
+                    "metadata": {"hgvs_protein": "p.Gly334Cys"},
+                    "evidence_excerpt": "MED13 c.1000G>T",
+                    "evidence_locator": "text_span:51-65",
+                },
+            ],
+        }
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.build_genomics_signal_bundle",
+        _fake_signal_bundle,
+    )
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    variant_labels = {
+        draft.payload["display_label"]
+        for draft in result.proposal_drafts
+        if draft.proposal_type == "entity_candidate"
+    }
+    assert len(variant_labels) >= 2
+    assert "c.1000G>T" in variant_labels
+    assert result.extraction_diagnostics["fallback_from_signals"] is True
+    assert result.extraction_diagnostics["agent_extraction_completed"] is False
+    assert result.extraction_diagnostics["fallback_output_used"] is True
+    assert result.extraction_diagnostics["trusted_evidence_eligible"] is False
+    assert all(
+        draft.metadata["trusted_evidence_eligible"] is False
+        for draft in result.proposal_drafts
+    )
+
+
+def test_extract_variant_aware_document_detects_unmatched_signal_with_non_variant_agent_entity(
+    monkeypatch,
+) -> None:
+    document = _document(text="MED13 c.1000G>T was reported.")
+    contract = ExtractionContract(
+        decision="generated",
+        confidence_score=0.0,
+        rationale="Agent emitted a gene but missed the variant signal.",
+        evidence=[],
+        source_type="pubmed",
+        document_id=document.id,
+        entities=[
+            ExtractedEntityCandidate(
+                entity_type="GENE",
+                label="MED13",
+                anchors={"gene_symbol": "MED13"},
+                metadata={},
+                evidence_excerpt="MED13 c.1000G>T",
+                evidence_locator="text_span:0-15",
+                assessment=_assessment(),
+            ),
+        ],
+        observations=[],
+        relations=[],
+        rejected_facts=[],
+        pipeline_payloads=[],
+        shadow_mode=True,
+        agent_run_id="variant-aware-non-variant-agent-test",
+    )
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    def _fake_signal_bundle(*, raw_record: object, source_type: str):
+        del raw_record, source_type
+        return {
+            "variant_aware_recommended": True,
+            "variant_candidates": [
+                {
+                    "anchors": {
+                        "gene_symbol": "MED13",
+                        "hgvs_notation": "c.1000G>T",
+                    },
+                    "metadata": {"hgvs_protein": "p.Gly334Cys"},
+                    "evidence_excerpt": "MED13 c.1000G>T",
+                    "evidence_locator": "text_span:0-15",
+                },
+            ],
+        }
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.build_genomics_signal_bundle",
+        _fake_signal_bundle,
+    )
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    assert result.extraction_diagnostics["fallback_from_signals"] is True
+    assert result.extraction_diagnostics["agent_extraction_completed"] is False
+    assert all(
+        draft.metadata["trusted_evidence_eligible"] is False
+        for draft in result.proposal_drafts
+    )
 
 
 def test_extract_variant_aware_document_falls_back_for_pubmed_variant_prose(
@@ -910,14 +1261,23 @@ def test_extract_variant_aware_document_preserves_decomposed_mechanism_claims(
         if draft.proposal_type == "candidate_claim"
     ]
 
-    assert len(claim_drafts) == 3
+    assert len(claim_drafts) == 2
     assert result.extraction_diagnostics["relation_count"] == 3
+    assert result.extraction_diagnostics["bridge_skipped_count"] == 1
     assert all(len(draft.summary.strip()) < 200 for draft in claim_drafts)
     assert {draft.payload["proposed_claim_type"] for draft in claim_drafts} == {
         "LOCATED_IN",
-        "AFFECTS",
-        "EXPLAINS",
+        "MODULATES",
     }
+    assert result.skipped_items == [
+        {
+            "kind": "relation_skipped",
+            "relation_type": "EXPLAINS",
+            "source_label": "NM_015335.6:c.977C>A (p.Thr326Lys)",
+            "target_label": "neurodevelopmental phenotype",
+            "reason": "Relation type requires governed dictionary review.",
+        },
+    ]
 
 
 def test_extract_variant_aware_document_promotes_strong_rejected_relations_to_review_items(
@@ -992,6 +1352,21 @@ def test_extract_variant_aware_document_promotes_strong_rejected_relations_to_re
                     rationale="This should stay audit-only metadata.",
                 ),
             ),
+            RejectedFact(
+                fact_type="relation",
+                reason="Raw relation type needs governed dictionary review",
+                payload={
+                    "source_type": "VARIANT",
+                    "relation_type": "PROTECTS_AGAINST",
+                    "target_type": "PHENOTYPE",
+                    "source_label": "MED13 c.977C>A",
+                    "target_label": "developmental delay",
+                },
+                assessment=_assessment(
+                    support_band=SupportBand.SUPPORTED,
+                    rationale="Strong enough to review, but the relation type is not governed.",
+                ),
+            ),
         ],
         pipeline_payloads=[],
         shadow_mode=True,
@@ -1041,3 +1416,85 @@ def test_extract_variant_aware_document_promotes_strong_rejected_relations_to_re
         and item["reason"] == "Too speculative to review"
         for item in result.skipped_items
     )
+    assert any(
+        item["kind"] == "rejected_fact"
+        and item["reason"] == "Raw relation type needs governed dictionary review"
+        for item in result.skipped_items
+    )
+
+
+def test_extract_variant_aware_document_canonicalizes_rejected_relation_review_items(
+    monkeypatch,
+) -> None:
+    document = _document(
+        text="MED13 c.977C>A affects developmental delay in the curated passage.",
+    )
+
+    contract = ExtractionContract(
+        decision="generated",
+        confidence_score=0.0,
+        rationale="One rejected relation should convert through canonical taxonomy.",
+        evidence=[],
+        source_type="pubmed",
+        document_id=document.id,
+        entities=[],
+        observations=[],
+        relations=[],
+        rejected_facts=[
+            RejectedFact(
+                fact_type="relation",
+                reason="Relation needs review before proposal staging",
+                payload={
+                    "source_type": "VARIANT",
+                    "relation_type": "AFFECTS",
+                    "target_type": "PHENOTYPE",
+                    "source_label": "MED13 c.977C>A",
+                    "target_label": "developmental delay",
+                    "evidence_excerpt": "MED13 c.977C>A affects developmental delay.",
+                    "evidence_locator": "sentence:1",
+                },
+                assessment=_assessment(
+                    support_band=SupportBand.SUPPORTED,
+                    rationale="The relation is reviewable after canonicalization.",
+                ),
+            ),
+        ],
+        pipeline_payloads=[],
+        shadow_mode=True,
+        agent_run_id="variant-aware-rejected-canonical-test",
+    )
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    review_item = next(
+        draft
+        for draft in result.review_item_drafts
+        if draft.review_type == "rejected_relation_review"
+    )
+    assert (
+        review_item.payload["proposal_draft"]["payload"]["proposed_claim_type"]
+        == "MODULATES"
+    )
+    assert review_item.metadata["relation_type"] == "MODULATES"

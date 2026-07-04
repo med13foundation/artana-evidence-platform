@@ -606,6 +606,77 @@ def test_review_queue_action_converts_review_item_to_proposal() -> None:
     )
 
 
+def test_review_queue_action_rejects_raw_unknown_candidate_claim_conversion() -> None:
+    (
+        client,
+        _approval_store,
+        proposal_store,
+        review_item_store,
+        research_space_store,
+        run_registry,
+    ) = _build_client()
+    space = research_space_store.create_space(
+        owner_id=_TEST_USER_ID,
+        name="Review Item Raw Relation Space",
+        description="Used for raw relation conversion guard tests.",
+    )
+    run_id = _create_run(space_id=space.id, run_registry=run_registry)
+    review_item = review_item_store.create_review_items(
+        space_id=space.id,
+        run_id=run_id,
+        review_items=(
+            HarnessReviewItemDraft(
+                review_type="rejected_relation_review",
+                source_family="document_extraction",
+                source_kind="document_extraction",
+                source_key="doc:review:raw-relation",
+                title="Review raw relation",
+                summary="The rejected relation used an ungoverned relation type.",
+                priority="high",
+                confidence=0.8,
+                ranking_score=0.82,
+                evidence_bundle=[],
+                payload={
+                    "proposal_draft": {
+                        "proposal_type": "candidate_claim",
+                        "title": "Extracted claim: MED13 protects against phenotype",
+                        "summary": "Raw relation should not convert.",
+                        "payload": {
+                            "proposed_subject": "unresolved:med13",
+                            "proposed_subject_label": "MED13",
+                            "proposed_claim_type": "PROTECTS_AGAINST",
+                            "proposed_object": "unresolved:phenotype",
+                            "proposed_object_label": "phenotype",
+                            "evidence_entity_ids": [],
+                        },
+                    },
+                },
+                metadata={"source": "unit-test"},
+            ),
+        ),
+    )[0]
+
+    response = client.post(
+        f"/v1/spaces/{space.id}/review-queue/review_item:{review_item.id}/actions",
+        headers=_auth_headers(),
+        json={
+            "action": "convert_to_proposal",
+            "reason": "Try conversion",
+            "metadata": {},
+        },
+    )
+
+    assert response.status_code == 409
+    assert "unknown relation type" in response.json()["detail"]
+    assert proposal_store.list_proposals(space_id=space.id) == []
+    refreshed_review_item = review_item_store.get_review_item(
+        space_id=space.id,
+        review_item_id=review_item.id,
+    )
+    assert refreshed_review_item is not None
+    assert refreshed_review_item.status == "pending_review"
+
+
 def test_review_queue_action_approves_run_gate() -> None:
     (
         client,

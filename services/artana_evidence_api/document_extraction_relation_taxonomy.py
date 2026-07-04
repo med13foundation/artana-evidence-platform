@@ -50,6 +50,10 @@ LLM_VALID_RELATION_TYPES = frozenset(
         "HAS_KEYWORD",
     },
 )
+LLM_PROPOSE_NEW_RELATION_TYPE = "PROPOSE_NEW_RELATION_TYPE"
+LLM_EXTRACTION_RELATION_TYPES = frozenset(
+    {*LLM_VALID_RELATION_TYPES, LLM_PROPOSE_NEW_RELATION_TYPE},
+)
 
 # Synonyms that map to canonical types (from graph_domain_config.py)
 LLM_RELATION_SYNONYMS: dict[str, str] = {
@@ -196,6 +200,7 @@ LLM_RELATION_SYNONYMS: dict[str, str] = {
     "ELEMENT_OF": "COMPONENT_OF",
     "BUILDING_BLOCK_OF": "COMPONENT_OF",
     # SENSITIZES_TO
+    "SENSITIZES": "SENSITIZES_TO",
     "INCREASES_SENSITIVITY_TO": "SENSITIZES_TO",
     "CONFERS_SENSITIVITY_TO": "SENSITIZES_TO",
     "RENDERS_SENSITIVE_TO": "SENSITIZES_TO",
@@ -269,4 +274,29 @@ LLM_RELATION_SYNONYMS: dict[str, str] = {
 }
 
 
-__all__ = ["LLM_RELATION_SYNONYMS", "LLM_VALID_RELATION_TYPES"]
+def normalize_relation_type_label(value: str) -> str:
+    """Normalize one relation type label to dictionary identifier form."""
+
+    return value.strip().upper().replace(" ", "_")
+
+
+def canonicalize_extraction_relation_type(value: str) -> str | None:
+    """Return a canonical extraction relation type, or ``None`` if unapproved."""
+
+    normalized = normalize_relation_type_label(value)
+    if normalized == LLM_PROPOSE_NEW_RELATION_TYPE:
+        return None
+    canonical = LLM_RELATION_SYNONYMS.get(normalized, normalized)
+    if canonical in LLM_VALID_RELATION_TYPES:
+        return canonical
+    return None
+
+
+__all__ = [
+    "LLM_EXTRACTION_RELATION_TYPES",
+    "LLM_PROPOSE_NEW_RELATION_TYPE",
+    "LLM_RELATION_SYNONYMS",
+    "LLM_VALID_RELATION_TYPES",
+    "canonicalize_extraction_relation_type",
+    "normalize_relation_type_label",
+]

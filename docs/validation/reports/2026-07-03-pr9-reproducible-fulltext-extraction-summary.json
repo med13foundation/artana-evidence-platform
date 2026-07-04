@@ -1,0 +1,27 @@
+{
+  "report": "PR-9 Reproducible Full-Text Extraction Evidence Snapshot",
+  "date": "2026-07-03",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "planned_branch": "alvaro/evidence-pr9-reproducible-fulltext-extraction",
+  "scope": [
+    "Split relation extraction text into sentence-aware full-text chunks.",
+    "Add prompt-version, model-aware, full-document and chunk-aware extraction replay keys.",
+    "Emit llm_extraction_chunk_count and llm_extraction_text_char_count diagnostics.",
+    "Keep document_extraction.py under the 1200-line architecture budget by moving prompt and conversion helpers into a support module."
+  ],
+  "focused_result": {
+    "same_prefix_different_tail_step_keys_differ": true,
+    "late_chunk_relation_extracted": true,
+    "late_chunk_diagnostics_status": "completed",
+    "minimum_late_chunk_count_in_regression": 2,
+    "document_extraction_line_count_after_split": 1169
+  },
+  "validation": {
+    "focused_red_green_tests": "2 failed before implementation, then passed",
+    "focused_extraction_bundle": "passed",
+    "ruff_touched_files": "passed",
+    "first_api_service_check_attempt": "failed on architecture_size before helper split",
+    "artana_evidence_api_service_checks": "passed after helper split; live external API, running-service, and OpenAI-key integration tests skipped"
+  },
+  "known_remaining_risk": "This slice proves local full-text prompt coverage and replay-key safety, but real live-agent recall and precision still require a configured model key in the strict audit environment."
+}

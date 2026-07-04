@@ -196,9 +196,14 @@ class TestAutoRejectOnPromotion:
     def test_reject_pending_duplicates_works(self) -> None:
         """Test reject_pending_duplicates with manually created duplicates."""
         store = HarnessProposalStore()
-        fp = compute_claim_fingerprint("A", "REL", "B")
+        fp = compute_claim_fingerprint("A", "ASSOCIATED_WITH", "B")
         # Create two proposals with same fingerprint by inserting directly
-        draft1 = _make_draft(subject="A", relation="REL", obj="B", source_key="s1")
+        draft1 = _make_draft(
+            subject="A",
+            relation="ASSOCIATED_WITH",
+            obj="B",
+            source_key="s1",
+        )
         p1 = store.create_proposals(
             space_id=SPACE_ID,
             run_id=RUN_A,
@@ -208,7 +213,12 @@ class TestAutoRejectOnPromotion:
         # Second would be blocked by dedup. Force-insert by clearing fingerprint
         # then manually set it. We'll just test reject_pending_duplicates logic.
         # Create a different proposal first
-        draft_diff = _make_draft(subject="X", relation="REL", obj="Y", source_key="s2")
+        draft_diff = _make_draft(
+            subject="X",
+            relation="ASSOCIATED_WITH",
+            obj="Y",
+            source_key="s2",
+        )
         p2 = store.create_proposals(
             space_id=SPACE_ID,
             run_id=RUN_A,

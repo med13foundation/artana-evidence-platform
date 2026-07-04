@@ -1,0 +1,84 @@
+{
+  "benchmark_name": "biomedical_relation_feasibility_starter",
+  "description": "Starter corpus for checking whether relation extraction creates specific, evidence-grounded, valuable biomedical triples instead of generic edges.",
+  "cases": [
+    {
+      "case_id": "med13_specific_activation",
+      "title": "Specific MED13 mechanism",
+      "category": "strong_specific",
+      "text": "MED13 activates cardiac septal development.",
+      "gold_relations": [
+        {
+          "subject": "MED13",
+          "relation_type": "ACTIVATES",
+          "object": "cardiac septal development",
+          "support_sentence": "MED13 activates cardiac septal development.",
+          "value_level": "high",
+          "rationale": "Specific gene-to-biological-process claim with direct support."
+        }
+      ]
+    },
+    {
+      "case_id": "generic_clinical_features",
+      "title": "Generic association should be low value",
+      "category": "generic_relation",
+      "text": "MED13 was associated with clinical features.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "hedged_disease_association",
+      "title": "Hedged association should not count as valuable",
+      "category": "weak_association",
+      "text": "MED13 may be linked to congenital heart disease.",
+      "gold_relations": [
+        {
+          "subject": "MED13",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "congenital heart disease",
+          "support_sentence": "MED13 may be linked to congenital heart disease.",
+          "value_level": "low",
+          "rationale": "The sentence is hedged and only supports a broad association."
+        }
+      ]
+    },
+    {
+      "case_id": "drug_target_relation",
+      "title": "Drug-target relation coverage",
+      "category": "strong_specific",
+      "text": "Osimertinib targets EGFR T790M in resistant lung cancer.",
+      "gold_relations": [
+        {
+          "subject": "Osimertinib",
+          "relation_type": "TARGETS",
+          "object": "EGFR T790M",
+          "support_sentence": "Osimertinib targets EGFR T790M in resistant lung cancer.",
+          "value_level": "high",
+          "rationale": "Specific therapeutic target relation."
+        }
+      ]
+    },
+    {
+      "case_id": "methods_only_negative",
+      "title": "Methods-only text should not emit evidence",
+      "category": "negative_control",
+      "text": "We performed RNA sequencing and normalized read counts before statistical analysis.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "specific_inhibition",
+      "title": "Specific inhibition mechanism",
+      "category": "strong_specific",
+      "text": "Rivor inhibits YTF.",
+      "gold_relations": [
+        {
+          "subject": "Rivor",
+          "relation_type": "INHIBITS",
+          "object": "YTF",
+          "support_sentence": "Rivor inhibits YTF.",
+          "value_level": "high",
+          "rationale": "Specific entity-to-entity inhibitory relation."
+        }
+      ]
+    }
+  ]
+}

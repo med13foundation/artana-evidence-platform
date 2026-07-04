@@ -9,7 +9,7 @@ import logging
 import re
 from contextlib import suppress
 from typing import TYPE_CHECKING, cast
-from uuid import NAMESPACE_URL, UUID, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from artana_evidence_api.document_context_summary import summarize_document_context
 from artana_evidence_api.document_extraction_contracts import (
@@ -36,23 +36,22 @@ from artana_evidence_api.document_extraction_diagnostics import (
 )
 from artana_evidence_api.document_extraction_drafts import (
     build_document_extraction_drafts,
+    with_candidate_extraction_trust_metadata,
 )
 from artana_evidence_api.document_extraction_entities import (
     canonical_entity_label_rejection_reason,
     clean_candidate_label,
-    clean_llm_entity_label,
     resolve_exact_entity_label,
     resolve_graph_entity_label,  # noqa: F401 - compatibility import path
 )
 from artana_evidence_api.document_extraction_prompting import (
     DOCUMENT_PROPOSAL_REVIEW_SYSTEM_PROMPT,
-    LLM_EXTRACTION_SYSTEM_PROMPT,
     build_llm_extraction_output_schema,
     build_proposal_review_output_schema,
 )
 from artana_evidence_api.document_extraction_relation_taxonomy import (
-    LLM_RELATION_SYNONYMS,
     LLM_VALID_RELATION_TYPES,
+    normalize_relation_type_label,
 )
 from artana_evidence_api.document_extraction_review import (
     apply_document_proposal_review,
@@ -61,6 +60,24 @@ from artana_evidence_api.document_extraction_review import (
     goal_context_summary,
     review_from_draft_metadata,
     shorten_text,
+)
+from artana_evidence_api.document_extraction_support.full_text_chunking import (
+    build_relation_extraction_text_chunks,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    LLM_EXTRACTION_PROMPT_VERSION,
+    build_llm_extraction_prompt,
+    llm_extraction_document_fingerprint,
+    llm_relations_to_candidates,
+)
+from artana_evidence_api.document_extraction_support.relation_resolution_decisions import (
+    apply_relation_resolution_decisions,
+)
+from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
+    RelationSpecificityPruningResult,
+    SpecificityFilteredCandidateList,
+    is_low_value_generic_relation_candidate,
+    prune_redundant_generic_relation_candidates,
 )
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.graph_integration.preflight import GraphAIPreflightService
@@ -82,7 +99,6 @@ def _graph_ai_preflight_service() -> GraphAIPreflightService:
     return GraphAIPreflightService()
 
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
-_MIN_ENTITY_LABEL_LENGTH = 2
 _MAX_AI_ENTITY_PRE_RESOLUTION_LABELS = 4
 _AI_ENTITY_PRE_RESOLUTION_TIMEOUT_SECONDS = 2.0
 _LLM_CANDIDATE_EXTRACTION_TIMEOUT_SECONDS = 5.0
@@ -220,13 +236,25 @@ def _llm_extraction_step_key(
     *,
     text: str,
     max_relations: int,
+    model_id: str = "",
+    prompt_version: str = LLM_EXTRACTION_PROMPT_VERSION,
+    chunk_index: int = 0,
+    total_chunks: int = 1,
+    document_fingerprint: str | None = None,
 ) -> str:
-    """Return the stable extraction step key for one normalized document body."""
+    """Return the stable extraction step key for one extraction chunk."""
     normalized_text = normalize_text_document(text)
+    chunk_fingerprint = hashlib.sha256(normalized_text.encode("utf-8")).hexdigest()
+    effective_document_fingerprint = document_fingerprint or chunk_fingerprint
     return _fingerprinted_step_key(
-        "research_init.llm_extraction.v1",
+        "research_init.llm_extraction.v2",
+        prompt_version,
+        model_id,
         str(max_relations),
-        normalized_text[:4000],
+        effective_document_fingerprint,
+        str(chunk_index),
+        str(total_chunks),
+        chunk_fingerprint,
     )
 
 
@@ -245,6 +273,44 @@ def _proposal_review_step_key(
         claims_text,
         goal_context_summary,
     )
+
+
+async def _resolve_unknown_llm_relation_types(
+    *,
+    candidates: list[ExtractedRelationCandidate],
+    unknown_relation_types: set[str],
+    space_context: str,
+) -> list[ExtractedRelationCandidate]:
+    if not unknown_relation_types:
+        return candidates
+    try:
+        preflight_service = _graph_ai_preflight_service()
+        decisions = {
+            candidate: await preflight_service.resolve_relation_type(
+                space_id=_LLM_EXTRACTION_PSEUDO_SPACE_ID,
+                relation_type=candidate,
+                known_types=sorted(LLM_VALID_RELATION_TYPES),
+                space_context=space_context,
+                domain_context="biomedical",
+            )
+            for candidate in sorted(unknown_relation_types)
+        }
+        return apply_relation_resolution_decisions(
+            candidates=candidates,
+            decisions=decisions,
+        )
+    except Exception:
+        logger.exception(
+            "AI relation type resolution failed for %s; "
+            "dropping raw types until governed review succeeds",
+            unknown_relation_types,
+        )
+        return [
+            candidate
+            for candidate in candidates
+            if normalize_relation_type_label(candidate.relation_type)
+            not in unknown_relation_types
+        ]
 
 
 def extract_pdf_text(payload: bytes) -> DocumentTextExtraction:
@@ -341,8 +407,9 @@ def extract_relation_candidates(text: str) -> list[ExtractedRelationCandidate]:
                 prefer_tail=True,
             )
             object_label = clean_candidate_label(match.group("object"))
+            lemma = match.groupdict().get("lemma", "").strip().lower()
             relation_type = fixed_relation_type or _LEMMA_RELATION_TYPES.get(
-                match.groupdict().get("lemma", "").strip().lower(),
+                lemma,
                 "ASSOCIATED_WITH",
             )
             if subject_label == "" or object_label == "":
@@ -350,6 +417,12 @@ def extract_relation_candidates(text: str) -> list[ExtractedRelationCandidate]:
             if _is_bad_heuristic_subject_label(subject_label):
                 continue
             if canonical_entity_label_rejection_reason(subject_label) is not None:
+                continue
+            if is_low_value_generic_relation_candidate(
+                relation_type=relation_type,
+                lemma=lemma,
+                sentence=cleaned_sentence,
+            ):
                 continue
             candidate_key = (
                 subject_label.casefold(),
@@ -372,9 +445,19 @@ def extract_relation_candidates(text: str) -> list[ExtractedRelationCandidate]:
     return candidates
 
 
+def _prune_relation_candidate_specificity(
+    candidates: list[ExtractedRelationCandidate],
+) -> RelationSpecificityPruningResult:
+    return prune_redundant_generic_relation_candidates(candidates)
 
 
-async def extract_relation_candidates_with_llm(  # noqa: PLR0912, PLR0915
+def _fallback_candidates_with_specificity_pruning(
+    text: str,
+) -> RelationSpecificityPruningResult:
+    return _prune_relation_candidate_specificity(extract_relation_candidates(text))
+
+
+async def extract_relation_candidates_with_llm(
     text: str,
     *,
     max_relations: int = 10,
@@ -386,8 +469,6 @@ async def extract_relation_candidates_with_llm(  # noqa: PLR0912, PLR0915
     Use ``discover_relation_candidates()`` for LLM-first discovery with
     heuristic fallback and diagnostics.
     """
-    from uuid import uuid4
-
     from artana_evidence_api.runtime_support import (
         ModelCapability,
         get_model_registry,
@@ -398,15 +479,21 @@ async def extract_relation_candidates_with_llm(  # noqa: PLR0912, PLR0915
         msg = "OPENAI_API_KEY not configured"
         raise RuntimeError(msg)
 
+    normalized_text = normalize_text_document(text)
+    chunks = build_relation_extraction_text_chunks(normalized_text)
+    if not chunks:
+        return SpecificityFilteredCandidateList(
+            (),
+            pruned_generic_relation_count=0,
+        )
+    document_fingerprint = llm_extraction_document_fingerprint(normalized_text)
     output_schema = build_llm_extraction_output_schema(max_relations)
 
-    # Create kernel components using Evidence API patterns
     from artana.agent import SingleStepModelClient
     from artana.kernel import ArtanaKernel
     from artana.models import TenantContext
     from artana.ports.model import LiteLLMAdapter
 
-    model_port = LiteLLMAdapter(timeout_seconds=60.0)
     kernel: ArtanaKernel | None = None
     store = None
 
@@ -416,9 +503,11 @@ async def extract_relation_candidates_with_llm(  # noqa: PLR0912, PLR0915
         normalize_litellm_model_id,
     )
 
-    registry = get_model_registry()
-    model_spec = registry.get_default_model(ModelCapability.EVIDENCE_EXTRACTION)
-    model_id = normalize_litellm_model_id(model_spec.model_id)
+    model_id = normalize_litellm_model_id(
+        get_model_registry().get_default_model(
+            ModelCapability.EVIDENCE_EXTRACTION,
+        ).model_id,
+    )
 
     tenant = TenantContext(
         tenant_id="research-init-extraction",
@@ -426,147 +515,87 @@ async def extract_relation_candidates_with_llm(  # noqa: PLR0912, PLR0915
         budget_usd_limit=1.0,
     )
 
-    prompt = (
-        f"{LLM_EXTRACTION_SYSTEM_PROMPT}\n\n"
-        f"---\nTEXT TO ANALYZE:\n---\n{text[:4000]}\n---\n\n"
-        f"Return the relations as JSON. Remember: subject and object must each be "
-        f"a short canonical entity name (1-4 words, like BRCA1, cisplatin, EGFR T790M, TNBC). "
-        f"Never use sentence fragments as entity names."
-    )
-    step_key = _llm_extraction_step_key(
-        text=text,
-        max_relations=max_relations,
-    )
-
     try:
         store = create_artana_postgres_store()
         kernel = ArtanaKernel(
             store=store,
-            model_port=model_port,
+            model_port=LiteLLMAdapter(timeout_seconds=60.0),
         )
         client = SingleStepModelClient(kernel=kernel)
-        result = await run_single_step_with_policy(
-            client,
-            run_id=f"research-init-extraction:{uuid4()}",
-            tenant=tenant,
-            model=model_id,
-            prompt=prompt,
-            output_schema=output_schema,
-            step_key=step_key,
-            replay_policy="fork_on_drift",
-        )
-
-        output = result.output
-        parsed = cast(
-            "LLMExtractionResultLike",
-            (
-                output
-                if isinstance(output, output_schema)
-                else output_schema.model_validate(output)
-            ),
-        )
-
-        # Convert to ExtractedRelationCandidate with label cleanup
         candidates: list[ExtractedRelationCandidate] = []
         unknown_relation_types: set[str] = set()
-
-        for rel in parsed.relations:
-            relation_type = rel.relation_type.upper().strip().replace(" ", "_")
-            # Fast path: deterministic synonym map for well-known aliases
-            relation_type = LLM_RELATION_SYNONYMS.get(relation_type, relation_type)
-
-            subject = clean_llm_entity_label(rel.subject)
-            obj = clean_llm_entity_label(rel.object)
-
-            # Skip if labels are empty or too generic after cleaning
-            if (
-                not subject
-                or not obj
-                or len(subject) < _MIN_ENTITY_LABEL_LENGTH
-                or len(obj) < _MIN_ENTITY_LABEL_LENGTH
-            ):
-                continue
-
-            # Track unknown types for AI resolution
-            if relation_type not in LLM_VALID_RELATION_TYPES:
-                unknown_relation_types.add(relation_type)
-
-            candidates.append(
-                ExtractedRelationCandidate(
-                    subject_label=subject,
-                    relation_type=relation_type,
-                    object_label=obj,
-                    sentence=rel.sentence.strip(),
+        raw_relation_count = 0
+        for chunk in chunks:
+            result = await run_single_step_with_policy(
+                client,
+                run_id=f"research-init-extraction:{uuid4()}",
+                tenant=tenant,
+                model=model_id,
+                prompt=build_llm_extraction_prompt(
+                    chunk=chunk,
+                    total_chunks=len(chunks),
+                    document_fingerprint=document_fingerprint,
                 ),
+                output_schema=output_schema,
+                step_key=_llm_extraction_step_key(
+                    text=chunk.text,
+                    max_relations=max_relations,
+                    model_id=model_id,
+                    chunk_index=chunk.index,
+                    total_chunks=len(chunks),
+                    document_fingerprint=document_fingerprint,
+                ),
+                replay_policy="fork_on_drift",
             )
 
-        # AI-powered resolution for unknown relation types
-        if unknown_relation_types:
-            from artana_evidence_api.relation_type_resolver import RelationTypeAction
+            output = result.output
+            parsed = cast(
+                "LLMExtractionResultLike",
+                (
+                    output
+                    if isinstance(output, output_schema)
+                    else output_schema.model_validate(output)
+                ),
+            )
+            raw_relation_count += len(parsed.relations)
+            chunk_candidates, chunk_unknown_relation_types = (
+                llm_relations_to_candidates(parsed)
+            )
+            candidates.extend(chunk_candidates)
+            unknown_relation_types.update(chunk_unknown_relation_types)
 
-            try:
-                preflight_service = _graph_ai_preflight_service()
-                decisions = {
-                    candidate: await preflight_service.resolve_relation_type(
-                        space_id=_LLM_EXTRACTION_PSEUDO_SPACE_ID,
-                        relation_type=candidate,
-                        known_types=sorted(LLM_VALID_RELATION_TYPES),
-                        space_context=space_context,
-                        domain_context="biomedical",
-                    )
-                    for candidate in sorted(unknown_relation_types)
-                }
-                # Apply decisions: replace relation types in candidates
-                for i, candidate in enumerate(candidates):
-                    key = candidate.relation_type.strip().upper()
-                    if key in decisions:
-                        decision = decisions[key]
-                        if decision.action in (
-                            RelationTypeAction.MAP_TO_EXISTING,
-                            RelationTypeAction.TYPO_CORRECTION,
-                        ):
-                            candidates[i] = ExtractedRelationCandidate(
-                                subject_label=candidate.subject_label,
-                                relation_type=decision.canonical_type,
-                                object_label=candidate.object_label,
-                                sentence=candidate.sentence,
-                            )
-                            logger.info(
-                                "Relation type resolved: %s → %s (%s)",
-                                key,
-                                decision.canonical_type,
-                                decision.action.value,
-                            )
-                        else:
-                            # register_new: keep the canonical_type (cleaned)
-                            candidates[i] = ExtractedRelationCandidate(
-                                subject_label=candidate.subject_label,
-                                relation_type=decision.canonical_type,
-                                object_label=candidate.object_label,
-                                sentence=candidate.sentence,
-                            )
-                            logger.info(
-                                "New relation type will be registered: %s",
-                                decision.canonical_type,
-                            )
-            except Exception:
-                logger.exception(
-                    "AI relation type resolution failed for %s; "
-                    "keeping raw types (will resolve at promotion time)",
-                    unknown_relation_types,
-                )
+        candidates = await _resolve_unknown_llm_relation_types(
+            candidates=candidates,
+            unknown_relation_types=unknown_relation_types,
+            space_context=space_context,
+        )
+
+        pruning_result = _prune_relation_candidate_specificity(candidates)
+        if pruning_result.pruned_count > 0:
+            logger.info(
+                "Suppressed %s generic relation candidates after LLM extraction",
+                pruning_result.pruned_count,
+            )
+        filtered_candidates = SpecificityFilteredCandidateList(
+            pruning_result.candidates[:max_relations],
+            pruned_generic_relation_count=pruning_result.pruned_count,
+            llm_extraction_chunk_count=len(chunks),
+            llm_extraction_text_char_count=len(normalized_text),
+        )
+        candidates = list(filtered_candidates)
 
         if not candidates:
             logger.debug(
                 "LLM extraction returned zero usable candidates",
                 extra={
                     "model_id": model_id,
-                    "text_length": len(text),
-                    "raw_relation_count": len(parsed.relations),
+                    "text_length": len(normalized_text),
+                    "chunk_count": len(chunks),
+                    "raw_relation_count": raw_relation_count,
                     "usable_candidate_count": 0,
                 },
             )
-        return candidates
+        return filtered_candidates
     finally:
         if kernel is not None:
             with suppress(Exception):
@@ -607,13 +636,17 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 "text_length": len(normalized_text),
             },
         )
-        fallback_candidates = extract_relation_candidates(normalized_text)
+        fallback_pruning = _fallback_candidates_with_specificity_pruning(
+            normalized_text,
+        )
+        fallback_candidates = list(fallback_pruning.candidates)
         return (
             fallback_candidates,
             candidate_fallback(
                 status="fallback_error",
                 error="LLM candidate extraction timed out",
                 fallback_candidate_count=len(fallback_candidates),
+                pruned_generic_relation_count=fallback_pruning.pruned_count,
             ),
         )
     except (ModuleNotFoundError, ImportError) as exc:
@@ -626,17 +659,24 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 "exception_type": type(exc).__name__,
             },
         )
-        fallback_candidates = extract_relation_candidates(normalized_text)
+        fallback_pruning = _fallback_candidates_with_specificity_pruning(
+            normalized_text,
+        )
+        fallback_candidates = list(fallback_pruning.candidates)
         return (
             fallback_candidates,
             candidate_fallback(
                 status="unavailable",
                 error=str(exc),
                 fallback_candidate_count=len(fallback_candidates),
+                pruned_generic_relation_count=fallback_pruning.pruned_count,
             ),
         )
     except RuntimeError as exc:
-        fallback_candidates = extract_relation_candidates(normalized_text)
+        fallback_pruning = _fallback_candidates_with_specificity_pruning(
+            normalized_text,
+        )
+        fallback_candidates = list(fallback_pruning.candidates)
         status = runtime_error_candidate_status(str(exc))
         if status == "unavailable":
             logger.debug(
@@ -664,6 +704,7 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 status=status,
                 error=str(exc),
                 fallback_candidate_count=len(fallback_candidates),
+                pruned_generic_relation_count=fallback_pruning.pruned_count,
             ),
         )
     except Exception as exc:  # noqa: BLE001
@@ -676,27 +717,57 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 "exception_type": type(exc).__name__,
             },
         )
-        fallback_candidates = extract_relation_candidates(normalized_text)
+        fallback_pruning = _fallback_candidates_with_specificity_pruning(
+            normalized_text,
+        )
+        fallback_candidates = list(fallback_pruning.candidates)
         return (
             fallback_candidates,
             candidate_fallback(
                 status="fallback_error",
                 error=str(exc),
                 fallback_candidate_count=len(fallback_candidates),
+                pruned_generic_relation_count=fallback_pruning.pruned_count,
             ),
         )
+
+    llm_pruned_generic_relation_count = int(
+        getattr(llm_candidates, "pruned_generic_relation_count", 0),
+    )
+    llm_extraction_chunk_count = int(
+        getattr(llm_candidates, "llm_extraction_chunk_count", 0),
+    )
+    llm_extraction_text_char_count = int(
+        getattr(llm_candidates, "llm_extraction_text_char_count", 0),
+    )
+    llm_pruning = _prune_relation_candidate_specificity(list(llm_candidates))
+    llm_pruned_generic_relation_count += llm_pruning.pruned_count
+    llm_candidates = list(llm_pruning.candidates)
 
     if llm_candidates:
         return (
             llm_candidates,
-            candidate_completed(candidate_count=len(llm_candidates)),
+            candidate_completed(
+                candidate_count=len(llm_candidates),
+                pruned_generic_relation_count=llm_pruned_generic_relation_count,
+                llm_extraction_chunk_count=llm_extraction_chunk_count,
+                llm_extraction_text_char_count=llm_extraction_text_char_count,
+            ),
         )
 
-    fallback_candidates = extract_relation_candidates(normalized_text)
+    fallback_pruning = _fallback_candidates_with_specificity_pruning(
+        normalized_text,
+    )
+    fallback_candidates = list(fallback_pruning.candidates)
     return (
         fallback_candidates,
         candidate_llm_empty(
             fallback_candidate_count=len(fallback_candidates),
+            pruned_generic_relation_count=(
+                llm_pruned_generic_relation_count + fallback_pruning.pruned_count
+            ),
+            llm_extraction_chunk_count=llm_extraction_chunk_count,
+            llm_extraction_text_char_count=llm_extraction_text_char_count,
         ),
     )
 
@@ -713,9 +784,6 @@ async def extract_relation_candidates_with_diagnostics(
         max_relations=max_relations,
         space_context=space_context,
     )
-
-
-
 
 
 async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, PLR0915
@@ -1090,4 +1158,5 @@ __all__ = [
     "review_document_extraction_drafts_with_diagnostics",
     "sha256_hex",
     "summarize_document_context",
+    "with_candidate_extraction_trust_metadata",
 ]

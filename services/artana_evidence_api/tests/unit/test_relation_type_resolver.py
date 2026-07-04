@@ -300,7 +300,7 @@ class TestRelationBatch:
 
 class TestRelationAgentFallback:
     @pytest.mark.asyncio
-    async def test_agent_failure_falls_back_to_register_new(self):
+    async def test_agent_failure_requires_review_without_registering_raw_type(self):
         from artana_evidence_api.relation_type_resolver import resolve_relation_type
 
         with patch(
@@ -313,7 +313,7 @@ class TestRelationAgentFallback:
                 known_types=["INHIBITS"],
             )
 
-        assert result.action == RelationTypeAction.REGISTER_NEW
+        assert result.action.value == "requires_review"
         assert result.canonical_type == "BRAND_NEW_TYPE"
         assert "failed" in result.reasoning.lower()
         # Should be cached even on failure

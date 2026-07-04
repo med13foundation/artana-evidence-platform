@@ -5,6 +5,7 @@ from __future__ import annotations
 from artana_evidence_api.ranking import (
     rank_chat_graph_write_candidate,
     rank_mechanism_candidate,
+    rank_reviewed_candidate_claim,
 )
 
 
@@ -50,3 +51,32 @@ def test_rank_mechanism_candidate_rewards_support_and_short_paths() -> None:
     assert stronger.metadata["path_count"] == 4
     assert stronger.metadata["supporting_claim_count"] == 6
     assert stronger.metadata["average_path_length"] == 1.5
+
+
+def test_rank_reviewed_candidate_claim_rewards_grounded_entailed_specific_evidence() -> None:
+    strong = rank_reviewed_candidate_claim(
+        factual_confidence=0.92,
+        goal_relevance=0.96,
+        priority=0.96,
+        supporting_document_count=1,
+        evidence_reference_count=1,
+        grounded_sentence=True,
+        both_arguments_present=True,
+        entailment_supported=True,
+        relation_specific=True,
+    )
+    weak = rank_reviewed_candidate_claim(
+        factual_confidence=0.92,
+        goal_relevance=0.96,
+        priority=0.96,
+        supporting_document_count=1,
+        evidence_reference_count=1,
+        grounded_sentence=False,
+        both_arguments_present=False,
+        entailment_supported=False,
+        relation_specific=False,
+    )
+
+    assert strong.score > weak.score
+    assert strong.metadata["evidence_quality_component"] == 1.0
+    assert weak.metadata["evidence_quality_component"] == 0.0

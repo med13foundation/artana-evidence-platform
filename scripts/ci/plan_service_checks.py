@@ -17,6 +17,13 @@ REPO_CONTROL_FILES = {
     "tests/unit/test_coverage_enforcement_contract.py",
     "tests/unit/test_makefile_type_gate_contract.py",
 }
+QUALITY_GATE_PREFIXES = (
+    "scripts/validation/relation_feasibility/",
+)
+QUALITY_GATE_FILES = {
+    "scripts/run_relation_feasibility_audit.py",
+    "tests/unit/test_relation_feasibility_audit.py",
+}
 HIGH_RISK_PREFIXES = (
     ".github/workflows/",
     "services/artana_evidence_api/alembic/",
@@ -78,14 +85,17 @@ def plan_checks(
     tests_only = bool(test_paths) and len(test_paths) == len(normalized_paths)
     high_risk = any(_is_high_risk_path(path) for path in normalized_paths)
     repo_control = any(_is_repo_control_path(path) for path in normalized_paths)
+    quality_gate = any(_is_quality_gate_path(path) for path in normalized_paths)
     evidence_api = any(_is_evidence_api_path(path) for path in normalized_paths)
     graph_service = any(_is_graph_service_path(path) for path in normalized_paths)
 
     return CheckPlan(
         docs_only=docs_only,
-        evidence_api=(evidence_api or high_risk) and not tests_only,
+        evidence_api=(evidence_api or high_risk or quality_gate) and not tests_only,
         graph_service=(graph_service or high_risk) and not tests_only,
-        repo_control=(repo_control or high_risk) and not docs_only and not tests_only,
+        repo_control=(
+            repo_control or high_risk or quality_gate
+        ) and not docs_only and not tests_only,
         full=high_risk,
         targeted_test_paths=test_paths if tests_only else (),
     )
@@ -147,6 +157,10 @@ def _is_repo_control_path(path: str) -> bool:
     return path in REPO_CONTROL_FILES or path.startswith(
         ("scripts/ci/", "scripts/deploy/"),
     )
+
+
+def _is_quality_gate_path(path: str) -> bool:
+    return path in QUALITY_GATE_FILES or path.startswith(QUALITY_GATE_PREFIXES)
 
 
 def _is_evidence_api_path(path: str) -> bool:

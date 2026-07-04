@@ -540,11 +540,17 @@ def _convert_review_item_to_proposal(
         )
 
     proposal_draft = _proposal_draft_from_review_item(review_item)
-    created_proposals = proposal_store.create_proposals(
-        space_id=space_id,
-        run_id=review_item.run_id,
-        proposals=(proposal_draft,),
-    )
+    try:
+        created_proposals = proposal_store.create_proposals(
+            space_id=space_id,
+            run_id=review_item.run_id,
+            proposals=(proposal_draft,),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
     proposal = created_proposals[0] if created_proposals else None
     if proposal is None and proposal_draft.claim_fingerprint is not None:
         proposal = _find_existing_proposal_by_fingerprint(

@@ -1,0 +1,63 @@
+{
+  "report_id": "2026-07-02-pr2-grounding-gate",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "command": "uv run --python python3.13 python scripts/run_relation_feasibility_audit.py --extractor agent --cases scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json --output-dir reports/relation_feasibility/2026-07-02-pr2-grounding-gate-agent-strict",
+  "environment_note": "Local strict-agent run on 2026-07-02. OpenAI API key was unavailable to the extractor, so all agent-mode cases used unavailable/fallback diagnostics and the verdict is RED. PR-2 treats that as expected evidence that live agent quality is still unproven while the grounding gate itself is now measurable and fail-closed for AI-authored claims.",
+  "fixture": {
+    "path": "scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json",
+    "sha256": "0be3c497378645a69038655818b65dc88af17f029679a3d6590eaa95164fbc70",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "provenance": "curated_synthetic_seed"
+  },
+  "ignored_local_artifacts": {
+    "json_path": "reports/relation_feasibility/2026-07-02-pr2-grounding-gate-agent-strict/relation_feasibility_report.json",
+    "json_sha256": "bd066d60be48549ceae59982e4baa166e8731a82537d73acf8c2d9761b568d62",
+    "markdown_path": "reports/relation_feasibility/2026-07-02-pr2-grounding-gate-agent-strict/relation_feasibility_report.md",
+    "markdown_sha256": "6ae759e7233930372268551d0d61ad4b1ccc6a6c0446d5d80f57c2c088754c12"
+  },
+  "summary": {
+    "verdict": "RED",
+    "verdict_reason": "30/30 cases are invalid because agent extraction did not complete without fallback.",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "candidate_count": 9,
+    "completed_agent_candidate_count": 0,
+    "completed_agent_precision_against_gold": 0.0,
+    "completed_agent_recall_against_gold": 0.0,
+    "completed_agent_valuable_candidate_rate": 0.0,
+    "agent_completed_case_count": 0,
+    "fallback_case_count": 30,
+    "fallback_candidate_count": 9,
+    "fallback_credited_as_agent_count": 6,
+    "invalid_agent_case_count": 30,
+    "precision_against_gold": 0.7778,
+    "recall_against_gold": 0.28,
+    "valuable_candidate_rate": 0.6667,
+    "generic_relation_rate": 0.1111,
+    "grounded_sentence_rate": 1.0,
+    "both_arguments_present_count": 9,
+    "both_arguments_present_rate": 1.0,
+    "support_sentence_alignment_rate": 0.7778
+  },
+  "implementation_evidence": {
+    "proposal_metadata": "Document extraction proposals now include metadata.evidence_grounding with anchor_start, anchor_end, match_kind, score, subject_present, object_present, and grounded.",
+    "audit_gate": "Candidate value now requires a grounded sentence plus subject and object presence in the evidence sentence.",
+    "graph_hard_floor": "AI-authored relation claims that require evidence are invalid unless metadata.evidence_grounding has grounded=true, subject_present=true, and object_present=true.",
+    "create_route_behavior": "AI-authored insufficient_evidence validation results return HTTP 400 instead of persisting a claim.",
+    "canonical_relation_hard_floor": "POST /relations now applies the same AI grounding hard floor before creating the resolved claim or materializing a canonical relation."
+  },
+  "adversarial_review": {
+    "initial_verdict": "BLOCK",
+    "blocking_finding": "Canonical relation promotion bypassed the PR-2 AI grounding floor because POST /relations validated ordinary evidence presence but not metadata.evidence_grounding before persistence.",
+    "fix": "The shared AI evidence validator now accepts both claim-create and relation-create requests, and POST /relations calls validate_ai_authored_relation_request after triple validation and before persistence.",
+    "final_verdict": "PASS",
+    "non_blocking_risk": "Direct POST /relations writes still depend on AI markers because KernelRelationCreateRequest has no agent_run_id or ai_provenance field; proposal promotion sets evidence_sentence_source=artana_generated."
+  },
+  "adversarial_findings": [
+    "fallback_only_report",
+    "fallback_candidates_look_valuable",
+    "entailment_not_checked",
+    "generic_relation_rate_high"
+  ]
+}

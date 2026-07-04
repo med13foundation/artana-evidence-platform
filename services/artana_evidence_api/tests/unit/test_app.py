@@ -176,6 +176,7 @@ from artana_evidence_api.types.graph_contracts import (
     KernelGraphDocumentNode,
     KernelGraphDocumentRequest,
     KernelGraphDocumentResponse,
+    KernelGraphValidationResponse,
     KernelGraphViewCountsResponse,
     KernelReasoningPathDetailResponse,
     KernelReasoningPathListResponse,
@@ -330,6 +331,21 @@ class _SelectiveHarnessResearchSpaceStore(HarnessResearchSpaceStore):
         )
 
 
+def _allowed_relation_validation(relation_type: str) -> KernelGraphValidationResponse:
+    normalized = relation_type.strip().upper().replace(" ", "_")
+    return KernelGraphValidationResponse(
+        valid=True,
+        code="allowed",
+        message="Test graph validation allows relation write.",
+        severity="info",
+        next_actions=[],
+        normalized_relation_type=normalized,
+        validation_state="ALLOWED",
+        validation_reason="test_validation",
+        persistability="PERSISTABLE",
+    )
+
+
 class _FakeGraphApiGateway:
     def __init__(self) -> None:
         self.closed = False
@@ -371,6 +387,15 @@ class _FakeGraphApiGateway:
             updated_at=datetime.now(UTC),
         )
 
+    def validate_claim_create(
+        self,
+        *,
+        space_id: str,
+        request: KernelRelationClaimCreateRequest,
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        return _allowed_relation_validation(request.relation_type)
+
     def create_relation(
         self,
         *,
@@ -397,6 +422,16 @@ class _FakeGraphApiGateway:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
+
+    def validate_relation_materialization(
+        self,
+        *,
+        space_id: str,
+        payload: dict[str, object],
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        relation_type = str(payload.get("relation_type", "")).strip()
+        return _allowed_relation_validation(relation_type)
 
     def list_claims(
         self,
@@ -466,7 +501,7 @@ class _FakeGraphApiGateway:
                 constraint_check=KernelRelationSuggestionConstraintCheckResponse(
                     passed=True,
                     source_entity_type="GENE",
-                    relation_type="SUGGESTS",
+                    relation_type="ASSOCIATED_WITH",
                     target_entity_type="GENE",
                 ),
             )
@@ -907,7 +942,7 @@ class _FakeGraphApiGateway:
                     source_document_ref="pmid:duplicate",
                     agent_run_id="curation:test-duplicate",
                     source_type="GENE",
-                    relation_type="SUGGESTS",
+                    relation_type="ASSOCIATED_WITH",
                     target_type="GENE",
                     source_label="Duplicate source",
                     target_label="Synthetic duplicate target",

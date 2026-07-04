@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -116,6 +118,28 @@ def test_make_all_aliases_normal_service_gate() -> None:
     assert "artana-evidence-api-*` prefix" in readme
 
 
+def test_relation_feasibility_quality_gate_is_part_of_service_checks() -> None:
+    """Regression: relation-quality audit tests must run in normal gates."""
+    makefile = _read_text("Makefile")
+    make_targets = _make_targets()
+
+    assert "relation-feasibility-quality-gate" in make_targets
+    assert re.search(
+        r"^service-checks:.*\n(?:\t@.*\n)*\t@\$\(MAKE\) -s relation-feasibility-quality-gate",
+        makefile,
+        flags=re.MULTILINE,
+    )
+
+
+def test_ci_repo_control_jobs_run_relation_feasibility_quality_tests() -> None:
+    """Regression: audit-methodology changes must execute audit tests in CI."""
+    evidence_api_workflow = _read_text(".github/workflows/evidence-api-service-checks.yml")
+    graph_workflow = _read_text(".github/workflows/graph-service-checks.yml")
+
+    assert "tests/unit/test_relation_feasibility_audit.py" in evidence_api_workflow
+    assert "tests/unit/test_relation_feasibility_audit.py" in graph_workflow
+
+
 def test_readme_visualizes_backend_review_workflow() -> None:
     """Regression: README should show the human review gate at a glance."""
     readme = _read_text("README.md")
@@ -185,6 +209,26 @@ def test_docs_do_not_link_removed_project_status() -> None:
     assert not (REPO_ROOT / "docs" / "project_status.md").exists()
     for relative_path in ("README.md", "docs/README.md"):
         assert "project_status.md" not in _read_text(relative_path)
+
+
+def test_validation_report_snapshots_are_not_gitignored() -> None:
+    """Regression: PR evidence snapshots under docs must remain merge-visible."""
+
+    git_bin = shutil.which("git")
+    assert git_bin is not None
+    snapshot_paths = (
+        "docs/validation/reports/2026-07-02-pr0-agent-strict-v2-summary.md",
+        "docs/validation/reports/2026-07-02-pr0-agent-strict-v2-summary.json",
+    )
+
+    for relative_path in snapshot_paths:
+        assert (REPO_ROOT / relative_path).exists()
+        result = subprocess.run(
+            [git_bin, "check-ignore", "-q", relative_path],
+            cwd=REPO_ROOT,
+            check=False,
+        )
+        assert result.returncode == 1
 
 
 def test_docs_do_not_use_machine_absolute_paths() -> None:
@@ -266,10 +310,24 @@ def test_live_checks_are_explicit_opt_in_targets() -> None:
     make_targets = _make_targets()
     readme = _read_text("README.md")
 
-    assert {"live-endpoint-contract-check", "live-external-api-check"} <= make_targets
+    assert {
+        "live-endpoint-contract-check",
+        "live-external-api-check",
+        "live-agent-relation-feasibility-check",
+    } <= make_targets
     assert "live-service-checks" in make_targets
     assert "ARTANA_EVIDENCE_API_BOOTSTRAP_KEY" in makefile
     assert "RUN_LIVE_EXTERNAL_API_TESTS=1" in makefile
+    live_agent_body = _make_target_body(
+        makefile,
+        "live-agent-relation-feasibility-check",
+    )
+    assert "scripts/run_relation_feasibility_audit.py --extractor agent" in live_agent_body
+    assert "--allow-fallback" not in live_agent_body
+    assert "$(MAKE) -s live-agent-relation-feasibility-check" in _make_target_body(
+        makefile,
+        "live-service-checks",
+    )
     assert "live-endpoint-contract-check" not in _make_target_body(
         makefile,
         "service-checks",
@@ -278,8 +336,13 @@ def test_live_checks_are_explicit_opt_in_targets() -> None:
         makefile,
         "service-checks",
     )
+    assert "live-agent-relation-feasibility-check" not in _make_target_body(
+        makefile,
+        "service-checks",
+    )
     assert "## Live Checks" in readme
     assert "Live/external tests are not required for normal CI" in readme
+    assert "live-agent-relation-feasibility-check" in readme
 
 
 def test_qa_report_has_no_stale_monorepo_targets() -> None:

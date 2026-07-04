@@ -1,0 +1,45 @@
+{
+  "report": "Final Aggregate Gate And Audit Snapshot",
+  "date": "2026-07-03",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "scope": [
+    "Specificity pruning",
+    "CURIE linking and graph entity-candidate propagation",
+    "Evidence-aware scoring",
+    "Trust ladder hard floors",
+    "Reproducible full-text extraction",
+    "CI quality regression gate"
+  ],
+  "service_checks": {
+    "status": "passed",
+    "coverage_percent": 86.86,
+    "coverage_minimum_percent": 86.0,
+    "live_external_api_tests": "skipped",
+    "running_service_tests": "skipped",
+    "openai_key_tests": "skipped"
+  },
+  "strict_agent_audit": {
+    "verdict": "RED",
+    "precision_fallback_only_comparison": 0.75,
+    "recall_fallback_only_comparison": 0.24,
+    "valuable_candidate_rate_fallback_only_comparison": 0.75,
+    "generic_relation_rate": 0.0,
+    "curie_linked_gold_endpoint_rate": 0.0,
+    "agent_completed_cases": "0/30",
+    "fallback_or_unavailable_cases": "30/30",
+    "invalid_agent_cases": "30/30",
+    "json_sha256": "32e4c619f22cc9c9cc12090332d148c9dba4b087624184f2418b3e3655337b85",
+    "markdown_sha256": "544097fb4665daa81759242333cd8e0b9e67f7c5e3de1bba712b4e4b7fb7ffb7"
+  },
+  "deterministic_comparison_audit": {
+    "verdict": "RED",
+    "precision": 0.75,
+    "recall": 0.24,
+    "valuable_candidate_rate": 0.75,
+    "generic_relation_rate": 0.0,
+    "curie_linked_gold_endpoint_rate": 0.0,
+    "json_sha256": "db43f21c237397462e62c569261e78484effdd9475919c0d2e9a60396ef13f29",
+    "markdown_sha256": "8d967de7cb7a70dd74afc0595ddd182a4db4185ee1f4a949df69503e020d4d36"
+  },
+  "interpretation": "The deterministic/fallback path is more specific and better guarded, but it is not counted as trusted agent evidence. The trusted-agent product goal remains unproven locally until the agent path completes with model credentials and recovers CURIE-linked gold endpoints."
+}

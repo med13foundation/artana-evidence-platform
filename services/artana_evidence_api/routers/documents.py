@@ -38,6 +38,7 @@ from artana_evidence_api.document_extraction import (
     normalize_text_document,
     review_document_extraction_drafts_with_diagnostics,
     sha256_hex,
+    with_candidate_extraction_trust_metadata,
 )
 from artana_evidence_api.document_extraction_support.dismech_structured import (
     build_dismech_structured_extraction_drafts,
@@ -46,6 +47,9 @@ from artana_evidence_api.document_extraction_support.dismech_structured import (
 from artana_evidence_api.document_extraction_support.draft_reuse import (
     effective_proposals_for_drafts,
     effective_review_items_for_drafts,
+)
+from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
+    with_variant_aware_trust_metadata,
 )
 from artana_evidence_api.document_ingestion_support import (
     _complete_document_run,
@@ -793,6 +797,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 graph_api_gateway=graph_api_gateway,
                 review_context=review_context,
             )
+            variant_result = with_variant_aware_trust_metadata(variant_result)
             created_proposals = proposal_store.create_proposals(
                 space_id=space_id,
                 run_id=run.id,
@@ -978,6 +983,10 @@ async def extract_document(  # noqa: PLR0913, PLR0915
             candidates=candidates,
             graph_api_gateway=graph_api_gateway,
             review_context=review_context,
+        )
+        drafts = with_candidate_extraction_trust_metadata(
+            drafts=drafts,
+            diagnostics=candidate_diagnostics,
         )
         (
             drafts,

@@ -183,6 +183,13 @@ For live PubMed, ClinVar, AlphaFold, MONDO, and related integration checks:
 make live-external-api-check
 ```
 
+For strict model-backed relation extraction, configure `OPENAI_API_KEY` or
+`ARTANA_OPENAI_API_KEY`, then run:
+
+```bash
+make live-agent-relation-feasibility-check
+```
+
 To run both live groups, keep `make run-all` running and execute:
 
 ```bash

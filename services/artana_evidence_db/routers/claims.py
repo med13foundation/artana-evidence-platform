@@ -46,6 +46,9 @@ from artana_evidence_db.dependencies import (
     verify_space_membership,
 )
 from artana_evidence_db.fact_assessment_support import fact_assessment_metadata
+from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
+    KernelGraphValidationResponse,
+)
 from artana_evidence_db.graph_validation_service import GraphValidationService
 from artana_evidence_db.kernel_domain_ports import ClaimRelationConstraintError
 from artana_evidence_db.kernel_services import (
@@ -86,6 +89,22 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/v1/spaces", tags=["claims"])
+
+
+def _build_validation_error_detail(
+    validation: KernelGraphValidationResponse,
+) -> dict[str, object]:
+    return {
+        "code": validation.code,
+        "message": validation.message,
+        "severity": validation.severity,
+        "validation_state": validation.validation_state,
+        "persistability": validation.persistability,
+        "next_actions": [
+            action.model_dump(mode="json") for action in validation.next_actions
+        ],
+    }
+
 
 @router.get(
     "/{space_id}/claims",
@@ -300,6 +319,11 @@ def create_claim(  # noqa: PLR0915
                     claim_ids=validation.claim_ids,
                 ),
             )
+        if validation.code == "unknown_relation_type":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_build_validation_error_detail(validation),
+            )
         if validation.code == "missing_ai_provenance":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -309,6 +333,14 @@ def create_claim(  # noqa: PLR0915
                     "validation_state": validation.validation_state,
                     "persistability": validation.persistability,
                 },
+            )
+        if (
+            validation.code == "insufficient_evidence"
+            and request.ai_provenance is not None
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_build_validation_error_detail(validation),
             )
         validation_state = _CLAIM_VALIDATION_STATE_MAP.get(
             validation.validation_state or "",

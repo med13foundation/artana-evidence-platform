@@ -12,6 +12,7 @@ from artana_evidence_api.document_context_summary import summarize_document_cont
 from artana_evidence_api.document_extraction import extract_relation_candidates
 from artana_evidence_api.document_extraction_contracts import (
     DocumentCandidateExtractionDiagnostics,
+    DocumentProposalReview,
     DocumentProposalReviewDiagnostics,
     ExtractedRelationCandidate,
 )
@@ -28,6 +29,7 @@ from artana_evidence_api.document_extraction_diagnostics import (
 )
 from artana_evidence_api.document_extraction_drafts import (
     build_document_extraction_drafts,
+    with_candidate_extraction_trust_metadata,
 )
 from artana_evidence_api.document_extraction_entities import (
     build_unresolved_entity_id,
@@ -41,10 +43,12 @@ from artana_evidence_api.document_extraction_entities import (
     split_compound_entity_label,
 )
 from artana_evidence_api.document_extraction_prompting import (
+    LLM_EXTRACTION_SYSTEM_PROMPT,
     build_llm_extraction_output_schema,
     build_proposal_review_output_schema,
 )
 from artana_evidence_api.document_extraction_relation_taxonomy import (
+    LLM_PROPOSE_NEW_RELATION_TYPE,
     LLM_RELATION_SYNONYMS,
     LLM_VALID_RELATION_TYPES,
 )
@@ -55,6 +59,9 @@ from artana_evidence_api.document_extraction_review import (
     goal_context_summary,
     review_from_draft_metadata,
     shorten_text,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    llm_relations_to_candidates,
 )
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.proposal_store import HarnessProposalDraft
@@ -125,6 +132,9 @@ def test_diagnostics_builders_normalize_candidate_and_review_status() -> None:
         "llm_candidate_status": "llm_empty",
         "llm_candidate_attempted": True,
         "llm_candidate_failed": False,
+        "agent_extraction_completed": False,
+        "fallback_output_used": True,
+        "trusted_evidence_eligible": False,
         "fallback_candidate_count": 1,
         "llm_candidate_error": "LLM succeeded but returned zero usable candidates",
     }
@@ -157,14 +167,18 @@ def test_prompt_schema_builders_validate_structured_outputs() -> None:
             "relations": [
                 {
                     "subject": "MED13",
+                    "subject_curie": "HGNC:22474",
                     "relation_type": "ACTIVATES",
                     "object": "EGFR",
+                    "object_curie": "HGNC:3236",
                     "sentence": "MED13 activates EGFR.",
                 },
             ],
         },
     )
     assert parsed.relations[0].subject == "MED13"
+    assert parsed.relations[0].subject_curie == "HGNC:22474"
+    assert parsed.relations[0].object_curie == "HGNC:3236"
 
     review_schema = build_proposal_review_output_schema()
     review = review_schema.model_validate(
@@ -184,6 +198,88 @@ def test_prompt_schema_builders_validate_structured_outputs() -> None:
     )
     assert review.reviews[0].priority == "prioritize"
 
+
+def test_llm_extraction_schema_rejects_raw_unknown_relation_type() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    with pytest.raises(Exception):
+        extraction_schema.model_validate(
+            {
+                "relations": [
+                    {
+                        "subject": "MET amplification",
+                        "relation_type": "CONFERS_RESISTANCE_TO",
+                        "object": "erlotinib",
+                        "sentence": "MET amplification confers resistance to erlotinib.",
+                    },
+                ],
+            },
+        )
+
+
+def test_llm_extraction_schema_canonicalizes_relation_type_synonyms() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    parsed = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "BRCA1 loss",
+                    "relation_type": "SENSITIZES",
+                    "object": "olaparib",
+                    "sentence": "BRCA1 loss sensitizes tumors to olaparib.",
+                },
+            ],
+        },
+    )
+
+    assert parsed.relations[0].relation_type == "SENSITIZES_TO"
+
+    proposed_canonical = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "BRCA1 loss",
+                    "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+                    "proposed_relation_type": "SENSITIZES",
+                    "new_relation_type_rationale": (
+                        "This is already covered by SENSITIZES_TO."
+                    ),
+                    "object": "olaparib",
+                    "sentence": "BRCA1 loss sensitizes tumors to olaparib.",
+                },
+            ],
+        },
+    )
+
+    assert proposed_canonical.relations[0].relation_type == "SENSITIZES_TO"
+    assert proposed_canonical.relations[0].proposed_relation_type is None
+    assert proposed_canonical.relations[0].new_relation_type_rationale is None
+
+
+def test_llm_extraction_schema_accepts_structured_new_relation_proposal() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    parsed = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "MET amplification",
+                    "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+                    "proposed_relation_type": "CONFERS_RESISTANCE_TO",
+                    "new_relation_type_rationale": (
+                        "Specific resistance relation not covered by canonical types."
+                    ),
+                    "object": "erlotinib",
+                    "sentence": "MET amplification confers resistance to erlotinib.",
+                },
+            ],
+        },
+    )
+
+    assert parsed.relations[0].relation_type == "PROPOSE_NEW_RELATION_TYPE"
+    assert parsed.relations[0].proposed_relation_type == "CONFERS_RESISTANCE_TO"
+
     with pytest.raises(ValueError):
         extraction_schema.model_validate({"relations": [{"subject": ""}]})
 
@@ -197,6 +293,70 @@ def test_relation_taxonomy_keeps_canonical_types_and_synonyms_together() -> None
         canonical_type in LLM_VALID_RELATION_TYPES
         for canonical_type in LLM_RELATION_SYNONYMS.values()
     )
+
+
+def test_llm_prompt_lists_every_extraction_relation_type() -> None:
+    for relation_type in LLM_VALID_RELATION_TYPES:
+        assert relation_type in LLM_EXTRACTION_SYSTEM_PROMPT
+
+
+def test_llm_prompt_requires_preserving_specific_relation_arguments() -> None:
+    assert "Preserve modifiers that define the biomedical entity" in (
+        LLM_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert "BRCA-mutated ovarian cancer" in LLM_EXTRACTION_SYSTEM_PROMPT
+    assert "response to pembrolizumab" in LLM_EXTRACTION_SYSTEM_PROMPT
+
+
+def test_llm_conversion_rejects_broadened_specific_object_label() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="Olaparib",
+                subject_curie=None,
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="ovarian cancer",
+                object_curie=None,
+                sentence=(
+                    "Olaparib treats BRCA-mutated ovarian cancer by exploiting "
+                    "homologous recombination deficiency."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert candidates == []
+    assert unknown_relation_types == set()
+
+
+def test_llm_conversion_preserves_specific_relation_arguments() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="Olaparib",
+                subject_curie=None,
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="BRCA-mutated ovarian cancer",
+                object_curie=None,
+                sentence=(
+                    "Olaparib treats BRCA-mutated ovarian cancer by exploiting "
+                    "homologous recombination deficiency."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].object_label == "BRCA-mutated ovarian cancer"
 
 
 def test_entity_helpers_clean_split_and_resolve_labels() -> None:
@@ -369,6 +529,75 @@ def test_review_helpers_apply_ranked_metadata_to_drafts() -> None:
     assert review_from_draft_metadata(updated) == review
 
 
+def test_review_helpers_rank_specific_grounded_entailed_claim_above_generic_ungrounded_claim() -> None:
+    context = build_document_review_context(objective="Study MED13 EGFR activation.")
+    review = DocumentProposalReview(
+        factual_support="strong",
+        goal_relevance="direct",
+        priority="prioritize",
+        rationale="Same review labels for ranking isolation.",
+        factual_rationale="Same factual label.",
+        relevance_rationale="Same relevance label.",
+        method="unit_test",
+    )
+    strong = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="document-1:0",
+        title="MED13 activates EGFR",
+        summary="MED13 activates EGFR.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[{"relevance": 0.1}],
+        payload={"proposed_claim_type": "ACTIVATES"},
+        metadata={
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {"support": "ENTAILS"},
+        },
+        document_id="document-1",
+    )
+    weak = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="document-1:1",
+        title="MED13 associated with phenotype",
+        summary="The paper discusses cardiac development.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[{"relevance": 0.1}],
+        payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+        metadata={
+            "evidence_grounding": {
+                "grounded": False,
+                "subject_present": False,
+                "object_present": False,
+            },
+        },
+        document_id="document-1",
+    )
+
+    ranked_strong = apply_document_proposal_review(
+        draft=strong,
+        review=review,
+        review_context=context,
+    )
+    ranked_weak = apply_document_proposal_review(
+        draft=weak,
+        review=review,
+        review_context=context,
+    )
+
+    assert ranked_strong.ranking_score > ranked_weak.ranking_score
+    assert ranked_strong.metadata["evidence_quality_component"] == 1.0
+    assert ranked_weak.metadata["evidence_quality_component"] == 0.0
+
+
 def test_draft_builder_assembles_reviewed_proposals_from_candidates() -> None:
     gateway = _GraphGateway()
     candidate = ExtractedRelationCandidate(
@@ -405,6 +634,8 @@ def test_draft_builder_propagates_document_evidence_grade() -> None:
     document = replace(
         _document(),
         source_type="pubmed",
+        text_content="MED13 activates EGFR in a randomized trial.",
+        text_excerpt="MED13 activates EGFR in a randomized trial.",
         metadata={
             "pubmed": {
                 "pmid": "12345",
@@ -425,6 +656,200 @@ def test_draft_builder_propagates_document_evidence_grade() -> None:
     assert len(drafts) == 1
     assert drafts[0].evidence_grade == "High"
     assert drafts[0].metadata["evidence_grade"] == "High"
+    assert drafts[0].metadata["evidence_grounding"] == {
+        "anchor_start": 0,
+        "anchor_end": 43,
+        "match_kind": "exact",
+        "score": 1.0,
+        "subject_present": True,
+        "object_present": True,
+        "grounded": True,
+    }
+    assert drafts[0].metadata["support_verification"]["support"] == "ENTAILS"
+
+
+def test_draft_builder_marks_contradicted_support_low_priority() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13",
+        relation_type="ACTIVATES",
+        object_label="EGFR",
+        sentence="MED13 does not activate EGFR.",
+    )
+    document = replace(
+        _document(),
+        text_content="MED13 does not activate EGFR.",
+        text_excerpt="MED13 does not activate EGFR.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert skipped == []
+    assert len(drafts) == 1
+    assert drafts[0].ranking_score == 0.1
+    assert drafts[0].metadata["support_verification"]["support"] == "CONTRADICTS"
+
+
+def test_draft_builder_omits_support_verification_when_grounding_fails() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13",
+        relation_type="ACTIVATES",
+        object_label="EGFR",
+        sentence="MED13 activates EGFR.",
+    )
+    document = replace(
+        _document(),
+        text_content="The paper discusses cardiac development.",
+        text_excerpt="The paper discusses cardiac development.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert skipped == []
+    assert len(drafts) == 1
+    assert drafts[0].metadata["evidence_grounding"]["grounded"] is False
+    assert "support_verification" not in drafts[0].metadata
+
+
+def test_candidate_extraction_trust_requires_entailing_support() -> None:
+    draft = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="doc:0",
+        title="MED13 activates EGFR",
+        summary="MED13 and EGFR were both measured.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={},
+        metadata={
+            "support_verification": {
+                "support": "NEUTRAL",
+                "rationale": "No relation cue.",
+                "model_id": "artana-heuristic-support-v1",
+            },
+        },
+    )
+
+    (trusted_draft,) = with_candidate_extraction_trust_metadata(
+        drafts=(draft,),
+        diagnostics=DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="completed",
+            llm_candidate_count=1,
+        ),
+    )
+
+    assert trusted_draft.metadata["agent_extraction_completed"] is True
+    assert trusted_draft.metadata["fallback_output_used"] is False
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is False
+
+
+def test_candidate_extraction_trust_requires_all_hard_floors() -> None:
+    draft = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="doc:0",
+        title="MED13 causes developmental delay",
+        summary="MED13 causes developmental delay.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={"proposed_claim_type": "CAUSES"},
+        metadata={
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {"support": "ENTAILS"},
+            "entity_linking": {
+                "subject": {"status": "abstained", "reason": "missing_curie"},
+                "object": {
+                    "status": "linked",
+                    "curie": "HP:0001263",
+                    "source": "verified_linker",
+                },
+            },
+        },
+    )
+
+    (trusted_draft,) = with_candidate_extraction_trust_metadata(
+        drafts=(draft,),
+        diagnostics=DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="completed",
+            llm_candidate_count=1,
+        ),
+    )
+
+    assert trusted_draft.metadata["agent_extraction_completed"] is True
+    assert trusted_draft.metadata["fallback_output_used"] is False
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is False
+    assert trusted_draft.metadata["trust_tier"] == "verified_evidence"
+    assert trusted_draft.metadata["trust_floor_failures"] == [
+        "curie_linked_subject",
+    ]
+
+
+def test_candidate_extraction_trust_marks_verified_linked_agent_relation_trusted() -> (
+    None
+):
+    draft = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="doc:0",
+        title="MED13 causes developmental delay",
+        summary="MED13 causes developmental delay.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={"proposed_claim_type": "CAUSES"},
+        metadata={
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {"support": "ENTAILS"},
+            "entity_linking": {
+                "subject": {
+                    "status": "linked",
+                    "curie": "HGNC:22474",
+                    "source": "verified_linker",
+                },
+                "object": {
+                    "status": "linked",
+                    "curie": "HP:0001263",
+                    "source": "verified_linker",
+                },
+            },
+        },
+    )
+
+    (trusted_draft,) = with_candidate_extraction_trust_metadata(
+        drafts=(draft,),
+        diagnostics=DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="completed",
+            llm_candidate_count=1,
+        ),
+    )
+
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is True
+    assert trusted_draft.metadata["trust_tier"] == "trusted"
+    assert trusted_draft.metadata["trust_floor_failures"] == []
 
 
 def test_draft_builder_skips_non_canonical_subject_labels() -> None:
@@ -448,6 +873,255 @@ def test_draft_builder_skips_non_canonical_subject_labels() -> None:
     assert skipped[0]["reason"] == "non_canonical_subject_label"
     assert skipped[0]["label"] == "were"
     assert skipped[0]["label_rejection_reason"] == "standalone_fragment_label"
+
+
+def test_draft_builder_skips_raw_unknown_relation_types(
+) -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13",
+        relation_type="PROTECTS_AGAINST",
+        object_label="developmental disorder",
+        sentence="MED13 protects against developmental disorder.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=_document(),
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert drafts == ()
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "unknown_relation_type"
+    assert skipped[0]["relation_type"] == "PROTECTS_AGAINST"
+
+
+def test_draft_builder_stages_governed_relation_type_proposals() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type=LLM_PROPOSE_NEW_RELATION_TYPE,
+        proposed_relation_type="CONFERS_RESISTANCE_TO",
+        new_relation_type_rationale=(
+            "Specific resistance relation not covered by canonical types."
+        ),
+        relation_governance_status="requires_relation_review",
+        object_label="erlotinib",
+        sentence="MET amplification confers resistance to erlotinib.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=_document(),
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert skipped == []
+    assert len(drafts) == 1
+    assert drafts[0].proposal_type == "relation_type_candidate"
+    assert drafts[0].payload["proposed_relation_type"] == "CONFERS_RESISTANCE_TO"
+    assert drafts[0].payload["trusted_evidence_eligible"] is False
+    assert drafts[0].metadata["relation_governance_status"] == (
+        "requires_relation_review"
+    )
+    assert drafts[0].metadata["trusted_evidence_eligible"] is False
+
+
+def test_draft_builder_prunes_redundant_generic_relation_siblings() -> None:
+    document = replace(
+        _document(),
+        text_content="MED13 activates EGFR and is associated with EGFR.",
+        text_excerpt="MED13 activates EGFR and is associated with EGFR.",
+    )
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="MED13",
+            relation_type="ASSOCIATED_WITH",
+            object_label="EGFR",
+            sentence="MED13 activates EGFR and is associated with EGFR.",
+        ),
+        ExtractedRelationCandidate(
+            subject_label="MED13",
+            relation_type="ACTIVATES",
+            object_label="EGFR",
+            sentence="MED13 activates EGFR and is associated with EGFR.",
+        ),
+    ]
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=candidates,
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert len(drafts) == 1
+    assert drafts[0].payload["proposed_claim_type"] == "ACTIVATES"
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "redundant_generic_relation_sibling"
+    assert skipped[0]["relation_type"] == "ASSOCIATED_WITH"
+    assert skipped[0]["suppressing_relation_type"] == "ACTIVATES"
+
+
+def test_draft_builder_keeps_generic_relation_from_different_sentence() -> None:
+    document = replace(
+        _document(),
+        text_content=(
+            "MED13 activates EGFR in cardiomyocytes. "
+            "MED13 was also associated with EGFR expression in fibroblasts."
+        ),
+        text_excerpt=(
+            "MED13 activates EGFR in cardiomyocytes. "
+            "MED13 was also associated with EGFR expression in fibroblasts."
+        ),
+    )
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="MED13",
+            relation_type="ACTIVATES",
+            object_label="EGFR",
+            sentence="MED13 activates EGFR in cardiomyocytes.",
+        ),
+        ExtractedRelationCandidate(
+            subject_label="MED13",
+            relation_type="ASSOCIATED_WITH",
+            object_label="EGFR",
+            sentence="MED13 was also associated with EGFR expression in fibroblasts.",
+        ),
+    ]
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=candidates,
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert len(drafts) == 2
+    assert skipped == []
+    assert {draft.payload["proposed_claim_type"] for draft in drafts} == {
+        "ACTIVATES",
+        "ASSOCIATED_WITH",
+    }
+
+
+def test_draft_builder_skips_weak_generic_relation_candidates() -> None:
+    document = replace(
+        _document(),
+        text_content=(
+            "MET amplification was correlated with resistance in a small "
+            "exploratory cohort."
+        ),
+        text_excerpt=(
+            "MET amplification was correlated with resistance in a small "
+            "exploratory cohort."
+        ),
+    )
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="resistance",
+        sentence=(
+            "MET amplification was correlated with resistance in a small "
+            "exploratory cohort."
+        ),
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert drafts == ()
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "weak_generic_relation"
+    assert skipped[0]["relation_type"] == "ASSOCIATED_WITH"
+
+
+def test_draft_builder_propagates_curie_identifiers_for_graph_entity_creation() -> None:
+    document = replace(
+        _document(),
+        text_content="MED13 causes developmental delay.",
+        text_excerpt="MED13 causes developmental delay.",
+    )
+    candidates = [
+        ExtractedRelationCandidate(
+                subject_label="MED13",
+                subject_curie="HGNC:22474",
+                subject_curie_source="verified_linker",
+                relation_type="CAUSES",
+                object_label="developmental delay",
+                object_curie="HP:0001263",
+                object_curie_source="verified_linker",
+                sentence="MED13 causes developmental delay.",
+            ),
+        ]
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=candidates,
+        graph_api_gateway=_GraphGateway(),
+    )
+
+    assert skipped == []
+    assert len(drafts) == 1
+    subject_candidate = drafts[0].payload["proposed_subject_entity_candidate"]
+    object_candidate = drafts[0].payload["proposed_object_entity_candidate"]
+    assert subject_candidate["entity_type"] == "GENE"
+    assert subject_candidate["identifiers"] == {"hgnc_id": "HGNC:22474"}
+    assert object_candidate["entity_type"] == "PHENOTYPE"
+    assert object_candidate["identifiers"] == {"hpo_id": "HP:0001263"}
+    assert drafts[0].metadata["subject_curie"] == "HGNC:22474"
+    assert drafts[0].metadata["object_curie"] == "HP:0001263"
+    assert drafts[0].metadata["entity_linking"]["subject"]["status"] == "linked"
+    assert drafts[0].metadata["entity_linking"]["object"]["status"] == "linked"
+    assert drafts[0].metadata["entity_linking"]["subject"]["trusted_identifier"] is True
+    assert drafts[0].metadata["entity_linking"]["object"]["trusted_identifier"] is True
+
+
+def test_draft_builder_keeps_model_curie_hints_out_of_graph_identifiers() -> None:
+    document = replace(
+        _document(),
+        text_content="MED13 causes developmental delay.",
+        text_excerpt="MED13 causes developmental delay.",
+    )
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="MED13",
+            subject_curie="HGNC:22474",
+            subject_curie_source="model",
+            relation_type="CAUSES",
+            object_label="developmental delay",
+            object_curie="HP:0001263",
+            object_curie_source="model",
+            sentence="MED13 causes developmental delay.",
+        ),
+    ]
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=candidates,
+        graph_api_gateway=_GraphGateway(),
+    )
+
+    assert skipped == []
+    assert len(drafts) == 1
+    assert drafts[0].payload["proposed_subject_entity_candidate"] is None
+    assert drafts[0].payload["proposed_object_entity_candidate"] is None
+    assert drafts[0].metadata["entity_linking"]["subject"]["source"] == "model"
+    assert drafts[0].metadata["entity_linking"]["object"]["source"] == "model"
+    assert drafts[0].metadata["entity_linking"]["subject"]["trusted_identifier"] is False
+    assert drafts[0].metadata["entity_linking"]["object"]["trusted_identifier"] is False
 
 
 def test_draft_builder_skips_ambiguous_gene_family_subject_labels() -> None:

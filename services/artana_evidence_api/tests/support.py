@@ -33,6 +33,7 @@ from artana_evidence_api.types.graph_contracts import (
     KernelGraphDocumentMeta,
     KernelGraphDocumentNode,
     KernelGraphDocumentResponse,
+    KernelGraphValidationResponse,
     KernelGraphViewCountsResponse,
     KernelReasoningPathDetailResponse,
     KernelReasoningPathListResponse,
@@ -816,6 +817,15 @@ class FakeGraphApiGateway:
             updated_at=now,
         )
 
+    def validate_claim_create(
+        self,
+        *,
+        space_id: str,
+        request: KernelRelationClaimCreateRequest,
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        return _allowed_relation_validation(request.relation_type)
+
     def create_relation(
         self,
         *,
@@ -843,6 +853,16 @@ class FakeGraphApiGateway:
             created_at=now,
             updated_at=now,
         )
+
+    def validate_relation_materialization(
+        self,
+        *,
+        space_id: str,
+        payload: JSONObject,
+    ) -> KernelGraphValidationResponse:
+        del space_id
+        relation_type = str(payload.get("relation_type", "")).strip()
+        return _allowed_relation_validation(relation_type)
 
     def list_entities(
         self,
@@ -885,6 +905,21 @@ class FakeGraphApiGateway:
 
     def close(self) -> None:
         self.closed = True
+
+
+def _allowed_relation_validation(relation_type: str) -> KernelGraphValidationResponse:
+    normalized = relation_type.strip().upper().replace(" ", "_")
+    return KernelGraphValidationResponse(
+        valid=True,
+        code="allowed",
+        message="Test graph validation allows relation write.",
+        severity="info",
+        next_actions=[],
+        normalized_relation_type=normalized,
+        validation_state="ALLOWED",
+        validation_reason="test_validation",
+        persistability="PERSISTABLE",
+    )
 
 
 def parse_summary(summary_json: str) -> dict[str, object]:

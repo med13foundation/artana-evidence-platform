@@ -1,0 +1,56 @@
+{
+  "report": "PR-5 Specificity Pruning Evidence Snapshot",
+  "date": "2026-07-03",
+  "branch": "alvaro/evidence-pr0-quality-harness",
+  "planned_branch": "alvaro/evidence-pr5-specificity-pruning",
+  "scope": [
+    "Prune redundant ASSOCIATED_WITH candidates when a canonical specific sibling exists for the same normalized subject/object pair.",
+    "Suppress weak exploratory generic correlations before candidate staging.",
+    "Update the LLM extraction prompt to make ASSOCIATED_WITH a last resort.",
+    "Report pruned_generic_relation_count in audit JSON, Markdown, and CLI output."
+  ],
+  "strict_agent_summary": {
+    "verdict": "RED",
+    "precision": 0.75,
+    "recall": 0.24,
+    "valuable_candidate_rate": 0.75,
+    "generic_relation_rate": 0.0,
+    "generic_relation_count": 0,
+    "pruned_generic_relation_count": 0,
+    "agent_completed_cases": 0,
+    "case_count": 30,
+    "fallback_cases": 30,
+    "invalid_agent_cases": 30,
+    "fallback_credited_as_agent_count": 6
+  },
+  "deterministic_summary": {
+    "verdict": "YELLOW",
+    "precision": 0.75,
+    "recall": 0.24,
+    "valuable_candidate_rate": 0.75,
+    "generic_relation_rate": 0.0,
+    "generic_relation_count": 0,
+    "pruned_generic_relation_count": 0
+  },
+  "validation": {
+    "focused_red_green_tests": "4 passed",
+    "post_adversarial_red_green_tests": "3 passed",
+    "focused_affected_bundle": "104 passed after adversarial fixes",
+    "research_init_compatibility_regressions": "7 passed",
+    "ruff_touched_files": "passed",
+    "artana_evidence_api_service_checks": "passed after support-module split for architecture budget",
+    "aggregate_service_checks": "passed with total coverage 86.83%; live external API, running-service, and OpenAI-key integration tests skipped",
+    "independent_adversarial_re_review": "PASS"
+  },
+  "artifacts": {
+    "strict_json": "reports/relation_feasibility/2026-07-03-pr5-specificity-pruning-agent-strict/relation_feasibility_report.json",
+    "strict_markdown": "reports/relation_feasibility/2026-07-03-pr5-specificity-pruning-agent-strict/relation_feasibility_report.md",
+    "deterministic_json": "reports/relation_feasibility/2026-07-03-pr5-specificity-pruning-deterministic/relation_feasibility_report.json",
+    "deterministic_markdown": "reports/relation_feasibility/2026-07-03-pr5-specificity-pruning-deterministic/relation_feasibility_report.md",
+    "strict_json_sha256": "c6c320a277cadb77e3e735308b954a75559e2264be348a32d6c743cacf40838a",
+    "strict_markdown_sha256": "59b6964dcc0f863297c39b8bed12e79af1d6309354628cb0ea6f77afa67cae76",
+    "deterministic_json_sha256": "5562d16393922717adb7ec19418ce844d5737b97d47bf024c0c73610866835c6",
+    "deterministic_markdown_sha256": "d215308263f83b49758c67c6e8a0771d1834d0249038b7f35948abf9a589e62f"
+  },
+  "known_remaining_risk": "The strict audit remains RED because no local agent run completed. PR-5 removes local generic relation leakage but does not prove live-agent quality."
+}

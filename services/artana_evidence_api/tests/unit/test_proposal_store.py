@@ -142,6 +142,110 @@ def test_in_memory_harness_proposal_store_normalizes_oversized_titles() -> None:
     assert created[0].title.endswith("...")
 
 
+def test_in_memory_harness_proposal_store_rejects_raw_unknown_candidate_claim_type() -> None:
+    proposal_store = HarnessProposalStore()
+
+    with pytest.raises(ValueError, match="unknown relation type"):
+        proposal_store.create_proposals(
+            space_id=str(uuid4()),
+            run_id=str(uuid4()),
+            proposals=(
+                HarnessProposalDraft(
+                    proposal_type="candidate_claim",
+                    source_kind="document_extraction",
+                    source_key="doc-raw:0",
+                    title="Raw unknown claim",
+                    summary="This claim should not persist.",
+                    confidence=0.74,
+                    ranking_score=0.74,
+                    reasoning_path={"document_id": "doc-raw"},
+                    evidence_bundle=[],
+                    payload={"proposed_claim_type": "PROTECTS_AGAINST"},
+                    metadata={"source_type": "pubmed"},
+                ),
+            ),
+        )
+
+
+def test_in_memory_harness_proposal_store_canonicalizes_candidate_claim_type() -> None:
+    proposal_store = HarnessProposalStore()
+
+    created = proposal_store.create_proposals(
+        space_id=str(uuid4()),
+        run_id=str(uuid4()),
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key="doc-synonym:0",
+                title="Synonym claim",
+                summary="This claim should persist with canonical relation type.",
+                confidence=0.74,
+                ranking_score=0.74,
+                reasoning_path={"document_id": "doc-synonym"},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "AFFECTS"},
+                metadata={"source_type": "pubmed"},
+            ),
+        ),
+    )
+
+    assert created[0].payload["proposed_claim_type"] == "MODULATES"
+
+
+def test_in_memory_harness_proposal_store_migrates_legacy_relation_type_key() -> None:
+    proposal_store = HarnessProposalStore()
+
+    created = proposal_store.create_proposals(
+        space_id=str(uuid4()),
+        run_id=str(uuid4()),
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="hypothesis_run",
+                source_key="legacy-relation-key:0",
+                title="Legacy relation key claim",
+                summary="This claim uses the old relation_type payload key.",
+                confidence=0.74,
+                ranking_score=0.74,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"relation_type": "REGULATES"},
+                metadata={"source_type": "pubmed"},
+            ),
+        ),
+    )
+
+    assert created[0].payload["relation_type"] == "REGULATES"
+    assert created[0].payload["proposed_claim_type"] == "REGULATES"
+
+
+def test_in_memory_harness_proposal_store_maps_legacy_suggests_relation() -> None:
+    proposal_store = HarnessProposalStore()
+
+    created = proposal_store.create_proposals(
+        space_id=str(uuid4()),
+        run_id=str(uuid4()),
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="graph_suggestion",
+                source_key="legacy-suggests:0",
+                title="Legacy suggestion claim",
+                summary="This claim uses an older graph suggestion placeholder.",
+                confidence=0.74,
+                ranking_score=0.74,
+                reasoning_path={},
+                evidence_bundle=[],
+                payload={"proposed_claim_type": "SUGGESTS"},
+                metadata={"source_type": "pubmed"},
+            ),
+        ),
+    )
+
+    assert created[0].payload["proposed_claim_type"] == "ASSOCIATED_WITH"
+
+
 def test_in_memory_harness_proposal_store_filters_by_evidence_grade() -> None:
     proposal_store = HarnessProposalStore()
     space_id = str(uuid4())

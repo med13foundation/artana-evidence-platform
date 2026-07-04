@@ -19,6 +19,17 @@ def _qualify(table_name: str, column_name: str) -> str:
     return f"{schema}.{table_name}.{column_name}"
 
 
+def _drop_index_if_exists(index_name: str, *, table_name: str, schema: str | None) -> None:
+    inspector = sa.inspect(op.get_bind())
+    existing_indexes = {
+        index["name"]
+        for index in inspector.get_indexes(table_name, schema=schema)
+    }
+    if index_name not in existing_indexes:
+        return
+    op.drop_index(index_name, table_name=table_name, schema=schema)
+
+
 def upgrade() -> None:
     schema = harness_schema_name()
     op.create_table(
@@ -211,87 +222,87 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     schema = harness_schema_name()
-    op.drop_index(
+    _drop_index_if_exists(
         "uq_harness_review_items_space_type_source_key_null_fp",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "uq_harness_review_items_space_review_fingerprint",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "idx_harness_review_items_document_id",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "idx_harness_review_items_space_rank",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "idx_harness_review_items_space_status",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_linked_approval_key",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_linked_proposal_id",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_ranking_score",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_status",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_priority",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_document_id",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_source_key",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_source_kind",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_review_type",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_source_family",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_run_id",
         table_name="harness_review_items",
         schema=schema,
     )
-    op.drop_index(
+    _drop_index_if_exists(
         "ix_harness_review_items_space_id",
         table_name="harness_review_items",
         schema=schema,

@@ -189,7 +189,23 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
                     target_entity_id=str(target_entity_id),
                     relation_type="ASSOCIATED_WITH",
                 ),
-                metadata={"agent_run_id": "integration-live-graph-promotion"},
+                metadata={
+                    "agent_run_id": "integration-live-graph-promotion",
+                    "evidence_grounding": {
+                        "anchor_start": 0,
+                        "anchor_end": 68,
+                        "match_kind": "exact",
+                        "score": 1.0,
+                        "subject_present": True,
+                        "object_present": True,
+                        "grounded": True,
+                    },
+                    "support_verification": {
+                        "support": "ENTAILS",
+                        "rationale": "The sentence directly supports the relation.",
+                        "model_id": "artana-heuristic-support-v1",
+                    },
+                },
             ),
         ),
     )[0]

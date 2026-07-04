@@ -852,9 +852,25 @@ def test_extract_document_creates_pending_review_proposals_and_supports_filterin
     assert payload["proposals"][0]["document_id"] == document_id
     proposal_review = payload["proposals"][0]["metadata"]["proposal_review"]
     assert proposal_review["scale_version"] == "v1"
-    assert proposal_review["factual_support"] in {"strong", "moderate", "tentative"}
-    assert proposal_review["goal_relevance"] in {"direct", "supporting"}
-    assert proposal_review["priority"] in {"prioritize", "review", "background"}
+    assert proposal_review["factual_support"] in {
+        "strong",
+        "moderate",
+        "tentative",
+        "unsupported",
+    }
+    assert proposal_review["goal_relevance"] in {
+        "direct",
+        "supporting",
+        "peripheral",
+        "off_target",
+        "unscoped",
+    }
+    assert proposal_review["priority"] in {
+        "prioritize",
+        "review",
+        "background",
+        "ignore",
+    }
     stored_document = document_store.get_document(
         space_id=space_id,
         document_id=document_id,
@@ -1190,12 +1206,99 @@ def test_extract_document_surfaces_llm_review_fallback_in_metadata(
         "llm_candidate_status": "fallback_error",
         "llm_candidate_attempted": True,
         "llm_candidate_failed": True,
+        "agent_extraction_completed": False,
+        "fallback_output_used": True,
+        "trusted_evidence_eligible": False,
         "llm_candidate_error": "synthetic candidate outage",
         "llm_review_status": "fallback_error",
         "llm_review_attempted": True,
         "llm_review_failed": True,
         "llm_review_error": "synthetic llm outage",
     }
+
+    stored_document = document_store.get_document(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert stored_document is not None
+    assert stored_document.metadata["extraction_diagnostics"] == diagnostics
+
+
+def test_extract_document_marks_fallback_proposals_as_not_trusted_evidence(
+    monkeypatch,
+) -> None:
+    client, _, document_store, proposal_store, _, space_id = _build_client(
+        objective="Map MED13 mechanism evidence in cardiomyopathy.",
+    )
+
+    async def _fake_extract_with_diagnostics(
+        text: str,
+        *,
+        space_context: str = "",
+    ) -> tuple[
+        list[ExtractedRelationCandidate],
+        DocumentCandidateExtractionDiagnostics,
+    ]:
+        del text, space_context
+        return (
+            [
+                ExtractedRelationCandidate(
+                    subject_label="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object_label="cardiomyopathy",
+                    sentence="MED13 associates with cardiomyopathy.",
+                ),
+            ],
+            DocumentCandidateExtractionDiagnostics(
+                llm_candidate_status="llm_empty",
+                llm_candidate_error=(
+                    "LLM succeeded but returned zero usable candidates"
+                ),
+                fallback_candidate_count=1,
+            ),
+        )
+
+    monkeypatch.setattr(
+        "artana_evidence_api.routers.documents.extract_relation_candidates",
+        lambda _text: [],
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.routers.documents.extract_relation_candidates_with_diagnostics",
+        _fake_extract_with_diagnostics,
+    )
+
+    submit_response = client.post(
+        f"/v1/spaces/{space_id}/documents/text",
+        headers=_auth_headers(),
+        json={
+            "title": "MED13 evidence note",
+            "text": "MED13 associates with cardiomyopathy.",
+            "metadata": {},
+        },
+    )
+    document_id = submit_response.json()["document"]["id"]
+
+    extract_response = client.post(
+        f"/v1/spaces/{space_id}/documents/{document_id}/extract",
+        headers=_auth_headers(),
+    )
+
+    assert extract_response.status_code == 201
+    payload = extract_response.json()
+    diagnostics = payload["document"]["metadata"]["extraction_diagnostics"]
+    assert diagnostics["agent_extraction_completed"] is False
+    assert diagnostics["fallback_output_used"] is True
+    assert diagnostics["trusted_evidence_eligible"] is False
+
+    proposals = proposal_store.list_proposals(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert len(proposals) == 1
+    proposal_metadata = proposals[0].metadata
+    assert proposal_metadata["agent_extraction_completed"] is False
+    assert proposal_metadata["fallback_output_used"] is True
+    assert proposal_metadata["trusted_evidence_eligible"] is False
 
     stored_document = document_store.get_document(
         space_id=space_id,
@@ -2201,6 +2304,191 @@ def test_extract_document_routes_variant_aware_documents_through_bridge(
     assert artifact_payload["variant_aware_extraction"] is True
     assert artifact_payload["proposal_count"] == 1
     assert artifact_payload["review_item_count"] == 1
+
+
+def test_extract_document_marks_variant_fallback_proposals_as_not_trusted(
+    monkeypatch,
+) -> None:
+    client, _, document_store, proposal_store, _, space_id = _build_client()
+    review_item_store = client.app.dependency_overrides[get_review_item_store]()
+
+    async def _fake_variant_extract(
+        *,
+        space_id: UUID,
+        document,
+        graph_api_gateway,
+        review_context=None,
+    ) -> VariantAwareDocumentExtractionResult:
+        del space_id, graph_api_gateway, review_context
+        contract = ExtractionContract(
+            decision="escalate",
+            confidence_score=0.0,
+            rationale="LLM deferred to deterministic signal extraction.",
+            evidence=[],
+            source_type="pubmed",
+            document_id=document.id,
+            entities=[],
+            observations=[],
+            relations=[],
+            rejected_facts=[],
+            pipeline_payloads=[],
+            shadow_mode=True,
+            agent_run_id="variant-aware-fallback-test",
+        )
+        return VariantAwareDocumentExtractionResult(
+            contract=contract,
+            proposal_drafts=(
+                HarnessProposalDraft(
+                    proposal_type="entity_candidate",
+                    source_kind="document_extraction",
+                    source_key=f"{document.id}:variant:0",
+                    document_id=document.id,
+                    title="Extracted entity: VARIANT c.977C>A",
+                    summary="MED13 NM_015335.6:c.977C>A (p.Thr326Lys)",
+                    confidence=0.9,
+                    ranking_score=0.9,
+                    reasoning_path={"kind": "entity_candidate"},
+                    evidence_bundle=[],
+                    payload={
+                        "entity_type": "VARIANT",
+                        "display_label": "c.977C>A",
+                    },
+                    metadata={"candidate_kind": "entity"},
+                ),
+            ),
+            review_item_drafts=(
+                HarnessReviewItemDraft(
+                    review_type="phenotype_claim_review",
+                    source_family="document_extraction",
+                    source_kind="document_extraction",
+                    source_key=f"{document.id}:phenotype-review:0",
+                    document_id=document.id,
+                    title="Review phenotype link for c.977C>A",
+                    summary="developmental delay",
+                    priority="medium",
+                    confidence=0.7,
+                    ranking_score=0.7,
+                    evidence_bundle=[],
+                    payload={
+                        "phenotype_span": "developmental delay",
+                        "proposal_draft": {
+                            "proposal_type": "candidate_claim",
+                            "title": (
+                                "Extracted claim: c.977C>A CAUSES "
+                                "developmental delay"
+                            ),
+                            "summary": "The variant was reported with delay.",
+                            "payload": {
+                                "proposed_subject": "unresolved:c.977c>a",
+                                "proposed_subject_label": "c.977C>A",
+                                "proposed_claim_type": "CAUSES",
+                                "proposed_object": "unresolved:developmental_delay",
+                                "proposed_object_label": "developmental delay",
+                                "evidence_entity_ids": [],
+                            },
+                            "metadata": {},
+                        },
+                    },
+                    metadata={"candidate_kind": "phenotype_review"},
+                ),
+            ),
+            skipped_items=[],
+            candidate_discovery={
+                "method": "variant_aware_extraction",
+                "variant_aware_recommended": True,
+                "llm_attempted": False,
+                "llm_candidate_count": 0,
+                "entity_candidate_count": 1,
+                "observation_candidate_count": 0,
+                "review_item_count": 1,
+                "llm_status": "escalate",
+            },
+            extraction_diagnostics={
+                "extraction_mode": "variant_aware",
+                "fallback_from_signals": True,
+                "bridge_proposal_count": 1,
+                "bridge_review_item_count": 1,
+            },
+        )
+
+    monkeypatch.setattr(
+        "artana_evidence_api.routers.documents.document_supports_variant_aware_extraction",
+        lambda document: True,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.routers.documents.extract_variant_aware_document",
+        _fake_variant_extract,
+    )
+
+    submit_response = client.post(
+        f"/v1/spaces/{space_id}/documents/text",
+        headers=_auth_headers(),
+        json={
+            "title": "Variant fallback note",
+            "text": "MED13 NM_015335.6:c.977C>A (p.Thr326Lys) was identified.",
+            "metadata": {},
+        },
+    )
+    document_id = submit_response.json()["document"]["id"]
+
+    extract_response = client.post(
+        f"/v1/spaces/{space_id}/documents/{document_id}/extract",
+        headers=_auth_headers(),
+    )
+
+    assert extract_response.status_code == 201
+    payload = extract_response.json()
+    diagnostics = payload["document"]["metadata"]["extraction_diagnostics"]
+    assert diagnostics["agent_extraction_completed"] is False
+    assert diagnostics["fallback_output_used"] is True
+    assert diagnostics["trusted_evidence_eligible"] is False
+
+    proposals = proposal_store.list_proposals(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert len(proposals) == 1
+    proposal_metadata = proposals[0].metadata
+    assert proposal_metadata["agent_extraction_completed"] is False
+    assert proposal_metadata["fallback_output_used"] is True
+    assert proposal_metadata["trusted_evidence_eligible"] is False
+
+    review_items = review_item_store.list_review_items(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert len(review_items) == 1
+    review_item = review_items[0]
+    assert review_item.metadata["agent_extraction_completed"] is False
+    assert review_item.metadata["fallback_output_used"] is True
+    assert review_item.metadata["trusted_evidence_eligible"] is False
+    nested_metadata = review_item.payload["proposal_draft"]["metadata"]
+    assert nested_metadata["agent_extraction_completed"] is False
+    assert nested_metadata["fallback_output_used"] is True
+    assert nested_metadata["trusted_evidence_eligible"] is False
+
+    conversion_response = client.post(
+        f"/v1/spaces/{space_id}/review-queue/review_item:{review_item.id}/actions",
+        headers=_auth_headers(),
+        json={"action": "convert_to_proposal", "reason": "Ready for curation"},
+    )
+
+    assert conversion_response.status_code == 200
+    converted_proposal = proposal_store.get_proposal(
+        space_id=space_id,
+        proposal_id=conversion_response.json()["resource_id"],
+    )
+    assert converted_proposal is not None
+    assert converted_proposal.metadata["agent_extraction_completed"] is False
+    assert converted_proposal.metadata["fallback_output_used"] is True
+    assert converted_proposal.metadata["trusted_evidence_eligible"] is False
+
+    stored_document = document_store.get_document(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert stored_document is not None
+    assert stored_document.metadata["extraction_diagnostics"] == diagnostics
 
 
 def test_extract_document_routes_pubmed_variant_prose_through_bridge(
