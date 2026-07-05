@@ -16,6 +16,9 @@ from artana_evidence_api.document_extraction_support.evidence_support_verifier i
     TripleSupport,
     verify_triple_support,
 )
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    review_only_record_for_label,
+)
 
 from scripts.validation.relation_feasibility.models import (
     BenchmarkCase,
@@ -26,6 +29,19 @@ from scripts.validation.relation_feasibility.models import (
     GoldRelation,
     RelationTypeSurface,
     Verdict,
+)
+from scripts.validation.relation_feasibility.relation_matching import (
+    curie_matches as _curie_matches,
+)
+from scripts.validation.relation_feasibility.relation_matching import (
+    normalize_entity as _normalize_entity,
+)
+from scripts.validation.relation_feasibility.relation_matching import (
+    normalize_relation_type as _normalize_relation_type,
+)
+from scripts.validation.relation_feasibility.relation_matching import (
+    normalized_relation_key,
+    relation_matches_gold,
 )
 from scripts.validation.relation_feasibility.trusted_metric_rules import (
     HIGH_VALUE_LEVELS,
@@ -59,15 +75,6 @@ _GENERIC_ENTITY_LABELS = frozenset(
         "traits",
     },
 )
-_RELATION_SYNONYMS = {
-    "LINKED_TO": "ASSOCIATED_WITH",
-    "LINKS_TO": "ASSOCIATED_WITH",
-    "CORRELATED_WITH": "ASSOCIATED_WITH",
-    "INTERACTS_WITH": "PHYSICALLY_INTERACTS_WITH",
-    "BINDS_TO": "PHYSICALLY_INTERACTS_WITH",
-    "UPREGULATES": "ACTIVATES",
-    "DOWNREGULATES": "INHIBITS",
-}
 _MAX_SPECIFIC_ENTITY_TOKENS = 6
 _RED_MIN_PRECISION = 0.5
 _RED_MIN_VALUABLE_RATE = 0.35
@@ -102,6 +109,8 @@ class _QualityContext:
     has_verified_object_curie: bool
     subject_curie_matches_gold: bool
     object_curie_matches_gold: bool
+    subject_review_only_grounding: bool
+    object_review_only_grounding: bool
     matched_gold: GoldRelation | None
 
 
@@ -625,16 +634,6 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
     )
 
 
-def normalized_relation_key(relation: ExtractedRelation | GoldRelation) -> tuple[str, str, str]:
-    """Return the normalized triple key used for support matching."""
-
-    return (
-        _normalize_entity(relation.subject),
-        _normalize_relation_type(relation.relation_type),
-        _normalize_entity(relation.object),
-    )
-
-
 def _missed_gold_indices(
     *,
     gold_relations: tuple[GoldRelation, ...],
@@ -723,6 +722,12 @@ def _assess_candidate(
         ),
         gold_curie=matched_gold.object_curie if matched_gold is not None else None,
     )
+    subject_review_only_grounding = (
+        review_only_record_for_label(candidate.subject) is not None
+    )
+    object_review_only_grounding = (
+        review_only_record_for_label(candidate.object) is not None
+    )
     value_supported = (
         matched_gold is not None and matched_gold.value_level in {"high", "medium"}
     )
@@ -749,6 +754,8 @@ def _assess_candidate(
             has_verified_object_curie=has_verified_object_curie,
             subject_curie_matches_gold=subject_curie_matches_gold,
             object_curie_matches_gold=object_curie_matches_gold,
+            subject_review_only_grounding=subject_review_only_grounding,
+            object_review_only_grounding=object_review_only_grounding,
             matched_gold=matched_gold,
         ),
     )
@@ -821,9 +828,8 @@ def _matched_gold_index(
 ) -> int | None:
     if _is_governed_relation_proposal(candidate):
         return None
-    candidate_key = normalized_relation_key(candidate)
     for index, gold_relation in enumerate(gold_relations):
-        if candidate_key == normalized_relation_key(gold_relation):
+        if relation_matches_gold(candidate=candidate, gold_relation=gold_relation):
             return index
     return None
 
@@ -856,6 +862,10 @@ def _quality_flags(context: _QualityContext) -> tuple[str, ...]:
         flags.append("requires_relation_review")
     if context.proposal_supported:
         flags.append("proposal_matches_gold")
+    if context.subject_review_only_grounding:
+        flags.append("review_only_subject_grounding")
+    if context.object_review_only_grounding:
+        flags.append("review_only_object_grounding")
     if not context.subject_specific:
         flags.append("generic_subject")
     if not context.object_specific:
@@ -930,15 +940,6 @@ def _curie_endpoint_flag(
     return ""
 
 
-def _normalize_entity(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
-
-
-def _normalize_relation_type(value: str) -> str:
-    token = re.sub(r"[^A-Z0-9]+", "_", value.strip().upper()).strip("_")
-    return _RELATION_SYNONYMS.get(token, token)
-
-
 def _is_specific_entity_label(label: str) -> bool:
     normalized = _normalize_entity(label)
     if not normalized:
@@ -976,18 +977,6 @@ def _is_governed_relation_proposal(candidate: ExtractedRelation) -> bool:
         candidate.relation_governance_status == "requires_relation_review"
         or _normalize_relation_type(candidate.relation_type)
         == LLM_PROPOSE_NEW_RELATION_TYPE
-    )
-
-
-def _curie_matches(
-    *,
-    candidate_curie: str | None,
-    gold_curie: str | None,
-) -> bool:
-    return (
-        gold_curie is not None
-        and candidate_curie is not None
-        and _normalize_curie(candidate_curie) == _normalize_curie(gold_curie)
     )
 
 
@@ -1087,13 +1076,6 @@ def _model_curie_is_wrong(
             gold_curie=gold_curie,
         )
     )
-
-
-def _normalize_curie(value: str) -> str:
-    prefix, separator, local = value.strip().partition(":")
-    if separator == "":
-        return value.strip().upper()
-    return f"{prefix.upper()}:{local}"
 
 
 def _has_grounded_sentence(*, source_text: str, sentence: str) -> bool:

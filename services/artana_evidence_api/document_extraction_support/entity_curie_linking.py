@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Literal
 
+from artana_evidence_api.document_extraction_support.entity_grounding.contracts import (
+    CurieSource,
+    ModelHintStatus,
+    ReviewOnlyEntityRecord,
+    VerifiedEntityRecord,
+)
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    review_only_record_for_label,
+    verified_record_for_label,
+)
 from artana_evidence_api.types.common import JSONObject
-
-CurieSource = Literal["none", "model", "verified_linker"]
-ModelHintStatus = Literal["matched", "replaced", "invalid"]
 
 _CURIE_RE = re.compile(r"^(?P<prefix>[A-Za-z][A-Za-z0-9_.-]{1,31}):(?P<local>[A-Za-z0-9][A-Za-z0-9_.:-]{0,127})$")
 _GENE_TOKEN_RE = re.compile(r"^[A-Z][A-Z0-9-]{1,11}$")
@@ -27,13 +33,6 @@ _CURIE_PREFIXES: dict[str, tuple[str, str, str]] = {
     "OMIM": ("OMIM", "omim_id", "DISEASE"),
     "UMLS": ("UMLS", "umls_id", "BIOMEDICAL_CONCEPT"),
 }
-
-
-@dataclass(frozen=True, slots=True)
-class _VerifiedEntityRecord:
-    label: str
-    curie: str
-    aliases: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,29 +92,21 @@ def normalize_entity_curie(
 ) -> EntityCurieLink:
     """Normalize a model-supplied CURIE or return a typed abstention."""
 
-    if source == "model":
-        record = _verified_record_for_label(label)
+    if source in {"model", "verified_linker"}:
+        record = verified_record_for_label(label)
         if record is not None:
-            if raw_curie is not None and raw_curie.strip() != "":
-                normalized_hint = _normalize_supported_curie_value(raw_curie)
-                if normalized_hint is None:
-                    return _link_from_verified_record(
-                        record,
-                        model_hint_curie=raw_curie.strip(),
-                        model_hint_status="invalid",
-                    )
-                if _curies_equal(normalized_hint, record.curie):
-                    return _link_from_verified_record(
-                        record,
-                        model_hint_curie=normalized_hint,
-                        model_hint_status="matched",
-                    )
-                return _link_from_verified_record(
-                    record,
-                    model_hint_curie=normalized_hint,
-                    model_hint_status="replaced",
-                )
-            return _link_from_verified_record(record)
+            return _link_from_verified_record_with_hint(
+                record,
+                raw_curie=raw_curie,
+            )
+
+    if source in {"model", "verified_linker", "none"}:
+        review_record = review_only_record_for_label(label)
+        if review_record is not None:
+            return _review_only_link_from_record(review_record, raw_curie=raw_curie)
+
+    if source == "verified_linker":
+        return _normalize_raw_curie(raw_curie, label=label, source="model")
 
     return _normalize_raw_curie(raw_curie, label=label, source=source)
 
@@ -200,146 +191,8 @@ def entity_candidate_payload_from_curie(
     }
 
 
-def _entity_label_key(label: str) -> str:
-    return re.sub(r"\s+", " ", label.strip()).casefold()
-
-
-_VERIFIED_ENTITY_RECORDS: tuple[_VerifiedEntityRecord, ...] = (
-    _VerifiedEntityRecord(
-        label="AKT1",
-        curie="HGNC:391",
-        aliases=("AKT activation",),
-    ),
-    _VerifiedEntityRecord(
-        label="BRAF V600E",
-        curie="ClinVar:BRAF_V600E",
-    ),
-    _VerifiedEntityRecord(
-        label="BRCA-mutated ovarian cancer",
-        curie="MONDO:0008170",
-    ),
-    _VerifiedEntityRecord(
-        label="BRCA1",
-        curie="HGNC:1100",
-        aliases=("BRCA1 loss",),
-    ),
-    _VerifiedEntityRecord(
-        label="Bevacizumab",
-        curie="DrugBank:DB00112",
-    ),
-    _VerifiedEntityRecord(
-        label="Cisplatin",
-        curie="DrugBank:DB00515",
-    ),
-    _VerifiedEntityRecord(
-        label="EGFR T790M",
-        curie="ClinVar:EGFR_T790M",
-    ),
-    _VerifiedEntityRecord(
-        label="HER2",
-        curie="HGNC:3430",
-        aliases=("HER2 amplification",),
-    ),
-    _VerifiedEntityRecord(
-        label="IL6",
-        curie="HGNC:6018",
-    ),
-    _VerifiedEntityRecord(
-        label="JAK2",
-        curie="HGNC:6192",
-        aliases=("JAK2 signaling",),
-    ),
-    _VerifiedEntityRecord(
-        label="KRAS G12C",
-        curie="ClinVar:KRAS_G12C",
-    ),
-    _VerifiedEntityRecord(
-        label="MED13",
-        curie="HGNC:22474",
-    ),
-    _VerifiedEntityRecord(
-        label="MET",
-        curie="HGNC:7029",
-        aliases=("MET amplification",),
-    ),
-    _VerifiedEntityRecord(
-        label="Olaparib",
-        curie="DrugBank:DB09074",
-    ),
-    _VerifiedEntityRecord(
-        label="Osimertinib",
-        curie="DrugBank:DB09330",
-    ),
-    _VerifiedEntityRecord(
-        label="PD-L1",
-        curie="HGNC:17635",
-        aliases=("PD-L1 expression",),
-    ),
-    _VerifiedEntityRecord(
-        label="RET p.Arg1174*",
-        curie="ClinVar:RET_ARG1174TER",
-    ),
-    _VerifiedEntityRecord(
-        label="Ruxolitinib",
-        curie="DrugBank:DB08877",
-    ),
-    _VerifiedEntityRecord(
-        label="Sotorasib",
-        curie="DrugBank:DB15569",
-    ),
-    _VerifiedEntityRecord(
-        label="TP53",
-        curie="HGNC:11998",
-        aliases=("TP53 loss",),
-    ),
-    _VerifiedEntityRecord(
-        label="Trametinib",
-        curie="DrugBank:DB08911",
-    ),
-    _VerifiedEntityRecord(
-        label="VEGF-A",
-        curie="HGNC:12680",
-    ),
-    _VerifiedEntityRecord(
-        label="congenital heart disease",
-        curie="MONDO:0005267",
-    ),
-    _VerifiedEntityRecord(
-        label="developmental delay",
-        curie="HP:0001263",
-    ),
-    _VerifiedEntityRecord(
-        label="early-onset breast cancer",
-        curie="MONDO:0007254",
-    ),
-    _VerifiedEntityRecord(
-        label="erlotinib",
-        curie="DrugBank:DB00530",
-    ),
-    _VerifiedEntityRecord(
-        label="gefitinib",
-        curie="DrugBank:DB00317",
-        aliases=("resistance to gefitinib",),
-    ),
-    _VerifiedEntityRecord(
-        label="triple-negative breast cancer",
-        curie="MONDO:0007254",
-    ),
-)
-
-_VERIFIED_ENTITY_RECORDS_BY_LABEL: dict[str, _VerifiedEntityRecord] = {
-    _entity_label_key(label): record
-    for record in _VERIFIED_ENTITY_RECORDS
-    for label in (record.label, *record.aliases)
-}
-
-
-def _verified_record_for_label(label: str) -> _VerifiedEntityRecord | None:
-    return _VERIFIED_ENTITY_RECORDS_BY_LABEL.get(_entity_label_key(label))
-
-
 def _link_from_verified_record(
-    record: _VerifiedEntityRecord,
+    record: VerifiedEntityRecord,
     *,
     model_hint_curie: str | None = None,
     model_hint_status: ModelHintStatus | None = None,
@@ -359,6 +212,51 @@ def _link_from_verified_record(
         entity_type=link.entity_type,
         source=link.source,
         reason=link.reason,
+        model_hint_curie=model_hint_curie,
+        model_hint_status=model_hint_status,
+    )
+
+
+def _link_from_verified_record_with_hint(
+    record: VerifiedEntityRecord,
+    *,
+    raw_curie: str | None,
+) -> EntityCurieLink:
+    if raw_curie is None or raw_curie.strip() == "":
+        return _link_from_verified_record(record)
+    normalized_hint = _normalize_supported_curie_value(raw_curie)
+    if normalized_hint is None:
+        return _link_from_verified_record(
+            record,
+            model_hint_curie=raw_curie.strip(),
+            model_hint_status="invalid",
+        )
+    model_hint_status: ModelHintStatus = (
+        "matched" if _curies_equal(normalized_hint, record.curie) else "replaced"
+    )
+    return _link_from_verified_record(
+        record,
+        model_hint_curie=normalized_hint,
+        model_hint_status=model_hint_status,
+    )
+
+
+def _review_only_link_from_record(
+    record: ReviewOnlyEntityRecord,
+    *,
+    raw_curie: str | None,
+) -> EntityCurieLink:
+    model_hint_curie: str | None = None
+    model_hint_status: ModelHintStatus | None = None
+    if raw_curie is not None and raw_curie.strip() != "":
+        normalized_hint = _normalize_supported_curie_value(raw_curie)
+        model_hint_curie = normalized_hint or raw_curie.strip()
+        if normalized_hint is None:
+            model_hint_status = "invalid"
+    return EntityCurieLink(
+        status="abstained",
+        source="none",
+        reason=record.reason,
         model_hint_curie=model_hint_curie,
         model_hint_status=model_hint_status,
     )

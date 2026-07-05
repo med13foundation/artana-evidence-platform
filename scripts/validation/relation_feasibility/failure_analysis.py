@@ -38,6 +38,15 @@ class _MissedGoldKey:
 
 
 @dataclass(frozen=True, slots=True)
+class _MissedGoldCurieEndpointKey:
+    case_id: str
+    endpoint_role: str
+    label: str
+    gold_curie: str
+    value_level: str
+
+
+@dataclass(frozen=True, slots=True)
 class _FalsePositiveKey:
     case_id: str
     subject: str
@@ -100,6 +109,7 @@ def build_failure_analysis_report(
     """Build a read-only failure attribution report from feasibility reports."""
 
     missed_gold: dict[_MissedGoldKey, _Accumulator] = {}
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator] = {}
     false_positives: dict[_FalsePositiveKey, _Accumulator] = {}
     curie_gaps: dict[_CurieGapKey, _Accumulator] = {}
     governed_proposals: dict[_GovernedProposalKey, _Accumulator] = {}
@@ -134,6 +144,7 @@ def build_failure_analysis_report(
             case_id = _case_id(case_result)
             _collect_missed_gold(
                 missed_gold,
+                missed_gold_curie_endpoints,
                 case_result=case_result,
                 case_id=case_id,
                 run_label=label,
@@ -153,6 +164,9 @@ def build_failure_analysis_report(
         "run_count": len(inputs),
         "input_reports": input_reports,
         "repeated_missed_gold_relations": _missed_gold_rows(missed_gold),
+        "missed_gold_curie_endpoints": _missed_gold_curie_endpoint_rows(
+            missed_gold_curie_endpoints,
+        ),
         "repeated_false_positive_candidates": _false_positive_rows(false_positives),
         "curie_gaps": _curie_gap_rows(curie_gaps),
         "proposal_capture": {
@@ -185,6 +199,20 @@ def render_failure_analysis_markdown(report: JSONObject) -> str:
         _table_lines(
             report.get("repeated_missed_gold_relations"),
             ("occurrence_count", "value_level", "case_id", "subject", "relation_type", "object"),
+        ),
+    )
+    lines.extend(["", "## CURIE Endpoints Lost To Missed Gold", ""])
+    lines.extend(
+        _table_lines(
+            report.get("missed_gold_curie_endpoints"),
+            (
+                "occurrence_count",
+                "value_level",
+                "case_id",
+                "endpoint_role",
+                "label",
+                "gold_curie",
+            ),
         ),
     )
     lines.extend(["", "## Repeated False Positives", ""])
@@ -249,6 +277,7 @@ def write_failure_analysis_report(*, report: JSONObject, output_dir: Path) -> JS
 
 def _collect_missed_gold(
     missed_gold: dict[_MissedGoldKey, _Accumulator],
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator],
     *,
     case_result: JSONObject,
     case_id: str,
@@ -263,6 +292,41 @@ def _collect_missed_gold(
             value_level=_string_value(missed_relation.get("value_level")),
         )
         _add_occurrence(missed_gold, key, run_label)
+        _collect_missed_gold_curie_endpoint(
+            missed_gold_curie_endpoints,
+            missed_relation=missed_relation,
+            case_id=case_id,
+            run_label=run_label,
+            role="subject",
+        )
+        _collect_missed_gold_curie_endpoint(
+            missed_gold_curie_endpoints,
+            missed_relation=missed_relation,
+            case_id=case_id,
+            run_label=run_label,
+            role="object",
+        )
+
+
+def _collect_missed_gold_curie_endpoint(
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator],
+    *,
+    missed_relation: JSONObject,
+    case_id: str,
+    run_label: str,
+    role: str,
+) -> None:
+    gold_curie = _optional_string(missed_relation.get(f"{role}_curie"))
+    if gold_curie is None:
+        return
+    key = _MissedGoldCurieEndpointKey(
+        case_id=case_id,
+        endpoint_role=role,
+        label=_string_value(missed_relation.get(role)),
+        gold_curie=gold_curie,
+        value_level=_string_value(missed_relation.get("value_level")),
+    )
+    _add_occurrence(missed_gold_curie_endpoints, key, run_label)
 
 
 def _collect_assessments(
@@ -409,6 +473,25 @@ def _false_positive_rows(
                 "proposed_relation_type": key.proposed_relation_type,
                 "object": key.object,
                 "support_verification": key.support_verification,
+                "occurrence_count": accumulator.count,
+                "run_labels": sorted(accumulator.run_labels),
+            },
+        )
+    return _sort_rows(rows)
+
+
+def _missed_gold_curie_endpoint_rows(
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator],
+) -> list[JSONObject]:
+    rows: list[JSONObject] = []
+    for key, accumulator in missed_gold_curie_endpoints.items():
+        rows.append(
+            {
+                "case_id": key.case_id,
+                "endpoint_role": key.endpoint_role,
+                "label": key.label,
+                "gold_curie": key.gold_curie,
+                "value_level": key.value_level,
                 "occurrence_count": accumulator.count,
                 "run_labels": sorted(accumulator.run_labels),
             },

@@ -113,6 +113,45 @@ def test_failure_analysis_classifies_model_hint_curie_as_unverified(
     ]
 
 
+def test_failure_analysis_reports_curie_endpoints_lost_to_missed_gold(
+    tmp_path: Path,
+) -> None:
+    missed_relation = {
+        "subject": "MED13",
+        "relation_type": "ASSOCIATED_WITH",
+        "object": "congenital heart disease",
+        "value_level": "low",
+        "subject_curie": "HGNC:22474",
+        "object_curie": "MONDO:0005267",
+    }
+    report_path = _write_report(tmp_path, "run1", missed=[missed_relation])
+
+    report = build_failure_analysis_report(
+        (FailureAnalysisInput(path=report_path, label="run1"),),
+    )
+
+    assert report["missed_gold_curie_endpoints"] == [
+        {
+            "case_id": "case_a",
+            "endpoint_role": "subject",
+            "label": "MED13",
+            "gold_curie": "HGNC:22474",
+            "value_level": "low",
+            "occurrence_count": 1,
+            "run_labels": ["run1"],
+        },
+        {
+            "case_id": "case_a",
+            "endpoint_role": "object",
+            "label": "congenital heart disease",
+            "gold_curie": "MONDO:0005267",
+            "value_level": "low",
+            "occurrence_count": 1,
+            "run_labels": ["run1"],
+        },
+    ]
+
+
 def test_failure_analysis_keeps_governed_proposal_capture_separate_from_trust(
     tmp_path: Path,
 ) -> None:

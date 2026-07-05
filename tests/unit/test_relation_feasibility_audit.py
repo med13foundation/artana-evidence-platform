@@ -362,6 +362,113 @@ def test_model_curie_hints_do_not_count_as_verified_gold_endpoint_links() -> Non
     assert report.summary.trusted_high_value_recall == 0.0
 
 
+def test_verified_curie_match_can_support_curated_endpoint_alias() -> None:
+    cases = (
+        _case(
+            case_id="curated_endpoint_alias",
+            text="BRCA1 regulates homologous recombination DNA repair.",
+            gold=(
+                GoldRelation(
+                    subject="BRCA1",
+                    relation_type="REGULATES",
+                    object="homologous recombination DNA repair",
+                    support_sentence=(
+                        "BRCA1 regulates homologous recombination DNA repair."
+                    ),
+                    value_level="high",
+                    rationale="Specific gene-to-process regulatory relation.",
+                    subject_curie="HGNC:1100",
+                    object_curie="GO:0000724",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="BRCA1",
+                    subject_curie="HGNC:1100",
+                    subject_curie_source="verified_linker",
+                    relation_type="REGULATES",
+                    object="homologous recombination",
+                    object_curie="GO:0000724",
+                    object_curie_source="verified_linker",
+                    sentence="BRCA1 regulates homologous recombination DNA repair.",
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.is_supported_by_gold is True
+    assert assessment.object_curie_matches_gold is True
+    assert "unsupported_by_gold" not in assessment.quality_flags
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.trusted_high_value_recall == 1.0
+    assert report.summary.curie_linked_gold_endpoint_rate == 1.0
+
+
+def test_review_only_grounding_labels_are_flagged_without_gold_curie() -> None:
+    cases = (
+        _case(
+            case_id="review_only_grounding",
+            text="PD-L1 expression is a biomarker for response to pembrolizumab.",
+            gold=(
+                GoldRelation(
+                    subject="PD-L1 expression",
+                    relation_type="BIOMARKER_FOR",
+                    object="response to pembrolizumab",
+                    support_sentence=(
+                        "PD-L1 expression is a biomarker for response to "
+                        "pembrolizumab."
+                    ),
+                    value_level="high",
+                    rationale="Specific biomarker-to-response relation.",
+                    subject_curie="HGNC:17635",
+                    object_curie=None,
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="PD-L1 expression",
+                    subject_curie="HGNC:17635",
+                    subject_curie_source="verified_linker",
+                    relation_type="BIOMARKER_FOR",
+                    object="response to pembrolizumab",
+                    sentence=(
+                        "PD-L1 expression is a biomarker for response to "
+                        "pembrolizumab."
+                    ),
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.is_supported_by_gold is True
+    assert assessment.is_valuable is True
+    assert "review_only_object_grounding" in assessment.quality_flags
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.trusted_high_value_recall == 0.0
+
+
 def test_trusted_high_value_recall_requires_completed_agent_and_verified_curies() -> None:
     cases = (
         _case(
@@ -1353,6 +1460,49 @@ def test_v2_fixture_has_required_categories_and_richer_labels() -> None:
     assert any(relation.subject_curie for relation in gold_relations)
     assert any(relation.object_curie for relation in gold_relations)
     assert any(not relation.requires_entailment for relation in gold_relations)
+
+
+def test_v2_fixture_pins_pr21_verified_grounding_policy() -> None:
+    cases = load_benchmark_cases(
+        Path("scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json"),
+    )
+
+    gold_by_case = {
+        case.case_id: case.gold_relations[0]
+        for case in cases
+        if case.case_id
+        in {
+            "strong_med13_activates_septal_development",
+            "strong_brca1_regulates_dna_repair",
+            "strong_mek_inhibits_erk",
+            "strong_pdl1_biomarker_immunotherapy",
+            "strong_braf_v600e_activates_mapk",
+            "complex_ret_variant_alias",
+            "complex_her2_amplification_growth",
+            "long_document_tail_relation_braf",
+        }
+    }
+
+    assert (
+        gold_by_case["strong_med13_activates_septal_development"].object_curie
+        == "GO:0003279"
+    )
+    assert (
+        gold_by_case["strong_brca1_regulates_dna_repair"].object_curie
+        == "GO:0000724"
+    )
+    assert gold_by_case["strong_mek_inhibits_erk"].object_curie is None
+    assert (
+        gold_by_case["strong_braf_v600e_activates_mapk"].object_curie
+        == "GO:0000165"
+    )
+    assert gold_by_case["complex_ret_variant_alias"].object_curie == "GO:0000165"
+    assert (
+        gold_by_case["long_document_tail_relation_braf"].object_curie
+        == "GO:0000165"
+    )
+    assert gold_by_case["strong_pdl1_biomarker_immunotherapy"].object_curie is None
+    assert gold_by_case["complex_her2_amplification_growth"].object_curie is None
 
 
 def test_v2_fixture_uses_canonical_drug_resistance_relation_shape() -> None:
