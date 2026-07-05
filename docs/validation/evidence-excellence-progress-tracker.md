@@ -6,6 +6,9 @@ This is the living tracker for raising Artana Evidence from "useful relation
 candidate extraction" to a high-confidence, agent-driven, evidence-grounded
 trusted graph system.
 
+Next trusted-readiness PR plan:
+`docs/validation/trusted-graph-readiness-pr-plan.md`
+
 The tracker is updated after each PR with metrics, report links, tests, and
 review evidence. A phase is not done because code merged. A phase is done when
 the evidence below proves the quality gate moved in the right direction.
