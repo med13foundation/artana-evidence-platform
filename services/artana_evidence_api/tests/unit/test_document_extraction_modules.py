@@ -993,6 +993,106 @@ def test_draft_builder_prunes_redundant_generic_relation_siblings() -> None:
     assert skipped[0]["suppressing_relation_type"] == "ACTIVATES"
 
 
+def test_draft_builder_prunes_generic_tail_when_specific_subject_sibling_exists() -> None:
+    document = replace(
+        _document(),
+        text_content=(
+            "EGFR T790M causes resistance to gefitinib and is associated "
+            "with disease progression."
+        ),
+        text_excerpt=(
+            "EGFR T790M causes resistance to gefitinib and is associated "
+            "with disease progression."
+        ),
+    )
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="EGFR T790M",
+            relation_type="CAUSES",
+            object_label="resistance to gefitinib",
+            sentence=(
+                "EGFR T790M causes resistance to gefitinib and is associated "
+                "with disease progression."
+            ),
+        ),
+        ExtractedRelationCandidate(
+            subject_label="EGFR T790M",
+            relation_type="ASSOCIATED_WITH",
+            object_label="disease progression",
+            sentence=(
+                "EGFR T790M causes resistance to gefitinib and is associated "
+                "with disease progression."
+            ),
+        ),
+    ]
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=candidates,
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert len(drafts) == 1
+    assert drafts[0].payload["proposed_claim_type"] == "CAUSES"
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "redundant_generic_relation_sibling"
+    assert skipped[0]["relation_type"] == "ASSOCIATED_WITH"
+    assert skipped[0]["suppressing_relation_type"] == "CAUSES"
+
+
+def test_draft_builder_prunes_generic_tail_when_governed_proposal_sibling_exists() -> None:
+    document = replace(
+        _document(),
+        text_content=(
+            "MET amplification confers resistance to erlotinib and is "
+            "associated with EGFR-mutant lung adenocarcinoma."
+        ),
+        text_excerpt=(
+            "MET amplification confers resistance to erlotinib and is "
+            "associated with EGFR-mutant lung adenocarcinoma."
+        ),
+    )
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="MET amplification",
+            relation_type=LLM_PROPOSE_NEW_RELATION_TYPE,
+            proposed_relation_type="CONFERS_RESISTANCE_TO",
+            relation_governance_status="requires_relation_review",
+            object_label="erlotinib",
+            sentence=(
+                "MET amplification confers resistance to erlotinib and is "
+                "associated with EGFR-mutant lung adenocarcinoma."
+            ),
+        ),
+        ExtractedRelationCandidate(
+            subject_label="MET amplification",
+            relation_type="ASSOCIATED_WITH",
+            object_label="EGFR-mutant lung adenocarcinoma",
+            sentence=(
+                "MET amplification confers resistance to erlotinib and is "
+                "associated with EGFR-mutant lung adenocarcinoma."
+            ),
+        ),
+    ]
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=candidates,
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert len(drafts) == 1
+    assert drafts[0].proposal_type == "relation_type_candidate"
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "redundant_generic_relation_sibling"
+    assert skipped[0]["relation_type"] == "ASSOCIATED_WITH"
+    assert skipped[0]["suppressing_relation_type"] == "CONFERS_RESISTANCE_TO"
+
+
 def test_draft_builder_keeps_generic_relation_from_different_sentence() -> None:
     document = replace(
         _document(),

@@ -1,0 +1,51 @@
+{
+  "report": "PR-13 Specificity Noise Reduction Evidence Snapshot",
+  "date": "2026-07-05",
+  "branch": "alvaro/evidence-pr13-specificity-noise-reduction",
+  "base_branch": "alvaro/evidence-pr12-precision-value-gates",
+  "scope": [
+    "Suppress ASSOCIATED_WITH candidates that trail a specific canonical sibling in the same sentence.",
+    "Suppress ASSOCIATED_WITH candidates that trail a governed relation-type proposal in the same sentence.",
+    "Preserve generic associations from different sentences.",
+    "Keep governed relation proposals staged for review instead of dropping them."
+  ],
+  "strict_live_agent_summary": {
+    "verdict": "RED",
+    "completed_agent_precision": 0.8095,
+    "completed_agent_recall": 0.68,
+    "high_value_recall": 0.85,
+    "completed_agent_valuable_rate": 0.8095,
+    "generic_relation_rate": 0.0,
+    "pruned_generic_relations": 6,
+    "quality_filtered_candidates": 5,
+    "candidate_curie_present_rate": 0.9048,
+    "verified_curie_match_rate": 0.7027,
+    "model_curie_wrong_count": 0,
+    "fallback_cases": 0,
+    "invalid_agent_cases": 0,
+    "negative_control_leakage_cases": 0,
+    "governed_proposal_recall_among_proposal_eligible_gold": 1.0
+  },
+  "delta_from_pr12": {
+    "completed_agent_precision": "+0.0595",
+    "completed_agent_recall": "-0.0400",
+    "high_value_recall": "-0.0500",
+    "completed_agent_valuable_rate": "+0.0595",
+    "generic_relation_rate": "-0.1250",
+    "verified_curie_match_rate": "-0.0541"
+  },
+  "validation": {
+    "focused_pruning_tests": "passed",
+    "focused_affected_bundle": "passed",
+    "artana_evidence_api_lint": "passed",
+    "artana_evidence_api_type_check": "passed",
+    "relation_feasibility_quality_gate": "passed"
+  },
+  "artifacts": {
+    "live_agent_json": "reports/relation_feasibility/2026-07-05-pr13-specificity-noise-reduction-r2/relation_feasibility_report.json",
+    "live_agent_markdown": "reports/relation_feasibility/2026-07-05-pr13-specificity-noise-reduction-r2/relation_feasibility_report.md",
+    "live_agent_json_sha256": "3d309bc3076561e8417d8992cbfa392fb3370ba8283cef9a53af3655df542620",
+    "live_agent_markdown_sha256": "77218b16fe170bf8b5995a2599c52a218516b7a0a776c60ce18d8df5b2e890a5"
+  },
+  "known_remaining_risk": "The strict live-agent gate remains RED because recall and verified CURIE-linked endpoint recovery remain below target."
+}

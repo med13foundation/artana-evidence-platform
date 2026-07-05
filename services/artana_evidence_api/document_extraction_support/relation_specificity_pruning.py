@@ -94,14 +94,17 @@ def prune_redundant_generic_relation_candidates(
 
     indexed_candidates = tuple(enumerate(candidates))
     specific_relation_by_pair_and_sentence: dict[tuple[str, str, str], str] = {}
+    specific_relation_by_subject_and_sentence: dict[tuple[str, str], str] = {}
     for _, candidate in indexed_candidates:
-        canonical_relation = canonicalize_extraction_relation_type(
-            candidate.relation_type,
-        )
-        if canonical_relation is None or canonical_relation in _GENERIC_RELATION_TYPES:
+        canonical_relation = _candidate_specific_relation_type(candidate)
+        if canonical_relation is None:
             continue
         specific_relation_by_pair_and_sentence.setdefault(
             _candidate_entity_pair_and_sentence(candidate),
+            canonical_relation,
+        )
+        specific_relation_by_subject_and_sentence.setdefault(
+            _candidate_subject_and_sentence(candidate),
             canonical_relation,
         )
 
@@ -127,6 +130,12 @@ def prune_redundant_generic_relation_candidates(
         suppressing_relation_type = specific_relation_by_pair_and_sentence.get(
             _candidate_entity_pair_and_sentence(candidate),
         )
+        if suppressing_relation_type is None and _is_generic_tail_clause(candidate):
+            suppressing_relation_type = (
+                specific_relation_by_subject_and_sentence.get(
+                    _candidate_subject_and_sentence(candidate),
+                )
+            )
         if (
             canonical_relation in _GENERIC_RELATION_TYPES
             and suppressing_relation_type is not None
@@ -165,6 +174,36 @@ def is_low_value_generic_relation_candidate(
     )
 
 
+def _candidate_specific_relation_type(
+    candidate: ExtractedRelationCandidate,
+) -> str | None:
+    if (
+        candidate.relation_governance_status == "requires_relation_review"
+        and candidate.proposed_relation_type is not None
+        and candidate.proposed_relation_type.strip()
+    ):
+        return candidate.proposed_relation_type.strip().upper()
+    canonical_relation = canonicalize_extraction_relation_type(
+        candidate.relation_type,
+    )
+    if canonical_relation is None or canonical_relation in _GENERIC_RELATION_TYPES:
+        return None
+    return canonical_relation
+
+
+def _is_generic_tail_clause(candidate: ExtractedRelationCandidate) -> bool:
+    if canonicalize_extraction_relation_type(candidate.relation_type) not in (
+        _GENERIC_RELATION_TYPES
+    ):
+        return False
+    sentence = _normalize_sentence(candidate.sentence)
+    return (
+        " and is associated with " in sentence
+        or " and was associated with " in sentence
+        or " and were associated with " in sentence
+    )
+
+
 def has_broadened_entity_label(*, label: str, sentence: str) -> bool:
     """Return whether an entity label drops an explicit sentence modifier."""
 
@@ -200,6 +239,15 @@ def _candidate_entity_pair_and_sentence(
 ) -> tuple[str, str, str]:
     subject, object_ = _candidate_entity_pair(candidate)
     return subject, object_, _normalize_sentence(candidate.sentence)
+
+
+def _candidate_subject_and_sentence(
+    candidate: ExtractedRelationCandidate,
+) -> tuple[str, str]:
+    return (
+        _normalize_entity_label(candidate.subject_label),
+        _normalize_sentence(candidate.sentence),
+    )
 
 
 def _normalize_entity_label(label: str) -> str:
