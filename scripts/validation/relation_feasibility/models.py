@@ -350,8 +350,13 @@ class FeasibilitySummary:
     invalid_agent_case_count: int
     high_value_gold_relation_count: int
     high_value_missed_gold_count: int
+    trusted_high_value_match_count: int
+    trusted_high_value_recall: float
     low_value_gold_relation_count: int
     low_value_missed_gold_count: int
+    low_value_review_candidate_count: int
+    low_value_review_gold_match_count: int
+    low_value_review_recall: float
     negative_control_case_count: int
     negative_control_empty_count: int
     negative_control_leakage_count: int
@@ -431,9 +436,14 @@ class FeasibilitySummary:
             "high_value_gold_relation_count": self.high_value_gold_relation_count,
             "high_value_missed_gold_count": self.high_value_missed_gold_count,
             "high_value_recall": self.high_value_recall,
+            "trusted_high_value_match_count": self.trusted_high_value_match_count,
+            "trusted_high_value_recall": self.trusted_high_value_recall,
             "low_value_gold_relation_count": self.low_value_gold_relation_count,
             "low_value_missed_gold_count": self.low_value_missed_gold_count,
             "low_value_recall": self.low_value_recall,
+            "low_value_review_candidate_count": self.low_value_review_candidate_count,
+            "low_value_review_gold_match_count": self.low_value_review_gold_match_count,
+            "low_value_review_recall": self.low_value_review_recall,
             "negative_control_case_count": self.negative_control_case_count,
             "negative_control_empty_count": self.negative_control_empty_count,
             "negative_control_empty_rate": self.negative_control_empty_rate,

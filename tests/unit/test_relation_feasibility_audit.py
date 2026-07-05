@@ -358,6 +358,102 @@ def test_model_curie_hints_do_not_count_as_verified_gold_endpoint_links() -> Non
     assert report.summary.verified_curie_match_count == 0
     assert report.summary.verified_curie_match_rate == 0.0
     assert report.summary.model_curie_wrong_count == 1
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.trusted_high_value_recall == 0.0
+
+
+def test_trusted_high_value_recall_requires_completed_agent_and_verified_curies() -> None:
+    cases = (
+        _case(
+            case_id="trusted_high_value",
+            text="MED13 activates cardiac septal development.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="cardiac septal development",
+                    support_sentence="MED13 activates cardiac septal development.",
+                    value_level="high",
+                    rationale="Specific gene-to-process mechanism.",
+                    subject_curie="HGNC:22474",
+                    object_curie="GO:0031070",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="MED13",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    relation_type="ACTIVATES",
+                    object="cardiac septal development",
+                    object_curie="GO:0031070",
+                    object_curie_source="verified_linker",
+                    sentence="MED13 activates cardiac septal development.",
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.trusted_high_value_match_count == 1
+    assert report.summary.trusted_high_value_recall == 1.0
+
+
+def test_context_relations_do_not_count_as_trusted_high_value_recall() -> None:
+    cases = (
+        _case(
+            case_id="context_relation_review_only",
+            text="ERK phosphorylation is downstream of MEK.",
+            gold=(
+                GoldRelation(
+                    subject="ERK phosphorylation",
+                    relation_type="DOWNSTREAM_OF",
+                    object="MEK",
+                    support_sentence="ERK phosphorylation is downstream of MEK.",
+                    value_level="high",
+                    rationale="Pathway context should not auto-promote as trusted evidence.",
+                    subject_curie="GO:0001932",
+                    object_curie="HGNC:6840",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="ERK phosphorylation",
+                    subject_curie="GO:0001932",
+                    subject_curie_source="verified_linker",
+                    relation_type="DOWNSTREAM_OF",
+                    object="MEK",
+                    object_curie="HGNC:6840",
+                    object_curie_source="verified_linker",
+                    sentence="ERK phosphorylation is downstream of MEK.",
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.trusted_high_value_match_count == 0
+    assert report.summary.trusted_high_value_recall == 0.0
 
 
 def test_wrong_verified_curie_links_are_reported_as_blocking() -> None:
@@ -614,8 +710,15 @@ def test_summary_reports_high_value_and_low_value_recall_separately() -> None:
     )
 
     def extractor(text: str) -> list[ExtractedRelation]:
-        if "activates" not in text:
-            return []
+        if "associated" in text:
+            return [
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object="clinical features",
+                    sentence="MED13 was associated with clinical features.",
+                ),
+            ]
         return [
             ExtractedRelation(
                 subject="MED13",
@@ -635,10 +738,62 @@ def test_summary_reports_high_value_and_low_value_recall_separately() -> None:
     assert report.summary.high_value_missed_gold_count == 0
     assert report.summary.high_value_recall == 1.0
     assert report.summary.low_value_gold_relation_count == 1
-    assert report.summary.low_value_missed_gold_count == 1
-    assert report.summary.low_value_recall == 0.0
+    assert report.summary.low_value_missed_gold_count == 0
+    assert report.summary.low_value_recall == 1.0
+    assert report.summary.trusted_high_value_recall == 0.0
+    assert report.summary.low_value_review_candidate_count == 0
+    assert report.summary.low_value_review_recall == 0.0
+    summary_json = report.summary.to_json()
+    assert summary_json["trusted_high_value_recall"] == 0.0
+    assert summary_json["low_value_review_candidate_count"] == 0
+    assert summary_json["low_value_review_recall"] == 0.0
     assert "High-value recall: 1.0000" in markdown
-    assert "Low-value recall: 0.0000" in markdown
+    assert "Low-value recall: 1.0000" in markdown
+    assert "Trusted high-value recall: 0.0000" in markdown
+    assert "Low-value review candidates: 0" in markdown
+    assert "Low-value review recall: 0.0000" in markdown
+
+
+def test_low_value_review_metrics_require_review_only_candidate() -> None:
+    cases = (
+        _case(
+            case_id="low_value_review_proposal",
+            text="MED13 had a weak exploratory connection to clinical features.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="WEAKLY_LINKED_TO",
+                    object="clinical features",
+                    support_sentence=(
+                        "MED13 had a weak exploratory connection to clinical features."
+                    ),
+                    value_level="low",
+                    rationale="Weak relation should be review-only.",
+                    requires_entailment=False,
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="PROPOSE_NEW_RELATION_TYPE",
+                proposed_relation_type="WEAKLY_LINKED_TO",
+                relation_governance_status="requires_relation_review",
+                object="clinical features",
+                sentence="MED13 had a weak exploratory connection to clinical features.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+
+    assert report.summary.low_value_gold_relation_count == 1
+    assert report.summary.low_value_recall == 0.0
+    assert report.summary.low_value_review_candidate_count == 1
+    assert report.summary.low_value_review_gold_match_count == 1
+    assert report.summary.low_value_review_recall == 1.0
 
 
 def test_summary_counts_negative_control_empty_agent_completions() -> None:

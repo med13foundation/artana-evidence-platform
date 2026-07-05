@@ -325,7 +325,7 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
 - Test: `services/artana_evidence_api/tests/unit/test_document_extraction_modules.py`
 - Test: `tests/unit/test_relation_feasibility_failure_analysis.py`
 
-- [ ] **Step 1: Write failing precision tests**
+- [x] **Step 1: Write failing precision tests**
 
   Add tests for:
 
@@ -339,7 +339,7 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
   - broad `BRCA1` can replace `BRCA1 loss`
   - low-value misses are mixed into the main remediation queue
 
-- [ ] **Step 2: Add directionality and value adjudication**
+- [x] **Step 2: Add directionality and value adjudication**
 
   Required behavior:
 
@@ -348,7 +348,7 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
   - hedged low-value relations are accounted as review-only triage
   - failure analysis separates high-value missed relations from low-value review-only misses
 
-- [ ] **Step 3: Run PR-20 validation**
+- [x] **Step 3: Run PR-20 validation**
 
   ```bash
   PYTHONPATH="$(pwd)/services:$(pwd)" \
@@ -367,6 +367,18 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
   - M-04 and FP-07 are closed by qualifier preservation
   - FP-03 is downgraded to non-promotable context unless explicitly requested by a graph-review policy
   - M-05 through M-09 are no longer confused with trusted high-value readiness blockers
+
+  Current PR20 evidence:
+
+  - `docs/validation/reports/2026-07-05-pr20-qualifier-precision-summary.md`
+  - `reports/relation_feasibility/2026-07-05-pr20-qualifier-precision-run4/relation_feasibility_report.json`
+  - `reports/relation_feasibility_failure_analysis/2026-07-05-pr20-run4/relation_feasibility_failure_analysis_report.md`
+  - Focused PR20 unit suite after adversarial fixes: 151 passed.
+  - `make relation-feasibility-quality-gate`: 53 passed.
+  - Strict live-agent result: completed-agent precision `0.9500`,
+    high-value recall `0.9500`, trusted high-value recall `0.5500`,
+    fallback `0`, invalid-agent `0`, negative leakage `0`.
+  - Remaining RED blocker: verified CURIE-linked endpoint rate `0.8108`.
 
 ## Task 4: PR-21 Repeatability, Model A/B, And Consensus
 

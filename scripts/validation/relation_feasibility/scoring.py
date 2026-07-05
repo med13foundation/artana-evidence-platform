@@ -27,6 +27,12 @@ from scripts.validation.relation_feasibility.models import (
     RelationTypeSurface,
     Verdict,
 )
+from scripts.validation.relation_feasibility.trusted_metric_rules import (
+    HIGH_VALUE_LEVELS,
+    LOW_VALUE_LEVELS,
+    is_trusted_high_value_match,
+    low_value_review_gold_index,
+)
 
 _GENERIC_RELATION_TYPES = frozenset({"ASSOCIATED_WITH"})
 _GENERIC_ENTITY_LABELS = frozenset(
@@ -71,8 +77,6 @@ _YELLOW_MIN_RECALL = 0.6
 _YELLOW_MIN_VALUABLE_RATE = 0.7
 _YELLOW_MAX_GENERIC_RELATION_RATE = 0.25
 _MIN_CURIE_LINKED_GOLD_ENDPOINT_RATE = 0.95
-_HIGH_VALUE_LEVELS = frozenset({"high", "medium"})
-_LOW_VALUE_LEVELS = frozenset({"low", "reject"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -300,7 +304,7 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         1
         for gold_relations in inputs.case_gold_relations
         for gold_relation in gold_relations
-        if gold_relation.value_level in _HIGH_VALUE_LEVELS
+        if gold_relation.value_level in HIGH_VALUE_LEVELS
     )
     missed_gold_relations = tuple(
         gold_relations[index]
@@ -317,18 +321,18 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
     high_value_missed_gold_count = sum(
         1
         for gold_relation in missed_gold_relations
-        if gold_relation.value_level in _HIGH_VALUE_LEVELS
+        if gold_relation.value_level in HIGH_VALUE_LEVELS
     )
     low_value_gold_relation_count = sum(
         1
         for gold_relations in inputs.case_gold_relations
         for gold_relation in gold_relations
-        if gold_relation.value_level in _LOW_VALUE_LEVELS
+        if gold_relation.value_level in LOW_VALUE_LEVELS
     )
     low_value_missed_gold_count = sum(
         1
         for gold_relation in missed_gold_relations
-        if gold_relation.value_level in _LOW_VALUE_LEVELS
+        if gold_relation.value_level in LOW_VALUE_LEVELS
     )
     high_value_recall = _ratio(
         high_value_gold_relation_count - high_value_missed_gold_count,
@@ -349,6 +353,43 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         )
     )
     agent_completed_case_count = sum(1 for completed in case_agent_completed_flags if completed)
+    trusted_high_value_matches: set[tuple[int, int]] = set()
+    low_value_review_matches: set[tuple[int, int]] = set()
+    low_value_review_candidate_count = 0
+    for case_index, (gold_relations, assessments, agent_completed) in enumerate(
+        zip(
+            inputs.case_gold_relations,
+            inputs.case_assessments,
+            case_agent_completed_flags,
+            strict=True,
+        ),
+    ):
+        for assessment in assessments:
+            if is_trusted_high_value_match(
+                assessment=assessment,
+                gold_relations=gold_relations,
+                agent_completed=agent_completed,
+            ):
+                trusted_high_value_matches.add(
+                    (case_index, assessment.matched_gold_index or 0),
+                )
+            low_value_review_index = low_value_review_gold_index(
+                assessment=assessment,
+                gold_relations=gold_relations,
+            )
+            if low_value_review_index is not None:
+                low_value_review_candidate_count += 1
+                low_value_review_matches.add((case_index, low_value_review_index))
+    trusted_high_value_match_count = len(trusted_high_value_matches)
+    trusted_high_value_recall = _ratio(
+        trusted_high_value_match_count,
+        high_value_gold_relation_count,
+    )
+    low_value_review_gold_match_count = len(low_value_review_matches)
+    low_value_review_recall = _ratio(
+        low_value_review_gold_match_count,
+        low_value_gold_relation_count,
+    )
     agent_zero_candidate_case_count = sum(
         1
         for completed, trace in zip(
@@ -447,7 +488,7 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
             precision=precision,
             recall=recall,
             trusted_recall=(
-                high_value_recall
+                trusted_high_value_recall
                 if high_value_gold_relation_count > 0
                 else recall
             ),
@@ -506,8 +547,13 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         invalid_agent_case_count=invalid_agent_case_count,
         high_value_gold_relation_count=high_value_gold_relation_count,
         high_value_missed_gold_count=high_value_missed_gold_count,
+        trusted_high_value_match_count=trusted_high_value_match_count,
+        trusted_high_value_recall=trusted_high_value_recall,
         low_value_gold_relation_count=low_value_gold_relation_count,
         low_value_missed_gold_count=low_value_missed_gold_count,
+        low_value_review_candidate_count=low_value_review_candidate_count,
+        low_value_review_gold_match_count=low_value_review_gold_match_count,
+        low_value_review_recall=low_value_review_recall,
         negative_control_case_count=negative_control_case_count,
         negative_control_empty_count=negative_control_empty_count,
         negative_control_leakage_count=negative_control_leakage_count,

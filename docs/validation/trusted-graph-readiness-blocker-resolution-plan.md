@@ -229,7 +229,7 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
 - Modify: `services/artana_evidence_api/tests/unit/test_relation_candidate_quality_filter.py`
 - Modify: `tests/unit/test_relation_feasibility_audit.py`
 
-- [ ] **Step 1: Add the failing broad-subject regression**
+- [x] **Step 1: Add the failing broad-subject regression**
 
   Add a regression where the source sentence is:
 
@@ -251,7 +251,7 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
     -q
   ```
 
-- [ ] **Step 2: Implement modifier-preservation policy**
+- [x] **Step 2: Implement modifier-preservation policy**
 
   The policy must reject broad substitutions when the sentence contains one of these biomedical modifiers and the candidate drops it:
 
@@ -266,7 +266,7 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
 
   The filter should operate on candidate labels and evidence sentence text, not on gold labels.
 
-- [ ] **Step 3: Add the context-relation adjudication regression**
+- [x] **Step 3: Add the context-relation adjudication regression**
 
   Add a case where `ERK phosphorylation DOWNSTREAM_OF MEK` is entailed but should not be promoted above the direct valuable mechanism relation in the same evidence context.
 
@@ -276,7 +276,7 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
   - it must not count as trusted high-value evidence for the case
   - it must not hide the direct mechanism relation if the direct relation is present
 
-- [ ] **Step 4: Add low-value review accounting**
+- [x] **Step 4: Add low-value review accounting**
 
   Update scoring and reporting so low-value hedged relations are counted separately from trusted readiness.
 
@@ -293,7 +293,7 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
   - low-value misses do not force the model to promote hedged evidence as trusted
   - low-value candidates can be useful review artifacts
 
-- [ ] **Step 5: Run validation**
+- [x] **Step 5: Run validation**
 
   ```bash
   PYTHONPATH="$(pwd)/services:$(pwd)" \
@@ -315,6 +315,25 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
   - `BRCA1 loss` is recovered or broad `BRCA1` is filtered
   - context false positives do not reduce trusted precision
   - low-value review accounting appears in Markdown and JSON reports
+
+  Current PR20 evidence:
+
+  - Focused PR20 unit suite after adversarial fixes: 151 passed.
+  - `make relation-feasibility-quality-gate`: 53 passed.
+  - Strict live-agent run:
+    `reports/relation_feasibility/2026-07-05-pr20-qualifier-precision-run4/relation_feasibility_report.json`
+  - Failure attribution:
+    `reports/relation_feasibility_failure_analysis/2026-07-05-pr20-run4/relation_feasibility_failure_analysis_report.md`
+  - Live result: completed-agent precision `0.9500`, high-value recall
+    `0.9500`, trusted high-value recall `0.5500`, fallback `0`,
+    invalid-agent `0`, negative leakage `0`.
+  - Adversarial review fixes: expanded modifier coverage, stricter trusted
+    high-value metric, low-value review-only accounting, narrower context
+    shadowing for separate pathway claims, clause-local modifier checks, and
+    review-only trust accounting for context relations; final re-review added
+    comma-and coordinated-claim scoping and found no remaining PR20 blocker.
+  - Remaining blocker: verified CURIE-linked endpoint rate `0.8108`, below
+    the `0.9500` trusted-readiness target.
 
 ## PR21: Repeatability, Consensus, And Model A/B
 

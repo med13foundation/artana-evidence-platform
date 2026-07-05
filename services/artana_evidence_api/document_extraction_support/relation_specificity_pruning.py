@@ -23,7 +23,43 @@ _LOW_VALUE_GENERIC_RELATION_LEMMAS = frozenset(
         "were correlated with",
     },
 )
-_MIN_BROADENED_ENTITY_TOKENS = 2
+_ENTITY_MODIFIER_TERMS = (
+    "amplification",
+    "activation",
+    "deficiency",
+    "deletion",
+    "depletion",
+    "downregulation",
+    "knockdown",
+    "knockout",
+    "loss",
+    "loss of",
+    "phosphorylation",
+    "overexpression",
+    "silencing",
+    "suppression",
+    "upregulation",
+    "mutation",
+    "variant",
+)
+_ENTITY_MODIFIER_PREFIXES = (
+    "amplified",
+    "activated",
+    "deficient",
+    "deleted",
+    "depleted",
+    "downregulated",
+    "knocked down",
+    "knocked out",
+    "loss of",
+    "mutated",
+    "overexpressed",
+    "phosphorylated",
+    "silenced",
+    "suppressed",
+    "upregulated",
+    "variant",
+)
 _WEAK_GENERIC_RELATION_CUE_RE = re.compile(
     r"\b("
     r"exploratory|may|might|nominally|possible|possibly|small cohort|"
@@ -204,26 +240,110 @@ def _is_generic_tail_clause(candidate: ExtractedRelationCandidate) -> bool:
     )
 
 
-def has_broadened_entity_label(*, label: str, sentence: str) -> bool:
+def has_broadened_entity_label(
+    *,
+    label: str,
+    sentence: str,
+    counterpart_label: str | None = None,
+) -> bool:
     """Return whether an entity label drops an explicit sentence modifier."""
 
     normalized_label = _normalize_entity_label(label)
-    if (
-        not normalized_label
-        or len(normalized_label.split()) < _MIN_BROADENED_ENTITY_TOKENS
-    ):
+    if not normalized_label:
         return False
     label_pattern = r"\s+".join(
         re.escape(token) for token in normalized_label.split()
     )
+    normalized_sentence = _normalize_sentence(sentence)
+    if re.search(rf"\b{label_pattern}\b", normalized_sentence) is None:
+        return False
+    search_scopes = _claim_scopes_for_entity(
+        label_pattern=label_pattern,
+        counterpart_label=counterpart_label,
+        sentence=normalized_sentence,
+    )
+    return any(
+        _scope_has_broadened_entity_label(
+            label_pattern=label_pattern,
+            sentence=scope,
+        )
+        for scope in search_scopes
+    )
+
+
+def _claim_scopes_for_entity(
+    *,
+    label_pattern: str,
+    counterpart_label: str | None,
+    sentence: str,
+) -> tuple[str, ...]:
+    if counterpart_label is None:
+        return (sentence,)
+    normalized_counterpart = _normalize_entity_label(counterpart_label)
+    if not normalized_counterpart:
+        return (sentence,)
+    counterpart_pattern = r"\s+".join(
+        re.escape(token) for token in normalized_counterpart.split()
+    )
+    scoped_clauses = tuple(
+        clause
+        for clause in _split_sentence_claim_clauses(sentence)
+        if re.search(rf"\b{label_pattern}\b", clause) is not None
+        and re.search(rf"\b{counterpart_pattern}\b", clause) is not None
+    )
+    return scoped_clauses or (sentence,)
+
+
+def _split_sentence_claim_clauses(sentence: str) -> tuple[str, ...]:
+    return tuple(
+        clause.strip(" ,")
+        for clause in re.split(
+            r"(?:[.;:]|,\s*(?:and|while|whereas|but)\b|\b(?:while|whereas|but)\b)",
+            sentence,
+        )
+        if clause.strip(" ,")
+    )
+
+
+def _scope_has_broadened_entity_label(*, label_pattern: str, sentence: str) -> bool:
+    if _has_post_modifier(label_pattern=label_pattern, sentence=sentence):
+        return True
+    if _has_prefix_modifier(label_pattern=label_pattern, sentence=sentence):
+        return True
     modifier_pattern = re.compile(
         _HYPHENATED_MODIFIER_TEMPLATE.format(label=label_pattern),
         re.IGNORECASE,
     )
-    exact_label_pattern = re.compile(rf"\b{label_pattern}\b", re.IGNORECASE)
+    return modifier_pattern.search(sentence) is not None
+
+
+def _has_post_modifier(*, label_pattern: str, sentence: str) -> bool:
+    modifier_pattern = "|".join(
+        r"\s+".join(re.escape(token) for token in modifier.split())
+        for modifier in _ENTITY_MODIFIER_TERMS
+    )
     return (
-        exact_label_pattern.search(sentence) is not None
-        and modifier_pattern.search(sentence) is not None
+        re.search(
+            rf"\b{label_pattern}\s+(?:{modifier_pattern})\b",
+            sentence,
+            flags=re.IGNORECASE,
+        )
+        is not None
+    )
+
+
+def _has_prefix_modifier(*, label_pattern: str, sentence: str) -> bool:
+    modifier_pattern = "|".join(
+        r"\s+".join(re.escape(token) for token in modifier.split())
+        for modifier in _ENTITY_MODIFIER_PREFIXES
+    )
+    return (
+        re.search(
+            rf"\b(?:{modifier_pattern})\s+{label_pattern}\b",
+            sentence,
+            flags=re.IGNORECASE,
+        )
+        is not None
     )
 
 

@@ -132,6 +132,7 @@ Status values:
 | 6 | PR-10 | `alvaro/evidence-pr10-ci-quality-gate` | Ready for review | Make quality regression visible in CI. | Regression fails CI. | Relation-feasibility quality gate in `service-checks`, CI planner routing for audit-methodology changes, repo-control workflows run audit tests, RED/GREEN planner/control tests, direct quality-gate pass, repo-control bundle pass, and docs path hygiene cleanup. |
 | 7 | PR-17 | `alvaro/evidence-pr17-readiness-failure-attribution` | Local checkpoint committed | Explain every PR16 readiness blocker before changing extraction or promotion policy. | Repeated misses, false positives, CURIE gaps, proposal capture, and model labels are reportable. | Failure-analysis module, CLI, focused RED/GREEN tests, PR16 three-run baseline analysis, service-checks pass, and merge-visible PR17 evidence snapshot. |
 | 8 | PR-19 | `alvaro/evidence-pr19-high-value-relation-recovery` | Implemented locally; strict gate RED | Make high-value drug-resistance relations canonical instead of proposal noise. | High-value recall >= 0.8500 with raw unknown relation surfaces 0. | `CONFERS_RESISTANCE_TO` API taxonomy, graph dictionary seed, graph constraints, safe typo proposal repair, verifier cues, benchmark shape update, focused RED/GREEN tests, relation-feasibility gate, and strict live run. Live run reaches precision 0.9048 and high-value recall 0.9500, but trusted graph readiness remains blocked by verified CURIE endpoint rate 0.8108. |
+| 9 | PR-20 | `alvaro/evidence-pr20-qualifier-precision-adjudication` | Implemented locally; adversarial review fixes applied; strict gate RED | Preserve biomedical qualifiers and remove context false positives from trusted evidence. | Completed-agent precision >= 0.8000 and high-value recall >= 0.8500 without broad subject substitutions. | Dropped-modifier tests, expanded modifier adversarial tests, clause-local and comma-and modifier regressions, context-shadowing and review-only trust tests, low-value review accounting, relation-feasibility gate, strict live run4 with completed-agent precision 0.9500 and high-value recall 0.9500. Trusted high-value recall is now stricter at 0.5500; trusted graph readiness remains blocked by verified CURIE endpoint rate 0.8108. |
 
 ## PR Evidence Packet
 
@@ -309,6 +310,81 @@ PR19 closes the repeated drug-resistance shape problem by approving
 dictionary governance. The remaining RED verdict is not a resistance-semantics
 failure; it is verified endpoint coverage plus PR20 qualifier preservation,
 especially `BRCA1 loss` being shortened to `BRCA1`.
+
+### 2026-07-05 - PR-20 Qualifier Preservation And Precision
+
+PR: PR-20 qualifier preservation and precision adjudication
+
+Branch: `alvaro/evidence-pr20-qualifier-precision-adjudication`
+
+Goal: Preserve biomedical modifiers such as `loss` and keep entailed context
+relations out of trusted candidate precision when a direct mechanism relation is
+available.
+
+Commands:
+
+```bash
+PYTHONPATH="$(pwd)/services:$(pwd)" \
+  .venv/bin/python3 -m pytest \
+  services/artana_evidence_api/tests/unit/test_relation_candidate_quality_filter.py \
+  services/artana_evidence_api/tests/unit/test_evidence_grounding.py \
+  services/artana_evidence_api/tests/unit/test_document_extraction_modules.py \
+  services/artana_evidence_api/tests/unit/test_document_extraction.py::test_extract_relation_candidates_with_llm_prunes_redundant_generic_siblings \
+  services/artana_evidence_api/tests/unit/test_document_extraction.py::test_discover_relation_candidates_reports_llm_pruned_generic_siblings \
+  services/artana_evidence_api/tests/unit/test_evidence_support_verifier.py \
+  tests/unit/test_relation_feasibility_audit.py \
+  -q
+
+make relation-feasibility-quality-gate
+
+bash -lc 'set -a; source .env.postgres; set +a; \
+  PYTHONPATH="$(pwd)/services:$(pwd)" \
+  .venv/bin/python3 scripts/run_relation_feasibility_audit.py \
+  --extractor agent \
+  --output-dir reports/relation_feasibility/2026-07-05-pr20-qualifier-precision-run4'
+
+PYTHONPATH="$(pwd)/services:$(pwd)" \
+  .venv/bin/python3 scripts/summarize_relation_readiness_failures.py \
+  --report current=reports/relation_feasibility/2026-07-05-pr20-qualifier-precision-run4/relation_feasibility_report.json \
+  --output-dir reports/relation_feasibility_failure_analysis/2026-07-05-pr20-run4
+```
+
+Evidence:
+
+- `docs/validation/reports/2026-07-05-pr20-qualifier-precision-summary.md`
+- `reports/relation_feasibility/2026-07-05-pr20-qualifier-precision-run4/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-05-pr20-qualifier-precision-run4/relation_feasibility_report.md`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr20-run4/relation_feasibility_failure_analysis_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr20-run4/relation_feasibility_failure_analysis_report.md`
+
+Result:
+
+- Verdict: RED
+- Agent completed cases: 30
+- Fallback cases: 0
+- Invalid strict-agent cases: 0
+- Negative-control leakage cases: 0
+- Completed-agent precision: 0.9500
+- Completed-agent recall: 0.7600
+- Completed-agent valuable rate: 0.9500
+- High-value recall: 0.9500
+- Trusted high-value recall: 0.5500
+- Generic relation rate: 0.0500
+- Quality-filtered candidates: 7
+- False positives in failure attribution: 1
+- Verified CURIE-linked gold endpoint rate: 0.8108
+- Model CURIE wrong count: 0
+- Wrong verified CURIE links: 0
+
+Interpretation:
+
+PR20 blocks broad subject substitution, narrows context shadowing, scopes
+modifier detection to the candidate claim clause including comma-and coordinated
+claims, and keeps context relations out of trusted high-value recall. Run3 was
+stronger, but run4 is the latest evidence and shows repeatability variance. The
+stricter trusted high-value recall metric is only `0.5500`, so the system is
+still not trusted-graph ready until verified entity grounding and repeatability
+improve.
 
 ### 2026-07-02 - PR-0 Baseline Strict Agent Run
 

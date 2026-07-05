@@ -103,8 +103,16 @@ def _llm_relation_to_candidate(
         or not obj
         or len(subject) < _MIN_ENTITY_LABEL_LENGTH
         or len(obj) < _MIN_ENTITY_LABEL_LENGTH
-        or has_broadened_entity_label(label=subject, sentence=rel.sentence)
-        or has_broadened_entity_label(label=obj, sentence=rel.sentence)
+        or has_broadened_entity_label(
+            label=subject,
+            sentence=rel.sentence,
+            counterpart_label=obj,
+        )
+        or has_broadened_entity_label(
+            label=obj,
+            sentence=rel.sentence,
+            counterpart_label=subject,
+        )
     ):
         return None, None
     subject_curie_link = normalize_entity_curie(

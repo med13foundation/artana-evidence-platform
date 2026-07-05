@@ -446,6 +446,29 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
 - `entailment_checked_rate == 1.0000`.
 - Reports include quarantined/adjudication counts.
 
+**Current PR20 implementation note:**
+
+The active PR20 branch follows the narrower root-cause blocker plan in
+`docs/validation/trusted-graph-readiness-blocker-resolution-plan.md` rather than
+the heavier reranker design above. The implemented slice adds dropped-modifier
+filtering, context-relation shadowing, and explicit low-value review metrics.
+After adversarial review, it also expands modifier coverage, makes
+`trusted_high_value_recall` require completed-agent provenance and verified
+gold endpoints, preserves separate pathway-context claims, scopes modifier
+checks to the candidate claim clause, and treats context relations as review-only
+for trusted high-value recall. Final adversarial re-review added comma-and
+coordinated-claim scoping and found no remaining PR20 blocker. The latest strict
+live-agent run reached completed-agent precision `0.9500`, high-value recall
+`0.9500`, trusted high-value recall `0.5500`, fallback `0`, invalid-agent `0`,
+and negative leakage `0`. The run remains RED because verified CURIE-linked
+endpoint rate is `0.8108`.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-05-pr20-qualifier-precision-summary.md`
+- `reports/relation_feasibility/2026-07-05-pr20-qualifier-precision-run4/relation_feasibility_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr20-run4/relation_feasibility_failure_analysis_report.md`
+
 ## PR21: Repeatability, Consensus, And Model Policy
 
 Suggested branch: `alvaro/evidence-pr21-repeatability-model-policy`

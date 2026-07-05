@@ -24,6 +24,151 @@ def test_quality_filter_keeps_entailed_specific_candidate() -> None:
     assert result.filtered_candidates == ()
 
 
+def test_quality_filter_removes_candidate_that_drops_subject_modifier() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="BRCA1",
+        relation_type="SENSITIZES_TO",
+        object_label="cisplatin",
+        sentence="BRCA1 loss sensitizes tumors to cisplatin.",
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.candidates == ()
+    assert result.filtered_candidates[0].reason == "dropped_subject_modifier"
+
+
+def test_quality_filter_removes_candidate_that_drops_common_biomedical_modifier() -> None:
+    candidates = (
+        ExtractedRelationCandidate(
+            subject_label="BRCA1",
+            relation_type="SENSITIZES_TO",
+            object_label="cisplatin",
+            sentence="BRCA1 deletion sensitizes tumors to cisplatin.",
+        ),
+        ExtractedRelationCandidate(
+            subject_label="BRCA1",
+            relation_type="SENSITIZES_TO",
+            object_label="cisplatin",
+            sentence="BRCA1 knockdown sensitizes tumors to cisplatin.",
+        ),
+        ExtractedRelationCandidate(
+            subject_label="BRCA1",
+            relation_type="SENSITIZES_TO",
+            object_label="cisplatin",
+            sentence="BRCA1 deficiency sensitizes tumors to cisplatin.",
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(candidates)
+
+    assert result.candidates == ()
+    assert {
+        filtered.reason for filtered in result.filtered_candidates
+    } == {"dropped_subject_modifier"}
+
+
+def test_quality_filter_keeps_candidate_that_preserves_subject_modifier() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="BRCA1 loss",
+        relation_type="SENSITIZES_TO",
+        object_label="cisplatin",
+        sentence="BRCA1 loss sensitizes tumors to cisplatin.",
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.candidates == (candidate,)
+    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_keeps_unmodified_claim_in_separate_clause() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="BRCA1",
+        relation_type="ACTIVATES",
+        object_label="DNA repair",
+        sentence=(
+            "BRCA1 loss sensitizes tumors to cisplatin, while BRCA1 activates "
+            "DNA repair."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.candidates == (candidate,)
+    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_keeps_unmodified_claim_in_coordinated_clause() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="BRCA1",
+        relation_type="ACTIVATES",
+        object_label="DNA repair",
+        sentence=(
+            "BRCA1 loss sensitizes tumors to cisplatin, and BRCA1 activates "
+            "DNA repair."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.candidates == (candidate,)
+    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_removes_context_relation_shadowed_by_direct_mechanism() -> None:
+    direct_candidate = ExtractedRelationCandidate(
+        subject_label="Trametinib",
+        relation_type="INHIBITS",
+        object_label="ERK phosphorylation",
+        sentence="Trametinib inhibits ERK phosphorylation downstream of MEK.",
+    )
+    context_candidate = ExtractedRelationCandidate(
+        subject_label="ERK phosphorylation",
+        relation_type="DOWNSTREAM_OF",
+        object_label="MEK",
+        sentence="Trametinib inhibits ERK phosphorylation downstream of MEK.",
+    )
+
+    result = filter_low_value_relation_candidates(
+        (direct_candidate, context_candidate),
+    )
+
+    assert result.candidates == (direct_candidate,)
+    assert result.filtered_candidates[0].candidate == context_candidate
+    assert result.filtered_candidates[0].reason == (
+        "context_relation_shadowed_by_direct_mechanism"
+    )
+
+
+def test_quality_filter_keeps_context_relation_when_it_is_separate_claim() -> None:
+    direct_candidate = ExtractedRelationCandidate(
+        subject_label="Trametinib",
+        relation_type="INHIBITS",
+        object_label="ERK phosphorylation",
+        sentence=(
+            "Trametinib inhibits ERK phosphorylation, and ERK phosphorylation "
+            "is downstream of MEK."
+        ),
+    )
+    context_candidate = ExtractedRelationCandidate(
+        subject_label="ERK phosphorylation",
+        relation_type="DOWNSTREAM_OF",
+        object_label="MEK",
+        sentence=(
+            "Trametinib inhibits ERK phosphorylation, and ERK phosphorylation "
+            "is downstream of MEK."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (direct_candidate, context_candidate),
+    )
+
+    assert result.candidates == (direct_candidate, context_candidate)
+    assert result.filtered_candidates == ()
+
+
 def test_quality_filter_removes_uncertain_candidate() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="HRD score",
