@@ -132,9 +132,15 @@ def test_audit_rejects_off_target_support_sentence_for_matching_triple() -> None
     assert assessment.has_object_in_sentence is False
     assert assessment.has_both_arguments_in_sentence is False
     assert assessment.has_gold_support_sentence is False
+    assert assessment.support_verification == "NEUTRAL"
+    assert assessment.has_support_verification is True
+    assert assessment.has_entailment_support is False
     assert assessment.is_valuable is False
     assert "missing_relation_arguments" in assessment.quality_flags
     assert "support_sentence_mismatch" in assessment.quality_flags
+    assert "support_not_entailed" in assessment.quality_flags
+    assert "support_not_checked" not in assessment.quality_flags
+    assert report.summary.entailment_checked_rate == 1.0
 
 
 def test_audit_requires_entailment_support_for_valuable_candidate() -> None:
@@ -960,10 +966,52 @@ def test_adversarial_findings_warn_when_relation_arguments_are_missing() -> None
 
     assert report.summary.grounded_sentence_rate == 0.5
     assert report.summary.both_arguments_present_rate == 0.5
-    assert {finding.code for finding in findings} >= {
-        "entailment_not_checked",
-        "relation_arguments_missing_from_sentence",
-    }
+    finding_codes = {finding.code for finding in findings}
+
+    assert "entailment_not_checked" not in finding_codes
+    assert "relation_arguments_missing_from_sentence" in finding_codes
+    assert report.summary.entailment_checked_rate == 1.0
+
+
+def test_adversarial_findings_warn_when_source_sentence_is_not_grounded() -> None:
+    cases = (
+        _case(
+            case_id="ungrounded_sentence",
+            text="MED13 activates cardiac septal development.",
+            gold=(),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence=(
+                    "MED13 activates cardiac septal development in a separate "
+                    "unpublished note."
+                ),
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    findings = find_quality_illusions(report)
+    finding_codes = {finding.code for finding in findings}
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.has_grounded_sentence is False
+    assert assessment.has_both_arguments_in_sentence is True
+    assert assessment.support_verification == "NEUTRAL"
+    assert "missing_source_sentence" in assessment.quality_flags
+    assert "support_not_entailed" in assessment.quality_flags
+    assert "support_not_checked" not in assessment.quality_flags
+    assert report.summary.grounded_sentence_rate == 0.0
+    assert report.summary.both_arguments_present_rate == 1.0
+    assert report.summary.entailment_checked_rate == 1.0
+    assert "source_sentence_not_grounded" in finding_codes
+    assert "entailment_not_checked" not in finding_codes
+    assert "relation_arguments_missing_from_sentence" not in finding_codes
 
 
 def test_report_serializes_to_json(tmp_path: Path) -> None:

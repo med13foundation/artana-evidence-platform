@@ -759,7 +759,7 @@ def _support_verification(
     if not requires_entailment:
         return None
     if not grounded_sentence or not both_arguments_in_sentence:
-        return None
+        return "NEUTRAL"
     return verify_triple_support(
         sentence=candidate.sentence,
         subject=candidate.subject,
