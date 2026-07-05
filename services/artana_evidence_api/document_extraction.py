@@ -70,6 +70,10 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
     llm_extraction_document_fingerprint,
     llm_relations_to_candidates,
 )
+from artana_evidence_api.document_extraction_support.relation_candidate_quality_filter import (
+    RelationCandidateQualityFilterResult,
+    filter_low_value_relation_candidates,
+)
 from artana_evidence_api.document_extraction_support.relation_resolution_decisions import (
     apply_relation_resolution_decisions,
 )
@@ -457,6 +461,18 @@ def _fallback_candidates_with_specificity_pruning(
     return _prune_relation_candidate_specificity(extract_relation_candidates(text))
 
 
+def _filter_relation_candidate_quality(
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> RelationCandidateQualityFilterResult:
+    result = filter_low_value_relation_candidates(candidates)
+    if result.filtered_count > 0:
+        logger.info(
+            "Suppressed %s low-evidence relation candidates after LLM extraction",
+            result.filtered_count,
+        )
+    return result
+
+
 async def extract_relation_candidates_with_llm(
     text: str,
     *,
@@ -576,9 +592,13 @@ async def extract_relation_candidates_with_llm(
                 "Suppressed %s generic relation candidates after LLM extraction",
                 pruning_result.pruned_count,
             )
+        quality_filter_result = _filter_relation_candidate_quality(
+            pruning_result.candidates,
+        )
         filtered_candidates = SpecificityFilteredCandidateList(
-            pruning_result.candidates[:max_relations],
+            quality_filter_result.candidates[:max_relations],
             pruned_generic_relation_count=pruning_result.pruned_count,
+            quality_filtered_candidate_count=quality_filter_result.filtered_count,
             llm_extraction_chunk_count=len(chunks),
             llm_extraction_text_char_count=len(normalized_text),
         )
@@ -734,6 +754,9 @@ async def discover_relation_candidates(  # noqa: PLR0911
     llm_pruned_generic_relation_count = int(
         getattr(llm_candidates, "pruned_generic_relation_count", 0),
     )
+    llm_quality_filtered_candidate_count = int(
+        getattr(llm_candidates, "quality_filtered_candidate_count", 0),
+    )
     llm_extraction_chunk_count = int(
         getattr(llm_candidates, "llm_extraction_chunk_count", 0),
     )
@@ -750,6 +773,9 @@ async def discover_relation_candidates(  # noqa: PLR0911
             candidate_completed(
                 candidate_count=len(llm_candidates),
                 pruned_generic_relation_count=llm_pruned_generic_relation_count,
+                quality_filtered_candidate_count=(
+                    llm_quality_filtered_candidate_count
+                ),
                 llm_extraction_chunk_count=llm_extraction_chunk_count,
                 llm_extraction_text_char_count=llm_extraction_text_char_count,
             ),
@@ -766,6 +792,7 @@ async def discover_relation_candidates(  # noqa: PLR0911
             pruned_generic_relation_count=(
                 llm_pruned_generic_relation_count + fallback_pruning.pruned_count
             ),
+            quality_filtered_candidate_count=llm_quality_filtered_candidate_count,
             llm_extraction_chunk_count=llm_extraction_chunk_count,
             llm_extraction_text_char_count=llm_extraction_text_char_count,
         ),

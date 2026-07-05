@@ -132,9 +132,15 @@ def test_audit_rejects_off_target_support_sentence_for_matching_triple() -> None
     assert assessment.has_object_in_sentence is False
     assert assessment.has_both_arguments_in_sentence is False
     assert assessment.has_gold_support_sentence is False
+    assert assessment.support_verification == "NEUTRAL"
+    assert assessment.has_support_verification is True
+    assert assessment.has_entailment_support is False
     assert assessment.is_valuable is False
     assert "missing_relation_arguments" in assessment.quality_flags
     assert "support_sentence_mismatch" in assessment.quality_flags
+    assert "support_not_entailed" in assessment.quality_flags
+    assert "support_not_checked" not in assessment.quality_flags
+    assert report.summary.entailment_checked_rate == 1.0
 
 
 def test_audit_requires_entailment_support_for_valuable_candidate() -> None:
@@ -354,6 +360,80 @@ def test_model_curie_hints_do_not_count_as_verified_gold_endpoint_links() -> Non
     assert report.summary.model_curie_wrong_count == 1
 
 
+def test_wrong_verified_curie_links_are_reported_as_blocking() -> None:
+    cases = (
+        _case(
+            case_id="wrong_verified_curie",
+            text="MED13 causes developmental delay.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="CAUSES",
+                    object="developmental delay",
+                    support_sentence="MED13 causes developmental delay.",
+                    value_level="high",
+                    rationale="Gold endpoints include stable ontology identifiers.",
+                    subject_curie="HGNC:22474",
+                    object_curie="HP:0001263",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                subject_curie="HGNC:99999",
+                subject_curie_source="verified_linker",
+                relation_type="CAUSES",
+                object="developmental delay",
+                object_curie="HP:0001263",
+                object_curie_source="verified_linker",
+                sentence="MED13 causes developmental delay.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+    markdown = render_markdown_report(report)
+
+    assert "wrong_subject_curie" in assessment.quality_flags
+    assert report.summary.wrong_verified_curie_link_count == 1
+    assert "Wrong verified CURIE links: 1" in markdown
+    assert report.summary.verdict == "RED"
+    assert "Wrong verified CURIE links were emitted." in (
+        report.summary.verdict_reason
+    )
+
+
+def test_quality_filtered_candidate_count_is_reported() -> None:
+    cases = (
+        _case(
+            case_id="quality_filter_telemetry",
+            text="HRD score may serve as a biomarker for platinum sensitivity.",
+            gold=(),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="llm_empty",
+                quality_filtered_candidate_count=1,
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    markdown = render_markdown_report(report)
+
+    assert report.summary.quality_filtered_candidate_count == 1
+    assert report.summary.to_json()["quality_filtered_candidate_count"] == 1
+    assert "Quality-filtered candidates: 1" in markdown
+
+
 def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() -> None:
     candidates = [
         ExtractedRelationCandidate(
@@ -396,6 +476,110 @@ def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() ->
         "requires_relation_review"
     )
     assert result.relations[1].trusted_evidence_eligible is False
+
+
+def test_agent_adapter_inventory_indexes_governed_proposed_relation_type() -> None:
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="MET amplification",
+            relation_type="PROPOSE_NEW_RELATION_TYPE",
+            proposed_relation_type="CONFERS_RESISTANCE_TO",
+            new_relation_type_rationale="Specific resistance relation.",
+            relation_governance_status="requires_relation_review",
+            object_label="erlotinib",
+            sentence="MET amplification confers resistance to erlotinib.",
+        ),
+    ]
+    diagnostics = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="completed",
+        llm_candidate_count=1,
+    )
+
+    result = _agent_relation_extraction_result_from_candidates(
+        candidates=candidates,
+        diagnostics=diagnostics,
+    )
+    case = _case(
+        case_id="governed_proposal_inventory",
+        text="MET amplification confers resistance to erlotinib.",
+        gold=(
+            GoldRelation(
+                subject="MET amplification",
+                relation_type="CONFERS_RESISTANCE_TO",
+                object="erlotinib",
+                support_sentence="MET amplification confers resistance to erlotinib.",
+                value_level="high",
+                rationale="Relation needs dictionary governance.",
+            ),
+        ),
+    )
+
+    report = run_feasibility_audit(cases=(case,), extractor=lambda _: result)
+    markdown = render_markdown_report(report)
+    surfaces = {
+        (surface.surface, surface.relation_type)
+        for surface in report.case_results[0].relation_type_surfaces
+    }
+
+    assert surfaces == {
+        ("candidate_relation.relation_type", "PROPOSE_NEW_RELATION_TYPE"),
+        ("candidate_relation.proposed_relation_type", "CONFERS_RESISTANCE_TO"),
+    }
+    proposed_surfaces = tuple(
+        surface
+        for surface in report.case_results[0].relation_type_surfaces
+        if surface.surface == "candidate_relation.proposed_relation_type"
+    )
+
+    assert proposed_surfaces[0].governance_status == "requires_relation_review"
+    assert report.summary.relation_type_surface_count == 2
+    assert report.summary.raw_unknown_relation_type_surface_count == 0
+    assert report.summary.proposal_recall_against_proposal_eligible_gold == 1.0
+    assert (
+        "`candidate_relation.proposed_relation_type` -> `CONFERS_RESISTANCE_TO`"
+        in markdown
+    )
+
+
+def test_agent_adapter_inventory_blocks_ungoverned_proposed_relation_type() -> None:
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="BRCA1",
+            relation_type="ACTIVATES",
+            proposed_relation_type="PROTECTS_AGAINST",
+            object_label="TP53",
+            sentence="BRCA1 activates TP53.",
+        ),
+    ]
+    diagnostics = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="completed",
+        llm_candidate_count=1,
+    )
+
+    result = _agent_relation_extraction_result_from_candidates(
+        candidates=candidates,
+        diagnostics=diagnostics,
+    )
+    case = _case(
+        case_id="ungoverned_proposed_type_inventory",
+        text="BRCA1 activates TP53.",
+        gold=(),
+    )
+
+    report = run_feasibility_audit(cases=(case,), extractor=lambda _: result)
+    proposed_surfaces = tuple(
+        surface
+        for surface in report.case_results[0].relation_type_surfaces
+        if surface.surface == "candidate_relation.proposed_relation_type"
+    )
+
+    assert len(proposed_surfaces) == 1
+    assert proposed_surfaces[0].relation_type == "PROTECTS_AGAINST"
+    assert proposed_surfaces[0].governance_status == "canonical"
+    assert report.summary.relation_type_surface_count == 2
+    assert report.summary.raw_unknown_relation_type_surface_count == 1
+    assert report.summary.verdict == "RED"
+    assert "raw unknown relation type" in report.summary.verdict_reason
 
 
 def test_summary_reports_high_value_and_low_value_recall_separately() -> None:
@@ -886,10 +1070,52 @@ def test_adversarial_findings_warn_when_relation_arguments_are_missing() -> None
 
     assert report.summary.grounded_sentence_rate == 0.5
     assert report.summary.both_arguments_present_rate == 0.5
-    assert {finding.code for finding in findings} >= {
-        "entailment_not_checked",
-        "relation_arguments_missing_from_sentence",
-    }
+    finding_codes = {finding.code for finding in findings}
+
+    assert "entailment_not_checked" not in finding_codes
+    assert "relation_arguments_missing_from_sentence" in finding_codes
+    assert report.summary.entailment_checked_rate == 1.0
+
+
+def test_adversarial_findings_warn_when_source_sentence_is_not_grounded() -> None:
+    cases = (
+        _case(
+            case_id="ungrounded_sentence",
+            text="MED13 activates cardiac septal development.",
+            gold=(),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence=(
+                    "MED13 activates cardiac septal development in a separate "
+                    "unpublished note."
+                ),
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    findings = find_quality_illusions(report)
+    finding_codes = {finding.code for finding in findings}
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.has_grounded_sentence is False
+    assert assessment.has_both_arguments_in_sentence is True
+    assert assessment.support_verification == "NEUTRAL"
+    assert "missing_source_sentence" in assessment.quality_flags
+    assert "support_not_entailed" in assessment.quality_flags
+    assert "support_not_checked" not in assessment.quality_flags
+    assert report.summary.grounded_sentence_rate == 0.0
+    assert report.summary.both_arguments_present_rate == 1.0
+    assert report.summary.entailment_checked_rate == 1.0
+    assert "source_sentence_not_grounded" in finding_codes
+    assert "entailment_not_checked" not in finding_codes
+    assert "relation_arguments_missing_from_sentence" not in finding_codes
 
 
 def test_report_serializes_to_json(tmp_path: Path) -> None:

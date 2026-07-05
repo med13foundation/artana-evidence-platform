@@ -1,0 +1,122 @@
+{
+  "report": "PR-16 Repeatability Readiness Evidence Snapshot",
+  "date": "2026-07-05",
+  "branch": "alvaro/evidence-pr16-repeatability-readiness",
+  "base_branch": "alvaro/evidence-pr15-governed-proposal-inventory",
+  "scope": [
+    "Aggregate multiple strict live-agent feasibility reports.",
+    "Require a minimum number of repeated strict runs before any trusted-graph readiness claim.",
+    "Fail closed on fallback, invalid agent completion, negative-control leakage, raw unknown relation surfaces, and wrong verified CURIE links.",
+    "Fail closed on malformed or schema-drifted input reports, including missing or non-numeric required metrics.",
+    "Fail closed if any source feasibility audit is already RED.",
+    "Evaluate worst-run precision, recall, high-value recall, valuable-candidate rate, generic relation rate, verified CURIE recovery, and entailment coverage.",
+    "Keep the default CLI non-destructive for evidence generation, with --fail-on-not-ready available for hard CI gating."
+  ],
+  "strict_live_agent_runs": [
+    {
+      "run": "run1",
+      "completed_agent_precision": 0.8095,
+      "completed_agent_recall": 0.68,
+      "high_value_recall": 0.85,
+      "completed_agent_valuable_rate": 0.8095,
+      "generic_relation_rate": 0.0,
+      "curie_linked_gold_endpoint_rate": 0.7027,
+      "governed_proposal_recall_among_proposal_eligible_gold": 0.5,
+      "fallback_cases": 0,
+      "invalid_agent_cases": 0,
+      "negative_control_leakage_cases": 0
+    },
+    {
+      "run": "run2",
+      "completed_agent_precision": 0.7619,
+      "completed_agent_recall": 0.64,
+      "high_value_recall": 0.8,
+      "completed_agent_valuable_rate": 0.7619,
+      "generic_relation_rate": 0.0,
+      "curie_linked_gold_endpoint_rate": 0.6486,
+      "governed_proposal_recall_among_proposal_eligible_gold": 0.5,
+      "fallback_cases": 0,
+      "invalid_agent_cases": 0,
+      "negative_control_leakage_cases": 0
+    },
+    {
+      "run": "run3",
+      "completed_agent_precision": 0.8095,
+      "completed_agent_recall": 0.68,
+      "high_value_recall": 0.85,
+      "completed_agent_valuable_rate": 0.8095,
+      "generic_relation_rate": 0.0,
+      "curie_linked_gold_endpoint_rate": 0.7027,
+      "governed_proposal_recall_among_proposal_eligible_gold": 1.0,
+      "fallback_cases": 0,
+      "invalid_agent_cases": 0,
+      "negative_control_leakage_cases": 0
+    }
+  ],
+  "readiness_gate": {
+    "trusted_graph_ready": false,
+    "readiness_status": "not_ready",
+    "run_count": 3,
+    "required_run_count": 3,
+    "red_source_report_count": 3,
+    "required_metric_errors": [],
+    "blocking_reasons": [
+      "3 source audit reports were RED.",
+      "Worst-run completed-agent precision is below target.",
+      "Worst-run high-value recall is below target.",
+      "Worst-run CURIE-linked gold endpoint rate is below target."
+    ],
+    "hard_failure_counts": {
+      "fallback_case_count": 0,
+      "invalid_agent_case_count": 0,
+      "negative_control_leakage_count": 0,
+      "raw_unknown_relation_type_count": 0,
+      "raw_unknown_relation_type_surface_count": 0,
+      "wrong_verified_curie_link_count": 0
+    },
+    "worst_metrics": {
+      "completed_agent_precision_against_gold": 0.7619,
+      "completed_agent_recall_against_gold": 0.64,
+      "high_value_recall": 0.8,
+      "completed_agent_valuable_candidate_rate": 0.7619,
+      "curie_linked_gold_endpoint_rate": 0.6486,
+      "verified_curie_match_rate": 0.6486,
+      "entailment_checked_rate": 1.0,
+      "generic_relation_rate": 0.0
+    },
+    "mean_metrics": {
+      "completed_agent_precision_against_gold": 0.7936,
+      "completed_agent_recall_against_gold": 0.6667,
+      "high_value_recall": 0.8333,
+      "completed_agent_valuable_candidate_rate": 0.7936,
+      "curie_linked_gold_endpoint_rate": 0.6847,
+      "verified_curie_match_rate": 0.6847,
+      "entailment_checked_rate": 1.0,
+      "generic_relation_rate": 0.0
+    }
+  },
+  "validation": {
+    "failing_import_regression_reproduced": "passed",
+    "relation_feasibility_readiness_unit_tests": "passed",
+    "adversarial_review_issue_addressed": "passed",
+    "relation_feasibility_quality_gate": "passed",
+    "artana_evidence_api_lint": "passed",
+    "artana_evidence_api_type_check": "passed",
+    "fail_on_not_ready_exit_status": "1",
+    "service_checks": "passed",
+    "service_checks_coverage": "86.86%"
+  },
+  "artifacts": {
+    "run1_json": "reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json",
+    "run2_json": "reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json",
+    "run3_json": "reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json",
+    "readiness_json": "reports/relation_feasibility_readiness/2026-07-05-pr16-repeatability-readiness-r2/relation_feasibility_readiness_report.json",
+    "readiness_markdown": "reports/relation_feasibility_readiness/2026-07-05-pr16-repeatability-readiness-r2/relation_feasibility_readiness_report.md",
+    "run1_json_sha256": "9f68f62e3754886d5d3356b182167d9c7dd9381fc9f32485f1cef8674ab1702a",
+    "run2_json_sha256": "3a02fc86772401818d08df11fcd0322db334e509506132ffc90b31ee7d13fa88",
+    "run3_json_sha256": "e62048277442a23068688a64e8d7a20fb0d50367d37a52b0a1a87cc99d991d28",
+    "readiness_json_sha256": "59d0921b80e4161396de0df56458c4e81caf2bec04fab5dfd45bbe714eb0b79d",
+    "readiness_markdown_sha256": "c8c93114756703c330f82978f654487bca52b37c8dbc0d157cf5f510e561ca75"
+  },
+  "known_remaining_risk": "The current stack is not trusted-graph ready. Auto-promotion should remain blocked until repeated runs clear precision, high-value recall, and verified CURIE recovery targets."
+}

@@ -125,6 +125,7 @@ class RelationTypeSurface:
     surface: str
     relation_type: str
     source_ref: str
+    governance_status: RelationGovernanceStatus | None = None
 
     def to_json(self) -> dict[str, object]:
         """Return a JSON-compatible representation."""
@@ -133,6 +134,7 @@ class RelationTypeSurface:
             "surface": self.surface,
             "relation_type": self.relation_type,
             "source_ref": self.source_ref,
+            "governance_status": self.governance_status,
         }
 
 
@@ -146,6 +148,7 @@ class ExtractionTrace:
     llm_candidate_count: int = 0
     fallback_candidate_count: int = 0
     pruned_generic_relation_count: int = 0
+    quality_filtered_candidate_count: int = 0
 
     @property
     def agent_completed(self) -> bool:
@@ -183,6 +186,7 @@ class ExtractionTrace:
             "llm_candidate_count": self.llm_candidate_count,
             "fallback_candidate_count": self.fallback_candidate_count,
             "pruned_generic_relation_count": self.pruned_generic_relation_count,
+            "quality_filtered_candidate_count": self.quality_filtered_candidate_count,
             "agent_completed": self.agent_completed,
             "fallback_used": self.fallback_used,
         }
@@ -316,6 +320,7 @@ class FeasibilitySummary:
     valuable_candidate_count: int
     generic_relation_count: int
     pruned_generic_relation_count: int
+    quality_filtered_candidate_count: int
     raw_unknown_relation_type_count: int
     relation_type_surface_count: int
     raw_unknown_relation_type_surface_count: int
@@ -327,6 +332,7 @@ class FeasibilitySummary:
     curie_linked_gold_endpoint_count: int
     verified_curie_match_count: int
     model_curie_wrong_count: int
+    wrong_verified_curie_link_count: int
     support_sentence_aligned_count: int
     both_arguments_present_count: int
     entailment_required_count: int
@@ -391,6 +397,7 @@ class FeasibilitySummary:
             "valuable_candidate_count": self.valuable_candidate_count,
             "generic_relation_count": self.generic_relation_count,
             "pruned_generic_relation_count": self.pruned_generic_relation_count,
+            "quality_filtered_candidate_count": self.quality_filtered_candidate_count,
             "raw_unknown_relation_type_count": self.raw_unknown_relation_type_count,
             "relation_type_surface_count": self.relation_type_surface_count,
             "raw_unknown_relation_type_surface_count": self.raw_unknown_relation_type_surface_count,
@@ -404,6 +411,7 @@ class FeasibilitySummary:
             "curie_linked_gold_endpoint_count": self.curie_linked_gold_endpoint_count,
             "verified_curie_match_count": self.verified_curie_match_count,
             "model_curie_wrong_count": self.model_curie_wrong_count,
+            "wrong_verified_curie_link_count": self.wrong_verified_curie_link_count,
             "support_sentence_aligned_count": self.support_sentence_aligned_count,
             "both_arguments_present_count": self.both_arguments_present_count,
             "entailment_required_count": self.entailment_required_count,

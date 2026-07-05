@@ -183,6 +183,7 @@ class DocumentCandidateExtractionDiagnostics:
     llm_candidate_count: int = 0
     fallback_candidate_count: int = 0
     pruned_generic_relation_count: int = 0
+    quality_filtered_candidate_count: int = 0
     llm_extraction_chunk_count: int = 0
     llm_extraction_text_char_count: int = 0
 
@@ -228,6 +229,10 @@ class DocumentCandidateExtractionDiagnostics:
         if self.pruned_generic_relation_count > 0:
             payload["pruned_generic_relation_count"] = (
                 self.pruned_generic_relation_count
+            )
+        if self.quality_filtered_candidate_count > 0:
+            payload["quality_filtered_candidate_count"] = (
+                self.quality_filtered_candidate_count
             )
         if self.llm_extraction_chunk_count > 0:
             payload["llm_extraction_chunk_count"] = self.llm_extraction_chunk_count

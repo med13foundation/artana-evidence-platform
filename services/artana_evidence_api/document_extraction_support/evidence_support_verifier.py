@@ -259,9 +259,12 @@ def _is_negated_cue(*, sentence: str, cue: str) -> bool:
 def _phrase_spans(sentence: str, phrase: str) -> tuple[tuple[int, int], ...]:
     if not phrase:
         return ()
+    prefix_boundary = r"(?<![a-z0-9])" if phrase[0].isalnum() else ""
+    suffix_boundary = r"(?![a-z0-9])" if phrase[-1].isalnum() else ""
+    pattern = f"{prefix_boundary}{re.escape(phrase)}{suffix_boundary}"
     return tuple(
         (match.start(), match.end())
-        for match in re.finditer(rf"\b{re.escape(phrase)}\b", sentence)
+        for match in re.finditer(pattern, sentence)
     )
 
 
@@ -329,7 +332,15 @@ _RELATION_CUES: dict[str, tuple[str, ...]] = {
         "correlated with",
         "correlates with",
     ),
+    "BIOMARKER_FOR": (
+        "biomarker for",
+        "marker for",
+        "predicts",
+        "predictor of",
+        "indicator of",
+    ),
     "CAUSES": ("causes", "caused", "caused by", "leads to", "results in"),
+    "DOWNSTREAM_OF": ("downstream of", "downstream", "triggered by"),
     "INHIBITS": (
         "inhibits",
         "inhibit",
@@ -347,8 +358,23 @@ _RELATION_CUES: dict[str, tuple[str, ...]] = {
         "binds to",
         "bound to",
     ),
+    "PREDISPOSES_TO": (
+        "predisposes to",
+        "predisposes",
+        "increases risk of",
+        "confers susceptibility to",
+        "susceptibility to",
+    ),
     "PROTECTS_AGAINST": ("protects against", "protective against"),
     "REGULATES": ("regulates", "regulated", "regulated by", "regulation", "controls"),
+    "SENSITIZES_TO": (
+        "sensitizes to",
+        "sensitizes",
+        "increases sensitivity to",
+        "confers sensitivity to",
+        "renders sensitive to",
+        "sensitive to",
+    ),
     "TARGETS": ("targets", "targeted", "targeted by", "binds"),
     "TREATS": ("treats", "treated", "treatment with", "responsive to"),
 }

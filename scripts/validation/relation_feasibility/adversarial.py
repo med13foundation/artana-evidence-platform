@@ -64,6 +64,16 @@ def find_quality_illusions(report: FeasibilityReport) -> tuple[AdversarialFindin
                 ),
             ),
         )
+    if summary.grounded_sentence_rate < 1.0 and summary.candidate_count > 0:
+        findings.append(
+            AdversarialFinding(
+                code="source_sentence_not_grounded",
+                message=(
+                    "At least one candidate evidence sentence could not be "
+                    "grounded in the source text."
+                ),
+            ),
+        )
     if summary.raw_unknown_relation_type_count > 0:
         findings.append(
             AdversarialFinding(
