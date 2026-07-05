@@ -80,6 +80,7 @@ def render_markdown_report(report: FeasibilityReport) -> str:
         f"- Verified CURIE matches: {summary.verified_curie_match_count}",
         f"- Verified CURIE match rate: {summary.verified_curie_match_rate:.4f}",
         f"- Model CURIE wrong count: {summary.model_curie_wrong_count}",
+        f"- Wrong verified CURIE links: {summary.wrong_verified_curie_link_count}",
         f"- Verified CURIE-linked gold endpoints: {summary.curie_linked_gold_endpoint_count}",
         f"- Verified CURIE-linked gold endpoint rate: {summary.curie_linked_gold_endpoint_rate:.4f}",
         f"- Valuable candidate rate: {summary.valuable_candidate_rate:.4f}",

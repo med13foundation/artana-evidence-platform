@@ -359,6 +359,32 @@ def test_llm_conversion_preserves_specific_relation_arguments() -> None:
     assert candidates[0].object_label == "BRCA-mutated ovarian cancer"
 
 
+def test_llm_conversion_verifies_model_curie_hints_against_dictionary() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="MED13",
+                subject_curie="HGNC:22474",
+                relation_type="CAUSES",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="developmental delay",
+                object_curie="HP:0001263",
+                sentence="MED13 causes developmental delay.",
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].subject_curie == "HGNC:22474"
+    assert candidates[0].subject_curie_source == "verified_linker"
+    assert candidates[0].object_curie == "HP:0001263"
+    assert candidates[0].object_curie_source == "verified_linker"
+
+
 def test_entity_helpers_clean_split_and_resolve_labels() -> None:
     gateway = _GraphGateway(
         {
@@ -1088,7 +1114,7 @@ def test_draft_builder_propagates_curie_identifiers_for_graph_entity_creation() 
     assert drafts[0].metadata["entity_linking"]["object"]["trusted_identifier"] is True
 
 
-def test_draft_builder_keeps_model_curie_hints_out_of_graph_identifiers() -> None:
+def test_draft_builder_replaces_wrong_model_curie_hints_with_dictionary_ids() -> None:
     document = replace(
         _document(),
         text_content="MED13 causes developmental delay.",
@@ -1097,11 +1123,11 @@ def test_draft_builder_keeps_model_curie_hints_out_of_graph_identifiers() -> Non
     candidates = [
         ExtractedRelationCandidate(
             subject_label="MED13",
-            subject_curie="HGNC:22474",
+            subject_curie="MONDO:0007254",
             subject_curie_source="model",
             relation_type="CAUSES",
             object_label="developmental delay",
-            object_curie="HP:0001263",
+            object_curie="HGNC:22474",
             object_curie_source="model",
             sentence="MED13 causes developmental delay.",
         ),
@@ -1116,12 +1142,24 @@ def test_draft_builder_keeps_model_curie_hints_out_of_graph_identifiers() -> Non
 
     assert skipped == []
     assert len(drafts) == 1
-    assert drafts[0].payload["proposed_subject_entity_candidate"] is None
-    assert drafts[0].payload["proposed_object_entity_candidate"] is None
-    assert drafts[0].metadata["entity_linking"]["subject"]["source"] == "model"
-    assert drafts[0].metadata["entity_linking"]["object"]["source"] == "model"
-    assert drafts[0].metadata["entity_linking"]["subject"]["trusted_identifier"] is False
-    assert drafts[0].metadata["entity_linking"]["object"]["trusted_identifier"] is False
+    subject_candidate = drafts[0].payload["proposed_subject_entity_candidate"]
+    object_candidate = drafts[0].payload["proposed_object_entity_candidate"]
+    assert subject_candidate["identifiers"] == {"hgnc_id": "HGNC:22474"}
+    assert object_candidate["identifiers"] == {"hpo_id": "HP:0001263"}
+    assert drafts[0].metadata["entity_linking"]["subject"]["source"] == (
+        "verified_linker"
+    )
+    assert drafts[0].metadata["entity_linking"]["object"]["source"] == (
+        "verified_linker"
+    )
+    assert drafts[0].metadata["entity_linking"]["subject"]["trusted_identifier"] is True
+    assert drafts[0].metadata["entity_linking"]["object"]["trusted_identifier"] is True
+    assert drafts[0].metadata["entity_linking"]["subject"]["model_hint_status"] == (
+        "replaced"
+    )
+    assert drafts[0].metadata["entity_linking"]["object"]["model_hint_status"] == (
+        "replaced"
+    )
 
 
 def test_draft_builder_skips_ambiguous_gene_family_subject_labels() -> None:

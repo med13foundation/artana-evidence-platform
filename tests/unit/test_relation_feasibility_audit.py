@@ -354,6 +354,53 @@ def test_model_curie_hints_do_not_count_as_verified_gold_endpoint_links() -> Non
     assert report.summary.model_curie_wrong_count == 1
 
 
+def test_wrong_verified_curie_links_are_reported_as_blocking() -> None:
+    cases = (
+        _case(
+            case_id="wrong_verified_curie",
+            text="MED13 causes developmental delay.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="CAUSES",
+                    object="developmental delay",
+                    support_sentence="MED13 causes developmental delay.",
+                    value_level="high",
+                    rationale="Gold endpoints include stable ontology identifiers.",
+                    subject_curie="HGNC:22474",
+                    object_curie="HP:0001263",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                subject_curie="HGNC:99999",
+                subject_curie_source="verified_linker",
+                relation_type="CAUSES",
+                object="developmental delay",
+                object_curie="HP:0001263",
+                object_curie_source="verified_linker",
+                sentence="MED13 causes developmental delay.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+    markdown = render_markdown_report(report)
+
+    assert "wrong_subject_curie" in assessment.quality_flags
+    assert report.summary.wrong_verified_curie_link_count == 1
+    assert "Wrong verified CURIE links: 1" in markdown
+    assert report.summary.verdict == "RED"
+    assert "Wrong verified CURIE links were emitted." in (
+        report.summary.verdict_reason
+    )
+
+
 def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() -> None:
     candidates = [
         ExtractedRelationCandidate(

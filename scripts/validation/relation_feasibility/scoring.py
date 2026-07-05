@@ -130,6 +130,7 @@ class _VerdictContext:
     raw_unknown_relation_type_surface_count: int
     gold_curie_endpoint_count: int
     curie_linked_gold_endpoint_rate: float
+    wrong_verified_curie_link_count: int
     negative_control_leakage_count: int
     invalid_agent_case_count: int
     require_agent_completion: bool
@@ -252,6 +253,10 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         gold_curie_endpoint_count,
     )
     model_curie_wrong_count = _model_curie_wrong_count(
+        inputs.case_assessments,
+        inputs.case_gold_relations,
+    )
+    wrong_verified_curie_link_count = _wrong_verified_curie_link_count(
         inputs.case_assessments,
         inputs.case_gold_relations,
     )
@@ -451,6 +456,7 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
             ),
             gold_curie_endpoint_count=gold_curie_endpoint_count,
             curie_linked_gold_endpoint_rate=curie_linked_gold_endpoint_rate,
+            wrong_verified_curie_link_count=wrong_verified_curie_link_count,
             negative_control_leakage_count=negative_control_leakage_count,
             invalid_agent_case_count=invalid_agent_case_count,
             require_agent_completion=inputs.require_agent_completion,
@@ -477,6 +483,7 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         curie_linked_gold_endpoint_count=curie_linked_gold_endpoint_count,
         verified_curie_match_count=verified_curie_match_count,
         model_curie_wrong_count=model_curie_wrong_count,
+        wrong_verified_curie_link_count=wrong_verified_curie_link_count,
         support_sentence_aligned_count=support_sentence_aligned_count,
         both_arguments_present_count=both_arguments_present_count,
         entailment_required_count=entailment_required_count,
@@ -955,6 +962,55 @@ def _model_curie_wrong_count(
     return wrong_count
 
 
+def _wrong_verified_curie_link_count(
+    case_assessments: tuple[tuple[CandidateAssessment, ...], ...],
+    case_gold_relations: tuple[tuple[GoldRelation, ...], ...],
+) -> int:
+    wrong_count = 0
+    for assessments, gold_relations in zip(
+        case_assessments,
+        case_gold_relations,
+        strict=True,
+    ):
+        for assessment in assessments:
+            if assessment.matched_gold_index is None:
+                continue
+            gold = gold_relations[assessment.matched_gold_index]
+            candidate = assessment.candidate
+            wrong_count += int(
+                _verified_curie_is_wrong(
+                    candidate_curie=candidate.subject_curie,
+                    candidate_source=candidate.subject_curie_source,
+                    gold_curie=gold.subject_curie,
+                ),
+            )
+            wrong_count += int(
+                _verified_curie_is_wrong(
+                    candidate_curie=candidate.object_curie,
+                    candidate_source=candidate.object_curie_source,
+                    gold_curie=gold.object_curie,
+                ),
+            )
+    return wrong_count
+
+
+def _verified_curie_is_wrong(
+    *,
+    candidate_curie: str | None,
+    candidate_source: str,
+    gold_curie: str | None,
+) -> bool:
+    return (
+        candidate_source == "verified_linker"
+        and candidate_curie is not None
+        and gold_curie is not None
+        and not _curie_matches(
+            candidate_curie=candidate_curie,
+            gold_curie=gold_curie,
+        )
+    )
+
+
 def _model_curie_is_wrong(
     *,
     candidate_curie: str | None,
@@ -1027,6 +1083,8 @@ def _verdict(context: _VerdictContext) -> tuple[Verdict, str, tuple[str, ...], t
         red_reasons.append(
             "At least one review, proposal, graph, or dictionary surface kept a raw unknown relation type."
         )
+    if context.wrong_verified_curie_link_count > 0:
+        red_reasons.append("Wrong verified CURIE links were emitted.")
     if (
         context.gold_curie_endpoint_count > 0
         and context.curie_linked_gold_endpoint_rate

@@ -665,7 +665,7 @@ async def test_extract_relation_candidates_with_llm_uses_fresh_store_and_closes(
 
 
 @pytest.mark.asyncio
-async def test_extract_relation_candidates_with_llm_preserves_valid_curies_and_abstains_invalid(
+async def test_extract_relation_candidates_with_llm_repairs_known_label_curies(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     async def _fake_run_single_step_with_policy(*_args, **_kwargs):
@@ -726,11 +726,11 @@ async def test_extract_relation_candidates_with_llm_preserves_valid_curies_and_a
 
     assert len(candidates) == 2
     assert candidates[0].subject_curie == "HGNC:22474"
-    assert candidates[0].subject_curie_source == "model"
+    assert candidates[0].subject_curie_source == "verified_linker"
     assert candidates[0].object_curie == "HP:0001263"
-    assert candidates[0].object_curie_source == "model"
-    assert candidates[1].subject_curie is None
-    assert candidates[1].subject_curie_source == "none"
+    assert candidates[0].object_curie_source == "verified_linker"
+    assert candidates[1].subject_curie == "HGNC:22474"
+    assert candidates[1].subject_curie_source == "verified_linker"
     assert candidates[1].object_curie == "HGNC:3236"
     assert candidates[1].object_curie_source == "model"
 

@@ -327,6 +327,7 @@ class FeasibilitySummary:
     curie_linked_gold_endpoint_count: int
     verified_curie_match_count: int
     model_curie_wrong_count: int
+    wrong_verified_curie_link_count: int
     support_sentence_aligned_count: int
     both_arguments_present_count: int
     entailment_required_count: int
@@ -404,6 +405,7 @@ class FeasibilitySummary:
             "curie_linked_gold_endpoint_count": self.curie_linked_gold_endpoint_count,
             "verified_curie_match_count": self.verified_curie_match_count,
             "model_curie_wrong_count": self.model_curie_wrong_count,
+            "wrong_verified_curie_link_count": self.wrong_verified_curie_link_count,
             "support_sentence_aligned_count": self.support_sentence_aligned_count,
             "both_arguments_present_count": self.both_arguments_present_count,
             "entailment_required_count": self.entailment_required_count,
