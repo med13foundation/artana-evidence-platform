@@ -6,8 +6,14 @@ This is the living tracker for raising Artana Evidence from "useful relation
 candidate extraction" to a high-confidence, agent-driven, evidence-grounded
 trusted graph system.
 
-Next trusted-readiness PR plan:
-`docs/validation/trusted-graph-readiness-pr-plan.md`
+Next trusted-readiness PR plans:
+
+- PR11-PR16 foundation plan:
+  `docs/validation/trusted-graph-readiness-pr-plan.md`
+- PR17+ recovery plan for the remaining trusted-graph blockers:
+  `docs/validation/trusted-graph-readiness-recovery-plan.md`
+- Finding-by-finding remediation plan for the PR-17 failure attribution output:
+  `docs/validation/trusted-graph-finding-remediation-plan.md`
 
 The tracker is updated after each PR with metrics, report links, tests, and
 review evidence. A phase is not done because code merged. A phase is done when
@@ -122,6 +128,7 @@ Status values:
 | 5 | PR-8 | `alvaro/evidence-pr8-trust-ladder-hard-floors` | Ready for review | Add trust ladder and hard floors config cannot weaken. | Trusted-tier precision is 1.00. | Trust ladder metadata, verified-linker-only CURIE trust floors, graph-side trusted-claim rejection, verifier-owned promotion metadata protection, focused RED/GREEN adversarial tests, service gates, and live-agent remediation report. Live run completes; trusted graph readiness remains blocked by verified CURIE recovery and precision/valuable-rate warnings. |
 | 6 | PR-9 | `alvaro/evidence-pr9-reproducible-fulltext-extraction` | Ready for review | Pin model behavior, fix cache keys, and chunk full documents. | No 4000-character blind spot. | Full-text sentence-aware chunking, prompt-version/model-aware replay keys, chunk telemetry in diagnostics, RED/GREEN blind-spot and key-collision tests, architecture-size split, touched-file lint, focused extraction suite, and API service gate. |
 | 6 | PR-10 | `alvaro/evidence-pr10-ci-quality-gate` | Ready for review | Make quality regression visible in CI. | Regression fails CI. | Relation-feasibility quality gate in `service-checks`, CI planner routing for audit-methodology changes, repo-control workflows run audit tests, RED/GREEN planner/control tests, direct quality-gate pass, repo-control bundle pass, and docs path hygiene cleanup. |
+| 7 | PR-17 | `alvaro/evidence-pr17-readiness-failure-attribution` | In progress | Explain every PR16 readiness blocker before changing extraction or promotion policy. | Repeated misses, false positives, CURIE gaps, proposal capture, and model labels are reportable. | Failure-analysis module, CLI, focused RED/GREEN tests, PR16 three-run baseline analysis, and merge-visible PR17 evidence snapshot. |
 
 ## PR Evidence Packet
 
@@ -182,6 +189,51 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-05 - PR-17 Readiness Failure Attribution
+
+PR: PR-17 readiness failure attribution
+
+Branch: `alvaro/evidence-pr17-readiness-failure-attribution`
+
+Goal: Convert the PR16 repeatability failures into a structured error queue for
+the PR18-PR22 recovery loop.
+
+Command:
+
+```bash
+PYTHONPATH="$(pwd)/services:$(pwd)" \
+  .venv/bin/python3 scripts/summarize_relation_readiness_failures.py \
+  --report current=/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json \
+  --report current=/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json \
+  --report current=/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json \
+  --output-dir reports/relation_feasibility_failure_analysis/2026-07-05-pr17-pr16-baseline
+```
+
+Evidence:
+
+- `docs/validation/reports/2026-07-05-pr17-readiness-failure-attribution-summary.md`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr17-pr16-baseline/relation_feasibility_failure_analysis_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr17-pr16-baseline/relation_feasibility_failure_analysis_report.md`
+
+Result:
+
+- Repeated missed gold patterns: 9
+- Repeated false-positive patterns: 7
+- Canonical-supported CURIE-gap patterns: 11
+- Proposal candidates: 9
+- Proposal gold matches: 4
+- Proposal-eligible gold count: 6
+- Trusted proposal capture count: 0
+
+Interpretation:
+
+The top next lane is verified entity linking, especially `MAPK signaling`,
+`homologous recombination DNA repair`, `response to pembrolizumab`,
+`aggressive tumor growth`, `cardiac septal development`, and
+`ERK phosphorylation`. The second lane is high-value resistance relation
+recovery, especially `CONFERS_RESISTANCE_TO` and `resistance to gefitinib`
+representation.
 
 ### 2026-07-02 - PR-0 Baseline Strict Agent Run
 

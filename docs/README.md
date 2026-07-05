@@ -21,6 +21,8 @@ or `packages/artana_api`.
 - [Remaining Work](./remaining_work_priorities.md)
 - [Evidence Excellence Progress Tracker](./validation/evidence-excellence-progress-tracker.md)
 - [Trusted Graph Readiness PR Plan](./validation/trusted-graph-readiness-pr-plan.md)
+- [Trusted Graph Readiness Recovery Plan](./validation/trusted-graph-readiness-recovery-plan.md)
+- [Trusted Graph Finding Remediation Plan](./validation/trusted-graph-finding-remediation-plan.md)
 - [Module Packaging Plan](./architecture/module-packaging-plan.md)
 - [Source Plugin Developer Guide](./source_plugins.md)
 - [V2 API Migration Plan](./v2_api_migration_plan.md)
