@@ -340,6 +340,14 @@ _RELATION_CUES: dict[str, tuple[str, ...]] = {
         "indicator of",
     ),
     "CAUSES": ("causes", "caused", "caused by", "leads to", "results in"),
+    "CONFERS_RESISTANCE_TO": (
+        "confers resistance to",
+        "causes resistance to",
+        "drives resistance to",
+        "mediates resistance to",
+        "renders resistant to",
+        "resistant to",
+    ),
     "DOWNSTREAM_OF": ("downstream of", "downstream", "triggered by"),
     "INHIBITS": (
         "inhibits",

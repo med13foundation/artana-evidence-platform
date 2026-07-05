@@ -208,13 +208,54 @@ def test_llm_extraction_schema_rejects_raw_unknown_relation_type() -> None:
                 "relations": [
                     {
                         "subject": "MET amplification",
-                        "relation_type": "CONFERS_RESISTANCE_TO",
+                        "relation_type": "PROTECTS_AGAINST",
                         "object": "erlotinib",
-                        "sentence": "MET amplification confers resistance to erlotinib.",
+                        "sentence": "MET amplification protects against erlotinib.",
                     },
                 ],
             },
         )
+
+
+def test_llm_extraction_schema_accepts_confers_resistance_as_canonical() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    parsed = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "MET amplification",
+                    "relation_type": "CONFERS_RESISTANCE_TO",
+                    "object": "erlotinib",
+                    "sentence": "MET amplification confers resistance to erlotinib.",
+                },
+            ],
+        },
+    )
+
+    assert parsed.relations[0].relation_type == "CONFERS_RESISTANCE_TO"
+    assert parsed.relations[0].proposed_relation_type is None
+
+    proposed_canonical = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "MET amplification",
+                    "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+                    "proposed_relation_type": "CONFERS_RESISTANCE_TO",
+                    "new_relation_type_rationale": (
+                        "Resistance is now governed as a canonical relation."
+                    ),
+                    "object": "erlotinib",
+                    "sentence": "MET amplification confers resistance to erlotinib.",
+                },
+            ],
+        },
+    )
+
+    assert proposed_canonical.relations[0].relation_type == "CONFERS_RESISTANCE_TO"
+    assert proposed_canonical.relations[0].proposed_relation_type is None
+    assert proposed_canonical.relations[0].new_relation_type_rationale is None
 
 
 def test_llm_extraction_schema_canonicalizes_relation_type_synonyms() -> None:
@@ -264,21 +305,21 @@ def test_llm_extraction_schema_accepts_structured_new_relation_proposal() -> Non
         {
             "relations": [
                 {
-                    "subject": "MET amplification",
+                    "subject": "BRCA1 loss",
                     "relation_type": "PROPOSE_NEW_RELATION_TYPE",
-                    "proposed_relation_type": "CONFERS_RESISTANCE_TO",
+                    "proposed_relation_type": "REDUCES_TOXICITY_OF",
                     "new_relation_type_rationale": (
-                        "Specific resistance relation not covered by canonical types."
+                        "Toxicity-specific treatment effect needs governance."
                     ),
-                    "object": "erlotinib",
-                    "sentence": "MET amplification confers resistance to erlotinib.",
+                    "object": "cisplatin",
+                    "sentence": "BRCA1 loss reduces cisplatin toxicity.",
                 },
             ],
         },
     )
 
     assert parsed.relations[0].relation_type == "PROPOSE_NEW_RELATION_TYPE"
-    assert parsed.relations[0].proposed_relation_type == "CONFERS_RESISTANCE_TO"
+    assert parsed.relations[0].proposed_relation_type == "REDUCES_TOXICITY_OF"
 
     with pytest.raises(ValueError):
         extraction_schema.model_validate({"relations": [{"subject": ""}]})
@@ -287,6 +328,7 @@ def test_llm_extraction_schema_accepts_structured_new_relation_proposal() -> Non
 def test_relation_taxonomy_keeps_canonical_types_and_synonyms_together() -> None:
     assert "ASSOCIATED_WITH" in LLM_VALID_RELATION_TYPES
     assert "ACTIVATES" in LLM_VALID_RELATION_TYPES
+    assert "CONFERS_RESISTANCE_TO" in LLM_VALID_RELATION_TYPES
     assert LLM_RELATION_SYNONYMS["CORRELATED_WITH"] == "ASSOCIATED_WITH"
     assert LLM_RELATION_SYNONYMS["STIMULATES"] == "ACTIVATES"
     assert all(
@@ -357,6 +399,60 @@ def test_llm_conversion_preserves_specific_relation_arguments() -> None:
     assert unknown_relation_types == set()
     assert len(candidates) == 1
     assert candidates[0].object_label == "BRCA-mutated ovarian cancer"
+
+
+def test_llm_conversion_keeps_confers_resistance_as_canonical_candidate() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="MET amplification",
+                subject_curie=None,
+                relation_type="CONFERS_RESISTANCE_TO",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="erlotinib",
+                object_curie=None,
+                sentence="MET amplification confers resistance to erlotinib.",
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].relation_type == "CONFERS_RESISTANCE_TO"
+    assert candidates[0].proposed_relation_type is None
+    assert candidates[0].relation_governance_status == "canonical"
+
+
+def test_llm_conversion_repairs_resistance_proposal_typo_without_trusting_it() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="MET amplification",
+                subject_curie=None,
+                relation_type="PROPOSE_NEW_RELATION_TYPE",
+                proposed_relation_type="CONFOERS_RESISTANCE_TO",
+                new_relation_type_rationale="Typo in resistance proposal.",
+                object="erlotinib",
+                object_curie=None,
+                sentence="MET amplification confers resistance to erlotinib.",
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].relation_type == "PROPOSE_NEW_RELATION_TYPE"
+    assert candidates[0].proposed_relation_type == "CONFERS_RESISTANCE_TO"
+    assert candidates[0].relation_governance_status == "requires_relation_review"
+    assert candidates[0].trusted_evidence_eligible is False
+    assert "proposal_relation_type_repaired_to:CONFERS_RESISTANCE_TO" in (
+        candidates[0].new_relation_type_rationale or ""
+    )
 
 
 def test_llm_conversion_verifies_model_curie_hints_against_dictionary() -> None:
@@ -926,15 +1022,15 @@ def test_draft_builder_skips_raw_unknown_relation_types(
 
 def test_draft_builder_stages_governed_relation_type_proposals() -> None:
     candidate = ExtractedRelationCandidate(
-        subject_label="MET amplification",
+        subject_label="BRCA1 loss",
         relation_type=LLM_PROPOSE_NEW_RELATION_TYPE,
-        proposed_relation_type="CONFERS_RESISTANCE_TO",
+        proposed_relation_type="REDUCES_TOXICITY_OF",
         new_relation_type_rationale=(
-            "Specific resistance relation not covered by canonical types."
+            "Toxicity-specific treatment effect needs governance."
         ),
         relation_governance_status="requires_relation_review",
-        object_label="erlotinib",
-        sentence="MET amplification confers resistance to erlotinib.",
+        object_label="cisplatin",
+        sentence="BRCA1 loss reduces cisplatin toxicity.",
     )
 
     drafts, skipped = build_document_extraction_drafts(
@@ -948,7 +1044,7 @@ def test_draft_builder_stages_governed_relation_type_proposals() -> None:
     assert skipped == []
     assert len(drafts) == 1
     assert drafts[0].proposal_type == "relation_type_candidate"
-    assert drafts[0].payload["proposed_relation_type"] == "CONFERS_RESISTANCE_TO"
+    assert drafts[0].payload["proposed_relation_type"] == "REDUCES_TOXICITY_OF"
     assert drafts[0].payload["trusted_evidence_eligible"] is False
     assert drafts[0].metadata["relation_governance_status"] == (
         "requires_relation_review"
@@ -1008,8 +1104,8 @@ def test_draft_builder_prunes_generic_tail_when_specific_subject_sibling_exists(
     candidates = [
         ExtractedRelationCandidate(
             subject_label="EGFR T790M",
-            relation_type="CAUSES",
-            object_label="resistance to gefitinib",
+            relation_type="CONFERS_RESISTANCE_TO",
+            object_label="gefitinib",
             sentence=(
                 "EGFR T790M causes resistance to gefitinib and is associated "
                 "with disease progression."
@@ -1035,11 +1131,11 @@ def test_draft_builder_prunes_generic_tail_when_specific_subject_sibling_exists(
     )
 
     assert len(drafts) == 1
-    assert drafts[0].payload["proposed_claim_type"] == "CAUSES"
+    assert drafts[0].payload["proposed_claim_type"] == "CONFERS_RESISTANCE_TO"
     assert len(skipped) == 1
     assert skipped[0]["reason"] == "redundant_generic_relation_sibling"
     assert skipped[0]["relation_type"] == "ASSOCIATED_WITH"
-    assert skipped[0]["suppressing_relation_type"] == "CAUSES"
+    assert skipped[0]["suppressing_relation_type"] == "CONFERS_RESISTANCE_TO"
 
 
 def test_draft_builder_prunes_generic_tail_when_governed_proposal_sibling_exists() -> None:
@@ -1057,9 +1153,7 @@ def test_draft_builder_prunes_generic_tail_when_governed_proposal_sibling_exists
     candidates = [
         ExtractedRelationCandidate(
             subject_label="MET amplification",
-            relation_type=LLM_PROPOSE_NEW_RELATION_TYPE,
-            proposed_relation_type="CONFERS_RESISTANCE_TO",
-            relation_governance_status="requires_relation_review",
+            relation_type="CONFERS_RESISTANCE_TO",
             object_label="erlotinib",
             sentence=(
                 "MET amplification confers resistance to erlotinib and is "
@@ -1086,7 +1180,7 @@ def test_draft_builder_prunes_generic_tail_when_governed_proposal_sibling_exists
     )
 
     assert len(drafts) == 1
-    assert drafts[0].proposal_type == "relation_type_candidate"
+    assert drafts[0].payload["proposed_claim_type"] == "CONFERS_RESISTANCE_TO"
     assert len(skipped) == 1
     assert skipped[0]["reason"] == "redundant_generic_relation_sibling"
     assert skipped[0]["relation_type"] == "ASSOCIATED_WITH"

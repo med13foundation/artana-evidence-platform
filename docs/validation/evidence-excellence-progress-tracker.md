@@ -14,6 +14,8 @@ Next trusted-readiness PR plans:
   `docs/validation/trusted-graph-readiness-recovery-plan.md`
 - Finding-by-finding remediation plan for the PR-17 failure attribution output:
   `docs/validation/trusted-graph-finding-remediation-plan.md`
+- Root-cause blocker plan for the latest PR19 trusted-readiness blockers:
+  `docs/validation/trusted-graph-readiness-blocker-resolution-plan.md`
 
 The tracker is updated after each PR with metrics, report links, tests, and
 review evidence. A phase is not done because code merged. A phase is done when
@@ -128,7 +130,8 @@ Status values:
 | 5 | PR-8 | `alvaro/evidence-pr8-trust-ladder-hard-floors` | Ready for review | Add trust ladder and hard floors config cannot weaken. | Trusted-tier precision is 1.00. | Trust ladder metadata, verified-linker-only CURIE trust floors, graph-side trusted-claim rejection, verifier-owned promotion metadata protection, focused RED/GREEN adversarial tests, service gates, and live-agent remediation report. Live run completes; trusted graph readiness remains blocked by verified CURIE recovery and precision/valuable-rate warnings. |
 | 6 | PR-9 | `alvaro/evidence-pr9-reproducible-fulltext-extraction` | Ready for review | Pin model behavior, fix cache keys, and chunk full documents. | No 4000-character blind spot. | Full-text sentence-aware chunking, prompt-version/model-aware replay keys, chunk telemetry in diagnostics, RED/GREEN blind-spot and key-collision tests, architecture-size split, touched-file lint, focused extraction suite, and API service gate. |
 | 6 | PR-10 | `alvaro/evidence-pr10-ci-quality-gate` | Ready for review | Make quality regression visible in CI. | Regression fails CI. | Relation-feasibility quality gate in `service-checks`, CI planner routing for audit-methodology changes, repo-control workflows run audit tests, RED/GREEN planner/control tests, direct quality-gate pass, repo-control bundle pass, and docs path hygiene cleanup. |
-| 7 | PR-17 | `alvaro/evidence-pr17-readiness-failure-attribution` | In progress | Explain every PR16 readiness blocker before changing extraction or promotion policy. | Repeated misses, false positives, CURIE gaps, proposal capture, and model labels are reportable. | Failure-analysis module, CLI, focused RED/GREEN tests, PR16 three-run baseline analysis, and merge-visible PR17 evidence snapshot. |
+| 7 | PR-17 | `alvaro/evidence-pr17-readiness-failure-attribution` | Local checkpoint committed | Explain every PR16 readiness blocker before changing extraction or promotion policy. | Repeated misses, false positives, CURIE gaps, proposal capture, and model labels are reportable. | Failure-analysis module, CLI, focused RED/GREEN tests, PR16 three-run baseline analysis, service-checks pass, and merge-visible PR17 evidence snapshot. |
+| 8 | PR-19 | `alvaro/evidence-pr19-high-value-relation-recovery` | Implemented locally; strict gate RED | Make high-value drug-resistance relations canonical instead of proposal noise. | High-value recall >= 0.8500 with raw unknown relation surfaces 0. | `CONFERS_RESISTANCE_TO` API taxonomy, graph dictionary seed, graph constraints, safe typo proposal repair, verifier cues, benchmark shape update, focused RED/GREEN tests, relation-feasibility gate, and strict live run. Live run reaches precision 0.9048 and high-value recall 0.9500, but trusted graph readiness remains blocked by verified CURIE endpoint rate 0.8108. |
 
 ## PR Evidence Packet
 
@@ -234,6 +237,78 @@ The top next lane is verified entity linking, especially `MAPK signaling`,
 `ERK phosphorylation`. The second lane is high-value resistance relation
 recovery, especially `CONFERS_RESISTANCE_TO` and `resistance to gefitinib`
 representation.
+
+### 2026-07-05 - PR-19 High-Value Relation Recovery
+
+PR: PR-19 high-value relation recovery
+
+Branch: `alvaro/evidence-pr19-high-value-relation-recovery`
+
+Goal: Recover repeated high-value drug-resistance relations without letting
+unapproved proposal surfaces count as trusted graph evidence.
+
+Commands:
+
+```bash
+PYTHONPATH="$(pwd)/services:$(pwd)" \
+  .venv/bin/python3 -m pytest \
+  services/artana_evidence_api/tests/unit/test_document_extraction_modules.py \
+  services/artana_evidence_api/tests/unit/test_document_extraction.py::test_extract_relation_candidates_with_llm_keeps_structured_new_type_proposals \
+  services/artana_evidence_api/tests/unit/test_document_extraction.py::test_extract_relation_candidates_with_llm_filters_review_required_raw_types \
+  services/artana_evidence_api/tests/unit/test_evidence_support_verifier.py \
+  services/artana_evidence_api/tests/unit/test_relation_candidate_quality_filter.py \
+  tests/unit/test_relation_feasibility_audit.py \
+  services/artana_evidence_db/tests/unit/test_governance.py::test_graph_governance_repository_seeds_builtin_entity_and_relation_types \
+  services/artana_evidence_db/tests/unit/test_app.py::test_seed_builtin_dictionary_entries_persists_core_relation_constraints \
+  -q
+
+make relation-feasibility-quality-gate
+
+bash -lc 'set -a; source .env.postgres; set +a; \
+  PYTHONPATH="$(pwd)/services:$(pwd)" \
+  .venv/bin/python3 scripts/run_relation_feasibility_audit.py \
+  --extractor agent \
+  --output-dir reports/relation_feasibility/2026-07-05-pr19-high-value-relation-recovery-run2'
+
+PYTHONPATH="$(pwd)/services:$(pwd)" \
+  .venv/bin/python3 scripts/summarize_relation_readiness_failures.py \
+  --report reports/relation_feasibility/2026-07-05-pr19-high-value-relation-recovery-run2/relation_feasibility_report.json \
+  --output-dir reports/relation_feasibility_failure_analysis/2026-07-05-pr19-run2
+```
+
+Evidence:
+
+- `docs/validation/reports/2026-07-05-pr19-high-value-relation-recovery-summary.md`
+- `reports/relation_feasibility/2026-07-05-pr19-high-value-relation-recovery-run2/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-05-pr19-high-value-relation-recovery-run2/relation_feasibility_report.md`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr19-run2/relation_feasibility_failure_analysis_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr19-run2/relation_feasibility_failure_analysis_report.md`
+
+Result:
+
+- Verdict: RED
+- Agent completed cases: 30
+- Fallback cases: 0
+- Invalid strict-agent cases: 0
+- Negative-control leakage cases: 0
+- Completed-agent precision: 0.9048
+- High-value recall: 0.9500
+- Completed-agent valuable rate: 0.9048
+- Generic relation rate: 0.0000
+- Raw unknown relation types: 0
+- Raw unknown relation inventory surfaces: 0
+- Governed proposal candidates: 0
+- Verified CURIE-linked gold endpoint rate: 0.8108
+- Model CURIE wrong count: 0
+- Wrong verified CURIE links: 0
+
+Interpretation:
+
+PR19 closes the repeated drug-resistance shape problem by approving
+`CONFERS_RESISTANCE_TO` through both Evidence API extraction and graph
+dictionary governance. The remaining RED verdict is not a resistance-semantics
+failure; it is verified endpoint coverage plus PR20 qualifier preservation,
+especially `BRCA1 loss` being shortened to `BRCA1`.
 
 ### 2026-07-02 - PR-0 Baseline Strict Agent Run
 

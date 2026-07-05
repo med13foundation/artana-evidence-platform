@@ -196,6 +196,8 @@ Each triple has:
   and a specific mechanism, output only the specific mechanism.
   Use PREDISPOSES_TO for risk or susceptibility language.
   Use SENSITIZES_TO for drug-sensitivity language.
+  Use CONFERS_RESISTANCE_TO when a variant, amplification, gene state, or
+  biomarker confers resistance to a specific drug.
   Use BIOMARKER_FOR when an expression, score, variant, or signature predicts
   a condition or treatment response.
 
@@ -219,7 +221,7 @@ IMPORTANT — do NOT extract:
 Focus on:
 - Concrete findings from results and conclusions
 - Drug-target interactions (osimertinib TARGETS EGFR T790M)
-- Resistance mechanisms (MET amplification CAUSES resistance to erlotinib)
+- Resistance mechanisms (MET amplification CONFERS_RESISTANCE_TO erlotinib)
 - Biomarker associations (HRD score BIOMARKER_FOR platinum sensitivity)
 - Pathway interactions (BRCA1 REGULATES DNA damage repair)
 - Gene expression (PD-L1 EXPRESSED_IN tumor microenvironment)
@@ -227,7 +229,7 @@ Focus on:
 - Risk relationships (TP53 loss PREDISPOSES_TO early-onset breast cancer)
 - Sensitivity relationships (BRCA1 loss SENSITIZES_TO cisplatin)
 - Treatment-response biomarkers (PD-L1 expression BIOMARKER_FOR response to pembrolizumab)
-- Governed relation proposals (MET amplification PROPOSE_NEW_RELATION_TYPE CONFERS_RESISTANCE_TO erlotinib)
+- Governed relation proposals only when no canonical relation type fits
 
 Return up to 10 of the strongest, most specific relationships. Quality over quantity."""
 

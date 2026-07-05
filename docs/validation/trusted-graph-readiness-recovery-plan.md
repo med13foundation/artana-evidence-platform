@@ -332,14 +332,14 @@ governed relation proposals.
 
 **Test checklist:**
 
-- [ ] Add a failing extraction conversion test for the MET resistance sentence.
-- [ ] Add a failing extraction conversion test for the EGFR T790M resistance
+- [x] Add a failing extraction conversion test for the MET resistance sentence.
+- [x] Add a failing extraction conversion test for the EGFR T790M resistance
   sentence.
-- [ ] Add a failing scoring test where a governed proposal gets proposal capture
+- [x] Add a failing scoring test where a governed proposal gets proposal capture
   credit but not trusted auto-promotion credit.
-- [ ] Add a failing regression where a misspelled proposal is review-required
+- [x] Add a failing regression where a misspelled proposal is review-required
   and cannot enter raw unknown relation inventory.
-- [ ] Run:
+- [x] Run:
 
 ```bash
 PYTHONPATH="$(pwd)/services:$(pwd)" \
@@ -363,6 +363,18 @@ PYTHONPATH="$(pwd)/services:$(pwd)" \
   recall.
 - Raw unknown relation surface counts remain zero.
 - No regression in verified CURIE endpoint rate after PR18.
+
+**Current PR19 evidence:**
+
+- Summary:
+  `docs/validation/reports/2026-07-05-pr19-high-value-relation-recovery-summary.md`
+- Strict live-agent run:
+  `reports/relation_feasibility/2026-07-05-pr19-high-value-relation-recovery-run2/relation_feasibility_report.md`
+- Result: fallback 0, invalid-agent 0, negative-control leakage 0, raw unknown
+  relation surfaces 0, completed-agent precision 0.9048, high-value recall
+  0.9500, and valuable rate 0.9048.
+- Verified CURIE endpoint rate is still 0.8108, so trusted graph readiness
+  remains RED until PR18/PR20/PR21/PR22 are integrated and pass together.
 
 ## PR20: Precision, Reranking, And Non-Gold Adjudication
 

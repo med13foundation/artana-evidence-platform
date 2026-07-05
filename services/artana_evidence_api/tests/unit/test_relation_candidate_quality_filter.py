@@ -68,11 +68,11 @@ def test_quality_filter_removes_non_entailed_canonical_candidate() -> None:
 
 def test_quality_filter_keeps_governed_relation_proposal_for_review() -> None:
     candidate = ExtractedRelationCandidate(
-        subject_label="MET amplification",
+        subject_label="BRCA1 loss",
         relation_type="PROPOSE_NEW_RELATION_TYPE",
-        object_label="erlotinib",
-        sentence="MET amplification confers resistance to erlotinib.",
-        proposed_relation_type="CONFERS_RESISTANCE_TO",
+        object_label="cisplatin",
+        sentence="BRCA1 loss reduces toxicity of cisplatin.",
+        proposed_relation_type="REDUCES_TOXICITY_OF",
         relation_governance_status="requires_relation_review",
     )
 

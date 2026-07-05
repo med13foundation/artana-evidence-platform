@@ -74,6 +74,39 @@ def test_biomarker_sentence_returns_entails() -> None:
     assert result.support == "ENTAILS"
 
 
+def test_confers_resistance_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="MET amplification confers resistance to erlotinib.",
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_causes_resistance_sentence_returns_entails_for_drug_target() -> None:
+    result = verify_triple_support(
+        sentence="EGFR T790M causes resistance to gefitinib.",
+        subject="EGFR T790M",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="gefitinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_correlated_resistance_sentence_is_not_canonical_resistance_support() -> None:
+    result = verify_triple_support(
+        sentence="MET amplification was correlated with resistance.",
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "NEUTRAL"
+
+
 def test_unrelated_sentence_returns_neutral() -> None:
     result = verify_triple_support(
         sentence="MED13 and EGFR were both measured in the cohort.",

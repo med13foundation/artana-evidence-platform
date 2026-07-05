@@ -28,6 +28,9 @@ from artana_evidence_api.document_extraction_support.entity_curie_linking import
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
 )
+from artana_evidence_api.document_extraction_support.proposal_relation_type_guard import (
+    normalize_proposed_relation_type,
+)
 from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
     has_broadened_entity_label,
 )
@@ -116,14 +119,20 @@ def _llm_relation_to_candidate(
     )
 
     if relation_type == LLM_PROPOSE_NEW_RELATION_TYPE:
-        proposed_relation_type = normalize_relation_type_label(
-            getattr(rel, "proposed_relation_type", None) or "",
+        proposed_relation_type = normalize_proposed_relation_type(
+            getattr(rel, "proposed_relation_type", None),
         )
         logger.info(
             "LLM proposed new relation type %s; returning review-required "
             "candidate",
-            proposed_relation_type,
+            proposed_relation_type.relation_type,
         )
+        rationale = getattr(rel, "new_relation_type_rationale", None)
+        if proposed_relation_type.repair_applied:
+            rationale = _append_relation_proposal_repair_note(
+                rationale,
+                proposed_relation_type=proposed_relation_type.relation_type,
+            )
         return (
             ExtractedRelationCandidate(
                 subject_label=subject,
@@ -134,12 +143,8 @@ def _llm_relation_to_candidate(
                 object_curie=object_curie_link.curie,
                 subject_curie_source=_candidate_curie_source(subject_curie_link),
                 object_curie_source=_candidate_curie_source(object_curie_link),
-                proposed_relation_type=proposed_relation_type,
-                new_relation_type_rationale=getattr(
-                    rel,
-                    "new_relation_type_rationale",
-                    None,
-                ),
+                proposed_relation_type=proposed_relation_type.relation_type,
+                new_relation_type_rationale=rationale,
                 relation_governance_status="requires_relation_review",
             ),
             None,
@@ -166,6 +171,17 @@ def _llm_relation_to_candidate(
 
 def _candidate_curie_source(link: EntityCurieLink) -> CurieSource:
     return link.source if link.curie is not None else "none"
+
+
+def _append_relation_proposal_repair_note(
+    rationale: str | None,
+    *,
+    proposed_relation_type: str,
+) -> str:
+    note = f"proposal_relation_type_repaired_to:{proposed_relation_type}"
+    if rationale is None or rationale.strip() == "":
+        return note
+    return f"{rationale.strip()} ({note})"
 
 
 __all__ = [

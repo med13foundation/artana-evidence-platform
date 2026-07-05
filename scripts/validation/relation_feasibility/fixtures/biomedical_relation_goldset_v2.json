@@ -426,8 +426,8 @@
       "gold_relations": [
         {
           "subject": "EGFR T790M",
-          "relation_type": "CAUSES",
-          "object": "resistance to gefitinib",
+          "relation_type": "CONFERS_RESISTANCE_TO",
+          "object": "gefitinib",
           "support_sentence": "EGFR T790M causes resistance to gefitinib and is associated with disease progression.",
           "value_level": "high",
           "rationale": "Specific resistance cause should suppress a redundant generic association.",

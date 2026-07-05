@@ -744,14 +744,14 @@ async def test_extract_relation_candidates_with_llm_keeps_structured_new_type_pr
             output={
                 "relations": [
                     {
-                        "subject": "MET amplification",
+                        "subject": "BRCA1 loss",
                         "relation_type": "PROPOSE_NEW_RELATION_TYPE",
-                        "proposed_relation_type": "CONFERS_RESISTANCE_TO",
+                        "proposed_relation_type": "REDUCES_TOXICITY_OF",
                         "new_relation_type_rationale": (
-                            "Specific resistance relation not covered by canonical types."
+                            "Toxicity-specific treatment effect needs governance."
                         ),
-                        "object": "erlotinib",
-                        "sentence": "MET amplification confers resistance to erlotinib.",
+                        "object": "cisplatin",
+                        "sentence": "BRCA1 loss reduces cisplatin toxicity.",
                     },
                 ],
             },
@@ -786,17 +786,17 @@ async def test_extract_relation_candidates_with_llm_keeps_structured_new_type_pr
     )
 
     candidates = await extract_relation_candidates_with_llm(
-        "MET amplification confers resistance to erlotinib.",
+        "BRCA1 loss reduces cisplatin toxicity.",
     )
 
     assert len(candidates) == 1
-    assert candidates[0].subject_label == "MET amplification"
+    assert candidates[0].subject_label == "BRCA1 loss"
     assert candidates[0].relation_type == "PROPOSE_NEW_RELATION_TYPE"
-    assert candidates[0].proposed_relation_type == "CONFERS_RESISTANCE_TO"
+    assert candidates[0].proposed_relation_type == "REDUCES_TOXICITY_OF"
     assert candidates[0].new_relation_type_rationale == (
-        "Specific resistance relation not covered by canonical types."
+        "Toxicity-specific treatment effect needs governance."
     )
-    assert candidates[0].object_label == "erlotinib"
+    assert candidates[0].object_label == "cisplatin"
     assert candidates[0].relation_governance_status == "requires_relation_review"
     assert candidates[0].trusted_evidence_eligible is False
 
@@ -827,10 +827,10 @@ async def test_extract_relation_candidates_with_llm_filters_review_required_raw_
 
     class _ReviewRequiredPreflight:
         async def resolve_relation_type(self, **kwargs):
-            assert kwargs["relation_type"] == "CONFERS_RESISTANCE_TO"
+            assert kwargs["relation_type"] == "PROTECTS_AGAINST"
             return RelationTypeDecision(
                 action=RelationTypeAction.REQUIRES_REVIEW,
-                canonical_type="CONFERS_RESISTANCE_TO",
+                canonical_type="PROTECTS_AGAINST",
                 reasoning="Governed review required before use.",
             )
 
@@ -840,9 +840,9 @@ async def test_extract_relation_candidates_with_llm_filters_review_required_raw_
                 "relations": [
                     {
                         "subject": "MET amplification",
-                        "relation_type": "CONFERS_RESISTANCE_TO",
+                        "relation_type": "PROTECTS_AGAINST",
                         "object": "erlotinib",
-                        "sentence": "MET amplification confers resistance to erlotinib.",
+                        "sentence": "MET amplification protects against erlotinib.",
                     },
                 ],
             },
@@ -887,7 +887,7 @@ async def test_extract_relation_candidates_with_llm_filters_review_required_raw_
     )
 
     candidates = await extract_relation_candidates_with_llm(
-        "MET amplification confers resistance to erlotinib.",
+        "MET amplification protects against erlotinib.",
     )
 
     assert candidates == []

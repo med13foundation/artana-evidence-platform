@@ -447,13 +447,13 @@ def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() ->
             sentence="MED13 causes developmental delay.",
         ),
         ExtractedRelationCandidate(
-            subject_label="MET amplification",
+            subject_label="BRCA1 loss",
             relation_type="PROPOSE_NEW_RELATION_TYPE",
-            proposed_relation_type="CONFERS_RESISTANCE_TO",
-            new_relation_type_rationale="Specific resistance relation.",
+            proposed_relation_type="REDUCES_TOXICITY_OF",
+            new_relation_type_rationale="Toxicity-specific effect relation.",
             relation_governance_status="requires_relation_review",
-            object_label="erlotinib",
-            sentence="MET amplification confers resistance to erlotinib.",
+            object_label="cisplatin",
+            sentence="BRCA1 loss reduces toxicity of cisplatin.",
         ),
     ]
     diagnostics = DocumentCandidateExtractionDiagnostics(
@@ -468,9 +468,9 @@ def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() ->
 
     assert result.relations[0].subject_curie_source == "verified_linker"
     assert result.relations[0].object_curie_source == "model"
-    assert result.relations[1].proposed_relation_type == "CONFERS_RESISTANCE_TO"
+    assert result.relations[1].proposed_relation_type == "REDUCES_TOXICITY_OF"
     assert result.relations[1].new_relation_type_rationale == (
-        "Specific resistance relation."
+        "Toxicity-specific effect relation."
     )
     assert result.relations[1].relation_governance_status == (
         "requires_relation_review"
@@ -481,13 +481,13 @@ def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() ->
 def test_agent_adapter_inventory_indexes_governed_proposed_relation_type() -> None:
     candidates = [
         ExtractedRelationCandidate(
-            subject_label="MET amplification",
+            subject_label="BRCA1 loss",
             relation_type="PROPOSE_NEW_RELATION_TYPE",
-            proposed_relation_type="CONFERS_RESISTANCE_TO",
-            new_relation_type_rationale="Specific resistance relation.",
+            proposed_relation_type="REDUCES_TOXICITY_OF",
+            new_relation_type_rationale="Toxicity-specific effect relation.",
             relation_governance_status="requires_relation_review",
-            object_label="erlotinib",
-            sentence="MET amplification confers resistance to erlotinib.",
+            object_label="cisplatin",
+            sentence="BRCA1 loss reduces toxicity of cisplatin.",
         ),
     ]
     diagnostics = DocumentCandidateExtractionDiagnostics(
@@ -501,13 +501,13 @@ def test_agent_adapter_inventory_indexes_governed_proposed_relation_type() -> No
     )
     case = _case(
         case_id="governed_proposal_inventory",
-        text="MET amplification confers resistance to erlotinib.",
+        text="BRCA1 loss reduces toxicity of cisplatin.",
         gold=(
             GoldRelation(
-                subject="MET amplification",
-                relation_type="CONFERS_RESISTANCE_TO",
-                object="erlotinib",
-                support_sentence="MET amplification confers resistance to erlotinib.",
+                subject="BRCA1 loss",
+                relation_type="REDUCES_TOXICITY_OF",
+                object="cisplatin",
+                support_sentence="BRCA1 loss reduces toxicity of cisplatin.",
                 value_level="high",
                 rationale="Relation needs dictionary governance.",
             ),
@@ -523,7 +523,7 @@ def test_agent_adapter_inventory_indexes_governed_proposed_relation_type() -> No
 
     assert surfaces == {
         ("candidate_relation.relation_type", "PROPOSE_NEW_RELATION_TYPE"),
-        ("candidate_relation.proposed_relation_type", "CONFERS_RESISTANCE_TO"),
+        ("candidate_relation.proposed_relation_type", "REDUCES_TOXICITY_OF"),
     }
     proposed_surfaces = tuple(
         surface
@@ -536,7 +536,7 @@ def test_agent_adapter_inventory_indexes_governed_proposed_relation_type() -> No
     assert report.summary.raw_unknown_relation_type_surface_count == 0
     assert report.summary.proposal_recall_against_proposal_eligible_gold == 1.0
     assert (
-        "`candidate_relation.proposed_relation_type` -> `CONFERS_RESISTANCE_TO`"
+        "`candidate_relation.proposed_relation_type` -> `REDUCES_TOXICITY_OF`"
         in markdown
     )
 
@@ -771,7 +771,7 @@ def test_audit_counts_raw_unknown_relation_types_as_blocking_quality_issue() -> 
     cases = (
         _case(
             case_id="raw_unknown_relation_type",
-            text="MET amplification confers resistance to erlotinib.",
+            text="MET amplification protects against erlotinib.",
             gold=(),
         ),
     )
@@ -780,9 +780,9 @@ def test_audit_counts_raw_unknown_relation_types_as_blocking_quality_issue() -> 
         return [
             ExtractedRelation(
                 subject="MET amplification",
-                relation_type="CONFERS_RESISTANCE_TO",
+                relation_type="PROTECTS_AGAINST",
                 object="erlotinib",
-                sentence="MET amplification confers resistance to erlotinib.",
+                sentence="MET amplification protects against erlotinib.",
             ),
         ]
 
@@ -797,10 +797,10 @@ def test_audit_counts_raw_unknown_relation_types_as_blocking_quality_issue() -> 
     assert "raw_unknown_relation_type" in assessment.quality_flags
 
 
-def test_governed_relation_proposal_counts_proposal_recall_without_trusted_recall() -> None:
+def test_canonical_confers_resistance_counts_as_known_valuable_relation() -> None:
     cases = (
         _case(
-            case_id="governed_relation_proposal",
+            case_id="canonical_confers_resistance",
             text="MET amplification confers resistance to erlotinib.",
             gold=(
                 GoldRelation(
@@ -811,7 +811,9 @@ def test_governed_relation_proposal_counts_proposal_recall_without_trusted_recal
                         "MET amplification confers resistance to erlotinib."
                     ),
                     value_level="high",
-                    rationale="Specific resistance relation proposed for governance.",
+                    rationale="Specific drug-resistance relation.",
+                    subject_curie="HGNC:7029",
+                    object_curie="DrugBank:DB00530",
                 ),
             ),
         ),
@@ -821,14 +823,59 @@ def test_governed_relation_proposal_counts_proposal_recall_without_trusted_recal
         return [
             ExtractedRelation(
                 subject="MET amplification",
+                subject_curie="HGNC:7029",
+                subject_curie_source="verified_linker",
+                relation_type="CONFERS_RESISTANCE_TO",
+                object="erlotinib",
+                object_curie="DrugBank:DB00530",
+                object_curie_source="verified_linker",
+                sentence="MET amplification confers resistance to erlotinib.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.is_supported_by_gold is True
+    assert assessment.is_valuable is True
+    assert assessment.has_known_relation_type is True
+    assert report.summary.raw_unknown_relation_type_count == 0
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.curie_linked_gold_endpoint_rate == 1.0
+
+
+def test_governed_relation_proposal_counts_proposal_recall_without_trusted_recall() -> None:
+    cases = (
+        _case(
+            case_id="governed_relation_proposal",
+            text="BRCA1 loss reduces toxicity of cisplatin.",
+            gold=(
+                GoldRelation(
+                    subject="BRCA1 loss",
+                    relation_type="REDUCES_TOXICITY_OF",
+                    object="cisplatin",
+                    support_sentence=(
+                        "BRCA1 loss reduces toxicity of cisplatin."
+                    ),
+                    value_level="high",
+                    rationale="Specific toxicity relation proposed for governance.",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="BRCA1 loss",
                 relation_type="PROPOSE_NEW_RELATION_TYPE",
-                proposed_relation_type="CONFERS_RESISTANCE_TO",
+                proposed_relation_type="REDUCES_TOXICITY_OF",
                 new_relation_type_rationale=(
-                    "Specific resistance relation not covered by canonical types."
+                    "Toxicity-specific effect relation not covered by canonical types."
                 ),
                 relation_governance_status="requires_relation_review",
-                object="erlotinib",
-                sentence="MET amplification confers resistance to erlotinib.",
+                object="cisplatin",
+                sentence="BRCA1 loss reduces toxicity of cisplatin.",
             ),
         ]
 
@@ -870,14 +917,14 @@ def test_governed_proposal_recall_uses_proposal_eligible_denominator() -> None:
         ),
         _case(
             case_id="proposal_eligible_gold",
-            text="MET amplification confers resistance to erlotinib.",
+            text="BRCA1 loss reduces toxicity of cisplatin.",
             gold=(
                 GoldRelation(
-                    subject="MET amplification",
-                    relation_type="CONFERS_RESISTANCE_TO",
-                    object="erlotinib",
+                    subject="BRCA1 loss",
+                    relation_type="REDUCES_TOXICITY_OF",
+                    object="cisplatin",
                     support_sentence=(
-                        "MET amplification confers resistance to erlotinib."
+                        "BRCA1 loss reduces toxicity of cisplatin."
                     ),
                     value_level="high",
                     rationale="Relation needs dictionary governance.",
@@ -887,17 +934,17 @@ def test_governed_proposal_recall_uses_proposal_eligible_denominator() -> None:
     )
 
     def extractor(text: str) -> list[ExtractedRelation]:
-        if "MET amplification" not in text:
+        if "BRCA1 loss" not in text:
             return []
         return [
             ExtractedRelation(
-                subject="MET amplification",
+                subject="BRCA1 loss",
                 relation_type="PROPOSE_NEW_RELATION_TYPE",
-                proposed_relation_type="CONFERS_RESISTANCE_TO",
-                new_relation_type_rationale="Governed resistance relation.",
+                proposed_relation_type="REDUCES_TOXICITY_OF",
+                new_relation_type_rationale="Governed toxicity relation.",
                 relation_governance_status="requires_relation_review",
-                object="erlotinib",
-                sentence="MET amplification confers resistance to erlotinib.",
+                object="cisplatin",
+                sentence="BRCA1 loss reduces toxicity of cisplatin.",
             ),
         ]
 
@@ -1151,6 +1198,34 @@ def test_v2_fixture_has_required_categories_and_richer_labels() -> None:
     assert any(relation.subject_curie for relation in gold_relations)
     assert any(relation.object_curie for relation in gold_relations)
     assert any(not relation.requires_entailment for relation in gold_relations)
+
+
+def test_v2_fixture_uses_canonical_drug_resistance_relation_shape() -> None:
+    cases = load_benchmark_cases(
+        Path("scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json"),
+    )
+
+    gold_by_case = {
+        case.case_id: case.gold_relations[0]
+        for case in cases
+        if case.case_id
+        in {
+            "complex_nsclc_alias",
+            "generic_sibling_met_resistance",
+            "generic_sibling_egfr_t790m_resistance",
+        }
+    }
+
+    for case_id in ("complex_nsclc_alias", "generic_sibling_met_resistance"):
+        relation = gold_by_case[case_id]
+        assert relation.relation_type == "CONFERS_RESISTANCE_TO"
+        assert relation.object == "erlotinib"
+        assert relation.object_curie == "DrugBank:DB00530"
+
+    egfr_relation = gold_by_case["generic_sibling_egfr_t790m_resistance"]
+    assert egfr_relation.relation_type == "CONFERS_RESISTANCE_TO"
+    assert egfr_relation.object == "gefitinib"
+    assert egfr_relation.object_curie == "DrugBank:DB00317"
 
 
 def test_agent_trace_counts_completed_agent_cases() -> None:

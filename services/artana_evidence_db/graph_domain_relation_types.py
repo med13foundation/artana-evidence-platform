@@ -248,6 +248,18 @@ GRAPH_SERVICE_CORE_CAUSAL_RELATION_TYPES = (
         inverse_label="SENSITIZED_BY",
     ),
     BuiltinRelationTypeDefinition(
+        relation_type="CONFERS_RESISTANCE_TO",
+        display_name="Confers Resistance To",
+        description=(
+            "A variant, amplification, gene state, or biomarker that confers "
+            "resistance to a therapeutic compound or intervention."
+        ),
+        domain_context="clinical",
+        category="core_causal",
+        is_directional=True,
+        inverse_label="RESISTANCE_CONFERRED_BY",
+    ),
+    BuiltinRelationTypeDefinition(
         relation_type="PHENOCOPY_OF",
         display_name="Phenocopy Of",
         description=(
@@ -524,6 +536,5 @@ GRAPH_SERVICE_BUILTIN_RELATION_TYPES = (
     *GRAPH_SERVICE_EXTENDED_SCIENTIFIC_RELATION_TYPES,
     *GRAPH_SERVICE_DOCUMENT_GOVERNANCE_RELATION_TYPES,
 )
-
 
 

@@ -86,7 +86,7 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
 |---|---|---:|---|---|---|
 | M-01 | `complex_nsclc_alias`: `MET amplification CONFERS_RESISTANCE_TO erlotinib` | 3 | Valuable resistance relation is discovered as a governed proposal or typo instead of a trusted canonical relation. | PR-19 | Canonical or reviewed proposal credit recovers the relation in all three runs without raw unknown surfaces. |
 | M-02 | `generic_sibling_met_resistance`: `MET amplification CONFERS_RESISTANCE_TO erlotinib` | 3 | Same resistance semantics gap, plus generic sibling pruning must prefer the specific resistance edge over broad association. | PR-19 | Specific resistance relation is recovered and generic sibling is suppressed or review-only. |
-| M-03 | `generic_sibling_egfr_t790m_resistance`: `EGFR T790M CAUSES resistance to gefitinib` | 3 | The model often proposes `CONFERS_RESISTANCE_TO gefitinib`; scoring cannot yet reconcile that with the current gold shape. | PR-19 | Governance chooses one representation and the harness credits the approved shape consistently. |
+| M-03 | `generic_sibling_egfr_t790m_resistance`: `EGFR T790M CONFERS_RESISTANCE_TO gefitinib` | 3 | The benchmark previously used `CAUSES resistance to gefitinib`, while the model often proposed the more specific drug-resistance shape. | PR-19 | Governance chooses one representation and the harness credits the approved shape consistently. |
 | M-04 | `generic_sibling_brca1_loss_cisplatin`: `BRCA1 loss SENSITIZES_TO cisplatin` | 1 | Subject qualifier is dropped or weakened from `BRCA1 loss` to `BRCA1`, changing the biological meaning. | PR-20 | Qualifier preservation test passes and `BRCA1 loss` is kept as the subject for sensitivity claims. |
 | M-05 | `weak_akt_trend_survival`: `AKT activation ASSOCIATED_WITH reduced survival` | 3 | Low-value hedged association is intentionally filtered from trusted extraction, but the audit still records it as missed. | PR-20 | Low-value recall is reported separately as review-only and does not block trusted graph readiness. |
 | M-06 | `weak_hrd_possible_biomarker`: `HRD score BIOMARKER_FOR platinum sensitivity` | 3 | Hedged biomarker language should be triage-only unless review accepts it. | PR-20 | Review-only candidate accounting captures it or records a deliberate low-value miss. |
@@ -236,7 +236,7 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
 - Test: `services/artana_evidence_db/tests/unit/test_relation_auto_promotion.py`
 - Test: `tests/unit/test_relation_feasibility_audit.py`
 
-- [ ] **Step 1: Write failing resistance semantics tests**
+- [x] **Step 1: Write failing resistance semantics tests**
 
   Add tests for:
 
@@ -250,7 +250,7 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
   - canonical resistance recovery fails
   - proposal typo remains unnormalized or unclassified
 
-- [ ] **Step 2: Make a governance decision for `CONFERS_RESISTANCE_TO`**
+- [x] **Step 2: Make a governance decision for `CONFERS_RESISTANCE_TO`**
 
   Approved path:
 
@@ -267,16 +267,16 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
 
   The PR must choose one path and document the reason in its evidence summary. It must not silently count review-only proposals as trusted graph evidence.
 
-- [ ] **Step 3: Normalize proposal spelling without unsafe invention**
+- [x] **Step 3: Normalize proposal spelling without unsafe invention**
 
-  Add normalization in `proposal_relation_type_guard.py` for known safe variants:
+  Add normalization for known safe review-required proposal variants:
 
   - `CONFERS_RESISTANCE_TO`
   - `CONFOERS_RESISTANCE_TO`
 
   Reject unrelated proposal strings with a specific reason such as `proposal_relation_type_unapproved`.
 
-- [ ] **Step 4: Run PR-19 validation**
+- [x] **Step 4: Run PR-19 validation**
 
   ```bash
   PYTHONPATH="$(pwd)/services:$(pwd)" \
@@ -295,6 +295,21 @@ Every finding below must be closed by a PR, an explicit "review-only by design" 
   - M-01, M-02, and M-03 are closed or explicitly counted as governed proposal captures
   - FP-01, FP-02, FP-04, FP-05, and FP-06 no longer harm trusted precision
   - high-value recall worst run is >= 0.8500 or the remaining misses are named
+
+  PR19 evidence:
+
+  - Summary:
+    `docs/validation/reports/2026-07-05-pr19-high-value-relation-recovery-summary.md`
+  - Strict live-agent run:
+    `reports/relation_feasibility/2026-07-05-pr19-high-value-relation-recovery-run2/relation_feasibility_report.md`
+  - Failure attribution:
+    `reports/relation_feasibility_failure_analysis/2026-07-05-pr19-run2/relation_feasibility_failure_analysis_report.md`
+  - Result: strict live path completed 30/30 with fallback 0, invalid-agent 0,
+    negative-control leakage 0, raw unknown relation surfaces 0, completed-agent
+    precision 0.9048, high-value recall 0.9500, and valuable rate 0.9048.
+  - Remaining blocker: trusted graph readiness is still RED because verified
+    CURIE endpoint rate is 0.8108, and PR20 still needs to preserve qualifiers
+    such as `BRCA1 loss`.
 
 ## Task 3: PR-20 Precision, Directionality, And Low-Value Accounting
 
