@@ -36,7 +36,7 @@ Command:
 
 ```bash
 PYTHONPATH="$(pwd)/services:$(pwd)" \
-  /Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform/.venv/bin/python \
+  .venv/bin/python3 \
   scripts/run_relation_feasibility_audit.py \
   --extractor agent \
   --output-dir reports/relation_feasibility/2026-07-05-pr11-verified-curie-linking-r2
