@@ -478,6 +478,110 @@ def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() ->
     assert result.relations[1].trusted_evidence_eligible is False
 
 
+def test_agent_adapter_inventory_indexes_governed_proposed_relation_type() -> None:
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="MET amplification",
+            relation_type="PROPOSE_NEW_RELATION_TYPE",
+            proposed_relation_type="CONFERS_RESISTANCE_TO",
+            new_relation_type_rationale="Specific resistance relation.",
+            relation_governance_status="requires_relation_review",
+            object_label="erlotinib",
+            sentence="MET amplification confers resistance to erlotinib.",
+        ),
+    ]
+    diagnostics = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="completed",
+        llm_candidate_count=1,
+    )
+
+    result = _agent_relation_extraction_result_from_candidates(
+        candidates=candidates,
+        diagnostics=diagnostics,
+    )
+    case = _case(
+        case_id="governed_proposal_inventory",
+        text="MET amplification confers resistance to erlotinib.",
+        gold=(
+            GoldRelation(
+                subject="MET amplification",
+                relation_type="CONFERS_RESISTANCE_TO",
+                object="erlotinib",
+                support_sentence="MET amplification confers resistance to erlotinib.",
+                value_level="high",
+                rationale="Relation needs dictionary governance.",
+            ),
+        ),
+    )
+
+    report = run_feasibility_audit(cases=(case,), extractor=lambda _: result)
+    markdown = render_markdown_report(report)
+    surfaces = {
+        (surface.surface, surface.relation_type)
+        for surface in report.case_results[0].relation_type_surfaces
+    }
+
+    assert surfaces == {
+        ("candidate_relation.relation_type", "PROPOSE_NEW_RELATION_TYPE"),
+        ("candidate_relation.proposed_relation_type", "CONFERS_RESISTANCE_TO"),
+    }
+    proposed_surfaces = tuple(
+        surface
+        for surface in report.case_results[0].relation_type_surfaces
+        if surface.surface == "candidate_relation.proposed_relation_type"
+    )
+
+    assert proposed_surfaces[0].governance_status == "requires_relation_review"
+    assert report.summary.relation_type_surface_count == 2
+    assert report.summary.raw_unknown_relation_type_surface_count == 0
+    assert report.summary.proposal_recall_against_proposal_eligible_gold == 1.0
+    assert (
+        "`candidate_relation.proposed_relation_type` -> `CONFERS_RESISTANCE_TO`"
+        in markdown
+    )
+
+
+def test_agent_adapter_inventory_blocks_ungoverned_proposed_relation_type() -> None:
+    candidates = [
+        ExtractedRelationCandidate(
+            subject_label="BRCA1",
+            relation_type="ACTIVATES",
+            proposed_relation_type="PROTECTS_AGAINST",
+            object_label="TP53",
+            sentence="BRCA1 activates TP53.",
+        ),
+    ]
+    diagnostics = DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="completed",
+        llm_candidate_count=1,
+    )
+
+    result = _agent_relation_extraction_result_from_candidates(
+        candidates=candidates,
+        diagnostics=diagnostics,
+    )
+    case = _case(
+        case_id="ungoverned_proposed_type_inventory",
+        text="BRCA1 activates TP53.",
+        gold=(),
+    )
+
+    report = run_feasibility_audit(cases=(case,), extractor=lambda _: result)
+    proposed_surfaces = tuple(
+        surface
+        for surface in report.case_results[0].relation_type_surfaces
+        if surface.surface == "candidate_relation.proposed_relation_type"
+    )
+
+    assert len(proposed_surfaces) == 1
+    assert proposed_surfaces[0].relation_type == "PROTECTS_AGAINST"
+    assert proposed_surfaces[0].governance_status == "canonical"
+    assert report.summary.relation_type_surface_count == 2
+    assert report.summary.raw_unknown_relation_type_surface_count == 1
+    assert report.summary.verdict == "RED"
+    assert "raw unknown relation type" in report.summary.verdict_reason
+
+
 def test_summary_reports_high_value_and_low_value_recall_separately() -> None:
     high_value_case = _case(
         case_id="high_value_mechanism",

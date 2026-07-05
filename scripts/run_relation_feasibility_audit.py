@@ -216,14 +216,27 @@ def _agent_relation_extraction_result_from_candidates(
 def _candidate_relation_type_surfaces(
     relations: tuple[ExtractedRelation, ...],
 ) -> tuple[RelationTypeSurface, ...]:
-    return tuple(
-        RelationTypeSurface(
-            surface="candidate_relation.relation_type",
-            relation_type=relation.relation_type,
-            source_ref=f"{relation.subject}->{relation.object}",
+    surfaces: list[RelationTypeSurface] = []
+    for relation in relations:
+        source_ref = f"{relation.subject}->{relation.object}"
+        surfaces.append(
+            RelationTypeSurface(
+                surface="candidate_relation.relation_type",
+                relation_type=relation.relation_type,
+                source_ref=source_ref,
+                governance_status=relation.relation_governance_status,
+            ),
         )
-        for relation in relations
-    )
+        if relation.proposed_relation_type is not None:
+            surfaces.append(
+                RelationTypeSurface(
+                    surface="candidate_relation.proposed_relation_type",
+                    relation_type=relation.proposed_relation_type,
+                    source_ref=source_ref,
+                    governance_status=relation.relation_governance_status,
+                ),
+            )
+    return tuple(surfaces)
 
 
 def main() -> int:

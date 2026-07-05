@@ -1,0 +1,78 @@
+{
+  "report": "PR-15 Governed Proposal Inventory Evidence Snapshot",
+  "date": "2026-07-05",
+  "branch": "alvaro/evidence-pr15-governed-proposal-inventory",
+  "base_branch": "alvaro/evidence-pr14-entailment-coverage-hardening",
+  "scope": [
+    "Add candidate_relation.proposed_relation_type to the relation-type inventory for structured governed proposals.",
+    "Carry governance status on relation-type inventory surfaces.",
+    "Keep candidate_relation.relation_type as the canonical PROPOSE_NEW_RELATION_TYPE sentinel.",
+    "Do not count governed proposed relation-type surfaces as raw unknown blockers.",
+    "Preserve raw-unknown blocking for ungoverned review, proposal, graph, or dictionary surfaces."
+  ],
+  "strict_live_agent_summary": {
+    "verdict": "RED",
+    "completed_agent_precision": 0.8571,
+    "completed_agent_recall": 0.72,
+    "high_value_recall": 0.9,
+    "completed_agent_valuable_rate": 0.8571,
+    "generic_relation_rate": 0.0,
+    "pruned_generic_relations": 5,
+    "quality_filtered_candidates": 7,
+    "relation_type_surface_count": 23,
+    "raw_unknown_relation_type_surface_count": 0,
+    "raw_unknown_relation_type_surface_rate": 0.0,
+    "governed_proposal_candidates": 2,
+    "governed_proposal_gold_matches": 2,
+    "governed_proposal_eligible_gold_relations": 2,
+    "governed_proposal_recall_among_proposal_eligible_gold": 1.0,
+    "candidate_curie_present_rate": 0.9048,
+    "verified_curie_match_rate": 0.7568,
+    "entailment_checked_rate": 1.0,
+    "model_curie_wrong_count": 0,
+    "fallback_cases": 0,
+    "invalid_agent_cases": 0,
+    "negative_control_leakage_cases": 0
+  },
+  "governed_proposed_relation_type_surfaces": [
+    {
+      "surface": "candidate_relation.proposed_relation_type",
+      "relation_type": "CONFERS_RESISTANCE_TO",
+      "source_ref": "MET amplification->erlotinib",
+      "governance_status": "requires_relation_review"
+    },
+    {
+      "surface": "candidate_relation.proposed_relation_type",
+      "relation_type": "CONFERS_RESISTANCE_TO",
+      "source_ref": "MET amplification->erlotinib",
+      "governance_status": "requires_relation_review"
+    }
+  ],
+  "delta_from_pr14": {
+    "completed_agent_precision": "+0.0844",
+    "completed_agent_recall": "+0.0400",
+    "high_value_recall": "+0.0500",
+    "completed_agent_valuable_rate": "+0.0844",
+    "generic_relation_rate": "-0.0455",
+    "verified_curie_match_rate": "+0.0541",
+    "governed_proposal_recall_among_proposal_eligible_gold": "+0.0000"
+  },
+  "validation": {
+    "failing_regression_reproduced": "passed",
+    "focused_governed_proposal_inventory_regression": "passed",
+    "adversarial_review_issue_addressed": "passed",
+    "relation_feasibility_audit_unit_suite": "passed",
+    "relation_feasibility_quality_gate": "passed",
+    "artana_evidence_api_lint": "passed",
+    "artana_evidence_api_type_check": "passed",
+    "service_checks": "passed",
+    "service_checks_coverage": "86.86%"
+  },
+  "artifacts": {
+    "live_agent_json": "reports/relation_feasibility/2026-07-05-pr15-governed-proposal-inventory-r2/relation_feasibility_report.json",
+    "live_agent_markdown": "reports/relation_feasibility/2026-07-05-pr15-governed-proposal-inventory-r2/relation_feasibility_report.md",
+    "live_agent_json_sha256": "b7620d0024c2b74a35a510c15056b5b3963083197a26b1e45be7c6851c5eff2b",
+    "live_agent_markdown_sha256": "b7b4f8c9dd26e79aba667468c49e4e5a580a192b2a2ffcf1b039a54c520e696a"
+  },
+  "known_remaining_risk": "The strict live-agent gate remains RED because verified CURIE-linked endpoint recovery remains below trusted graph target."
+}

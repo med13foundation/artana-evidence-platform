@@ -202,7 +202,7 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
     raw_unknown_relation_type_surface_count = sum(
         1
         for surface in relation_type_surfaces
-        if not _is_known_relation_type(surface.relation_type)
+        if not _is_known_relation_type_surface(surface)
     )
     proposal_candidate_count = sum(
         1 for assessment in candidates if assessment.is_governed_relation_proposal
@@ -912,6 +912,17 @@ def _is_known_relation_type(relation_type: str) -> bool:
         normalized in LLM_VALID_RELATION_TYPES
         or normalized == LLM_PROPOSE_NEW_RELATION_TYPE
     )
+
+
+def _is_known_relation_type_surface(surface: RelationTypeSurface) -> bool:
+    if surface.surface == "candidate_relation.proposed_relation_type":
+        normalized = _normalize_relation_type(surface.relation_type)
+        return (
+            surface.governance_status == "requires_relation_review"
+            and normalized != ""
+            and normalized != LLM_PROPOSE_NEW_RELATION_TYPE
+        )
+    return _is_known_relation_type(surface.relation_type)
 
 
 def _is_governed_relation_proposal(candidate: ExtractedRelation) -> bool:

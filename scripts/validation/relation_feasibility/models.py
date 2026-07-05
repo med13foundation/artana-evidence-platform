@@ -125,6 +125,7 @@ class RelationTypeSurface:
     surface: str
     relation_type: str
     source_ref: str
+    governance_status: RelationGovernanceStatus | None = None
 
     def to_json(self) -> dict[str, object]:
         """Return a JSON-compatible representation."""
@@ -133,6 +134,7 @@ class RelationTypeSurface:
             "surface": self.surface,
             "relation_type": self.relation_type,
             "source_ref": self.source_ref,
+            "governance_status": self.governance_status,
         }
 
 
