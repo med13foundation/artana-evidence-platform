@@ -309,7 +309,7 @@ coverage-check: ## Enforce service coverage threshold
 
 relation-feasibility-quality-gate: ## Run relation feasibility quality regression tests
 	$(call check_venv)
-	PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) -m pytest tests/unit/test_relation_feasibility_audit.py -q
+	PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) -m pytest tests/unit/test_relation_feasibility_audit.py tests/unit/test_relation_feasibility_readiness_gate.py -q
 
 artana-evidence-api-static-checks-core: ## Run evidence API static gates except repo-wide size check
 	@$(MAKE) -s artana-evidence-api-lint
