@@ -205,6 +205,9 @@ def _agent_relation_extraction_result_from_candidates(
             llm_candidate_count=diagnostics.llm_candidate_count,
             fallback_candidate_count=diagnostics.fallback_candidate_count,
             pruned_generic_relation_count=diagnostics.pruned_generic_relation_count,
+            quality_filtered_candidate_count=(
+                diagnostics.quality_filtered_candidate_count
+            ),
         ),
         relation_type_surfaces=_candidate_relation_type_surfaces(relations),
     )
@@ -271,6 +274,7 @@ def main() -> int:
         f"completed_agent_valuable_rate={summary.completed_agent_valuable_candidate_rate:.4f} "
         f"all_candidate_generic_relation_rate={summary.generic_relation_rate:.4f} "
         f"pruned_generic_relations={summary.pruned_generic_relation_count} "
+        f"quality_filtered_candidates={summary.quality_filtered_candidate_count} "
         f"candidate_curie_present_rate={summary.candidate_curie_present_rate:.4f} "
         f"verified_curie_match_rate={summary.verified_curie_match_rate:.4f} "
         f"model_curie_wrong_count={summary.model_curie_wrong_count} "

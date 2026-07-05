@@ -401,6 +401,33 @@ def test_wrong_verified_curie_links_are_reported_as_blocking() -> None:
     )
 
 
+def test_quality_filtered_candidate_count_is_reported() -> None:
+    cases = (
+        _case(
+            case_id="quality_filter_telemetry",
+            text="HRD score may serve as a biomarker for platinum sensitivity.",
+            gold=(),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="llm_empty",
+                quality_filtered_candidate_count=1,
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    markdown = render_markdown_report(report)
+
+    assert report.summary.quality_filtered_candidate_count == 1
+    assert report.summary.to_json()["quality_filtered_candidate_count"] == 1
+    assert "Quality-filtered candidates: 1" in markdown
+
+
 def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() -> None:
     candidates = [
         ExtractedRelationCandidate(

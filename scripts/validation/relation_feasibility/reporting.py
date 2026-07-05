@@ -64,6 +64,7 @@ def render_markdown_report(report: FeasibilityReport) -> str:
         f"- Relation specificity rate: {summary.relation_specificity_rate:.4f}",
         f"- Generic relation rate: {summary.generic_relation_rate:.4f}",
         f"- Pruned generic relation siblings: {summary.pruned_generic_relation_count}",
+        f"- Quality-filtered candidates: {summary.quality_filtered_candidate_count}",
         f"- Raw unknown candidate relation types: {summary.raw_unknown_relation_type_count}",
         f"- Raw unknown candidate relation type rate: {summary.raw_unknown_relation_type_rate:.4f}",
         f"- Relation type inventory surfaces: {summary.relation_type_surface_count}",

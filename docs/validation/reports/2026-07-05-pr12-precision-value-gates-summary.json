@@ -1,0 +1,53 @@
+{
+  "report": "PR-12 Precision And Valuable Candidate Evidence Snapshot",
+  "date": "2026-07-05",
+  "branch": "alvaro/evidence-pr12-precision-value-gates",
+  "base_branch": "alvaro/evidence-pr11-verified-curie-linking",
+  "scope": [
+    "Keep governed relation proposals in review for PR-15.",
+    "Remove canonical candidates whose evidence sentence is uncertain.",
+    "Remove canonical candidates whose evidence sentence is missing a relation endpoint.",
+    "Remove canonical candidates whose sentence does not entail the candidate relation.",
+    "Add support-verifier coverage for symbolic variant labels and relation types such as BIOMARKER_FOR, SENSITIZES_TO, PREDISPOSES_TO, and DOWNSTREAM_OF.",
+    "Report quality_filtered_candidate_count in diagnostics, audit JSON, Markdown, and CLI output."
+  ],
+  "strict_live_agent_summary": {
+    "verdict": "RED",
+    "completed_agent_precision": 0.75,
+    "completed_agent_recall": 0.72,
+    "high_value_recall": 0.9,
+    "low_value_recall": 0.0,
+    "completed_agent_valuable_rate": 0.75,
+    "generic_relation_rate": 0.125,
+    "pruned_generic_relations": 3,
+    "quality_filtered_candidates": 8,
+    "candidate_curie_present_rate": 0.875,
+    "verified_curie_match_rate": 0.7568,
+    "model_curie_wrong_count": 0,
+    "wrong_verified_curie_link_count": 0,
+    "fallback_cases": 0,
+    "invalid_agent_cases": 0,
+    "negative_control_leakage_cases": 0
+  },
+  "delta_from_pr11": {
+    "completed_agent_precision": "+0.0603",
+    "completed_agent_recall": "-0.0800",
+    "high_value_recall": "+0.0000",
+    "low_value_recall": "-0.4000",
+    "completed_agent_valuable_rate": "+0.1638",
+    "verified_curie_match_rate": "-0.0270"
+  },
+  "validation": {
+    "focused_regression_bundle": "passed",
+    "artana_evidence_api_lint": "passed",
+    "artana_evidence_api_type_check": "passed",
+    "relation_feasibility_quality_gate": "passed"
+  },
+  "artifacts": {
+    "live_agent_json": "reports/relation_feasibility/2026-07-05-pr12-precision-value-gates/relation_feasibility_report.json",
+    "live_agent_markdown": "reports/relation_feasibility/2026-07-05-pr12-precision-value-gates/relation_feasibility_report.md",
+    "live_agent_json_sha256": "e94798292607eb47d7f3282566f557156669dd22732bb46c8d92654291a46f02",
+    "live_agent_markdown_sha256": "0eb782e5249ff8dcb966592a0411d3944c55b228653b0e1b4dd86b5a40a0dc71"
+  },
+  "known_remaining_risk": "The strict live-agent gate remains RED. Global recall and verified CURIE match rate dipped because low-confidence claims are filtered while the scorecard still counts low-value gold endpoints in those denominators."
+}

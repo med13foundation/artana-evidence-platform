@@ -76,11 +76,13 @@ class SpecificityFilteredCandidateList(list[ExtractedRelationCandidate]):
         candidates: Iterable[ExtractedRelationCandidate],
         *,
         pruned_generic_relation_count: int,
+        quality_filtered_candidate_count: int = 0,
         llm_extraction_chunk_count: int = 0,
         llm_extraction_text_char_count: int = 0,
     ) -> None:
         super().__init__(candidates)
         self.pruned_generic_relation_count = pruned_generic_relation_count
+        self.quality_filtered_candidate_count = quality_filtered_candidate_count
         self.llm_extraction_chunk_count = llm_extraction_chunk_count
         self.llm_extraction_text_char_count = llm_extraction_text_char_count
 

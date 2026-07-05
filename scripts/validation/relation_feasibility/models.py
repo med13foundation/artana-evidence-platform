@@ -146,6 +146,7 @@ class ExtractionTrace:
     llm_candidate_count: int = 0
     fallback_candidate_count: int = 0
     pruned_generic_relation_count: int = 0
+    quality_filtered_candidate_count: int = 0
 
     @property
     def agent_completed(self) -> bool:
@@ -183,6 +184,7 @@ class ExtractionTrace:
             "llm_candidate_count": self.llm_candidate_count,
             "fallback_candidate_count": self.fallback_candidate_count,
             "pruned_generic_relation_count": self.pruned_generic_relation_count,
+            "quality_filtered_candidate_count": self.quality_filtered_candidate_count,
             "agent_completed": self.agent_completed,
             "fallback_used": self.fallback_used,
         }
@@ -316,6 +318,7 @@ class FeasibilitySummary:
     valuable_candidate_count: int
     generic_relation_count: int
     pruned_generic_relation_count: int
+    quality_filtered_candidate_count: int
     raw_unknown_relation_type_count: int
     relation_type_surface_count: int
     raw_unknown_relation_type_surface_count: int
@@ -392,6 +395,7 @@ class FeasibilitySummary:
             "valuable_candidate_count": self.valuable_candidate_count,
             "generic_relation_count": self.generic_relation_count,
             "pruned_generic_relation_count": self.pruned_generic_relation_count,
+            "quality_filtered_candidate_count": self.quality_filtered_candidate_count,
             "raw_unknown_relation_type_count": self.raw_unknown_relation_type_count,
             "relation_type_surface_count": self.relation_type_surface_count,
             "raw_unknown_relation_type_surface_count": self.raw_unknown_relation_type_surface_count,

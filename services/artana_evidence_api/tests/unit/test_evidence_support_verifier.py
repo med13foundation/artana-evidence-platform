@@ -52,6 +52,28 @@ def test_passive_sentence_returns_entails_for_correct_direction() -> None:
     assert result.support == "ENTAILS"
 
 
+def test_symbolic_variant_label_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="RET p.Arg1174* activates MAPK signaling in engineered cells.",
+        subject="RET p.Arg1174*",
+        relation_type="ACTIVATES",
+        object_="MAPK signaling",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_biomarker_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="PD-L1 expression is a biomarker for response to pembrolizumab.",
+        subject="PD-L1 expression",
+        relation_type="BIOMARKER_FOR",
+        object_="response to pembrolizumab",
+    )
+
+    assert result.support == "ENTAILS"
+
+
 def test_unrelated_sentence_returns_neutral() -> None:
     result = verify_triple_support(
         sentence="MED13 and EGFR were both measured in the cohort.",

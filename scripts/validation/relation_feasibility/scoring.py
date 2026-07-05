@@ -187,6 +187,9 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
     pruned_generic_relation_count = sum(
         trace.pruned_generic_relation_count for trace in inputs.extraction_traces
     )
+    quality_filtered_candidate_count = sum(
+        trace.quality_filtered_candidate_count for trace in inputs.extraction_traces
+    )
     raw_unknown_relation_type_count = sum(
         1 for assessment in candidates if not assessment.has_known_relation_type
     )
@@ -470,6 +473,7 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         valuable_candidate_count=valuable_candidate_count,
         generic_relation_count=generic_relation_count,
         pruned_generic_relation_count=pruned_generic_relation_count,
+        quality_filtered_candidate_count=quality_filtered_candidate_count,
         raw_unknown_relation_type_count=raw_unknown_relation_type_count,
         relation_type_surface_count=relation_type_surface_count,
         raw_unknown_relation_type_surface_count=(
