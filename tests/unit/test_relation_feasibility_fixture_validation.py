@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,20 @@ from scripts.validation.relation_feasibility.io import load_benchmark_cases
 V3_FIXTURE = Path(
     "scripts/validation/relation_feasibility/fixtures/"
     "biomedical_relation_goldset_v3.json",
+)
+V4_FIXTURE = Path(
+    "scripts/validation/relation_feasibility/fixtures/"
+    "biomedical_relation_goldset_v4.json",
+)
+V4_LEGACY_SEED_DUPLICATE_SIGNATURE_ALLOWANCE = 1
+V4_BROAD_REVIEW_CONTEXT_ENDPOINTS = frozenset(
+    {
+        "MAPK signaling",
+        "PI3K-AKT signaling",
+        "cardiac septal development",
+        "homologous recombination DNA repair",
+        "inflammatory signaling",
+    },
 )
 
 
@@ -312,3 +327,97 @@ def test_v3_fixture_passes_validation_and_broad_coverage() -> None:
         "long_document_chunking",
         "adversarial_negated_near_miss",
     }
+
+
+def test_fixture_coverage_distinguishes_true_low_value_from_review_only(
+    tmp_path: Path,
+) -> None:
+    fixture_path = tmp_path / "review_only_high_value.json"
+    fixture_path.write_text(
+        """
+        {
+          "benchmark_name": "review_only_high_value",
+          "cases": [
+            {
+              "case_id": "high_value_review_only",
+              "title": "High-value review-only row",
+              "category": "strong_specific",
+              "topics": ["biomarker_treatment_response"],
+              "text": "PD-L1 is a biomarker for response to pembrolizumab.",
+              "gold_relations": [
+                {
+                  "subject": "PD-L1",
+                  "relation_type": "BIOMARKER_FOR",
+                  "object": "response to pembrolizumab",
+                  "support_sentence": "PD-L1 is a biomarker for response to pembrolizumab.",
+                  "value_level": "high",
+                  "review_status": "review_only",
+                  "rationale": "High-value claim with composite review-only endpoint.",
+                  "subject_curie": "HGNC:17635",
+                  "object_curie": null,
+                  "requires_entailment": true
+                }
+              ]
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    coverage = fixture_coverage(fixture_path)
+
+    assert coverage.low_value_review_case_count == 1
+    assert coverage.true_low_value_review_case_count == 0
+
+
+def test_v4_fixture_reaches_definition_of_green_scale() -> None:
+    coverage = fixture_coverage(V4_FIXTURE)
+
+    assert coverage.issue_count == 0
+    assert coverage.case_count >= 100
+    assert (
+        coverage.repeated_gold_relation_signature_count
+        <= V4_LEGACY_SEED_DUPLICATE_SIGNATURE_ALLOWANCE
+    )
+    assert coverage.unique_gold_relation_signature_count >= 74
+    assert coverage.high_value_specific_case_count >= 50
+    assert coverage.true_low_value_review_case_count >= 25
+    assert coverage.negative_control_case_count >= 25
+    assert coverage.topic_counts["long_document_chunking"] >= 5
+    assert coverage.topic_counts["adversarial_negated_near_miss"] >= 5
+    assert set(coverage.topic_counts) >= {
+        "oncology_drug_response",
+        "rare_disease_gene_phenotype",
+        "variant_disease_risk",
+        "pathway_regulation",
+        "biomarker_treatment_response",
+        "low_value_review",
+        "negative_control",
+        "long_document_chunking",
+        "adversarial_negated_near_miss",
+    }
+
+
+def test_v4_new_gold_does_not_add_broad_trusted_context_rows() -> None:
+    payload = json.loads(V4_FIXTURE.read_text(encoding="utf-8"))
+    offenders: list[str] = []
+
+    for case in payload["cases"]:
+        case_id = case["case_id"]
+        if not case_id.startswith("v4_"):
+            continue
+        for relation in case.get("gold_relations", []):
+            if relation.get("review_status", "candidate") == "review_only":
+                continue
+            if (
+                relation["subject"] in V4_BROAD_REVIEW_CONTEXT_ENDPOINTS
+                or relation["object"] in V4_BROAD_REVIEW_CONTEXT_ENDPOINTS
+            ):
+                offenders.append(case_id)
+            if relation["relation_type"] == "PREDISPOSES_TO" and str(
+                relation.get("subject_curie", "")
+            ).startswith("HGNC:"):
+                offenders.append(case_id)
+
+    assert offenders == []

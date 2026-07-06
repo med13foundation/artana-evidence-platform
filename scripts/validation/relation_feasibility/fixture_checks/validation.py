@@ -43,8 +43,12 @@ class FixtureCoverage:
 
     issue_count: int
     case_count: int
+    gold_relation_signature_count: int
+    unique_gold_relation_signature_count: int
+    repeated_gold_relation_signature_count: int
     high_value_specific_case_count: int
     low_value_review_case_count: int
+    true_low_value_review_case_count: int
     negative_control_case_count: int
     topic_counts: dict[str, int]
 
@@ -114,16 +118,28 @@ def fixture_coverage(path: Path) -> FixtureCoverage:
     issues = validate_fixture_payload(payload)
     cases = _case_list(payload)
     topic_counts: Counter[str] = Counter()
+    gold_relation_signatures: Counter[tuple[str, str, str]] = Counter()
     for case in cases:
         topic_counts.update(_case_topics(case))
+        gold_relation_signatures.update(
+            _gold_relation_signature(relation) for relation in _relation_list(case)
+        )
     return FixtureCoverage(
         issue_count=len(issues),
         case_count=len(cases),
+        gold_relation_signature_count=sum(gold_relation_signatures.values()),
+        unique_gold_relation_signature_count=len(gold_relation_signatures),
+        repeated_gold_relation_signature_count=sum(
+            count - 1 for count in gold_relation_signatures.values() if count > 1
+        ),
         high_value_specific_case_count=sum(
             1 for case in cases if _has_high_value_specific_gold(case)
         ),
         low_value_review_case_count=sum(
             1 for case in cases if _has_low_value_review_gold(case)
+        ),
+        true_low_value_review_case_count=sum(
+            1 for case in cases if _has_true_low_value_review_gold(case)
         ),
         negative_control_case_count=sum(1 for case in cases if _is_negative_case(case)),
         topic_counts=dict(topic_counts),
@@ -442,6 +458,22 @@ def _has_low_value_review_gold(case: Mapping[str, object]) -> bool:
         _string_field(relation, "value_level") == "low"
         or _string_field(relation, "review_status") == "review_only"
         for relation in _relation_list(case)
+    )
+
+
+def _has_true_low_value_review_gold(case: Mapping[str, object]) -> bool:
+    return any(
+        _string_field(relation, "value_level") == "low"
+        and _string_field(relation, "review_status") == "review_only"
+        for relation in _relation_list(case)
+    )
+
+
+def _gold_relation_signature(relation: Mapping[str, object]) -> tuple[str, str, str]:
+    return (
+        (_string_field(relation, "subject") or "").casefold(),
+        (_string_field(relation, "relation_type") or "").upper(),
+        (_string_field(relation, "object") or "").casefold(),
     )
 
 

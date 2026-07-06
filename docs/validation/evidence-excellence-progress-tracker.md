@@ -153,6 +153,7 @@ Status values:
 | 21 | PR-32 | `alvaro/evidence-pr32-weak-review-recovery` | Implemented locally; post-adversarial three-run readiness READY; final gates pass | Recover weak EGFR trend-response and MET correlated-resistance evidence as review-only candidates while preserving trusted-lane safety. | Low-value review recall is 1.0000 across three strict v3 live-agent runs, weak trusted leakage remains 0, and trusted readiness remains READY. | Added weak-review prompt examples, weak-pass prompt reinforcement, `trended with` detection, trend-response relation repair, correlated-resistance object repair, post-repair duplicate merging, and schema recovery for canonical relations with spurious proposal fields. Adversarial review then tightened schema recovery to reject unknown/conflicting proposals, clear stale object CURIE metadata after object repair, and scope repair cues to the candidate claim; re-review then closed bare-`and` claim-boundary leakage. Focused tests pass (`55 passed`), touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage 87.03%, strict live runs12-14 are GREEN with low-value review recall 1.0000, fallback 0, invalid agent 0, weak trusted leakage 0, and readiness aggregate READY. Summary: `docs/validation/reports/2026-07-06-pr32-weak-review-recovery-summary.md`. |
 | 22 | PR-33 | `alvaro/evidence-pr33-review-burden-pruning` | Implemented locally; final gates pass; three-run readiness READY | Remove repeated review-burden false positives and recover rare zero-candidate/schema-invalid agent responses without deterministic fallback. | Trusted readiness remains READY, hard safety failures stay 0, and missed gold and repeated false positives are 0 across three post-adversarial strict v3 live-agent runs. | Added companion phenotype, pathway/process, downstream context, cell-context, and binding-site sibling pruning; added agent-only zero-candidate and schema-repair retries with retry-specific prompts and distinct replay keys; adversarial review and service-gate failures fixed invalid-sibling shadowing, raw-but-unusable retry suppression, schema-retry ordering, weak-pass candidate loss, partial zero-retry cue coverage, unknown-only candidate retry suppression, and over-broad pruning; focused tests pass (`80 passed`), quality-filter suite passes (`47 passed`), touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and strict post-adversarial3 live runs1-3 aggregate to READY with worst completed-agent precision 1.0000, worst recall 1.0000, worst high-value recall 1.0000, trusted precision 1.0000, trusted valuable rate 1.0000, trusted endpoint rate 1.0000, missed gold 0, false positives 0, fallback 0, invalid agent 0, negative leakage 0, weak trusted leakage 0, and wrong verified CURIE links 0. Summary: `docs/validation/reports/2026-07-06-pr33-review-burden-pruning-summary.md`. |
 | 23 | PR-34 | `alvaro/evidence-pr34-live-model-ab-proof` | Implemented locally; live A/B proof complete; final gates pass | Close the stronger-model question with a fail-closed live model comparison on the v3 benchmark. | Candidate model adoption requires three completed runs, zero hard safety failures, and no trusted endpoint regression. | Added fixture pinning to `scripts/run_relation_model_comparison.py`, made failed audit subprocesses produce a `KEEP_CURRENT` report with `audit_failures`, and added Markdown audit-failure rendering. Current `openai:gpt-5.4-mini` completed 3/3 strict v3 live runs with trusted readiness READY and hard failures 0; candidate `openai:gpt-5` completed only 1/3 runs and failed run2 preflight with a LiteLLM timeout, so the comparison decision is KEEP_CURRENT. Focused model-comparison tests pass (`13 passed`), `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and adversarial review found no blockers after symmetric failed-current-run coverage and doc wording cleanup. Summary: `docs/validation/reports/2026-07-06-pr34-live-model-ab-proof-summary.md`. |
+| 24 | PR-35 | `alvaro/evidence-pr35-benchmark-v4-100-case-proof` | Implemented locally; final local gates pass; adversarial re-review PASS | Make the Definition-of-Green benchmark scale requirement executable with a 100-case v4 fixture. | CI fails if the trusted-readiness benchmark fixture is below 100 cases, lacks balanced high-value/true-low-value/negative/long-document/near-miss coverage, pads scale with duplicate relation signatures, or adds new broad v4 pathway/gene rows as trusted gold. | Added `biomedical_relation_goldset_v4.json` by preserving the 40-case v3 seed and adding 60 labeled synthetic cases: 50 strong-specific, 25 weak review-only, and 25 negative-control cases overall. Added v4 validation coverage requiring at least 100 cases, 50 high-value specific cases, 25 true low-value review cases, 25 negative controls, at least five long-document cases, at least five adversarial negated near-misses, at least 74 unique gold relation signatures, and at most one repeated signature for the inherited v3 IL6 strong/weak contrast. RED test failed on the missing v4 fixture; adversarial review then found the low-value count mixed high-value review-only rows and that some v4 rows duplicated v3 or used broad trusted endpoints, so PR35 added `true_low_value_review_case_count`, signature-diversity counters, and a v4 trusted-context guard. GREEN focused fixture validation passes (`7 passed`) with validator issue count 0, touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and final adversarial re-review reports PASS. Summary: `docs/validation/reports/2026-07-06-pr35-benchmark-v4-100-case-proof-summary.md`. |
 
 ## PR Evidence Packet
 
@@ -293,6 +294,63 @@ The current model is repeatably READY on the trusted lane, while the stronger
 candidate did not complete the required three-run gate and its only completed
 run was worse on completed-agent recall, high-value recall, and valuable
 candidate rate.
+
+### 2026-07-06 - PR-35 Benchmark V4 100-Case Proof
+
+PR: PR-35 benchmark v4 100-case proof
+
+Branch: `alvaro/evidence-pr35-benchmark-v4-100-case-proof`
+
+Goal: Make the Definition-of-Green benchmark scale requirement executable by
+adding a 100-case v4 fixture and tests that fail when the fixture is too small
+or too narrow.
+
+Evidence:
+
+- `scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v4.json`
+- `tests/unit/test_relation_feasibility_fixture_validation.py`
+- `docs/validation/reports/2026-07-06-pr35-benchmark-v4-100-case-proof-summary.md`
+
+Fixture coverage:
+
+- validator issue count: `0`
+- total cases: `100`
+- gold relation signatures: `75`
+- unique gold relation signatures: `74`
+- repeated gold relation signatures: `1`
+- strong-specific cases: `50`
+- weak review-only cases: `25`
+- negative controls: `25`
+- high-value specific cases: `50`
+- true low-value review gold cases: `25`
+- any review-only gold cases: `62`
+- long-document topic cases: `8`
+- adversarial negated near-miss cases: `6`
+
+RED/GREEN proof:
+
+- RED: `test_v4_fixture_reaches_definition_of_green_scale` failed with
+  `FileNotFoundError` while the v4 fixture was absent.
+- Adversarial RED: high-value review-only rows could satisfy the old blended
+  low-value counter.
+- Adversarial RED: duplicate v4 relation signatures padded the 100-case count,
+  and new broad v4 pathway/gene rows were trusted candidates.
+- GREEN: `uv run pytest tests/unit/test_relation_feasibility_fixture_validation.py -q`
+  passed with `7 passed`.
+
+Remaining proof:
+
+- After mergeable local validation, run strict live-agent readiness against the
+  v4 fixture before claiming trusted-graph readiness.
+
+Final local validation:
+
+- `uv run ruff check scripts/validation/relation_feasibility/fixture_checks/validation.py tests/unit/test_relation_feasibility_fixture_validation.py`: passed.
+- `make relation-feasibility-quality-gate`: passed.
+- `make service-checks`: passed with coverage `87.03%`.
+- Final adversarial re-review: PASS, with only residual risk that strict
+  live-agent v4 readiness remains the next proof before any trusted-graph-ready
+  claim.
 
 ### 2026-07-06 - PR-33 Review Burden Pruning And Agent Retry Hardening
 
