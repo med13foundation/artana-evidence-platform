@@ -199,6 +199,7 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
     endpoint_metric_summary = build_endpoint_metric_summary(
         case_assessments=inputs.case_assessments,
         case_gold_relations=inputs.case_gold_relations,
+        case_agent_completed_flags=case_agent_completed_flags,
     )
     negative_control_metrics = _negative_control_metric_counts(
         inputs,
@@ -694,7 +695,7 @@ def _trust_lane_metric_counts(
                 assessment=assessment,
                 gold_relations=gold_relations,
             )
-            if low_value_review_index is not None:
+            if agent_completed and low_value_review_index is not None:
                 low_value_review_candidate_count += 1
                 low_value_review_matches.add((case_index, low_value_review_index))
     return _TrustLaneMetricCounts(

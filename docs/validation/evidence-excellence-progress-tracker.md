@@ -141,6 +141,7 @@ Status values:
 | 9 | PR-20 | `alvaro/evidence-pr20-qualifier-precision-adjudication` | Implemented locally; adversarial review fixes applied; strict gate RED | Preserve biomedical qualifiers and remove context false positives from trusted evidence. | Completed-agent precision >= 0.8000 and high-value recall >= 0.8500 without broad subject substitutions. | Dropped-modifier tests, expanded modifier adversarial tests, clause-local and comma-and modifier regressions, context-shadowing and review-only trust tests, low-value review accounting, relation-feasibility gate, strict live run4 with completed-agent precision 0.9500 and high-value recall 0.9500. Trusted high-value recall is now stricter at 0.5500; trusted graph readiness remains blocked by verified CURIE endpoint rate 0.8108. |
 | 10 | PR-21 | `alvaro/evidence-pr21-verified-grounding-closure` | Implemented locally; adversarial blockers fixed; strict gate RED | Improve verified grounding and review-only abstention without trusting raw model hints. | Trusted high-value recall >= 0.8500 and wrong verified CURIE links remain 0. | Grounding dictionary split, verified process labels, review-only broad/composite labels, verified-linker spoof regression, safe relation-alias scoring, missed-gold CURIE attribution, focused tests, relation-feasibility gate, strict live run3 with precision 1.0000, high-value recall 1.0000, trusted high-value recall 0.8500, verified endpoint rate 0.8810, false positives 0, fallback 0. Overall readiness remains RED. |
 | 11 | PR-22 | `alvaro/evidence-pr22-low-value-review-lane` | Implemented locally; strict single-run GREEN; repeatability pending | Split trusted-eligible endpoint recovery from low-value review evidence. | Trusted-eligible CURIE-linked endpoint rate >= 0.9500 and weak-claim trusted leakage remains 0. | Review-only candidate policy, review status propagation, `review_only_candidate` trust floor, promotion metadata protection, trusted/review endpoint metric split, single-run verdict contract fix, scoring/readiness helper refactor, focused tests, direct touched-file ruff, relation-feasibility gate, strict live run4 with verdict GREEN, precision 1.0000, high-value recall 1.0000, trusted endpoint rate 1.0000, weak leakage 0, fallback 0. Low-value review recall remains 0.4000 and final readiness still needs repeated runs. |
+| 12 | PR-23 | `alvaro/evidence-pr23-low-value-review-recall` | Draft PR #106 open; GitHub CI clean | Recover weak-but-useful low-value review evidence through the live agent path without deterministic fallback. | Low-value review recall >= 0.8000 and weak-claim trusted leakage remains 0. | Weak-review agent pass, weak-pass prompt/schema versioning, code-forced review-only metadata, policy-backed weak-pass keep filter, candidate-argument scoped weak-cue policy, raw weak-pass relation-type/proposal drop, review-only pruning preservation, fallback-gated review metrics, sensitization prompt repair, focused RED/GREEN tests, relation-feasibility gate, strict live run7 with verdict GREEN, precision 1.0000, low-value review recall 1.0000, high-value recall 1.0000, trusted endpoint rate 1.0000, false positives 0, missed gold 0, weak leakage 0, fallback 0, invalid agent 0, `make service-checks` with coverage 87.03%, and PR #106 GitHub checks passing. Repeatability remains pending. |
 
 ## PR Evidence Packet
 
@@ -201,6 +202,68 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-05 - PR-23 Low-Value Review Recall
+
+PR: PR-23 low-value review recall
+
+Branch: `alvaro/evidence-pr23-low-value-review-recall`
+
+Draft PR: https://github.com/med13foundation/artana-evidence-platform/pull/106
+
+Goal: Recover weak but useful low-value evidence with the live agent path while
+forcing weak evidence to remain review-only and excluding deterministic fallback
+from success.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-05-pr23-low-value-review-recall-summary.md`
+- `reports/relation_feasibility/2026-07-05-pr23-low-value-review-recall-run7/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-05-pr23-low-value-review-recall-run7/relation_feasibility_report.md`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr23-low-value-review-recall-run7/relation_feasibility_failure_analysis_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr23-low-value-review-recall-run7/relation_feasibility_failure_analysis_report.md`
+
+Final strict live-agent metrics:
+
+| Metric | Value |
+|---|---:|
+| Verdict | GREEN |
+| Completed-agent precision | 1.0000 |
+| Completed-agent recall | 1.0000 |
+| High-value recall | 1.0000 |
+| Trusted high-value recall | 0.8500 |
+| Low-value review recall | 1.0000 |
+| Low-value review CURIE endpoint capture rate | 1.0000 |
+| Trusted-eligible CURIE-linked endpoint rate | 1.0000 |
+| Verified CURIE match rate | 1.0000 |
+| Weak-claim trusted leakage count | 0 |
+| Fallback cases | 0 |
+| Invalid strict-agent cases | 0 |
+| Negative-control leakage cases | 0 |
+| Raw unknown relation-type surfaces | 0 |
+| Wrong verified CURIE links | 0 |
+
+Validation:
+
+- Focused RED/GREEN weak-pass tests passed.
+- Affected extraction, prompt, quality-filter, and review-policy tests passed.
+- `make relation-feasibility-quality-gate` passed.
+- Strict live-agent run7 passed with all five low-value review cases captured
+  as `review_only`.
+- Adversarial review findings from run6 were addressed before run7: mixed
+  strong/weak sentence poisoning, weak-pass structured proposal leakage, and
+  fallback-creditable low-value review metrics now have regressions.
+- `make service-checks` passed with coverage 87.03% against the 86% gate.
+- PR #106 GitHub checks passed and `mergeStateStatus` was `CLEAN` while the PR
+  remained draft.
+
+Known remaining risk:
+
+- Precision returned to 1.0000 after adversarial mixed-sentence scoping and weak-pass proposal rejection fixes.
+- Generic review-lane noise remains visible and should be tightened in a
+  follow-up without losing weak-review recall.
+- Repeatability still needs multi-run proof before final trusted-readiness
+  claims.
 
 ### 2026-07-05 - PR-22 Low-Value Review Lane And Trusted Verdict Split
 

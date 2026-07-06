@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from scripts.validation.relation_feasibility.trusted_metric_rules import (
     HIGH_VALUE_LEVELS,
@@ -34,6 +34,7 @@ def build_endpoint_metric_summary(
     *,
     case_assessments: tuple[tuple[CandidateAssessment, ...], ...],
     case_gold_relations: tuple[tuple[GoldRelation, ...], ...],
+    case_agent_completed_flags: tuple[bool, ...],
 ) -> EndpointMetricSummary:
     """Build endpoint metrics that separate trusted and review-only evidence."""
 
@@ -44,9 +45,9 @@ def build_endpoint_metric_summary(
     trusted_linked_endpoints = _linked_endpoint_keys(
         case_assessments=case_assessments,
         case_gold_relations=case_gold_relations,
+        case_agent_completed_flags=case_agent_completed_flags,
         value_levels=HIGH_VALUE_LEVELS,
-        require_trusted_eligible=True,
-        require_review_only=False,
+        lane="trusted",
     )
     low_value_gold_endpoints = _gold_endpoint_keys(
         case_gold_relations=case_gold_relations,
@@ -55,9 +56,9 @@ def build_endpoint_metric_summary(
     low_value_review_linked_endpoints = _linked_endpoint_keys(
         case_assessments=case_assessments,
         case_gold_relations=case_gold_relations,
+        case_agent_completed_flags=case_agent_completed_flags,
         value_levels=LOW_VALUE_LEVELS,
-        require_trusted_eligible=False,
-        require_review_only=True,
+        lane="review",
     )
     return EndpointMetricSummary(
         trusted_eligible_gold_curie_endpoint_count=len(trusted_gold_endpoints),
@@ -104,23 +105,27 @@ def _linked_endpoint_keys(
     *,
     case_assessments: tuple[tuple[CandidateAssessment, ...], ...],
     case_gold_relations: tuple[tuple[GoldRelation, ...], ...],
+    case_agent_completed_flags: tuple[bool, ...],
     value_levels: frozenset[str],
-    require_trusted_eligible: bool,
-    require_review_only: bool,
+    lane: Literal["trusted", "review"],
 ) -> set[tuple[int, int, str]]:
     endpoint_keys: set[tuple[int, int, str]] = set()
-    for case_index, assessments in enumerate(case_assessments):
+    for case_index, (assessments, agent_completed) in enumerate(
+        zip(case_assessments, case_agent_completed_flags, strict=True),
+    ):
+        if not agent_completed:
+            continue
         for assessment in assessments:
             gold_index = _review_or_match_gold_index(
                 assessment=assessment,
-                require_review_only=require_review_only,
+                require_review_only=lane == "review",
             )
             if gold_index is None:
                 continue
             gold_relation = case_gold_relations[case_index][gold_index]
             if gold_relation.value_level not in value_levels:
                 continue
-            if require_trusted_eligible and not assessment.is_trusted_evidence_eligible:
+            if lane == "trusted" and not assessment.is_trusted_evidence_eligible:
                 continue
             if assessment.subject_curie_matches_gold:
                 endpoint_keys.add((case_index, gold_index, "subject"))

@@ -899,17 +899,26 @@ def test_low_value_review_metrics_require_review_only_candidate() -> None:
         ),
     )
 
-    def extractor(_: str) -> list[ExtractedRelation]:
-        return [
-            ExtractedRelation(
-                subject="MED13",
-                relation_type="PROPOSE_NEW_RELATION_TYPE",
-                proposed_relation_type="WEAKLY_LINKED_TO",
-                relation_governance_status="requires_relation_review",
-                object="clinical features",
-                sentence="MED13 had a weak exploratory connection to clinical features.",
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="PROPOSE_NEW_RELATION_TYPE",
+                    proposed_relation_type="WEAKLY_LINKED_TO",
+                    relation_governance_status="requires_relation_review",
+                    object="clinical features",
+                    sentence=(
+                        "MED13 had a weak exploratory connection to clinical features."
+                    ),
+                ),
             ),
-        ]
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=1,
+            ),
+        )
 
     report = run_feasibility_audit(cases=cases, extractor=extractor)
 
@@ -942,22 +951,29 @@ def test_low_value_review_metrics_count_review_only_canonical_candidate() -> Non
         ),
     )
 
-    def extractor(_: str) -> list[ExtractedRelation]:
-        return [
-            ExtractedRelation(
-                subject="IL6",
-                relation_type="REGULATES",
-                object="inflammatory signaling",
-                sentence=(
-                    "IL6 may regulate inflammatory signaling in stressed "
-                    "epithelial cells."
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    sentence=(
+                        "IL6 may regulate inflammatory signaling in stressed "
+                        "epithelial cells."
+                    ),
+                    subject_curie="HGNC:6018",
+                    subject_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("hedged_language", "may_regulate"),
                 ),
-                subject_curie="HGNC:6018",
-                subject_curie_source="verified_linker",
-                review_status="review_only",
-                review_reason_codes=("hedged_language", "may_regulate"),
             ),
-        ]
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=1,
+            ),
+        )
 
     report = run_feasibility_audit(cases=cases, extractor=extractor)
     assessment = report.case_results[0].candidate_assessments[0]
@@ -973,6 +989,228 @@ def test_low_value_review_metrics_count_review_only_canonical_candidate() -> Non
     assert report.summary.low_value_review_gold_match_count == 1
     assert report.summary.low_value_review_recall == 1.0
     assert "Low-value review candidates: 1" in markdown
+
+
+def test_low_value_review_metrics_ignore_fallback_review_only_candidates() -> None:
+    cases = (
+        _case(
+            case_id="fallback_low_value_review",
+            text="MED13 may be linked to congenital heart disease.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object="congenital heart disease",
+                    support_sentence=(
+                        "MED13 may be linked to congenital heart disease."
+                    ),
+                    value_level="low",
+                    rationale="Fallback review-only output is not agent evidence.",
+                    requires_entailment=False,
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object="congenital heart disease",
+                    sentence="MED13 may be linked to congenital heart disease.",
+                    review_status="review_only",
+                    review_reason_codes=("hedged_language", "may_link"),
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="fallback_error",
+                fallback_candidate_count=1,
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+
+    assert report.summary.fallback_case_count == 1
+    assert report.summary.low_value_review_candidate_count == 0
+    assert report.summary.low_value_review_gold_match_count == 0
+    assert report.summary.low_value_review_recall == 0.0
+
+
+def test_low_value_review_recall_captures_pr23_weak_cases_without_trust_leakage() -> None:
+    cases = (
+        _case(
+            case_id="trusted_high_value_anchor",
+            text="MED13 activates MAPK signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    support_sentence="MED13 activates MAPK signaling.",
+                    value_level="high",
+                    rationale="High-value trusted mechanism anchor.",
+                    subject_curie="HGNC:22474",
+                    object_curie="GO:0000165",
+                ),
+            ),
+        ),
+        _case(
+            case_id="weak_med13_may_link_chd",
+            text="MED13 may be linked to congenital heart disease in a subset of families.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object="congenital heart disease",
+                    support_sentence=(
+                        "MED13 may be linked to congenital heart disease in a "
+                        "subset of families."
+                    ),
+                    value_level="low",
+                    rationale="Hedged association belongs in review lane.",
+                    subject_curie="HGNC:22474",
+                    object_curie="MONDO:0005267",
+                    requires_entailment=False,
+                ),
+            ),
+        ),
+        _case(
+            case_id="weak_met_correlated_resistance",
+            text=(
+                "MET amplification was correlated with resistance in a small "
+                "exploratory cohort."
+            ),
+            gold=(
+                GoldRelation(
+                    subject="MET amplification",
+                    relation_type="ASSOCIATED_WITH",
+                    object="resistance",
+                    support_sentence=(
+                        "MET amplification was correlated with resistance in a "
+                        "small exploratory cohort."
+                    ),
+                    value_level="low",
+                    rationale="Exploratory correlation belongs in review lane.",
+                    subject_curie="HGNC:7029",
+                    requires_entailment=False,
+                ),
+            ),
+        ),
+        _case(
+            case_id="weak_akt_trend_survival",
+            text="AKT activation showed a trend toward association with reduced survival.",
+            gold=(
+                GoldRelation(
+                    subject="AKT activation",
+                    relation_type="ASSOCIATED_WITH",
+                    object="reduced survival",
+                    support_sentence=(
+                        "AKT activation showed a trend toward association with "
+                        "reduced survival."
+                    ),
+                    value_level="low",
+                    rationale="Trend language belongs in review lane.",
+                    subject_curie="HGNC:391",
+                    requires_entailment=False,
+                ),
+            ),
+        ),
+    )
+
+    def agent_result(relation: ExtractedRelation) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(relation,),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=1,
+            ),
+        )
+
+    def extractor(text: str) -> RelationExtractionResult:
+        if "MED13 activates" in text:
+            return agent_result(
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    sentence="MED13 activates MAPK signaling.",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="GO:0000165",
+                    object_curie_source="verified_linker",
+                ),
+            )
+        if "may be linked" in text:
+            return agent_result(
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object="congenital heart disease",
+                    sentence=(
+                        "MED13 may be linked to congenital heart disease in a "
+                        "subset of families."
+                    ),
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="MONDO:0005267",
+                    object_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("hedged_language", "may_link"),
+                ),
+            )
+        if "MET amplification" in text:
+            return agent_result(
+                ExtractedRelation(
+                    subject="MET amplification",
+                    relation_type="ASSOCIATED_WITH",
+                    object="resistance",
+                    sentence=(
+                        "MET amplification was correlated with resistance in a "
+                        "small exploratory cohort."
+                    ),
+                    subject_curie="HGNC:7029",
+                    subject_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("hedged_language", "correlated_only"),
+                ),
+            )
+        return agent_result(
+            ExtractedRelation(
+                subject="AKT activation",
+                relation_type="ASSOCIATED_WITH",
+                object="reduced survival",
+                sentence=(
+                    "AKT activation showed a trend toward association with "
+                    "reduced survival."
+                ),
+                subject_curie="HGNC:391",
+                subject_curie_source="verified_linker",
+                review_status="review_only",
+                review_reason_codes=("hedged_language", "trend_only"),
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    low_value_flags = {
+        result.case.case_id: result.candidate_assessments[0].quality_flags
+        for result in report.case_results
+        if result.case.case_id.startswith("weak_")
+    }
+
+    assert report.summary.low_value_review_recall >= 0.8
+    assert report.summary.weak_claim_trusted_leakage_count == 0
+    assert report.summary.trusted_high_value_recall >= 0.85
+    assert report.summary.precision_against_gold == 1.0
+    assert "review_only_candidate" in low_value_flags["weak_med13_may_link_chd"]
+    assert "review_reason:may_link" in low_value_flags["weak_med13_may_link_chd"]
+    assert "review_reason:correlated_only" in low_value_flags[
+        "weak_met_correlated_resistance"
+    ]
+    assert "review_reason:trend_only" in low_value_flags["weak_akt_trend_survival"]
 
 
 def test_endpoint_metrics_split_trusted_eligible_from_low_value_review() -> None:
@@ -1011,34 +1249,43 @@ def test_endpoint_metrics_split_trusted_eligible_from_low_value_review() -> None
         ),
     )
 
-    def extractor(text: str) -> list[ExtractedRelation]:
+    def extractor(text: str) -> RelationExtractionResult:
         if "IL6" in text:
-            return [
+            relations = (
                 ExtractedRelation(
-                    subject="IL6",
-                    relation_type="REGULATES",
-                    object="inflammatory signaling",
-                    sentence="IL6 may regulate inflammatory signaling.",
-                    subject_curie="HGNC:6018",
-                    subject_curie_source="verified_linker",
-                    object_curie="GO:0006954",
-                    object_curie_source="verified_linker",
-                    review_status="review_only",
-                    review_reason_codes=("hedged_language", "may_regulate"),
+                        subject="IL6",
+                        relation_type="REGULATES",
+                        object="inflammatory signaling",
+                        sentence="IL6 may regulate inflammatory signaling.",
+                        subject_curie="HGNC:6018",
+                        subject_curie_source="verified_linker",
+                        object_curie="GO:0006954",
+                        object_curie_source="verified_linker",
+                        review_status="review_only",
+                        review_reason_codes=("hedged_language", "may_regulate"),
                 ),
-            ]
-        return [
-            ExtractedRelation(
-                subject="MED13",
-                relation_type="ACTIVATES",
-                object="MAPK signaling",
-                sentence="MED13 activates MAPK signaling.",
-                subject_curie="HGNC:22474",
-                subject_curie_source="verified_linker",
-                object_curie="GO:0000165",
-                object_curie_source="verified_linker",
+            )
+        else:
+            relations = (
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    sentence="MED13 activates MAPK signaling.",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="GO:0000165",
+                    object_curie_source="verified_linker",
+                ),
+            )
+        return RelationExtractionResult(
+            relations=relations,
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=len(relations),
             ),
-        ]
+        )
 
     report = run_feasibility_audit(cases=cases, extractor=extractor)
     summary_json = report.summary.to_json()
@@ -1122,21 +1369,35 @@ def test_verdict_uses_trusted_eligible_endpoint_rate_not_all_gold_rate() -> None
         ),
     )
 
-    def extractor(text: str) -> list[ExtractedRelation]:
+    def extractor(text: str) -> RelationExtractionResult:
         if "MED13" not in text:
-            return []
-        return [
-            ExtractedRelation(
-                subject="MED13",
-                relation_type="ACTIVATES",
-                object="MAPK signaling",
-                sentence="MED13 activates MAPK signaling.",
-                subject_curie="HGNC:22474",
-                subject_curie_source="verified_linker",
-                object_curie="GO:0000165",
-                object_curie_source="verified_linker",
+            return RelationExtractionResult(
+                relations=(),
+                trace=ExtractionTrace(
+                    extractor_mode="agent",
+                    llm_candidate_status="completed",
+                    llm_candidate_count=0,
+                ),
+            )
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    sentence="MED13 activates MAPK signaling.",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="GO:0000165",
+                    object_curie_source="verified_linker",
+                ),
             ),
-        ]
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=1,
+            ),
+        )
 
     report = run_feasibility_audit(cases=cases, extractor=extractor)
 

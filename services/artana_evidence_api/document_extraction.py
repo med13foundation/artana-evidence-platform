@@ -19,7 +19,6 @@ from artana_evidence_api.document_extraction_contracts import (
     DocumentProposalReviewDiagnostics,
     DocumentTextExtraction,
     ExtractedRelationCandidate,
-    LLMExtractionResultLike,
     PdfTextExtractionOutcome,
     ProposalReviewResultLike,
 )
@@ -47,6 +46,7 @@ from artana_evidence_api.document_extraction_entities import (
 from artana_evidence_api.document_extraction_prompting import (
     DOCUMENT_PROPOSAL_REVIEW_SYSTEM_PROMPT,
     build_llm_extraction_output_schema,
+    build_llm_weak_review_extraction_output_schema,
     build_proposal_review_output_schema,
 )
 from artana_evidence_api.document_extraction_relation_taxonomy import (
@@ -66,9 +66,14 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     LLM_EXTRACTION_PROMPT_VERSION,
+    LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
     build_llm_extraction_prompt,
+    build_llm_weak_review_extraction_prompt,
+    fingerprinted_step_key,
     llm_extraction_document_fingerprint,
-    llm_relations_to_candidates,
+    llm_extraction_step_key,
+    merge_duplicate_relation_candidates,
+    run_llm_relation_extraction_pass,
 )
 from artana_evidence_api.document_extraction_support.relation_candidate_quality_filter import (
     RelationCandidateQualityFilterResult,
@@ -107,6 +112,7 @@ _MAX_AI_ENTITY_PRE_RESOLUTION_LABELS = 4
 _AI_ENTITY_PRE_RESOLUTION_TIMEOUT_SECONDS = 2.0
 _LLM_CANDIDATE_EXTRACTION_TIMEOUT_SECONDS = 5.0
 _LLM_PROPOSAL_REVIEW_TIMEOUT_SECONDS = 5.0
+_WEAK_REVIEW_AGENT_PASS_REASON = "weak_review_agent_pass"
 _RELATION_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(
@@ -229,39 +235,6 @@ def sha256_hex(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _fingerprinted_step_key(prefix: str, *parts: str) -> str:
-    """Return a stable per-input step key for replay-sensitive model calls."""
-    payload = "\x1f".join(parts).encode("utf-8")
-    digest = hashlib.sha256(payload).hexdigest()[:16]
-    return f"{prefix}.{digest}"
-
-
-def _llm_extraction_step_key(
-    *,
-    text: str,
-    max_relations: int,
-    model_id: str = "",
-    prompt_version: str = LLM_EXTRACTION_PROMPT_VERSION,
-    chunk_index: int = 0,
-    total_chunks: int = 1,
-    document_fingerprint: str | None = None,
-) -> str:
-    """Return the stable extraction step key for one extraction chunk."""
-    normalized_text = normalize_text_document(text)
-    chunk_fingerprint = hashlib.sha256(normalized_text.encode("utf-8")).hexdigest()
-    effective_document_fingerprint = document_fingerprint or chunk_fingerprint
-    return _fingerprinted_step_key(
-        "research_init.llm_extraction.v2",
-        prompt_version,
-        model_id,
-        str(max_relations),
-        effective_document_fingerprint,
-        str(chunk_index),
-        str(total_chunks),
-        chunk_fingerprint,
-    )
-
-
 def _proposal_review_step_key(
     *,
     document: HarnessDocumentRecord,
@@ -269,7 +242,7 @@ def _proposal_review_step_key(
     goal_context_summary: str,
 ) -> str:
     """Return the stable proposal-review step key for one review payload."""
-    return _fingerprinted_step_key(
+    return fingerprinted_step_key(
         "document_extraction.proposal_review.v1",
         document.sha256,
         document.source_type,
@@ -504,6 +477,9 @@ async def extract_relation_candidates_with_llm(
         )
     document_fingerprint = llm_extraction_document_fingerprint(normalized_text)
     output_schema = build_llm_extraction_output_schema(max_relations)
+    weak_review_output_schema = build_llm_weak_review_extraction_output_schema(
+        max_relations,
+    )
 
     from artana.agent import SingleStepModelClient
     from artana.kernel import ArtanaKernel
@@ -542,49 +518,63 @@ async def extract_relation_candidates_with_llm(
         unknown_relation_types: set[str] = set()
         raw_relation_count = 0
         for chunk in chunks:
-            result = await run_single_step_with_policy(
-                client,
-                run_id=f"research-init-extraction:{uuid4()}",
-                tenant=tenant,
-                model=model_id,
-                prompt=build_llm_extraction_prompt(
-                    chunk=chunk,
-                    total_chunks=len(chunks),
-                    document_fingerprint=document_fingerprint,
-                ),
-                output_schema=output_schema,
-                step_key=_llm_extraction_step_key(
-                    text=chunk.text,
-                    max_relations=max_relations,
-                    model_id=model_id,
-                    chunk_index=chunk.index,
-                    total_chunks=len(chunks),
-                    document_fingerprint=document_fingerprint,
-                ),
-                replay_policy="fork_on_drift",
-            )
-
-            output = result.output
-            parsed = cast(
-                "LLMExtractionResultLike",
+            extraction_passes = (
                 (
-                    output
-                    if isinstance(output, output_schema)
-                    else output_schema.model_validate(output)
+                    LLM_EXTRACTION_PROMPT_VERSION,
+                    build_llm_extraction_prompt(
+                        chunk=chunk,
+                        total_chunks=len(chunks),
+                        document_fingerprint=document_fingerprint,
+                    ),
+                    output_schema,
+                    (),
+                ),
+                (
+                    LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
+                    build_llm_weak_review_extraction_prompt(
+                        chunk=chunk,
+                        total_chunks=len(chunks),
+                        document_fingerprint=document_fingerprint,
+                    ),
+                    weak_review_output_schema,
+                    (_WEAK_REVIEW_AGENT_PASS_REASON,),
                 ),
             )
-            raw_relation_count += len(parsed.relations)
-            chunk_candidates, chunk_unknown_relation_types = (
-                llm_relations_to_candidates(parsed)
-            )
-            candidates.extend(chunk_candidates)
-            unknown_relation_types.update(chunk_unknown_relation_types)
+            for prompt_version, prompt, pass_output_schema, force_review_only_reason_codes in (
+                extraction_passes
+            ):
+                chunk_candidates, chunk_unknown_relation_types, chunk_raw_count = (
+                    await run_llm_relation_extraction_pass(
+                        step_runner=run_single_step_with_policy,
+                        client=client,
+                        tenant=tenant,
+                        model_id=model_id,
+                        prompt=prompt,
+                        output_schema=pass_output_schema,
+                        step_key=llm_extraction_step_key(
+                            text=chunk.text,
+                            max_relations=max_relations,
+                            model_id=model_id,
+                            prompt_version=prompt_version,
+                            chunk_index=chunk.index,
+                            total_chunks=len(chunks),
+                            document_fingerprint=document_fingerprint,
+                        ),
+                        force_review_only_reason_codes=(
+                            force_review_only_reason_codes
+                        ),
+                    )
+                )
+                raw_relation_count += chunk_raw_count
+                candidates.extend(chunk_candidates)
+                unknown_relation_types.update(chunk_unknown_relation_types)
 
         candidates = await _resolve_unknown_llm_relation_types(
             candidates=candidates,
             unknown_relation_types=unknown_relation_types,
             space_context=space_context,
         )
+        candidates = merge_duplicate_relation_candidates(candidates)
 
         pruning_result = _prune_relation_candidate_specificity(candidates)
         if pruning_result.pruned_count > 0:
@@ -944,7 +934,6 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
         goal_context_summary=goal_context,
     )
 
-    from uuid import uuid4
 
     kernel: ArtanaKernel | None = None
     store = None

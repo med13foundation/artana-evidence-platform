@@ -103,7 +103,10 @@ def filter_low_value_relation_candidates(
     for candidate_index, candidate in enumerate(candidates):
         reason = _quality_filter_reason(candidate)
         review_only_candidate = _review_only_candidate(candidate)
-        if reason == "uncertain_relation_claim" and review_only_candidate is not None:
+        if review_only_candidate is not None and reason in {
+            None,
+            "uncertain_relation_claim",
+        }:
             kept_candidates.append(review_only_candidate)
             continue
         if reason is None and _is_context_relation_shadowed(
@@ -135,6 +138,8 @@ def _review_only_candidate(
     decision = classify_review_only_candidate(
         relation_type=candidate.relation_type,
         support_sentence=candidate.sentence,
+        subject_label=candidate.subject_label,
+        object_label=candidate.object_label,
     )
     if not decision.review_only:
         return None
@@ -161,7 +166,13 @@ def _quality_filter_reason(
 def _single_candidate_support_reason(
     candidate: ExtractedRelationCandidate,
 ) -> RelationCandidateQualityFilterReason | None:
-    if _UNCERTAIN_RELATION_CUE_RE.search(candidate.sentence) is not None:
+    review_decision = classify_review_only_candidate(
+        relation_type=candidate.relation_type,
+        support_sentence=candidate.sentence,
+        subject_label=candidate.subject_label,
+        object_label=candidate.object_label,
+    )
+    if review_decision.review_only:
         return "uncertain_relation_claim"
     grounding = ground_relation_sentence(
         source_text=candidate.sentence,

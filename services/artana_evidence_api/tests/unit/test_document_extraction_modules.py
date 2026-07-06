@@ -45,6 +45,7 @@ from artana_evidence_api.document_extraction_entities import (
 from artana_evidence_api.document_extraction_prompting import (
     LLM_EXTRACTION_SYSTEM_PROMPT,
     build_llm_extraction_output_schema,
+    build_llm_weak_review_extraction_output_schema,
     build_proposal_review_output_schema,
 )
 from artana_evidence_api.document_extraction_relation_taxonomy import (
@@ -61,6 +62,7 @@ from artana_evidence_api.document_extraction_review import (
     shorten_text,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    LLM_EXTRACTION_PROMPT_VERSION,
     llm_relations_to_candidates,
 )
 from artana_evidence_api.document_store import HarnessDocumentRecord
@@ -215,6 +217,83 @@ def test_llm_extraction_schema_rejects_raw_unknown_relation_type() -> None:
                 ],
             },
         )
+
+
+def test_llm_extraction_prompt_preserves_useful_weak_claims_as_review_only() -> None:
+    normalized_prompt = " ".join(LLM_EXTRACTION_SYSTEM_PROMPT.split())
+
+    assert "WEAK REVIEW-ONLY RELATIONS" in normalized_prompt
+    assert "only as review_only" in normalized_prompt
+    assert "do not treat them as trusted evidence" in normalized_prompt
+    assert "do not invent relations absent from the support sentence" in (
+        normalized_prompt
+    )
+    assert "Reject vague non-relational role statements" in normalized_prompt
+    assert "MED13 may be linked to congenital heart disease" in normalized_prompt
+    assert "MET amplification was correlated with resistance" in normalized_prompt
+    assert "AKT activation showed a trend toward association" in normalized_prompt
+
+
+def test_llm_extraction_prompt_prioritizes_specific_sensitizes_relation() -> None:
+    normalized_prompt = " ".join(LLM_EXTRACTION_SYSTEM_PROMPT.split())
+
+    assert "BRCA1 loss sensitizes triple-negative breast cancer to cisplatin" in (
+        normalized_prompt
+    )
+    assert "subject BRCA1 loss" in normalized_prompt
+    assert "object cisplatin" in normalized_prompt
+    assert "Do not replace this with ASSOCIATED_WITH DNA repair defects" in (
+        normalized_prompt
+    )
+
+
+def test_llm_extraction_prompt_version_changes_for_review_only_schema() -> None:
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v4"
+
+
+def test_llm_extraction_schema_accepts_review_only_lane_fields() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    parsed = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "MED13",
+                    "relation_type": "ASSOCIATED_WITH",
+                    "object": "congenital heart disease",
+                    "sentence": "MED13 may be linked to congenital heart disease.",
+                    "review_status": "review_only",
+                    "review_reason_codes": ["hedged_language", "may_link"],
+                },
+            ],
+        },
+    )
+
+    assert parsed.relations[0].review_status == "review_only"
+    assert parsed.relations[0].review_reason_codes == [
+        "hedged_language",
+        "may_link",
+    ]
+
+
+def test_weak_review_extraction_schema_allows_raw_relation_type_for_guard() -> None:
+    extraction_schema = build_llm_weak_review_extraction_output_schema(max_relations=1)
+
+    parsed = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "MED13",
+                    "relation_type": "CASES",
+                    "object": "congenital heart disease",
+                    "sentence": "MED13 may be linked to congenital heart disease.",
+                    "review_status": "review_only",
+                },
+            ],
+        },
+    )
+
+    assert parsed.relations[0].relation_type == "CASES"
 
 
 def test_llm_extraction_schema_accepts_confers_resistance_as_canonical() -> None:
@@ -399,6 +478,33 @@ def test_llm_conversion_preserves_specific_relation_arguments() -> None:
     assert unknown_relation_types == set()
     assert len(candidates) == 1
     assert candidates[0].object_label == "BRCA-mutated ovarian cancer"
+
+
+def test_llm_conversion_preserves_model_review_only_reason_hints() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="MED13",
+                subject_curie=None,
+                relation_type="ASSOCIATED_WITH",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="congenital heart disease",
+                object_curie=None,
+                sentence="MED13 was associated with congenital heart disease.",
+                review_status="review_only",
+                review_reason_codes=["agent_review_hint"],
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].review_status == "review_only"
+    assert candidates[0].review_reason_codes == ("agent_review_hint",)
+    assert candidates[0].trusted_evidence_eligible is False
 
 
 def test_llm_conversion_keeps_confers_resistance_as_canonical_candidate() -> None:

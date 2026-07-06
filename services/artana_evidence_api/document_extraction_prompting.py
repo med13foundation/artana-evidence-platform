@@ -6,6 +6,7 @@ from artana_evidence_api.document_extraction_contracts import (
     FactualSupportScale,
     GoalRelevanceScale,
     PriorityScale,
+    RelationReviewStatus,
 )
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     LLM_EXTRACTION_RELATION_TYPES,
@@ -18,6 +19,30 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
     """Build the structured output schema for one LLM extraction pass."""
+
+    return _build_llm_extraction_output_schema(
+        max_relations=max_relations,
+        strict_relation_type=True,
+    )
+
+
+def build_llm_weak_review_extraction_output_schema(
+    max_relations: int,
+) -> type[BaseModel]:
+    """Build the schema for weak-review extraction with raw-type guardrails."""
+
+    return _build_llm_extraction_output_schema(
+        max_relations=max_relations,
+        strict_relation_type=False,
+    )
+
+
+def _build_llm_extraction_output_schema(
+    *,
+    max_relations: int,
+    strict_relation_type: bool,
+) -> type[BaseModel]:
+    """Build a relation extraction output schema."""
 
     class LLMRelation(BaseModel):
         model_config = ConfigDict(strict=True)
@@ -86,6 +111,23 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
             ),
         )
         sentence: str = Field(..., min_length=1, max_length=1000)
+        review_status: RelationReviewStatus = Field(
+            default="candidate",
+            description=(
+                "Set to review_only only for weak, hedged, trend-only, "
+                "possible biomarker, may-link, or correlation-only claims that "
+                "are useful for human review."
+            ),
+        )
+        review_reason_codes: list[str] = Field(
+            default_factory=list,
+            max_length=8,
+            description=(
+                "Short snake_case reasons when review_status is review_only, "
+                "for example hedged_language, trend_only, may_link, or "
+                "correlated_only."
+            ),
+        )
 
         @field_validator("relation_type")
         @classmethod
@@ -93,6 +135,8 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
             normalized = _normalize_relation_type(value)
             canonical = LLM_RELATION_SYNONYMS.get(normalized, normalized)
             if canonical not in LLM_EXTRACTION_RELATION_TYPES:
+                if not strict_relation_type:
+                    return canonical
                 raise ValueError(
                     "relation_type must be a canonical relation type or "
                     f"{LLM_PROPOSE_NEW_RELATION_TYPE}",
@@ -200,6 +244,10 @@ Each triple has:
   biomarker confers resistance to a specific drug.
   Use BIOMARKER_FOR when an expression, score, variant, or signature predicts
   a condition or treatment response.
+  Use SENSITIZES_TO for constructions like "BRCA1 loss sensitizes
+  triple-negative breast cancer to cisplatin": subject BRCA1 loss, object
+  cisplatin. Do not replace this with ASSOCIATED_WITH DNA repair defects when
+  the sentence supports the specific drug-sensitivity relation.
 
 - object: the target entity. Same rules as subject: short canonical name, max 4 words, no sentence fragments.
   Preserve modifiers that define the biomedical entity or clinical subgroup.
@@ -215,8 +263,21 @@ IMPORTANT — do NOT extract:
 - Author names or contributions
 - Study design descriptions that don't state a biological finding
 - Sentences about methods or protocols without a biological conclusion
-- Vague or speculative statements ("may play a role", "further research is needed")
+- Vague non-relational statements ("may play a role", "further research is needed")
 - Relations where subject or object is not a specific named entity
+
+WEAK REVIEW-ONLY RELATIONS:
+Reject vague non-relational role statements. Preserve direct weak claims when
+the sentence still names a concrete subject, relation cue, and object. Emit
+these only as review_only with review_reason_codes; do not treat them as
+trusted evidence and do not invent relations absent from the support sentence.
+Examples to keep for human review:
+- "MED13 may be linked to congenital heart disease" -> ASSOCIATED_WITH,
+  review_only, reasons: hedged_language, may_link
+- "MET amplification was correlated with resistance" -> ASSOCIATED_WITH,
+  review_only, reasons: hedged_language, correlated_only
+- "AKT activation showed a trend toward association with reduced survival" ->
+  ASSOCIATED_WITH, review_only, reasons: hedged_language, trend_only
 
 Focus on:
 - Concrete findings from results and conclusions

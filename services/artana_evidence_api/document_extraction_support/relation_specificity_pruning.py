@@ -151,10 +151,13 @@ def prune_redundant_generic_relation_candidates(
         canonical_relation = canonicalize_extraction_relation_type(
             candidate.relation_type,
         )
-        if is_low_value_generic_relation_candidate(
-            relation_type=candidate.relation_type,
-            lemma="",
-            sentence=candidate.sentence,
+        if (
+            candidate.review_status != "review_only"
+            and is_low_value_generic_relation_candidate(
+                relation_type=candidate.relation_type,
+                lemma="",
+                sentence=candidate.sentence,
+            )
         ):
             weak_generic_candidates.append(
                 WeakGenericRelationCandidate(

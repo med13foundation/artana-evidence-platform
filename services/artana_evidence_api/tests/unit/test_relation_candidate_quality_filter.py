@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from artana_evidence_api.document_extraction_contracts import (
     ExtractedRelationCandidate,
 )
@@ -185,6 +186,68 @@ def test_quality_filter_keeps_uncertain_candidate_as_review_only() -> None:
         "hedged_language",
         "possible_biomarker",
     )
+    assert result.candidates[0].trusted_evidence_eligible is False
+
+
+@pytest.mark.parametrize(
+    ("candidate", "expected_reason_codes"),
+    [
+        (
+            ExtractedRelationCandidate(
+                subject_label="AKT activation",
+                relation_type="ASSOCIATED_WITH",
+                object_label="reduced survival",
+                sentence="AKT activation showed a trend toward reduced survival.",
+            ),
+            ("hedged_language", "trend_only"),
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="MED13",
+                relation_type="ASSOCIATED_WITH",
+                object_label="congenital heart disease",
+                sentence="MED13 may be linked to congenital heart disease.",
+            ),
+            ("hedged_language", "may_link"),
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="MET amplification",
+                relation_type="ASSOCIATED_WITH",
+                object_label="resistance",
+                sentence="MET amplification correlated with resistance.",
+            ),
+            ("hedged_language", "correlated_only"),
+        ),
+    ],
+)
+def test_quality_filter_keeps_weak_review_candidates_as_review_only(
+    candidate: ExtractedRelationCandidate,
+    expected_reason_codes: tuple[str, ...],
+) -> None:
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.filtered_candidates == ()
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].review_reason_codes == expected_reason_codes
+    assert result.candidates[0].trusted_evidence_eligible is False
+
+
+def test_quality_filter_keeps_model_review_hint_candidate_as_review_only() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13",
+        relation_type="ASSOCIATED_WITH",
+        object_label="congenital heart disease",
+        sentence="MED13 was associated with congenital heart disease.",
+        review_status="review_only",
+        review_reason_codes=("agent_review_hint",),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.filtered_candidates == ()
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].review_reason_codes == ("agent_review_hint",)
     assert result.candidates[0].trusted_evidence_eligible is False
 
 
