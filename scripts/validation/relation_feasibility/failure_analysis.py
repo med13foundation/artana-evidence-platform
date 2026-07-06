@@ -16,10 +16,24 @@ _METRIC_KEYS = (
     "completed_agent_precision_against_gold",
     "completed_agent_recall_against_gold",
     "high_value_recall",
+    "trusted_high_value_recall",
+    "low_value_review_recall",
+    "low_value_review_curie_endpoint_capture_rate",
     "completed_agent_valuable_candidate_rate",
     "curie_linked_gold_endpoint_rate",
+    "trusted_eligible_curie_linked_gold_endpoint_rate",
     "verified_curie_match_rate",
+    "entailment_checked_rate",
     "generic_relation_rate",
+)
+_HARD_FAILURE_COUNT_KEYS = (
+    "fallback_case_count",
+    "invalid_agent_case_count",
+    "negative_control_leakage_count",
+    "raw_unknown_relation_type_count",
+    "raw_unknown_relation_type_surface_count",
+    "wrong_verified_curie_link_count",
+    "weak_claim_trusted_leakage_count",
 )
 
 
@@ -265,7 +279,16 @@ def render_failure_analysis_markdown(report: JSONObject) -> str:
     lines.extend(
         _table_lines(
             report.get("model_comparison"),
-            ("model_label", "run_count", "mean_completed_agent_precision_against_gold", "mean_high_value_recall", "mean_curie_linked_gold_endpoint_rate"),
+            (
+                "model_label",
+                "run_count",
+                "mean_completed_agent_precision_against_gold",
+                "worst_completed_agent_precision_against_gold",
+                "worst_trusted_high_value_recall",
+                "worst_trusted_eligible_curie_linked_gold_endpoint_rate",
+                "total_wrong_verified_curie_link_count",
+                "total_weak_claim_trusted_leakage_count",
+            ),
         ),
     )
     return "\n".join(lines) + "\n"
@@ -578,6 +601,10 @@ def _model_comparison_rows(summaries_by_model: dict[str, list[JSONObject]]) -> l
             values = [_float_value(summary.get(key)) for summary in summaries]
             row[f"mean_{key}"] = _round_metric(sum(values) / len(values)) if values else 0.0
             row[f"worst_{key}"] = _worst_metric(key, values)
+        for key in _HARD_FAILURE_COUNT_KEYS:
+            row[f"total_{key}"] = sum(
+                _int_value(summary.get(key)) for summary in summaries
+            )
         rows.append(row)
     return sorted(rows, key=lambda row: str(row.get("model_label", "")))
 

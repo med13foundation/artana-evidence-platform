@@ -245,6 +245,62 @@ def test_failure_analysis_does_not_call_verified_proposal_links_wrong(
     assert report["curie_gaps"] == []
 
 
+def test_failure_analysis_model_comparison_includes_trust_lane_metrics(
+    tmp_path: Path,
+) -> None:
+    current_report = _write_report(
+        tmp_path,
+        "current",
+        summary={
+            "model_label": "current",
+            "completed_agent_precision_against_gold": 0.86,
+            "trusted_high_value_recall": 0.85,
+            "low_value_review_recall": 0.8,
+            "low_value_review_curie_endpoint_capture_rate": 0.6,
+            "trusted_eligible_curie_linked_gold_endpoint_rate": 0.96,
+            "entailment_checked_rate": 1.0,
+            "fallback_case_count": 0,
+            "wrong_verified_curie_link_count": 0,
+        },
+    )
+    candidate_report = _write_report(
+        tmp_path,
+        "candidate",
+        summary={
+            "model_label": "candidate",
+            "completed_agent_precision_against_gold": 0.9,
+            "trusted_high_value_recall": 0.9,
+            "low_value_review_recall": 1.0,
+            "low_value_review_curie_endpoint_capture_rate": 0.8,
+            "trusted_eligible_curie_linked_gold_endpoint_rate": 0.98,
+            "entailment_checked_rate": 1.0,
+            "fallback_case_count": 0,
+            "wrong_verified_curie_link_count": 0,
+        },
+    )
+
+    report = build_failure_analysis_report(
+        (
+            FailureAnalysisInput(path=current_report, label="run1"),
+            FailureAnalysisInput(path=candidate_report, label="run1"),
+        ),
+    )
+
+    rows = {
+        str(row["model_label"]): row
+        for row in report["model_comparison"]
+        if isinstance(row, dict)
+    }
+    candidate = rows["candidate"]
+    assert candidate["worst_trusted_high_value_recall"] == 0.9
+    assert candidate["worst_low_value_review_recall"] == 1.0
+    assert candidate["worst_low_value_review_curie_endpoint_capture_rate"] == 0.8
+    assert candidate["worst_trusted_eligible_curie_linked_gold_endpoint_rate"] == 0.98
+    assert candidate["worst_entailment_checked_rate"] == 1.0
+    assert candidate["total_fallback_case_count"] == 0
+    assert candidate["total_wrong_verified_curie_link_count"] == 0
+
+
 def test_failure_analysis_reports_review_only_grounding_decision(
     tmp_path: Path,
 ) -> None:
