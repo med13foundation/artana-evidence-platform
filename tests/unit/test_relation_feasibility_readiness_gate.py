@@ -20,6 +20,10 @@ def _write_report(
     high_value_recall: float = 0.9,
     valuable_rate: float = 0.84,
     generic_rate: float = 0.0,
+    trusted_precision: float | None = None,
+    trusted_high_value_recall: float | None = None,
+    trusted_valuable_rate: float | None = None,
+    trusted_generic_rate: float | None = None,
     verified_curie_rate: float = 0.96,
     trusted_eligible_curie_rate: float = 0.96,
     weak_claim_trusted_leakage_count: int = 0,
@@ -30,6 +34,7 @@ def _write_report(
     raw_unknown_candidate_types: int = 0,
     raw_unknown_inventory_types: int = 0,
     wrong_verified_curie_links: int = 0,
+    review_only_gold_trusted_leakage_count: int = 0,
     verdict: str = "YELLOW",
     blocking_reasons: list[str] | None = None,
 ) -> Path:
@@ -38,10 +43,24 @@ def _write_report(
         "summary": {
             "verdict": verdict,
             "blocking_reasons": blocking_reasons or [],
+            "trusted_candidate_precision_against_gold": (
+                precision if trusted_precision is None else trusted_precision
+            ),
             "completed_agent_precision_against_gold": precision,
             "completed_agent_recall_against_gold": recall,
+            "trusted_eligible_high_value_recall": (
+                high_value_recall
+                if trusted_high_value_recall is None
+                else trusted_high_value_recall
+            ),
             "high_value_recall": high_value_recall,
+            "trusted_candidate_valuable_rate": (
+                valuable_rate if trusted_valuable_rate is None else trusted_valuable_rate
+            ),
             "completed_agent_valuable_candidate_rate": valuable_rate,
+            "trusted_candidate_generic_relation_rate": (
+                generic_rate if trusted_generic_rate is None else trusted_generic_rate
+            ),
             "generic_relation_rate": generic_rate,
             "curie_linked_gold_endpoint_rate": verified_curie_rate,
             "trusted_eligible_curie_linked_gold_endpoint_rate": (
@@ -56,6 +75,9 @@ def _write_report(
             "raw_unknown_relation_type_surface_count": raw_unknown_inventory_types,
             "wrong_verified_curie_link_count": wrong_verified_curie_links,
             "weak_claim_trusted_leakage_count": weak_claim_trusted_leakage_count,
+            "review_only_gold_trusted_leakage_count": (
+                review_only_gold_trusted_leakage_count
+            ),
         },
     }
     path.write_text(json.dumps(payload) + "\n")
@@ -77,7 +99,9 @@ def test_readiness_gate_passes_when_repeated_strict_runs_clear_thresholds(
     assert report["trusted_graph_ready"] is True
     assert report["run_count"] == 3
     assert report["blocking_reasons"] == []
+    assert report["worst_metrics"]["trusted_candidate_precision_against_gold"] == 0.86
     assert report["worst_metrics"]["completed_agent_precision_against_gold"] == 0.86
+    assert report["worst_metrics"]["trusted_eligible_high_value_recall"] == 0.9
     assert report["worst_metrics"]["trusted_eligible_curie_linked_gold_endpoint_rate"] == 0.96
     assert report["hard_failure_counts"]["fallback_case_count"] == 0
     assert "Trusted graph readiness: **READY**" in markdown
@@ -146,6 +170,59 @@ def test_readiness_gate_uses_trusted_eligible_endpoint_rate(
     assert report["trusted_graph_ready"] is True
     assert report["worst_metrics"]["curie_linked_gold_endpoint_rate"] == 0.8
     assert report["worst_metrics"]["trusted_eligible_curie_linked_gold_endpoint_rate"] == 0.96
+
+
+def test_readiness_gate_uses_trusted_lane_quality_metrics(tmp_path: Path) -> None:
+    report_paths = (
+        _write_report(
+            tmp_path,
+            "run1",
+            precision=0.55,
+            high_value_recall=0.5,
+            valuable_rate=0.4,
+            generic_rate=0.75,
+            trusted_precision=0.86,
+            trusted_high_value_recall=0.9,
+            trusted_valuable_rate=0.84,
+            trusted_generic_rate=0.0,
+        ),
+        _write_report(
+            tmp_path,
+            "run2",
+            precision=0.56,
+            high_value_recall=0.51,
+            valuable_rate=0.41,
+            generic_rate=0.76,
+            trusted_precision=0.88,
+            trusted_high_value_recall=0.92,
+            trusted_valuable_rate=0.85,
+            trusted_generic_rate=0.0,
+        ),
+        _write_report(
+            tmp_path,
+            "run3",
+            precision=0.57,
+            high_value_recall=0.52,
+            valuable_rate=0.42,
+            generic_rate=0.77,
+            trusted_precision=0.9,
+            trusted_high_value_recall=0.93,
+            trusted_valuable_rate=0.86,
+            trusted_generic_rate=0.0,
+        ),
+    )
+
+    report = build_readiness_report(report_paths=report_paths, min_runs=3)
+
+    assert report["trusted_graph_ready"] is True
+    assert report["worst_metrics"]["completed_agent_precision_against_gold"] == 0.55
+    assert report["worst_metrics"]["high_value_recall"] == 0.5
+    assert report["worst_metrics"]["completed_agent_valuable_candidate_rate"] == 0.4
+    assert report["worst_metrics"]["generic_relation_rate"] == 0.77
+    assert report["worst_metrics"]["trusted_candidate_precision_against_gold"] == 0.86
+    assert report["worst_metrics"]["trusted_eligible_high_value_recall"] == 0.9
+    assert report["worst_metrics"]["trusted_candidate_valuable_rate"] == 0.84
+    assert report["worst_metrics"]["trusted_candidate_generic_relation_rate"] == 0.0
 
 
 def test_readiness_gate_blocks_weak_claim_trusted_leakage(

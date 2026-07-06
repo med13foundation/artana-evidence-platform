@@ -362,6 +362,14 @@ class FeasibilitySummary:
     high_value_missed_gold_count: int
     trusted_high_value_match_count: int
     trusted_high_value_recall: float
+    trusted_eligible_high_value_gold_relation_count: int
+    trusted_eligible_high_value_match_count: int
+    trusted_eligible_high_value_recall: float
+    trusted_candidate_count: int
+    trusted_candidate_supported_count: int
+    trusted_candidate_valuable_count: int
+    trusted_candidate_generic_relation_count: int
+    review_only_gold_trusted_leakage_count: int
     high_value_review_gold_relation_count: int
     high_value_review_candidate_count: int
     high_value_review_gold_match_count: int
@@ -386,6 +394,9 @@ class FeasibilitySummary:
     recall_against_gold: float
     high_value_recall: float
     low_value_recall: float
+    trusted_candidate_precision_against_gold: float
+    trusted_candidate_valuable_rate: float
+    trusted_candidate_generic_relation_rate: float
     completed_agent_precision_against_gold: float
     completed_agent_recall_against_gold: float
     specificity_rate: float
@@ -459,6 +470,14 @@ class FeasibilitySummary:
             "high_value_recall": self.high_value_recall,
             "trusted_high_value_match_count": self.trusted_high_value_match_count,
             "trusted_high_value_recall": self.trusted_high_value_recall,
+            "trusted_eligible_high_value_gold_relation_count": self.trusted_eligible_high_value_gold_relation_count,
+            "trusted_eligible_high_value_match_count": self.trusted_eligible_high_value_match_count,
+            "trusted_eligible_high_value_recall": self.trusted_eligible_high_value_recall,
+            "trusted_candidate_count": self.trusted_candidate_count,
+            "trusted_candidate_supported_count": self.trusted_candidate_supported_count,
+            "trusted_candidate_valuable_count": self.trusted_candidate_valuable_count,
+            "trusted_candidate_generic_relation_count": self.trusted_candidate_generic_relation_count,
+            "review_only_gold_trusted_leakage_count": self.review_only_gold_trusted_leakage_count,
             "high_value_review_gold_relation_count": self.high_value_review_gold_relation_count,
             "high_value_review_candidate_count": self.high_value_review_candidate_count,
             "high_value_review_gold_match_count": self.high_value_review_gold_match_count,
@@ -483,6 +502,9 @@ class FeasibilitySummary:
             "missed_gold_count": self.missed_gold_count,
             "precision_against_gold": self.precision_against_gold,
             "recall_against_gold": self.recall_against_gold,
+            "trusted_candidate_precision_against_gold": self.trusted_candidate_precision_against_gold,
+            "trusted_candidate_valuable_rate": self.trusted_candidate_valuable_rate,
+            "trusted_candidate_generic_relation_rate": self.trusted_candidate_generic_relation_rate,
             "completed_agent_precision_against_gold": self.completed_agent_precision_against_gold,
             "completed_agent_recall_against_gold": self.completed_agent_recall_against_gold,
             "specificity_rate": self.specificity_rate,

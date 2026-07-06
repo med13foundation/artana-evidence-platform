@@ -253,10 +253,14 @@ def test_failure_analysis_model_comparison_includes_trust_lane_metrics(
         "current",
         summary={
             "model_label": "current",
+            "trusted_candidate_precision_against_gold": 0.86,
             "completed_agent_precision_against_gold": 0.86,
+            "trusted_eligible_high_value_recall": 0.86,
             "trusted_high_value_recall": 0.85,
             "low_value_review_recall": 0.8,
             "low_value_review_curie_endpoint_capture_rate": 0.6,
+            "trusted_candidate_valuable_rate": 0.84,
+            "trusted_candidate_generic_relation_rate": 0.0,
             "trusted_eligible_curie_linked_gold_endpoint_rate": 0.96,
             "entailment_checked_rate": 1.0,
             "fallback_case_count": 0,
@@ -268,10 +272,14 @@ def test_failure_analysis_model_comparison_includes_trust_lane_metrics(
         "candidate",
         summary={
             "model_label": "candidate",
+            "trusted_candidate_precision_against_gold": 0.91,
             "completed_agent_precision_against_gold": 0.9,
+            "trusted_eligible_high_value_recall": 0.92,
             "trusted_high_value_recall": 0.9,
             "low_value_review_recall": 1.0,
             "low_value_review_curie_endpoint_capture_rate": 0.8,
+            "trusted_candidate_valuable_rate": 0.95,
+            "trusted_candidate_generic_relation_rate": 0.0,
             "trusted_eligible_curie_linked_gold_endpoint_rate": 0.98,
             "entailment_checked_rate": 1.0,
             "fallback_case_count": 0,
@@ -292,9 +300,13 @@ def test_failure_analysis_model_comparison_includes_trust_lane_metrics(
         if isinstance(row, dict)
     }
     candidate = rows["candidate"]
+    assert candidate["worst_trusted_candidate_precision_against_gold"] == 0.91
+    assert candidate["worst_trusted_eligible_high_value_recall"] == 0.92
     assert candidate["worst_trusted_high_value_recall"] == 0.9
     assert candidate["worst_low_value_review_recall"] == 1.0
     assert candidate["worst_low_value_review_curie_endpoint_capture_rate"] == 0.8
+    assert candidate["worst_trusted_candidate_valuable_rate"] == 0.95
+    assert candidate["worst_trusted_candidate_generic_relation_rate"] == 0.0
     assert candidate["worst_trusted_eligible_curie_linked_gold_endpoint_rate"] == 0.98
     assert candidate["worst_entailment_checked_rate"] == 1.0
     assert candidate["total_fallback_case_count"] == 0

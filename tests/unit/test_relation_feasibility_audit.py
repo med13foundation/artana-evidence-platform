@@ -561,6 +561,17 @@ def test_context_relations_do_not_count_as_trusted_high_value_recall() -> None:
     assert report.summary.high_value_recall == 1.0
     assert report.summary.trusted_high_value_match_count == 0
     assert report.summary.trusted_high_value_recall == 0.0
+    assert report.summary.trusted_eligible_high_value_gold_relation_count == 0
+    assert report.summary.trusted_eligible_high_value_match_count == 0
+    assert report.summary.trusted_eligible_high_value_recall == 0.0
+    assert report.summary.trusted_candidate_count == 0
+    assert report.summary.trusted_eligible_gold_curie_endpoint_count == 0
+    assert report.summary.trusted_eligible_curie_linked_gold_endpoint_count == 0
+    assert report.summary.verdict == "YELLOW"
+    assert any(
+        "no trusted-eligible high-value" in reason.lower()
+        for reason in report.summary.warning_reasons
+    )
 
 
 def test_wrong_verified_curie_links_are_reported_as_blocking() -> None:
@@ -1057,6 +1068,315 @@ def test_high_value_review_metrics_count_review_only_canonical_candidate() -> No
     assert summary_json["high_value_review_gold_match_count"] == 1
     assert summary_json["high_value_review_recall"] == 1.0
     assert "High-value review-only candidates: 1" in markdown
+
+
+def test_trusted_eligible_high_value_recall_excludes_high_value_review_only_gold() -> None:
+    cases = (
+        _case(
+            case_id="trusted_high_value_mechanism",
+            text="MED13 activates MAPK signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    support_sentence="MED13 activates MAPK signaling.",
+                    value_level="high",
+                    rationale="Trusted-eligible mechanism.",
+                    subject_curie="HGNC:22474",
+                    object_curie="GO:0000165",
+                ),
+            ),
+        ),
+        _case(
+            case_id="review_only_high_value_disease_context",
+            text=(
+                "FBN1 loss-of-function variants are associated with Marfan "
+                "syndrome."
+            ),
+            gold=(
+                GoldRelation(
+                    subject="FBN1 loss-of-function variants",
+                    relation_type="ASSOCIATED_WITH",
+                    object="Marfan syndrome",
+                    support_sentence=(
+                        "FBN1 loss-of-function variants are associated with "
+                        "Marfan syndrome."
+                    ),
+                    value_level="high",
+                    rationale=(
+                        "The disease context is high-value for review, but the "
+                        "composite variant label must not auto-promote."
+                    ),
+                    object_curie="MONDO:0007947",
+                    review_status="review_only",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(text: str) -> RelationExtractionResult:
+        if "FBN1" in text:
+            relations = (
+                ExtractedRelation(
+                    subject="FBN1 loss-of-function variants",
+                    relation_type="ASSOCIATED_WITH",
+                    object="Marfan syndrome",
+                    sentence=(
+                        "FBN1 loss-of-function variants are associated with "
+                        "Marfan syndrome."
+                    ),
+                    object_curie="MONDO:0007947",
+                    object_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("review_only_subject_grounding",),
+                ),
+            )
+        else:
+            relations = (
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    sentence="MED13 activates MAPK signaling.",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="GO:0000165",
+                    object_curie_source="verified_linker",
+                ),
+            )
+        return RelationExtractionResult(
+            relations=relations,
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=len(relations),
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    summary_json = report.summary.to_json()
+
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.high_value_review_recall == 1.0
+    assert report.summary.trusted_eligible_high_value_gold_relation_count == 1
+    assert report.summary.trusted_eligible_high_value_match_count == 1
+    assert report.summary.trusted_eligible_high_value_recall == 1.0
+    assert summary_json["trusted_eligible_high_value_recall"] == 1.0
+    assert not any(
+        "high-value recall" in reason.lower()
+        for reason in report.summary.warning_reasons
+    )
+
+
+def test_review_only_generic_candidates_do_not_drive_trusted_readiness_warnings() -> None:
+    cases = (
+        _case(
+            case_id="trusted_specific_candidate",
+            text="MED13 activates MAPK signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    support_sentence="MED13 activates MAPK signaling.",
+                    value_level="high",
+                    rationale="Trusted-eligible mechanism.",
+                    subject_curie="HGNC:22474",
+                    object_curie="GO:0000165",
+                ),
+            ),
+        ),
+        _case(
+            case_id="review_only_generic_one",
+            text="MECP2 pathogenic variants are associated with Rett syndrome.",
+            gold=(
+                GoldRelation(
+                    subject="MECP2 pathogenic variants",
+                    relation_type="ASSOCIATED_WITH",
+                    object="Rett syndrome",
+                    support_sentence=(
+                        "MECP2 pathogenic variants are associated with Rett syndrome."
+                    ),
+                    value_level="high",
+                    rationale="High-value disease context requiring review.",
+                    object_curie="MONDO:0010726",
+                    review_status="review_only",
+                ),
+            ),
+        ),
+        _case(
+            case_id="review_only_generic_two",
+            text="PAH pathogenic variants are associated with phenylketonuria.",
+            gold=(
+                GoldRelation(
+                    subject="PAH pathogenic variants",
+                    relation_type="ASSOCIATED_WITH",
+                    object="phenylketonuria",
+                    support_sentence=(
+                        "PAH pathogenic variants are associated with phenylketonuria."
+                    ),
+                    value_level="high",
+                    rationale="High-value disease context requiring review.",
+                    object_curie="MONDO:0009861",
+                    review_status="review_only",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(text: str) -> RelationExtractionResult:
+        if "MED13" in text:
+            relations = (
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    sentence="MED13 activates MAPK signaling.",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="GO:0000165",
+                    object_curie_source="verified_linker",
+                ),
+            )
+        elif "MECP2" in text:
+            relations = (
+                ExtractedRelation(
+                    subject="MECP2 pathogenic variants",
+                    relation_type="ASSOCIATED_WITH",
+                    object="Rett syndrome",
+                    sentence=(
+                        "MECP2 pathogenic variants are associated with Rett syndrome."
+                    ),
+                    object_curie="MONDO:0010726",
+                    object_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("review_only_subject_grounding",),
+                ),
+            )
+        else:
+            relations = (
+                ExtractedRelation(
+                    subject="PAH pathogenic variants",
+                    relation_type="ASSOCIATED_WITH",
+                    object="phenylketonuria",
+                    sentence=(
+                        "PAH pathogenic variants are associated with phenylketonuria."
+                    ),
+                    object_curie="MONDO:0009861",
+                    object_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("review_only_subject_grounding",),
+                ),
+            )
+        return RelationExtractionResult(
+            relations=relations,
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=len(relations),
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    summary_json = report.summary.to_json()
+
+    assert report.summary.generic_relation_rate > 0.25
+    assert report.summary.valuable_candidate_rate < 0.7
+    assert report.summary.trusted_candidate_count == 1
+    assert report.summary.trusted_candidate_valuable_count == 1
+    assert report.summary.trusted_candidate_valuable_rate == 1.0
+    assert report.summary.trusted_candidate_generic_relation_count == 0
+    assert report.summary.trusted_candidate_generic_relation_rate == 0.0
+    assert summary_json["trusted_candidate_generic_relation_rate"] == 0.0
+    assert not any("valuable" in reason.lower() for reason in report.summary.warning_reasons)
+    assert not any("generic" in reason.lower() for reason in report.summary.warning_reasons)
+
+
+def test_trusted_candidate_matching_review_only_gold_is_hard_leakage() -> None:
+    cases = (
+        _case(
+            case_id="trusted_anchor",
+            text="MED13 activates MAPK signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    support_sentence="MED13 activates MAPK signaling.",
+                    value_level="high",
+                    rationale="Trusted-eligible mechanism.",
+                    subject_curie="HGNC:22474",
+                    object_curie="GO:0000165",
+                ),
+            ),
+        ),
+        _case(
+            case_id="review_only_gold_without_candidate_review_flag",
+            text="IL6 regulates inflammatory signaling.",
+            gold=(
+                GoldRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    support_sentence="IL6 regulates inflammatory signaling.",
+                    value_level="high",
+                    rationale="Broad endpoint must stay review-only.",
+                    subject_curie="HGNC:6018",
+                    review_status="review_only",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(text: str) -> RelationExtractionResult:
+        if "IL6" in text:
+            relations = (
+                ExtractedRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    sentence="IL6 regulates inflammatory signaling.",
+                    subject_curie="HGNC:6018",
+                    subject_curie_source="verified_linker",
+                ),
+            )
+        else:
+            relations = (
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    sentence="MED13 activates MAPK signaling.",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="GO:0000165",
+                    object_curie_source="verified_linker",
+                ),
+            )
+        return RelationExtractionResult(
+            relations=relations,
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=len(relations),
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    summary_json = report.summary.to_json()
+
+    assert report.summary.review_only_gold_trusted_leakage_count == 1
+    assert report.summary.trusted_candidate_count == 2
+    assert report.summary.trusted_candidate_supported_count == 1
+    assert report.summary.trusted_candidate_valuable_count == 1
+    assert report.summary.trusted_candidate_precision_against_gold == 0.5
+    assert report.summary.trusted_candidate_valuable_rate == 0.5
+    assert report.summary.verdict == "RED"
+    assert "Review-only gold evidence leaked into trusted candidates." in (
+        report.summary.blocking_reasons
+    )
+    assert summary_json["review_only_gold_trusted_leakage_count"] == 1
 
 
 def test_low_value_review_metrics_ignore_fallback_review_only_candidates() -> None:
@@ -1875,7 +2195,7 @@ def test_markdown_report_includes_adversarial_findings() -> None:
 
     assert "## Adversarial Checks" in markdown
     assert "fallback_only_report" in markdown
-    assert "generic_relation_rate_high" in markdown
+    assert "all_candidate_generic_relation_rate_high" in markdown
 
 
 def test_adversarial_findings_detect_quality_illusions() -> None:
@@ -1916,10 +2236,60 @@ def test_adversarial_findings_detect_quality_illusions() -> None:
 
     assert finding_codes >= {
         "fallback_only_report",
-        "generic_relation_rate_high",
+        "all_candidate_generic_relation_rate_high",
     }
     assert "entailment_not_checked" not in finding_codes
     assert report.summary.entailment_checked_rate == 1.0
+
+
+def test_adversarial_findings_distinguish_trusted_generic_candidates() -> None:
+    cases = (
+        _case(
+            case_id="trusted_generic_candidate",
+            text="MED13 was associated with developmental delay.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object="developmental delay",
+                    support_sentence="MED13 was associated with developmental delay.",
+                    value_level="high",
+                    rationale="Generic relation should be visible if trusted.",
+                    subject_curie="HGNC:22474",
+                    object_curie="HP:0001263",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="MED13",
+                    relation_type="ASSOCIATED_WITH",
+                    object="developmental delay",
+                    sentence="MED13 was associated with developmental delay.",
+                    subject_curie="HGNC:22474",
+                    subject_curie_source="verified_linker",
+                    object_curie="HP:0001263",
+                    object_curie_source="verified_linker",
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=1,
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    findings = find_quality_illusions(report)
+    finding_codes = {finding.code for finding in findings}
+
+    assert report.summary.trusted_candidate_generic_relation_rate == 1.0
+    assert "trusted_candidate_generic_relation_rate_high" in finding_codes
+    assert "all_candidate_generic_relation_rate_high" not in finding_codes
 
 
 def test_adversarial_findings_warn_when_relation_arguments_are_missing() -> None:

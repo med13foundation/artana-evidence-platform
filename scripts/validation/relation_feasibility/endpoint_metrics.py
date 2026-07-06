@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Literal
 from scripts.validation.relation_feasibility.trusted_metric_rules import (
     HIGH_VALUE_LEVELS,
     LOW_VALUE_LEVELS,
+    is_review_only_context_relation,
+    is_trusted_graph_evidence_candidate,
 )
 
 if TYPE_CHECKING:
@@ -42,6 +44,7 @@ def build_endpoint_metric_summary(
         case_gold_relations=case_gold_relations,
         value_levels=HIGH_VALUE_LEVELS,
         review_status="candidate",
+        exclude_context_relations=True,
     )
     trusted_linked_endpoints = _linked_endpoint_keys(
         case_assessments=case_assessments,
@@ -54,6 +57,7 @@ def build_endpoint_metric_summary(
         case_gold_relations=case_gold_relations,
         value_levels=LOW_VALUE_LEVELS,
         review_status=None,
+        exclude_context_relations=False,
     )
     low_value_review_linked_endpoints = _linked_endpoint_keys(
         case_assessments=case_assessments,
@@ -91,6 +95,7 @@ def _gold_endpoint_keys(
     case_gold_relations: tuple[tuple[GoldRelation, ...], ...],
     value_levels: frozenset[str],
     review_status: str | None,
+    exclude_context_relations: bool,
 ) -> set[tuple[int, int, str]]:
     endpoint_keys: set[tuple[int, int, str]] = set()
     for case_index, gold_relations in enumerate(case_gold_relations):
@@ -100,6 +105,10 @@ def _gold_endpoint_keys(
             if (
                 review_status is not None
                 and gold_relation.review_status != review_status
+            ):
+                continue
+            if exclude_context_relations and is_review_only_context_relation(
+                gold_relation.relation_type,
             ):
                 continue
             if gold_relation.subject_curie is not None:
@@ -135,7 +144,13 @@ def _linked_endpoint_keys(
                 continue
             if lane == "trusted" and gold_relation.review_status == "review_only":
                 continue
-            if lane == "trusted" and not assessment.is_trusted_evidence_eligible:
+            if lane == "trusted" and is_review_only_context_relation(
+                gold_relation.relation_type,
+            ):
+                continue
+            if lane == "trusted" and not is_trusted_graph_evidence_candidate(
+                assessment,
+            ):
                 continue
             if assessment.subject_curie_matches_gold:
                 endpoint_keys.add((case_index, gold_index, "subject"))
@@ -172,7 +187,7 @@ def _weak_claim_trusted_leakage_count(
             gold_relation = case_gold_relations[case_index][matched_index]
             if gold_relation.value_level not in LOW_VALUE_LEVELS:
                 continue
-            if assessment.is_trusted_evidence_eligible:
+            if is_trusted_graph_evidence_candidate(assessment):
                 leaked_gold.add((case_index, matched_index))
     return len(leaked_gold)
 

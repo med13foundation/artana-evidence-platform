@@ -35,11 +35,17 @@ class _BlockingReasonContext:
 
 
 _DEFAULT_THRESHOLDS = ReadinessThresholds()
-_LOWER_IS_BETTER_METRICS = ("generic_relation_rate",)
+_LOWER_IS_BETTER_METRICS = (
+    "trusted_candidate_generic_relation_rate",
+    "generic_relation_rate",
+)
 _HIGHER_IS_BETTER_METRICS = (
+    "trusted_candidate_precision_against_gold",
     "completed_agent_precision_against_gold",
     "completed_agent_recall_against_gold",
+    "trusted_eligible_high_value_recall",
     "high_value_recall",
+    "trusted_candidate_valuable_rate",
     "completed_agent_valuable_candidate_rate",
     "trusted_eligible_curie_linked_gold_endpoint_rate",
     "curie_linked_gold_endpoint_rate",
@@ -54,6 +60,7 @@ _HARD_FAILURE_COUNT_KEYS = (
     "raw_unknown_relation_type_surface_count",
     "wrong_verified_curie_link_count",
     "weak_claim_trusted_leakage_count",
+    "review_only_gold_trusted_leakage_count",
 )
 _REQUIRED_NUMERIC_METRICS = (
     *_HIGHER_IS_BETTER_METRICS,
@@ -260,6 +267,7 @@ def _hard_failure_blocking_reasons(hard_failure_counts: JSONObject) -> tuple[str
             ("raw_unknown_relation_type_surface_count", "Raw unknown inventory relation-type surfaces were observed."),
             ("wrong_verified_curie_link_count", "Wrong verified CURIE links were observed."),
             ("weak_claim_trusted_leakage_count", "Weak low-value claims leaked into trusted evidence."),
+            ("review_only_gold_trusted_leakage_count", "Review-only gold evidence leaked into trusted candidates."),
         )
         if _int_from_object(hard_failure_counts.get(key)) > 0
     )
@@ -275,10 +283,10 @@ def _threshold_blocking_reasons(
         for blocked, reason in (
             (
                 _float_from_object(
-                    worst_metrics.get("completed_agent_precision_against_gold"),
+                    worst_metrics.get("trusted_candidate_precision_against_gold"),
                 )
                 < thresholds.min_precision,
-                "Worst-run completed-agent precision is below target.",
+                "Worst-run trusted candidate precision is below target.",
             ),
             (
                 _float_from_object(
@@ -288,21 +296,25 @@ def _threshold_blocking_reasons(
                 "Worst-run completed-agent recall is below target.",
             ),
             (
-                _float_from_object(worst_metrics.get("high_value_recall"))
+                _float_from_object(
+                    worst_metrics.get("trusted_eligible_high_value_recall"),
+                )
                 < thresholds.min_high_value_recall,
-                "Worst-run high-value recall is below target.",
+                "Worst-run trusted-eligible high-value recall is below target.",
             ),
             (
                 _float_from_object(
-                    worst_metrics.get("completed_agent_valuable_candidate_rate"),
+                    worst_metrics.get("trusted_candidate_valuable_rate"),
                 )
                 < thresholds.min_valuable_rate,
-                "Worst-run valuable candidate rate is below target.",
+                "Worst-run trusted candidate valuable rate is below target.",
             ),
             (
-                _float_from_object(worst_metrics.get("generic_relation_rate"))
+                _float_from_object(
+                    worst_metrics.get("trusted_candidate_generic_relation_rate"),
+                )
                 > thresholds.max_generic_rate,
-                "Worst-run generic relation rate is above target.",
+                "Worst-run trusted candidate generic relation rate is above target.",
             ),
             (
                 _float_from_object(

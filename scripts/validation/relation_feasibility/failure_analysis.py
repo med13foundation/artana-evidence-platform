@@ -13,13 +13,17 @@ from artana_evidence_api.document_extraction_support.entity_grounding.verified_d
 
 JSONObject = dict[str, object]
 _METRIC_KEYS = (
+    "trusted_candidate_precision_against_gold",
     "completed_agent_precision_against_gold",
     "completed_agent_recall_against_gold",
+    "trusted_eligible_high_value_recall",
     "high_value_recall",
     "trusted_high_value_recall",
     "low_value_review_recall",
     "low_value_review_curie_endpoint_capture_rate",
+    "trusted_candidate_valuable_rate",
     "completed_agent_valuable_candidate_rate",
+    "trusted_candidate_generic_relation_rate",
     "curie_linked_gold_endpoint_rate",
     "trusted_eligible_curie_linked_gold_endpoint_rate",
     "verified_curie_match_rate",
@@ -34,6 +38,7 @@ _HARD_FAILURE_COUNT_KEYS = (
     "raw_unknown_relation_type_surface_count",
     "wrong_verified_curie_link_count",
     "weak_claim_trusted_leakage_count",
+    "review_only_gold_trusted_leakage_count",
 )
 
 
@@ -282,12 +287,18 @@ def render_failure_analysis_markdown(report: JSONObject) -> str:
             (
                 "model_label",
                 "run_count",
+                "mean_trusted_candidate_precision_against_gold",
                 "mean_completed_agent_precision_against_gold",
+                "worst_trusted_candidate_precision_against_gold",
                 "worst_completed_agent_precision_against_gold",
+                "worst_trusted_eligible_high_value_recall",
                 "worst_trusted_high_value_recall",
+                "worst_trusted_candidate_valuable_rate",
+                "worst_trusted_candidate_generic_relation_rate",
                 "worst_trusted_eligible_curie_linked_gold_endpoint_rate",
                 "total_wrong_verified_curie_link_count",
                 "total_weak_claim_trusted_leakage_count",
+                "total_review_only_gold_trusted_leakage_count",
             ),
         ),
     )

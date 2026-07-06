@@ -29,15 +29,23 @@ def is_trusted_high_value_match(
     matched_gold = gold_relations[matched_index]
     return (
         agent_completed
-        and not is_review_only_context_relation(assessment.candidate.relation_type)
+        and is_trusted_graph_evidence_candidate(assessment)
         and matched_gold.review_status != "review_only"
         and matched_gold.value_level in HIGH_VALUE_LEVELS
         and assessment.is_valuable
-        and assessment.is_trusted_evidence_eligible
         and has_verified_gold_curie_endpoints(
             assessment=assessment,
             matched_gold=matched_gold,
         )
+    )
+
+
+def is_trusted_graph_evidence_candidate(assessment: CandidateAssessment) -> bool:
+    """Return whether a candidate can enter trusted graph auto-promotion metrics."""
+
+    return (
+        assessment.is_trusted_evidence_eligible
+        and not is_review_only_context_relation(assessment.candidate.relation_type)
     )
 
 

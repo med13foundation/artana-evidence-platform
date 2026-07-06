@@ -94,11 +94,28 @@ def find_quality_illusions(report: FeasibilityReport) -> tuple[AdversarialFindin
                 ),
             ),
         )
-    if summary.generic_relation_rate > _TRUSTED_GRAPH_GENERIC_RELATION_RATE_TARGET:
+    if (
+        summary.trusted_candidate_generic_relation_rate
+        > _TRUSTED_GRAPH_GENERIC_RELATION_RATE_TARGET
+    ):
         findings.append(
             AdversarialFinding(
-                code="generic_relation_rate_high",
-                message="Generic relation rate exceeds the trusted-graph target.",
+                code="trusted_candidate_generic_relation_rate_high",
+                message=(
+                    "Trusted candidate generic relation rate exceeds the "
+                    "trusted-graph target."
+                ),
+            ),
+        )
+    elif summary.generic_relation_rate > _TRUSTED_GRAPH_GENERIC_RELATION_RATE_TARGET:
+        findings.append(
+            AdversarialFinding(
+                code="all_candidate_generic_relation_rate_high",
+                message=(
+                    "All-candidate generic relation rate exceeds the review "
+                    "triage target, but trusted candidate generic rate is within "
+                    "the trusted-graph target."
+                ),
             ),
         )
     return tuple(findings)

@@ -8,6 +8,10 @@ from scripts.validation.relation_feasibility.endpoint_metrics import (
     EndpointMetricSummary,
     build_endpoint_metric_summary,
 )
+from scripts.validation.relation_feasibility.metrics.trust_lane import (
+    TrustLaneMetricCounts,
+    build_trust_lane_metric_counts,
+)
 from scripts.validation.relation_feasibility.models import (
     CandidateAssessment,
     ExtractionTrace,
@@ -25,9 +29,6 @@ from scripts.validation.relation_feasibility.scoring import (
 from scripts.validation.relation_feasibility.trusted_metric_rules import (
     HIGH_VALUE_LEVELS,
     LOW_VALUE_LEVELS,
-    high_value_review_gold_index,
-    is_trusted_high_value_match,
-    low_value_review_gold_index,
 )
 
 _RED_MIN_PRECISION = 0.5
@@ -63,6 +64,7 @@ class _VerdictContext:
     precision: float
     recall: float
     trusted_recall: float
+    trusted_eligible_high_value_gold_relation_count: int
     valuable_rate: float
     generic_relation_rate: float
     raw_unknown_relation_type_count: int
@@ -72,6 +74,7 @@ class _VerdictContext:
     trusted_eligible_gold_curie_endpoint_count: int
     trusted_eligible_curie_linked_gold_endpoint_rate: float
     weak_claim_trusted_leakage_count: int
+    review_only_gold_trusted_leakage_count: int
     wrong_verified_curie_link_count: int
     negative_control_leakage_count: int
     invalid_agent_case_count: int
@@ -142,19 +145,6 @@ class _ValueMetricCounts:
 
 
 @dataclass(frozen=True, slots=True)
-class _TrustLaneMetricCounts:
-    trusted_high_value_match_count: int
-    trusted_high_value_recall: float
-    high_value_review_gold_relation_count: int
-    high_value_review_candidate_count: int
-    high_value_review_gold_match_count: int
-    high_value_review_recall: float
-    low_value_review_candidate_count: int
-    low_value_review_gold_match_count: int
-    low_value_review_recall: float
-
-
-@dataclass(frozen=True, slots=True)
 class _AgentMetricCounts:
     agent_completed_case_count: int
     agent_zero_candidate_case_count: int
@@ -180,7 +170,7 @@ class _SummaryMetricGroups:
     relation_type: _RelationTypeMetricCounts
     curie: _CurieMetricCounts
     value: _ValueMetricCounts
-    trust_lane: _TrustLaneMetricCounts
+    trust_lane: TrustLaneMetricCounts
     negative_control: _NegativeControlMetricCounts
     agent: _AgentMetricCounts
 
@@ -196,10 +186,12 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
     curie_metrics = _curie_metric_counts(inputs, candidates)
     value_metrics = _value_metric_counts(inputs)
     case_agent_completed_flags = _case_agent_completed_flags(inputs)
-    trust_lane_metrics = _trust_lane_metric_counts(
-        inputs,
+    trust_lane_metrics = build_trust_lane_metric_counts(
+        case_gold_relations=inputs.case_gold_relations,
+        case_assessments=inputs.case_assessments,
         case_agent_completed_flags=case_agent_completed_flags,
-        value_metrics=value_metrics,
+        high_value_gold_relation_count=value_metrics.high_value_gold_relation_count,
+        low_value_gold_relation_count=value_metrics.low_value_gold_relation_count,
     )
     endpoint_metric_summary = build_endpoint_metric_summary(
         case_assessments=inputs.case_assessments,
@@ -292,6 +284,28 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
             trust_lane_metrics.trusted_high_value_match_count
         ),
         trusted_high_value_recall=trust_lane_metrics.trusted_high_value_recall,
+        trusted_eligible_high_value_gold_relation_count=(
+            trust_lane_metrics.trusted_eligible_high_value_gold_relation_count
+        ),
+        trusted_eligible_high_value_match_count=(
+            trust_lane_metrics.trusted_eligible_high_value_match_count
+        ),
+        trusted_eligible_high_value_recall=(
+            trust_lane_metrics.trusted_eligible_high_value_recall
+        ),
+        trusted_candidate_count=trust_lane_metrics.trusted_candidate_count,
+        trusted_candidate_supported_count=(
+            trust_lane_metrics.trusted_candidate_supported_count
+        ),
+        trusted_candidate_valuable_count=(
+            trust_lane_metrics.trusted_candidate_valuable_count
+        ),
+        trusted_candidate_generic_relation_count=(
+            trust_lane_metrics.trusted_candidate_generic_relation_count
+        ),
+        review_only_gold_trusted_leakage_count=(
+            trust_lane_metrics.review_only_gold_trusted_leakage_count
+        ),
         high_value_review_gold_relation_count=(
             trust_lane_metrics.high_value_review_gold_relation_count
         ),
@@ -346,6 +360,15 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         recall_against_gold=recall,
         high_value_recall=value_metrics.high_value_recall,
         low_value_recall=value_metrics.low_value_recall,
+        trusted_candidate_precision_against_gold=(
+            trust_lane_metrics.trusted_candidate_precision_against_gold
+        ),
+        trusted_candidate_valuable_rate=(
+            trust_lane_metrics.trusted_candidate_valuable_rate
+        ),
+        trusted_candidate_generic_relation_rate=(
+            trust_lane_metrics.trusted_candidate_generic_relation_rate
+        ),
         completed_agent_precision_against_gold=_ratio(
             agent_metrics.completed_agent_supported_candidate_count,
             agent_metrics.completed_agent_candidate_count,
@@ -680,82 +703,6 @@ def _case_agent_completed_flags(inputs: SummaryInputs) -> tuple[bool, ...]:
     )
 
 
-def _trust_lane_metric_counts(
-    inputs: SummaryInputs,
-    *,
-    case_agent_completed_flags: tuple[bool, ...],
-    value_metrics: _ValueMetricCounts,
-) -> _TrustLaneMetricCounts:
-    trusted_high_value_matches: set[tuple[int, int]] = set()
-    high_value_review_matches: set[tuple[int, int]] = set()
-    high_value_review_candidate_count = 0
-    low_value_review_matches: set[tuple[int, int]] = set()
-    low_value_review_candidate_count = 0
-    for case_index, (gold_relations, assessments, agent_completed) in enumerate(
-        zip(
-            inputs.case_gold_relations,
-            inputs.case_assessments,
-            case_agent_completed_flags,
-            strict=True,
-        ),
-    ):
-        for assessment in assessments:
-            if is_trusted_high_value_match(
-                assessment=assessment,
-                gold_relations=gold_relations,
-                agent_completed=agent_completed,
-            ):
-                trusted_high_value_matches.add(
-                    (case_index, assessment.matched_gold_index or 0),
-                )
-            high_value_review_index = high_value_review_gold_index(
-                assessment=assessment,
-                gold_relations=gold_relations,
-            )
-            if agent_completed and high_value_review_index is not None:
-                high_value_review_candidate_count += 1
-                high_value_review_matches.add((case_index, high_value_review_index))
-            low_value_review_index = low_value_review_gold_index(
-                assessment=assessment,
-                gold_relations=gold_relations,
-            )
-            if agent_completed and low_value_review_index is not None:
-                low_value_review_candidate_count += 1
-                low_value_review_matches.add((case_index, low_value_review_index))
-    return _TrustLaneMetricCounts(
-        trusted_high_value_match_count=len(trusted_high_value_matches),
-        trusted_high_value_recall=_ratio(
-            len(trusted_high_value_matches),
-            value_metrics.high_value_gold_relation_count,
-        ),
-        high_value_review_gold_relation_count=_high_value_review_gold_relation_count(
-            inputs,
-        ),
-        high_value_review_candidate_count=high_value_review_candidate_count,
-        high_value_review_gold_match_count=len(high_value_review_matches),
-        high_value_review_recall=_ratio(
-            len(high_value_review_matches),
-            _high_value_review_gold_relation_count(inputs),
-        ),
-        low_value_review_candidate_count=low_value_review_candidate_count,
-        low_value_review_gold_match_count=len(low_value_review_matches),
-        low_value_review_recall=_ratio(
-            len(low_value_review_matches),
-            value_metrics.low_value_gold_relation_count,
-        ),
-    )
-
-
-def _high_value_review_gold_relation_count(inputs: SummaryInputs) -> int:
-    return sum(
-        1
-        for gold_relations in inputs.case_gold_relations
-        for gold_relation in gold_relations
-        if gold_relation.value_level in HIGH_VALUE_LEVELS
-        and gold_relation.review_status == "review_only"
-    )
-
-
 def _negative_control_metric_counts(
     inputs: SummaryInputs,
     *,
@@ -892,15 +839,31 @@ def _verdict_context(
 ) -> _VerdictContext:
     return _VerdictContext(
         case_count=inputs.case_count,
-        precision=metric_groups.candidate.precision,
+        precision=(
+            metric_groups.trust_lane.trusted_candidate_precision_against_gold
+            if metric_groups.trust_lane.trusted_candidate_count > 0
+            else metric_groups.candidate.precision
+        ),
         recall=recall,
         trusted_recall=(
-            metric_groups.trust_lane.trusted_high_value_recall
-            if metric_groups.value.high_value_gold_relation_count > 0
+            metric_groups.trust_lane.trusted_eligible_high_value_recall
+            if metric_groups.trust_lane.trusted_eligible_high_value_gold_relation_count
+            > 0
             else recall
         ),
-        valuable_rate=metric_groups.candidate.valuable_rate,
-        generic_relation_rate=metric_groups.candidate.generic_relation_rate,
+        trusted_eligible_high_value_gold_relation_count=(
+            metric_groups.trust_lane.trusted_eligible_high_value_gold_relation_count
+        ),
+        valuable_rate=(
+            metric_groups.trust_lane.trusted_candidate_valuable_rate
+            if metric_groups.trust_lane.trusted_candidate_count > 0
+            else metric_groups.candidate.valuable_rate
+        ),
+        generic_relation_rate=(
+            metric_groups.trust_lane.trusted_candidate_generic_relation_rate
+            if metric_groups.trust_lane.trusted_candidate_count > 0
+            else metric_groups.candidate.generic_relation_rate
+        ),
         raw_unknown_relation_type_count=(
             metric_groups.relation_type.raw_unknown_relation_type_count
         ),
@@ -919,6 +882,9 @@ def _verdict_context(
         ),
         weak_claim_trusted_leakage_count=(
             endpoint_metric_summary.weak_claim_trusted_leakage_count
+        ),
+        review_only_gold_trusted_leakage_count=(
+            metric_groups.trust_lane.review_only_gold_trusted_leakage_count
         ),
         wrong_verified_curie_link_count=(
             metric_groups.curie.wrong_verified_curie_link_count
@@ -1006,6 +972,10 @@ def _red_verdict_reasons(context: _VerdictContext) -> tuple[str, ...]:
                 "Weak low-value claims leaked into trusted evidence.",
             ),
             (
+                context.review_only_gold_trusted_leakage_count > 0,
+                "Review-only gold evidence leaked into trusted candidates.",
+            ),
+            (
                 context.negative_control_leakage_count > 0,
                 "At least one negative-control case emitted a candidate.",
             ),
@@ -1015,11 +985,11 @@ def _red_verdict_reasons(context: _VerdictContext) -> tuple[str, ...]:
             ),
             (
                 context.valuable_rate < _RED_MIN_VALUABLE_RATE,
-                "Too few candidates were specific, supported, and valuable.",
+                "Too few trusted candidates were specific, supported, and valuable.",
             ),
             (
                 context.generic_relation_rate > _RED_MAX_GENERIC_RELATION_RATE,
-                "More than half of candidates used generic relation types.",
+                "More than half of trusted candidates used generic relation types.",
             ),
         )
         if active
@@ -1031,20 +1001,24 @@ def _yellow_verdict_reasons(context: _VerdictContext) -> tuple[str, ...]:
         reason
         for active, reason in (
             (
+                context.trusted_eligible_high_value_gold_relation_count == 0,
+                "No trusted-eligible high-value gold relations were provided.",
+            ),
+            (
                 context.precision < _YELLOW_MIN_PRECISION,
                 "Precision is below trusted graph construction target.",
             ),
             (
                 context.trusted_recall < _YELLOW_MIN_RECALL,
-                "Trusted high-value recall is below target.",
+                "Trusted-eligible high-value recall is below target.",
             ),
             (
                 context.valuable_rate < _YELLOW_MIN_VALUABLE_RATE,
-                "Valuable candidate rate is below target.",
+                "Trusted candidate valuable rate is below target.",
             ),
             (
                 context.generic_relation_rate > _YELLOW_MAX_GENERIC_RELATION_RATE,
-                "Generic relation rate is above target.",
+                "Trusted candidate generic relation rate is above target.",
             ),
         )
         if active
