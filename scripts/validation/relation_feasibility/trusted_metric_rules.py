@@ -70,6 +70,14 @@ def low_value_review_gold_index(
 ) -> int | None:
     """Return the low-value gold index captured by a governed review proposal."""
 
+    if assessment.candidate.review_status == "review_only":
+        matched_index = assessment.matched_gold_index
+        if matched_index is None:
+            return None
+        matched_gold = gold_relations[matched_index]
+        if matched_gold.value_level not in LOW_VALUE_LEVELS:
+            return None
+        return matched_index
     matched_index = assessment.proposal_matched_gold_index
     if matched_index is None or not assessment.is_governed_relation_proposal:
         return None

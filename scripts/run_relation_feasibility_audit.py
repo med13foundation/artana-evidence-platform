@@ -128,6 +128,8 @@ def extract_with_current_heuristic(text: str) -> RelationExtractionResult:
             proposed_relation_type=candidate.proposed_relation_type,
             new_relation_type_rationale=candidate.new_relation_type_rationale,
             relation_governance_status=candidate.relation_governance_status,
+            review_status=candidate.review_status,
+            review_reason_codes=candidate.review_reason_codes,
         )
         for candidate in candidates
     )
@@ -193,6 +195,8 @@ def _agent_relation_extraction_result_from_candidates(
             proposed_relation_type=candidate.proposed_relation_type,
             new_relation_type_rationale=candidate.new_relation_type_rationale,
             relation_governance_status=candidate.relation_governance_status,
+            review_status=candidate.review_status,
+            review_reason_codes=candidate.review_reason_codes,
         )
         for candidate in candidates
     )

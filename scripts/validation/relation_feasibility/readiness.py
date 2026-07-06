@@ -23,12 +23,25 @@ class ReadinessThresholds:
     min_entailment_checked_rate: float = 1.0
 
 
+@dataclass(frozen=True, slots=True)
+class _BlockingReasonContext:
+    run_count: int
+    min_runs: int
+    worst_metrics: JSONObject
+    hard_failure_counts: JSONObject
+    metric_errors: list[str]
+    red_source_report_count: int
+    thresholds: ReadinessThresholds
+
+
+_DEFAULT_THRESHOLDS = ReadinessThresholds()
 _LOWER_IS_BETTER_METRICS = ("generic_relation_rate",)
 _HIGHER_IS_BETTER_METRICS = (
     "completed_agent_precision_against_gold",
     "completed_agent_recall_against_gold",
     "high_value_recall",
     "completed_agent_valuable_candidate_rate",
+    "trusted_eligible_curie_linked_gold_endpoint_rate",
     "curie_linked_gold_endpoint_rate",
     "verified_curie_match_rate",
     "entailment_checked_rate",
@@ -40,6 +53,7 @@ _HARD_FAILURE_COUNT_KEYS = (
     "raw_unknown_relation_type_count",
     "raw_unknown_relation_type_surface_count",
     "wrong_verified_curie_link_count",
+    "weak_claim_trusted_leakage_count",
 )
 _REQUIRED_NUMERIC_METRICS = (
     *_HIGHER_IS_BETTER_METRICS,
@@ -52,10 +66,11 @@ def build_readiness_report(
     *,
     report_paths: Sequence[Path],
     min_runs: int = 3,
-    thresholds: ReadinessThresholds = ReadinessThresholds(),
+    thresholds: ReadinessThresholds | None = None,
 ) -> JSONObject:
     """Build a repeatability readiness report from single-run audit reports."""
 
+    active_thresholds = thresholds or _DEFAULT_THRESHOLDS
     summaries = tuple(_load_summary(path) for path in report_paths)
     run_count = len(summaries)
     metric_errors = _required_metric_errors(summaries)
@@ -69,13 +84,15 @@ def build_readiness_report(
         for key in _HARD_FAILURE_COUNT_KEYS
     }
     blocking_reasons = _blocking_reasons(
-        run_count=run_count,
-        min_runs=min_runs,
-        worst_metrics=worst_metrics,
-        hard_failure_counts=hard_failure_counts,
-        metric_errors=metric_errors,
-        red_source_report_count=red_source_report_count,
-        thresholds=thresholds,
+        _BlockingReasonContext(
+            run_count=run_count,
+            min_runs=min_runs,
+            worst_metrics=worst_metrics,
+            hard_failure_counts=hard_failure_counts,
+            metric_errors=metric_errors,
+            red_source_report_count=red_source_report_count,
+            thresholds=active_thresholds,
+        ),
     )
     trusted_graph_ready = len(blocking_reasons) == 0
     return {
@@ -91,15 +108,17 @@ def build_readiness_report(
         "mean_metrics": mean_metrics,
         "blocking_reasons": blocking_reasons,
         "thresholds": {
-            "min_precision": thresholds.min_precision,
-            "min_recall": thresholds.min_recall,
-            "min_high_value_recall": thresholds.min_high_value_recall,
-            "min_valuable_rate": thresholds.min_valuable_rate,
-            "max_generic_rate": thresholds.max_generic_rate,
+            "min_precision": active_thresholds.min_precision,
+            "min_recall": active_thresholds.min_recall,
+            "min_high_value_recall": active_thresholds.min_high_value_recall,
+            "min_valuable_rate": active_thresholds.min_valuable_rate,
+            "max_generic_rate": active_thresholds.max_generic_rate,
             "min_curie_linked_endpoint_rate": (
-                thresholds.min_curie_linked_endpoint_rate
+                active_thresholds.min_curie_linked_endpoint_rate
             ),
-            "min_entailment_checked_rate": thresholds.min_entailment_checked_rate,
+            "min_entailment_checked_rate": (
+                active_thresholds.min_entailment_checked_rate
+            ),
         },
     }
 
@@ -180,11 +199,11 @@ def _load_summary(path: Path) -> JSONObject:
     payload = json.loads(path.read_text())
     if not isinstance(payload, dict):
         msg = f"{path} does not contain a JSON object"
-        raise ValueError(msg)
+        raise TypeError(msg)
     summary = payload.get("summary")
     if not isinstance(summary, dict):
         msg = f"{path} does not contain a summary object"
-        raise ValueError(msg)
+        raise TypeError(msg)
     return dict(summary)
 
 
@@ -209,86 +228,99 @@ def _mean_metrics(summaries: tuple[JSONObject, ...]) -> JSONObject:
     return metrics
 
 
-def _blocking_reasons(
-    *,
-    run_count: int,
-    min_runs: int,
-    worst_metrics: JSONObject,
-    hard_failure_counts: JSONObject,
-    metric_errors: list[str],
-    red_source_report_count: int,
-    thresholds: ReadinessThresholds,
-) -> list[str]:
+def _blocking_reasons(context: _BlockingReasonContext) -> list[str]:
     reasons: list[str] = []
-    if run_count < min_runs:
+    if context.run_count < context.min_runs:
         reasons.append(
-            f"At least {min_runs} strict live-agent runs are required; got {run_count}.",
+            f"At least {context.min_runs} strict live-agent runs are required; got {context.run_count}.",
         )
-    reasons.extend(metric_errors)
-    if red_source_report_count > 0:
+    reasons.extend(context.metric_errors)
+    if context.red_source_report_count > 0:
         reasons.append(
-            f"{red_source_report_count} source audit reports were RED.",
+            f"{context.red_source_report_count} source audit reports were RED.",
         )
-    if _int_from_object(hard_failure_counts.get("fallback_case_count")) > 0:
-        reasons.append("Fallback cases were observed in strict live-agent runs.")
-    if _int_from_object(hard_failure_counts.get("invalid_agent_case_count")) > 0:
-        reasons.append("Invalid strict-agent completions were observed.")
-    if (
-        _int_from_object(hard_failure_counts.get("negative_control_leakage_count"))
-        > 0
-    ):
-        reasons.append("Negative-control leakage was observed.")
-    if _int_from_object(hard_failure_counts.get("raw_unknown_relation_type_count")) > 0:
-        reasons.append("Raw unknown candidate relation types were observed.")
-    if (
-        _int_from_object(
-            hard_failure_counts.get("raw_unknown_relation_type_surface_count"),
-        )
-        > 0
-    ):
-        reasons.append("Raw unknown inventory relation-type surfaces were observed.")
-    if _int_from_object(hard_failure_counts.get("wrong_verified_curie_link_count")) > 0:
-        reasons.append("Wrong verified CURIE links were observed.")
-    if (
-        _float_from_object(
-            worst_metrics.get("completed_agent_precision_against_gold"),
-        )
-        < thresholds.min_precision
-    ):
-        reasons.append("Worst-run completed-agent precision is below target.")
-    if (
-        _float_from_object(worst_metrics.get("completed_agent_recall_against_gold"))
-        < thresholds.min_recall
-    ):
-        reasons.append("Worst-run completed-agent recall is below target.")
-    if (
-        _float_from_object(worst_metrics.get("high_value_recall"))
-        < thresholds.min_high_value_recall
-    ):
-        reasons.append("Worst-run high-value recall is below target.")
-    if (
-        _float_from_object(
-            worst_metrics.get("completed_agent_valuable_candidate_rate"),
-        )
-        < thresholds.min_valuable_rate
-    ):
-        reasons.append("Worst-run valuable candidate rate is below target.")
-    if (
-        _float_from_object(worst_metrics.get("generic_relation_rate"))
-        > thresholds.max_generic_rate
-    ):
-        reasons.append("Worst-run generic relation rate is above target.")
-    if (
-        _float_from_object(worst_metrics.get("curie_linked_gold_endpoint_rate"))
-        < thresholds.min_curie_linked_endpoint_rate
-    ):
-        reasons.append("Worst-run CURIE-linked gold endpoint rate is below target.")
-    if (
-        _float_from_object(worst_metrics.get("entailment_checked_rate"))
-        < thresholds.min_entailment_checked_rate
-    ):
-        reasons.append("Worst-run entailment checked rate is below target.")
+    reasons.extend(_hard_failure_blocking_reasons(context.hard_failure_counts))
+    reasons.extend(
+        _threshold_blocking_reasons(
+            worst_metrics=context.worst_metrics,
+            thresholds=context.thresholds,
+        ),
+    )
     return reasons
+
+
+def _hard_failure_blocking_reasons(hard_failure_counts: JSONObject) -> tuple[str, ...]:
+    return tuple(
+        reason
+        for key, reason in (
+            ("fallback_case_count", "Fallback cases were observed in strict live-agent runs."),
+            ("invalid_agent_case_count", "Invalid strict-agent completions were observed."),
+            ("negative_control_leakage_count", "Negative-control leakage was observed."),
+            ("raw_unknown_relation_type_count", "Raw unknown candidate relation types were observed."),
+            ("raw_unknown_relation_type_surface_count", "Raw unknown inventory relation-type surfaces were observed."),
+            ("wrong_verified_curie_link_count", "Wrong verified CURIE links were observed."),
+            ("weak_claim_trusted_leakage_count", "Weak low-value claims leaked into trusted evidence."),
+        )
+        if _int_from_object(hard_failure_counts.get(key)) > 0
+    )
+
+
+def _threshold_blocking_reasons(
+    *,
+    worst_metrics: JSONObject,
+    thresholds: ReadinessThresholds,
+) -> tuple[str, ...]:
+    return tuple(
+        reason
+        for blocked, reason in (
+            (
+                _float_from_object(
+                    worst_metrics.get("completed_agent_precision_against_gold"),
+                )
+                < thresholds.min_precision,
+                "Worst-run completed-agent precision is below target.",
+            ),
+            (
+                _float_from_object(
+                    worst_metrics.get("completed_agent_recall_against_gold"),
+                )
+                < thresholds.min_recall,
+                "Worst-run completed-agent recall is below target.",
+            ),
+            (
+                _float_from_object(worst_metrics.get("high_value_recall"))
+                < thresholds.min_high_value_recall,
+                "Worst-run high-value recall is below target.",
+            ),
+            (
+                _float_from_object(
+                    worst_metrics.get("completed_agent_valuable_candidate_rate"),
+                )
+                < thresholds.min_valuable_rate,
+                "Worst-run valuable candidate rate is below target.",
+            ),
+            (
+                _float_from_object(worst_metrics.get("generic_relation_rate"))
+                > thresholds.max_generic_rate,
+                "Worst-run generic relation rate is above target.",
+            ),
+            (
+                _float_from_object(
+                    worst_metrics.get(
+                        "trusted_eligible_curie_linked_gold_endpoint_rate",
+                    ),
+                )
+                < thresholds.min_curie_linked_endpoint_rate,
+                "Worst-run trusted-eligible CURIE-linked gold endpoint rate is below target.",
+            ),
+            (
+                _float_from_object(worst_metrics.get("entailment_checked_rate"))
+                < thresholds.min_entailment_checked_rate,
+                "Worst-run entailment checked rate is below target.",
+            ),
+        )
+        if blocked
+    )
 
 
 def _required_metric_errors(summaries: tuple[JSONObject, ...]) -> list[str]:

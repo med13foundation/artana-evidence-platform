@@ -9,6 +9,9 @@ from artana_evidence_api.document_extraction_relation_taxonomy import (
     LLM_PROPOSE_NEW_RELATION_TYPE,
     LLM_VALID_RELATION_TYPES,
 )
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    review_only_record_for_label,
+)
 from artana_evidence_api.document_extraction_support.evidence_grounding import (
     ground_relation_sentence,
 )
@@ -16,19 +19,13 @@ from artana_evidence_api.document_extraction_support.evidence_support_verifier i
     TripleSupport,
     verify_triple_support,
 )
-from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
-    review_only_record_for_label,
-)
 
 from scripts.validation.relation_feasibility.models import (
     BenchmarkCase,
     CandidateAssessment,
     ExtractedRelation,
-    ExtractionTrace,
-    FeasibilitySummary,
     GoldRelation,
     RelationTypeSurface,
-    Verdict,
 )
 from scripts.validation.relation_feasibility.relation_matching import (
     curie_matches as _curie_matches,
@@ -42,12 +39,6 @@ from scripts.validation.relation_feasibility.relation_matching import (
 from scripts.validation.relation_feasibility.relation_matching import (
     normalized_relation_key,
     relation_matches_gold,
-)
-from scripts.validation.relation_feasibility.trusted_metric_rules import (
-    HIGH_VALUE_LEVELS,
-    LOW_VALUE_LEVELS,
-    is_trusted_high_value_match,
-    low_value_review_gold_index,
 )
 
 _GENERIC_RELATION_TYPES = frozenset({"ASSOCIATED_WITH"})
@@ -76,14 +67,6 @@ _GENERIC_ENTITY_LABELS = frozenset(
     },
 )
 _MAX_SPECIFIC_ENTITY_TOKENS = 6
-_RED_MIN_PRECISION = 0.5
-_RED_MIN_VALUABLE_RATE = 0.35
-_RED_MAX_GENERIC_RELATION_RATE = 0.5
-_YELLOW_MIN_PRECISION = 0.8
-_YELLOW_MIN_RECALL = 0.6
-_YELLOW_MIN_VALUABLE_RATE = 0.7
-_YELLOW_MAX_GENERIC_RELATION_RATE = 0.25
-_MIN_CURIE_LINKED_GOLD_ENDPOINT_RATE = 0.95
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,42 +94,19 @@ class _QualityContext:
     object_curie_matches_gold: bool
     subject_review_only_grounding: bool
     object_review_only_grounding: bool
+    review_status: str
+    review_reason_codes: tuple[str, ...]
     matched_gold: GoldRelation | None
 
 
 @dataclass(frozen=True, slots=True)
-class SummaryInputs:
-    """Aggregate inputs needed to build a feasibility summary."""
-
-    case_assessments: tuple[tuple[CandidateAssessment, ...], ...]
-    extraction_traces: tuple[ExtractionTrace, ...]
-    case_gold_relations: tuple[tuple[GoldRelation, ...], ...]
-    case_gold_relation_counts: tuple[int, ...]
-    case_missed_gold_counts: tuple[int, ...]
-    case_categories: tuple[str, ...]
-    relation_type_surfaces: tuple[tuple[RelationTypeSurface, ...], ...]
-    case_count: int
-    gold_relation_count: int
-    missed_gold_count: int
-    require_agent_completion: bool
-
-
-@dataclass(frozen=True, slots=True)
-class _VerdictContext:
-    case_count: int
-    precision: float
-    recall: float
-    trusted_recall: float
-    valuable_rate: float
-    generic_relation_rate: float
-    raw_unknown_relation_type_count: int
-    raw_unknown_relation_type_surface_count: int
-    gold_curie_endpoint_count: int
-    curie_linked_gold_endpoint_rate: float
-    wrong_verified_curie_link_count: int
-    negative_control_leakage_count: int
-    invalid_agent_case_count: int
-    require_agent_completion: bool
+class _CurieEndpointFlagContext:
+    has_curie: bool
+    has_verified_curie: bool
+    matches_gold: bool
+    missing_flag: str
+    unverified_flag: str
+    wrong_flag: str
 
 
 def assess_case(
@@ -179,476 +139,8 @@ def assess_case(
     return tuple(assessments), missed_gold_indices
 
 
-def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
-    """Build aggregate feasibility metrics."""
-
-    candidates = tuple(
-        assessment
-        for assessments in inputs.case_assessments
-        for assessment in assessments
-    )
-    candidate_count = len(candidates)
-    supported_candidate_count = sum(
-        1 for assessment in candidates if assessment.is_supported_by_gold
-    )
-    valuable_candidate_count = sum(
-        1 for assessment in candidates if assessment.is_valuable
-    )
-    generic_relation_count = sum(
-        1 for assessment in candidates if not assessment.is_relation_specific
-    )
-    pruned_generic_relation_count = sum(
-        trace.pruned_generic_relation_count for trace in inputs.extraction_traces
-    )
-    quality_filtered_candidate_count = sum(
-        trace.quality_filtered_candidate_count for trace in inputs.extraction_traces
-    )
-    raw_unknown_relation_type_count = sum(
-        1 for assessment in candidates if not assessment.has_known_relation_type
-    )
-    relation_type_surfaces = tuple(
-        surface
-        for surfaces in inputs.relation_type_surfaces
-        for surface in surfaces
-    )
-    relation_type_surface_count = len(relation_type_surfaces)
-    raw_unknown_relation_type_surface_count = sum(
-        1
-        for surface in relation_type_surfaces
-        if not _is_known_relation_type_surface(surface)
-    )
-    proposal_candidate_count = sum(
-        1 for assessment in candidates if assessment.is_governed_relation_proposal
-    )
-    proposal_gold_match_count = len(
-        {
-            (case_index, assessment.proposal_matched_gold_index)
-            for case_index, assessments in enumerate(inputs.case_assessments)
-            for assessment in assessments
-            if assessment.proposal_matched_gold_index is not None
-        },
-    )
-    proposal_eligible_gold_count = sum(
-        1
-        for gold_relations in inputs.case_gold_relations
-        for gold_relation in gold_relations
-        if not _is_known_relation_type(gold_relation.relation_type)
-    )
-    gold_curie_endpoint_count = sum(
-        1
-        for gold_relations in inputs.case_gold_relations
-        for gold_relation in gold_relations
-        for curie in (gold_relation.subject_curie, gold_relation.object_curie)
-        if curie is not None
-    )
-    candidate_curie_endpoint_count = sum(
-        int(assessment.has_subject_curie) + int(assessment.has_object_curie)
-        for assessment in candidates
-    )
-    candidate_curie_present_rate = _ratio(
-        candidate_curie_endpoint_count,
-        candidate_count * 2,
-    )
-    curie_linked_gold_endpoints = {
-        (case_index, assessment.matched_gold_index, "subject")
-        for case_index, assessments in enumerate(inputs.case_assessments)
-        for assessment in assessments
-        if assessment.matched_gold_index is not None
-        and assessment.subject_curie_matches_gold
-    } | {
-        (case_index, assessment.matched_gold_index, "object")
-        for case_index, assessments in enumerate(inputs.case_assessments)
-        for assessment in assessments
-        if assessment.matched_gold_index is not None
-        and assessment.object_curie_matches_gold
-    }
-    curie_linked_gold_endpoint_count = len(curie_linked_gold_endpoints)
-    verified_curie_match_count = curie_linked_gold_endpoint_count
-    curie_linked_gold_endpoint_rate = _ratio(
-        curie_linked_gold_endpoint_count,
-        gold_curie_endpoint_count,
-    )
-    model_curie_wrong_count = _model_curie_wrong_count(
-        inputs.case_assessments,
-        inputs.case_gold_relations,
-    )
-    wrong_verified_curie_link_count = _wrong_verified_curie_link_count(
-        inputs.case_assessments,
-        inputs.case_gold_relations,
-    )
-    specific_entity_count = sum(
-        1
-        for assessment in candidates
-        if assessment.has_specific_subject and assessment.has_specific_object
-    )
-    relation_specific_count = sum(
-        1 for assessment in candidates if assessment.is_relation_specific
-    )
-    grounded_sentence_count = sum(
-        1 for assessment in candidates if assessment.has_grounded_sentence
-    )
-    both_arguments_present_count = sum(
-        1 for assessment in candidates if assessment.has_both_arguments_in_sentence
-    )
-    support_sentence_aligned_count = sum(
-        1 for assessment in candidates if assessment.has_gold_support_sentence
-    )
-    entailment_required_count = sum(
-        1 for assessment in candidates if assessment.requires_entailment
-    )
-    entailment_checked_count = sum(
-        1 for assessment in candidates if assessment.has_support_verification
-    )
-    entailment_supported_count = sum(
-        1
-        for assessment in candidates
-        if assessment.requires_entailment and assessment.has_entailment_support
-    )
-    precision = _ratio(supported_candidate_count, candidate_count)
-    recall = _ratio(
-        inputs.gold_relation_count - inputs.missed_gold_count,
-        inputs.gold_relation_count,
-    )
-    high_value_gold_relation_count = sum(
-        1
-        for gold_relations in inputs.case_gold_relations
-        for gold_relation in gold_relations
-        if gold_relation.value_level in HIGH_VALUE_LEVELS
-    )
-    missed_gold_relations = tuple(
-        gold_relations[index]
-        for gold_relations, assessments in zip(
-            inputs.case_gold_relations,
-            inputs.case_assessments,
-            strict=True,
-        )
-        for index in _missed_gold_indices(
-            gold_relations=gold_relations,
-            assessments=assessments,
-        )
-    )
-    high_value_missed_gold_count = sum(
-        1
-        for gold_relation in missed_gold_relations
-        if gold_relation.value_level in HIGH_VALUE_LEVELS
-    )
-    low_value_gold_relation_count = sum(
-        1
-        for gold_relations in inputs.case_gold_relations
-        for gold_relation in gold_relations
-        if gold_relation.value_level in LOW_VALUE_LEVELS
-    )
-    low_value_missed_gold_count = sum(
-        1
-        for gold_relation in missed_gold_relations
-        if gold_relation.value_level in LOW_VALUE_LEVELS
-    )
-    high_value_recall = _ratio(
-        high_value_gold_relation_count - high_value_missed_gold_count,
-        high_value_gold_relation_count,
-    )
-    low_value_recall = _ratio(
-        low_value_gold_relation_count - low_value_missed_gold_count,
-        low_value_gold_relation_count,
-    )
-    valuable_rate = _ratio(valuable_candidate_count, candidate_count)
-    generic_relation_rate = _ratio(generic_relation_count, candidate_count)
-    case_agent_completed_flags = tuple(
-        _case_agent_completed(trace, len(assessments))
-        for assessments, trace in zip(
-            inputs.case_assessments,
-            inputs.extraction_traces,
-            strict=True,
-        )
-    )
-    agent_completed_case_count = sum(1 for completed in case_agent_completed_flags if completed)
-    trusted_high_value_matches: set[tuple[int, int]] = set()
-    low_value_review_matches: set[tuple[int, int]] = set()
-    low_value_review_candidate_count = 0
-    for case_index, (gold_relations, assessments, agent_completed) in enumerate(
-        zip(
-            inputs.case_gold_relations,
-            inputs.case_assessments,
-            case_agent_completed_flags,
-            strict=True,
-        ),
-    ):
-        for assessment in assessments:
-            if is_trusted_high_value_match(
-                assessment=assessment,
-                gold_relations=gold_relations,
-                agent_completed=agent_completed,
-            ):
-                trusted_high_value_matches.add(
-                    (case_index, assessment.matched_gold_index or 0),
-                )
-            low_value_review_index = low_value_review_gold_index(
-                assessment=assessment,
-                gold_relations=gold_relations,
-            )
-            if low_value_review_index is not None:
-                low_value_review_candidate_count += 1
-                low_value_review_matches.add((case_index, low_value_review_index))
-    trusted_high_value_match_count = len(trusted_high_value_matches)
-    trusted_high_value_recall = _ratio(
-        trusted_high_value_match_count,
-        high_value_gold_relation_count,
-    )
-    low_value_review_gold_match_count = len(low_value_review_matches)
-    low_value_review_recall = _ratio(
-        low_value_review_gold_match_count,
-        low_value_gold_relation_count,
-    )
-    agent_zero_candidate_case_count = sum(
-        1
-        for completed, trace in zip(
-            case_agent_completed_flags,
-            inputs.extraction_traces,
-            strict=True,
-        )
-        if completed and trace.llm_candidate_status == "llm_empty"
-    )
-    negative_control_case_count = sum(
-        1 for category in inputs.case_categories if category == "negative_control"
-    )
-    negative_control_empty_count = sum(
-        1
-        for category, completed, assessments in zip(
-            inputs.case_categories,
-            case_agent_completed_flags,
-            inputs.case_assessments,
-            strict=True,
-        )
-        if category == "negative_control" and completed and len(assessments) == 0
-    )
-    negative_control_leakage_count = sum(
-        1
-        for category, assessments in zip(
-            inputs.case_categories,
-            inputs.case_assessments,
-            strict=True,
-        )
-        if category == "negative_control" and len(assessments) > 0
-    )
-    fallback_case_count = sum(
-        1 for trace in inputs.extraction_traces if trace.fallback_used
-    )
-    fallback_candidate_count = sum(
-        trace.fallback_candidate_count for trace in inputs.extraction_traces
-    )
-    completed_agent_assessments = tuple(
-        assessment
-        for assessments, trace in zip(
-            inputs.case_assessments,
-            inputs.extraction_traces,
-            strict=True,
-        )
-        if _case_agent_completed(trace, len(assessments))
-        for assessment in assessments
-    )
-    completed_agent_candidate_count = len(completed_agent_assessments)
-    completed_agent_supported_candidate_count = sum(
-        1
-        for assessment in completed_agent_assessments
-        if assessment.is_supported_by_gold
-    )
-    completed_agent_valuable_candidate_count = sum(
-        1 for assessment in completed_agent_assessments if assessment.is_valuable
-    )
-    completed_agent_gold_relation_count = sum(
-        gold_count
-        for gold_count, trace, assessments in zip(
-            inputs.case_gold_relation_counts,
-            inputs.extraction_traces,
-            inputs.case_assessments,
-            strict=True,
-        )
-        if _case_agent_completed(trace, len(assessments))
-    )
-    completed_agent_missed_gold_count = sum(
-        missed_count
-        for missed_count, trace, assessments in zip(
-            inputs.case_missed_gold_counts,
-            inputs.extraction_traces,
-            inputs.case_assessments,
-            strict=True,
-        )
-        if _case_agent_completed(trace, len(assessments))
-    )
-    fallback_credited_as_agent_count = sum(
-        1
-        for assessments, trace in zip(
-            inputs.case_assessments,
-            inputs.extraction_traces,
-            strict=True,
-        )
-        if trace.fallback_used
-        for assessment in assessments
-        if assessment.is_valuable
-    )
-    invalid_agent_case_count = (
-        sum(1 for completed in case_agent_completed_flags if not completed)
-        if inputs.require_agent_completion
-        else 0
-    )
-    verdict, reason, blocking_reasons, warning_reasons = _verdict(
-        _VerdictContext(
-            case_count=inputs.case_count,
-            precision=precision,
-            recall=recall,
-            trusted_recall=(
-                trusted_high_value_recall
-                if high_value_gold_relation_count > 0
-                else recall
-            ),
-            valuable_rate=valuable_rate,
-            generic_relation_rate=generic_relation_rate,
-            raw_unknown_relation_type_count=raw_unknown_relation_type_count,
-            raw_unknown_relation_type_surface_count=(
-                raw_unknown_relation_type_surface_count
-            ),
-            gold_curie_endpoint_count=gold_curie_endpoint_count,
-            curie_linked_gold_endpoint_rate=curie_linked_gold_endpoint_rate,
-            wrong_verified_curie_link_count=wrong_verified_curie_link_count,
-            negative_control_leakage_count=negative_control_leakage_count,
-            invalid_agent_case_count=invalid_agent_case_count,
-            require_agent_completion=inputs.require_agent_completion,
-        ),
-    )
-    return FeasibilitySummary(
-        case_count=inputs.case_count,
-        gold_relation_count=inputs.gold_relation_count,
-        candidate_count=candidate_count,
-        supported_candidate_count=supported_candidate_count,
-        valuable_candidate_count=valuable_candidate_count,
-        generic_relation_count=generic_relation_count,
-        pruned_generic_relation_count=pruned_generic_relation_count,
-        quality_filtered_candidate_count=quality_filtered_candidate_count,
-        raw_unknown_relation_type_count=raw_unknown_relation_type_count,
-        relation_type_surface_count=relation_type_surface_count,
-        raw_unknown_relation_type_surface_count=(
-            raw_unknown_relation_type_surface_count
-        ),
-        proposal_candidate_count=proposal_candidate_count,
-        proposal_gold_match_count=proposal_gold_match_count,
-        proposal_eligible_gold_count=proposal_eligible_gold_count,
-        gold_curie_endpoint_count=gold_curie_endpoint_count,
-        candidate_curie_endpoint_count=candidate_curie_endpoint_count,
-        curie_linked_gold_endpoint_count=curie_linked_gold_endpoint_count,
-        verified_curie_match_count=verified_curie_match_count,
-        model_curie_wrong_count=model_curie_wrong_count,
-        wrong_verified_curie_link_count=wrong_verified_curie_link_count,
-        support_sentence_aligned_count=support_sentence_aligned_count,
-        both_arguments_present_count=both_arguments_present_count,
-        entailment_required_count=entailment_required_count,
-        entailment_checked_count=entailment_checked_count,
-        entailment_supported_count=entailment_supported_count,
-        agent_completed_case_count=agent_completed_case_count,
-        agent_zero_candidate_case_count=agent_zero_candidate_case_count,
-        fallback_case_count=fallback_case_count,
-        fallback_candidate_count=fallback_candidate_count,
-        fallback_credited_as_agent_count=fallback_credited_as_agent_count,
-        completed_agent_candidate_count=completed_agent_candidate_count,
-        completed_agent_supported_candidate_count=completed_agent_supported_candidate_count,
-        completed_agent_valuable_candidate_count=completed_agent_valuable_candidate_count,
-        completed_agent_gold_relation_count=completed_agent_gold_relation_count,
-        completed_agent_missed_gold_count=completed_agent_missed_gold_count,
-        invalid_agent_case_count=invalid_agent_case_count,
-        high_value_gold_relation_count=high_value_gold_relation_count,
-        high_value_missed_gold_count=high_value_missed_gold_count,
-        trusted_high_value_match_count=trusted_high_value_match_count,
-        trusted_high_value_recall=trusted_high_value_recall,
-        low_value_gold_relation_count=low_value_gold_relation_count,
-        low_value_missed_gold_count=low_value_missed_gold_count,
-        low_value_review_candidate_count=low_value_review_candidate_count,
-        low_value_review_gold_match_count=low_value_review_gold_match_count,
-        low_value_review_recall=low_value_review_recall,
-        negative_control_case_count=negative_control_case_count,
-        negative_control_empty_count=negative_control_empty_count,
-        negative_control_leakage_count=negative_control_leakage_count,
-        missed_gold_count=inputs.missed_gold_count,
-        precision_against_gold=precision,
-        recall_against_gold=recall,
-        high_value_recall=high_value_recall,
-        low_value_recall=low_value_recall,
-        completed_agent_precision_against_gold=_ratio(
-            completed_agent_supported_candidate_count,
-            completed_agent_candidate_count,
-        ),
-        completed_agent_recall_against_gold=_ratio(
-            completed_agent_gold_relation_count - completed_agent_missed_gold_count,
-            completed_agent_gold_relation_count,
-        ),
-        specificity_rate=_ratio(specific_entity_count, candidate_count),
-        relation_specificity_rate=_ratio(relation_specific_count, candidate_count),
-        generic_relation_rate=generic_relation_rate,
-        raw_unknown_relation_type_rate=_ratio(
-            raw_unknown_relation_type_count,
-            candidate_count,
-        ),
-        raw_unknown_relation_type_surface_rate=_ratio(
-            raw_unknown_relation_type_surface_count,
-            relation_type_surface_count,
-        ),
-        proposal_recall_against_gold=_ratio(
-            proposal_gold_match_count,
-            inputs.gold_relation_count,
-        ),
-        proposal_recall_against_proposal_eligible_gold=_ratio(
-            proposal_gold_match_count,
-            proposal_eligible_gold_count,
-        ),
-        candidate_curie_present_rate=candidate_curie_present_rate,
-        verified_curie_match_rate=curie_linked_gold_endpoint_rate,
-        curie_linked_gold_endpoint_rate=curie_linked_gold_endpoint_rate,
-        valuable_candidate_rate=valuable_rate,
-        completed_agent_valuable_candidate_rate=_ratio(
-            completed_agent_valuable_candidate_count,
-            completed_agent_candidate_count,
-        ),
-        grounded_sentence_rate=_ratio(grounded_sentence_count, candidate_count),
-        both_arguments_present_rate=_ratio(
-            both_arguments_present_count,
-            candidate_count,
-        ),
-        support_sentence_alignment_rate=_ratio(
-            support_sentence_aligned_count,
-            candidate_count,
-        ),
-        entailment_checked_rate=_ratio(
-            entailment_checked_count,
-            entailment_required_count,
-        ),
-        entailment_supported_rate=_ratio(
-            entailment_supported_count,
-            entailment_required_count,
-        ),
-        verdict=verdict,
-        verdict_reason=reason,
-        negative_control_empty_rate=_ratio(
-            negative_control_empty_count,
-            negative_control_case_count,
-        ),
-        blocking_reasons=blocking_reasons,
-        warning_reasons=warning_reasons,
-    )
 
 
-def _missed_gold_indices(
-    *,
-    gold_relations: tuple[GoldRelation, ...],
-    assessments: tuple[CandidateAssessment, ...],
-) -> tuple[int, ...]:
-    matched_indices = {
-        assessment.matched_gold_index
-        for assessment in assessments
-        if assessment.matched_gold_index is not None
-    }
-    return tuple(
-        index
-        for index in range(len(gold_relations))
-        if index not in matched_indices
-    )
 
 
 def _assess_candidate(
@@ -756,6 +248,8 @@ def _assess_candidate(
             object_curie_matches_gold=object_curie_matches_gold,
             subject_review_only_grounding=subject_review_only_grounding,
             object_review_only_grounding=object_review_only_grounding,
+            review_status=candidate.review_status,
+            review_reason_codes=candidate.review_reason_codes,
             matched_gold=matched_gold,
         ),
     )
@@ -855,17 +349,46 @@ def _proposal_matched_gold_index(
 
 
 def _quality_flags(context: _QualityContext) -> tuple[str, ...]:
+    return (
+        _support_quality_flags(context)
+        + _review_quality_flags(context)
+        + _specificity_quality_flags(context)
+        + _sentence_quality_flags(context)
+        + _support_verification_quality_flags(context)
+        + _curie_quality_flags(context)
+        + _gold_value_quality_flags(context)
+    )
+
+
+def _support_quality_flags(context: _QualityContext) -> tuple[str, ...]:
     flags: list[str] = []
     if not context.supported and not context.proposal_supported:
         flags.append("unsupported_by_gold")
-    if context.governed_relation_proposal:
-        flags.append("requires_relation_review")
     if context.proposal_supported:
         flags.append("proposal_matches_gold")
+    if context.supported and not context.gold_support_sentence:
+        flags.append("support_sentence_mismatch")
+    return tuple(flags)
+
+
+def _review_quality_flags(context: _QualityContext) -> tuple[str, ...]:
+    flags: list[str] = []
+    if context.governed_relation_proposal:
+        flags.append("requires_relation_review")
     if context.subject_review_only_grounding:
         flags.append("review_only_subject_grounding")
     if context.object_review_only_grounding:
         flags.append("review_only_object_grounding")
+    if context.review_status == "review_only":
+        flags.append("review_only_candidate")
+        flags.extend(
+            f"review_reason:{reason}" for reason in context.review_reason_codes
+        )
+    return tuple(flags)
+
+
+def _specificity_quality_flags(context: _QualityContext) -> tuple[str, ...]:
+    flags: list[str] = []
     if not context.subject_specific:
         flags.append("generic_subject")
     if not context.object_specific:
@@ -874,23 +397,26 @@ def _quality_flags(context: _QualityContext) -> tuple[str, ...]:
         flags.append("generic_relation_type")
     if not context.known_relation_type:
         flags.append("raw_unknown_relation_type")
+    return tuple(flags)
+
+
+def _sentence_quality_flags(context: _QualityContext) -> tuple[str, ...]:
+    flags: list[str] = []
     if not context.grounded_sentence:
         flags.append("missing_source_sentence")
     if context.grounded_sentence and not context.both_arguments_in_sentence:
         flags.append("missing_relation_arguments")
-    if context.supported and not context.gold_support_sentence:
-        flags.append("support_sentence_mismatch")
-    if context.requires_entailment and not context.has_support_verification:
-        flags.append("support_not_checked")
-    elif context.requires_entailment and not context.has_entailment_support:
-        flags.append("support_not_entailed")
-    flags.extend(_curie_quality_flags(context))
-    if (
-        context.matched_gold is not None
-        and context.matched_gold.value_level in {"low", "reject"}
-    ):
-        flags.append(f"{context.matched_gold.value_level}_gold_value")
     return tuple(flags)
+
+
+def _support_verification_quality_flags(
+    context: _QualityContext,
+) -> tuple[str, ...]:
+    if context.requires_entailment and not context.has_support_verification:
+        return ("support_not_checked",)
+    if context.requires_entailment and not context.has_entailment_support:
+        return ("support_not_entailed",)
+    return ()
 
 
 def _curie_quality_flags(context: _QualityContext) -> tuple[str, ...]:
@@ -900,43 +426,49 @@ def _curie_quality_flags(context: _QualityContext) -> tuple[str, ...]:
     if context.matched_gold.subject_curie is not None:
         flags.append(
             _curie_endpoint_flag(
-                has_curie=context.has_subject_curie,
-                has_verified_curie=context.has_verified_subject_curie,
-                matches_gold=context.subject_curie_matches_gold,
-                missing_flag="missing_subject_curie",
-                unverified_flag="unverified_subject_curie",
-                wrong_flag="wrong_subject_curie",
+                _CurieEndpointFlagContext(
+                    has_curie=context.has_subject_curie,
+                    has_verified_curie=context.has_verified_subject_curie,
+                    matches_gold=context.subject_curie_matches_gold,
+                    missing_flag="missing_subject_curie",
+                    unverified_flag="unverified_subject_curie",
+                    wrong_flag="wrong_subject_curie",
+                ),
             ),
         )
     if context.matched_gold.object_curie is not None:
         flags.append(
             _curie_endpoint_flag(
-                has_curie=context.has_object_curie,
-                has_verified_curie=context.has_verified_object_curie,
-                matches_gold=context.object_curie_matches_gold,
-                missing_flag="missing_object_curie",
-                unverified_flag="unverified_object_curie",
-                wrong_flag="wrong_object_curie",
+                _CurieEndpointFlagContext(
+                    has_curie=context.has_object_curie,
+                    has_verified_curie=context.has_verified_object_curie,
+                    matches_gold=context.object_curie_matches_gold,
+                    missing_flag="missing_object_curie",
+                    unverified_flag="unverified_object_curie",
+                    wrong_flag="wrong_object_curie",
+                ),
             ),
         )
     return tuple(flag for flag in flags if flag != "")
 
 
+def _gold_value_quality_flags(context: _QualityContext) -> tuple[str, ...]:
+    if context.matched_gold is None:
+        return ()
+    if context.matched_gold.value_level not in {"low", "reject"}:
+        return ()
+    return (f"{context.matched_gold.value_level}_gold_value",)
+
+
 def _curie_endpoint_flag(
-    *,
-    has_curie: bool,
-    has_verified_curie: bool,
-    matches_gold: bool,
-    missing_flag: str,
-    unverified_flag: str,
-    wrong_flag: str,
+    context: _CurieEndpointFlagContext,
 ) -> str:
-    if not has_curie:
-        return missing_flag
-    if not has_verified_curie:
-        return unverified_flag
-    if not matches_gold:
-        return wrong_flag
+    if not context.has_curie:
+        return context.missing_flag
+    if not context.has_verified_curie:
+        return context.unverified_flag
+    if not context.matches_gold:
+        return context.wrong_flag
     return ""
 
 
@@ -1096,77 +628,3 @@ def _has_matching_support_sentence(
 
 def _normalize_text_for_sentence_match(value: str) -> str:
     return re.sub(r"\s+", " ", value.casefold()).strip()
-
-
-def _ratio(numerator: int, denominator: int) -> float:
-    return round(numerator / denominator, 4) if denominator else 0.0
-
-
-def _case_agent_completed(trace: ExtractionTrace, candidate_count: int) -> bool:
-    if not trace.agent_completed:
-        return False
-    if trace.llm_candidate_status == "llm_empty":
-        return candidate_count == 0
-    return True
-
-
-def _verdict(context: _VerdictContext) -> tuple[Verdict, str, tuple[str, ...], tuple[str, ...]]:
-    red_reasons: list[str] = []
-    if context.case_count == 0:
-        red_reasons.append("No benchmark cases were provided.")
-    if context.require_agent_completion and context.invalid_agent_case_count > 0:
-        red_reasons.append(
-            f"{context.invalid_agent_case_count}/{context.case_count} cases are invalid because agent extraction did not complete without fallback.",
-        )
-    if context.raw_unknown_relation_type_count > 0:
-        red_reasons.append(
-            "At least one extracted candidate kept a raw unknown relation type."
-        )
-    if context.raw_unknown_relation_type_surface_count > 0:
-        red_reasons.append(
-            "At least one review, proposal, graph, or dictionary surface kept a raw unknown relation type."
-        )
-    if context.wrong_verified_curie_link_count > 0:
-        red_reasons.append("Wrong verified CURIE links were emitted.")
-    if (
-        context.gold_curie_endpoint_count > 0
-        and context.curie_linked_gold_endpoint_rate
-        < _MIN_CURIE_LINKED_GOLD_ENDPOINT_RATE
-    ):
-        red_reasons.append(
-            "Too few CURIE-linked gold endpoints were recovered by extraction."
-        )
-    if context.negative_control_leakage_count > 0:
-        red_reasons.append("At least one negative-control case emitted a candidate.")
-    if context.precision < _RED_MIN_PRECISION:
-        red_reasons.append("Less than half of extracted relations matched the gold set.")
-    if context.valuable_rate < _RED_MIN_VALUABLE_RATE:
-        red_reasons.append("Too few candidates were specific, supported, and valuable.")
-    if context.generic_relation_rate > _RED_MAX_GENERIC_RELATION_RATE:
-        red_reasons.append("More than half of candidates used generic relation types.")
-
-    yellow_reasons: list[str] = []
-    if (
-        context.precision < _YELLOW_MIN_PRECISION
-    ):
-        yellow_reasons.append("Precision is below trusted graph construction target.")
-    if context.trusted_recall < _YELLOW_MIN_RECALL:
-        yellow_reasons.append("Trusted high-value recall is below target.")
-    if context.valuable_rate < _YELLOW_MIN_VALUABLE_RATE:
-        yellow_reasons.append("Valuable candidate rate is below target.")
-    if context.generic_relation_rate > _YELLOW_MAX_GENERIC_RELATION_RATE:
-        yellow_reasons.append("Generic relation rate is above target.")
-    if red_reasons:
-        return "RED", red_reasons[0], tuple(red_reasons), tuple(yellow_reasons)
-    if yellow_reasons:
-        reason = (
-            "The method may be useful for triage, but quality is not strong "
-            "enough for trusted graph construction without review."
-        )
-        return "YELLOW", reason, (), tuple(yellow_reasons)
-    return (
-        "GREEN",
-        "The benchmark outputs are mostly supported, specific, and valuable.",
-        (),
-        (),
-    )

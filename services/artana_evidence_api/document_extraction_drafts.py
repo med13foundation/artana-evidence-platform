@@ -220,6 +220,8 @@ def build_document_extraction_drafts(
                     relation_type=candidate.relation_type,
                     object_label=object_label,
                     sentence=candidate.sentence,
+                    review_status=candidate.review_status,
+                    review_reason_codes=candidate.review_reason_codes,
                 ),
                 review_context=normalized_review_context,
             )
@@ -328,6 +330,7 @@ def build_document_extraction_drafts(
                             "subject_label": candidate.subject_label,
                             "object_label": object_label,
                             "original_object_label": candidate.object_label,
+                            **_candidate_review_metadata(candidate),
                             "resolved_subject_label": resolved_subject_label,
                             "resolved_object_label": resolved_object_label,
                             "subject_resolved": subject_match is not None,
@@ -529,6 +532,13 @@ def _curie_source_for_candidate(source: CurieSource) -> CurieSource:
     if source == "none":
         return "model"
     return source
+
+
+def _candidate_review_metadata(candidate: ExtractedRelationCandidate) -> JSONObject:
+    return {
+        "review_status": candidate.review_status,
+        "review_reason_codes": list(candidate.review_reason_codes),
+    }
 
 
 def _is_relation_type_governance_candidate(

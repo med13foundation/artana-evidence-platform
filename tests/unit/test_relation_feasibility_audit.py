@@ -658,6 +658,17 @@ def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() ->
             object_label="cisplatin",
             sentence="BRCA1 loss reduces toxicity of cisplatin.",
         ),
+        ExtractedRelationCandidate(
+            subject_label="IL6",
+            relation_type="REGULATES",
+            object_label="inflammatory signaling",
+            sentence=(
+                "IL6 may regulate inflammatory signaling in stressed epithelial "
+                "cells."
+            ),
+            review_status="review_only",
+            review_reason_codes=("hedged_language", "may_regulate"),
+        ),
     ]
     diagnostics = DocumentCandidateExtractionDiagnostics(
         llm_candidate_status="completed",
@@ -679,6 +690,12 @@ def test_agent_adapter_preserves_candidate_provenance_and_governance_fields() ->
         "requires_relation_review"
     )
     assert result.relations[1].trusted_evidence_eligible is False
+    assert result.relations[2].review_status == "review_only"
+    assert result.relations[2].review_reason_codes == (
+        "hedged_language",
+        "may_regulate",
+    )
+    assert result.relations[2].trusted_evidence_eligible is False
 
 
 def test_agent_adapter_inventory_indexes_governed_proposed_relation_type() -> None:
@@ -901,6 +918,233 @@ def test_low_value_review_metrics_require_review_only_candidate() -> None:
     assert report.summary.low_value_review_candidate_count == 1
     assert report.summary.low_value_review_gold_match_count == 1
     assert report.summary.low_value_review_recall == 1.0
+
+
+def test_low_value_review_metrics_count_review_only_canonical_candidate() -> None:
+    cases = (
+        _case(
+            case_id="low_value_review_canonical",
+            text="IL6 may regulate inflammatory signaling in stressed epithelial cells.",
+            gold=(
+                GoldRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    support_sentence=(
+                        "IL6 may regulate inflammatory signaling in stressed "
+                        "epithelial cells."
+                    ),
+                    value_level="low",
+                    rationale="Hedged regulatory language is review-only.",
+                    subject_curie="HGNC:6018",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="IL6",
+                relation_type="REGULATES",
+                object="inflammatory signaling",
+                sentence=(
+                    "IL6 may regulate inflammatory signaling in stressed "
+                    "epithelial cells."
+                ),
+                subject_curie="HGNC:6018",
+                subject_curie_source="verified_linker",
+                review_status="review_only",
+                review_reason_codes=("hedged_language", "may_regulate"),
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+    markdown = render_markdown_report(report)
+
+    assert assessment.matched_gold_index == 0
+    assert assessment.is_trusted_evidence_eligible is False
+    assert "review_only_candidate" in assessment.quality_flags
+    assert "review_reason:may_regulate" in assessment.quality_flags
+    assert report.summary.low_value_gold_relation_count == 1
+    assert report.summary.low_value_missed_gold_count == 0
+    assert report.summary.low_value_review_candidate_count == 1
+    assert report.summary.low_value_review_gold_match_count == 1
+    assert report.summary.low_value_review_recall == 1.0
+    assert "Low-value review candidates: 1" in markdown
+
+
+def test_endpoint_metrics_split_trusted_eligible_from_low_value_review() -> None:
+    cases = (
+        _case(
+            case_id="endpoint_metric_split_high",
+            text="MED13 activates MAPK signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    support_sentence="MED13 activates MAPK signaling.",
+                    value_level="high",
+                    rationale="Trusted-eligible mechanism.",
+                    subject_curie="HGNC:22474",
+                    object_curie="GO:0000165",
+                ),
+            ),
+        ),
+        _case(
+            case_id="endpoint_metric_split_low",
+            text="IL6 may regulate inflammatory signaling.",
+            gold=(
+                GoldRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    support_sentence="IL6 may regulate inflammatory signaling.",
+                    value_level="low",
+                    rationale="Weak claim belongs in review lane.",
+                    subject_curie="HGNC:6018",
+                    object_curie="GO:0006954",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(text: str) -> list[ExtractedRelation]:
+        if "IL6" in text:
+            return [
+                ExtractedRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    sentence="IL6 may regulate inflammatory signaling.",
+                    subject_curie="HGNC:6018",
+                    subject_curie_source="verified_linker",
+                    object_curie="GO:0006954",
+                    object_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("hedged_language", "may_regulate"),
+                ),
+            ]
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="MAPK signaling",
+                sentence="MED13 activates MAPK signaling.",
+                subject_curie="HGNC:22474",
+                subject_curie_source="verified_linker",
+                object_curie="GO:0000165",
+                object_curie_source="verified_linker",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    summary_json = report.summary.to_json()
+
+    assert report.summary.trusted_eligible_gold_curie_endpoint_count == 2
+    assert report.summary.trusted_eligible_curie_linked_gold_endpoint_count == 2
+    assert report.summary.trusted_eligible_curie_linked_gold_endpoint_rate == 1.0
+    assert report.summary.low_value_review_curie_endpoint_capture_rate == 1.0
+    assert report.summary.weak_claim_trusted_leakage_count == 0
+    assert summary_json["trusted_eligible_curie_linked_gold_endpoint_rate"] == 1.0
+    assert summary_json["low_value_review_curie_endpoint_capture_rate"] == 1.0
+    assert summary_json["weak_claim_trusted_leakage_count"] == 0
+
+
+def test_weak_low_value_claim_trusted_leakage_is_counted() -> None:
+    cases = (
+        _case(
+            case_id="weak_claim_leakage",
+            text="IL6 may regulate inflammatory signaling.",
+            gold=(
+                GoldRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    support_sentence="IL6 may regulate inflammatory signaling.",
+                    value_level="low",
+                    rationale="Weak claim belongs in review lane.",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="IL6",
+                relation_type="REGULATES",
+                object="inflammatory signaling",
+                sentence="IL6 may regulate inflammatory signaling.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+
+    assert report.summary.weak_claim_trusted_leakage_count == 1
+    assert report.summary.low_value_review_candidate_count == 0
+
+
+def test_verdict_uses_trusted_eligible_endpoint_rate_not_all_gold_rate() -> None:
+    cases = (
+        _case(
+            case_id="trusted_endpoint_verdict_high",
+            text="MED13 activates MAPK signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="MAPK signaling",
+                    support_sentence="MED13 activates MAPK signaling.",
+                    value_level="high",
+                    rationale="Trusted-eligible mechanism.",
+                    subject_curie="HGNC:22474",
+                    object_curie="GO:0000165",
+                ),
+            ),
+        ),
+        _case(
+            case_id="trusted_endpoint_verdict_low",
+            text="MET amplification was correlated with resistance.",
+            gold=(
+                GoldRelation(
+                    subject="MET amplification",
+                    relation_type="ASSOCIATED_WITH",
+                    object="resistance",
+                    support_sentence="MET amplification was correlated with resistance.",
+                    value_level="low",
+                    rationale="Weak evidence belongs in review lane.",
+                    subject_curie="HGNC:7029",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(text: str) -> list[ExtractedRelation]:
+        if "MED13" not in text:
+            return []
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="MAPK signaling",
+                sentence="MED13 activates MAPK signaling.",
+                subject_curie="HGNC:22474",
+                subject_curie_source="verified_linker",
+                object_curie="GO:0000165",
+                object_curie_source="verified_linker",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+
+    assert report.summary.curie_linked_gold_endpoint_rate < 0.95
+    assert report.summary.trusted_eligible_curie_linked_gold_endpoint_rate == 1.0
+    assert report.summary.weak_claim_trusted_leakage_count == 0
+    assert report.summary.verdict != "RED"
+    assert "Too few CURIE-linked gold endpoints" not in report.summary.blocking_reasons
 
 
 def test_summary_counts_negative_control_empty_agent_completions() -> None:

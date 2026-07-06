@@ -817,6 +817,56 @@ def test_draft_builder_marks_contradicted_support_low_priority() -> None:
     assert drafts[0].metadata["support_verification"]["support"] == "CONTRADICTS"
 
 
+def test_draft_builder_preserves_review_only_candidate_trust_floor() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MED13",
+        subject_curie="HGNC:22474",
+        subject_curie_source="verified_linker",
+        relation_type="CAUSES",
+        object_label="developmental delay",
+        object_curie="HP:0001263",
+        object_curie_source="verified_linker",
+        sentence="MED13 causes developmental delay.",
+        review_status="review_only",
+        review_reason_codes=("hedged_language", "weak_claim"),
+    )
+    document = replace(
+        _document(),
+        text_content="MED13 causes developmental delay.",
+        text_excerpt="MED13 causes developmental delay.",
+    )
+
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=uuid4(),
+        document=document,
+        candidates=[candidate],
+        graph_api_gateway=_GraphGateway(),
+        review_context=build_document_review_context(),
+    )
+
+    assert skipped == []
+    assert len(drafts) == 1
+    assert drafts[0].metadata["review_status"] == "review_only"
+    assert drafts[0].metadata["review_reason_codes"] == [
+        "hedged_language",
+        "weak_claim",
+    ]
+
+    (trusted_draft,) = with_candidate_extraction_trust_metadata(
+        drafts=drafts,
+        diagnostics=DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="completed",
+            llm_candidate_count=1,
+        ),
+    )
+
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is False
+    assert trusted_draft.metadata["trust_tier"] == "agent_candidate"
+    assert trusted_draft.metadata["trust_floor_failures"] == [
+        "review_only_candidate",
+    ]
+
+
 def test_draft_builder_omits_support_verification_when_grounding_fails() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="MED13",
@@ -972,6 +1022,57 @@ def test_candidate_extraction_trust_marks_verified_linked_agent_relation_trusted
     assert trusted_draft.metadata["trusted_evidence_eligible"] is True
     assert trusted_draft.metadata["trust_tier"] == "trusted"
     assert trusted_draft.metadata["trust_floor_failures"] == []
+
+
+def test_candidate_extraction_trust_blocks_review_only_candidates() -> None:
+    draft = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="doc:0",
+        title="MED13 causes developmental delay",
+        summary="MED13 may cause developmental delay.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={"proposed_claim_type": "CAUSES"},
+        metadata={
+            "review_status": "review_only",
+            "review_reason_codes": ["hedged_language"],
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {"support": "ENTAILS"},
+            "entity_linking": {
+                "subject": {
+                    "status": "linked",
+                    "curie": "HGNC:22474",
+                    "source": "verified_linker",
+                },
+                "object": {
+                    "status": "linked",
+                    "curie": "HP:0001263",
+                    "source": "verified_linker",
+                },
+            },
+        },
+    )
+
+    (trusted_draft,) = with_candidate_extraction_trust_metadata(
+        drafts=(draft,),
+        diagnostics=DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="completed",
+            llm_candidate_count=1,
+        ),
+    )
+
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is False
+    assert trusted_draft.metadata["trust_tier"] == "agent_candidate"
+    assert trusted_draft.metadata["trust_floor_failures"] == [
+        "review_only_candidate",
+    ]
 
 
 def test_draft_builder_skips_non_canonical_subject_labels() -> None:

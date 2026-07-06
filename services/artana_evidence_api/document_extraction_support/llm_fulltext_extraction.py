@@ -34,6 +34,9 @@ from artana_evidence_api.document_extraction_support.proposal_relation_type_guar
 from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
     has_broadened_entity_label,
 )
+from artana_evidence_api.document_extraction_support.review_policy.review_only_candidate_policy import (
+    classify_review_only_candidate,
+)
 
 LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v2"
 _MIN_ENTITY_LABEL_LENGTH = 2
@@ -162,6 +165,10 @@ def _llm_relation_to_candidate(
     unknown_relation_type = (
         relation_type if relation_type not in LLM_VALID_RELATION_TYPES else None
     )
+    review_only_decision = classify_review_only_candidate(
+        relation_type=relation_type,
+        support_sentence=rel.sentence,
+    )
     return (
         ExtractedRelationCandidate(
             subject_label=subject,
@@ -172,6 +179,10 @@ def _llm_relation_to_candidate(
             object_curie=object_curie_link.curie,
             subject_curie_source=_candidate_curie_source(subject_curie_link),
             object_curie_source=_candidate_curie_source(object_curie_link),
+            review_status=(
+                "review_only" if review_only_decision.review_only else "candidate"
+            ),
+            review_reason_codes=review_only_decision.reason_codes,
         ),
         unknown_relation_type,
     )

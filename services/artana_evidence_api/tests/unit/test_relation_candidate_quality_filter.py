@@ -169,18 +169,23 @@ def test_quality_filter_keeps_context_relation_when_it_is_separate_claim() -> No
     assert result.filtered_candidates == ()
 
 
-def test_quality_filter_removes_uncertain_candidate() -> None:
+def test_quality_filter_keeps_uncertain_candidate_as_review_only() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="HRD score",
         relation_type="BIOMARKER_FOR",
         object_label="platinum sensitivity",
-        sentence="HRD score may serve as a biomarker for platinum sensitivity.",
+        sentence="HRD score was described as a possible biomarker for platinum sensitivity.",
     )
 
     result = filter_low_value_relation_candidates((candidate,))
 
-    assert result.candidates == ()
-    assert result.filtered_candidates[0].reason == "uncertain_relation_claim"
+    assert result.filtered_candidates == ()
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].review_reason_codes == (
+        "hedged_language",
+        "possible_biomarker",
+    )
+    assert result.candidates[0].trusted_evidence_eligible is False
 
 
 def test_quality_filter_removes_candidate_missing_sentence_argument() -> None:

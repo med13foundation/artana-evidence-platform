@@ -15,6 +15,7 @@ Verdict = Literal["GREEN", "YELLOW", "RED"]
 ExtractorMode = Literal["agent", "deterministic", "custom"]
 RelationGovernanceStatus = Literal["canonical", "requires_relation_review"]
 CurieSource = Literal["none", "model", "verified_linker"]
+RelationReviewStatus = Literal["candidate", "review_only"]
 CandidateExtractionStatus = Literal[
     "not_needed",
     "completed",
@@ -92,12 +93,17 @@ class ExtractedRelation:
     proposed_relation_type: str | None = None
     new_relation_type_rationale: str | None = None
     relation_governance_status: RelationGovernanceStatus = "canonical"
+    review_status: RelationReviewStatus = "candidate"
+    review_reason_codes: tuple[str, ...] = ()
 
     @property
     def trusted_evidence_eligible(self) -> bool:
         """Return whether this candidate can be treated as a trusted graph edge."""
 
-        return self.relation_governance_status == "canonical"
+        return (
+            self.relation_governance_status == "canonical"
+            and self.review_status != "review_only"
+        )
 
     def to_json(self) -> dict[str, object]:
         """Return a JSON-compatible representation."""
@@ -109,6 +115,8 @@ class ExtractedRelation:
             "new_relation_type_rationale": self.new_relation_type_rationale,
             "relation_governance_status": self.relation_governance_status,
             "trusted_evidence_eligible": self.trusted_evidence_eligible,
+            "review_status": self.review_status,
+            "review_reason_codes": list(self.review_reason_codes),
             "object": self.object,
             "sentence": self.sentence,
             "subject_curie": self.subject_curie,
@@ -357,6 +365,13 @@ class FeasibilitySummary:
     low_value_review_candidate_count: int
     low_value_review_gold_match_count: int
     low_value_review_recall: float
+    trusted_eligible_gold_curie_endpoint_count: int
+    trusted_eligible_curie_linked_gold_endpoint_count: int
+    trusted_eligible_curie_linked_gold_endpoint_rate: float
+    low_value_review_gold_curie_endpoint_count: int
+    low_value_review_curie_linked_gold_endpoint_count: int
+    low_value_review_curie_endpoint_capture_rate: float
+    weak_claim_trusted_leakage_count: int
     negative_control_case_count: int
     negative_control_empty_count: int
     negative_control_leakage_count: int
@@ -444,6 +459,13 @@ class FeasibilitySummary:
             "low_value_review_candidate_count": self.low_value_review_candidate_count,
             "low_value_review_gold_match_count": self.low_value_review_gold_match_count,
             "low_value_review_recall": self.low_value_review_recall,
+            "trusted_eligible_gold_curie_endpoint_count": self.trusted_eligible_gold_curie_endpoint_count,
+            "trusted_eligible_curie_linked_gold_endpoint_count": self.trusted_eligible_curie_linked_gold_endpoint_count,
+            "trusted_eligible_curie_linked_gold_endpoint_rate": self.trusted_eligible_curie_linked_gold_endpoint_rate,
+            "low_value_review_gold_curie_endpoint_count": self.low_value_review_gold_curie_endpoint_count,
+            "low_value_review_curie_linked_gold_endpoint_count": self.low_value_review_curie_linked_gold_endpoint_count,
+            "low_value_review_curie_endpoint_capture_rate": self.low_value_review_curie_endpoint_capture_rate,
+            "weak_claim_trusted_leakage_count": self.weak_claim_trusted_leakage_count,
             "negative_control_case_count": self.negative_control_case_count,
             "negative_control_empty_count": self.negative_control_empty_count,
             "negative_control_empty_rate": self.negative_control_empty_rate,

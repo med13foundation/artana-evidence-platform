@@ -110,6 +110,8 @@ _VERIFIER_OWNED_PROMOTION_METADATA_KEYS = frozenset(
         "fallback_output_used",
         "support_verification",
         "support_verification_floor",
+        "review_reason_codes",
+        "review_status",
         "trust_floor_failures",
         "trust_tier",
         "trusted_evidence_eligible",

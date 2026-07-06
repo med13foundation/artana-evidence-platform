@@ -243,6 +243,8 @@ def test_build_graph_claim_request_preserves_verifier_owned_metadata() -> None:
             "trust_tier": "agent_candidate",
             "trust_floor_failures": ["support_entails_claim"],
             "trusted_evidence_eligible": False,
+            "review_status": "review_only",
+            "review_reason_codes": ["hedged_language"],
         },
     )
 
@@ -264,6 +266,8 @@ def test_build_graph_claim_request_preserves_verifier_owned_metadata() -> None:
             "trust_tier": "trusted",
             "trust_floor_failures": [],
             "trusted_evidence_eligible": True,
+            "review_status": "candidate",
+            "review_reason_codes": [],
         },
         graph_api_gateway=_ResolvingGraphApiGateway(entity_id=uuid4(), label="MED13"),
     )
@@ -280,6 +284,8 @@ def test_build_graph_claim_request_preserves_verifier_owned_metadata() -> None:
         "trust_floor_failures"
     ]
     assert request.metadata["trusted_evidence_eligible"] is False
+    assert request.metadata["review_status"] == "review_only"
+    assert request.metadata["review_reason_codes"] == ["hedged_language"]
 
 
 def test_build_graph_claim_request_rejects_invalid_entity_creation_response() -> None:
@@ -690,6 +696,8 @@ def test_build_graph_relation_request_preserves_verifier_owned_metadata() -> Non
             "trust_tier": "agent_candidate",
             "trust_floor_failures": ["support_entails_claim"],
             "trusted_evidence_eligible": False,
+            "review_status": "review_only",
+            "review_reason_codes": ["hedged_language"],
         },
     )
 
@@ -711,6 +719,8 @@ def test_build_graph_relation_request_preserves_verifier_owned_metadata() -> Non
             "trust_tier": "trusted",
             "trust_floor_failures": [],
             "trusted_evidence_eligible": True,
+            "review_status": "candidate",
+            "review_reason_codes": [],
         },
         graph_api_gateway=_ResolvingGraphApiGateway(
             entity_id=subject_id,
@@ -730,6 +740,8 @@ def test_build_graph_relation_request_preserves_verifier_owned_metadata() -> Non
         "trust_floor_failures"
     ]
     assert request.metadata["trusted_evidence_eligible"] is False
+    assert request.metadata["review_status"] == "review_only"
+    assert request.metadata["review_reason_codes"] == ["hedged_language"]
 
 
 def _proposal_with_no_reasoning(

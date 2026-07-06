@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal
 
 from artana_evidence_api.document_extraction_contracts import (
@@ -20,6 +20,9 @@ from artana_evidence_api.document_extraction_support.evidence_support_verifier i
 )
 from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
     has_broadened_entity_label,
+)
+from artana_evidence_api.document_extraction_support.review_policy.review_only_candidate_policy import (
+    classify_review_only_candidate,
 )
 
 RelationCandidateQualityFilterReason = Literal[
@@ -99,6 +102,10 @@ def filter_low_value_relation_candidates(
     filtered_candidates: list[QualityFilteredRelationCandidate] = []
     for candidate_index, candidate in enumerate(candidates):
         reason = _quality_filter_reason(candidate)
+        review_only_candidate = _review_only_candidate(candidate)
+        if reason == "uncertain_relation_claim" and review_only_candidate is not None:
+            kept_candidates.append(review_only_candidate)
+            continue
         if reason is None and _is_context_relation_shadowed(
             candidate=candidate,
             candidates=candidates,
@@ -117,6 +124,24 @@ def filter_low_value_relation_candidates(
     return RelationCandidateQualityFilterResult(
         candidates=tuple(kept_candidates),
         filtered_candidates=tuple(filtered_candidates),
+    )
+
+
+def _review_only_candidate(
+    candidate: ExtractedRelationCandidate,
+) -> ExtractedRelationCandidate | None:
+    if candidate.review_status == "review_only":
+        return candidate
+    decision = classify_review_only_candidate(
+        relation_type=candidate.relation_type,
+        support_sentence=candidate.sentence,
+    )
+    if not decision.review_only:
+        return None
+    return replace(
+        candidate,
+        review_status="review_only",
+        review_reason_codes=decision.reason_codes,
     )
 
 

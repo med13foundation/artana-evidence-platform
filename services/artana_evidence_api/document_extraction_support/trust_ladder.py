@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -27,6 +27,7 @@ CandidateTrustFloorFailure = Literal[
     "canonical_relation_type",
     "curie_linked_subject",
     "curie_linked_object",
+    "review_only_candidate",
 ]
 
 
@@ -65,6 +66,8 @@ def assess_candidate_trust(
         failures.append("agent_extraction_completed")
     if metadata.get("fallback_output_used") is not False:
         failures.append("no_fallback_output")
+    if _is_review_only_candidate(metadata):
+        failures.append("review_only_candidate")
 
     grounding = _object(metadata.get("evidence_grounding"))
     if grounding.get("grounded") is not True:
@@ -117,6 +120,7 @@ def _trust_tier_for_failures(
         "evidence_has_object",
         "support_entails_claim",
         "canonical_relation_type",
+        "review_only_candidate",
     }
     if evidence_failures.isdisjoint(failures):
         return "verified_evidence"
@@ -152,6 +156,20 @@ def _has_linked_endpoint(
 
 def _object(value: object) -> Mapping[str, object]:
     return value if isinstance(value, Mapping) else {}
+
+
+def _is_review_only_candidate(metadata: Mapping[str, object]) -> bool:
+    if metadata.get("review_status") == "review_only":
+        return True
+    reason_codes = metadata.get("review_reason_codes")
+    if isinstance(reason_codes, str):
+        return reason_codes.strip() != ""
+    if isinstance(reason_codes, Sequence):
+        return any(
+            isinstance(reason_code, str) and reason_code.strip() != ""
+            for reason_code in reason_codes
+        )
+    return False
 
 
 __all__ = [

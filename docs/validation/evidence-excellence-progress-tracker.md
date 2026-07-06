@@ -20,6 +20,8 @@ Next trusted-readiness PR plans:
   `docs/validation/trusted-graph-readiness-robust-findings-plan.md`
 - Current post-PR21 finding closure plan:
   `docs/validation/trusted-graph-readiness-post-pr21-findings-plan.md`
+- Current post-PR22 remediation plan:
+  `docs/validation/trusted-graph-readiness-post-pr22-remediation-plan.md`
 
 The tracker is updated after each PR with metrics, report links, tests, and
 review evidence. A phase is not done because code merged. A phase is done when
@@ -138,6 +140,7 @@ Status values:
 | 8 | PR-19 | `alvaro/evidence-pr19-high-value-relation-recovery` | Implemented locally; strict gate RED | Make high-value drug-resistance relations canonical instead of proposal noise. | High-value recall >= 0.8500 with raw unknown relation surfaces 0. | `CONFERS_RESISTANCE_TO` API taxonomy, graph dictionary seed, graph constraints, safe typo proposal repair, verifier cues, benchmark shape update, focused RED/GREEN tests, relation-feasibility gate, and strict live run. Live run reaches precision 0.9048 and high-value recall 0.9500, but trusted graph readiness remains blocked by verified CURIE endpoint rate 0.8108. |
 | 9 | PR-20 | `alvaro/evidence-pr20-qualifier-precision-adjudication` | Implemented locally; adversarial review fixes applied; strict gate RED | Preserve biomedical qualifiers and remove context false positives from trusted evidence. | Completed-agent precision >= 0.8000 and high-value recall >= 0.8500 without broad subject substitutions. | Dropped-modifier tests, expanded modifier adversarial tests, clause-local and comma-and modifier regressions, context-shadowing and review-only trust tests, low-value review accounting, relation-feasibility gate, strict live run4 with completed-agent precision 0.9500 and high-value recall 0.9500. Trusted high-value recall is now stricter at 0.5500; trusted graph readiness remains blocked by verified CURIE endpoint rate 0.8108. |
 | 10 | PR-21 | `alvaro/evidence-pr21-verified-grounding-closure` | Implemented locally; adversarial blockers fixed; strict gate RED | Improve verified grounding and review-only abstention without trusting raw model hints. | Trusted high-value recall >= 0.8500 and wrong verified CURIE links remain 0. | Grounding dictionary split, verified process labels, review-only broad/composite labels, verified-linker spoof regression, safe relation-alias scoring, missed-gold CURIE attribution, focused tests, relation-feasibility gate, strict live run3 with precision 1.0000, high-value recall 1.0000, trusted high-value recall 0.8500, verified endpoint rate 0.8810, false positives 0, fallback 0. Overall readiness remains RED. |
+| 11 | PR-22 | `alvaro/evidence-pr22-low-value-review-lane` | Implemented locally; strict single-run GREEN; repeatability pending | Split trusted-eligible endpoint recovery from low-value review evidence. | Trusted-eligible CURIE-linked endpoint rate >= 0.9500 and weak-claim trusted leakage remains 0. | Review-only candidate policy, review status propagation, `review_only_candidate` trust floor, promotion metadata protection, trusted/review endpoint metric split, single-run verdict contract fix, scoring/readiness helper refactor, focused tests, direct touched-file ruff, relation-feasibility gate, strict live run4 with verdict GREEN, precision 1.0000, high-value recall 1.0000, trusted endpoint rate 1.0000, weak leakage 0, fallback 0. Low-value review recall remains 0.4000 and final readiness still needs repeated runs. |
 
 ## PR Evidence Packet
 
@@ -198,6 +201,42 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-05 - PR-22 Low-Value Review Lane And Trusted Verdict Split
+
+PR: PR-22 low-value review lane and trusted verdict split
+
+Branch: `alvaro/evidence-pr22-low-value-review-lane`
+
+Goal: Separate trusted-eligible endpoint recovery from low-value review evidence
+so weak/hedged claims are measured without blocking trusted high-value promotion
+or leaking into trusted graph evidence.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-05-pr22-low-value-review-lane-summary.md`
+- `reports/relation_feasibility/2026-07-05-pr22-low-value-review-lane-run4/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-05-pr22-low-value-review-lane-run4/relation_feasibility_report.md`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr22-low-value-review-lane-run4/relation_feasibility_failure_analysis_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-05-pr22-low-value-review-lane-run4/relation_feasibility_failure_analysis_report.md`
+
+Result: strict live-agent run4 is GREEN for the single-run trusted-lane gate:
+completed-agent precision `1.0000`, high-value recall `1.0000`, trusted
+high-value recall `0.8500`, trusted-eligible CURIE-linked endpoint rate
+`1.0000`, weak-claim trusted leakage `0`, fallback cases `0`, invalid-agent
+cases `0`, negative-control leakage `0`, and wrong verified CURIE links `0`.
+The production proposal path also carries `review_only` status into draft
+metadata, blocks it with a `review_only_candidate` trust-floor failure, and
+keeps promotion request metadata from overriding verifier-owned review fields.
+Final validation includes focused RED/GREEN regressions, touched-file ruff,
+`make relation-feasibility-quality-gate`, architecture checks, `git diff --check`,
+final adversarial review, and `make service-checks` with coverage 87.03% against
+the 86% gate.
+
+Remaining risk: this is not final trusted-graph readiness. Low-value review
+recall remains `0.4000`, low-value review endpoint capture remains `0.2000`,
+and final readiness still requires repeated strict live-agent runs plus graph
+promotion enforcement.
 
 ### 2026-07-05 - PR-21 Verified Grounding And Review-Only Abstention
 
