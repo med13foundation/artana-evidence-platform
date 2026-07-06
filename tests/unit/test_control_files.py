@@ -124,6 +124,8 @@ def test_relation_feasibility_quality_gate_is_part_of_service_checks() -> None:
     make_targets = _make_targets()
 
     assert "relation-feasibility-quality-gate" in make_targets
+    assert "tests/unit/test_relation_feasibility_fixture_validation.py" in makefile
+    assert "tests/unit/test_generate_relation_feasibility_summary.py" in makefile
     assert re.search(
         r"^service-checks:.*\n(?:\t@.*\n)*\t@\$\(MAKE\) -s relation-feasibility-quality-gate",
         makefile,

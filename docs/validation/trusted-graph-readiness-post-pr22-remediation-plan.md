@@ -779,18 +779,18 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
 **Files:**
 
 - Create: `scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v3.json`
-- Create: `scripts/validation/relation_feasibility/fixture_validation.py`
+- Create: `scripts/validation/relation_feasibility/fixture_checks/validation.py`
 - Create: `scripts/generate_relation_feasibility_summary.py`
 - Modify: `tests/unit/test_relation_feasibility_audit.py`
 - Modify: `tests/unit/test_control_files.py`
 - Create: `tests/unit/test_relation_feasibility_fixture_validation.py`
 - Create: `tests/unit/test_generate_relation_feasibility_summary.py`
 - Modify: `docs/validation/evidence-excellence-progress-tracker.md`
-- Create: `docs/validation/reports/2026-07-05-pr27-benchmark-v3-doc-proof-summary.md`
+- Create: `docs/validation/reports/2026-07-06-pr27-benchmark-v3-doc-proof-summary.md`
 
-- [ ] **Step 1: Add fixture validation rules**
+- [x] **Step 1: Add fixture validation rules**
 
-  `fixture_validation.py` must reject:
+  `fixture_checks/validation.py` must reject:
 
   - duplicate `case_id`
   - missing support sentence
@@ -799,7 +799,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
   - negative-control case with gold relations
   - low-value weak case missing a `value_level`
 
-- [ ] **Step 2: Add v3 fixture coverage**
+- [x] **Step 2: Add v3 fixture coverage**
 
   `biomedical_relation_goldset_v3.json` must include at least:
 
@@ -814,7 +814,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
   - long-document chunking case
   - adversarial near-miss where entities appear but relation is negated
 
-- [ ] **Step 3: Generate docs from JSON**
+- [x] **Step 3: Generate docs from JSON**
 
   `generate_relation_feasibility_summary.py` must read:
 
@@ -834,7 +834,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
   - blocking reasons
   - remaining failures
 
-- [ ] **Step 4: Run fixture and summary tests**
+- [x] **Step 4: Run fixture and summary tests**
 
   ```bash
   PYTHONPATH="$(pwd)/services:$(pwd)" \
@@ -845,7 +845,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
     -q
   ```
 
-- [ ] **Step 5: Run v2 and v3 audits separately**
+- [x] **Step 5: Run v2 and v3 audits separately**
 
   ```bash
   bash -lc 'set -a; source .env.postgres; set +a; \
@@ -853,7 +853,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
     .venv/bin/python3 scripts/run_relation_feasibility_audit.py \
     --extractor agent \
     --cases scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v2.json \
-    --output-dir reports/relation_feasibility/2026-07-05-pr27-v2-run1'
+    --output-dir reports/relation_feasibility/2026-07-06-pr27-v2-run1'
   ```
 
   ```bash
@@ -862,7 +862,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
     .venv/bin/python3 scripts/run_relation_feasibility_audit.py \
     --extractor agent \
     --cases scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v3.json \
-    --output-dir reports/relation_feasibility/2026-07-05-pr27-v3-run1'
+    --output-dir reports/relation_feasibility/2026-07-06-pr27-v3-run2'
   ```
 
 **Merge gate:** PR27 is mergeable when v3 fixture validation passes, generated summaries are reproducible from JSON, and the docs clearly separate seed-fixture readiness from broader production confidence.

@@ -145,6 +145,7 @@ Status values:
 | 13 | PR-24 | `alvaro/evidence-pr24-grounding-decision-table` | Implemented locally; final gates pending | Give every remaining endpoint gap a safe verified or review-only grounding decision without trusting model hints. | All remaining CURIE gaps have explicit review-only decision metadata and wrong verified CURIE links remain 0. | Review-only grounding decision metadata, eight-label endpoint policy table, review-only-before-verified collision handling, link metadata for `grounding_reason_code`, failure-analysis `review_only_endpoint` rows, guarded primary LLM schema for raw relation-type cleanup, focused RED/GREEN tests, relation-feasibility gate, and strict live run3 with verdict GREEN, precision 0.9615, recall 1.0000, trusted endpoint rate 1.0000, verified CURIE match rate 1.0000, one review-only false positive, missed gold 0, fallback 0, invalid agent 0, wrong verified CURIE links 0. Repeatability and generic relation rate 0.1154 remain follow-up work. |
 | 14 | PR-25 | `alvaro/evidence-pr25-repeatability-model-ab` | In progress; harness implemented, live A/B pending | Prove repeatability and evaluate whether a stronger model improves trusted readiness without safety regressions. | Candidate model can be recommended only from worst-run readiness, zero safety failures, and no trusted-endpoint regression. | Artifact-only model-comparison module, repeated-run wrapper with `ARTANA_STRONGER_MODEL_CANDIDATE` fail-closed guard, readiness-backed adoption decision, failure-analysis trust-lane model metrics, focused RED/GREEN tests, and updated `relation-feasibility-quality-gate`. Live six-run A/B remains pending because `ARTANA_STRONGER_MODEL_CANDIDATE` is not configured in `.env.postgres`. |
 | 15 | PR-26 | `alvaro/evidence-pr26-graph-promotion-fail-closed` | Implemented locally; final gates pass | Make Graph DB independently reject unsafe trusted AI evidence even if a caller labels it trusted. | Graph validation rejects fallback, incomplete-agent, review-only, weak-reason, model-only endpoint, unlinked endpoint, non-ENTAILS, malformed floor metadata, and failed trust-floor promotion attempts. | Graph-owned review-lane floor, verified endpoint marker floor, malformed metadata fail-closed checks, `/claims` trusted-floor rejection, claim and direct relation regression tests, RED unit/integration/adversarial proof, focused 71-test graph validation pass, changed-file Ruff pass, post-adversarial `make graph-service-checks` pass, and post-adversarial `make service-checks` pass with coverage 87.03%. Summary: `docs/validation/reports/2026-07-06-pr26-graph-promotion-fail-closed-summary.md`. |
+| 16 | PR-27 | `alvaro/evidence-pr27-benchmark-v3-doc-proof` | Implemented locally; final gates pass | Expand benchmark breadth and make proof summaries generated from JSON artifacts. | v3 fixture validation passes and generated summaries expose reproducible metrics, blockers, warning reasons, artifact hashes, and remaining failures from tracked JSON. | 40-case v3 fixture, fixture validator, generated summary CLI, tracked PR27 proof JSON/Markdown, quality-gate tests, v2 GREEN run, v3 RED run2, v3 failure attribution, adversarial re-review PASS, pre-commit pass, and `make service-checks` pass with coverage 87.03%. V3 proves current agent path is safe on hard negatives but not trusted-graph ready: precision 0.7333, trusted high-value recall 0.2000, trusted endpoint rate 0.3000, generic rate 0.3000, model-only wrong CURIE hints 9, fallback 0, invalid agent 0, negative leakage 0, weak trusted leakage 0, wrong verified links 0. Summary: `docs/validation/reports/2026-07-06-pr27-benchmark-v3-doc-proof-summary.md`. |
 
 ## PR Evidence Packet
 
@@ -205,6 +206,65 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-06 - PR-27 Benchmark V3 And Generated Proof Docs
+
+PR: PR-27 benchmark v3 and generated proof docs
+
+Branch: `alvaro/evidence-pr27-benchmark-v3-doc-proof`
+
+Goal: Make the relation-feasibility benchmark harder and broader, then generate
+proof summaries from JSON so metrics and blockers do not drift from artifacts.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-06-pr27-benchmark-v3-doc-proof-summary.md`
+- `docs/validation/reports/2026-07-06-pr27-v2-relation-feasibility-report.json`
+- `docs/validation/reports/2026-07-06-pr27-v2-generated-summary.md`
+- `docs/validation/reports/2026-07-06-pr27-v3-relation-feasibility-report.json`
+- `docs/validation/reports/2026-07-06-pr27-v3-failure-analysis-report.json`
+- `docs/validation/reports/2026-07-06-pr27-v3-generated-summary.md`
+- `scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v3.json`
+- `reports/relation_feasibility/2026-07-06-pr27-v2-run1/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-06-pr27-v3-run2/relation_feasibility_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-06-pr27-v3-run2/relation_feasibility_failure_analysis_report.json`
+
+Result:
+
+- V2 seed fixture verdict: GREEN
+- V3 expanded fixture verdict: RED
+- V3 completed-agent precision: 0.7333
+- V3 completed-agent recall: 0.7333
+- V3 high-value recall: 0.7000
+- V3 trusted high-value recall: 0.2000
+- V3 trusted-eligible CURIE endpoint rate: 0.3000
+- V3 completed-agent valuable candidate rate: 0.3667
+- V3 generic relation rate: 0.3000
+- V3 model-only wrong CURIE hints: 9
+- V3 fallback cases: 0
+- V3 invalid strict-agent cases: 0
+- V3 negative-control leakage: 0
+- V3 weak-claim trusted leakage: 0
+- V3 wrong verified CURIE links: 0
+
+Interpretation:
+
+PR27 shows that the previous v2 seed was too curated to prove production
+biomedical value. The live agent path remains safe on hard negative controls,
+but the expanded fixture exposes real quality blockers in high-value recall,
+trusted endpoint recovery, generic relation noise, and near-miss specificity.
+
+Validation:
+
+- Focused PR27 tests passed.
+- `make relation-feasibility-quality-gate` passed.
+- V3 live-agent run2 completed with fallback 0 and invalid agent 0.
+- Failure attribution completed for V3 run2.
+- Adversarial re-review passed after tracked proof docs, metric, and fixture
+  validation fixes.
+- `git diff --check` passed.
+- `pre-commit run --all-files` passed.
+- `make service-checks` passed with coverage 87.03%.
 
 ### 2026-07-06 - PR-24 Grounding Decision Table
 
