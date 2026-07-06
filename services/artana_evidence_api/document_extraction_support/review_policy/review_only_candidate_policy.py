@@ -15,7 +15,10 @@ class ReviewOnlyDecision:
     trusted_promotion_allowed: bool
 
 
-_TREND_RE = re.compile(r"\btrend(?:ed)?\s+toward\b|\btrend\s+with\b", re.IGNORECASE)
+_TREND_RE = re.compile(
+    r"\btrend(?:ed|s|ing)?\s+(?:toward|with)\b",
+    re.IGNORECASE,
+)
 _POSSIBLE_BIOMARKER_RE = re.compile(
     r"\b(possible|potential|putative)\s+biomarker\b",
     re.IGNORECASE,
@@ -29,6 +32,20 @@ _CORRELATED_RE = re.compile(r"\bcorrelat(?:e|es|ed|ing|ion)\s+with\b", re.IGNORE
 _WEAK_LANGUAGE_RE = re.compile(
     r"\b(?:may|might|possible|potential|trend|weakly)\b",
     re.IGNORECASE,
+)
+_BARE_AND_CLAIM_BOUNDARY_PATTERN = (
+    r"\band\s+(?="
+    r"[A-Z0-9][A-Za-z0-9*.-]*"
+    r"(?:\s+[A-Za-z0-9*.-]+){0,5}\s+"
+    r"(?:"
+    r"activat(?:e|es|ed|ing|ion)|associat(?:e|es|ed|ing|ion)|"
+    r"biomarker|confers?|correlat(?:e|es|ed|ing|ion)|"
+    r"express(?:es|ed|ing|ion)?|inhibit(?:s|ed|ing)?|is|may|might|"
+    r"predic(?:t|ts|ted|ting)|regulat(?:e|es|ed|ing|ion)|"
+    r"sensitiz(?:e|es|ed|ing)|target(?:s|ed|ing)?|"
+    r"trend(?:ed|s|ing)?|was|were"
+    r")\b"
+    r")"
 )
 
 
@@ -106,8 +123,14 @@ def _split_candidate_clauses(sentence: str) -> tuple[str, ...]:
     return tuple(
         clause.strip(" ,")
         for clause in re.split(
-            r"(?:[.;:]|,\s*(?:and|while|whereas|but)\b|\b(?:while|whereas|but)\b)",
+            r"(?:"
+            r"[.;:]|"
+            r",\s*(?:and|while|whereas|but)\b|"
+            r"\b(?:while|whereas|but)\b|"
+            rf"{_BARE_AND_CLAIM_BOUNDARY_PATTERN}"
+            r")",
             sentence,
+            flags=re.IGNORECASE,
         )
         if clause.strip(" ,")
     )

@@ -116,6 +116,26 @@ _CELL_CONTEXT_TOKENS = frozenset(
         "macrophages",
     },
 )
+_RESISTANCE_OBJECT_BOUNDARY_AFTER_PATTERN = (
+    "after|although|among|and|are|because|before|but|cases|cells|cohort|"
+    "despite|did|do|does|during|for|however|in|is|patients|samples|show|"
+    "showed|shows|study|that|threshold|through|tumors|tumours|was|were|"
+    "whereas|which|while"
+)
+_BARE_AND_CLAIM_BOUNDARY_PATTERN = (
+    r"\band\s+(?="
+    r"[A-Z0-9][A-Za-z0-9*.-]*"
+    r"(?:\s+[A-Za-z0-9*.-]+){0,5}\s+"
+    r"(?:"
+    r"activat(?:e|es|ed|ing|ion)|associat(?:e|es|ed|ing|ion)|"
+    r"biomarker|confers?|correlat(?:e|es|ed|ing|ion)|"
+    r"express(?:es|ed|ing|ion)?|inhibit(?:s|ed|ing)?|is|may|might|"
+    r"predic(?:t|ts|ted|ting)|regulat(?:e|es|ed|ing|ion)|"
+    r"sensitiz(?:e|es|ed|ing)|target(?:s|ed|ing)?|"
+    r"trend(?:ed|s|ing)?|was|were"
+    r")\b"
+    r")"
+)
 
 _UNCERTAIN_RELATION_CUE_RE = re.compile(
     r"\b("
@@ -162,17 +182,20 @@ def filter_low_value_relation_candidates(
 
     kept_candidates: list[ExtractedRelationCandidate] = []
     filtered_candidates: list[QualityFilteredRelationCandidate] = []
-    for candidate_index, candidate in enumerate(candidates):
+    repaired_candidates = tuple(
+        _repair_weak_review_candidate(candidate) for candidate in candidates
+    )
+    for candidate_index, candidate in enumerate(repaired_candidates):
         reason = _quality_filter_reason(candidate)
         if reason is None and _is_context_relation_shadowed(
             candidate=candidate,
-            candidates=candidates,
+            candidates=repaired_candidates,
         ):
             reason = "context_relation_shadowed_by_direct_mechanism"
         if reason is None:
             sibling_decision = _sibling_shadow_decision(
                 candidate=candidate,
-                candidates=candidates,
+                candidates=repaired_candidates,
             )
             if sibling_decision.review_only_candidate is not None:
                 kept_candidates.append(sibling_decision.review_only_candidate)
@@ -201,9 +224,57 @@ def filter_low_value_relation_candidates(
             ),
         )
     return RelationCandidateQualityFilterResult(
-        candidates=tuple(kept_candidates),
+        candidates=_merge_duplicate_kept_candidates(kept_candidates),
         filtered_candidates=tuple(filtered_candidates),
     )
+
+
+def _merge_duplicate_kept_candidates(
+    candidates: list[ExtractedRelationCandidate],
+) -> tuple[ExtractedRelationCandidate, ...]:
+    merged_by_key: dict[tuple[str, str, str, str], ExtractedRelationCandidate] = {}
+    ordered_keys: list[tuple[str, str, str, str]] = []
+    for candidate in candidates:
+        key = (
+            candidate.subject_label.casefold(),
+            candidate.relation_type,
+            candidate.object_label.casefold(),
+            candidate.sentence.casefold(),
+        )
+        existing = merged_by_key.get(key)
+        if existing is None:
+            merged_by_key[key] = candidate
+            ordered_keys.append(key)
+            continue
+        review_reason_codes = tuple(
+            dict.fromkeys(
+                (*existing.review_reason_codes, *candidate.review_reason_codes),
+            ),
+        )
+        merged_by_key[key] = replace(
+            existing,
+            subject_curie=existing.subject_curie or candidate.subject_curie,
+            object_curie=existing.object_curie or candidate.object_curie,
+            subject_curie_source=(
+                existing.subject_curie_source
+                if existing.subject_curie is not None
+                else candidate.subject_curie_source
+            ),
+            object_curie_source=(
+                existing.object_curie_source
+                if existing.object_curie is not None
+                else candidate.object_curie_source
+            ),
+            review_status=(
+                "review_only"
+                if "review_only"
+                in {existing.review_status, candidate.review_status}
+                or bool(review_reason_codes)
+                else "candidate"
+            ),
+            review_reason_codes=review_reason_codes,
+        )
+    return tuple(merged_by_key[key] for key in ordered_keys)
 
 
 def _review_only_candidate(
@@ -224,6 +295,65 @@ def _review_only_candidate(
         review_status="review_only",
         review_reason_codes=decision.reason_codes,
     )
+
+
+def _repair_weak_review_candidate(
+    candidate: ExtractedRelationCandidate,
+) -> ExtractedRelationCandidate:
+    candidate = _repair_trend_response_relation_type(candidate)
+    repaired_object = _correlated_resistance_object(candidate)
+    if repaired_object is None:
+        return candidate
+    return replace(
+        candidate,
+        object_label=repaired_object,
+        object_curie=None,
+        object_curie_source="none",
+    )
+
+
+def _repair_trend_response_relation_type(
+    candidate: ExtractedRelationCandidate,
+) -> ExtractedRelationCandidate:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation != "BIOMARKER_FOR":
+        return candidate
+    object_label = _normalize_entity_label(candidate.object_label)
+    if "response" not in object_label.split():
+        return candidate
+    claim_scope = _candidate_claim_scope(candidate)
+    if claim_scope == "":
+        return candidate
+    if re.search(r"\btrend(?:ed|s|ing)?\s+with\b", claim_scope) is None:
+        return candidate
+    return replace(candidate, relation_type="ASSOCIATED_WITH")
+
+
+def _correlated_resistance_object(
+    candidate: ExtractedRelationCandidate,
+) -> str | None:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation != "ASSOCIATED_WITH":
+        return None
+    object_label = _normalize_entity_label(candidate.object_label)
+    if object_label == "" or object_label.startswith("resistance to "):
+        return None
+    claim_scope = _candidate_claim_scope(candidate)
+    if claim_scope == "":
+        return None
+    object_pattern = _phrase_pattern(object_label)
+    if (
+        re.search(
+            rf"\bresistance\s+to\s+{object_pattern}\b"
+            rf"(?=$|\s+(?:{_RESISTANCE_OBJECT_BOUNDARY_AFTER_PATTERN})\b)",
+            claim_scope,
+        )
+        is None
+    ):
+        return None
+    if re.search(r"\bcorrelat(?:e|es|ed|ing|ion)\s+with\b", claim_scope) is None:
+        return None
+    return f"resistance to {candidate.object_label}"
 
 
 def _quality_filter_reason(
@@ -614,6 +744,39 @@ def _sentence_has_disease_then_companion_phenotype(
 
 def _phrase_pattern(normalized_label: str) -> str:
     return r"\s+".join(re.escape(token) for token in normalized_label.split())
+
+
+def _candidate_claim_scope(candidate: ExtractedRelationCandidate) -> str:
+    subject = _normalize_entity_label(candidate.subject_label)
+    obj = _normalize_entity_label(candidate.object_label)
+    if subject == "" or obj == "":
+        return ""
+    subject_pattern = _phrase_pattern(subject)
+    object_pattern = _phrase_pattern(obj)
+    clauses = [
+        clause
+        for clause in _split_candidate_clauses(candidate.sentence)
+        if re.search(rf"\b{subject_pattern}\b", clause) is not None
+        and re.search(rf"\b{object_pattern}\b", clause) is not None
+    ]
+    return " ".join(clauses)
+
+
+def _split_candidate_clauses(sentence: str) -> tuple[str, ...]:
+    return tuple(
+        normalized_clause
+        for raw_clause in re.split(
+            r"(?:"
+            r"[.;:]|"
+            r",\s*(?:and|while|whereas|but)\b|"
+            r"\b(?:while|whereas|but)\b|"
+            rf"{_BARE_AND_CLAIM_BOUNDARY_PATTERN}"
+            r")",
+            sentence,
+            flags=re.IGNORECASE,
+        )
+        if (normalized_clause := _normalize_entity_label(raw_clause)) != ""
+    )
 
 
 def _context_edge_is_direct_mechanism_modifier(

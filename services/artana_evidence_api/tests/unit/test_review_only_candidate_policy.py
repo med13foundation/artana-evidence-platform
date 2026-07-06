@@ -20,6 +20,10 @@ from artana_evidence_api.document_extraction_support.review_policy.review_only_c
             {"hedged_language", "trend_only"},
         ),
         (
+            "EGFR expression trended with erlotinib response.",
+            {"hedged_language", "trend_only"},
+        ),
+        (
             "HRD score was described as a possible biomarker for platinum sensitivity.",
             {"hedged_language", "possible_biomarker"},
         ),

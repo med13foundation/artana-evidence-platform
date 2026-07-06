@@ -1561,6 +1561,72 @@ async def test_extract_relation_candidates_with_llm_keeps_weak_generic_review_on
     assert candidates[0].trusted_evidence_eligible is False
 
 
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_repairs_weak_met_resistance_object(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" not in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MET amplification",
+                        "relation_type": "ASSOCIATED_WITH",
+                        "object": "EGFR inhibition",
+                        "sentence": (
+                            "MET amplification was correlated with resistance "
+                            "to EGFR inhibition in a small exploratory cohort."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MET amplification was correlated with resistance to EGFR inhibition "
+        "in a small exploratory cohort.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MET amplification"
+    assert candidates[0].relation_type == "ASSOCIATED_WITH"
+    assert candidates[0].object_label == "resistance to EGFR inhibition"
+    assert candidates[0].review_status == "review_only"
+    assert "correlated_only" in candidates[0].review_reason_codes
+    assert candidates[0].trusted_evidence_eligible is False
+
+
 def test_llm_extraction_step_key_uses_full_text_beyond_prefix() -> None:
     shared_prefix = "Background sentence. " * 250
     first_text = f"{shared_prefix} BRCA1 activates EGFR."

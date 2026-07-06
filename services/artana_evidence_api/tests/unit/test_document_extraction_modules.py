@@ -67,6 +67,7 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     LLM_EXTRACTION_PROMPT_VERSION,
     build_llm_extraction_prompt,
+    build_llm_weak_review_extraction_prompt,
     llm_relations_to_candidates,
 )
 from artana_evidence_api.document_store import HarnessDocumentRecord
@@ -236,6 +237,34 @@ def test_llm_extraction_prompt_preserves_useful_weak_claims_as_review_only() -> 
     assert "MED13 may be linked to congenital heart disease" in normalized_prompt
     assert "MET amplification was correlated with resistance" in normalized_prompt
     assert "AKT activation showed a trend toward association" in normalized_prompt
+    assert "EGFR expression trended with erlotinib response" in normalized_prompt
+    assert "resistance to EGFR inhibition" in normalized_prompt
+
+
+def test_weak_review_prompt_names_repeated_v3_review_misses() -> None:
+    prompt = build_llm_weak_review_extraction_prompt(
+        chunk=RelationExtractionTextChunk(
+            index=0,
+            start_char=0,
+            end_char=190,
+            text=(
+                "EGFR expression trended with erlotinib response but did not "
+                "meet the prespecified threshold. MET amplification was "
+                "correlated with resistance to EGFR inhibition in a small "
+                "exploratory cohort."
+            ),
+        ),
+        total_chunks=1,
+        document_fingerprint="doc123",
+    )
+    normalized_prompt = " ".join(prompt.split())
+
+    assert "EGFR expression trended with erlotinib response" in normalized_prompt
+    assert "object: erlotinib response" in normalized_prompt
+    assert "MET amplification was correlated with resistance to EGFR inhibition" in (
+        normalized_prompt
+    )
+    assert "object: resistance to EGFR inhibition" in normalized_prompt
 
 
 def test_llm_extraction_prompt_prioritizes_specific_sensitizes_relation() -> None:
@@ -339,6 +368,75 @@ def test_llm_extraction_schema_accepts_confers_resistance_as_canonical() -> None
     assert proposed_canonical.relations[0].relation_type == "CONFERS_RESISTANCE_TO"
     assert proposed_canonical.relations[0].proposed_relation_type is None
     assert proposed_canonical.relations[0].new_relation_type_rationale is None
+
+
+def test_llm_extraction_schema_ignores_spurious_proposal_on_canonical_relation() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    parsed = extraction_schema.model_validate(
+        {
+            "relations": [
+                {
+                    "subject": "Sotorasib",
+                    "relation_type": "TARGETS",
+                    "proposed_relation_type": "TARGETS",
+                    "new_relation_type_rationale": (
+                        "The model redundantly filled proposal fields."
+                    ),
+                    "object": "KRAS G12C",
+                    "sentence": "Sotorasib targets KRAS G12C in lung cancer.",
+                },
+            ],
+        },
+    )
+
+    assert parsed.relations[0].relation_type == "TARGETS"
+    assert parsed.relations[0].proposed_relation_type is None
+    assert parsed.relations[0].new_relation_type_rationale is None
+
+
+def test_llm_extraction_schema_rejects_unknown_proposal_on_canonical_relation() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    with pytest.raises(Exception):
+        extraction_schema.model_validate(
+            {
+                "relations": [
+                    {
+                        "subject": "Sotorasib",
+                        "relation_type": "TARGETS",
+                        "proposed_relation_type": "INVENTED_UNKNOWN_RELATION",
+                        "new_relation_type_rationale": (
+                            "The model mixed canonical evidence with a proposal."
+                        ),
+                        "object": "KRAS G12C",
+                        "sentence": "Sotorasib targets KRAS G12C in lung cancer.",
+                    },
+                ],
+            },
+        )
+
+
+def test_llm_extraction_schema_rejects_conflicting_proposal_on_canonical_relation() -> None:
+    extraction_schema = build_llm_extraction_output_schema(max_relations=1)
+
+    with pytest.raises(Exception):
+        extraction_schema.model_validate(
+            {
+                "relations": [
+                    {
+                        "subject": "Sotorasib",
+                        "relation_type": "TARGETS",
+                        "proposed_relation_type": "TREATS",
+                        "new_relation_type_rationale": (
+                            "The model mixed two governed relation types."
+                        ),
+                        "object": "KRAS G12C",
+                        "sentence": "Sotorasib targets KRAS G12C in lung cancer.",
+                    },
+                ],
+            },
+        )
 
 
 def test_llm_extraction_schema_canonicalizes_relation_type_synonyms() -> None:

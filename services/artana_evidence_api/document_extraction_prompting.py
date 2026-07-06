@@ -183,10 +183,18 @@ def _build_llm_extraction_output_schema(
                         "relation proposals",
                     )
             elif self.proposed_relation_type is not None:
-                raise ValueError(
-                    "proposed_relation_type is only allowed when relation_type is "
-                    f"{LLM_PROPOSE_NEW_RELATION_TYPE}",
-                )
+                if self.proposed_relation_type not in LLM_VALID_RELATION_TYPES:
+                    raise ValueError(
+                        "proposed_relation_type on canonical relation_type must "
+                        "resolve to the same canonical relation type",
+                    )
+                if self.proposed_relation_type != self.relation_type:
+                    raise ValueError(
+                        "proposed_relation_type conflicts with canonical "
+                        "relation_type",
+                    )
+                self.proposed_relation_type = None
+                self.new_relation_type_rationale = None
             return self
 
     class LLMExtractionResult(BaseModel):
@@ -294,8 +302,12 @@ trusted evidence and do not invent relations absent from the support sentence.
 Examples to keep for human review:
 - "MED13 may be linked to congenital heart disease" -> ASSOCIATED_WITH,
   review_only, reasons: hedged_language, may_link
-- "MET amplification was correlated with resistance" -> ASSOCIATED_WITH,
-  review_only, reasons: hedged_language, correlated_only
+- "EGFR expression trended with erlotinib response" -> ASSOCIATED_WITH,
+  subject: EGFR expression, object: erlotinib response, review_only,
+  reasons: hedged_language, trend_only
+- "MET amplification was correlated with resistance to EGFR inhibition" ->
+  ASSOCIATED_WITH, subject: MET amplification, object: resistance to EGFR
+  inhibition, review_only, reasons: hedged_language, correlated_only
 - "AKT activation showed a trend toward association with reduced survival" ->
   ASSOCIATED_WITH, review_only, reasons: hedged_language, trend_only
 

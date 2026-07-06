@@ -169,6 +169,198 @@ def test_quality_filter_keeps_correlated_only_specific_relation_review_only() ->
     assert result.filtered_candidates == ()
 
 
+def test_quality_filter_repairs_correlated_resistance_review_object() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="EGFR inhibition",
+        sentence=(
+            "MET amplification was correlated with resistance to EGFR "
+            "inhibition in a small exploratory cohort."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].object_label == "resistance to EGFR inhibition"
+    assert result.candidates[0].review_status == "review_only"
+    assert "correlated_only" in result.candidates[0].review_reason_codes
+    assert result.candidates[0].trusted_evidence_eligible is False
+    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_clears_stale_object_curie_after_resistance_object_repair() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="EGFR inhibition",
+        object_curie="GO:0000000",
+        object_curie_source="model",
+        sentence=(
+            "MET amplification was correlated with resistance to EGFR "
+            "inhibition in a small exploratory cohort."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].object_label == "resistance to EGFR inhibition"
+    assert result.candidates[0].object_curie is None
+    assert result.candidates[0].object_curie_source == "none"
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].trusted_evidence_eligible is False
+
+
+def test_quality_filter_does_not_repair_resistance_object_from_prefix_match() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="EGFR",
+        sentence=(
+            "MET amplification was correlated with resistance to EGFR "
+            "inhibition in a small exploratory cohort."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].object_label == "EGFR"
+    assert result.candidates[0].review_status == "review_only"
+
+
+def test_quality_filter_does_not_repair_trend_relation_from_unrelated_clause() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="EGFR expression",
+        relation_type="BIOMARKER_FOR",
+        object_label="erlotinib response",
+        sentence=(
+            "EGFR expression is a biomarker for erlotinib response. MET "
+            "amplification trended with resistance to EGFR inhibition."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].relation_type == "BIOMARKER_FOR"
+    assert result.candidates[0].review_status == "candidate"
+
+
+def test_quality_filter_does_not_repair_trend_relation_from_bare_and_clause() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="EGFR expression",
+        relation_type="BIOMARKER_FOR",
+        object_label="erlotinib response",
+        sentence=(
+            "EGFR expression is a biomarker for erlotinib response and MET "
+            "amplification trended with resistance to EGFR inhibition."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].relation_type == "BIOMARKER_FOR"
+    assert result.candidates[0].review_status == "candidate"
+
+
+def test_quality_filter_does_not_repair_resistance_object_from_unrelated_clause() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="EGFR inhibition",
+        sentence=(
+            "MET amplification was observed in resistant tumors. EGFR "
+            "expression was correlated with resistance to EGFR inhibition."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].object_label == "EGFR inhibition"
+
+
+def test_quality_filter_does_not_repair_resistance_object_from_bare_and_clause() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="EGFR inhibition",
+        sentence=(
+            "MET amplification was observed in resistant tumors and EGFR "
+            "expression was correlated with resistance to EGFR inhibition."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].object_label == "EGFR inhibition"
+
+
+def test_quality_filter_deduplicates_repaired_review_candidates() -> None:
+    primary_candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="EGFR inhibition",
+        sentence=(
+            "MET amplification was correlated with resistance to EGFR "
+            "inhibition in a small exploratory cohort."
+        ),
+    )
+    weak_pass_candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="ASSOCIATED_WITH",
+        object_label="resistance to EGFR inhibition",
+        sentence=(
+            "MET amplification was correlated with resistance to EGFR "
+            "inhibition in a small exploratory cohort."
+        ),
+        review_status="review_only",
+        review_reason_codes=("weak_review_agent_pass",),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (primary_candidate, weak_pass_candidate),
+    )
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].object_label == "resistance to EGFR inhibition"
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].review_reason_codes == (
+        "hedged_language",
+        "correlated_only",
+        "weak_review_agent_pass",
+    )
+    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_repairs_trend_response_relation_type_to_review_association() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="EGFR expression",
+        relation_type="BIOMARKER_FOR",
+        object_label="erlotinib response",
+        sentence=(
+            "EGFR expression trended with erlotinib response but did not meet "
+            "the prespecified threshold."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].relation_type == "ASSOCIATED_WITH"
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].review_reason_codes == (
+        "hedged_language",
+        "trend_only",
+    )
+    assert result.candidates[0].trusted_evidence_eligible is False
+
+
 def test_quality_filter_removes_nested_biomarker_context_object() -> None:
     response_candidate = ExtractedRelationCandidate(
         subject_label="PD-L1 expression",
