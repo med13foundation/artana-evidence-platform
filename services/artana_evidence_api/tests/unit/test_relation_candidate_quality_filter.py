@@ -219,7 +219,7 @@ def test_quality_filter_marks_single_nested_biomarker_context_review_only() -> N
     assert result.filtered_candidates == ()
 
 
-def test_quality_filter_keeps_explicit_pathway_effect_with_direct_target() -> None:
+def test_quality_filter_marks_explicit_pathway_effect_with_direct_target_review_only() -> None:
     target_candidate = ExtractedRelationCandidate(
         subject_label="Vemurafenib",
         relation_type="TARGETS",
@@ -237,7 +237,62 @@ def test_quality_filter_keeps_explicit_pathway_effect_with_direct_target() -> No
         (target_candidate, pathway_candidate),
     )
 
-    assert result.candidates == (target_candidate, pathway_candidate)
+    assert result.candidates[0] == target_candidate
+    assert result.candidates[1].review_status == "review_only"
+    assert "pathway_effect_shadowed_by_direct_target" in (
+        result.candidates[1].review_reason_codes
+    )
+    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_marks_proliferation_effect_with_pathway_sibling_review_only() -> None:
+    pathway_candidate = ExtractedRelationCandidate(
+        subject_label="KRAS G12D",
+        relation_type="ACTIVATES",
+        object_label="MAPK signaling",
+        sentence=(
+            "KRAS G12D activates MAPK signaling and increases pancreatic "
+            "cancer cell proliferation."
+        ),
+    )
+    proliferation_candidate = ExtractedRelationCandidate(
+        subject_label="KRAS G12D",
+        relation_type="ACTIVATES",
+        object_label="pancreatic cancer cell proliferation",
+        sentence=(
+            "KRAS G12D activates MAPK signaling and increases pancreatic "
+            "cancer cell proliferation."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (pathway_candidate, proliferation_candidate),
+    )
+
+    assert result.candidates[0] == pathway_candidate
+    assert result.candidates[1].review_status == "review_only"
+    assert "process_effect_shadowed_by_pathway_mechanism" in (
+        result.candidates[1].review_reason_codes
+    )
+    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_marks_cell_context_activation_review_only() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="JAK-STAT",
+        relation_type="ACTIVATES",
+        object_label="macrophages",
+        sentence=(
+            "IL6 regulates inflammatory signaling through JAK-STAT activation "
+            "in macrophages."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].review_status == "review_only"
+    assert "cell_context_object" in result.candidates[0].review_reason_codes
     assert result.filtered_candidates == ()
 
 

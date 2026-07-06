@@ -830,6 +830,82 @@ async def test_extract_relation_candidates_with_llm_uses_agent_review_only_pass(
 
 
 @pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_demotes_pathway_target_sibling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "Vemurafenib",
+                        "relation_type": "TARGETS",
+                        "object": "BRAF V600E",
+                        "sentence": (
+                            "Vemurafenib targets BRAF V600E and inhibits "
+                            "MAPK signaling."
+                        ),
+                    },
+                    {
+                        "subject": "Vemurafenib",
+                        "relation_type": "INHIBITS",
+                        "object": "MAPK signaling",
+                        "sentence": (
+                            "Vemurafenib targets BRAF V600E and inhibits "
+                            "MAPK signaling."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "Vemurafenib targets BRAF V600E and inhibits MAPK signaling.",
+    )
+
+    assert len(candidates) == 2
+    assert candidates[0].relation_type == "TARGETS"
+    assert candidates[0].trusted_evidence_eligible is True
+    assert candidates[1].relation_type == "INHIBITS"
+    assert candidates[1].review_status == "review_only"
+    assert candidates[1].review_reason_codes == (
+        "pathway_effect_shadowed_by_direct_target",
+    )
+    assert candidates[1].trusted_evidence_eligible is False
+
+
+@pytest.mark.asyncio
 async def test_extract_relation_candidates_with_llm_drops_invalid_weak_pass_type(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -33,6 +33,8 @@ RelationCandidateQualityFilterReason = Literal[
     "missing_relation_arguments",
     "nested_context_object",
     "pathway_effect_shadowed_by_direct_target",
+    "process_effect_shadowed_by_pathway_mechanism",
+    "cell_context_object",
     "support_not_entailed",
     "uncertain_relation_claim",
 ]
@@ -100,6 +102,20 @@ _BROAD_PATHWAY_EFFECT_TOKENS = frozenset(
         "signaling",
     },
 )
+_BROAD_PROCESS_EFFECT_TOKENS = frozenset(
+    {
+        "growth",
+        "proliferation",
+    },
+)
+_CELL_CONTEXT_TOKENS = frozenset(
+    {
+        "cell",
+        "cells",
+        "macrophage",
+        "macrophages",
+    },
+)
 
 _UNCERTAIN_RELATION_CUE_RE = re.compile(
     r"\b("
@@ -162,11 +178,11 @@ def filter_low_value_relation_candidates(
                 kept_candidates.append(sibling_decision.review_only_candidate)
                 continue
             reason = sibling_decision.reason
-        if reason is None and _is_pathway_effect_shadowed_by_direct_target(
-            candidate=candidate,
-            candidates=candidates,
-        ):
-            reason = "pathway_effect_shadowed_by_direct_target"
+        if reason is None and _is_cell_context_object(candidate):
+            kept_candidates.append(
+                _with_review_only_reason(candidate, "cell_context_object"),
+            )
+            continue
         review_only_candidate = _review_only_candidate(candidate)
         if review_only_candidate is not None and reason in {
             None,
@@ -305,35 +321,63 @@ def _sibling_shadow_decision(
     candidate: ExtractedRelationCandidate,
     candidates: tuple[ExtractedRelationCandidate, ...],
 ) -> _SiblingShadowDecision:
-    companion_action = _companion_phenotype_shadow_action(
-        candidate=candidate,
-        candidates=candidates,
-    )
-    if companion_action == "filter":
-        return _SiblingShadowDecision(
-            reason="companion_phenotype_shadowed_by_disease",
-        )
-    if companion_action == "review_only":
-        return _SiblingShadowDecision(
-            review_only_candidate=_with_review_only_reason(
-                candidate,
-                "companion_phenotype_shadowed_by_disease",
+    shadow_actions: tuple[
+        tuple[_SiblingShadowAction | None, RelationCandidateQualityFilterReason],
+        ...,
+    ] = (
+        (
+            _companion_phenotype_shadow_action(
+                candidate=candidate,
+                candidates=candidates,
             ),
-        )
-    nested_action = _nested_context_object_shadow_action(
-        candidate=candidate,
-        candidates=candidates,
-    )
-    if nested_action == "filter":
-        return _SiblingShadowDecision(reason="nested_context_object")
-    if nested_action == "review_only":
-        return _SiblingShadowDecision(
-            review_only_candidate=_with_review_only_reason(
-                candidate,
-                "nested_context_object",
+            "companion_phenotype_shadowed_by_disease",
+        ),
+        (
+            _nested_context_object_shadow_action(
+                candidate=candidate,
+                candidates=candidates,
             ),
+            "nested_context_object",
+        ),
+        (
+            _pathway_effect_shadow_action(
+                candidate=candidate,
+                candidates=candidates,
+            ),
+            "pathway_effect_shadowed_by_direct_target",
+        ),
+        (
+            _process_effect_shadow_action(
+                candidate=candidate,
+                candidates=candidates,
+            ),
+            "process_effect_shadowed_by_pathway_mechanism",
+        ),
+    )
+    for action, reason in shadow_actions:
+        decision = _shadow_decision_from_action(
+            action=action,
+            candidate=candidate,
+            reason=reason,
         )
+        if decision is not None:
+            return decision
     return _SiblingShadowDecision()
+
+
+def _shadow_decision_from_action(
+    *,
+    action: _SiblingShadowAction | None,
+    candidate: ExtractedRelationCandidate,
+    reason: RelationCandidateQualityFilterReason,
+) -> _SiblingShadowDecision | None:
+    if action == "filter":
+        return _SiblingShadowDecision(reason=reason)
+    if action == "review_only":
+        return _SiblingShadowDecision(
+            review_only_candidate=_with_review_only_reason(candidate, reason),
+        )
+    return None
 
 
 def _companion_phenotype_shadow_action(
@@ -411,28 +455,87 @@ def _is_nested_context_object(candidate: ExtractedRelationCandidate) -> bool:
     )
 
 
-def _is_pathway_effect_shadowed_by_direct_target(
+def _pathway_effect_shadow_action(
     *,
     candidate: ExtractedRelationCandidate,
     candidates: tuple[ExtractedRelationCandidate, ...],
-) -> bool:
+) -> _SiblingShadowAction | None:
     canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
     if canonical_relation not in {"INHIBITS", "REGULATES"}:
-        return False
-    candidate_object = _normalize_entity_label(candidate.object_label)
-    if not _BROAD_PATHWAY_EFFECT_TOKENS.intersection(candidate_object.split()):
-        return False
-    if _candidate_relation_cue_present(candidate):
-        return False
+        return None
+    if not _has_broad_pathway_effect_object(candidate.object_label):
+        return None
     candidate_subject = _normalize_entity_label(candidate.subject_label)
     candidate_sentence = _normalize_sentence(candidate.sentence)
-    return any(
+    shadowed_by_direct_target = any(
         sibling is not candidate
         and canonicalize_extraction_relation_type(sibling.relation_type) == "TARGETS"
         and _normalize_entity_label(sibling.subject_label) == candidate_subject
         and _normalize_sentence(sibling.sentence) == candidate_sentence
         for sibling in candidates
     )
+    if not shadowed_by_direct_target:
+        return None
+    return "filter" if not _candidate_relation_cue_present(candidate) else "review_only"
+
+
+def _process_effect_shadow_action(
+    *,
+    candidate: ExtractedRelationCandidate,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> _SiblingShadowAction | None:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation not in {"ACTIVATES", "REGULATES"}:
+        return None
+    if not _has_broad_process_effect_object(candidate.object_label):
+        return None
+    candidate_subject = _normalize_entity_label(candidate.subject_label)
+    candidate_sentence = _normalize_sentence(candidate.sentence)
+    shadowed_by_pathway_mechanism = any(
+        sibling is not candidate
+        and canonicalize_extraction_relation_type(sibling.relation_type)
+        in {"ACTIVATES", "INHIBITS", "REGULATES"}
+        and _normalize_entity_label(sibling.subject_label) == candidate_subject
+        and _normalize_sentence(sibling.sentence) == candidate_sentence
+        and _has_broad_pathway_effect_object(sibling.object_label)
+        and _quality_filter_reason(sibling) is None
+        for sibling in candidates
+    )
+    if not shadowed_by_pathway_mechanism:
+        return None
+    return "review_only"
+
+
+def _is_cell_context_object(candidate: ExtractedRelationCandidate) -> bool:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation not in {"ACTIVATES", "REGULATES"}:
+        return False
+    candidate_object = _normalize_entity_label(candidate.object_label)
+    if not _CELL_CONTEXT_TOKENS.intersection(candidate_object.split()):
+        return False
+    subject_pattern = _phrase_pattern(_normalize_entity_label(candidate.subject_label))
+    object_pattern = _phrase_pattern(candidate_object)
+    if subject_pattern == "" or object_pattern == "":
+        return False
+    return (
+        re.search(
+            rf"\b{subject_pattern}\b"
+            rf".{{0,80}}\b(?:activation|activity|signaling)\b"
+            rf".{{0,80}}\b(?:in|within|among)\s+{object_pattern}\b",
+            _normalize_entity_label(candidate.sentence),
+        )
+        is not None
+    )
+
+
+def _has_broad_pathway_effect_object(label: str) -> bool:
+    normalized_label = _normalize_entity_label(label)
+    return bool(_BROAD_PATHWAY_EFFECT_TOKENS.intersection(normalized_label.split()))
+
+
+def _has_broad_process_effect_object(label: str) -> bool:
+    normalized_label = _normalize_entity_label(label)
+    return bool(_BROAD_PROCESS_EFFECT_TOKENS.intersection(normalized_label.split()))
 
 
 def _is_specific_biomarker_response_object(label: str) -> bool:
