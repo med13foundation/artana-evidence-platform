@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from scripts.validation.relation_feasibility.fixture_checks import (
     fixture_coverage,
     validate_fixture_payload,
 )
+from scripts.validation.relation_feasibility.io import load_benchmark_cases
 
 V3_FIXTURE = Path(
     "scripts/validation/relation_feasibility/fixtures/"
@@ -86,6 +89,69 @@ def test_fixture_validation_reports_structural_errors() -> None:
                     },
                 ],
             },
+            {
+                "case_id": "trusted_review_only_endpoint",
+                "title": "Trusted row uses review-only endpoint",
+                "category": "strong_specific",
+                "text": "IL6 regulates inflammatory signaling.",
+                "gold_relations": [
+                    {
+                        "subject": "IL6",
+                        "relation_type": "REGULATES",
+                        "object": "inflammatory signaling",
+                        "support_sentence": "IL6 regulates inflammatory signaling.",
+                        "value_level": "high",
+                        "rationale": (
+                            "Review-only endpoint labels must not count as trusted "
+                            "gold endpoints."
+                        ),
+                        "subject_curie": "HGNC:6018",
+                        "object_curie": "GO:0006954",
+                        "requires_entailment": True,
+                    },
+                ],
+            },
+            {
+                "case_id": "invalid_review_status",
+                "title": "Invalid review status",
+                "category": "strong_specific",
+                "text": "MED13 causes developmental delay.",
+                "gold_relations": [
+                    {
+                        "subject": "MED13",
+                        "relation_type": "CAUSES",
+                        "object": "developmental delay",
+                        "support_sentence": "MED13 causes developmental delay.",
+                        "value_level": "high",
+                        "review_status": "manual_review",
+                        "rationale": "Typo must not silently affect metrics.",
+                        "subject_curie": "HGNC:22474",
+                        "object_curie": "HP:0001263",
+                        "requires_entailment": True,
+                    },
+                ],
+            },
+            {
+                "case_id": "review_only_endpoint_with_curie",
+                "title": "Review-only endpoint keeps CURIE",
+                "category": "weak_association",
+                "topics": ["low_value_review"],
+                "text": "IL6 may regulate inflammatory signaling.",
+                "gold_relations": [
+                    {
+                        "subject": "IL6",
+                        "relation_type": "REGULATES",
+                        "object": "inflammatory signaling",
+                        "support_sentence": "IL6 may regulate inflammatory signaling.",
+                        "value_level": "low",
+                        "review_status": "review_only",
+                        "rationale": "Broad endpoint must not keep a trusted CURIE.",
+                        "subject_curie": "HGNC:6018",
+                        "object_curie": "GO:0006954",
+                        "requires_entailment": False,
+                    },
+                ],
+            },
         ],
     }
 
@@ -98,7 +164,46 @@ def test_fixture_validation_reports_structural_errors() -> None:
         "negative_control_has_gold_relations",
         "low_value_case_missing_value_level",
         "trusted_high_value_missing_curie",
+        "trusted_gold_uses_review_only_endpoint",
+        "invalid_review_status",
+        "review_only_endpoint_has_curie",
     }
+
+
+def test_load_benchmark_cases_rejects_invalid_review_status(tmp_path: Path) -> None:
+    fixture_path = tmp_path / "invalid_review_status.json"
+    fixture_path.write_text(
+        """
+        {
+          "benchmark_name": "invalid_review_status",
+          "cases": [
+            {
+              "case_id": "invalid_status",
+              "title": "Invalid Status",
+              "category": "strong_specific",
+              "text": "MED13 causes developmental delay.",
+              "gold_relations": [
+                {
+                  "subject": "MED13",
+                  "relation_type": "CAUSES",
+                  "object": "developmental delay",
+                  "support_sentence": "MED13 causes developmental delay.",
+                  "value_level": "high",
+                  "review_status": "manual_review",
+                  "rationale": "Review status typo.",
+                  "subject_curie": "HGNC:22474",
+                  "object_curie": "HP:0001263"
+                }
+              ]
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="review_status"):
+        load_benchmark_cases(fixture_path)
 
 
 def test_fixture_validation_rejects_mislabeled_hard_case_topics() -> None:

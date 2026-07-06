@@ -41,6 +41,7 @@ def build_endpoint_metric_summary(
     trusted_gold_endpoints = _gold_endpoint_keys(
         case_gold_relations=case_gold_relations,
         value_levels=HIGH_VALUE_LEVELS,
+        review_status="candidate",
     )
     trusted_linked_endpoints = _linked_endpoint_keys(
         case_assessments=case_assessments,
@@ -52,6 +53,7 @@ def build_endpoint_metric_summary(
     low_value_gold_endpoints = _gold_endpoint_keys(
         case_gold_relations=case_gold_relations,
         value_levels=LOW_VALUE_LEVELS,
+        review_status=None,
     )
     low_value_review_linked_endpoints = _linked_endpoint_keys(
         case_assessments=case_assessments,
@@ -88,11 +90,17 @@ def _gold_endpoint_keys(
     *,
     case_gold_relations: tuple[tuple[GoldRelation, ...], ...],
     value_levels: frozenset[str],
+    review_status: str | None,
 ) -> set[tuple[int, int, str]]:
     endpoint_keys: set[tuple[int, int, str]] = set()
     for case_index, gold_relations in enumerate(case_gold_relations):
         for gold_index, gold_relation in enumerate(gold_relations):
             if gold_relation.value_level not in value_levels:
+                continue
+            if (
+                review_status is not None
+                and gold_relation.review_status != review_status
+            ):
                 continue
             if gold_relation.subject_curie is not None:
                 endpoint_keys.add((case_index, gold_index, "subject"))
@@ -124,6 +132,8 @@ def _linked_endpoint_keys(
                 continue
             gold_relation = case_gold_relations[case_index][gold_index]
             if gold_relation.value_level not in value_levels:
+                continue
+            if lane == "trusted" and gold_relation.review_status == "review_only":
                 continue
             if lane == "trusted" and not assessment.is_trusted_evidence_eligible:
                 continue

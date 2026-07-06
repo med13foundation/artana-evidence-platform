@@ -8,6 +8,10 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    review_only_record_for_label,
+)
+
 JSONObject = dict[str, object]
 _LONG_DOCUMENT_MIN_CHARACTERS = 600
 _LONG_DOCUMENT_MIN_SENTENCES = 5
@@ -21,6 +25,7 @@ _NEGATED_RELATION_PHRASES = (
     "not establish",
     "no sentence asserts",
 )
+_VALID_REVIEW_STATUSES = frozenset({"candidate", "review_only"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,6 +195,18 @@ def _relation_issues(
             ),
         )
     value_level = _string_field(raw_relation, "value_level")
+    review_status = _string_field(raw_relation, "review_status")
+    if review_status is not None and review_status not in _VALID_REVIEW_STATUSES:
+        issues.append(
+            FixtureValidationIssue(
+                code="invalid_review_status",
+                message=(
+                    "Gold relation review_status must be one of "
+                    f"{sorted(_VALID_REVIEW_STATUSES)}."
+                ),
+                case_id=case_id,
+            ),
+        )
     if _is_weak_case(raw_case) and value_level is None:
         issues.append(
             FixtureValidationIssue(
@@ -242,6 +259,61 @@ def _relation_issues(
             FixtureValidationIssue(
                 code="trusted_high_value_missing_entailment_requirement",
                 message="Trusted high-value gold rows must require entailment.",
+                case_id=case_id,
+            ),
+        )
+    issues.extend(_review_only_endpoint_curie_issues(raw_relation, case_id))
+    if (
+        value_level in {"high", "medium"}
+        and _string_field(raw_relation, "review_status") != "review_only"
+    ):
+        issues.extend(_trusted_relation_review_only_endpoint_issues(raw_relation, case_id))
+    return tuple(issues)
+
+
+def _review_only_endpoint_curie_issues(
+    raw_relation: Mapping[str, object],
+    case_id: str | None,
+) -> tuple[FixtureValidationIssue, ...]:
+    issues: list[FixtureValidationIssue] = []
+    for endpoint_field in ("subject", "object"):
+        label = _string_field(raw_relation, endpoint_field)
+        curie = _string_field(raw_relation, f"{endpoint_field}_curie")
+        if (
+            label is None
+            or curie is None
+            or review_only_record_for_label(label) is None
+        ):
+            continue
+        issues.append(
+            FixtureValidationIssue(
+                code="review_only_endpoint_has_curie",
+                message=(
+                    "Gold endpoint labels governed as review-only must not keep "
+                    f"trusted CURIEs: {endpoint_field}={label}"
+                ),
+                case_id=case_id,
+            ),
+        )
+    return tuple(issues)
+
+
+def _trusted_relation_review_only_endpoint_issues(
+    raw_relation: Mapping[str, object],
+    case_id: str | None,
+) -> tuple[FixtureValidationIssue, ...]:
+    issues: list[FixtureValidationIssue] = []
+    for endpoint_field in ("subject", "object"):
+        label = _string_field(raw_relation, endpoint_field)
+        if label is None or review_only_record_for_label(label) is None:
+            continue
+        issues.append(
+            FixtureValidationIssue(
+                code="trusted_gold_uses_review_only_endpoint",
+                message=(
+                    "Trusted high/medium gold rows must not use endpoint labels "
+                    f"that grounding policy marks review-only: {endpoint_field}={label}"
+                ),
                 case_id=case_id,
             ),
         )

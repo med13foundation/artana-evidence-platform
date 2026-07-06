@@ -30,6 +30,7 @@ def is_trusted_high_value_match(
     return (
         agent_completed
         and not is_review_only_context_relation(assessment.candidate.relation_type)
+        and matched_gold.review_status != "review_only"
         and matched_gold.value_level in HIGH_VALUE_LEVELS
         and assessment.is_valuable
         and assessment.is_trusted_evidence_eligible
@@ -83,5 +84,35 @@ def low_value_review_gold_index(
         return None
     matched_gold = gold_relations[matched_index]
     if matched_gold.value_level not in LOW_VALUE_LEVELS:
+        return None
+    return matched_index
+
+
+def high_value_review_gold_index(
+    *,
+    assessment: CandidateAssessment,
+    gold_relations: tuple[GoldRelation, ...],
+) -> int | None:
+    """Return the high-value review-only gold index captured by an agent candidate."""
+
+    if assessment.candidate.review_status == "review_only":
+        matched_index = assessment.matched_gold_index
+        if matched_index is None:
+            return None
+        matched_gold = gold_relations[matched_index]
+        if (
+            matched_gold.value_level not in HIGH_VALUE_LEVELS
+            or matched_gold.review_status != "review_only"
+        ):
+            return None
+        return matched_index
+    matched_index = assessment.proposal_matched_gold_index
+    if matched_index is None or not assessment.is_governed_relation_proposal:
+        return None
+    matched_gold = gold_relations[matched_index]
+    if (
+        matched_gold.value_level not in HIGH_VALUE_LEVELS
+        or matched_gold.review_status != "review_only"
+    ):
         return None
     return matched_index

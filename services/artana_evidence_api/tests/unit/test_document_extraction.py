@@ -29,6 +29,12 @@ from artana_evidence_api.document_extraction import (
     pre_resolve_entities_with_ai,
     review_document_extraction_drafts_with_diagnostics,
 )
+from artana_evidence_api.document_extraction_prompting import (
+    LLM_EXTRACTION_SYSTEM_PROMPT,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    LLM_EXTRACTION_PROMPT_VERSION,
+)
 from artana_evidence_api.document_extraction_support.strict_relation_discovery import (
     discover_relation_candidates_strict,
 )
@@ -136,6 +142,22 @@ class _FakeKernel:
 class _FakeSingleStepClient:
     def __init__(self, *, kernel) -> None:
         self.kernel = kernel
+
+
+def test_llm_extraction_prompt_covers_rare_disease_gene_variant_associations() -> None:
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v7"
+    assert (
+        "FBN1 loss-of-function variants ASSOCIATED_WITH Marfan syndrome"
+        in LLM_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert (
+        "MECP2 pathogenic variants ASSOCIATED_WITH Rett syndrome"
+        in LLM_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert (
+        "Do not discard direct gene-variant-to-disease associations"
+        in LLM_EXTRACTION_SYSTEM_PROMPT
+    )
 
 
 def test_extract_pdf_text_marks_blank_pdf_as_image_likely() -> None:

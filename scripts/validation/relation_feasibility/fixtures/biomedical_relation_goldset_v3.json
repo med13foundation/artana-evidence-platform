@@ -16,9 +16,10 @@
           "object": "EGFR exon 19 deletion lung adenocarcinoma",
           "support_sentence": "Osimertinib treats EGFR exon 19 deletion lung adenocarcinoma after first-line molecular testing.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific drug-to-molecular-subtype treatment relation.",
           "subject_curie": "DrugBank:DB09330",
-          "object_curie": "MONDO:0005061",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -36,9 +37,10 @@
           "object": "ALK fusion-positive lung cancer",
           "support_sentence": "Alectinib treats ALK fusion-positive lung cancer with central nervous system involvement.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific targeted therapy relation.",
           "subject_curie": "DrugBank:DB11363",
-          "object_curie": "MONDO:0005233",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -98,7 +100,7 @@
           "value_level": "high",
           "rationale": "Tumor-agnostic targeted therapy relation.",
           "subject_curie": "DrugBank:DB14723",
-          "object_curie": "MONDO:0100342",
+          "object_curie": "MONDO:0700215",
           "requires_entailment": true
         }
       ]
@@ -116,8 +118,9 @@
           "object": "Rett syndrome",
           "support_sentence": "MECP2 pathogenic variants are associated with Rett syndrome and developmental regression.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific rare-disease gene-to-phenotype relation.",
-          "subject_curie": "HGNC:6990",
+          "subject_curie": null,
           "object_curie": "MONDO:0010726",
           "requires_entailment": true
         }
@@ -136,8 +139,9 @@
           "object": "Marfan syndrome",
           "support_sentence": "FBN1 loss-of-function variants are associated with Marfan syndrome and aortic root dilation.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific rare disease association.",
-          "subject_curie": "HGNC:3603",
+          "subject_curie": null,
           "object_curie": "MONDO:0007947",
           "requires_entailment": true
         }
@@ -156,8 +160,9 @@
           "object": "Fabry disease",
           "support_sentence": "GLA variants are associated with Fabry disease through deficient alpha-galactosidase A activity.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific rare disease association.",
-          "subject_curie": "HGNC:4296",
+          "subject_curie": null,
           "object_curie": "MONDO:0010526",
           "requires_entailment": true
         }
@@ -176,8 +181,9 @@
           "object": "phenylketonuria",
           "support_sentence": "PAH pathogenic variants are associated with phenylketonuria and elevated phenylalanine.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific gene-to-metabolic disease relation.",
-          "subject_curie": "HGNC:8582",
+          "subject_curie": null,
           "object_curie": "MONDO:0009861",
           "requires_entailment": true
         }
@@ -196,9 +202,10 @@
           "object": "familial hypercholesterolemia",
           "support_sentence": "LDLR loss-of-function variants predispose carriers to familial hypercholesterolemia.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific variant class to disease risk relation.",
-          "subject_curie": "HGNC:6547",
-          "object_curie": "MONDO:0007750",
+          "subject_curie": null,
+          "object_curie": "MONDO:0005439",
           "requires_entailment": true
         }
       ]
@@ -216,9 +223,10 @@
           "object": "hereditary breast and ovarian cancer syndrome",
           "support_sentence": "BRCA1 truncating variants predispose carriers to hereditary breast and ovarian cancer syndrome.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific cancer-risk relation.",
-          "subject_curie": "HGNC:1100",
-          "object_curie": "MONDO:0011450",
+          "subject_curie": null,
+          "object_curie": "MONDO:0003582",
           "requires_entailment": true
         }
       ]
@@ -236,9 +244,10 @@
           "object": "familial adenomatous polyposis",
           "support_sentence": "APC pathogenic variants predispose carriers to familial adenomatous polyposis.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific inherited cancer-risk relation.",
-          "subject_curie": "HGNC:583",
-          "object_curie": "MONDO:0008840",
+          "subject_curie": null,
+          "object_curie": "NCIT:C3339",
           "requires_entailment": true
         }
       ]
@@ -276,8 +285,9 @@
           "object": "PI3K-AKT signaling",
           "support_sentence": "PTEN loss activates PI3K-AKT signaling by removing lipid phosphatase restraint.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific loss-of-function to pathway activation relation.",
-          "subject_curie": "HGNC:9588",
+          "subject_curie": null,
           "object_curie": "GO:0043491",
           "requires_entailment": true
         }
@@ -296,10 +306,11 @@
           "object": "inflammatory signaling",
           "support_sentence": "IL6 regulates inflammatory signaling through JAK-STAT activation in macrophages.",
           "value_level": "high",
-          "rationale": "Specific cytokine-to-process regulation relation.",
+          "rationale": "Specific cytokine-to-process regulation relation with a broad process endpoint that must remain review-only.",
           "subject_curie": "HGNC:6018",
-          "object_curie": "GO:0006954",
-          "requires_entailment": true
+          "object_curie": null,
+          "requires_entailment": true,
+          "review_status": "review_only"
         }
       ]
     },
@@ -336,9 +347,10 @@
           "object": "response to pembrolizumab",
           "support_sentence": "PD-L1 expression is a biomarker for response to pembrolizumab in non-small cell lung cancer.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific biomarker-to-treatment-response relation.",
-          "subject_curie": "HGNC:17635",
-          "object_curie": "DrugBank:DB09037",
+          "subject_curie": null,
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -356,9 +368,10 @@
           "object": "immune checkpoint inhibitor response",
           "support_sentence": "MSI-high status is a biomarker for immune checkpoint inhibitor response in colorectal cancer.",
           "value_level": "high",
+          "review_status": "review_only",
           "rationale": "Specific biomarker response relation.",
-          "subject_curie": "NCIT:C150719",
-          "object_curie": "NCIT:C157484",
+          "subject_curie": "NCIT:C36493",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -439,8 +452,8 @@
           "value_level": "low",
           "review_status": "review_only",
           "rationale": "Trend-only outcome evidence is review-only.",
-          "subject_curie": "HGNC:391",
-          "object_curie": "NCIT:C17177",
+          "subject_curie": null,
+          "object_curie": null,
           "requires_entailment": false
         }
       ]
@@ -460,8 +473,8 @@
           "value_level": "low",
           "review_status": "review_only",
           "rationale": "Possible biomarker language requires review.",
-          "subject_curie": "NCIT:C120466",
-          "object_curie": "NCIT:C18295",
+          "subject_curie": null,
+          "object_curie": null,
           "requires_entailment": false
         }
       ]
@@ -482,7 +495,7 @@
           "review_status": "review_only",
           "rationale": "May-regulate language is review-only.",
           "subject_curie": "HGNC:6018",
-          "object_curie": "GO:0006954",
+          "object_curie": null,
           "requires_entailment": false
         }
       ]
@@ -502,7 +515,7 @@
           "value_level": "low",
           "review_status": "review_only",
           "rationale": "Correlated-only evidence is useful for review but not trusted promotion.",
-          "subject_curie": "HGNC:7029",
+          "subject_curie": null,
           "object_curie": "NCIT:C165567",
           "requires_entailment": false
         }

@@ -9,10 +9,12 @@ from typing import cast
 from scripts.validation.relation_feasibility.models import (
     BenchmarkCase,
     GoldRelation,
+    RelationReviewStatus,
     ValueLevel,
 )
 
 _VALID_VALUE_LEVELS = frozenset({"high", "medium", "low", "reject"})
+_VALID_REVIEW_STATUSES = frozenset({"candidate", "review_only"})
 
 
 def load_benchmark_cases(path: Path) -> tuple[BenchmarkCase, ...]:
@@ -79,7 +81,24 @@ def _parse_gold_relation(
         subject_curie=_optional_str(raw_relation.get("subject_curie")),
         object_curie=_optional_str(raw_relation.get("object_curie")),
         requires_entailment=bool(raw_relation.get("requires_entailment", True)),
+        review_status=_parse_review_status(raw_relation, case_id=case_id, path=path),
     )
+
+
+def _parse_review_status(
+    raw_relation: dict[str, object],
+    *,
+    case_id: str,
+    path: Path,
+) -> RelationReviewStatus:
+    review_status = _optional_str(raw_relation.get("review_status")) or "candidate"
+    if review_status not in _VALID_REVIEW_STATUSES:
+        msg = (
+            f"review_status for case {case_id} in {path} must be one of "
+            f"{sorted(_VALID_REVIEW_STATUSES)}"
+        )
+        raise ValueError(msg)
+    return cast("RelationReviewStatus", review_status)
 
 
 def _optional_str(value: object) -> str | None:

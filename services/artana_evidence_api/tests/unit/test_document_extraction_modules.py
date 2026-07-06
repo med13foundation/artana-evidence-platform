@@ -252,7 +252,7 @@ def test_llm_extraction_prompt_prioritizes_specific_sensitizes_relation() -> Non
 
 
 def test_llm_extraction_prompt_version_changes_for_review_only_schema() -> None:
-    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v6"
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v7"
 
 
 def test_llm_extraction_schema_accepts_review_only_lane_fields() -> None:
@@ -845,6 +845,68 @@ def test_llm_conversion_verifies_model_curie_hints_against_dictionary() -> None:
     assert candidates[0].subject_curie_source == "verified_linker"
     assert candidates[0].object_curie == "HP:0001263"
     assert candidates[0].object_curie_source == "verified_linker"
+
+
+@pytest.mark.parametrize(
+    (
+        "subject",
+        "subject_curie",
+        "object_label",
+        "object_curie",
+        "expected_reason_codes",
+    ),
+    [
+        (
+            "APC pathogenic variants",
+            "HGNC:583",
+            "familial adenomatous polyposis",
+            "NCIT:C3339",
+            (
+                "review_only_subject_grounding",
+                "subject_grounding_gene_state_requires_structured_grounding",
+            ),
+        ),
+        (
+            "MSI-high status",
+            "NCIT:C36493",
+            "immune checkpoint inhibitor response",
+            "NCIT:C157484",
+            (
+                "review_only_object_grounding",
+                "object_grounding_composite_treatment_response_label",
+            ),
+        ),
+    ],
+)
+def test_llm_conversion_demotes_review_only_endpoint_grounding_to_review_only(
+    subject: str,
+    subject_curie: str,
+    object_label: str,
+    object_curie: str,
+    expected_reason_codes: tuple[str, ...],
+) -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject=subject,
+                subject_curie=subject_curie,
+                relation_type="ASSOCIATED_WITH",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object=object_label,
+                object_curie=object_curie,
+                sentence=f"{subject} was associated with {object_label}.",
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].review_status == "review_only"
+    assert candidates[0].trusted_evidence_eligible is False
+    assert set(expected_reason_codes).issubset(candidates[0].review_reason_codes)
 
 
 def test_entity_helpers_clean_split_and_resolve_labels() -> None:

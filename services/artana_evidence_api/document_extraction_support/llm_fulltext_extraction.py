@@ -49,7 +49,7 @@ from artana_evidence_api.document_extraction_support.review_policy.review_only_c
 )
 from pydantic import BaseModel
 
-LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v6"
+LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v7"
 LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION = (
     "document_extraction.weak_review_extraction.v2"
 )
@@ -242,6 +242,10 @@ def _llm_relation_to_candidate(
         label=obj,
         source="model",
     )
+    endpoint_review_reason_codes = _endpoint_grounding_review_reason_codes(
+        subject_curie_link=subject_curie_link,
+        object_curie_link=object_curie_link,
+    )
 
     if relation_type == LLM_PROPOSE_NEW_RELATION_TYPE:
         if force_review_only_reason_codes:
@@ -263,7 +267,7 @@ def _llm_relation_to_candidate(
             )
         review_status, review_reason_codes = _candidate_review_metadata(
             rel=rel,
-            policy_reason_codes=(),
+            policy_reason_codes=endpoint_review_reason_codes,
             policy_review_only=False,
             force_review_only_reason_codes=force_review_only_reason_codes,
         )
@@ -313,7 +317,10 @@ def _llm_relation_to_candidate(
         return None, None
     review_status, review_reason_codes = _candidate_review_metadata(
         rel=rel,
-        policy_reason_codes=review_only_decision.reason_codes,
+        policy_reason_codes=(
+            *review_only_decision.reason_codes,
+            *endpoint_review_reason_codes,
+        ),
         policy_review_only=review_only_decision.review_only,
         force_review_only_reason_codes=force_review_only_reason_codes,
     )
@@ -394,6 +401,53 @@ def _normalize_fusion_surface(value: str) -> str:
 
 def _candidate_curie_source(link: EntityCurieLink) -> CurieSource:
     return link.source if link.curie is not None else "none"
+
+
+def _endpoint_grounding_review_reason_codes(
+    *,
+    subject_curie_link: EntityCurieLink,
+    object_curie_link: EntityCurieLink,
+) -> tuple[str, ...]:
+    return tuple(
+        dict.fromkeys(
+            (
+                *_review_only_endpoint_reason_codes(
+                    role="subject",
+                    link=subject_curie_link,
+                ),
+                *_review_only_endpoint_reason_codes(
+                    role="object",
+                    link=object_curie_link,
+                ),
+            ),
+        ),
+    )
+
+
+def _review_only_endpoint_reason_codes(
+    *,
+    role: str,
+    link: EntityCurieLink,
+) -> tuple[str, ...]:
+    if not _is_review_only_grounding_link(link):
+        return ()
+    reason_codes = [f"review_only_{role}_grounding"]
+    if link.grounding_reason_code is not None:
+        reason_codes.append(
+            f"{role}_grounding_{_normalize_review_reason_code(link.grounding_reason_code)}",
+        )
+    elif link.reason is not None:
+        reason_codes.append(
+            f"{role}_grounding_{_normalize_review_reason_code(link.reason)}",
+        )
+    return tuple(reason_codes)
+
+
+def _is_review_only_grounding_link(link: EntityCurieLink) -> bool:
+    return (
+        link.trusted_identifier_allowed is False
+        or link.grounding_curation_status == "review_only_for_relation_feasibility_v2"
+    )
 
 
 def _candidate_review_metadata(

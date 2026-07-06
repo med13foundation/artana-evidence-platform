@@ -39,6 +39,7 @@ class GoldRelation:
     subject_curie: str | None = None
     object_curie: str | None = None
     requires_entailment: bool = True
+    review_status: RelationReviewStatus = "candidate"
 
     def to_json(self) -> dict[str, object]:
         """Return a JSON-compatible representation."""
@@ -53,6 +54,7 @@ class GoldRelation:
             "subject_curie": self.subject_curie,
             "object_curie": self.object_curie,
             "requires_entailment": self.requires_entailment,
+            "review_status": self.review_status,
         }
 
 
@@ -360,6 +362,10 @@ class FeasibilitySummary:
     high_value_missed_gold_count: int
     trusted_high_value_match_count: int
     trusted_high_value_recall: float
+    high_value_review_gold_relation_count: int
+    high_value_review_candidate_count: int
+    high_value_review_gold_match_count: int
+    high_value_review_recall: float
     low_value_gold_relation_count: int
     low_value_missed_gold_count: int
     low_value_review_candidate_count: int
@@ -453,6 +459,10 @@ class FeasibilitySummary:
             "high_value_recall": self.high_value_recall,
             "trusted_high_value_match_count": self.trusted_high_value_match_count,
             "trusted_high_value_recall": self.trusted_high_value_recall,
+            "high_value_review_gold_relation_count": self.high_value_review_gold_relation_count,
+            "high_value_review_candidate_count": self.high_value_review_candidate_count,
+            "high_value_review_gold_match_count": self.high_value_review_gold_match_count,
+            "high_value_review_recall": self.high_value_review_recall,
             "low_value_gold_relation_count": self.low_value_gold_relation_count,
             "low_value_missed_gold_count": self.low_value_missed_gold_count,
             "low_value_recall": self.low_value_recall,

@@ -991,6 +991,74 @@ def test_low_value_review_metrics_count_review_only_canonical_candidate() -> Non
     assert "Low-value review candidates: 1" in markdown
 
 
+def test_high_value_review_metrics_count_review_only_canonical_candidate() -> None:
+    cases = (
+        _case(
+            case_id="high_value_review_canonical",
+            text="IL6 regulates inflammatory signaling through JAK-STAT activation.",
+            gold=(
+                GoldRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    support_sentence=(
+                        "IL6 regulates inflammatory signaling through JAK-STAT "
+                        "activation."
+                    ),
+                    value_level="high",
+                    rationale=(
+                        "High-value relation with a broad endpoint that must stay "
+                        "review-only."
+                    ),
+                    subject_curie="HGNC:6018",
+                    object_curie=None,
+                    review_status="review_only",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    sentence=(
+                        "IL6 regulates inflammatory signaling through JAK-STAT "
+                        "activation."
+                    ),
+                    subject_curie="HGNC:6018",
+                    subject_curie_source="verified_linker",
+                    review_status="review_only",
+                    review_reason_codes=("review_only_object_grounding",),
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=1,
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    summary_json = report.summary.to_json()
+    markdown = render_markdown_report(report)
+
+    assert report.summary.high_value_recall == 1.0
+    assert report.summary.trusted_high_value_recall == 0.0
+    assert report.summary.high_value_review_gold_relation_count == 1
+    assert report.summary.high_value_review_candidate_count == 1
+    assert report.summary.high_value_review_gold_match_count == 1
+    assert report.summary.high_value_review_recall == 1.0
+    assert summary_json["high_value_review_gold_relation_count"] == 1
+    assert summary_json["high_value_review_candidate_count"] == 1
+    assert summary_json["high_value_review_gold_match_count"] == 1
+    assert summary_json["high_value_review_recall"] == 1.0
+    assert "High-value review-only candidates: 1" in markdown
+
+
 def test_low_value_review_metrics_ignore_fallback_review_only_candidates() -> None:
     cases = (
         _case(

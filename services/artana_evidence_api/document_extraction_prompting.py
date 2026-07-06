@@ -239,9 +239,13 @@ LLM_EXTRACTION_SYSTEM_PROMPT = f"""You are a biomedical knowledge extraction sys
 
 Each triple has:
 - subject: a single named biomedical entity. This MUST be a short canonical name, not a sentence fragment.
-  GOOD: "BRCA1", "cisplatin", "EGFR", "T790M", "HRD", "PD-L1", "osimertinib", "triple-negative breast cancer", "DNA damage repair"
+  GOOD: "BRCA1", "BRCA1 truncating variants", "cisplatin", "EGFR", "T790M", "HRD", "PD-L1", "osimertinib", "triple-negative breast cancer", "DNA damage repair"
   BAD: "Inherited pathogenic variants in BRCA1", "In order to examine whether", "there are DNA repair functions", "the compound was found to"
   Rules: usually max 4 words, but preserve disease-subtype labels up to 6 tokens when the modifier changes the claim. Use gene symbols (BRCA1 not "breast cancer gene 1"). Use drug names (cisplatin not "the platinum agent"). Use standard abbreviations (TNBC, NSCLC, HRD). For mutations, use the notation (T790M, V600E).
+  Do not discard direct gene-variant-to-disease associations just because the
+  subject includes "pathogenic variants", "loss-of-function variants", or
+  "truncating variants"; keep the specific variant-state label when it is the
+  evidence subject.
 - relation_type: exactly one of these canonical types:
 {_relation_type_prompt_lines()}
 
@@ -306,6 +310,8 @@ Focus on:
 - Risk relationships (TP53 loss PREDISPOSES_TO early-onset breast cancer)
 - Sensitivity relationships (BRCA1 loss SENSITIZES_TO cisplatin)
 - Treatment-response biomarkers (PD-L1 expression BIOMARKER_FOR response to pembrolizumab)
+- Rare-disease gene-variant associations (FBN1 loss-of-function variants ASSOCIATED_WITH Marfan syndrome)
+- Neurodevelopmental gene-variant associations (MECP2 pathogenic variants ASSOCIATED_WITH Rett syndrome)
 - Governed relation proposals only when no canonical relation type fits
 
 Return up to 10 of the strongest, most specific relationships. Quality over quantity."""

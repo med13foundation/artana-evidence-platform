@@ -20,7 +20,14 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="AKT1",
         curie="HGNC:391",
-        aliases=("AKT activation",),
+    ),
+    VerifiedEntityRecord(
+        label="Alectinib",
+        curie="DrugBank:DB11363",
+    ),
+    VerifiedEntityRecord(
+        label="APC",
+        curie="HGNC:583",
     ),
     VerifiedEntityRecord(
         label="BRAF V600E",
@@ -33,7 +40,6 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="BRCA1",
         curie="HGNC:1100",
-        aliases=("BRCA1 loss",),
     ),
     VerifiedEntityRecord(
         label="Bevacizumab",
@@ -57,9 +63,33 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
         curie="ClinVar:EGFR_T790M",
     ),
     VerifiedEntityRecord(
+        label="Fabry disease",
+        curie="MONDO:0010526",
+    ),
+    VerifiedEntityRecord(
+        label="familial adenomatous polyposis",
+        curie="NCIT:C3339",
+    ),
+    VerifiedEntityRecord(
+        label="familial hypercholesterolemia",
+        curie="MONDO:0005439",
+    ),
+    VerifiedEntityRecord(
+        label="FBN1",
+        curie="HGNC:3603",
+    ),
+    VerifiedEntityRecord(
+        label="GLA",
+        curie="HGNC:4296",
+    ),
+    VerifiedEntityRecord(
+        label="hereditary breast ovarian cancer syndrome",
+        curie="MONDO:0003582",
+        aliases=("hereditary breast and ovarian cancer syndrome",),
+    ),
+    VerifiedEntityRecord(
         label="HER2",
         curie="HGNC:3430",
-        aliases=("HER2 amplification",),
     ),
     VerifiedEntityRecord(
         label="homologous recombination DNA repair",
@@ -77,11 +107,22 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="JAK2",
         curie="HGNC:6192",
-        aliases=("JAK2 signaling",),
     ),
     VerifiedEntityRecord(
         label="KRAS G12C",
         curie="ClinVar:KRAS_G12C",
+    ),
+    VerifiedEntityRecord(
+        label="KRAS G12D",
+        curie="ClinVar:KRAS_G12D",
+    ),
+    VerifiedEntityRecord(
+        label="Larotrectinib",
+        curie="DrugBank:DB14723",
+    ),
+    VerifiedEntityRecord(
+        label="LDLR",
+        curie="HGNC:6547",
     ),
     VerifiedEntityRecord(
         label="MAPK signaling",
@@ -98,9 +139,25 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
         curie="HGNC:22474",
     ),
     VerifiedEntityRecord(
+        label="MECP2",
+        curie="HGNC:6990",
+    ),
+    VerifiedEntityRecord(
         label="MET",
         curie="HGNC:7029",
-        aliases=("MET amplification",),
+    ),
+    VerifiedEntityRecord(
+        label="MSI-high status",
+        curie="NCIT:C36493",
+    ),
+    VerifiedEntityRecord(
+        label="NTRK fusion positive cancer",
+        curie="MONDO:0700215",
+        aliases=("NTRK fusion solid tumors", "NTRK gene fusion solid tumors"),
+        relation_match_aliases=(
+            "NTRK fusion solid tumors",
+            "NTRK gene fusion solid tumors",
+        ),
     ),
     VerifiedEntityRecord(
         label="Olaparib",
@@ -111,13 +168,28 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
         curie="DrugBank:DB09330",
     ),
     VerifiedEntityRecord(
+        label="PAH",
+        curie="HGNC:8582",
+    ),
+    VerifiedEntityRecord(
         label="PD-L1",
         curie="HGNC:17635",
-        aliases=("PD-L1 expression",),
+    ),
+    VerifiedEntityRecord(
+        label="PI3K-AKT signaling",
+        curie="GO:0043491",
+    ),
+    VerifiedEntityRecord(
+        label="PTEN",
+        curie="HGNC:9588",
     ),
     VerifiedEntityRecord(
         label="RET p.Arg1174*",
         curie="ClinVar:RET_ARG1174TER",
+    ),
+    VerifiedEntityRecord(
+        label="Rett syndrome",
+        curie="MONDO:0010726",
     ),
     VerifiedEntityRecord(
         label="Ruxolitinib",
@@ -130,7 +202,6 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="TP53",
         curie="HGNC:11998",
-        aliases=("TP53 loss",),
     ),
     VerifiedEntityRecord(
         label="Trametinib",
@@ -139,6 +210,10 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="VEGF-A",
         curie="HGNC:12680",
+    ),
+    VerifiedEntityRecord(
+        label="Vemurafenib",
+        curie="DrugBank:DB08881",
     ),
     VerifiedEntityRecord(
         label="congenital heart disease",
@@ -161,6 +236,14 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
         curie="DrugBank:DB00317",
     ),
     VerifiedEntityRecord(
+        label="Marfan syndrome",
+        curie="MONDO:0007947",
+    ),
+    VerifiedEntityRecord(
+        label="phenylketonuria",
+        curie="MONDO:0009861",
+    ),
+    VerifiedEntityRecord(
         label="triple-negative breast cancer",
         curie="MONDO:0007254",
     ),
@@ -172,13 +255,82 @@ REVIEW_ONLY_ENTITY_RECORDS: tuple[ReviewOnlyEntityRecord, ...] = (
         reason_code="composite_event_label",
     ),
     ReviewOnlyEntityRecord(
+        label="ALK fusion-positive lung cancer",
+        reason_code="molecular_subtype_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="APC pathogenic variants",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="AKT activation",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="BRCA1 loss",
+        reason_code="gene_state_requires_structured_grounding",
+        aliases=("BRCA1 truncating variants",),
+    ),
+    ReviewOnlyEntityRecord(
+        label="EGFR exon 19 deletion lung adenocarcinoma",
+        reason_code="molecular_subtype_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
         label="ERK phosphorylation",
         reason_code="broad_process_label",
         aliases=("ERK tyrosine phosphorylation",),
     ),
     ReviewOnlyEntityRecord(
+        label="FBN1 loss-of-function variants",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="GLA variants",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="HER2 amplification",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="immune checkpoint inhibitor response",
+        reason_code="composite_treatment_response_label",
+    ),
+    ReviewOnlyEntityRecord(
+        label="JAK2 signaling",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="LDLR loss-of-function variants",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="MECP2 pathogenic variants",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="MET amplification",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="PAH pathogenic variants",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="PD-L1 expression",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
+        label="PTEN loss",
+        reason_code="gene_state_requires_structured_grounding",
+    ),
+    ReviewOnlyEntityRecord(
         label="response to pembrolizumab",
         reason_code="composite_treatment_response_label",
+    ),
+    ReviewOnlyEntityRecord(
+        label="TP53 loss",
+        reason_code="gene_state_requires_structured_grounding",
     ),
     ReviewOnlyEntityRecord(
         label="HRD score",

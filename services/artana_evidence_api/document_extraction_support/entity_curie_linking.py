@@ -30,6 +30,7 @@ _CURIE_PREFIXES: dict[str, tuple[str, str, str]] = {
     "MESH": ("MESH", "mesh_id", "BIOMEDICAL_CONCEPT"),
     "MONDO": ("MONDO", "mondo_id", "DISEASE"),
     "NCBIGENE": ("NCBIGene", "ncbigene_id", "GENE"),
+    "NCIT": ("NCIT", "ncit_id", "BIOMEDICAL_CONCEPT"),
     "OMIM": ("OMIM", "omim_id", "DISEASE"),
     "UMLS": ("UMLS", "umls_id", "BIOMEDICAL_CONCEPT"),
 }
@@ -125,6 +126,7 @@ def _normalize_raw_curie(
     *,
     label: str,
     source: CurieSource,
+    enforce_label_type: bool = True,
 ) -> EntityCurieLink:
     """Normalize a raw CURIE without upgrading model hints to trusted links."""
 
@@ -154,7 +156,10 @@ def _normalize_raw_curie(
 
     namespace, identifier_key, entity_type = prefix_config
     normalized = f"{namespace}:{match.group('local')}"
-    if _label_conflicts_with_entity_type(label=label, entity_type=entity_type):
+    if enforce_label_type and _label_conflicts_with_entity_type(
+        label=label,
+        entity_type=entity_type,
+    ):
         return EntityCurieLink(
             status="abstained",
             source=source,
@@ -210,6 +215,7 @@ def _link_from_verified_record(
         record.curie,
         label=record.label,
         source="verified_linker",
+        enforce_label_type=False,
     )
     if link.status != "linked":
         return link

@@ -25,6 +25,7 @@ from scripts.validation.relation_feasibility.scoring import (
 from scripts.validation.relation_feasibility.trusted_metric_rules import (
     HIGH_VALUE_LEVELS,
     LOW_VALUE_LEVELS,
+    high_value_review_gold_index,
     is_trusted_high_value_match,
     low_value_review_gold_index,
 )
@@ -144,6 +145,10 @@ class _ValueMetricCounts:
 class _TrustLaneMetricCounts:
     trusted_high_value_match_count: int
     trusted_high_value_recall: float
+    high_value_review_gold_relation_count: int
+    high_value_review_candidate_count: int
+    high_value_review_gold_match_count: int
+    high_value_review_recall: float
     low_value_review_candidate_count: int
     low_value_review_gold_match_count: int
     low_value_review_recall: float
@@ -287,6 +292,16 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
             trust_lane_metrics.trusted_high_value_match_count
         ),
         trusted_high_value_recall=trust_lane_metrics.trusted_high_value_recall,
+        high_value_review_gold_relation_count=(
+            trust_lane_metrics.high_value_review_gold_relation_count
+        ),
+        high_value_review_candidate_count=(
+            trust_lane_metrics.high_value_review_candidate_count
+        ),
+        high_value_review_gold_match_count=(
+            trust_lane_metrics.high_value_review_gold_match_count
+        ),
+        high_value_review_recall=trust_lane_metrics.high_value_review_recall,
         low_value_gold_relation_count=value_metrics.low_value_gold_relation_count,
         low_value_missed_gold_count=value_metrics.low_value_missed_gold_count,
         low_value_review_candidate_count=(
@@ -672,6 +687,8 @@ def _trust_lane_metric_counts(
     value_metrics: _ValueMetricCounts,
 ) -> _TrustLaneMetricCounts:
     trusted_high_value_matches: set[tuple[int, int]] = set()
+    high_value_review_matches: set[tuple[int, int]] = set()
+    high_value_review_candidate_count = 0
     low_value_review_matches: set[tuple[int, int]] = set()
     low_value_review_candidate_count = 0
     for case_index, (gold_relations, assessments, agent_completed) in enumerate(
@@ -691,6 +708,13 @@ def _trust_lane_metric_counts(
                 trusted_high_value_matches.add(
                     (case_index, assessment.matched_gold_index or 0),
                 )
+            high_value_review_index = high_value_review_gold_index(
+                assessment=assessment,
+                gold_relations=gold_relations,
+            )
+            if agent_completed and high_value_review_index is not None:
+                high_value_review_candidate_count += 1
+                high_value_review_matches.add((case_index, high_value_review_index))
             low_value_review_index = low_value_review_gold_index(
                 assessment=assessment,
                 gold_relations=gold_relations,
@@ -704,12 +728,31 @@ def _trust_lane_metric_counts(
             len(trusted_high_value_matches),
             value_metrics.high_value_gold_relation_count,
         ),
+        high_value_review_gold_relation_count=_high_value_review_gold_relation_count(
+            inputs,
+        ),
+        high_value_review_candidate_count=high_value_review_candidate_count,
+        high_value_review_gold_match_count=len(high_value_review_matches),
+        high_value_review_recall=_ratio(
+            len(high_value_review_matches),
+            _high_value_review_gold_relation_count(inputs),
+        ),
         low_value_review_candidate_count=low_value_review_candidate_count,
         low_value_review_gold_match_count=len(low_value_review_matches),
         low_value_review_recall=_ratio(
             len(low_value_review_matches),
             value_metrics.low_value_gold_relation_count,
         ),
+    )
+
+
+def _high_value_review_gold_relation_count(inputs: SummaryInputs) -> int:
+    return sum(
+        1
+        for gold_relations in inputs.case_gold_relations
+        for gold_relation in gold_relations
+        if gold_relation.value_level in HIGH_VALUE_LEVELS
+        and gold_relation.review_status == "review_only"
     )
 
 

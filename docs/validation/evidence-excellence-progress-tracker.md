@@ -147,6 +147,7 @@ Status values:
 | 15 | PR-26 | `alvaro/evidence-pr26-graph-promotion-fail-closed` | Implemented locally; final gates pass | Make Graph DB independently reject unsafe trusted AI evidence even if a caller labels it trusted. | Graph validation rejects fallback, incomplete-agent, review-only, weak-reason, model-only endpoint, unlinked endpoint, non-ENTAILS, malformed floor metadata, and failed trust-floor promotion attempts. | Graph-owned review-lane floor, verified endpoint marker floor, malformed metadata fail-closed checks, `/claims` trusted-floor rejection, claim and direct relation regression tests, RED unit/integration/adversarial proof, focused 71-test graph validation pass, changed-file Ruff pass, post-adversarial `make graph-service-checks` pass, and post-adversarial `make service-checks` pass with coverage 87.03%. Summary: `docs/validation/reports/2026-07-06-pr26-graph-promotion-fail-closed-summary.md`. |
 | 16 | PR-27 | `alvaro/evidence-pr27-benchmark-v3-doc-proof` | Implemented locally; final gates pass | Expand benchmark breadth and make proof summaries generated from JSON artifacts. | v3 fixture validation passes and generated summaries expose reproducible metrics, blockers, warning reasons, artifact hashes, and remaining failures from tracked JSON. | 40-case v3 fixture, fixture validator, generated summary CLI, tracked PR27 proof JSON/Markdown, quality-gate tests, v2 GREEN run, v3 RED run2, v3 failure attribution, adversarial re-review PASS, pre-commit pass, and `make service-checks` pass with coverage 87.03%. V3 proves current agent path is safe on hard negatives but not trusted-graph ready: precision 0.7333, trusted high-value recall 0.2000, trusted endpoint rate 0.3000, generic rate 0.3000, model-only wrong CURIE hints 9, fallback 0, invalid agent 0, negative leakage 0, weak trusted leakage 0, wrong verified links 0. Summary: `docs/validation/reports/2026-07-06-pr27-benchmark-v3-doc-proof-summary.md`. |
 | 17 | PR-28 | `alvaro/evidence-pr28-v3-specificity-recall` | Implemented locally; post-adversarial strict gate RED | Improve v3 live-agent specificity and high-value recall without crediting deterministic fallback. | Precision/noise must improve while fallback, invalid-agent, negative leakage, weak trusted leakage, and wrong verified links stay at 0. | Specific biomedical label preservation, prompt v6 subtype reminder, tumor-agnostic fusion object repair for `harboring` and `with` surfaces, variant-class dropped-subject rejection, treatment/context-tail rejection, shared argument aliases, `predispose` support cue coverage, sibling-required context filtering, review-only retention for single suspicious context candidates, focused RED/GREEN tests, relation-feasibility quality gate, five pre-review strict v3 live-agent runs, and one post-review strict v3 live-agent run. Best precision/noise run was run4: precision 0.9259, recall 0.8333, high-value recall 0.8500, false positives 2, fallback 0, invalid agent 0. Best recall run was run2: recall 0.8667 and high-value recall 0.9000, but precision 0.7429 with 9 false positives. Final post-review run6 stayed RED: precision 0.8519, recall 0.7667, high-value recall 0.7500, generic rate 0.2593, valuable rate 0.5185, trusted endpoint rate 0.3250, false positives 4, fallback 0, invalid agent 0. Remaining blockers: trusted CURIE recovery, repeatability, generic/valuable thresholds, and repeatable omissions including BRCA1, EGFR, MET, FBN1, NTRK, plus post-review misses for MECP2/PAH/APC. Summary: `docs/validation/reports/2026-07-06-pr28-v3-specificity-recall-summary.md`. |
+| 18 | PR-29 | `alvaro/evidence-pr29-v3-curie-recovery` | Implemented locally; post-adversarial strict gate YELLOW | Recover v3 verified CURIE endpoints and high-value rare-disease associations through the live-agent path without accepting broad or fake exact IDs. | Trusted-eligible CURIE-linked endpoint rate >= 0.9500 with fallback, invalid-agent, weak trusted leakage, negative leakage, and wrong verified CURIE links all at 0. | Corrected false/broad v3 CURIE curation, demoted gene-state/composite/molecular-subtype labels to review-only, propagated review-only endpoint grounding into candidate trust metadata, added NTRK live-surface relation aliasing, added fixture-policy validation so trusted gold cannot use review-only endpoints or review-status typos, added explicit high-value review-only metrics, prompt v7 rare-disease association examples, focused RED/GREEN tests, relation-feasibility quality gate, and strict live run7. Run7: YELLOW, precision 0.9032, recall 0.9333, high-value recall 1.0000, high-value review-only recall 1.0000, trusted high-value recall 0.3500, trusted endpoint rate 1.0000, verified CURIE match rate 0.7250, model wrong hints 2, wrong verified links 0, fallback 0, invalid agent 0, negative leakage 0, weak trusted leakage 0. Remaining warnings: trusted high-value recall, valuable candidate rate 0.5161, and generic relation rate 0.2903. Summary: `docs/validation/reports/2026-07-06-pr29-v3-curie-recovery-summary.md`. |
 
 ## PR Evidence Packet
 
@@ -207,6 +208,80 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-06 - PR-29 V3 CURIE Recovery And Rare-Disease Recall
+
+PR: PR-29 v3 CURIE recovery
+
+Branch: `alvaro/evidence-pr29-v3-curie-recovery`
+
+Goal: Recover verified endpoint CURIEs for repeated v3 high-value misses and
+make the live agent extract direct rare-disease gene-variant associations
+without crediting deterministic fallback.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-06-pr29-v3-curie-recovery-summary.md`
+- `reports/relation_feasibility/2026-07-06-pr29-v3-curie-recovery-run7/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-06-pr29-v3-curie-recovery-run7/relation_feasibility_report.md`
+- `reports/relation_feasibility_failure_analysis/2026-07-06-pr29-v3-curie-recovery-run7/relation_feasibility_failure_analysis_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-06-pr29-v3-curie-recovery-run7/relation_feasibility_failure_analysis_report.md`
+
+Final strict live-agent metrics:
+
+| Metric | Value |
+|---|---:|
+| Verdict | YELLOW |
+| Completed-agent precision | 0.9032 |
+| Completed-agent recall | 0.9333 |
+| Completed-agent valuable rate | 0.5161 |
+| High-value recall | 1.0000 |
+| High-value review-only recall | 1.0000 |
+| Trusted high-value recall | 0.3500 |
+| Low-value review recall | 0.8000 |
+| Trusted-eligible CURIE-linked endpoint rate | 1.0000 |
+| Verified CURIE match rate | 0.7250 |
+| Model wrong CURIE hints | 2 |
+| Wrong verified CURIE links | 0 |
+| Weak-claim trusted leakage count | 0 |
+| Fallback cases | 0 |
+| Invalid strict-agent cases | 0 |
+| Negative-control leakage cases | 0 |
+| Generic relation rate | 0.2903 |
+
+Validation:
+
+- Focused RED/GREEN verified dictionary tests passed.
+- Focused RED/GREEN CURIE-linking tests passed.
+- Focused RED/GREEN candidate conversion tests proved review-only endpoint
+  grounding demotes the whole candidate from trusted eligibility.
+- V3 fixture validation now rejects trusted gold rows that use review-only
+  endpoint labels.
+- V3 fixture validation now rejects invalid `review_status` values and
+  review-only endpoint labels that keep trusted CURIEs.
+- High-value review-only capture now has explicit metrics, separating useful
+  review evidence from trusted graph evidence.
+- Prompt regression for rare-disease gene-variant associations passed.
+- Touched-file Ruff passed.
+- `make relation-feasibility-quality-gate` passed.
+- Strict live-agent run3 was superseded after adversarial review found broad or
+  incorrect exact CURIE curation.
+- Strict live-agent run7 is the authoritative result: YELLOW with trusted
+  endpoint rate `1.0000`, high-value review-only recall `1.0000`, wrong
+  verified CURIE links `0`, fallback `0`, invalid
+  agent `0`, negative-control leakage `0`, and weak trusted leakage `0`.
+
+Known remaining risk:
+
+- This is still not trusted-graph ready.
+- Trusted high-value recall is only `0.3500` because many high-value gene-state,
+  composite response, and molecular subtype endpoints are correctly review-only
+  until structured grounding exists.
+- Generic relation rate remains high at `0.2903`, and valuable candidate rate is
+  only `0.5161`.
+- The next PR should reduce generic relation noise and add structured grounding
+  for safe gene-state or molecular-subtype concepts without weakening safety
+  floors.
 
 ### 2026-07-06 - PR-27 Benchmark V3 And Generated Proof Docs
 
