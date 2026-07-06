@@ -152,6 +152,7 @@ Status values:
 | 20 | PR-31 | `alvaro/evidence-pr31-context-precision-guards` | Draft PR #114 open; three-run readiness READY; GitHub checks clean | Demote pathway, process, and cell-context candidates from trusted auto-promotion when they are useful review context but not curated trusted graph evidence. | Three strict v3 live-agent runs report trusted graph readiness ready with worst trusted precision, trusted high-value recall, trusted valuable rate, trusted endpoint recovery, and entailment checked rate all at 1.0000. | Added RED/GREEN quality-filter tests for Vemurafenib/MAPK pathway shadowing, KRAS/proliferation process shadowing, and JAK-STAT/macrophage cell-context activation; added fake-LLM extraction regression proving review-only metadata survives the agent path; ran focused tests, touched-file Ruff, `make relation-feasibility-quality-gate`, strict v3 live runs1-3, readiness aggregate READY, and failure analysis. Hard failures are all 0: fallback, invalid agent, negative leakage, raw unknown relation/surface, wrong verified CURIE links, weak trusted leakage, and review-only gold trusted leakage. Remaining work is review-lane usefulness, not trusted auto-promotion: weak EGFR/MET review misses and all-candidate review burden remain. Summary: `docs/validation/reports/2026-07-06-pr31-context-precision-guards-summary.md`. |
 | 21 | PR-32 | `alvaro/evidence-pr32-weak-review-recovery` | Implemented locally; post-adversarial three-run readiness READY; final gates pass | Recover weak EGFR trend-response and MET correlated-resistance evidence as review-only candidates while preserving trusted-lane safety. | Low-value review recall is 1.0000 across three strict v3 live-agent runs, weak trusted leakage remains 0, and trusted readiness remains READY. | Added weak-review prompt examples, weak-pass prompt reinforcement, `trended with` detection, trend-response relation repair, correlated-resistance object repair, post-repair duplicate merging, and schema recovery for canonical relations with spurious proposal fields. Adversarial review then tightened schema recovery to reject unknown/conflicting proposals, clear stale object CURIE metadata after object repair, and scope repair cues to the candidate claim; re-review then closed bare-`and` claim-boundary leakage. Focused tests pass (`55 passed`), touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage 87.03%, strict live runs12-14 are GREEN with low-value review recall 1.0000, fallback 0, invalid agent 0, weak trusted leakage 0, and readiness aggregate READY. Summary: `docs/validation/reports/2026-07-06-pr32-weak-review-recovery-summary.md`. |
 | 22 | PR-33 | `alvaro/evidence-pr33-review-burden-pruning` | Implemented locally; final gates pass; three-run readiness READY | Remove repeated review-burden false positives and recover rare zero-candidate/schema-invalid agent responses without deterministic fallback. | Trusted readiness remains READY, hard safety failures stay 0, and missed gold and repeated false positives are 0 across three post-adversarial strict v3 live-agent runs. | Added companion phenotype, pathway/process, downstream context, cell-context, and binding-site sibling pruning; added agent-only zero-candidate and schema-repair retries with retry-specific prompts and distinct replay keys; adversarial review and service-gate failures fixed invalid-sibling shadowing, raw-but-unusable retry suppression, schema-retry ordering, weak-pass candidate loss, partial zero-retry cue coverage, unknown-only candidate retry suppression, and over-broad pruning; focused tests pass (`80 passed`), quality-filter suite passes (`47 passed`), touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and strict post-adversarial3 live runs1-3 aggregate to READY with worst completed-agent precision 1.0000, worst recall 1.0000, worst high-value recall 1.0000, trusted precision 1.0000, trusted valuable rate 1.0000, trusted endpoint rate 1.0000, missed gold 0, false positives 0, fallback 0, invalid agent 0, negative leakage 0, weak trusted leakage 0, and wrong verified CURIE links 0. Summary: `docs/validation/reports/2026-07-06-pr33-review-burden-pruning-summary.md`. |
+| 23 | PR-34 | `alvaro/evidence-pr34-live-model-ab-proof` | Implemented locally; live A/B proof complete; final gates pass | Close the stronger-model question with a fail-closed live model comparison on the v3 benchmark. | Candidate model adoption requires three completed runs, zero hard safety failures, and no trusted endpoint regression. | Added fixture pinning to `scripts/run_relation_model_comparison.py`, made failed audit subprocesses produce a `KEEP_CURRENT` report with `audit_failures`, and added Markdown audit-failure rendering. Current `openai:gpt-5.4-mini` completed 3/3 strict v3 live runs with trusted readiness READY and hard failures 0; candidate `openai:gpt-5` completed only 1/3 runs and failed run2 preflight with a LiteLLM timeout, so the comparison decision is KEEP_CURRENT. Focused model-comparison tests pass (`13 passed`), `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and adversarial review found no blockers after symmetric failed-current-run coverage and doc wording cleanup. Summary: `docs/validation/reports/2026-07-06-pr34-live-model-ab-proof-summary.md`. |
 
 ## PR Evidence Packet
 
@@ -212,6 +213,86 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-06 - PR-34 Live Model A/B Proof
+
+PR: PR-34 live model A/B proof
+
+Branch: `alvaro/evidence-pr34-live-model-ab-proof`
+
+Goal: Prove whether a stronger extraction model should replace the current
+configured model for trusted-readiness evaluation, using the same v3 fixture and
+fail-closed adoption rules.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-06-pr34-live-model-ab-proof-summary.md`
+- `reports/relation_model_comparison/2026-07-06-pr34-live-model-ab-proof/relation_model_comparison_report.json`
+- `reports/relation_model_comparison/2026-07-06-pr34-live-model-ab-proof/relation_model_comparison_report.md`
+- `reports/relation_model_comparison/2026-07-06-pr34-live-model-ab-proof/runs/current/run1/relation_feasibility_report.json`
+- `reports/relation_model_comparison/2026-07-06-pr34-live-model-ab-proof/runs/current/run2/relation_feasibility_report.json`
+- `reports/relation_model_comparison/2026-07-06-pr34-live-model-ab-proof/runs/current/run3/relation_feasibility_report.json`
+- `reports/relation_model_comparison/2026-07-06-pr34-live-model-ab-proof/runs/candidate/run1/relation_feasibility_report.json`
+
+Model comparison decision:
+
+- current model: `openai:gpt-5.4-mini`
+- candidate model: `openai:gpt-5`
+- decision: `KEEP_CURRENT`
+- candidate adoption blocker: candidate audit run failed
+- candidate completed reports: `1/3`
+- candidate failed run: run2 exited `2` after live-agent preflight timed out
+
+Current model worst-run metrics across v3 runs1-3:
+
+| Metric | Worst |
+|---|---:|
+| Trusted readiness | READY |
+| Completed-agent precision | 1.0000 |
+| Completed-agent recall | 1.0000 |
+| Completed-agent valuable rate | 0.5333 |
+| High-value recall | 1.0000 |
+| Trusted candidate precision | 1.0000 |
+| Trusted candidate valuable rate | 1.0000 |
+| Trusted candidate generic rate | 0.0000 |
+| Trusted-eligible high-value recall | 1.0000 |
+| Trusted-eligible CURIE endpoint rate | 1.0000 |
+| Entailment checked rate | 1.0000 |
+| Verified CURIE match rate | 0.7250 |
+
+Candidate completed run1 metrics:
+
+| Metric | Value |
+|---|---:|
+| Verdict | GREEN |
+| Completed-agent precision | 1.0000 |
+| Completed-agent recall | 0.9667 |
+| High-value recall | 0.9500 |
+| Trusted candidate precision | 1.0000 |
+| Trusted-eligible high-value recall | 1.0000 |
+| Trusted-eligible CURIE endpoint rate | 1.0000 |
+| Fallback cases | 0 |
+| Invalid agent cases | 0 |
+| Wrong verified CURIE links | 0 |
+
+Validation:
+
+- RED/GREEN fixture-pinning regression passed.
+- RED/GREEN failed-candidate-audit reporting regression passed.
+- Symmetric failed-current-run regression passed.
+- Focused model-comparison suite: `13 passed`.
+- `make relation-feasibility-quality-gate`: passed.
+- `make service-checks`: passed with coverage `87.03%`.
+- Corrected live A/B command used
+  `--cases scripts/validation/relation_feasibility/fixtures/biomedical_relation_goldset_v3.json`.
+
+Interpretation:
+
+Do not switch the default extraction model to `openai:gpt-5` from this evidence.
+The current model is repeatably READY on the trusted lane, while the stronger
+candidate did not complete the required three-run gate and its only completed
+run was worse on completed-agent recall, high-value recall, and valuable
+candidate rate.
 
 ### 2026-07-06 - PR-33 Review Burden Pruning And Agent Retry Hardening
 

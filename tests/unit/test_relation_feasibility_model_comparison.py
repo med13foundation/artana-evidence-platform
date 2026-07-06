@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -453,3 +454,169 @@ def test_model_comparison_cli_orchestrates_repeated_audit_runs(
         (Path("runs/candidate/run3"), "openai:gpt-5.5"),
     ]
     assert (output_dir / "relation_model_comparison_report.json").exists()
+
+
+def test_model_comparison_cli_passes_cases_to_repeated_audit_runs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    run_cases: list[Path | None] = []
+    cases_path = tmp_path / "benchmark_v3.json"
+    cases_path.write_text("[]\n")
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5.5")
+
+    def _fake_run_audit(
+        *,
+        output_dir: Path,
+        env: Mapping[str, str],
+        cases_path: Path | None = None,
+    ) -> None:
+        run_cases.append(cases_path)
+        _write_report(
+            output_dir,
+            "relation_feasibility_report",
+            model_label="candidate"
+            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5.5"
+            else "current",
+        )
+
+    monkeypatch.setattr(comparison_script, "_run_single_audit", _fake_run_audit)
+
+    exit_code = comparison_main(
+        [
+            "--current-model-label",
+            "current",
+            "--candidate-model-label",
+            "candidate",
+            "--runs-per-model",
+            "3",
+            "--run-audits",
+            "--cases",
+            str(cases_path),
+            "--output-dir",
+            str(tmp_path / "comparison"),
+        ],
+    )
+
+    assert exit_code == 0
+    assert run_cases == [cases_path] * 6
+
+
+def test_model_comparison_cli_writes_fail_closed_report_for_failed_candidate_run(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5.5")
+
+    def _fake_run_audit(*, output_dir: Path, env: Mapping[str, str]) -> None:
+        relative_output = output_dir.relative_to(tmp_path / "comparison")
+        if relative_output == Path("runs/candidate/run2"):
+            raise subprocess.CalledProcessError(
+                returncode=2,
+                cmd=("run_relation_feasibility_audit.py", "--extractor", "agent"),
+            )
+        _write_report(
+            output_dir,
+            "relation_feasibility_report",
+            model_label="candidate"
+            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5.5"
+            else "current",
+        )
+
+    monkeypatch.setattr(comparison_script, "_run_single_audit", _fake_run_audit)
+    output_dir = tmp_path / "comparison"
+
+    exit_code = comparison_main(
+        [
+            "--current-model-label",
+            "current",
+            "--candidate-model-label",
+            "candidate",
+            "--runs-per-model",
+            "3",
+            "--run-audits",
+            "--output-dir",
+            str(output_dir),
+        ],
+    )
+
+    report = json.loads(
+        (output_dir / "relation_model_comparison_report.json").read_text(),
+    )
+    markdown = (output_dir / "relation_model_comparison_report.md").read_text()
+
+    assert exit_code == 0
+    assert report["decision"]["adopted_model_label"] is None
+    assert "candidate audit run failed." in report["decision"]["blocking_reasons"]
+    assert report["audit_failures"] == [
+        {
+            "model_label": "candidate",
+            "run_index": 2,
+            "exit_code": 2,
+            "command": "run_relation_feasibility_audit.py --extractor agent",
+        },
+    ]
+    assert "## Audit Failures" in markdown
+    assert "- candidate run2 exited 2" in markdown
+
+
+def test_model_comparison_cli_writes_fail_closed_report_for_failed_current_run(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5.5")
+
+    def _fake_run_audit(*, output_dir: Path, env: Mapping[str, str]) -> None:
+        relative_output = output_dir.relative_to(tmp_path / "comparison")
+        if relative_output == Path("runs/current/run2"):
+            raise subprocess.CalledProcessError(
+                returncode=2,
+                cmd=("run_relation_feasibility_audit.py", "--extractor", "agent"),
+            )
+        _write_report(
+            output_dir,
+            "relation_feasibility_report",
+            model_label="candidate"
+            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5.5"
+            else "current",
+        )
+
+    monkeypatch.setattr(comparison_script, "_run_single_audit", _fake_run_audit)
+    output_dir = tmp_path / "comparison"
+
+    exit_code = comparison_main(
+        [
+            "--current-model-label",
+            "current",
+            "--candidate-model-label",
+            "candidate",
+            "--runs-per-model",
+            "3",
+            "--run-audits",
+            "--output-dir",
+            str(output_dir),
+        ],
+    )
+
+    report = json.loads(
+        (output_dir / "relation_model_comparison_report.json").read_text(),
+    )
+    markdown = (output_dir / "relation_model_comparison_report.md").read_text()
+
+    assert exit_code == 0
+    assert report["decision"]["adopted_model_label"] is None
+    assert "current audit run failed." in report["decision"]["blocking_reasons"]
+    assert report["decision"]["blocking_reasons"] == [
+        "current audit run failed.",
+        "current report count must match --runs-per-model; expected 3, got 1.",
+    ]
+    assert report["audit_failures"] == [
+        {
+            "model_label": "current",
+            "run_index": 2,
+            "exit_code": 2,
+            "command": "run_relation_feasibility_audit.py --extractor agent",
+        },
+    ]
+    assert report["candidate_readiness"]["readiness_status"] == "ready"
+    assert "- current run2 exited 2" in markdown

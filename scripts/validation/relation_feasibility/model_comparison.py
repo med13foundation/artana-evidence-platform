@@ -142,6 +142,8 @@ def render_model_comparison_markdown(report: JSONObject) -> str:
         lines.extend(f"- {failure}" for failure in safety_failures)
     else:
         lines.append("- none")
+    lines.extend(["", "## Audit Failures", ""])
+    lines.extend(_audit_failure_lines(report.get("audit_failures")))
     lines.extend(["", "## Metric Deltas", ""])
     lines.extend(_metric_lines(decision.get("metric_deltas")))
     lines.extend(["", "## Current Worst Metrics", ""])
@@ -291,6 +293,23 @@ def _metric_lines(value: object) -> list[str]:
     if not metrics:
         return ["- none"]
     return [f"- {key}: {metric_value}" for key, metric_value in sorted(metrics.items())]
+
+
+def _audit_failure_lines(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return ["- none"]
+    lines: list[str] = []
+    for item in value:
+        failure = _object_dict(item)
+        model_label = _optional_string(failure.get("model_label")) or "unknown"
+        run_index = _int_value(failure.get("run_index"))
+        exit_code = _int_value(failure.get("exit_code"))
+        command = _optional_string(failure.get("command"))
+        line = f"- {model_label} run{run_index} exited {exit_code}"
+        if command is not None:
+            line = f"{line}: `{command}`"
+        lines.append(line)
+    return lines or ["- none"]
 
 
 def _object_dict(value: object) -> JSONObject:

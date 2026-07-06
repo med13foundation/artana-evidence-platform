@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -22,8 +23,25 @@ from scripts.validation.relation_feasibility.model_comparison import (  # noqa: 
     build_model_comparison_report,
     write_model_comparison_report,
 )
+from scripts.validation.relation_feasibility.readiness import (  # noqa: E402
+    build_readiness_report,
+)
 
 _DEFAULT_REPORT_ROOT = _REPO_ROOT / "reports" / "relation_model_comparison"
+
+
+@dataclass(frozen=True, slots=True)
+class _AuditRunFailure:
+    model_label: str
+    run_index: int
+    exit_code: int
+    command: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _AuditGroupResult:
+    report_paths: tuple[Path, ...]
+    failures: tuple[_AuditRunFailure, ...]
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -73,6 +91,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--cases",
+        type=Path,
+        default=None,
+        help=(
+            "Benchmark JSON file to pass to each live audit when --run-audits is "
+            "used. When omitted, the audit script uses its own default fixture."
+        ),
+    )
+    parser.add_argument(
         "--candidate-model-env-var",
         default="ARTANA_STRONGER_MODEL_CANDIDATE",
         help="Environment variable containing the candidate extraction model id.",
@@ -106,33 +133,50 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     output_dir = args.output_dir or _timestamped_output_dir()
     if args.run_audits:
-        current_reports, candidate_reports = _run_audit_group_reports(
+        current_group, candidate_group = _run_audit_group_reports(
             output_dir=output_dir,
             runs_per_model=args.runs_per_model,
             candidate_model_env_var=args.candidate_model_env_var,
+            cases_path=args.cases,
         )
+        current_reports = current_group.report_paths
+        candidate_reports = candidate_group.report_paths
+        audit_failures = current_group.failures + candidate_group.failures
     else:
         current_reports = tuple(args.current_report or ())
         candidate_reports = tuple(args.candidate_report or ())
-    _validate_report_count(
-        label="current",
-        report_paths=current_reports,
-        runs_per_model=args.runs_per_model,
+        audit_failures = ()
+    resolved_current_reports = tuple(_resolve_report_path(path) for path in current_reports)
+    resolved_candidate_reports = tuple(
+        _resolve_report_path(path) for path in candidate_reports
     )
-    _validate_report_count(
-        label="candidate",
-        report_paths=candidate_reports,
-        runs_per_model=args.runs_per_model,
-    )
-    report = build_model_comparison_report(
-        current_model_label=args.current_model_label,
-        candidate_model_label=args.candidate_model_label,
-        current_report_paths=tuple(_resolve_report_path(path) for path in current_reports),
-        candidate_report_paths=tuple(
-            _resolve_report_path(path) for path in candidate_reports
-        ),
-        min_runs=args.runs_per_model,
-    )
+    if audit_failures:
+        report = _build_failed_audit_comparison_report(
+            current_model_label=args.current_model_label,
+            candidate_model_label=args.candidate_model_label,
+            current_report_paths=resolved_current_reports,
+            candidate_report_paths=resolved_candidate_reports,
+            audit_failures=audit_failures,
+            min_runs=args.runs_per_model,
+        )
+    else:
+        _validate_report_count(
+            label="current",
+            report_paths=resolved_current_reports,
+            runs_per_model=args.runs_per_model,
+        )
+        _validate_report_count(
+            label="candidate",
+            report_paths=resolved_candidate_reports,
+            runs_per_model=args.runs_per_model,
+        )
+        report = build_model_comparison_report(
+            current_model_label=args.current_model_label,
+            candidate_model_label=args.candidate_model_label,
+            current_report_paths=resolved_current_reports,
+            candidate_report_paths=resolved_candidate_reports,
+            min_runs=args.runs_per_model,
+        )
     manifest = write_model_comparison_report(report=report, output_dir=output_dir)
     decision = report["decision"]
     adopted_model_label = (
@@ -159,32 +203,40 @@ def _run_audit_group_reports(
     output_dir: Path,
     runs_per_model: int,
     candidate_model_env_var: str,
-) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
+    cases_path: Path | None,
+) -> tuple[_AuditGroupResult, _AuditGroupResult]:
     candidate_model = os.environ.get(candidate_model_env_var)
     if not candidate_model:
         msg = f"{candidate_model_env_var} must be set when --run-audits is used"
         raise SystemExit(msg)
     original_model = os.environ.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL")
     current_reports = _run_model_audits(
+        model_label="current",
         output_dir=output_dir / "runs" / "current",
         runs_per_model=runs_per_model,
         model_id=original_model,
+        cases_path=cases_path,
     )
     candidate_reports = _run_model_audits(
+        model_label="candidate",
         output_dir=output_dir / "runs" / "candidate",
         runs_per_model=runs_per_model,
         model_id=candidate_model,
+        cases_path=cases_path,
     )
     return current_reports, candidate_reports
 
 
 def _run_model_audits(
     *,
+    model_label: str,
     output_dir: Path,
     runs_per_model: int,
     model_id: str | None,
-) -> tuple[Path, ...]:
+    cases_path: Path | None,
+) -> _AuditGroupResult:
     reports: list[Path] = []
+    failures: list[_AuditRunFailure] = []
     for run_index in range(1, runs_per_model + 1):
         run_dir = output_dir / f"run{run_index}"
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -193,12 +245,31 @@ def _run_model_audits(
             env["ARTANA_AI_EVIDENCE_EXTRACTION_MODEL"] = model_id
         else:
             env.pop("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL", None)
-        _run_single_audit(output_dir=run_dir, env=env)
+        try:
+            if cases_path is None:
+                _run_single_audit(output_dir=run_dir, env=env)
+            else:
+                _run_single_audit(output_dir=run_dir, env=env, cases_path=cases_path)
+        except subprocess.CalledProcessError as exc:
+            failures.append(
+                _AuditRunFailure(
+                    model_label=model_label,
+                    run_index=run_index,
+                    exit_code=exc.returncode,
+                    command=tuple(str(part) for part in exc.cmd),
+                ),
+            )
+            break
         reports.append(run_dir / "relation_feasibility_report.json")
-    return tuple(reports)
+    return _AuditGroupResult(report_paths=tuple(reports), failures=tuple(failures))
 
 
-def _run_single_audit(*, output_dir: Path, env: Mapping[str, str]) -> None:
+def _run_single_audit(
+    *,
+    output_dir: Path,
+    env: Mapping[str, str],
+    cases_path: Path | None = None,
+) -> None:
     command = [
         sys.executable,
         str(_REPO_ROOT / "scripts" / "run_relation_feasibility_audit.py"),
@@ -207,6 +278,8 @@ def _run_single_audit(*, output_dir: Path, env: Mapping[str, str]) -> None:
         "--output-dir",
         str(output_dir),
     ]
+    if cases_path is not None:
+        command.extend(("--cases", str(cases_path)))
     subprocess.run(  # noqa: S603
         command,
         cwd=_REPO_ROOT,
@@ -233,6 +306,117 @@ def _resolve_report_path(path: Path) -> Path:
     if path.is_dir():
         return path / "relation_feasibility_report.json"
     return path
+
+
+def _build_failed_audit_comparison_report(  # noqa: PLR0913
+    *,
+    current_model_label: str,
+    candidate_model_label: str,
+    current_report_paths: Sequence[Path],
+    candidate_report_paths: Sequence[Path],
+    audit_failures: Sequence[_AuditRunFailure],
+    min_runs: int,
+) -> dict[str, object]:
+    return {
+        "current_model_label": current_model_label,
+        "candidate_model_label": candidate_model_label,
+        "current_readiness": _readiness_or_incomplete_placeholder(
+            label="current",
+            report_paths=current_report_paths,
+            min_runs=min_runs,
+        ),
+        "candidate_readiness": _readiness_or_incomplete_placeholder(
+            label="candidate",
+            report_paths=candidate_report_paths,
+            min_runs=min_runs,
+        ),
+        "audit_failures": [_audit_failure_to_json(failure) for failure in audit_failures],
+        "decision": {
+            "adopted_model_label": None,
+            "blocking_reasons": _audit_failure_blocking_reasons(
+                current_report_count=len(current_report_paths),
+                candidate_report_count=len(candidate_report_paths),
+                audit_failures=audit_failures,
+                min_runs=min_runs,
+            ),
+            "metric_deltas": {},
+            "safety_failures": [
+                (
+                    f"{failure.model_label} run{failure.run_index} "
+                    f"exited {failure.exit_code}"
+                )
+                for failure in audit_failures
+            ],
+        },
+    }
+
+
+def _readiness_or_incomplete_placeholder(
+    *,
+    label: str,
+    report_paths: Sequence[Path],
+    min_runs: int,
+) -> dict[str, object]:
+    if len(report_paths) >= min_runs:
+        return build_readiness_report(report_paths=report_paths, min_runs=min_runs)
+    return {
+        "readiness_status": "not_ready",
+        "trusted_graph_ready": False,
+        "blocking_reasons": [
+            _report_count_reason(
+                label=label,
+                report_count=len(report_paths),
+                min_runs=min_runs,
+            ),
+        ],
+        "worst_metrics": {},
+        "hard_failure_counts": {},
+    }
+
+
+def _audit_failure_blocking_reasons(
+    *,
+    current_report_count: int,
+    candidate_report_count: int,
+    audit_failures: Sequence[_AuditRunFailure],
+    min_runs: int,
+) -> list[str]:
+    reasons: list[str] = []
+    failed_labels = {failure.model_label for failure in audit_failures}
+    reasons.extend(f"{label} audit run failed." for label in sorted(failed_labels))
+    if current_report_count != min_runs:
+        reasons.append(
+            _report_count_reason(
+                label="current",
+                report_count=current_report_count,
+                min_runs=min_runs,
+            ),
+        )
+    if candidate_report_count != min_runs:
+        reasons.append(
+            _report_count_reason(
+                label="candidate",
+                report_count=candidate_report_count,
+                min_runs=min_runs,
+            ),
+        )
+    return reasons
+
+
+def _report_count_reason(*, label: str, report_count: int, min_runs: int) -> str:
+    return (
+        f"{label} report count must match --runs-per-model; "
+        f"expected {min_runs}, got {report_count}."
+    )
+
+
+def _audit_failure_to_json(failure: _AuditRunFailure) -> dict[str, object]:
+    return {
+        "model_label": failure.model_label,
+        "run_index": failure.run_index,
+        "exit_code": failure.exit_code,
+        "command": " ".join(failure.command),
+    }
 
 
 def _decision_count(decision: object, key: str) -> int:
