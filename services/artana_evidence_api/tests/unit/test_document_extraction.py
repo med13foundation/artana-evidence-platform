@@ -871,6 +871,71 @@ async def test_extract_relation_candidates_with_llm_drops_invalid_weak_pass_type
 
 
 @pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_drops_invalid_primary_pass_type(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        prompts.append(prompt)
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MED13",
+                        "relation_type": "CASES",
+                        "object": "congenital heart disease",
+                        "sentence": "MED13 cases included congenital heart disease.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "_graph_ai_preflight_service",
+        lambda: (_ for _ in ()).throw(RuntimeError("resolver unavailable")),
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MED13 cases included congenital heart disease.",
+    )
+
+    assert len(prompts) == 2
+    assert candidates == []
+
+
+@pytest.mark.asyncio
 async def test_extract_relation_candidates_with_llm_does_not_downgrade_strong_claims(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

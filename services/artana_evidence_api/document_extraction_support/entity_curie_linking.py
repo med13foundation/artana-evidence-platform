@@ -46,6 +46,9 @@ class EntityCurieLink:
     entity_type: str | None = None
     source: CurieSource = "none"
     reason: str | None = None
+    grounding_curation_status: str | None = None
+    grounding_reason_code: str | None = None
+    trusted_identifier_allowed: bool | None = None
     model_hint_curie: str | None = None
     model_hint_status: ModelHintStatus | None = None
 
@@ -75,8 +78,14 @@ class EntityCurieLink:
         payload["trusted_identifier"] = (
             self.status == "linked" and self.source == "verified_linker"
         )
+        if self.trusted_identifier_allowed is not None:
+            payload["trusted_identifier_allowed"] = self.trusted_identifier_allowed
         if self.reason is not None:
             payload["reason"] = self.reason
+        if self.grounding_curation_status is not None:
+            payload["grounding_curation_status"] = self.grounding_curation_status
+        if self.grounding_reason_code is not None:
+            payload["grounding_reason_code"] = self.grounding_reason_code
         if self.model_hint_curie is not None:
             payload["model_hint_curie"] = self.model_hint_curie
         if self.model_hint_status is not None:
@@ -92,6 +101,11 @@ def normalize_entity_curie(
 ) -> EntityCurieLink:
     """Normalize a model-supplied CURIE or return a typed abstention."""
 
+    if source in {"model", "verified_linker", "none"}:
+        review_record = review_only_record_for_label(label)
+        if review_record is not None:
+            return _review_only_link_from_record(review_record, raw_curie=raw_curie)
+
     if source in {"model", "verified_linker"}:
         record = verified_record_for_label(label)
         if record is not None:
@@ -99,11 +113,6 @@ def normalize_entity_curie(
                 record,
                 raw_curie=raw_curie,
             )
-
-    if source in {"model", "verified_linker", "none"}:
-        review_record = review_only_record_for_label(label)
-        if review_record is not None:
-            return _review_only_link_from_record(review_record, raw_curie=raw_curie)
 
     if source == "verified_linker":
         return _normalize_raw_curie(raw_curie, label=label, source="model")
@@ -257,6 +266,9 @@ def _review_only_link_from_record(
         status="abstained",
         source="none",
         reason=record.reason,
+        grounding_curation_status=record.curation_status,
+        grounding_reason_code=record.reason_code,
+        trusted_identifier_allowed=record.trusted_identifier_allowed,
         model_hint_curie=model_hint_curie,
         model_hint_status=model_hint_status,
     )

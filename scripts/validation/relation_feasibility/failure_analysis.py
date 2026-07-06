@@ -7,6 +7,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    review_only_record_for_label,
+)
+
 JSONObject = dict[str, object]
 _METRIC_KEYS = (
     "completed_agent_precision_against_gold",
@@ -64,6 +68,9 @@ class _CurieGapKey:
     candidate_curie: str | None
     candidate_curie_source: str
     gap_type: str
+    grounding_curation_status: str | None
+    grounding_reason_code: str | None
+    trusted_identifier_allowed: bool | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -242,6 +249,9 @@ def render_failure_analysis_markdown(report: JSONObject) -> str:
                 "label",
                 "candidate_curie",
                 "candidate_curie_source",
+                "grounding_reason_code",
+                "grounding_curation_status",
+                "trusted_identifier_allowed",
             ),
         ),
     )
@@ -411,16 +421,31 @@ def _collect_curie_gap(
         return
     curie = _optional_string(candidate.get(f"{role}_curie"))
     curie_source = _string_value(candidate.get(f"{role}_curie_source")) or "none"
+    label = _string_value(candidate.get(role))
+    review_record = review_only_record_for_label(label)
+    has_verified_curie = _bool_value(assessment.get(verified_key))
     key = _CurieGapKey(
         case_id=context.case_id,
         endpoint_role=role,
-        label=_string_value(candidate.get(role)),
+        label=label,
         candidate_curie=curie,
         candidate_curie_source=curie_source,
         gap_type=_curie_gap_type(
             curie=curie,
             curie_source=curie_source,
-            has_verified_curie=_bool_value(assessment.get(verified_key)),
+            has_verified_curie=has_verified_curie,
+            has_review_only_policy=review_record is not None,
+        ),
+        grounding_curation_status=(
+            review_record.curation_status if review_record is not None else None
+        ),
+        grounding_reason_code=(
+            review_record.reason_code if review_record is not None else None
+        ),
+        trusted_identifier_allowed=(
+            review_record.trusted_identifier_allowed
+            if review_record is not None
+            else None
         ),
     )
     _add_occurrence(curie_gaps, key, context.run_label)
@@ -431,9 +456,12 @@ def _curie_gap_type(
     curie: str | None,
     curie_source: str,
     has_verified_curie: bool,
+    has_review_only_policy: bool,
 ) -> str:
     if has_verified_curie:
         return "wrong_verified_match"
+    if has_review_only_policy:
+        return "review_only_endpoint"
     if curie is None:
         return "missing_curie"
     if curie_source == "model":
@@ -502,18 +530,23 @@ def _missed_gold_curie_endpoint_rows(
 def _curie_gap_rows(curie_gaps: dict[_CurieGapKey, _Accumulator]) -> list[JSONObject]:
     rows: list[JSONObject] = []
     for key, accumulator in curie_gaps.items():
-        rows.append(
-            {
-                "case_id": key.case_id,
-                "endpoint_role": key.endpoint_role,
-                "label": key.label,
-                "candidate_curie": key.candidate_curie,
-                "candidate_curie_source": key.candidate_curie_source,
-                "gap_type": key.gap_type,
-                "occurrence_count": accumulator.count,
-                "run_labels": sorted(accumulator.run_labels),
-            },
-        )
+        row: JSONObject = {
+            "case_id": key.case_id,
+            "endpoint_role": key.endpoint_role,
+            "label": key.label,
+            "candidate_curie": key.candidate_curie,
+            "candidate_curie_source": key.candidate_curie_source,
+            "gap_type": key.gap_type,
+            "occurrence_count": accumulator.count,
+            "run_labels": sorted(accumulator.run_labels),
+        }
+        if key.grounding_curation_status is not None:
+            row["grounding_curation_status"] = key.grounding_curation_status
+        if key.grounding_reason_code is not None:
+            row["grounding_reason_code"] = key.grounding_reason_code
+        if key.trusted_identifier_allowed is not None:
+            row["trusted_identifier_allowed"] = key.trusted_identifier_allowed
+        rows.append(row)
     return _sort_rows(rows)
 
 

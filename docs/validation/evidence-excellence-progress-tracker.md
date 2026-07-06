@@ -142,6 +142,7 @@ Status values:
 | 10 | PR-21 | `alvaro/evidence-pr21-verified-grounding-closure` | Implemented locally; adversarial blockers fixed; strict gate RED | Improve verified grounding and review-only abstention without trusting raw model hints. | Trusted high-value recall >= 0.8500 and wrong verified CURIE links remain 0. | Grounding dictionary split, verified process labels, review-only broad/composite labels, verified-linker spoof regression, safe relation-alias scoring, missed-gold CURIE attribution, focused tests, relation-feasibility gate, strict live run3 with precision 1.0000, high-value recall 1.0000, trusted high-value recall 0.8500, verified endpoint rate 0.8810, false positives 0, fallback 0. Overall readiness remains RED. |
 | 11 | PR-22 | `alvaro/evidence-pr22-low-value-review-lane` | Implemented locally; strict single-run GREEN; repeatability pending | Split trusted-eligible endpoint recovery from low-value review evidence. | Trusted-eligible CURIE-linked endpoint rate >= 0.9500 and weak-claim trusted leakage remains 0. | Review-only candidate policy, review status propagation, `review_only_candidate` trust floor, promotion metadata protection, trusted/review endpoint metric split, single-run verdict contract fix, scoring/readiness helper refactor, focused tests, direct touched-file ruff, relation-feasibility gate, strict live run4 with verdict GREEN, precision 1.0000, high-value recall 1.0000, trusted endpoint rate 1.0000, weak leakage 0, fallback 0. Low-value review recall remains 0.4000 and final readiness still needs repeated runs. |
 | 12 | PR-23 | `alvaro/evidence-pr23-low-value-review-recall` | Draft PR #106 open; GitHub CI clean | Recover weak-but-useful low-value review evidence through the live agent path without deterministic fallback. | Low-value review recall >= 0.8000 and weak-claim trusted leakage remains 0. | Weak-review agent pass, weak-pass prompt/schema versioning, code-forced review-only metadata, policy-backed weak-pass keep filter, candidate-argument scoped weak-cue policy, raw weak-pass relation-type/proposal drop, review-only pruning preservation, fallback-gated review metrics, sensitization prompt repair, focused RED/GREEN tests, relation-feasibility gate, strict live run7 with verdict GREEN, precision 1.0000, low-value review recall 1.0000, high-value recall 1.0000, trusted endpoint rate 1.0000, false positives 0, missed gold 0, weak leakage 0, fallback 0, invalid agent 0, `make service-checks` with coverage 87.03%, and PR #106 GitHub checks passing. Repeatability remains pending. |
+| 13 | PR-24 | `alvaro/evidence-pr24-grounding-decision-table` | Implemented locally; final gates pending | Give every remaining endpoint gap a safe verified or review-only grounding decision without trusting model hints. | All remaining CURIE gaps have explicit review-only decision metadata and wrong verified CURIE links remain 0. | Review-only grounding decision metadata, eight-label endpoint policy table, review-only-before-verified collision handling, link metadata for `grounding_reason_code`, failure-analysis `review_only_endpoint` rows, guarded primary LLM schema for raw relation-type cleanup, focused RED/GREEN tests, relation-feasibility gate, and strict live run3 with verdict GREEN, precision 0.9615, recall 1.0000, trusted endpoint rate 1.0000, verified CURIE match rate 1.0000, one review-only false positive, missed gold 0, fallback 0, invalid agent 0, wrong verified CURIE links 0. Repeatability and generic relation rate 0.1154 remain follow-up work. |
 
 ## PR Evidence Packet
 
@@ -202,6 +203,75 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-06 - PR-24 Grounding Decision Table
+
+PR: PR-24 grounding decision table
+
+Branch: `alvaro/evidence-pr24-grounding-decision-table`
+
+Goal: Make every remaining endpoint-grounding gap either safely verified or
+explicitly review-only, with model hints unable to create trusted identifiers
+for broad or composite labels.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-06-pr24-grounding-decision-table-summary.md`
+- `reports/relation_feasibility/2026-07-06-pr24-grounding-decision-table-run3/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-06-pr24-grounding-decision-table-run3/relation_feasibility_report.md`
+- `reports/relation_feasibility_failure_analysis/2026-07-06-pr24-grounding-decision-table-run3/relation_feasibility_failure_analysis_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-06-pr24-grounding-decision-table-run3/relation_feasibility_failure_analysis_report.md`
+
+Final strict live-agent metrics:
+
+| Metric | Value |
+|---|---:|
+| Verdict | GREEN |
+| Completed-agent precision | 0.9615 |
+| Completed-agent recall | 1.0000 |
+| Completed-agent valuable rate | 0.7692 |
+| High-value recall | 1.0000 |
+| Trusted high-value recall | 0.8500 |
+| Low-value review recall | 1.0000 |
+| Trusted-eligible CURIE-linked endpoint rate | 1.0000 |
+| Verified CURIE match rate | 1.0000 |
+| Weak-claim trusted leakage count | 0 |
+| Fallback cases | 0 |
+| Invalid strict-agent cases | 0 |
+| Wrong verified CURIE links | 0 |
+| Missed gold relations | 0 |
+| False positives | 1 safe review-only candidate |
+| Generic relation rate | 0.1154 |
+
+Failure attribution:
+
+- All eight remaining endpoint gaps are `review_only_endpoint` rows with
+  explicit `grounding_reason_code`, `review_only_for_relation_feasibility_v2`,
+  and `trusted_identifier_allowed=False`.
+- The only false positive in run3 is `cisplatin TREATS platinum-sensitive
+  tumors`; it is `review_only`, has no trusted object CURIE, and carries
+  `context_dependent` plus `subset_relation` review reasons.
+- Generic relation rate remains `0.1154`, above the trusted-graph target, and
+  stays a follow-up blocker.
+
+Validation:
+
+- Focused RED/GREEN grounding decision tests passed.
+- Affected grounding/linking/failure-analysis suites passed.
+- Affected document extraction suites passed.
+- `make relation-feasibility-quality-gate` passed.
+- Strict live-agent run1 passed with fallback 0 and invalid agent 0.
+- Strict live-agent run2 exposed a primary-pass raw relation type crash; PR24
+  now routes primary LLM output through the code-owned unknown-type guard.
+- Strict live-agent run3 passed with fallback 0, invalid agent 0, and wrong
+  verified CURIE links 0.
+
+Known remaining risk:
+
+- This is still single-run evidence.
+- Review-only endpoint policy intentionally abstains rather than inventing broad
+  CURIEs; final readiness still requires repeatability and graph-side
+  promotion enforcement.
 
 ### 2026-07-05 - PR-23 Low-Value Review Recall
 

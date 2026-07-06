@@ -26,6 +26,15 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
     )
 
 
+def build_llm_guarded_extraction_output_schema(max_relations: int) -> type[BaseModel]:
+    """Build a primary extraction schema that lets code guard raw relation types."""
+
+    return _build_llm_extraction_output_schema(
+        max_relations=max_relations,
+        strict_relation_type=False,
+    )
+
+
 def build_llm_weak_review_extraction_output_schema(
     max_relations: int,
 ) -> type[BaseModel]:
@@ -329,5 +338,7 @@ __all__ = [
     "DOCUMENT_PROPOSAL_REVIEW_SYSTEM_PROMPT",
     "LLM_EXTRACTION_SYSTEM_PROMPT",
     "build_llm_extraction_output_schema",
+    "build_llm_guarded_extraction_output_schema",
+    "build_llm_weak_review_extraction_output_schema",
     "build_proposal_review_output_schema",
 ]

@@ -43,8 +43,10 @@ class ReviewOnlyEntityRecord:
 
     label: str
     reason: str = "grounding_requires_review"
+    reason_code: str = "grounding_requires_review"
     aliases: tuple[str, ...] = ()
     curation_status: str = "review_only_for_relation_feasibility_v2"
+    trusted_identifier_allowed: bool = False
 
 
 class EntityGrounder(Protocol):

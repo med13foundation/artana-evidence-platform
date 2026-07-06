@@ -159,7 +159,6 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="gefitinib",
         curie="DrugBank:DB00317",
-        aliases=("resistance to gefitinib",),
     ),
     VerifiedEntityRecord(
         label="triple-negative breast cancer",
@@ -168,12 +167,48 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
 )
 
 REVIEW_ONLY_ENTITY_RECORDS: tuple[ReviewOnlyEntityRecord, ...] = (
-    ReviewOnlyEntityRecord(label="aggressive tumor growth"),
+    ReviewOnlyEntityRecord(
+        label="aggressive tumor growth",
+        reason_code="composite_event_label",
+    ),
     ReviewOnlyEntityRecord(
         label="ERK phosphorylation",
+        reason_code="broad_process_label",
         aliases=("ERK tyrosine phosphorylation",),
     ),
-    ReviewOnlyEntityRecord(label="response to pembrolizumab"),
+    ReviewOnlyEntityRecord(
+        label="response to pembrolizumab",
+        reason_code="composite_treatment_response_label",
+    ),
+    ReviewOnlyEntityRecord(
+        label="HRD score",
+        reason_code="biomarker_score_label",
+        aliases=("homologous recombination deficiency score",),
+    ),
+    ReviewOnlyEntityRecord(
+        label="platinum sensitivity",
+        reason_code="drug_response_phenotype_label",
+        aliases=("sensitivity to platinum",),
+    ),
+    ReviewOnlyEntityRecord(
+        label="inflammatory signaling",
+        reason_code="broad_process_label",
+        aliases=("inflammation signaling",),
+    ),
+    ReviewOnlyEntityRecord(
+        label="reduced survival",
+        reason_code="prognosis_outcome_label",
+    ),
+    ReviewOnlyEntityRecord(
+        label="resistance",
+        reason_code="generic_resistance_label",
+        aliases=(
+            "drug resistance",
+            "therapy resistance",
+            "resistance to gefitinib",
+            "gefitinib resistance",
+        ),
+    ),
 )
 
 _VERIFIED_ENTITY_RECORDS_BY_LABEL: dict[str, VerifiedEntityRecord] = {

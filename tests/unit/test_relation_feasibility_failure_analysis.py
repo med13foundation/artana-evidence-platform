@@ -8,6 +8,7 @@ from pathlib import Path
 from scripts.validation.relation_feasibility.failure_analysis import (
     FailureAnalysisInput,
     build_failure_analysis_report,
+    render_failure_analysis_markdown,
 )
 
 
@@ -242,3 +243,50 @@ def test_failure_analysis_does_not_call_verified_proposal_links_wrong(
     )
 
     assert report["curie_gaps"] == []
+
+
+def test_failure_analysis_reports_review_only_grounding_decision(
+    tmp_path: Path,
+) -> None:
+    assessment = {
+        "candidate": {
+            "subject": "IL6",
+            "relation_type": "REGULATES",
+            "object": "inflammatory signaling",
+            "subject_curie": "HGNC:6018",
+            "object_curie": "GO:0002526",
+            "subject_curie_source": "verified_linker",
+            "object_curie_source": "model",
+        },
+        "matched_gold_index": 0,
+        "proposal_matched_gold_index": None,
+        "is_supported_by_gold": True,
+        "has_verified_subject_curie": True,
+        "has_verified_object_curie": False,
+        "subject_curie_matches_gold": True,
+        "object_curie_matches_gold": False,
+    }
+    report_path = _write_report(tmp_path, "run1", assessments=[assessment])
+
+    report = build_failure_analysis_report(
+        (FailureAnalysisInput(path=report_path, label="run1"),),
+    )
+
+    assert report["curie_gaps"] == [
+        {
+            "case_id": "case_a",
+            "endpoint_role": "object",
+            "label": "inflammatory signaling",
+            "candidate_curie": "GO:0002526",
+            "candidate_curie_source": "model",
+            "gap_type": "review_only_endpoint",
+            "grounding_curation_status": "review_only_for_relation_feasibility_v2",
+            "grounding_reason_code": "broad_process_label",
+            "trusted_identifier_allowed": False,
+            "occurrence_count": 1,
+            "run_labels": ["run1"],
+        },
+    ]
+    markdown = render_failure_analysis_markdown(report)
+    assert "grounding_reason_code" in markdown
+    assert "broad_process_label" in markdown

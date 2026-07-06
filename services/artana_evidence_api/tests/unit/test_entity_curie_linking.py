@@ -155,6 +155,33 @@ def test_verified_linker_source_does_not_bypass_review_only_grounding() -> None:
     assert metadata["model_hint_curie"] == "DRUGBANK:DB09037"
 
 
+@pytest.mark.parametrize(
+    "label",
+    [
+        "resistance to gefitinib",
+        "gefitinib resistance",
+    ],
+)
+def test_composite_resistance_label_does_not_trust_drug_anchor_hint(
+    label: str,
+) -> None:
+    link = normalize_entity_curie(
+        "DrugBank:DB00317",
+        label=label,
+        source="model",
+    )
+
+    metadata = link.to_metadata()
+    assert link.status == "abstained"
+    assert link.curie is None
+    assert link.source == "none"
+    assert link.reason == "grounding_requires_review"
+    assert metadata["trusted_identifier"] is False
+    assert metadata["trusted_identifier_allowed"] is False
+    assert metadata["grounding_reason_code"] == "generic_resistance_label"
+    assert metadata["model_hint_curie"] == "DRUGBANK:DB00317"
+
+
 def test_unknown_verified_linker_source_is_downgraded_to_untrusted_hint() -> None:
     link = normalize_entity_curie(
         "GO:1234567",
@@ -182,3 +209,40 @@ def test_broad_erk_phosphorylation_grounding_requires_review() -> None:
     assert link.reason == "grounding_requires_review"
     assert metadata["trusted_identifier"] is False
     assert metadata["model_hint_curie"] == "GO:0018108"
+
+
+@pytest.mark.parametrize(
+    ("label", "expected_reason"),
+    [
+        ("aggressive tumor growth", "composite_event_label"),
+        ("ERK phosphorylation", "broad_process_label"),
+        ("response to pembrolizumab", "composite_treatment_response_label"),
+        ("HRD score", "biomarker_score_label"),
+        ("platinum sensitivity", "drug_response_phenotype_label"),
+        ("inflammatory signaling", "broad_process_label"),
+        ("reduced survival", "prognosis_outcome_label"),
+        ("resistance", "generic_resistance_label"),
+    ],
+)
+def test_review_only_grounding_metadata_explains_policy_decision(
+    label: str,
+    expected_reason: str,
+) -> None:
+    link = normalize_entity_curie(
+        "GO:0002526",
+        label=label,
+        source="model",
+    )
+
+    metadata = link.to_metadata()
+    assert link.status == "abstained"
+    assert link.curie is None
+    assert link.source == "none"
+    assert link.reason == "grounding_requires_review"
+    assert metadata["trusted_identifier"] is False
+    assert metadata["trusted_identifier_allowed"] is False
+    assert metadata["grounding_curation_status"] == (
+        "review_only_for_relation_feasibility_v2"
+    )
+    assert metadata["grounding_reason_code"] == expected_reason
+    assert metadata["model_hint_curie"] == "GO:0002526"

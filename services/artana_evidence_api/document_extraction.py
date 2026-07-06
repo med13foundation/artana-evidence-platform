@@ -46,6 +46,7 @@ from artana_evidence_api.document_extraction_entities import (
 from artana_evidence_api.document_extraction_prompting import (
     DOCUMENT_PROPOSAL_REVIEW_SYSTEM_PROMPT,
     build_llm_extraction_output_schema,
+    build_llm_guarded_extraction_output_schema,
     build_llm_weak_review_extraction_output_schema,
     build_proposal_review_output_schema,
 )
@@ -476,7 +477,7 @@ async def extract_relation_candidates_with_llm(
             pruned_generic_relation_count=0,
         )
     document_fingerprint = llm_extraction_document_fingerprint(normalized_text)
-    output_schema = build_llm_extraction_output_schema(max_relations)
+    output_schema = build_llm_guarded_extraction_output_schema(max_relations)
     weak_review_output_schema = build_llm_weak_review_extraction_output_schema(
         max_relations,
     )
