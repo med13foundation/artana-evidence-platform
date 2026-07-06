@@ -591,7 +591,7 @@ async def test_llm_extraction_logs_debug_for_filtered_candidates(
     ]
     assert records
     record = records[-1]
-    assert record.raw_relation_count == 2
+    assert record.raw_relation_count == 4
     assert record.usable_candidate_count == 0
 
 

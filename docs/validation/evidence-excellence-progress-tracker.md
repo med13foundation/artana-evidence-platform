@@ -151,6 +151,7 @@ Status values:
 | 19 | PR-30 | `alvaro/evidence-pr30-trusted-lane-readiness` | Draft PR #113 open; three-run readiness not_ready | Separate trusted graph readiness from review-only/all-candidate triage so the gate measures auto-promotion safety without hiding review burden. | Readiness thresholds use trusted candidate precision, trusted-eligible high-value recall, trusted candidate valuable rate, trusted candidate generic rate, trusted-eligible CURIE endpoint rate, and review-only gold trusted leakage. | Added trusted-eligible high-value and trusted-candidate metrics, centralized trusted graph candidate eligibility so context relations cannot inflate readiness, made review-only gold trusted leakage a hard failure, rewired single-run verdict warnings and repeatability thresholds to the trusted lane, split Markdown reporting by trusted/review/all-candidate lanes, kept all-candidate metrics visible for triage, updated model comparison/failure attribution/adversarial wording, added RED/GREEN tests for review-only high-value/generic/context/leakage candidates, ran focused tests, failure-analysis tests, touched-file Ruff, `make relation-feasibility-quality-gate`, `make service-checks`, and strict v3 live runs5-7. Three-run readiness remains not_ready with blockers: one RED source audit, worst trusted candidate precision 0.7778, and worst trusted endpoint rate 0.8571. Trusted candidate generic rate is 0.0000 and hard failures are all 0, including review-only gold trusted leakage 0. Remaining issues: run5 missed `Larotrectinib TREATS NTRK fusion solid tumors`; runs6-7 had trusted precision misses including recurring `Vemurafenib INHIBITS MAPK signaling`. Summary: `docs/validation/reports/2026-07-06-pr30-trusted-lane-readiness-summary.md`. |
 | 20 | PR-31 | `alvaro/evidence-pr31-context-precision-guards` | Draft PR #114 open; three-run readiness READY; GitHub checks clean | Demote pathway, process, and cell-context candidates from trusted auto-promotion when they are useful review context but not curated trusted graph evidence. | Three strict v3 live-agent runs report trusted graph readiness ready with worst trusted precision, trusted high-value recall, trusted valuable rate, trusted endpoint recovery, and entailment checked rate all at 1.0000. | Added RED/GREEN quality-filter tests for Vemurafenib/MAPK pathway shadowing, KRAS/proliferation process shadowing, and JAK-STAT/macrophage cell-context activation; added fake-LLM extraction regression proving review-only metadata survives the agent path; ran focused tests, touched-file Ruff, `make relation-feasibility-quality-gate`, strict v3 live runs1-3, readiness aggregate READY, and failure analysis. Hard failures are all 0: fallback, invalid agent, negative leakage, raw unknown relation/surface, wrong verified CURIE links, weak trusted leakage, and review-only gold trusted leakage. Remaining work is review-lane usefulness, not trusted auto-promotion: weak EGFR/MET review misses and all-candidate review burden remain. Summary: `docs/validation/reports/2026-07-06-pr31-context-precision-guards-summary.md`. |
 | 21 | PR-32 | `alvaro/evidence-pr32-weak-review-recovery` | Implemented locally; post-adversarial three-run readiness READY; final gates pass | Recover weak EGFR trend-response and MET correlated-resistance evidence as review-only candidates while preserving trusted-lane safety. | Low-value review recall is 1.0000 across three strict v3 live-agent runs, weak trusted leakage remains 0, and trusted readiness remains READY. | Added weak-review prompt examples, weak-pass prompt reinforcement, `trended with` detection, trend-response relation repair, correlated-resistance object repair, post-repair duplicate merging, and schema recovery for canonical relations with spurious proposal fields. Adversarial review then tightened schema recovery to reject unknown/conflicting proposals, clear stale object CURIE metadata after object repair, and scope repair cues to the candidate claim; re-review then closed bare-`and` claim-boundary leakage. Focused tests pass (`55 passed`), touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage 87.03%, strict live runs12-14 are GREEN with low-value review recall 1.0000, fallback 0, invalid agent 0, weak trusted leakage 0, and readiness aggregate READY. Summary: `docs/validation/reports/2026-07-06-pr32-weak-review-recovery-summary.md`. |
+| 22 | PR-33 | `alvaro/evidence-pr33-review-burden-pruning` | Implemented locally; final gates pass; three-run readiness READY | Remove repeated review-burden false positives and recover rare zero-candidate/schema-invalid agent responses without deterministic fallback. | Trusted readiness remains READY, hard safety failures stay 0, and missed gold and repeated false positives are 0 across three post-adversarial strict v3 live-agent runs. | Added companion phenotype, pathway/process, downstream context, cell-context, and binding-site sibling pruning; added agent-only zero-candidate and schema-repair retries with retry-specific prompts and distinct replay keys; adversarial review and service-gate failures fixed invalid-sibling shadowing, raw-but-unusable retry suppression, schema-retry ordering, weak-pass candidate loss, partial zero-retry cue coverage, unknown-only candidate retry suppression, and over-broad pruning; focused tests pass (`80 passed`), quality-filter suite passes (`47 passed`), touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and strict post-adversarial3 live runs1-3 aggregate to READY with worst completed-agent precision 1.0000, worst recall 1.0000, worst high-value recall 1.0000, trusted precision 1.0000, trusted valuable rate 1.0000, trusted endpoint rate 1.0000, missed gold 0, false positives 0, fallback 0, invalid agent 0, negative leakage 0, weak trusted leakage 0, and wrong verified CURIE links 0. Summary: `docs/validation/reports/2026-07-06-pr33-review-burden-pruning-summary.md`. |
 
 ## PR Evidence Packet
 
@@ -211,6 +212,73 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-06 - PR-33 Review Burden Pruning And Agent Retry Hardening
+
+PR: PR-33 review burden pruning
+
+Branch: `alvaro/evidence-pr33-review-burden-pruning`
+
+Goal: Remove repeated low-value live-agent false positives from the review lane
+and add agent-only retries for rare zero-candidate and schema-invalid responses,
+without letting deterministic fallback count as evidence.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-06-pr33-review-burden-pruning-summary.md`
+- `reports/relation_feasibility/2026-07-06-pr33-review-burden-postadversarial3-run1/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-06-pr33-review-burden-postadversarial3-run2/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-06-pr33-review-burden-postadversarial3-run3/relation_feasibility_report.json`
+- `reports/relation_feasibility_readiness/2026-07-06-pr33-review-burden-postadversarial3-runs1-3/relation_feasibility_readiness_report.json`
+- `reports/relation_feasibility_failure_analysis/2026-07-06-pr33-review-burden-postadversarial3-runs1-3/relation_feasibility_failure_analysis_report.json`
+
+Final three-run strict live-agent metrics:
+
+| Metric | Worst | Mean |
+|---|---:|---:|
+| Trusted readiness | READY | READY |
+| Completed-agent precision | 1.0000 | 1.0000 |
+| Completed-agent recall | 1.0000 | 1.0000 |
+| Completed-agent valuable rate | 0.5333 | 0.5333 |
+| High-value recall | 1.0000 | 1.0000 |
+| Trusted candidate precision | 1.0000 | 1.0000 |
+| Trusted candidate valuable rate | 1.0000 | 1.0000 |
+| Trusted candidate generic rate | 0.0000 | 0.0000 |
+| Trusted-eligible high-value recall | 1.0000 | 1.0000 |
+| Trusted-eligible CURIE endpoint rate | 1.0000 | 1.0000 |
+| Entailment checked rate | 1.0000 | 1.0000 |
+| Verified CURIE match rate | 0.7250 | 0.7250 |
+
+Failure attribution:
+
+- missed gold relations: `0`
+- repeated false positives: `0`
+- fallback cases: `0`
+- invalid agent cases: `0`
+- negative-control leakage: `0`
+- weak-claim trusted leakage: `0`
+- review-only gold trusted leakage: `0`
+- wrong verified CURIE links: `0`
+- CURIE gaps: `35`, mostly review-only endpoint decisions and unverified model
+  hints that remain outside trusted promotion
+
+Validation:
+
+- Focused PR33 relation/retry suite: `80 passed in 0.87s`
+- Quality-filter suite: `47 passed in 0.16s`
+- Touched-file Ruff: `All checks passed!`
+- `make relation-feasibility-quality-gate`: passed
+- `make service-checks`: passed with coverage `87.03%`
+- Post-adversarial3 strict live-agent runs1-3: all `GREEN`
+- Adversarial review fixes: invalid target siblings can no longer shadow valid
+  pathway evidence, and raw-but-unusable model relations no longer suppress the
+  zero-candidate agent retry. The post-review schema failure is now covered by
+  RED/GREEN schema-repair retry regressions, including schema-to-zero retry
+  chaining, weak-pass candidate preservation, and unknown-only candidate retry.
+- Readiness aggregate:
+  `reports/relation_feasibility_readiness/2026-07-06-pr33-review-burden-postadversarial3-runs1-3/relation_feasibility_readiness_report.md`
+- Failure analysis:
+  `reports/relation_feasibility_failure_analysis/2026-07-06-pr33-review-burden-postadversarial3-runs1-3/relation_feasibility_failure_analysis_report.md`
 
 ### 2026-07-06 - PR-29 V3 CURIE Recovery And Rare-Disease Recall
 

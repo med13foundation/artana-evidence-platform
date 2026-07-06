@@ -65,16 +65,13 @@ from artana_evidence_api.document_extraction_review import (
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     build_relation_extraction_text_chunks,
 )
+from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
+    run_llm_relation_extraction_with_zero_retry,
+)
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
-    LLM_EXTRACTION_PROMPT_VERSION,
-    LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
-    build_llm_extraction_prompt,
-    build_llm_weak_review_extraction_prompt,
     fingerprinted_step_key,
     llm_extraction_document_fingerprint,
-    llm_extraction_step_key,
     merge_duplicate_relation_candidates,
-    run_llm_relation_extraction_pass,
 )
 from artana_evidence_api.document_extraction_support.relation_candidate_quality_filter import (
     RelationCandidateQualityFilterResult,
@@ -113,7 +110,6 @@ _MAX_AI_ENTITY_PRE_RESOLUTION_LABELS = 4
 _AI_ENTITY_PRE_RESOLUTION_TIMEOUT_SECONDS = 2.0
 _LLM_CANDIDATE_EXTRACTION_TIMEOUT_SECONDS = 5.0
 _LLM_PROPOSAL_REVIEW_TIMEOUT_SECONDS = 5.0
-_WEAK_REVIEW_AGENT_PASS_REASON = "weak_review_agent_pass"
 _RELATION_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(
@@ -515,60 +511,21 @@ async def extract_relation_candidates_with_llm(
             model_port=LiteLLMAdapter(timeout_seconds=60.0),
         )
         client = SingleStepModelClient(kernel=kernel)
-        candidates: list[ExtractedRelationCandidate] = []
-        unknown_relation_types: set[str] = set()
-        raw_relation_count = 0
-        for chunk in chunks:
-            extraction_passes = (
-                (
-                    LLM_EXTRACTION_PROMPT_VERSION,
-                    build_llm_extraction_prompt(
-                        chunk=chunk,
-                        total_chunks=len(chunks),
-                        document_fingerprint=document_fingerprint,
-                    ),
-                    output_schema,
-                    (),
-                ),
-                (
-                    LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
-                    build_llm_weak_review_extraction_prompt(
-                        chunk=chunk,
-                        total_chunks=len(chunks),
-                        document_fingerprint=document_fingerprint,
-                    ),
-                    weak_review_output_schema,
-                    (_WEAK_REVIEW_AGENT_PASS_REASON,),
-                ),
-            )
-            for prompt_version, prompt, pass_output_schema, force_review_only_reason_codes in (
-                extraction_passes
-            ):
-                chunk_candidates, chunk_unknown_relation_types, chunk_raw_count = (
-                    await run_llm_relation_extraction_pass(
-                        step_runner=run_single_step_with_policy,
-                        client=client,
-                        tenant=tenant,
-                        model_id=model_id,
-                        prompt=prompt,
-                        output_schema=pass_output_schema,
-                        step_key=llm_extraction_step_key(
-                            text=chunk.text,
-                            max_relations=max_relations,
-                            model_id=model_id,
-                            prompt_version=prompt_version,
-                            chunk_index=chunk.index,
-                            total_chunks=len(chunks),
-                            document_fingerprint=document_fingerprint,
-                        ),
-                        force_review_only_reason_codes=(
-                            force_review_only_reason_codes
-                        ),
-                    )
-                )
-                raw_relation_count += chunk_raw_count
-                candidates.extend(chunk_candidates)
-                unknown_relation_types.update(chunk_unknown_relation_types)
+        extraction_attempt = await run_llm_relation_extraction_with_zero_retry(
+            normalized_text=normalized_text,
+            chunks=chunks,
+            max_relations=max_relations,
+            document_fingerprint=document_fingerprint,
+            output_schema=output_schema,
+            weak_review_output_schema=weak_review_output_schema,
+            client=client,
+            tenant=tenant,
+            model_id=model_id,
+            step_runner=run_single_step_with_policy,
+        )
+        raw_relation_count = extraction_attempt.raw_relation_count
+        candidates = extraction_attempt.candidates
+        unknown_relation_types = extraction_attempt.unknown_relation_types
 
         candidates = await _resolve_unknown_llm_relation_types(
             candidates=candidates,

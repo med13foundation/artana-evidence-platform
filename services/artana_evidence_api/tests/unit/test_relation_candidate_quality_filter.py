@@ -148,6 +148,37 @@ def test_quality_filter_marks_single_biochemical_companion_phenotype_review_only
     assert result.filtered_candidates == ()
 
 
+def test_quality_filter_removes_biochemical_companion_when_disease_sibling_exists() -> None:
+    disease_candidate = ExtractedRelationCandidate(
+        subject_label="PAH pathogenic variants",
+        relation_type="ASSOCIATED_WITH",
+        object_label="phenylketonuria",
+        sentence=(
+            "PAH pathogenic variants are associated with phenylketonuria and "
+            "elevated phenylalanine."
+        ),
+    )
+    phenotype_candidate = ExtractedRelationCandidate(
+        subject_label="PAH pathogenic variants",
+        relation_type="ASSOCIATED_WITH",
+        object_label="elevated phenylalanine",
+        sentence=(
+            "PAH pathogenic variants are associated with phenylketonuria and "
+            "elevated phenylalanine."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (disease_candidate, phenotype_candidate),
+    )
+
+    assert result.candidates == (disease_candidate,)
+    assert result.filtered_candidates[0].candidate == phenotype_candidate
+    assert result.filtered_candidates[0].reason == (
+        "companion_phenotype_shadowed_by_disease"
+    )
+
+
 def test_quality_filter_keeps_correlated_only_specific_relation_review_only() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="MET amplification",
@@ -411,7 +442,7 @@ def test_quality_filter_marks_single_nested_biomarker_context_review_only() -> N
     assert result.filtered_candidates == ()
 
 
-def test_quality_filter_marks_explicit_pathway_effect_with_direct_target_review_only() -> None:
+def test_quality_filter_removes_explicit_pathway_effect_with_direct_target() -> None:
     target_candidate = ExtractedRelationCandidate(
         subject_label="Vemurafenib",
         relation_type="TARGETS",
@@ -429,15 +460,155 @@ def test_quality_filter_marks_explicit_pathway_effect_with_direct_target_review_
         (target_candidate, pathway_candidate),
     )
 
-    assert result.candidates[0] == target_candidate
-    assert result.candidates[1].review_status == "review_only"
-    assert "pathway_effect_shadowed_by_direct_target" in (
-        result.candidates[1].review_reason_codes
+    assert result.candidates == (target_candidate,)
+    assert result.filtered_candidates[0].candidate == pathway_candidate
+    assert result.filtered_candidates[0].reason == (
+        "pathway_effect_shadowed_by_direct_target"
     )
-    assert result.filtered_candidates == ()
 
 
-def test_quality_filter_marks_proliferation_effect_with_pathway_sibling_review_only() -> None:
+def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_invalid() -> None:
+    invalid_target_candidate = ExtractedRelationCandidate(
+        subject_label="Vemurafenib",
+        relation_type="TARGETS",
+        object_label="BRAF V600E",
+        sentence="Vemurafenib inhibits MAPK signaling in melanoma.",
+    )
+    pathway_candidate = ExtractedRelationCandidate(
+        subject_label="Vemurafenib",
+        relation_type="INHIBITS",
+        object_label="MAPK signaling",
+        sentence="Vemurafenib inhibits MAPK signaling in melanoma.",
+    )
+
+    result = filter_low_value_relation_candidates(
+        (invalid_target_candidate, pathway_candidate),
+    )
+
+    assert result.candidates == (pathway_candidate,)
+    assert result.filtered_candidates[0].candidate == invalid_target_candidate
+    assert result.filtered_candidates[0].reason == "missing_relation_arguments"
+
+
+def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_not_molecular() -> None:
+    disease_target_candidate = ExtractedRelationCandidate(
+        subject_label="Vemurafenib",
+        relation_type="TARGETS",
+        object_label="melanoma",
+        sentence="Vemurafenib targets melanoma and inhibits MAPK signaling.",
+    )
+    pathway_candidate = ExtractedRelationCandidate(
+        subject_label="Vemurafenib",
+        relation_type="INHIBITS",
+        object_label="MAPK signaling",
+        sentence="Vemurafenib targets melanoma and inhibits MAPK signaling.",
+    )
+
+    result = filter_low_value_relation_candidates(
+        (disease_target_candidate, pathway_candidate),
+    )
+
+    assert pathway_candidate in result.candidates
+    assert all(
+        filtered.candidate != pathway_candidate
+        for filtered in result.filtered_candidates
+    )
+
+
+def test_quality_filter_removes_binding_site_target_with_molecular_target_sibling() -> None:
+    target_candidate = ExtractedRelationCandidate(
+        subject_label="Sotorasib",
+        relation_type="TARGETS",
+        object_label="KRAS G12C",
+        sentence=(
+            "Sotorasib targets KRAS G12C by binding the switch-II pocket in "
+            "mutant lung cancer."
+        ),
+    )
+    binding_site_candidate = ExtractedRelationCandidate(
+        subject_label="Sotorasib",
+        relation_type="TARGETS",
+        object_label="switch-II pocket",
+        sentence=(
+            "Sotorasib targets KRAS G12C by binding the switch-II pocket in "
+            "mutant lung cancer."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (target_candidate, binding_site_candidate),
+    )
+
+    assert result.candidates == (target_candidate,)
+    assert result.filtered_candidates[0].candidate == binding_site_candidate
+    assert result.filtered_candidates[0].reason == (
+        "binding_site_shadowed_by_molecular_target"
+    )
+
+
+def test_quality_filter_keeps_binding_site_target_without_molecular_target_sibling() -> None:
+    pathway_target_candidate = ExtractedRelationCandidate(
+        subject_label="SHP099",
+        relation_type="TARGETS",
+        object_label="ERK signaling",
+        sentence=(
+            "SHP099 binds the SHP2 allosteric site and targets ERK signaling "
+            "in tumor cells."
+        ),
+    )
+    binding_site_candidate = ExtractedRelationCandidate(
+        subject_label="SHP099",
+        relation_type="TARGETS",
+        object_label="SHP2 allosteric site",
+        sentence=(
+            "SHP099 binds the SHP2 allosteric site and targets ERK signaling "
+            "in tumor cells."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (pathway_target_candidate, binding_site_candidate),
+    )
+
+    assert binding_site_candidate in result.candidates
+    assert all(
+        filtered.candidate != binding_site_candidate
+        for filtered in result.filtered_candidates
+    )
+
+
+def test_quality_filter_removes_downstream_pathway_context_with_direct_target() -> None:
+    target_candidate = ExtractedRelationCandidate(
+        subject_label="Vemurafenib",
+        relation_type="TARGETS",
+        object_label="BRAF V600E",
+        sentence=(
+            "Vemurafenib targets BRAF V600E and suppresses downstream MAPK "
+            "signaling in melanoma."
+        ),
+    )
+    pathway_context_candidate = ExtractedRelationCandidate(
+        subject_label="BRAF V600E",
+        relation_type="DOWNSTREAM_OF",
+        object_label="MAPK signaling",
+        sentence=(
+            "Vemurafenib targets BRAF V600E and suppresses downstream MAPK "
+            "signaling in melanoma."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (target_candidate, pathway_context_candidate),
+    )
+
+    assert result.candidates == (target_candidate,)
+    assert result.filtered_candidates[0].candidate == pathway_context_candidate
+    assert result.filtered_candidates[0].reason == (
+        "context_relation_shadowed_by_direct_mechanism"
+    )
+
+
+def test_quality_filter_removes_proliferation_effect_with_pathway_sibling() -> None:
     pathway_candidate = ExtractedRelationCandidate(
         subject_label="KRAS G12D",
         relation_type="ACTIVATES",
@@ -461,12 +632,42 @@ def test_quality_filter_marks_proliferation_effect_with_pathway_sibling_review_o
         (pathway_candidate, proliferation_candidate),
     )
 
-    assert result.candidates[0] == pathway_candidate
-    assert result.candidates[1].review_status == "review_only"
-    assert "process_effect_shadowed_by_pathway_mechanism" in (
-        result.candidates[1].review_reason_codes
+    assert result.candidates == (pathway_candidate,)
+    assert result.filtered_candidates[0].candidate == proliferation_candidate
+    assert result.filtered_candidates[0].reason == (
+        "process_effect_shadowed_by_pathway_mechanism"
     )
-    assert result.filtered_candidates == ()
+
+
+def test_quality_filter_keeps_independent_process_effect_clause() -> None:
+    pathway_candidate = ExtractedRelationCandidate(
+        subject_label="KRAS G12D",
+        relation_type="ACTIVATES",
+        object_label="MAPK signaling",
+        sentence=(
+            "KRAS G12D activates MAPK signaling, and KRAS G12D increases "
+            "pancreatic cancer cell proliferation through MYC."
+        ),
+    )
+    proliferation_candidate = ExtractedRelationCandidate(
+        subject_label="KRAS G12D",
+        relation_type="ACTIVATES",
+        object_label="pancreatic cancer cell proliferation",
+        sentence=(
+            "KRAS G12D activates MAPK signaling, and KRAS G12D increases "
+            "pancreatic cancer cell proliferation through MYC."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (pathway_candidate, proliferation_candidate),
+    )
+
+    assert proliferation_candidate in result.candidates
+    assert all(
+        filtered.candidate != proliferation_candidate
+        for filtered in result.filtered_candidates
+    )
 
 
 def test_quality_filter_marks_cell_context_activation_review_only() -> None:
@@ -486,6 +687,68 @@ def test_quality_filter_marks_cell_context_activation_review_only() -> None:
     assert result.candidates[0].review_status == "review_only"
     assert "cell_context_object" in result.candidates[0].review_reason_codes
     assert result.filtered_candidates == ()
+
+
+def test_quality_filter_removes_cell_context_activation_when_primary_relation_exists() -> None:
+    primary_candidate = ExtractedRelationCandidate(
+        subject_label="IL6",
+        relation_type="REGULATES",
+        object_label="inflammatory signaling",
+        sentence=(
+            "IL6 regulates inflammatory signaling through JAK-STAT activation "
+            "in macrophages."
+        ),
+    )
+    context_candidate = ExtractedRelationCandidate(
+        subject_label="JAK-STAT",
+        relation_type="ACTIVATES",
+        object_label="macrophages",
+        sentence=(
+            "IL6 regulates inflammatory signaling through JAK-STAT activation "
+            "in macrophages."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (primary_candidate, context_candidate),
+    )
+
+    assert result.candidates == (primary_candidate,)
+    assert result.filtered_candidates[0].candidate == context_candidate
+    assert result.filtered_candidates[0].reason == "cell_context_object"
+
+
+def test_quality_filter_keeps_independent_cell_context_clause_as_review_only() -> None:
+    primary_candidate = ExtractedRelationCandidate(
+        subject_label="IL6",
+        relation_type="REGULATES",
+        object_label="inflammatory signaling",
+        sentence=(
+            "IL6 regulates inflammatory signaling in macrophages, and "
+            "JAK-STAT activation was measured in macrophages."
+        ),
+    )
+    context_candidate = ExtractedRelationCandidate(
+        subject_label="JAK-STAT",
+        relation_type="ACTIVATES",
+        object_label="macrophages",
+        sentence=(
+            "IL6 regulates inflammatory signaling in macrophages, and "
+            "JAK-STAT activation was measured in macrophages."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(
+        (primary_candidate, context_candidate),
+    )
+
+    assert len(result.candidates) == 2
+    assert result.candidates[1].review_status == "review_only"
+    assert "cell_context_object" in result.candidates[1].review_reason_codes
+    assert all(
+        filtered.candidate != context_candidate
+        for filtered in result.filtered_candidates
+    )
 
 
 def test_quality_filter_removes_candidate_that_drops_subject_modifier() -> None:

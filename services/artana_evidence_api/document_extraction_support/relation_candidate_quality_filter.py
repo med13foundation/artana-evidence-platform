@@ -26,6 +26,7 @@ from artana_evidence_api.document_extraction_support.review_policy.review_only_c
 )
 
 RelationCandidateQualityFilterReason = Literal[
+    "binding_site_shadowed_by_molecular_target",
     "companion_phenotype_shadowed_by_disease",
     "context_relation_shadowed_by_direct_mechanism",
     "dropped_object_modifier",
@@ -79,6 +80,7 @@ _DISEASE_CONTEXT_TOKENS = frozenset(
         "melanoma",
         "neoplasm",
         "neoplasms",
+        "phenylketonuria",
         "polyposis",
         "syndrome",
         "tumor",
@@ -116,6 +118,12 @@ _CELL_CONTEXT_TOKENS = frozenset(
         "macrophages",
     },
 )
+_BINDING_SITE_CONTEXT_TOKENS = frozenset(
+    {
+        "pocket",
+        "site",
+    },
+)
 _RESISTANCE_OBJECT_BOUNDARY_AFTER_PATTERN = (
     "after|although|among|and|are|because|before|but|cases|cells|cohort|"
     "despite|did|do|does|during|for|however|in|is|patients|samples|show|"
@@ -144,6 +152,8 @@ _UNCERTAIN_RELATION_CUE_RE = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+_MOLECULAR_TARGET_TOKEN_RE = re.compile(r"^[A-Z][A-Z0-9.-]{1,}$")
+_VARIANT_TOKEN_RE = re.compile(r"^[A-Z][0-9]+[A-Z*]$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,6 +212,18 @@ def filter_low_value_relation_candidates(
                 continue
             reason = sibling_decision.reason
         if reason is None and _is_cell_context_object(candidate):
+            if _cell_context_shadowed_by_primary_relation(
+                candidate=candidate,
+                candidates=repaired_candidates,
+            ):
+                filtered_candidates.append(
+                    QualityFilteredRelationCandidate(
+                        candidate_index=candidate_index,
+                        candidate=candidate,
+                        reason="cell_context_object",
+                    ),
+                )
+                continue
             kept_candidates.append(
                 _with_review_only_reason(candidate, "cell_context_object"),
             )
@@ -477,6 +499,13 @@ def _sibling_shadow_decision(
             "pathway_effect_shadowed_by_direct_target",
         ),
         (
+            _binding_site_shadow_action(
+                candidate=candidate,
+                candidates=candidates,
+            ),
+            "binding_site_shadowed_by_molecular_target",
+        ),
+        (
             _process_effect_shadow_action(
                 candidate=candidate,
                 candidates=candidates,
@@ -602,11 +631,64 @@ def _pathway_effect_shadow_action(
         and canonicalize_extraction_relation_type(sibling.relation_type) == "TARGETS"
         and _normalize_entity_label(sibling.subject_label) == candidate_subject
         and _normalize_sentence(sibling.sentence) == candidate_sentence
+        and _sibling_shares_claim_scope(candidate, sibling)
+        and _is_specific_molecular_target_object(sibling.object_label)
+        and _quality_filter_reason(sibling) is None
         for sibling in candidates
     )
     if not shadowed_by_direct_target:
         return None
-    return "filter" if not _candidate_relation_cue_present(candidate) else "review_only"
+    return "filter"
+
+
+def _binding_site_shadow_action(
+    *,
+    candidate: ExtractedRelationCandidate,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> _SiblingShadowAction | None:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation != "TARGETS":
+        return None
+    if not _is_binding_site_context_object(candidate):
+        return None
+    candidate_subject = _normalize_entity_label(candidate.subject_label)
+    candidate_object = _normalize_entity_label(candidate.object_label)
+    candidate_sentence = _normalize_sentence(candidate.sentence)
+    has_surviving_molecular_target_sibling = any(
+        sibling is not candidate
+        and canonicalize_extraction_relation_type(sibling.relation_type) == "TARGETS"
+        and _normalize_entity_label(sibling.subject_label) == candidate_subject
+        and _normalize_sentence(sibling.sentence) == candidate_sentence
+        and _normalize_entity_label(sibling.object_label) != candidate_object
+        and _sibling_shares_claim_scope(candidate, sibling)
+        and _is_specific_molecular_target_object(sibling.object_label)
+        and not _has_binding_site_context_token(sibling.object_label)
+        and _quality_filter_reason(sibling) is None
+        for sibling in candidates
+    )
+    return "filter" if has_surviving_molecular_target_sibling else None
+
+
+def _is_binding_site_context_object(candidate: ExtractedRelationCandidate) -> bool:
+    candidate_object = _normalize_entity_label(candidate.object_label)
+    if not _has_binding_site_context_token(candidate_object):
+        return False
+    object_pattern = _phrase_pattern(candidate_object)
+    if object_pattern == "":
+        return False
+    return (
+        re.search(
+            rf"\b(?:bind|binds|binding|bound)\b"
+            rf".{{0,80}}\b{object_pattern}\b",
+            _normalize_entity_label(candidate.sentence),
+        )
+        is not None
+    )
+
+
+def _has_binding_site_context_token(label: str) -> bool:
+    normalized_label = _normalize_entity_label(label)
+    return bool(_BINDING_SITE_CONTEXT_TOKENS.intersection(normalized_label.split()))
 
 
 def _process_effect_shadow_action(
@@ -627,13 +709,14 @@ def _process_effect_shadow_action(
         in {"ACTIVATES", "INHIBITS", "REGULATES"}
         and _normalize_entity_label(sibling.subject_label) == candidate_subject
         and _normalize_sentence(sibling.sentence) == candidate_sentence
+        and _sibling_shares_claim_scope(candidate, sibling)
         and _has_broad_pathway_effect_object(sibling.object_label)
         and _quality_filter_reason(sibling) is None
         for sibling in candidates
     )
     if not shadowed_by_pathway_mechanism:
         return None
-    return "review_only"
+    return "filter"
 
 
 def _is_cell_context_object(candidate: ExtractedRelationCandidate) -> bool:
@@ -658,6 +741,31 @@ def _is_cell_context_object(candidate: ExtractedRelationCandidate) -> bool:
     )
 
 
+def _cell_context_shadowed_by_primary_relation(
+    *,
+    candidate: ExtractedRelationCandidate,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> bool:
+    candidate_sentence = _normalize_sentence(candidate.sentence)
+    for sibling in candidates:
+        if sibling is candidate:
+            continue
+        if _normalize_sentence(sibling.sentence) != candidate_sentence:
+            continue
+        if _quality_filter_reason(sibling) is not None:
+            continue
+        if not _sibling_shares_claim_scope(candidate, sibling):
+            continue
+        sibling_relation = canonicalize_extraction_relation_type(sibling.relation_type)
+        if sibling_relation not in {"ACTIVATES", "REGULATES"}:
+            continue
+        if _has_broad_pathway_effect_object(
+            sibling.object_label,
+        ) or _has_broad_process_effect_object(sibling.object_label):
+            return True
+    return False
+
+
 def _has_broad_pathway_effect_object(label: str) -> bool:
     normalized_label = _normalize_entity_label(label)
     return bool(_BROAD_PATHWAY_EFFECT_TOKENS.intersection(normalized_label.split()))
@@ -666,6 +774,19 @@ def _has_broad_pathway_effect_object(label: str) -> bool:
 def _has_broad_process_effect_object(label: str) -> bool:
     normalized_label = _normalize_entity_label(label)
     return bool(_BROAD_PROCESS_EFFECT_TOKENS.intersection(normalized_label.split()))
+
+
+def _is_specific_molecular_target_object(label: str) -> bool:
+    if _has_broad_pathway_effect_object(label) or _has_disease_context_token(
+        _normalize_entity_label(label),
+    ):
+        return False
+    tokens = re.findall(r"[A-Za-z0-9.*-]+", label)
+    return any(
+        _MOLECULAR_TARGET_TOKEN_RE.fullmatch(token) is not None
+        or _VARIANT_TOKEN_RE.fullmatch(token) is not None
+        for token in tokens
+    )
 
 
 def _is_specific_biomarker_response_object(label: str) -> bool:
@@ -762,6 +883,19 @@ def _candidate_claim_scope(candidate: ExtractedRelationCandidate) -> str:
     return " ".join(clauses)
 
 
+def _sibling_shares_claim_scope(
+    candidate: ExtractedRelationCandidate,
+    sibling: ExtractedRelationCandidate,
+) -> bool:
+    candidate_scope = _candidate_claim_scope(candidate)
+    sibling_scope = _candidate_claim_scope(sibling)
+    return (
+        candidate_scope != ""
+        and sibling_scope != ""
+        and candidate_scope == sibling_scope
+    )
+
+
 def _split_candidate_clauses(sentence: str) -> tuple[str, ...]:
     return tuple(
         normalized_clause
@@ -803,11 +937,20 @@ def _context_edge_is_direct_mechanism_modifier(
     pattern = re.compile(
         rf"\b{re.escape(direct_subject)}\b"
         rf".{{0,80}}\b(?:{direct_cue_pattern})\b"
-        rf".{{0,80}}\b{re.escape(context_subject)}\b"
+        rf"[^.;,]{{0,80}}\b{re.escape(context_subject)}\b"
         rf"\s+(?:{context_cue_pattern})\s+"
         rf"\b{re.escape(context_object)}\b",
     )
-    return pattern.search(sentence) is not None
+    if pattern.search(sentence) is not None:
+        return True
+    direct_target_context_pattern = re.compile(
+        rf"\b{re.escape(direct_subject)}\b"
+        rf".{{0,80}}\b(?:{direct_cue_pattern})\b"
+        rf"[^.;,]{{0,80}}\b{re.escape(context_subject)}\b"
+        rf"[^.;,]{{0,80}}\b(?:{context_cue_pattern})\s+"
+        rf"\b{re.escape(context_object)}\b",
+    )
+    return direct_target_context_pattern.search(sentence) is not None
 
 
 def _phrase_alternation(phrases: tuple[str, ...]) -> str:
