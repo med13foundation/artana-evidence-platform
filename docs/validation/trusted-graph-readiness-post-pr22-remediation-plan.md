@@ -703,7 +703,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
 - Modify: `services/artana_evidence_api/tests/unit/test_proposal_actions.py`
 - Create: `docs/validation/reports/2026-07-05-pr26-graph-promotion-fail-closed-summary.md`
 
-- [ ] **Step 1: Add graph-side failing tests**
+- [x] **Step 1: Add graph-side failing tests**
 
   Add tests proving trusted AI evidence is rejected when:
 
@@ -716,7 +716,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
   - `support_verification.support != "ENTAILS"`
   - `trust_floor_failures` contains any non-empty value
 
-- [ ] **Step 2: Tighten `trusted_evidence_floor_issue`**
+- [x] **Step 2: Tighten `trusted_evidence_floor_issue`**
 
   Add a review-status floor:
 
@@ -746,7 +746,7 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
   )
   ```
 
-- [ ] **Step 3: Run graph validation tests**
+- [x] **Step 3: Run graph validation tests**
 
   ```bash
   PYTHONPATH="$(pwd)/services:$(pwd)" \
@@ -756,13 +756,13 @@ Do not paste `OPENAI_API_KEY` or provider keys into any doc, test, PR body, or r
     -q
   ```
 
-- [ ] **Step 4: Run graph service checks**
+- [x] **Step 4: Run graph service checks**
 
   ```bash
   make graph-service-checks
   ```
 
-- [ ] **Step 5: Adversarial review prompt**
+- [x] **Step 5: Adversarial review prompt**
 
   ```text
   Review PR26 from the perspective of a malicious or buggy Evidence API client. Try to submit trusted AI relation evidence with fallback traces, review-only status, model-only CURIE hints, missing support verification, or failed trust floors. Verify Graph DB rejects it.
