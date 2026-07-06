@@ -15,11 +15,11 @@
 Source evidence from the PR16 repeatability gate:
 
 - Readiness artifact:
-  `/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility_readiness/2026-07-05-pr16-repeatability-readiness-r2/relation_feasibility_readiness_report.json`
+  `reports/relation_feasibility_readiness/2026-07-05-pr16-repeatability-readiness-r2/relation_feasibility_readiness_report.json`
 - Run artifacts:
-  `/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json`
-  `/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json`
-  `/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json`
+  `reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json`
+  `reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json`
+  `reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json`
 
 Current PR16 status: `not_ready`.
 

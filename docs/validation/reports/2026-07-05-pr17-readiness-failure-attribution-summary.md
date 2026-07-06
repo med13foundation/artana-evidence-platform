@@ -32,9 +32,9 @@ emits:
 The first report uses the three PR-16 strict live-agent repeatability reports:
 
 ```text
-/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json
-/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json
-/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json
+reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json
+reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json
+reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json
 ```
 
 ## Failure Attribution Command
@@ -42,9 +42,9 @@ The first report uses the three PR-16 strict live-agent repeatability reports:
 ```bash
 PYTHONPATH="$(pwd)/services:$(pwd)" \
   .venv/bin/python3 scripts/summarize_relation_readiness_failures.py \
-  --report current=/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json \
-  --report current=/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json \
-  --report current=/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json \
+  --report current=reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json \
+  --report current=reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json \
+  --report current=reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json \
   --output-dir reports/relation_feasibility_failure_analysis/2026-07-05-pr17-pr16-baseline
 ```
 

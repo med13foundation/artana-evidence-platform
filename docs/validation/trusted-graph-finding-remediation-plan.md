@@ -17,9 +17,9 @@ This plan is driven by the PR-17 failure attribution baseline:
 - Failure attribution report:
   `reports/relation_feasibility_failure_analysis/2026-07-05-pr17-pr16-baseline/relation_feasibility_failure_analysis_report.md`
 - Source strict live-agent reports:
-  `/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json`
-  `/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json`
-  `/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform-pr16/reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json`
+  `reports/relation_feasibility/2026-07-05-pr16-repeatability-run1/relation_feasibility_report.json`
+  `reports/relation_feasibility/2026-07-05-pr16-repeatability-run2/relation_feasibility_report.json`
+  `reports/relation_feasibility/2026-07-05-pr16-repeatability-run3/relation_feasibility_report.json`
 
 Baseline result:
 
