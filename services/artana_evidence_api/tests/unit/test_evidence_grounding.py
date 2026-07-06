@@ -73,6 +73,20 @@ def test_args_present_matches_protein_variant_normalization() -> None:
     assert result.object_present is True
 
 
+def test_args_present_matches_tumor_agnostic_fusion_object_surface() -> None:
+    result = args_present(
+        sentence=(
+            "Larotrectinib treats solid tumors harboring NTRK gene fusions "
+            "regardless of tissue origin."
+        ),
+        subject="Larotrectinib",
+        object_="NTRK fusion solid tumors",
+    )
+
+    assert result.subject_present is True
+    assert result.object_present is True
+
+
 def test_ground_relation_sentence_requires_anchor_and_both_arguments() -> None:
     result = ground_relation_sentence(
         source_text=(

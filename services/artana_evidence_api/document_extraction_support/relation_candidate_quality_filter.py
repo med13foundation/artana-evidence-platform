@@ -26,13 +26,17 @@ from artana_evidence_api.document_extraction_support.review_policy.review_only_c
 )
 
 RelationCandidateQualityFilterReason = Literal[
+    "companion_phenotype_shadowed_by_disease",
     "context_relation_shadowed_by_direct_mechanism",
     "dropped_object_modifier",
     "dropped_subject_modifier",
     "missing_relation_arguments",
+    "nested_context_object",
+    "pathway_effect_shadowed_by_direct_target",
     "support_not_entailed",
     "uncertain_relation_claim",
 ]
+_SiblingShadowAction = Literal["filter", "review_only"]
 _CONTEXT_RELATION_TYPES = frozenset({"DOWNSTREAM_OF", "UPSTREAM_OF"})
 _DIRECT_MECHANISM_RELATION_TYPES = frozenset(
     {
@@ -60,6 +64,42 @@ _CONTEXT_CUES_BY_RELATION = {
     "DOWNSTREAM_OF": ("downstream of", "downstream"),
     "UPSTREAM_OF": ("upstream of", "upstream"),
 }
+_DISEASE_CONTEXT_TOKENS = frozenset(
+    {
+        "adenocarcinoma",
+        "cancer",
+        "cancers",
+        "carcinoma",
+        "disease",
+        "hypercholesterolemia",
+        "leukemia",
+        "lymphoma",
+        "melanoma",
+        "neoplasm",
+        "neoplasms",
+        "polyposis",
+        "syndrome",
+        "tumor",
+        "tumors",
+    },
+)
+_PHENOTYPE_CONTEXT_TOKENS = frozenset(
+    {
+        "dilation",
+        "elevated",
+        "phenylalanine",
+        "regression",
+    },
+)
+_BROAD_PATHWAY_EFFECT_TOKENS = frozenset(
+    {
+        "pathway",
+        "pathways",
+        "program",
+        "programs",
+        "signaling",
+    },
+)
 
 _UNCERTAIN_RELATION_CUE_RE = re.compile(
     r"\b("
@@ -93,6 +133,12 @@ class RelationCandidateQualityFilterResult:
         return len(self.filtered_candidates)
 
 
+@dataclass(frozen=True, slots=True)
+class _SiblingShadowDecision:
+    reason: RelationCandidateQualityFilterReason | None = None
+    review_only_candidate: ExtractedRelationCandidate | None = None
+
+
 def filter_low_value_relation_candidates(
     candidates: tuple[ExtractedRelationCandidate, ...],
 ) -> RelationCandidateQualityFilterResult:
@@ -102,6 +148,25 @@ def filter_low_value_relation_candidates(
     filtered_candidates: list[QualityFilteredRelationCandidate] = []
     for candidate_index, candidate in enumerate(candidates):
         reason = _quality_filter_reason(candidate)
+        if reason is None and _is_context_relation_shadowed(
+            candidate=candidate,
+            candidates=candidates,
+        ):
+            reason = "context_relation_shadowed_by_direct_mechanism"
+        if reason is None:
+            sibling_decision = _sibling_shadow_decision(
+                candidate=candidate,
+                candidates=candidates,
+            )
+            if sibling_decision.review_only_candidate is not None:
+                kept_candidates.append(sibling_decision.review_only_candidate)
+                continue
+            reason = sibling_decision.reason
+        if reason is None and _is_pathway_effect_shadowed_by_direct_target(
+            candidate=candidate,
+            candidates=candidates,
+        ):
+            reason = "pathway_effect_shadowed_by_direct_target"
         review_only_candidate = _review_only_candidate(candidate)
         if review_only_candidate is not None and reason in {
             None,
@@ -109,11 +174,6 @@ def filter_low_value_relation_candidates(
         }:
             kept_candidates.append(review_only_candidate)
             continue
-        if reason is None and _is_context_relation_shadowed(
-            candidate=candidate,
-            candidates=candidates,
-        ):
-            reason = "context_relation_shadowed_by_direct_mechanism"
         if reason is None:
             kept_candidates.append(candidate)
             continue
@@ -238,6 +298,219 @@ def _is_context_relation_shadowed(
                 direct_relation=sibling_relation,
             )
     return False
+
+
+def _sibling_shadow_decision(
+    *,
+    candidate: ExtractedRelationCandidate,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> _SiblingShadowDecision:
+    companion_action = _companion_phenotype_shadow_action(
+        candidate=candidate,
+        candidates=candidates,
+    )
+    if companion_action == "filter":
+        return _SiblingShadowDecision(
+            reason="companion_phenotype_shadowed_by_disease",
+        )
+    if companion_action == "review_only":
+        return _SiblingShadowDecision(
+            review_only_candidate=_with_review_only_reason(
+                candidate,
+                "companion_phenotype_shadowed_by_disease",
+            ),
+        )
+    nested_action = _nested_context_object_shadow_action(
+        candidate=candidate,
+        candidates=candidates,
+    )
+    if nested_action == "filter":
+        return _SiblingShadowDecision(reason="nested_context_object")
+    if nested_action == "review_only":
+        return _SiblingShadowDecision(
+            review_only_candidate=_with_review_only_reason(
+                candidate,
+                "nested_context_object",
+            ),
+        )
+    return _SiblingShadowDecision()
+
+
+def _companion_phenotype_shadow_action(
+    *,
+    candidate: ExtractedRelationCandidate,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> _SiblingShadowAction | None:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation != "ASSOCIATED_WITH":
+        return None
+    candidate_object = _normalize_entity_label(candidate.object_label)
+    if _has_disease_context_token(candidate_object):
+        return None
+    if not _PHENOTYPE_CONTEXT_TOKENS.intersection(candidate_object.split()):
+        return None
+    candidate_subject = _normalize_entity_label(candidate.subject_label)
+    candidate_sentence = _normalize_sentence(candidate.sentence)
+    has_companion_shape = _sentence_has_disease_then_companion_phenotype(
+        sentence=_normalize_entity_label(candidate.sentence),
+        object_label=candidate_object,
+    )
+    if not has_companion_shape:
+        return None
+    has_surviving_disease_sibling = any(
+        sibling is not candidate
+        and canonicalize_extraction_relation_type(sibling.relation_type)
+        == "ASSOCIATED_WITH"
+        and _normalize_entity_label(sibling.subject_label) == candidate_subject
+        and _normalize_sentence(sibling.sentence) == candidate_sentence
+        and _has_disease_context_token(_normalize_entity_label(sibling.object_label))
+        and _quality_filter_reason(sibling) is None
+        for sibling in candidates
+    )
+    return "filter" if has_surviving_disease_sibling else "review_only"
+
+
+def _nested_context_object_shadow_action(
+    *,
+    candidate: ExtractedRelationCandidate,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> _SiblingShadowAction | None:
+    if not _is_nested_context_object(candidate):
+        return None
+    candidate_subject = _normalize_entity_label(candidate.subject_label)
+    candidate_sentence = _normalize_sentence(candidate.sentence)
+    has_surviving_response_sibling = any(
+        sibling is not candidate
+        and canonicalize_extraction_relation_type(sibling.relation_type)
+        == "BIOMARKER_FOR"
+        and _normalize_entity_label(sibling.subject_label) == candidate_subject
+        and _normalize_sentence(sibling.sentence) == candidate_sentence
+        and _is_specific_biomarker_response_object(sibling.object_label)
+        and _quality_filter_reason(sibling) is None
+        for sibling in candidates
+    )
+    return "filter" if has_surviving_response_sibling else "review_only"
+
+
+def _is_nested_context_object(candidate: ExtractedRelationCandidate) -> bool:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation != "BIOMARKER_FOR":
+        return False
+    normalized_object = _normalize_entity_label(candidate.object_label)
+    if not normalized_object:
+        return False
+    object_pattern = _phrase_pattern(normalized_object)
+    sentence = _normalize_entity_label(candidate.sentence)
+    return (
+        re.search(
+            rf"\b(?:response|sensitivity|benefit)\b"
+            rf".{{0,120}}\b(?:in|among|for)\s+{object_pattern}\b",
+            sentence,
+        )
+        is not None
+    )
+
+
+def _is_pathway_effect_shadowed_by_direct_target(
+    *,
+    candidate: ExtractedRelationCandidate,
+    candidates: tuple[ExtractedRelationCandidate, ...],
+) -> bool:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation not in {"INHIBITS", "REGULATES"}:
+        return False
+    candidate_object = _normalize_entity_label(candidate.object_label)
+    if not _BROAD_PATHWAY_EFFECT_TOKENS.intersection(candidate_object.split()):
+        return False
+    if _candidate_relation_cue_present(candidate):
+        return False
+    candidate_subject = _normalize_entity_label(candidate.subject_label)
+    candidate_sentence = _normalize_sentence(candidate.sentence)
+    return any(
+        sibling is not candidate
+        and canonicalize_extraction_relation_type(sibling.relation_type) == "TARGETS"
+        and _normalize_entity_label(sibling.subject_label) == candidate_subject
+        and _normalize_sentence(sibling.sentence) == candidate_sentence
+        for sibling in candidates
+    )
+
+
+def _is_specific_biomarker_response_object(label: str) -> bool:
+    return re.search(
+        r"\b(response|sensitivity|benefit)\b",
+        _normalize_entity_label(label),
+    ) is not None
+
+
+def _candidate_relation_cue_present(candidate: ExtractedRelationCandidate) -> bool:
+    canonical_relation = canonicalize_extraction_relation_type(candidate.relation_type)
+    if canonical_relation is None:
+        return False
+    cues = _DIRECT_MECHANISM_CUES_BY_RELATION.get(canonical_relation, ())
+    if not cues:
+        return False
+    cue_pattern = _phrase_alternation(cues)
+    object_pattern = _phrase_pattern(_normalize_entity_label(candidate.object_label))
+    if object_pattern == "":
+        return False
+    return (
+        re.search(
+            rf"\b(?:{cue_pattern})\b.{{0,80}}\b{object_pattern}\b",
+            _normalize_sentence(candidate.sentence),
+        )
+        is not None
+    )
+
+
+def _with_review_only_reason(
+    candidate: ExtractedRelationCandidate,
+    reason_code: str,
+) -> ExtractedRelationCandidate:
+    return replace(
+        candidate,
+        review_status="review_only",
+        review_reason_codes=tuple(
+            dict.fromkeys((*candidate.review_reason_codes, reason_code)),
+        ),
+    )
+
+
+def _has_disease_context_token(normalized_label: str) -> bool:
+    return bool(_DISEASE_CONTEXT_TOKENS.intersection(normalized_label.split()))
+
+
+def _sentence_has_disease_then_companion_phenotype(
+    *,
+    sentence: str,
+    object_label: str,
+) -> bool:
+    object_pattern = _phrase_pattern(object_label)
+    if "elevated" in object_label.split():
+        return (
+            re.search(
+                rf"\bassociated\s+with\b"
+                rf".{{1,100}}\band\s+{object_pattern}\b",
+                sentence,
+            )
+            is not None
+        )
+    disease_pattern = "|".join(
+        re.escape(token)
+        for token in sorted(_DISEASE_CONTEXT_TOKENS, key=len, reverse=True)
+    )
+    return (
+        re.search(
+            rf"\bassociated\s+with\b"
+            rf".{{0,100}}\b(?:{disease_pattern})\b"
+            rf".{{0,40}}\band\s+{object_pattern}\b",
+            sentence,
+        )
+        is not None
+    )
+
+
+def _phrase_pattern(normalized_label: str) -> str:
+    return r"\s+".join(re.escape(token) for token in normalized_label.split())
 
 
 def _context_edge_is_direct_mechanism_modifier(

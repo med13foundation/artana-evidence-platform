@@ -85,6 +85,34 @@ def test_confers_resistance_sentence_returns_entails() -> None:
     assert result.support == "ENTAILS"
 
 
+def test_predispose_carriers_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence=(
+            "LDLR loss-of-function variants predispose carriers to familial "
+            "hypercholesterolemia."
+        ),
+        subject="LDLR loss-of-function variants",
+        relation_type="PREDISPOSES_TO",
+        object_="familial hypercholesterolemia",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_tumor_agnostic_fusion_treatment_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence=(
+            "Larotrectinib treats solid tumors harboring NTRK gene fusions "
+            "regardless of tissue origin."
+        ),
+        subject="Larotrectinib",
+        relation_type="TREATS",
+        object_="NTRK fusion solid tumors",
+    )
+
+    assert result.support == "ENTAILS"
+
+
 def test_causes_resistance_sentence_returns_entails_for_drug_target() -> None:
     result = verify_triple_support(
         sentence="EGFR T790M causes resistance to gefitinib.",

@@ -8,6 +8,12 @@ from typing import Literal, Protocol
 
 from artana_evidence_api.document_extraction_support.evidence_grounding import (
     args_present,
+    argument_aliases,
+)
+from artana_evidence_api.document_extraction_support.evidence_support.cues import (
+    is_symmetric_relation,
+    passive_cues_for_relation,
+    relation_cues,
 )
 from artana_evidence_api.types.common import JSONObject
 
@@ -96,8 +102,8 @@ def _heuristic_support(
             model_id=_MODEL_ID,
         )
     normalized_sentence = _normalize_text(sentence)
-    cues = _relation_cues(relation_type)
     normalized_relation_type = _normalized_relation_type(relation_type)
+    cues = relation_cues(normalized_relation_type)
     if _has_negated_relation_support(
         sentence=normalized_sentence,
         subject=subject,
@@ -132,18 +138,6 @@ def _heuristic_support(
         support="NEUTRAL",
         rationale="Sentence contains both endpoints but no relation cue.",
         model_id=_MODEL_ID,
-    )
-
-
-def _relation_cues(relation_type: str) -> tuple[str, ...]:
-    normalized = _normalized_relation_type(relation_type)
-    cues = _RELATION_CUES.get(normalized)
-    if cues is not None:
-        return cues
-    return tuple(
-        token.casefold()
-        for token in normalized.split("_")
-        if len(token) >= _MIN_FALLBACK_CUE_LENGTH
     )
 
 
@@ -197,10 +191,10 @@ def _has_oriented_relation_support(
     normalized_relation_type: str,
     cue: str,
 ) -> bool:
-    subject_spans = _phrase_spans(sentence, _normalize_text(subject))
-    object_spans = _phrase_spans(sentence, _normalize_text(object_))
+    subject_spans = _argument_spans(sentence=sentence, label=subject)
+    object_spans = _argument_spans(sentence=sentence, label=object_)
     cue_spans = _phrase_spans(sentence, cue)
-    if normalized_relation_type in _SYMMETRIC_RELATION_TYPES:
+    if is_symmetric_relation(normalized_relation_type):
         return any(
             _span_between(
                 cue_span=cue_span,
@@ -216,7 +210,7 @@ def _has_oriented_relation_support(
             for object_span in object_spans
             for cue_span in cue_spans
         )
-    passive_cues = _PASSIVE_CUES_BY_RELATION.get(normalized_relation_type, ())
+    passive_cues = passive_cues_for_relation(normalized_relation_type)
     return any(
         (
             cue not in passive_cues
@@ -268,6 +262,18 @@ def _phrase_spans(sentence: str, phrase: str) -> tuple[tuple[int, int], ...]:
     )
 
 
+def _argument_spans(*, sentence: str, label: str) -> tuple[tuple[int, int], ...]:
+    spans: list[tuple[int, int]] = []
+    seen_spans: set[tuple[int, int]] = set()
+    for alias in argument_aliases(label):
+        for span in _phrase_spans(sentence, _normalize_text(alias)):
+            if span in seen_spans:
+                continue
+            seen_spans.add(span)
+            spans.append(span)
+    return tuple(spans)
+
+
 def _span_before(
     *,
     left_span: tuple[int, int],
@@ -295,97 +301,11 @@ def _normalized_relation_type(relation_type: str) -> str:
     return re.sub(r"[^A-Z0-9]+", "_", relation_type.upper()).strip("_")
 
 
-_MIN_FALLBACK_CUE_LENGTH = 4
 _NEGATED_CUE_PATTERNS = (
     r"\b(?:does not|do not|did not|not|never)\s+{cue}\b",
     r"\b(?:fails to|failed to|failure to)\s+{cue}\b",
     r"\bwithout\s+{cue}\b",
 )
-_SYMMETRIC_RELATION_TYPES = frozenset(
-    {
-        "ASSOCIATED_WITH",
-        "PHYSICALLY_INTERACTS_WITH",
-    }
-)
-_PASSIVE_CUES_BY_RELATION: dict[str, tuple[str, ...]] = {
-    "ACTIVATES": ("activated by", "activation by"),
-    "CAUSES": ("caused by",),
-    "INHIBITS": ("inhibited by", "suppressed by", "reduced by"),
-    "REGULATES": ("regulated by",),
-    "TARGETS": ("targeted by",),
-    "TREATS": ("responsive to",),
-}
-_RELATION_CUES: dict[str, tuple[str, ...]] = {
-    "ACTIVATES": (
-        "activate",
-        "activates",
-        "activated",
-        "activated by",
-        "activation",
-        "activation by",
-        "upregulates",
-        "increases",
-    ),
-    "ASSOCIATED_WITH": (
-        "associated with",
-        "linked to",
-        "correlated with",
-        "correlates with",
-    ),
-    "BIOMARKER_FOR": (
-        "biomarker for",
-        "marker for",
-        "predicts",
-        "predictor of",
-        "indicator of",
-    ),
-    "CAUSES": ("causes", "caused", "caused by", "leads to", "results in"),
-    "CONFERS_RESISTANCE_TO": (
-        "confers resistance to",
-        "causes resistance to",
-        "drives resistance to",
-        "mediates resistance to",
-        "renders resistant to",
-        "resistant to",
-    ),
-    "DOWNSTREAM_OF": ("downstream of", "downstream", "triggered by"),
-    "INHIBITS": (
-        "inhibits",
-        "inhibit",
-        "inhibited",
-        "inhibited by",
-        "suppresses",
-        "suppressed",
-        "suppressed by",
-        "reduces",
-        "reduced by",
-    ),
-    "PHYSICALLY_INTERACTS_WITH": (
-        "interacts with",
-        "binds",
-        "binds to",
-        "bound to",
-    ),
-    "PREDISPOSES_TO": (
-        "predisposes to",
-        "predisposes",
-        "increases risk of",
-        "confers susceptibility to",
-        "susceptibility to",
-    ),
-    "PROTECTS_AGAINST": ("protects against", "protective against"),
-    "REGULATES": ("regulates", "regulated", "regulated by", "regulation", "controls"),
-    "SENSITIZES_TO": (
-        "sensitizes to",
-        "sensitizes",
-        "increases sensitivity to",
-        "confers sensitivity to",
-        "renders sensitive to",
-        "sensitive to",
-    ),
-    "TARGETS": ("targets", "targeted", "targeted by", "binds"),
-    "TREATS": ("treats", "treated", "treatment with", "responsive to"),
-}
 
 
 __all__ = [

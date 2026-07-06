@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import replace
 from typing import Protocol, cast
@@ -30,6 +31,9 @@ from artana_evidence_api.document_extraction_support.entity_curie_linking import
     EntityCurieLink,
     normalize_entity_curie,
 )
+from artana_evidence_api.document_extraction_support.evidence_grounding import (
+    tumor_agnostic_fusion_surfaces,
+)
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
 )
@@ -38,15 +42,16 @@ from artana_evidence_api.document_extraction_support.proposal_relation_type_guar
 )
 from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
     has_broadened_entity_label,
+    has_context_tail_entity_label,
 )
 from artana_evidence_api.document_extraction_support.review_policy.review_only_candidate_policy import (
     classify_review_only_candidate,
 )
 from pydantic import BaseModel
 
-LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v4"
+LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v6"
 LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION = (
-    "document_extraction.weak_review_extraction.v1"
+    "document_extraction.weak_review_extraction.v2"
 )
 _MIN_ENTITY_LABEL_LENGTH = 2
 
@@ -124,8 +129,11 @@ def build_llm_extraction_prompt(
         "---\n\n"
         "Extract only relationships directly supported inside this chunk. "
         "Return the relations as JSON. Remember: subject and object must each "
-        "be a short canonical entity name (1-4 words, like BRCA1, cisplatin, "
-        "EGFR T790M, TNBC). Never use sentence fragments as entity names."
+        "be a short canonical entity name, usually 1-4 words, but disease or "
+        "molecular subtype labels may be up to 6 tokens when the modifier "
+        "defines the biomedical entity, like EGFR exon 19 deletion lung "
+        "adenocarcinoma or NTRK fusion solid tumors. Never use sentence "
+        "fragments as entity names."
     )
 
 
@@ -193,8 +201,14 @@ def _llm_relation_to_candidate(
     force_review_only_reason_codes: Sequence[str] = (),
 ) -> tuple[ExtractedRelationCandidate | None, str | None]:
     relation_type = normalize_relation_type_label(rel.relation_type)
+    relation_type = LLM_RELATION_SYNONYMS.get(relation_type, relation_type)
     subject = clean_llm_entity_label(rel.subject)
     obj = clean_llm_entity_label(rel.object)
+    obj = _repair_relation_object_label(
+        relation_type=relation_type,
+        object_label=obj,
+        sentence=rel.sentence,
+    )
     if (
         not subject
         or not obj
@@ -209,6 +223,12 @@ def _llm_relation_to_candidate(
             label=obj,
             sentence=rel.sentence,
             counterpart_label=subject,
+        )
+        or has_context_tail_entity_label(
+            label=obj,
+            sentence=rel.sentence,
+            counterpart_label=subject,
+            relation_type=relation_type,
         )
     ):
         return None, None
@@ -266,7 +286,6 @@ def _llm_relation_to_candidate(
             None,
         )
 
-    relation_type = LLM_RELATION_SYNONYMS.get(relation_type, relation_type)
     unknown_relation_type = (
         relation_type if relation_type not in LLM_VALID_RELATION_TYPES else None
     )
@@ -313,6 +332,64 @@ def _llm_relation_to_candidate(
         ),
         unknown_relation_type,
     )
+
+
+def _repair_relation_object_label(
+    *,
+    relation_type: str,
+    object_label: str,
+    sentence: str,
+) -> str:
+    if relation_type != "TREATS" or object_label == "":
+        return object_label
+    repaired = _repair_tumor_agnostic_fusion_treatment_object(
+        object_label=object_label,
+        sentence=sentence,
+    )
+    return repaired or object_label
+
+
+def _repair_tumor_agnostic_fusion_treatment_object(
+    *,
+    object_label: str,
+    sentence: str,
+) -> str | None:
+    match = re.fullmatch(
+        r"\s*(?P<driver>[A-Za-z0-9+./_-]+(?:\s+[A-Za-z0-9+./_-]+){0,2})"
+        r"\s+(?:gene\s+)?fusions?\s*",
+        object_label,
+        flags=re.IGNORECASE,
+    )
+    if match is None:
+        return None
+    driver = re.sub(
+        r"\s+gene$",
+        "",
+        " ".join(match.group("driver").split()),
+        flags=re.IGNORECASE,
+    )
+    if not _sentence_contains_tumor_agnostic_fusion_surface(
+        sentence=sentence,
+        driver=driver,
+    ):
+        return None
+    return f"{driver} fusion solid tumors"
+
+
+def _sentence_contains_tumor_agnostic_fusion_surface(
+    *,
+    sentence: str,
+    driver: str,
+) -> bool:
+    normalized_sentence = _normalize_fusion_surface(sentence)
+    return any(
+        _normalize_fusion_surface(surface) in normalized_sentence
+        for surface in tumor_agnostic_fusion_surfaces(driver)
+    )
+
+
+def _normalize_fusion_surface(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
 
 
 def _candidate_curie_source(link: EntityCurieLink) -> CurieSource:

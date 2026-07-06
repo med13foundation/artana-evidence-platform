@@ -34,13 +34,17 @@ _ENTITY_MODIFIER_TERMS = (
     "knockout",
     "loss",
     "loss of",
+    "loss-of-function",
     "phosphorylation",
     "overexpression",
+    "pathogenic",
     "silencing",
     "suppression",
+    "truncating",
     "upregulation",
     "mutation",
     "variant",
+    "variants",
 )
 _ENTITY_MODIFIER_PREFIXES = (
     "amplified",
@@ -69,6 +73,96 @@ _WEAK_GENERIC_RELATION_CUE_RE = re.compile(
 )
 _HYPHENATED_MODIFIER_TEMPLATE = (
     r"\b[A-Za-z0-9]+-[A-Za-z0-9]+(?:\s+[A-Za-z0-9]+){{0,2}}\s+{label}\b"
+)
+_SUBTYPE_TAIL_CUE_TOKENS = frozenset(
+    {
+        "amplification",
+        "deletion",
+        "deletions",
+        "exon",
+        "expressing",
+        "fusion",
+        "fusions",
+        "harboring",
+        "loss",
+        "mutant",
+        "mutated",
+        "mutation",
+        "mutations",
+        "pathogenic",
+        "positive",
+        "truncating",
+        "variant",
+        "variants",
+    },
+)
+_SUBTYPE_TAIL_DISEASE_TOKENS = frozenset(
+    {
+        "adenocarcinoma",
+        "cancer",
+        "cancers",
+        "carcinoma",
+        "disease",
+        "hypercholesterolemia",
+        "leukemia",
+        "lymphoma",
+        "melanoma",
+        "neoplasm",
+        "neoplasms",
+        "polyposis",
+        "syndrome",
+        "tumor",
+        "tumors",
+    },
+)
+_SUBTYPE_TAIL_STOP_TOKENS = frozenset(
+    {
+        "activates",
+        "across",
+        "after",
+        "among",
+        "associated",
+        "before",
+        "biomarker",
+        "by",
+        "confers",
+        "correlates",
+        "causes",
+        "during",
+        "for",
+        "from",
+        "in",
+        "inhibits",
+        "of",
+        "predisposes",
+        "predictor",
+        "predicts",
+        "regardless",
+        "regulates",
+        "sensitizes",
+        "targeted",
+        "targets",
+        "through",
+        "to",
+        "treat",
+        "treated",
+        "treating",
+        "treats",
+        "under",
+        "via",
+        "when",
+        "where",
+        "whereas",
+        "while",
+        "with",
+    },
+)
+_CONTEXT_TAIL_PREPOSITIONS = ("with", "including", "involving")
+_TREATMENT_RELATION_CUES = (
+    "treat",
+    "treats",
+    "treated",
+    "treating",
 )
 
 
@@ -313,11 +407,12 @@ def _scope_has_broadened_entity_label(*, label_pattern: str, sentence: str) -> b
         return True
     if _has_prefix_modifier(label_pattern=label_pattern, sentence=sentence):
         return True
-    modifier_pattern = re.compile(
-        _HYPHENATED_MODIFIER_TEMPLATE.format(label=label_pattern),
-        re.IGNORECASE,
+    if _has_subtype_tail_modifier(label_pattern=label_pattern, sentence=sentence):
+        return True
+    return _has_hyphenated_prefix_modifier(
+        label_pattern=label_pattern,
+        sentence=sentence,
     )
-    return modifier_pattern.search(sentence) is not None
 
 
 def _has_post_modifier(*, label_pattern: str, sentence: str) -> bool:
@@ -348,6 +443,99 @@ def _has_prefix_modifier(*, label_pattern: str, sentence: str) -> bool:
         )
         is not None
     )
+
+
+def _has_subtype_tail_modifier(*, label_pattern: str, sentence: str) -> bool:
+    label_tokens = tuple(label_pattern.split(r"\s+"))
+    label_has_disease_class = bool(
+        _SUBTYPE_TAIL_DISEASE_TOKENS.intersection(label_tokens),
+    )
+    pattern = re.compile(
+        rf"\b{label_pattern}\b(?P<tail>(?:\s+[a-z0-9+*/_-]+){{1,8}})",
+        re.IGNORECASE,
+    )
+    for match in pattern.finditer(sentence):
+        tail_tokens = _bounded_tail_tokens(match.group("tail"))
+        if not tail_tokens:
+            continue
+        if (
+            _SUBTYPE_TAIL_CUE_TOKENS.intersection(tail_tokens)
+            and (
+                label_has_disease_class
+                or _SUBTYPE_TAIL_DISEASE_TOKENS.intersection(tail_tokens)
+            )
+        ):
+            return True
+    return False
+
+
+def _has_hyphenated_prefix_modifier(*, label_pattern: str, sentence: str) -> bool:
+    modifier_pattern = re.compile(
+        _HYPHENATED_MODIFIER_TEMPLATE.format(label=label_pattern),
+        re.IGNORECASE,
+    )
+    for match in modifier_pattern.finditer(sentence):
+        matched_tokens = re.findall(r"[a-z0-9+*/_-]+", match.group(0).casefold())
+        label_token_count = len(label_pattern.split(r"\s+"))
+        bridge_tokens = matched_tokens[1:-label_token_count]
+        if _SUBTYPE_TAIL_STOP_TOKENS.intersection(bridge_tokens):
+            continue
+        return True
+    return False
+
+
+def has_context_tail_entity_label(
+    *,
+    label: str,
+    sentence: str,
+    counterpart_label: str | None,
+    relation_type: str,
+) -> bool:
+    """Return whether a treatment object is only a context tail."""
+
+    if relation_type != "TREATS" or counterpart_label is None:
+        return False
+    normalized_label = _normalize_entity_label(label)
+    normalized_counterpart = _normalize_entity_label(counterpart_label)
+    if not normalized_label or not normalized_counterpart:
+        return False
+    normalized_sentence = _normalize_sentence(sentence)
+    label_pattern = r"\s+".join(
+        re.escape(token) for token in normalized_label.split()
+    )
+    counterpart_pattern = r"\s+".join(
+        re.escape(token) for token in normalized_counterpart.split()
+    )
+    treatment_pattern = _phrase_alternation(_TREATMENT_RELATION_CUES)
+    preposition_pattern = _phrase_alternation(_CONTEXT_TAIL_PREPOSITIONS)
+    disease_pattern = "|".join(
+        re.escape(token)
+        for token in sorted(_SUBTYPE_TAIL_DISEASE_TOKENS, key=len, reverse=True)
+    )
+    pattern = re.compile(
+        rf"\b{counterpart_pattern}\b"
+        rf".{{0,80}}\b(?:{treatment_pattern})\b"
+        rf".{{0,120}}\b(?:{disease_pattern})\b"
+        rf".{{0,40}}\b(?:{preposition_pattern})\s+{label_pattern}\b",
+        re.IGNORECASE,
+    )
+    return pattern.search(normalized_sentence) is not None
+
+
+def _phrase_alternation(phrases: tuple[str, ...]) -> str:
+    return "|".join(
+        r"\s+".join(re.escape(token) for token in phrase.split())
+        for phrase in sorted(phrases, key=len, reverse=True)
+    )
+
+
+def _bounded_tail_tokens(raw_tail: str) -> tuple[str, ...]:
+    tokens: list[str] = []
+    for token in re.findall(r"[a-z0-9+*/_-]+", raw_tail.casefold()):
+        if token in _SUBTYPE_TAIL_STOP_TOKENS:
+            break
+        tokens.append(token)
+    return tuple(tokens)
 
 
 def _candidate_entity_pair(candidate: ExtractedRelationCandidate) -> tuple[str, str]:
@@ -387,6 +575,7 @@ __all__ = [
     "SpecificityFilteredCandidateList",
     "WeakGenericRelationCandidate",
     "has_broadened_entity_label",
+    "has_context_tail_entity_label",
     "is_low_value_generic_relation_candidate",
     "prune_redundant_generic_relation_candidates",
 ]

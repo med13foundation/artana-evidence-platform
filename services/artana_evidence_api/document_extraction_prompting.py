@@ -61,7 +61,8 @@ def _build_llm_extraction_output_schema(
             min_length=1,
             max_length=50,
             description=(
-                "Short canonical entity name, 1-4 words "
+                "Short canonical entity name, usually 1-4 words; preserve "
+                "specific disease-subtype labels up to 6 tokens "
                 "(e.g. BRCA1, cisplatin, EGFR T790M)"
             ),
         )
@@ -106,7 +107,8 @@ def _build_llm_extraction_output_schema(
             min_length=1,
             max_length=50,
             description=(
-                "Short canonical entity name, 1-4 words "
+                "Short canonical entity name, usually 1-4 words; preserve "
+                "specific disease-subtype labels up to 6 tokens "
                 "(e.g. TNBC, osimertinib, DNA damage repair)"
             ),
         )
@@ -239,7 +241,7 @@ Each triple has:
 - subject: a single named biomedical entity. This MUST be a short canonical name, not a sentence fragment.
   GOOD: "BRCA1", "cisplatin", "EGFR", "T790M", "HRD", "PD-L1", "osimertinib", "triple-negative breast cancer", "DNA damage repair"
   BAD: "Inherited pathogenic variants in BRCA1", "In order to examine whether", "there are DNA repair functions", "the compound was found to"
-  Rules: max 4 words. Use gene symbols (BRCA1 not "breast cancer gene 1"). Use drug names (cisplatin not "the platinum agent"). Use standard abbreviations (TNBC, NSCLC, HRD). For mutations, use the notation (T790M, V600E).
+  Rules: usually max 4 words, but preserve disease-subtype labels up to 6 tokens when the modifier changes the claim. Use gene symbols (BRCA1 not "breast cancer gene 1"). Use drug names (cisplatin not "the platinum agent"). Use standard abbreviations (TNBC, NSCLC, HRD). For mutations, use the notation (T790M, V600E).
 - relation_type: exactly one of these canonical types:
 {_relation_type_prompt_lines()}
 
@@ -258,10 +260,15 @@ Each triple has:
   cisplatin. Do not replace this with ASSOCIATED_WITH DNA repair defects when
   the sentence supports the specific drug-sensitivity relation.
 
-- object: the target entity. Same rules as subject: short canonical name, max 4 words, no sentence fragments.
+- object: the target entity. Same rules as subject: short canonical name, usually max 4 words, no sentence fragments.
   Preserve modifiers that define the biomedical entity or clinical subgroup.
   Do not shorten "BRCA-mutated ovarian cancer" to "ovarian cancer".
   Do not shorten "early-onset breast cancer" to "breast cancer".
+  Do not shorten "EGFR exon 19 deletion lung adenocarcinoma" to "EGFR".
+  Do not shorten "NTRK fusion solid tumors" to "solid tumors".
+  For "Alectinib treats ALK fusion-positive lung cancer with central nervous
+  system involvement", object is "ALK fusion-positive lung cancer", not
+  "central nervous system involvement".
   Do not shorten "response to pembrolizumab" to "pembrolizumab response"
   unless both arguments remain explicit in the sentence.
 - subject_curie and object_curie: stable biomedical identifiers for the subject/object when directly knowable from the exact entity name. Use CURIEs such as HGNC:22474, HP:0001263, MONDO:0000001, CHEBI:63637, GO:0006281, or MESH:D009369. If uncertain, ambiguous, unsupported by the name, or unavailable, return null rather than guessing.

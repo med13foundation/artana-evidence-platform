@@ -61,8 +61,12 @@ from artana_evidence_api.document_extraction_review import (
     review_from_draft_metadata,
     shorten_text,
 )
+from artana_evidence_api.document_extraction_support.full_text_chunking import (
+    RelationExtractionTextChunk,
+)
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     LLM_EXTRACTION_PROMPT_VERSION,
+    build_llm_extraction_prompt,
     llm_relations_to_candidates,
 )
 from artana_evidence_api.document_store import HarnessDocumentRecord
@@ -248,7 +252,7 @@ def test_llm_extraction_prompt_prioritizes_specific_sensitizes_relation() -> Non
 
 
 def test_llm_extraction_prompt_version_changes_for_review_only_schema() -> None:
-    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v4"
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v6"
 
 
 def test_llm_extraction_schema_accepts_review_only_lane_fields() -> None:
@@ -426,7 +430,31 @@ def test_llm_prompt_requires_preserving_specific_relation_arguments() -> None:
         LLM_EXTRACTION_SYSTEM_PROMPT
     )
     assert "BRCA-mutated ovarian cancer" in LLM_EXTRACTION_SYSTEM_PROMPT
+    assert "EGFR exon 19 deletion lung adenocarcinoma" in (
+        LLM_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert "NTRK fusion solid tumors" in LLM_EXTRACTION_SYSTEM_PROMPT
     assert "response to pembrolizumab" in LLM_EXTRACTION_SYSTEM_PROMPT
+
+
+def test_built_llm_prompt_preserves_specific_relation_argument_rule() -> None:
+    chunk = RelationExtractionTextChunk(
+        index=0,
+        start_char=0,
+        end_char=64,
+        text="Osimertinib treats EGFR exon 19 deletion lung adenocarcinoma.",
+    )
+
+    prompt = build_llm_extraction_prompt(
+        chunk=chunk,
+        total_chunks=1,
+        document_fingerprint="document-sha",
+    )
+
+    assert "usually 1-4 words" in prompt
+    assert "disease or molecular subtype labels may be up to 6 tokens" in prompt
+    assert "EGFR exon 19 deletion lung adenocarcinoma" in prompt
+    assert "1-4 words, like BRCA1" not in prompt
 
 
 def test_llm_conversion_rejects_broadened_specific_object_label() -> None:
@@ -443,6 +471,238 @@ def test_llm_conversion_rejects_broadened_specific_object_label() -> None:
                 sentence=(
                     "Olaparib treats BRCA-mutated ovarian cancer by exploiting "
                     "homologous recombination deficiency."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert candidates == []
+    assert unknown_relation_types == set()
+
+
+def test_llm_conversion_rejects_shortened_molecular_subtype_disease_object() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="osimertinib",
+                subject_curie="DRUGBANK:DB09330",
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="EGFR",
+                object_curie=None,
+                sentence=(
+                    "Osimertinib treats EGFR exon 19 deletion lung "
+                    "adenocarcinoma after first-line molecular testing."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert candidates == []
+    assert unknown_relation_types == set()
+
+
+def test_llm_conversion_rejects_dropped_variant_class_subject_label() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="APC",
+                subject_curie=None,
+                relation_type="PREDISPOSES_TO",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="familial adenomatous polyposis",
+                object_curie=None,
+                sentence=(
+                    "APC pathogenic variants predispose carriers to familial "
+                    "adenomatous polyposis."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert candidates == []
+    assert unknown_relation_types == set()
+
+
+def test_llm_conversion_preserves_molecular_subtype_disease_object() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="osimertinib",
+                subject_curie="DRUGBANK:DB09330",
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="EGFR exon 19 deletion lung adenocarcinoma",
+                object_curie=None,
+                sentence=(
+                    "Osimertinib treats EGFR exon 19 deletion lung "
+                    "adenocarcinoma after first-line molecular testing."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].object_label == "EGFR exon 19 deletion lung adenocarcinoma"
+
+
+def test_llm_conversion_rejects_treatment_context_as_object() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="Alectinib",
+                subject_curie=None,
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="central nervous system involvement",
+                object_curie=None,
+                sentence=(
+                    "Alectinib treats ALK fusion-positive lung cancer with "
+                    "central nervous system involvement."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert candidates == []
+    assert unknown_relation_types == set()
+
+
+def test_llm_conversion_rejects_broad_tumor_object_when_fusion_subtype_is_present() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="Larotrectinib",
+                subject_curie=None,
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="solid tumors",
+                object_curie=None,
+                sentence=(
+                    "Larotrectinib treats solid tumors harboring NTRK gene "
+                    "fusions regardless of tissue origin."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert candidates == []
+    assert unknown_relation_types == set()
+
+
+def test_llm_conversion_repairs_tumor_agnostic_fusion_treatment_object() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="Larotrectinib",
+                subject_curie=None,
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="NTRK gene fusions",
+                object_curie=None,
+                sentence=(
+                    "Larotrectinib treats solid tumors harboring NTRK gene "
+                    "fusions regardless of tissue origin."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].object_label == "NTRK fusion solid tumors"
+
+
+def test_llm_conversion_repairs_tumor_agnostic_fusion_treatment_with_surface() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="Larotrectinib",
+                subject_curie=None,
+                relation_type="TREATS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="NTRK gene fusions",
+                object_curie=None,
+                sentence=(
+                    "Larotrectinib treats solid tumors with NTRK gene fusions "
+                    "regardless of tissue origin."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].object_label == "NTRK fusion solid tumors"
+
+
+def test_llm_conversion_preserves_hereditary_cancer_syndrome_object() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="BRCA1 truncating variants",
+                subject_curie=None,
+                relation_type="PREDISPOSES_TO",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="hereditary breast and ovarian cancer syndrome",
+                object_curie=None,
+                sentence=(
+                    "BRCA1 truncating variants predispose carriers to "
+                    "hereditary breast and ovarian cancer syndrome."
+                ),
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert (
+        candidates[0].object_label
+        == "hereditary breast and ovarian cancer syndrome"
+    )
+
+
+def test_llm_conversion_rejects_generic_program_object() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="MED13",
+                subject_curie=None,
+                relation_type="REGULATES",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="transcriptional programs",
+                object_curie=None,
+                sentence=(
+                    "MED13 regulates cardiac septal development through "
+                    "transcriptional programs."
                 ),
             ),
         ],
