@@ -163,6 +163,9 @@ def test_shadow_review_study_batch_cli_does_not_relax_production_suite_floor(
     markdown_report = (output_dir / "shadow-review-study-batch.md").read_text()
     assert "## Suite Gate" in markdown_report
     assert "- Status: **FAILED**" in markdown_report
+    assert "- Production floor applied: yes" in markdown_report
+    assert "## Suite Thresholds" in markdown_report
+    assert "| min_entry_count | 1 | 3 |" in markdown_report
 
 
 def test_shadow_review_study_batch_cli_relaxed_entry_thresholds_still_need_suite_sample_floor(
@@ -201,6 +204,44 @@ def test_shadow_review_study_batch_cli_relaxed_entry_thresholds_still_need_suite
         "review-ranking decisions" in reason
         for reason in batch_report["suite_gate"]["blocking_reasons"]
     )
+
+
+def test_shadow_review_study_batch_cli_help_mentions_suite_gate_override(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    cli = _cli_module()
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.parse_args(("--help",))
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0
+    normalized_help = " ".join(captured.out.split())
+    assert "entry or suite gate fails" in normalized_help
+
+
+def test_shadow_review_study_batch_markdown_marks_missing_production_floor_unknown() -> None:
+    cli = _cli_module()
+
+    markdown = cli.render_evidence_selection_shadow_review_study_batch_markdown(
+        {
+            "batch_id": "batch-1",
+            "passed": False,
+            "entry_count": 0,
+            "passed_entry_count": 0,
+            "failed_entry_count": 0,
+            "suite_gate": {
+                "passed": False,
+                "blocking_reasons": [],
+                "summary": {},
+                "requested_thresholds": {},
+                "thresholds": {},
+            },
+            "entries": [],
+        },
+    )
+
+    assert "- Production floor applied: unknown" in markdown
 
 
 def test_shadow_review_study_batch_cli_relaxed_quality_thresholds_still_need_suite_quality_floor(

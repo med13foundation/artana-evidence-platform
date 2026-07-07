@@ -69,7 +69,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--allow-failed-gate",
         action="store_true",
-        help="Return success after writing reports even if one or more entries fail.",
+        help=(
+            "Return success after writing reports even if an entry or suite gate "
+            "fails."
+        ),
     )
     _add_gate_threshold_args(parser)
     return parser.parse_args(argv)
@@ -147,10 +150,17 @@ def render_evidence_selection_shadow_review_study_batch_markdown(
         "",
         f"- Status: **{_suite_gate_status(report)}**",
         f"- Blocking reasons: {_suite_gate_blocking_reason_text(report)}",
+        f"- Production floor applied: {_suite_gate_production_floor_applied(report)}",
         "",
         "| Metric | Value |",
         "| --- | ---: |",
         *_suite_gate_summary_rows(report),
+        "",
+        "## Suite Thresholds",
+        "",
+        "| Threshold | Requested | Enforced |",
+        "| --- | ---: | ---: |",
+        *_suite_gate_threshold_rows(report),
         "",
         "## Entries",
         "",
@@ -373,6 +383,18 @@ def _suite_gate_blocking_reason_text(report: JSONObject) -> str:
     return "; ".join(reasons) if reasons else "none"
 
 
+def _suite_gate_production_floor_applied(report: JSONObject) -> str:
+    suite_gate = report.get("suite_gate")
+    if not isinstance(suite_gate, dict):
+        return "unknown"
+    production_floor_applied = suite_gate.get("production_floor_applied")
+    if production_floor_applied is True:
+        return "yes"
+    if production_floor_applied is False:
+        return "no"
+    return "unknown"
+
+
 def _suite_gate_summary_rows(report: JSONObject) -> list[str]:
     suite_gate = report.get("suite_gate")
     if not isinstance(suite_gate, dict):
@@ -407,6 +429,23 @@ def _suite_gate_summary_rows(report: JSONObject) -> list[str]:
         f"| {_table_text(label)} | {_table_text(summary.get(key))} |"
         for key, label in labels
         if key in summary
+    ]
+
+
+def _suite_gate_threshold_rows(report: JSONObject) -> list[str]:
+    suite_gate = report.get("suite_gate")
+    if not isinstance(suite_gate, dict):
+        return []
+    requested = suite_gate.get("requested_thresholds")
+    enforced = suite_gate.get("thresholds")
+    if not isinstance(requested, dict) or not isinstance(enforced, dict):
+        return []
+    return [
+        "| "
+        f"{_table_text(key)} | "
+        f"{_table_text(requested.get(key))} | "
+        f"{_table_text(enforced.get(key))} |"
+        for key in sorted(enforced)
     ]
 
 
