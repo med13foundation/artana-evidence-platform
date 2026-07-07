@@ -124,8 +124,23 @@ The two source exports must have matching `source_system`, `export_id`,
 `exported_at` value must be canonical UTC ISO-8601 with a trailing `Z`, such as
 `2026-07-07T00:00:00Z`; timezone-naive values and offset spellings such as
 `+00:00` or `+01:00` are rejected. Identity text fields are compared literally
-and must not contain leading or trailing whitespace. Build the final study
-bundle with:
+and must not contain leading or trailing whitespace. Build the source exports
+from collected review JSON with:
+
+```bash
+uv run python scripts/build_evidence_selection_source_exports.py \
+  --selection-reviews path/to/selection-review-labels.json \
+  --review-ranking path/to/review-ranking-study.json \
+  --selection-export-output path/to/selection-review-export.json \
+  --review-ranking-export-output path/to/review-ranking-export.json \
+  --source-system artana-shadow-review \
+  --export-id <export-id> \
+  --exported-at 2026-07-07T00:00:00Z \
+  --exporter-id <exporter-id> \
+  --redaction-statement "No PHI or raw patient text included."
+```
+
+Then build the final study bundle with:
 
 ```bash
 uv run python scripts/build_evidence_selection_expert_study_bundle.py \

@@ -67,6 +67,7 @@ GRAPH_SERVICE_TEST_PATHS := \
 
 ARTANA_EVIDENCE_API_LINT_PATHS := \
  services/artana_evidence_api \
+ scripts/build_evidence_selection_source_exports.py \
  scripts/build_evidence_selection_expert_study_bundle.py \
  scripts/export_artana_evidence_api_openapi.py \
  scripts/validate_artana_evidence_api_service_boundary.py \
@@ -287,6 +288,7 @@ artana-evidence-api-lint: ## Run ruff on evidence API paths
 artana-evidence-api-type-check: ## Run strict mypy on evidence API package
 	$(call check_venv)
 	cd services && $(USE_PYTHON_ABS) -m mypy -p artana_evidence_api --exclude '$(ARTANA_EVIDENCE_API_TYPE_EXCLUDE)' --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_source_exports.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_expert_study_bundle.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 
 artana-evidence-api-type-check-strict-imports: ## Explicit strict-import evidence API mypy gate

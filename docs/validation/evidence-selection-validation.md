@@ -128,6 +128,19 @@ evidence that the harness is production ready.
 Full expert/shadow study gate:
 
 ```bash
+uv run python scripts/build_evidence_selection_source_exports.py \
+  --selection-reviews path/to/selection-review-labels.json \
+  --review-ranking path/to/review-ranking-study.json \
+  --selection-export-output path/to/selection-review-export.json \
+  --review-ranking-export-output path/to/review-ranking-export.json \
+  --source-system artana-shadow-review \
+  --export-id <export-id> \
+  --exported-at 2026-07-07T00:00:00Z \
+  --exporter-id <exporter-id> \
+  --redaction-statement "No PHI or raw patient text included."
+```
+
+```bash
 uv run python scripts/build_evidence_selection_expert_study_bundle.py \
   --study-id <study-id> \
   --study-evidence-kind real_shadow_review \
