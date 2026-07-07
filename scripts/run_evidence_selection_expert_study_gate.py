@@ -40,6 +40,7 @@ class EvidenceSelectionExpertStudyRunnerThresholds:
     min_mean_precision: float = 0.8
     min_mean_recall: float = 0.8
     min_mean_explanation_quality: float = 3.0
+    min_source_artifact_count: int = 2
     min_review_ranking_sample_count: int = 10
     max_expected_calibration_error: float = 0.05
     min_distinct_ranking_goals: int = 3
@@ -63,6 +64,7 @@ def build_evidence_selection_expert_study_gate_report(
         min_mean_precision=active_thresholds.min_mean_precision,
         min_mean_recall=active_thresholds.min_mean_recall,
         min_mean_explanation_quality=active_thresholds.min_mean_explanation_quality,
+        min_source_artifact_count=active_thresholds.min_source_artifact_count,
     )
     ranking_thresholds = ReviewRankingCalibrationGateThresholds(
         min_sample_count=active_thresholds.min_review_ranking_sample_count,
@@ -91,6 +93,7 @@ def render_evidence_selection_expert_study_gate_markdown(report: JSONObject) -> 
 
     gate = _object_value(report, "gate")
     selection_summary = _object_value(gate, "selection_summary")
+    provenance_summary = _object_value(gate, "provenance_summary")
     ranking_gate = _object_value(gate, "review_ranking_gate")
     ranking_calibration = _object_value(ranking_gate, "calibration")
     ranking_design = _object_value(ranking_gate, "study_design")
@@ -127,6 +130,29 @@ def render_evidence_selection_expert_study_gate_markdown(report: JSONObject) -> 
         f"{selection_summary.get('high_severity_overclaim_count')}",
         "- duplicate_suggestion_count: "
         f"{selection_summary.get('duplicate_suggestion_count')}",
+        "",
+        "## Source Manifest",
+        "",
+        "- source_manifest_present: "
+        f"{provenance_summary.get('source_manifest_present')}",
+        f"- source_system: {provenance_summary.get('source_system')}",
+        f"- export_id: {provenance_summary.get('export_id')}",
+        f"- exporter_id: {provenance_summary.get('exporter_id')}",
+        f"- artifact_count: {provenance_summary.get('artifact_count')}",
+        "- duplicate_source_artifact_id_count: "
+        f"{provenance_summary.get('duplicate_source_artifact_id_count')}",
+        "- missing_selection_run_id_count: "
+        f"{provenance_summary.get('missing_selection_run_id_count')}",
+        "- extra_selection_run_id_count: "
+        f"{provenance_summary.get('extra_selection_run_id_count')}",
+        "- missing_review_ranking_decision_key_count: "
+        f"{provenance_summary.get('missing_review_ranking_decision_key_count')}",
+        "- extra_review_ranking_decision_key_count: "
+        f"{provenance_summary.get('extra_review_ranking_decision_key_count')}",
+        "- reviewer_roster_count: "
+        f"{provenance_summary.get('reviewer_roster_count')}",
+        "- unknown_reviewer_id_count: "
+        f"{provenance_summary.get('unknown_reviewer_id_count')}",
         "",
         "## Review-Ranking Calibration",
         "",
@@ -220,6 +246,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Minimum mean explanation-quality score required for the study gate.",
     )
     parser.add_argument(
+        "--min-source-artifact-count",
+        type=int,
+        default=2,
+        help="Minimum source artifacts required for the study provenance gate.",
+    )
+    parser.add_argument(
         "--min-review-ranking-sample-count",
         type=int,
         default=10,
@@ -266,6 +298,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         min_mean_precision=args.min_mean_precision,
         min_mean_recall=args.min_mean_recall,
         min_mean_explanation_quality=args.min_mean_explanation_quality,
+        min_source_artifact_count=args.min_source_artifact_count,
         min_review_ranking_sample_count=args.min_review_ranking_sample_count,
         max_expected_calibration_error=args.max_expected_calibration_error,
         min_distinct_ranking_goals=args.min_distinct_ranking_goals,

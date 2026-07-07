@@ -7,6 +7,12 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
+from artana_evidence_api.evidence_selection.provenance import (
+    EvidenceSelectionExpertStudySourceArtifact,
+    EvidenceSelectionExpertStudySourceManifest,
+    build_evidence_selection_provenance_summary,
+    source_manifest_blocking_reasons,
+)
 from artana_evidence_api.ranking import (
     ReviewRankingCalibrationObservation,
     ReviewRankingCalibrationSummary,
@@ -167,6 +173,8 @@ class EvidenceSelectionExpertStudyGateThresholds(BaseModel):
     min_mean_recall: float = Field(default=0.8, ge=0.0, le=1.0)
     min_mean_explanation_quality: float = Field(default=3.0, ge=1.0, le=5.0)
     require_zero_high_severity_overclaims: bool = True
+    require_source_manifest: bool = True
+    min_source_artifact_count: int = Field(default=2, ge=1)
 
 
 class EvidenceSelectionExpertStudyInput(BaseModel):
@@ -179,6 +187,7 @@ class EvidenceSelectionExpertStudyInput(BaseModel):
     study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
     selection_reviews: tuple[EvidenceSelectionReviewInput, ...]
     review_ranking: ReviewRankingCalibrationStudyInput
+    source_manifest: EvidenceSelectionExpertStudySourceManifest | None = None
     description: str | None = Field(default=None, min_length=1)
 
     @field_validator("selection_reviews", mode="before")
@@ -260,6 +269,7 @@ class EvidenceSelectionExpertStudyGateReport:
     status: ReviewRankingGateStatus
     thresholds: EvidenceSelectionExpertStudyGateThresholds
     selection_summary: JSONObject
+    provenance_summary: JSONObject
     selection_reports: tuple[EvidenceSelectionReviewReport, ...]
     review_ranking_gate: ReviewRankingCalibrationGateReport
     blocking_reasons: tuple[str, ...]
@@ -287,8 +297,15 @@ class EvidenceSelectionExpertStudyGateReport:
                 "require_zero_high_severity_overclaims": (
                     self.thresholds.require_zero_high_severity_overclaims
                 ),
+                "require_source_manifest": (
+                    self.thresholds.require_source_manifest
+                ),
+                "min_source_artifact_count": (
+                    self.thresholds.min_source_artifact_count
+                ),
             },
             "selection_summary": dict(self.selection_summary),
+            "provenance_summary": dict(self.provenance_summary),
             "selection_reports": [
                 _selection_report_to_json(report)
                 for report in self.selection_reports
@@ -417,6 +434,18 @@ def evaluate_evidence_selection_expert_study_gate(
         reports=selection_reports,
         study_evidence_kind=study.study_evidence_kind,
     )
+    provenance_summary = build_evidence_selection_provenance_summary(
+        source_manifest=study.source_manifest,
+        selection_run_ids=tuple(report.run_id for report in selection_reports),
+        review_ranking_decision_keys=tuple(
+            _review_ranking_decision_key(decision)
+            for decision in study.review_ranking.decisions
+        ),
+        reviewer_ids=_expert_study_reviewer_ids(
+            study=study,
+            reports=selection_reports,
+        ),
+    )
     review_ranking_gate = evaluate_review_ranking_calibration_gate(
         decisions=study.review_ranking.decisions,
         adjudication_note=study.review_ranking.adjudication_note,
@@ -424,6 +453,7 @@ def evaluate_evidence_selection_expert_study_gate(
     )
     blocking_reasons = _expert_study_blocking_reasons(
         selection_summary=selection_summary,
+        provenance_summary=provenance_summary,
         thresholds=active_thresholds,
         review_ranking_gate=review_ranking_gate,
     )
@@ -433,6 +463,7 @@ def evaluate_evidence_selection_expert_study_gate(
         status="passed" if passed else "failed",
         thresholds=active_thresholds,
         selection_summary=selection_summary,
+        provenance_summary=provenance_summary,
         selection_reports=selection_reports,
         review_ranking_gate=review_ranking_gate,
         blocking_reasons=blocking_reasons,
@@ -799,6 +830,28 @@ def _selection_report_to_json(report: EvidenceSelectionReviewReport) -> JSONObje
     }
 
 
+def _review_ranking_decision_key(decision: ReviewRankingCalibrationDecision) -> str:
+    return f"{decision.source_kind}:{decision.item_id}"
+
+
+def _expert_study_reviewer_ids(
+    *,
+    study: EvidenceSelectionExpertStudyInput,
+    reports: tuple[EvidenceSelectionReviewReport, ...],
+) -> set[str]:
+    selection_reviewer_ids = {
+        reviewer_id.strip()
+        for report in reports
+        if (reviewer_id := report.reviewer_id) and reviewer_id.strip()
+    }
+    ranking_reviewer_ids = {
+        reviewer_id.strip()
+        for decision in study.review_ranking.decisions
+        if (reviewer_id := decision.reviewer_id) and reviewer_id.strip()
+    }
+    return selection_reviewer_ids | ranking_reviewer_ids
+
+
 def _mean(values: tuple[float | int, ...]) -> float:
     if not values:
         return 0.0
@@ -808,11 +861,17 @@ def _mean(values: tuple[float | int, ...]) -> float:
 def _expert_study_blocking_reasons(
     *,
     selection_summary: JSONObject,
+    provenance_summary: JSONObject,
     thresholds: EvidenceSelectionExpertStudyGateThresholds,
     review_ranking_gate: ReviewRankingCalibrationGateReport,
 ) -> tuple[str, ...]:
     return (
         *_expert_study_provenance_blocking_reasons(selection_summary),
+        *source_manifest_blocking_reasons(
+            provenance_summary=provenance_summary,
+            require_source_manifest=thresholds.require_source_manifest,
+            min_source_artifact_count=thresholds.min_source_artifact_count,
+        ),
         *_expert_study_coverage_blocking_reasons(
             selection_summary=selection_summary,
             thresholds=thresholds,
@@ -943,6 +1002,8 @@ __all__ = [
     "EvidenceSelectionExpertStudyGateReport",
     "EvidenceSelectionExpertStudyGateThresholds",
     "EvidenceSelectionExpertStudyInput",
+    "EvidenceSelectionExpertStudySourceArtifact",
+    "EvidenceSelectionExpertStudySourceManifest",
     "EvidenceSelectionReviewInput",
     "EvidenceSelectionReviewReport",
     "ReviewRankingCalibrationDecision",

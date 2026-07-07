@@ -99,6 +99,30 @@ decisions in one bundle:
     "study_id": "",
     "adjudication_note": "",
     "decisions": []
+  },
+  "source_manifest": {
+    "source_system": "",
+    "export_id": "",
+    "exported_at": "2026-07-07T00:00:00Z",
+    "exporter_id": "",
+    "redaction_statement": "",
+    "source_artifacts": [
+      {
+        "artifact_id": "",
+        "artifact_kind": "selection_review_export",
+        "uri": "",
+        "sha256": ""
+      },
+      {
+        "artifact_id": "",
+        "artifact_kind": "review_ranking_export",
+        "uri": "",
+        "sha256": ""
+      }
+    ],
+    "selection_review_run_ids": [],
+    "review_ranking_decision_keys": [],
+    "reviewer_roster": []
   }
 }
 ```
@@ -107,6 +131,13 @@ Run `scripts/run_evidence_selection_expert_study_gate.py` on the bundle before
 using the study to support a production-readiness claim. Use
 `study_evidence_kind: "synthetic_fixture"` for mechanics fixtures; those bundles
 must fail the production-style study gate.
+
+The `source_manifest` must describe the real export used to create the bundle.
+Use lowercase 64-character SHA-256 hashes for each source artifact. The
+`selection_review_run_ids` list must match the selection reviews exactly. The
+`review_ranking_decision_keys` list must use `<source_kind>:<item_id>` and match
+the review-ranking decisions exactly. The `reviewer_roster` must contain every
+selection-review and review-ranking reviewer ID.
 
 Production-readiness requires real shadow-mode comparisons with human reviewers
 on real research questions. Passing the MED13 fixture alone is not enough.

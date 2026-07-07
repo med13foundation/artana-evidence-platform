@@ -135,11 +135,14 @@ uv run python scripts/run_evidence_selection_expert_study_gate.py \
 
 This runner combines selection-review precision/recall, reviewer coverage,
 explanation quality, high-severity overclaim checks, and the review-ranking
-calibration gate above. It fails closed if either the selection-review study or
-the review-ranking calibration study is undercovered or below threshold. The
-study bundle must declare `study_evidence_kind: "real_shadow_review"` before it
-can pass. Synthetic fixtures remain valid for mechanics testing, but they must
-not produce a passing production-style study gate. Every selection review must
+calibration gate above. It also requires a source manifest with hashed export
+artifacts, exact selection-review run IDs, exact review-ranking decision keys,
+and a reviewer roster covering every reviewer ID in the bundle. It fails closed
+if either the selection-review study, source manifest, or review-ranking
+calibration study is undercovered or below threshold. The study bundle must
+declare `study_evidence_kind: "real_shadow_review"` before it can pass.
+Synthetic fixtures remain valid for mechanics testing, but they must not
+produce a passing production-style study gate. Every selection review must
 include a reviewer ID, a nonblank goal, measurable precision, measurable recall,
 and an explanation-quality score.
 
