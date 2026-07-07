@@ -180,6 +180,7 @@ def test_fixture_validation_reports_structural_errors() -> None:
         "low_value_case_missing_value_level",
         "trusted_high_value_missing_curie",
         "trusted_gold_uses_review_only_endpoint",
+        "trusted_gold_violates_promotion_safety_policy",
         "invalid_review_status",
         "review_only_endpoint_has_curie",
     }
@@ -421,3 +422,15 @@ def test_v4_new_gold_does_not_add_broad_trusted_context_rows() -> None:
                 offenders.append(case_id)
 
     assert offenders == []
+
+
+def test_v4_fixture_gold_rows_align_with_trusted_promotion_safety_policy() -> None:
+    issues = validate_fixture_payload(
+        json.loads(V4_FIXTURE.read_text(encoding="utf-8")),
+    )
+
+    assert {
+        issue.case_id
+        for issue in issues
+        if issue.code == "trusted_gold_violates_promotion_safety_policy"
+    } == set()

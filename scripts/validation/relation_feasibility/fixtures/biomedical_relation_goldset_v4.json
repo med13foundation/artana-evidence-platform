@@ -294,9 +294,10 @@
           "object": "MAPK signaling",
           "support_sentence": "BRAF V600E activates MAPK signaling in melanoma cells with constitutive kinase output.",
           "value_level": "high",
-          "rationale": "Specific variant-to-pathway activation relation.",
+          "review_status": "review_only",
+          "rationale": "Specific variant-to-pathway activation relation with a broad pathway endpoint that must remain review-only.",
           "subject_curie": "ClinVar:BRAF_V600E",
-          "object_curie": "GO:0000165",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -363,9 +364,10 @@
           "object": "MAPK signaling",
           "support_sentence": "KRAS G12D activates MAPK signaling and increases pancreatic cancer cell proliferation.",
           "value_level": "high",
-          "rationale": "Specific variant-to-pathway activation relation.",
+          "review_status": "review_only",
+          "rationale": "Specific variant-to-pathway activation relation with a broad pathway endpoint that must remain review-only.",
           "subject_curie": "ClinVar:KRAS_G12D",
-          "object_curie": "GO:0000165",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -840,7 +842,7 @@
     },
     {
       "case_id": "v4_bevacizumab_inhibits_vegfa",
-      "title": "Bevacizumab inhibits VEGF-A",
+      "title": "Bevacizumab inhibits VEGF-A signaling",
       "category": "strong_specific",
       "topics": [
         "pathway_regulation",
@@ -851,12 +853,13 @@
         {
           "subject": "Bevacizumab",
           "relation_type": "INHIBITS",
-          "object": "VEGF-A",
+          "object": "VEGF-A signaling",
           "support_sentence": "Bevacizumab inhibits VEGF-A signaling in angiogenesis-focused tumor models.",
           "value_level": "high",
-          "rationale": "Direct drug-to-target inhibition relation.",
+          "review_status": "review_only",
+          "rationale": "Drug-to-broad-pathway inhibition relation that must remain review-only rather than overclaiming direct target inhibition.",
           "subject_curie": "DrugBank:DB00112",
-          "object_curie": "HGNC:12680",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]

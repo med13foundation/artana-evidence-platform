@@ -11,6 +11,9 @@ from pathlib import Path
 from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
     review_only_record_for_label,
 )
+from artana_evidence_api.document_extraction_support.review_policy.trusted_promotion_safety_policy import (
+    classify_trusted_promotion_safety,
+)
 
 JSONObject = dict[str, object]
 _LONG_DOCUMENT_MIN_CHARACTERS = 600
@@ -284,6 +287,7 @@ def _relation_issues(
         and _string_field(raw_relation, "review_status") != "review_only"
     ):
         issues.extend(_trusted_relation_review_only_endpoint_issues(raw_relation, case_id))
+        issues.extend(_trusted_relation_promotion_safety_issues(raw_relation, case_id))
     return tuple(issues)
 
 
@@ -334,6 +338,36 @@ def _trusted_relation_review_only_endpoint_issues(
             ),
         )
     return tuple(issues)
+
+
+def _trusted_relation_promotion_safety_issues(
+    raw_relation: Mapping[str, object],
+    case_id: str | None,
+) -> tuple[FixtureValidationIssue, ...]:
+    subject = _string_field(raw_relation, "subject")
+    relation_type = _string_field(raw_relation, "relation_type")
+    object_label = _string_field(raw_relation, "object")
+    if subject is None or relation_type is None or object_label is None:
+        return ()
+    decision = classify_trusted_promotion_safety(
+        relation_type=relation_type,
+        subject_label=subject,
+        object_label=object_label,
+    )
+    if not decision.review_only:
+        return ()
+    return (
+        FixtureValidationIssue(
+            code="trusted_gold_violates_promotion_safety_policy",
+            message=(
+                "Trusted high/medium gold rows must not use relation shapes "
+                "that trusted-promotion policy keeps review-only: "
+                f"{subject} {relation_type} {object_label} "
+                f"({', '.join(decision.reason_codes)})"
+            ),
+            case_id=case_id,
+        ),
+    )
 
 
 def _topic_issues(

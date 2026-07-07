@@ -31,6 +31,9 @@ from artana_evidence_api.document_extraction_support.entity_curie_linking import
     EntityCurieLink,
     normalize_entity_curie,
 )
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    verified_record_for_label,
+)
 from artana_evidence_api.document_extraction_support.evidence_grounding import (
     tumor_agnostic_fusion_surfaces,
 )
@@ -54,6 +57,19 @@ LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION = (
     "document_extraction.weak_review_extraction.v2"
 )
 _MIN_ENTITY_LABEL_LENGTH = 2
+_DIRECT_TARGET_ACTIVITY_RELATION_TYPES = frozenset(
+    {
+        "ACTIVATES",
+        "INHIBITS",
+        "MODULATES",
+        "REGULATES",
+        "TARGETS",
+    },
+)
+_DIRECT_TARGET_ACTIVITY_OBJECT_RE = re.compile(
+    r"^\s*(?P<target>[A-Za-z][A-Za-z0-9.-]{1,15})\s+activity\s*$",
+    re.IGNORECASE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -356,13 +372,44 @@ def _repair_relation_object_label(
     object_label: str,
     sentence: str,
 ) -> str:
-    if relation_type != "TREATS" or object_label == "":
+    if object_label == "":
         return object_label
-    repaired = _repair_tumor_agnostic_fusion_treatment_object(
+    if relation_type == "TREATS":
+        repaired = _repair_tumor_agnostic_fusion_treatment_object(
+            object_label=object_label,
+            sentence=sentence,
+        )
+        if repaired is not None:
+            return repaired
+    return _repair_direct_target_activity_object(
+        relation_type=relation_type,
         object_label=object_label,
         sentence=sentence,
-    )
-    return repaired or object_label
+    ) or object_label
+
+
+def _repair_direct_target_activity_object(
+    *,
+    relation_type: str,
+    object_label: str,
+    sentence: str,
+) -> str | None:
+    if relation_type not in _DIRECT_TARGET_ACTIVITY_RELATION_TYPES:
+        return None
+    match = _DIRECT_TARGET_ACTIVITY_OBJECT_RE.fullmatch(object_label)
+    if match is None:
+        return None
+    target_label = match.group("target")
+    record = verified_record_for_label(target_label)
+    if record is None:
+        return None
+    if not re.search(
+        rf"\b{re.escape(target_label)}\s+activity\b",
+        sentence,
+        flags=re.IGNORECASE,
+    ):
+        return None
+    return record.label
 
 
 def _repair_tumor_agnostic_fusion_treatment_object(

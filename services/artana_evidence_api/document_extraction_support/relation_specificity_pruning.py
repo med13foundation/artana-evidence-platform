@@ -41,6 +41,7 @@ _ENTITY_MODIFIER_TERMS = (
     "silencing",
     "suppression",
     "truncating",
+    "mutated",
     "upregulation",
     "mutation",
     "variant",
@@ -422,7 +423,7 @@ def _has_post_modifier(*, label_pattern: str, sentence: str) -> bool:
     )
     return (
         re.search(
-            rf"\b{label_pattern}\s+(?:{modifier_pattern})\b",
+            rf"\b{label_pattern}(?:\s+|-)(?:{modifier_pattern})\b",
             sentence,
             flags=re.IGNORECASE,
         )

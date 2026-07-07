@@ -854,11 +854,12 @@ async def test_extract_relation_candidates_with_llm_uses_agent_review_only_pass(
     assert candidates[0].subject_label == "MED13"
     assert candidates[0].object_label == "congenital heart disease"
     assert candidates[0].review_status == "review_only"
-    assert candidates[0].review_reason_codes == (
+    assert set(candidates[0].review_reason_codes) >= {
         "hedged_language",
         "may_link",
         "weak_review_agent_pass",
-    )
+        "gene_phenotype_association_requires_variant_state",
+    }
     assert candidates[0].trusted_evidence_eligible is False
 
 

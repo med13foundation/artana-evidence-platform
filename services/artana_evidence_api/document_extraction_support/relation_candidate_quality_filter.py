@@ -24,6 +24,9 @@ from artana_evidence_api.document_extraction_support.relation_specificity_prunin
 from artana_evidence_api.document_extraction_support.review_policy.review_only_candidate_policy import (
     classify_review_only_candidate,
 )
+from artana_evidence_api.document_extraction_support.review_policy.trusted_promotion_safety_policy import (
+    classify_trusted_promotion_safety,
+)
 
 RelationCandidateQualityFilterReason = Literal[
     "binding_site_shadowed_by_molecular_target",
@@ -228,12 +231,12 @@ def filter_low_value_relation_candidates(
                 _with_review_only_reason(candidate, "cell_context_object"),
             )
             continue
-        review_only_candidate = _review_only_candidate(candidate)
-        if review_only_candidate is not None and reason in {
+        review_lane_candidate = _review_lane_candidate(candidate)
+        if review_lane_candidate is not None and reason in {
             None,
             "uncertain_relation_claim",
         }:
-            kept_candidates.append(review_only_candidate)
+            kept_candidates.append(review_lane_candidate)
             continue
         if reason is None:
             kept_candidates.append(candidate)
@@ -299,24 +302,34 @@ def _merge_duplicate_kept_candidates(
     return tuple(merged_by_key[key] for key in ordered_keys)
 
 
-def _review_only_candidate(
+def _review_lane_candidate(
     candidate: ExtractedRelationCandidate,
 ) -> ExtractedRelationCandidate | None:
-    if candidate.review_status == "review_only":
-        return candidate
+    review_only = candidate.review_status == "review_only"
+    review_reason_codes = list(candidate.review_reason_codes)
+
     decision = classify_review_only_candidate(
         relation_type=candidate.relation_type,
         support_sentence=candidate.sentence,
         subject_label=candidate.subject_label,
         object_label=candidate.object_label,
     )
-    if not decision.review_only:
-        return None
-    return replace(
-        candidate,
-        review_status="review_only",
-        review_reason_codes=decision.reason_codes,
+    if decision.review_only:
+        review_only = True
+        review_reason_codes.extend(decision.reason_codes)
+
+    safety_decision = classify_trusted_promotion_safety(
+        relation_type=candidate.relation_type,
+        subject_label=candidate.subject_label,
+        object_label=candidate.object_label,
     )
+    if safety_decision.review_only:
+        review_only = True
+        review_reason_codes.extend(safety_decision.reason_codes)
+
+    if not review_only:
+        return None
+    return _with_review_only_reasons(candidate, tuple(review_reason_codes))
 
 
 def _repair_weak_review_candidate(
@@ -820,11 +833,18 @@ def _with_review_only_reason(
     candidate: ExtractedRelationCandidate,
     reason_code: str,
 ) -> ExtractedRelationCandidate:
+    return _with_review_only_reasons(candidate, (reason_code,))
+
+
+def _with_review_only_reasons(
+    candidate: ExtractedRelationCandidate,
+    reason_codes: tuple[str, ...],
+) -> ExtractedRelationCandidate:
     return replace(
         candidate,
         review_status="review_only",
         review_reason_codes=tuple(
-            dict.fromkeys((*candidate.review_reason_codes, reason_code)),
+            dict.fromkeys((*candidate.review_reason_codes, *reason_codes)),
         ),
     )
 

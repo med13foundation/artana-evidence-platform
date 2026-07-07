@@ -11,7 +11,7 @@ from artana_evidence_api.document_extraction_support.relation_candidate_quality_
 )
 
 
-def test_quality_filter_keeps_entailed_specific_candidate() -> None:
+def test_quality_filter_keeps_entailed_specific_candidate_as_review_only() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="RET p.Arg1174*",
         relation_type="ACTIVATES",
@@ -21,7 +21,12 @@ def test_quality_filter_keeps_entailed_specific_candidate() -> None:
 
     result = filter_low_value_relation_candidates((candidate,))
 
-    assert result.candidates == (candidate,)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].review_status == "review_only"
+    assert "broad_pathway_endpoint_requires_review" in (
+        result.candidates[0].review_reason_codes
+    )
+    assert result.candidates[0].trusted_evidence_eligible is False
     assert result.filtered_candidates == ()
 
 
@@ -55,6 +60,149 @@ def test_quality_filter_keeps_entailed_specific_candidate() -> None:
                 "adenomatous polyposis."
             ),
         ),
+    ],
+)
+def test_quality_filter_keeps_gene_state_predisposition_surfaces_for_review(
+    candidate: ExtractedRelationCandidate,
+) -> None:
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].review_status == "review_only"
+    assert result.candidates[0].trusted_evidence_eligible is False
+    assert result.filtered_candidates == ()
+
+
+@pytest.mark.parametrize(
+    ("candidate", "expected_reason_code"),
+    [
+        (
+            ExtractedRelationCandidate(
+                subject_label="BRCA1",
+                relation_type="PREDISPOSES_TO",
+                object_label="hereditary breast ovarian cancer syndrome",
+                sentence=(
+                    "BRCA1 predisposes to hereditary breast ovarian cancer "
+                    "syndrome in families with pathogenic variants."
+                ),
+            ),
+            "gene_level_predisposition_requires_variant_state",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="MED13",
+                relation_type="ASSOCIATED_WITH",
+                object_label="developmental delay",
+                sentence="MED13 was associated with developmental delay.",
+            ),
+            "gene_phenotype_association_requires_variant_state",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="MED13",
+                relation_type="CAUSES",
+                object_label="developmental delay",
+                sentence="MED13 causes developmental delay in affected families.",
+            ),
+            "gene_phenotype_association_requires_variant_state",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="SOMEGENE pathogenic variants",
+                relation_type="ASSOCIATED_WITH",
+                object_label="developmental delay",
+                sentence=(
+                    "SOMEGENE pathogenic variants were associated with "
+                    "developmental delay."
+                ),
+            ),
+            "gene_state_subject_requires_structured_grounding",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="Trametinib",
+                relation_type="INHIBITS",
+                object_label="MAPK signaling",
+                sentence=(
+                    "Trametinib inhibits MAPK signaling in melanoma cells "
+                    "with pathway activation."
+                ),
+            ),
+            "broad_pathway_endpoint_requires_review",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="BRAF V600E",
+                relation_type="BIOMARKER_FOR",
+                object_label="response to vemurafenib",
+                sentence="BRAF V600E is a biomarker for response to vemurafenib.",
+            ),
+            "composite_treatment_response_label",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="Vemurafenib",
+                relation_type="TREATS",
+                object_label="BRAF V600E melanoma",
+                sentence="Vemurafenib treats BRAF V600E melanoma.",
+            ),
+            "molecular_subtype_requires_structured_grounding",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="KRAS G12D",
+                relation_type="ASSOCIATED_WITH",
+                object_label="pancreatic cancer cell proliferation",
+                sentence=(
+                    "KRAS G12D was associated with pancreatic cancer cell "
+                    "proliferation in engineered organoid models."
+                ),
+            ),
+            "composite_process_endpoint_requires_review",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="AKT activation",
+                relation_type="ASSOCIATED_WITH",
+                object_label="growth factor-independent proliferation",
+                sentence=(
+                    "AKT activation was associated with "
+                    "growth factor-independent proliferation in tumor cells."
+                ),
+            ),
+            "composite_process_endpoint_requires_review",
+        ),
+        (
+            ExtractedRelationCandidate(
+                subject_label="Homologous recombination DNA repair",
+                relation_type="REGULATES",
+                object_label="BRCA-mutated ovarian cancer",
+                sentence=(
+                    "Homologous recombination DNA repair regulates "
+                    "BRCA-mutated ovarian cancer sensitivity patterns in "
+                    "repair-deficient tumors."
+                ),
+            ),
+            "process_context_relation_requires_review",
+        ),
+    ],
+)
+def test_quality_filter_marks_trusted_promotion_unsafe_shapes_review_only(
+    candidate: ExtractedRelationCandidate,
+    expected_reason_code: str,
+) -> None:
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].review_status == "review_only"
+    assert expected_reason_code in result.candidates[0].review_reason_codes
+    assert result.candidates[0].trusted_evidence_eligible is False
+    assert result.filtered_candidates == ()
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    [
         ExtractedRelationCandidate(
             subject_label="Larotrectinib",
             relation_type="TREATS",
@@ -64,15 +212,63 @@ def test_quality_filter_keeps_entailed_specific_candidate() -> None:
                 "fusions regardless of tissue origin."
             ),
         ),
+        ExtractedRelationCandidate(
+            subject_label="Olaparib",
+            relation_type="TREATS",
+            object_label="BRCA-mutated ovarian cancer",
+            sentence=(
+                "Olaparib treats BRCA-mutated ovarian cancer by exploiting "
+                "homologous recombination deficiency."
+            ),
+        ),
+        ExtractedRelationCandidate(
+            subject_label="EGFR T790M",
+            relation_type="CONFERS_RESISTANCE_TO",
+            object_label="erlotinib",
+            sentence="EGFR T790M confers resistance to erlotinib.",
+        ),
+        ExtractedRelationCandidate(
+            subject_label="Vemurafenib",
+            relation_type="TARGETS",
+            object_label="BRAF V600E",
+            sentence="Vemurafenib targets BRAF V600E.",
+        ),
+        ExtractedRelationCandidate(
+            subject_label="Cetuximab",
+            relation_type="TARGETS",
+            object_label="epidermal growth factor receptor",
+            sentence="Cetuximab targets epidermal growth factor receptor.",
+        ),
     ],
 )
-def test_quality_filter_keeps_specific_v3_relation_surfaces(
+def test_quality_filter_keeps_curated_trusted_promotion_shapes(
     candidate: ExtractedRelationCandidate,
 ) -> None:
     result = filter_low_value_relation_candidates((candidate,))
 
     assert result.candidates == (candidate,)
     assert result.filtered_candidates == ()
+
+
+def test_quality_filter_merges_weak_review_and_promotion_safety_reasons() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="Trametinib",
+        relation_type="REGULATES",
+        object_label="MAPK signaling",
+        sentence="Trametinib may regulate MAPK signaling in melanoma cells.",
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert len(result.candidates) == 1
+    kept_candidate = result.candidates[0]
+    assert kept_candidate.review_status == "review_only"
+    assert kept_candidate.trusted_evidence_eligible is False
+    assert set(kept_candidate.review_reason_codes) >= {
+        "hedged_language",
+        "may_regulate",
+        "broad_pathway_endpoint_requires_review",
+    }
 
 
 def test_quality_filter_removes_companion_phenotype_when_disease_sibling_exists() -> None:
@@ -99,7 +295,13 @@ def test_quality_filter_removes_companion_phenotype_when_disease_sibling_exists(
         (disease_candidate, phenotype_candidate),
     )
 
-    assert result.candidates == (disease_candidate,)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].subject_label == disease_candidate.subject_label
+    assert result.candidates[0].object_label == disease_candidate.object_label
+    assert result.candidates[0].review_status == "review_only"
+    assert "gene_state_subject_requires_structured_grounding" in (
+        result.candidates[0].review_reason_codes
+    )
     assert result.filtered_candidates[0].candidate == phenotype_candidate
     assert result.filtered_candidates[0].reason == (
         "companion_phenotype_shadowed_by_disease"
@@ -172,7 +374,13 @@ def test_quality_filter_removes_biochemical_companion_when_disease_sibling_exist
         (disease_candidate, phenotype_candidate),
     )
 
-    assert result.candidates == (disease_candidate,)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].subject_label == disease_candidate.subject_label
+    assert result.candidates[0].object_label == disease_candidate.object_label
+    assert result.candidates[0].review_status == "review_only"
+    assert "gene_state_subject_requires_structured_grounding" in (
+        result.candidates[0].review_reason_codes
+    )
     assert result.filtered_candidates[0].candidate == phenotype_candidate
     assert result.filtered_candidates[0].reason == (
         "companion_phenotype_shadowed_by_disease"
@@ -262,7 +470,7 @@ def test_quality_filter_does_not_repair_resistance_object_from_prefix_match() ->
     assert result.candidates[0].review_status == "review_only"
 
 
-def test_quality_filter_does_not_repair_trend_relation_from_unrelated_clause() -> None:
+def test_quality_filter_does_not_repair_unrelated_trend_but_reviews_response() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="EGFR expression",
         relation_type="BIOMARKER_FOR",
@@ -277,10 +485,13 @@ def test_quality_filter_does_not_repair_trend_relation_from_unrelated_clause() -
 
     assert len(result.candidates) == 1
     assert result.candidates[0].relation_type == "BIOMARKER_FOR"
-    assert result.candidates[0].review_status == "candidate"
+    assert result.candidates[0].review_status == "review_only"
+    assert "composite_treatment_response_label" in (
+        result.candidates[0].review_reason_codes
+    )
 
 
-def test_quality_filter_does_not_repair_trend_relation_from_bare_and_clause() -> None:
+def test_quality_filter_does_not_repair_bare_and_trend_but_reviews_response() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="EGFR expression",
         relation_type="BIOMARKER_FOR",
@@ -295,7 +506,10 @@ def test_quality_filter_does_not_repair_trend_relation_from_bare_and_clause() ->
 
     assert len(result.candidates) == 1
     assert result.candidates[0].relation_type == "BIOMARKER_FOR"
-    assert result.candidates[0].review_status == "candidate"
+    assert result.candidates[0].review_status == "review_only"
+    assert "composite_treatment_response_label" in (
+        result.candidates[0].review_reason_codes
+    )
 
 
 def test_quality_filter_does_not_repair_resistance_object_from_unrelated_clause() -> None:
@@ -418,7 +632,14 @@ def test_quality_filter_removes_nested_biomarker_context_object() -> None:
         (response_candidate, context_candidate),
     )
 
-    assert result.candidates == (response_candidate,)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].subject_label == response_candidate.subject_label
+    assert result.candidates[0].relation_type == response_candidate.relation_type
+    assert result.candidates[0].object_label == response_candidate.object_label
+    assert result.candidates[0].review_status == "review_only"
+    assert "composite_treatment_response_label" in (
+        result.candidates[0].review_reason_codes
+    )
     assert result.filtered_candidates[0].candidate == context_candidate
     assert result.filtered_candidates[0].reason == "nested_context_object"
 
@@ -485,7 +706,14 @@ def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_invalid() ->
         (invalid_target_candidate, pathway_candidate),
     )
 
-    assert result.candidates == (pathway_candidate,)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].subject_label == pathway_candidate.subject_label
+    assert result.candidates[0].relation_type == pathway_candidate.relation_type
+    assert result.candidates[0].object_label == pathway_candidate.object_label
+    assert result.candidates[0].review_status == "review_only"
+    assert "broad_pathway_endpoint_requires_review" in (
+        result.candidates[0].review_reason_codes
+    )
     assert result.filtered_candidates[0].candidate == invalid_target_candidate
     assert result.filtered_candidates[0].reason == "missing_relation_arguments"
 
@@ -508,7 +736,15 @@ def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_not_molecula
         (disease_target_candidate, pathway_candidate),
     )
 
-    assert pathway_candidate in result.candidates
+    pathway_result = next(
+        candidate
+        for candidate in result.candidates
+        if candidate.object_label == pathway_candidate.object_label
+    )
+    assert pathway_result.review_status == "review_only"
+    assert "broad_pathway_endpoint_requires_review" in (
+        pathway_result.review_reason_codes
+    )
     assert all(
         filtered.candidate != pathway_candidate
         for filtered in result.filtered_candidates
@@ -632,7 +868,14 @@ def test_quality_filter_removes_proliferation_effect_with_pathway_sibling() -> N
         (pathway_candidate, proliferation_candidate),
     )
 
-    assert result.candidates == (pathway_candidate,)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].subject_label == pathway_candidate.subject_label
+    assert result.candidates[0].relation_type == pathway_candidate.relation_type
+    assert result.candidates[0].object_label == pathway_candidate.object_label
+    assert result.candidates[0].review_status == "review_only"
+    assert "broad_pathway_endpoint_requires_review" in (
+        result.candidates[0].review_reason_codes
+    )
     assert result.filtered_candidates[0].candidate == proliferation_candidate
     assert result.filtered_candidates[0].reason == (
         "process_effect_shadowed_by_pathway_mechanism"
@@ -663,7 +906,15 @@ def test_quality_filter_keeps_independent_process_effect_clause() -> None:
         (pathway_candidate, proliferation_candidate),
     )
 
-    assert proliferation_candidate in result.candidates
+    proliferation_result = next(
+        candidate
+        for candidate in result.candidates
+        if candidate.object_label == proliferation_candidate.object_label
+    )
+    assert proliferation_result.review_status == "review_only"
+    assert "composite_process_endpoint_requires_review" in (
+        proliferation_result.review_reason_codes
+    )
     assert all(
         filtered.candidate != proliferation_candidate
         for filtered in result.filtered_candidates
@@ -713,7 +964,14 @@ def test_quality_filter_removes_cell_context_activation_when_primary_relation_ex
         (primary_candidate, context_candidate),
     )
 
-    assert result.candidates == (primary_candidate,)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].subject_label == primary_candidate.subject_label
+    assert result.candidates[0].relation_type == primary_candidate.relation_type
+    assert result.candidates[0].object_label == primary_candidate.object_label
+    assert result.candidates[0].review_status == "review_only"
+    assert "broad_pathway_endpoint_requires_review" in (
+        result.candidates[0].review_reason_codes
+    )
     assert result.filtered_candidates[0].candidate == context_candidate
     assert result.filtered_candidates[0].reason == "cell_context_object"
 
@@ -793,6 +1051,23 @@ def test_quality_filter_removes_candidate_that_drops_common_biomedical_modifier(
     assert {
         filtered.reason for filtered in result.filtered_candidates
     } == {"dropped_subject_modifier"}
+
+
+def test_quality_filter_removes_candidate_that_drops_hyphenated_object_modifier() -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="Homologous recombination DNA repair",
+        relation_type="REGULATES",
+        object_label="BRCA",
+        sentence=(
+            "Homologous recombination DNA repair regulates BRCA-mutated "
+            "ovarian cancer sensitivity patterns in repair-deficient tumors."
+        ),
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.candidates == ()
+    assert result.filtered_candidates[0].reason == "dropped_object_modifier"
 
 
 def test_quality_filter_keeps_candidate_that_preserves_subject_modifier() -> None:
@@ -908,10 +1183,11 @@ def test_quality_filter_keeps_uncertain_candidate_as_review_only() -> None:
 
     assert result.filtered_candidates == ()
     assert result.candidates[0].review_status == "review_only"
-    assert result.candidates[0].review_reason_codes == (
+    assert set(result.candidates[0].review_reason_codes) >= {
         "hedged_language",
         "possible_biomarker",
-    )
+        "composite_treatment_response_label",
+    }
     assert result.candidates[0].trusted_evidence_eligible is False
 
 
@@ -955,7 +1231,7 @@ def test_quality_filter_keeps_weak_review_candidates_as_review_only(
 
     assert result.filtered_candidates == ()
     assert result.candidates[0].review_status == "review_only"
-    assert result.candidates[0].review_reason_codes == expected_reason_codes
+    assert set(result.candidates[0].review_reason_codes) >= set(expected_reason_codes)
     assert result.candidates[0].trusted_evidence_eligible is False
 
 
@@ -973,7 +1249,10 @@ def test_quality_filter_keeps_model_review_hint_candidate_as_review_only() -> No
 
     assert result.filtered_candidates == ()
     assert result.candidates[0].review_status == "review_only"
-    assert result.candidates[0].review_reason_codes == ("agent_review_hint",)
+    assert set(result.candidates[0].review_reason_codes) >= {
+        "agent_review_hint",
+        "gene_phenotype_association_requires_variant_state",
+    }
     assert result.candidates[0].trusted_evidence_eligible is False
 
 

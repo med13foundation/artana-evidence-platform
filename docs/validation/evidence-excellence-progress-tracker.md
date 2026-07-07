@@ -154,6 +154,7 @@ Status values:
 | 22 | PR-33 | `alvaro/evidence-pr33-review-burden-pruning` | Implemented locally; final gates pass; three-run readiness READY | Remove repeated review-burden false positives and recover rare zero-candidate/schema-invalid agent responses without deterministic fallback. | Trusted readiness remains READY, hard safety failures stay 0, and missed gold and repeated false positives are 0 across three post-adversarial strict v3 live-agent runs. | Added companion phenotype, pathway/process, downstream context, cell-context, and binding-site sibling pruning; added agent-only zero-candidate and schema-repair retries with retry-specific prompts and distinct replay keys; adversarial review and service-gate failures fixed invalid-sibling shadowing, raw-but-unusable retry suppression, schema-retry ordering, weak-pass candidate loss, partial zero-retry cue coverage, unknown-only candidate retry suppression, and over-broad pruning; focused tests pass (`80 passed`), quality-filter suite passes (`47 passed`), touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and strict post-adversarial3 live runs1-3 aggregate to READY with worst completed-agent precision 1.0000, worst recall 1.0000, worst high-value recall 1.0000, trusted precision 1.0000, trusted valuable rate 1.0000, trusted endpoint rate 1.0000, missed gold 0, false positives 0, fallback 0, invalid agent 0, negative leakage 0, weak trusted leakage 0, and wrong verified CURIE links 0. Summary: `docs/validation/reports/2026-07-06-pr33-review-burden-pruning-summary.md`. |
 | 23 | PR-34 | `alvaro/evidence-pr34-live-model-ab-proof` | Implemented locally; live A/B proof complete; final gates pass | Close the stronger-model question with a fail-closed live model comparison on the v3 benchmark. | Candidate model adoption requires three completed runs, zero hard safety failures, and no trusted endpoint regression. | Added fixture pinning to `scripts/run_relation_model_comparison.py`, made failed audit subprocesses produce a `KEEP_CURRENT` report with `audit_failures`, and added Markdown audit-failure rendering. Current `openai:gpt-5.4-mini` completed 3/3 strict v3 live runs with trusted readiness READY and hard failures 0; candidate `openai:gpt-5` completed only 1/3 runs and failed run2 preflight with a LiteLLM timeout, so the comparison decision is KEEP_CURRENT. Focused model-comparison tests pass (`13 passed`), `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and adversarial review found no blockers after symmetric failed-current-run coverage and doc wording cleanup. Summary: `docs/validation/reports/2026-07-06-pr34-live-model-ab-proof-summary.md`. |
 | 24 | PR-35 | `alvaro/evidence-pr35-benchmark-v4-100-case-proof` | Implemented locally; final local gates pass; adversarial re-review PASS | Make the Definition-of-Green benchmark scale requirement executable with a 100-case v4 fixture. | CI fails if the trusted-readiness benchmark fixture is below 100 cases, lacks balanced high-value/true-low-value/negative/long-document/near-miss coverage, pads scale with duplicate relation signatures, or adds new broad v4 pathway/gene rows as trusted gold. | Added `biomedical_relation_goldset_v4.json` by preserving the 40-case v3 seed and adding 60 labeled synthetic cases: 50 strong-specific, 25 weak review-only, and 25 negative-control cases overall. Added v4 validation coverage requiring at least 100 cases, 50 high-value specific cases, 25 true low-value review cases, 25 negative controls, at least five long-document cases, at least five adversarial negated near-misses, at least 74 unique gold relation signatures, and at most one repeated signature for the inherited v3 IL6 strong/weak contrast. RED test failed on the missing v4 fixture; adversarial review then found the low-value count mixed high-value review-only rows and that some v4 rows duplicated v3 or used broad trusted endpoints, so PR35 added `true_low_value_review_case_count`, signature-diversity counters, and a v4 trusted-context guard. GREEN focused fixture validation passes (`7 passed`) with validator issue count 0, touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and final adversarial re-review reports PASS. Summary: `docs/validation/reports/2026-07-06-pr35-benchmark-v4-100-case-proof-summary.md`. |
+| 25 | PR-36 | `alvaro/evidence-pr36-v4-live-readiness` | Implemented locally; final gates pass; post-adversarial three-run v4 readiness READY | Run strict live-agent readiness against the 100-case v4 fixture and close trusted-lane blockers without relying on deterministic fallback. | Three strict v4 live-agent runs pass the repeated-run readiness gate with trusted precision, trusted valuable rate, trusted generic rate, trusted-eligible high-value recall, and trusted endpoint recovery all at target while hard failures stay 0. | Added a trusted-promotion safety policy for strong-but-unsafe relation shapes, wired it into relation quality filtering, fixed hyphenated modifier-loss pruning, aligned v3/v4 gold rows with promotion policy, and added fixture validation so trusted gold cannot violate the same safety policy. Adversarial review then exposed `CAUSES`/gene-state association leaks, `growth` over-demotion, reason-code loss, a live `JAK2 activity` endpoint repair gap, and a `growth factor-independent proliferation` phrase gap; PR36 added RED/GREEN regressions and fixes for all. Strict v4 postreview2 runs1-3 aggregate to READY: worst trusted precision 1.0000, trusted valuable rate 1.0000, trusted generic rate 0.0000, trusted-eligible high-value recall 1.0000, trusted-eligible endpoint rate 1.0000, fallback 0, invalid agent 0, negative leakage 0, review-only trusted leakage 0, weak trusted leakage 0, and wrong verified CURIE links 0. Focused tests pass, touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, final adversarial re-review is PASS, and `make service-checks` passes with coverage `87.03%`. Summary: `docs/validation/reports/2026-07-06-pr36-v4-live-readiness-summary.md`. |
 
 ## PR Evidence Packet
 
@@ -214,6 +215,91 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-07 - PR-36 V4 Live-Agent Trusted Readiness
+
+PR: PR-36 v4 live-agent trusted readiness
+
+Branch: `alvaro/evidence-pr36-v4-live-readiness`
+
+Goal: Run the strict live-agent readiness loop against the 100-case v4 fixture
+and prevent broad or structurally under-grounded review evidence from leaking
+into trusted graph auto-promotion.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-06-pr36-v4-live-readiness-summary.md`
+- `reports/relation_feasibility/2026-07-07-pr36-v4-live-readiness-postreview2-run1/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-07-pr36-v4-live-readiness-postreview2-run2/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-07-pr36-v4-live-readiness-postreview2-run3/relation_feasibility_report.json`
+- `reports/relation_feasibility_readiness/2026-07-07-pr36-v4-live-readiness-postreview2/relation_feasibility_readiness_report.json`
+- `services/artana_evidence_api/document_extraction_support/review_policy/trusted_promotion_safety_policy.py`
+
+Final three-run strict live-agent trusted-lane metrics:
+
+| Metric | Worst | Mean |
+|---|---:|---:|
+| Trusted readiness | READY | READY |
+| Completed-agent precision | 0.9861 | 0.9908 |
+| Completed-agent recall | 0.9467 | 0.9600 |
+| Completed-agent valuable rate | 0.5694 | 0.5733 |
+| High-value recall | 0.9600 | 0.9733 |
+| Trusted candidate precision | 1.0000 | 1.0000 |
+| Trusted candidate valuable rate | 1.0000 | 1.0000 |
+| Trusted candidate generic rate | 0.0000 | 0.0000 |
+| Trusted-eligible high-value recall | 1.0000 | 1.0000 |
+| Trusted-eligible CURIE endpoint rate | 1.0000 | 1.0000 |
+| Entailment checked rate | 1.0000 | 1.0000 |
+| Verified CURIE match rate | 0.8161 | 0.8314 |
+| All-candidate generic relation rate | 0.3288 | 0.3211 |
+
+Hard failures:
+
+- fallback cases: `0`
+- invalid agent cases: `0`
+- negative-control leakage: `0`
+- raw unknown relation types: `0`
+- raw unknown relation type surfaces: `0`
+- review-only gold trusted leakage: `0`
+- weak-claim trusted leakage: `0`
+- wrong verified CURIE links: `0`
+
+Validation:
+
+- Quality-filter suite: `62 passed`
+- Focused regression bundle: passed
+- Touched-file Ruff: `All checks passed!`
+- `make relation-feasibility-quality-gate`: passed
+- Strict v4 postreview2 live-agent runs1-3: all `GREEN`
+- Repeated-run readiness gate with `--fail-on-not-ready`: `READY`
+- Final adversarial re-review: PASS
+- `make service-checks`: passed with coverage `87.03%`
+
+Adversarial review fixes:
+
+- Added `CAUSES` and non-dictionary gene-state association regressions so
+  bare-gene/gene-state disease claims cannot bypass promotion safety.
+- Prevented `growth` inside molecular target names such as epidermal growth
+  factor receptor from being treated as a composite growth process.
+- Merged weak-review and trusted-promotion safety reason codes so audit trails
+  do not lose either reason family.
+- Added the `Ruxolitinib INHIBITS JAK2 activity` conversion regression and
+  repair so a verified direct target is recovered instead of trusting a
+  model-only process endpoint.
+- Added the `growth factor-independent proliferation` regression so target-like
+  tokens inside process labels do not bypass composite-process review-only
+  safety; the v4 fixture and postreview2 live reports do not contain this phrase,
+  so the live-readiness metrics above remain the authoritative postreview2
+  batch.
+
+Interpretation:
+
+PR36 makes the v4 trusted lane ready under the current repeated strict
+live-agent gate. The change is not a fallback or benchmark-only shortcut: it
+adds code-level trusted-promotion safety rules and applies the same policy to
+fixture validation. Remaining all-candidate generic noise and review-only CURIE
+gaps stay visible as follow-up review-lane work, not trusted auto-promotion
+blockers.
 
 ### 2026-07-06 - PR-34 Live Model A/B Proof
 

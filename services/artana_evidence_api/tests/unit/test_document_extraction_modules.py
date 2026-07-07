@@ -945,6 +945,33 @@ def test_llm_conversion_verifies_model_curie_hints_against_dictionary() -> None:
     assert candidates[0].object_curie_source == "verified_linker"
 
 
+def test_llm_conversion_repairs_direct_target_activity_object() -> None:
+    parsed = SimpleNamespace(
+        relations=[
+            SimpleNamespace(
+                subject="Ruxolitinib",
+                subject_curie="DRUGBANK:DB08877",
+                relation_type="INHIBITS",
+                proposed_relation_type=None,
+                new_relation_type_rationale=None,
+                object="JAK2 activity",
+                object_curie="NCIT:C114453",
+                sentence="Ruxolitinib inhibits JAK2 activity in cytokine-stimulated cells.",
+            ),
+        ],
+    )
+
+    candidates, unknown_relation_types = llm_relations_to_candidates(parsed)
+
+    assert unknown_relation_types == set()
+    assert len(candidates) == 1
+    assert candidates[0].object_label == "JAK2"
+    assert candidates[0].object_curie == "HGNC:6192"
+    assert candidates[0].object_curie_source == "verified_linker"
+    assert candidates[0].review_status == "candidate"
+    assert candidates[0].trusted_evidence_eligible is True
+
+
 @pytest.mark.parametrize(
     (
         "subject",
