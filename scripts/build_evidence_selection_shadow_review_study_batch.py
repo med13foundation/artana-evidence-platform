@@ -23,6 +23,7 @@ from artana_evidence_api.evidence_selection.shadow_review_study_batch import (  
     EvidenceSelectionShadowReviewStudyBatchManifest,
     EvidenceSelectionShadowReviewStudyBatchRequest,
     EvidenceSelectionShadowReviewStudyBatchResult,
+    EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
     EvidenceSelectionShadowReviewStudyBatchThresholds,
     build_evidence_selection_shadow_review_study_batch,
     collect_evidence_selection_shadow_review_study_batch_source_paths,
@@ -97,6 +98,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 manifest_path=args.manifest,
                 output_dir=args.output_dir,
                 thresholds=_thresholds_from_args(args),
+                suite_thresholds=_suite_thresholds_from_args(args),
             ),
         )
         gate_report_manifests = _write_entry_gate_reports(result)
@@ -113,6 +115,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "evidence_selection_shadow_review_study_batch "
         f"batch_id={result.batch_id} "
         f"status={'passed' if result.passed else 'failed'} "
+        f"suite_gate={result.suite_gate.get('status')} "
         f"entries={result.entry_count} "
         f"passed={result.passed_entry_count} "
         f"failed={result.failed_entry_count}",
@@ -139,6 +142,15 @@ def render_evidence_selection_shadow_review_study_batch_markdown(
         f"- Entry count: {report.get('entry_count')}",
         f"- Passed entries: {report.get('passed_entry_count')}",
         f"- Failed entries: {report.get('failed_entry_count')}",
+        "",
+        "## Suite Gate",
+        "",
+        f"- Status: **{_suite_gate_status(report)}**",
+        f"- Blocking reasons: {_suite_gate_blocking_reason_text(report)}",
+        "",
+        "| Metric | Value |",
+        "| --- | ---: |",
+        *_suite_gate_summary_rows(report),
         "",
         "## Entries",
         "",
@@ -265,6 +277,37 @@ def _add_gate_threshold_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--max-expected-calibration-error", type=float, default=0.05)
     parser.add_argument("--min-distinct-ranking-goals", type=int, default=3)
     parser.add_argument("--min-distinct-evidence-shapes", type=int, default=3)
+    parser.add_argument("--min-batch-entry-count", type=int, default=3)
+    parser.add_argument("--min-batch-passed-entry-count", type=int, default=3)
+    parser.add_argument("--max-batch-failed-entry-count", type=int, default=0)
+    parser.add_argument("--min-batch-passed-entry-rate", type=float, default=1.0)
+    parser.add_argument("--min-batch-mean-precision", type=float, default=0.8)
+    parser.add_argument("--min-batch-mean-recall", type=float, default=0.8)
+    parser.add_argument(
+        "--min-batch-mean-explanation-quality",
+        type=float,
+        default=3.0,
+    )
+    parser.add_argument(
+        "--max-batch-expected-calibration-error",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument("--min-batch-total-selection-review-count", type=int, default=3)
+    parser.add_argument(
+        "--min-batch-total-review-ranking-decision-count",
+        type=int,
+        default=10,
+    )
+    parser.add_argument("--min-batch-distinct-source-run-ids", type=int, default=3)
+    parser.add_argument("--min-batch-distinct-study-ids", type=int, default=3)
+    parser.add_argument("--min-batch-distinct-selection-goals", type=int, default=3)
+    parser.add_argument(
+        "--min-batch-distinct-review-ranking-goals",
+        type=int,
+        default=3,
+    )
+    parser.add_argument("--min-batch-distinct-evidence-shapes", type=int, default=3)
 
 
 def _thresholds_from_args(
@@ -283,6 +326,88 @@ def _thresholds_from_args(
         min_distinct_ranking_goals=args.min_distinct_ranking_goals,
         min_distinct_evidence_shapes=args.min_distinct_evidence_shapes,
     )
+
+
+def _suite_thresholds_from_args(
+    args: argparse.Namespace,
+) -> EvidenceSelectionShadowReviewStudyBatchSuiteThresholds:
+    return EvidenceSelectionShadowReviewStudyBatchSuiteThresholds(
+        min_entry_count=args.min_batch_entry_count,
+        min_passed_entry_count=args.min_batch_passed_entry_count,
+        max_failed_entry_count=args.max_batch_failed_entry_count,
+        min_passed_entry_rate=args.min_batch_passed_entry_rate,
+        min_suite_mean_precision=args.min_batch_mean_precision,
+        min_suite_mean_recall=args.min_batch_mean_recall,
+        min_suite_mean_explanation_quality=args.min_batch_mean_explanation_quality,
+        max_suite_expected_calibration_error=(
+            args.max_batch_expected_calibration_error
+        ),
+        min_total_selection_review_count=(
+            args.min_batch_total_selection_review_count
+        ),
+        min_total_review_ranking_decision_count=(
+            args.min_batch_total_review_ranking_decision_count
+        ),
+        min_distinct_source_run_ids=args.min_batch_distinct_source_run_ids,
+        min_distinct_study_ids=args.min_batch_distinct_study_ids,
+        min_distinct_selection_goals=args.min_batch_distinct_selection_goals,
+        min_distinct_review_ranking_goals=(
+            args.min_batch_distinct_review_ranking_goals
+        ),
+        min_distinct_evidence_shapes=args.min_batch_distinct_evidence_shapes,
+    )
+
+
+def _suite_gate_status(report: JSONObject) -> str:
+    suite_gate = report.get("suite_gate")
+    if not isinstance(suite_gate, dict):
+        return "MISSING"
+    return "PASSED" if suite_gate.get("passed") is True else "FAILED"
+
+
+def _suite_gate_blocking_reason_text(report: JSONObject) -> str:
+    suite_gate = report.get("suite_gate")
+    if not isinstance(suite_gate, dict):
+        return "suite gate missing"
+    reasons = _string_list(suite_gate.get("blocking_reasons"))
+    return "; ".join(reasons) if reasons else "none"
+
+
+def _suite_gate_summary_rows(report: JSONObject) -> list[str]:
+    suite_gate = report.get("suite_gate")
+    if not isinstance(suite_gate, dict):
+        return []
+    summary = suite_gate.get("summary")
+    if not isinstance(summary, dict):
+        return []
+    labels = (
+        ("entry_count", "Entry count"),
+        ("passed_entry_count", "Passed entries"),
+        ("failed_entry_count", "Failed entries"),
+        ("passed_entry_rate", "Passed-entry rate"),
+        ("suite_mean_precision", "Suite mean precision"),
+        ("suite_mean_recall", "Suite mean recall"),
+        ("suite_mean_explanation_quality", "Suite explanation quality"),
+        (
+            "max_review_ranking_expected_calibration_error",
+            "Max ranking ECE",
+        ),
+        ("total_selection_review_count", "Total selection reviews"),
+        (
+            "total_review_ranking_decision_count",
+            "Total review-ranking decisions",
+        ),
+        ("distinct_source_run_id_count", "Distinct source run IDs"),
+        ("distinct_study_id_count", "Distinct study IDs"),
+        ("distinct_selection_goal_count", "Distinct selection goals"),
+        ("distinct_review_ranking_goal_count", "Distinct ranking goals"),
+        ("distinct_evidence_shape_count", "Distinct evidence shapes"),
+    )
+    return [
+        f"| {_table_text(label)} | {_table_text(summary.get(key))} |"
+        for key, label in labels
+        if key in summary
+    ]
 
 
 def _entry_reports(report: JSONObject) -> list[JSONObject]:

@@ -108,6 +108,148 @@ def test_shadow_review_study_batch_cli_allows_failed_gate_when_requested(
     assert batch_report["failed_entry_count"] == 1
 
 
+def test_shadow_review_study_batch_cli_does_not_relax_production_suite_floor(
+    tmp_path: Path,
+) -> None:
+    cli = _cli_module()
+    manifest_path = _write_single_manifest(tmp_path)
+    output_dir = tmp_path / "batch-output"
+
+    exit_code = cli.main(
+        (
+            "--manifest",
+            str(manifest_path),
+            "--output-dir",
+            str(output_dir),
+            "--min-selection-review-count",
+            "1",
+            "--min-distinct-selection-goals",
+            "1",
+            "--min-review-ranking-sample-count",
+            "2",
+            "--min-distinct-ranking-goals",
+            "1",
+            "--min-distinct-evidence-shapes",
+            "2",
+            "--min-batch-entry-count",
+            "1",
+            "--min-batch-passed-entry-count",
+            "1",
+            "--max-batch-failed-entry-count",
+            "0",
+            "--min-batch-passed-entry-rate",
+            "1.0",
+            "--min-batch-distinct-selection-goals",
+            "1",
+            "--min-batch-distinct-review-ranking-goals",
+            "1",
+            "--min-batch-distinct-evidence-shapes",
+            "2",
+        ),
+    )
+
+    assert exit_code == 1
+    batch_report = json.loads(
+        (output_dir / "shadow-review-study-batch.json").read_text(),
+    )
+    assert batch_report["passed"] is False
+    assert batch_report["suite_gate"]["passed"] is False
+    assert batch_report["suite_gate"]["thresholds"]["min_entry_count"] == 3
+    assert batch_report["suite_gate"]["summary"]["entry_count"] == 1
+    assert any(
+        "At least 3 batch entries" in reason
+        for reason in batch_report["suite_gate"]["blocking_reasons"]
+    )
+    markdown_report = (output_dir / "shadow-review-study-batch.md").read_text()
+    assert "## Suite Gate" in markdown_report
+    assert "- Status: **FAILED**" in markdown_report
+
+
+def test_shadow_review_study_batch_cli_relaxed_entry_thresholds_still_need_suite_sample_floor(
+    tmp_path: Path,
+) -> None:
+    cli = _cli_module()
+    manifest_path = _write_three_entry_thin_manifest(tmp_path)
+    output_dir = tmp_path / "batch-output"
+
+    exit_code = cli.main(
+        (
+            "--manifest",
+            str(manifest_path),
+            "--output-dir",
+            str(output_dir),
+            "--min-selection-review-count",
+            "1",
+            "--min-distinct-selection-goals",
+            "1",
+            "--min-review-ranking-sample-count",
+            "2",
+            "--min-distinct-ranking-goals",
+            "1",
+            "--min-distinct-evidence-shapes",
+            "2",
+        ),
+    )
+
+    assert exit_code == 1
+    batch_report = json.loads(
+        (output_dir / "shadow-review-study-batch.json").read_text(),
+    )
+    assert batch_report["passed"] is False
+    assert batch_report["suite_gate"]["summary"]["total_review_ranking_decision_count"] == 6
+    assert any(
+        "review-ranking decisions" in reason
+        for reason in batch_report["suite_gate"]["blocking_reasons"]
+    )
+
+
+def test_shadow_review_study_batch_cli_relaxed_quality_thresholds_still_need_suite_quality_floor(
+    tmp_path: Path,
+) -> None:
+    cli = _cli_module()
+    manifest_path = _write_three_entry_bad_quality_manifest(tmp_path)
+    output_dir = tmp_path / "batch-output"
+
+    exit_code = cli.main(
+        (
+            "--manifest",
+            str(manifest_path),
+            "--output-dir",
+            str(output_dir),
+            "--min-selection-review-count",
+            "1",
+            "--min-distinct-selection-goals",
+            "1",
+            "--min-review-ranking-sample-count",
+            "2",
+            "--min-distinct-ranking-goals",
+            "1",
+            "--min-distinct-evidence-shapes",
+            "2",
+            "--min-mean-precision",
+            "0",
+            "--min-mean-recall",
+            "0",
+            "--min-mean-explanation-quality",
+            "1",
+        ),
+    )
+
+    assert exit_code == 1
+    batch_report = json.loads(
+        (output_dir / "shadow-review-study-batch.json").read_text(),
+    )
+    assert batch_report["passed"] is False
+    summary = batch_report["suite_gate"]["summary"]
+    assert summary["suite_mean_precision"] == 0.0
+    assert summary["suite_mean_recall"] == 0.0
+    assert summary["suite_mean_explanation_quality"] == 1.0
+    assert any(
+        "suite mean precision" in reason
+        for reason in batch_report["suite_gate"]["blocking_reasons"]
+    )
+
+
 def test_shadow_review_study_batch_cli_rejects_report_manifest_collision(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -215,6 +357,121 @@ def _write_manifest(tmp_path: Path) -> Path:
     return manifest_path
 
 
+def _write_single_manifest(tmp_path: Path) -> Path:
+    manifest_path = tmp_path / "single-shadow-review-batch.json"
+    packet_path = tmp_path / "single-packet.json"
+    packet_path.write_text(json.dumps(_completed_packet()))
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "evidence_selection_shadow_review_study_batch.v1",
+                "batch_id": "single-batch-2026-07-07",
+                "entries": [
+                    _manifest_entry(
+                        entry_id="single-study",
+                        packet_path=packet_path,
+                        output_subdir="single-study",
+                        export_id="shadow-export-single",
+                    ),
+                ],
+            },
+        ),
+    )
+    return manifest_path
+
+
+def _write_three_entry_thin_manifest(tmp_path: Path) -> Path:
+    manifest_path = tmp_path / "thin-shadow-review-batch.json"
+    return _write_three_entry_manifest(
+        tmp_path=tmp_path,
+        manifest_path=manifest_path,
+        batch_id="thin-batch-2026-07-07",
+        review_ranking_counts=(2, 2, 2),
+        bad_quality=False,
+    )
+
+
+def _write_three_entry_bad_quality_manifest(tmp_path: Path) -> Path:
+    manifest_path = tmp_path / "bad-quality-shadow-review-batch.json"
+    return _write_three_entry_manifest(
+        tmp_path=tmp_path,
+        manifest_path=manifest_path,
+        batch_id="bad-quality-batch-2026-07-07",
+        review_ranking_counts=(4, 3, 3),
+        bad_quality=True,
+    )
+
+
+def _write_three_entry_manifest(
+    *,
+    tmp_path: Path,
+    manifest_path: Path,
+    batch_id: str,
+    review_ranking_counts: tuple[int, int, int],
+    bad_quality: bool,
+) -> Path:
+    packet_specs = (
+        (
+            "first",
+            "11111111-1111-4111-8111-111111111111",
+            "Assess BRAF targeted therapy evidence.",
+            "variant_drug_response",
+            "background_context",
+        ),
+        (
+            "second",
+            "22222222-2222-4222-8222-222222222222",
+            "Assess EGFR resistance evidence.",
+            "drug_resistance",
+            "mechanistic_context",
+        ),
+        (
+            "third",
+            "33333333-3333-4333-8333-333333333333",
+            "Assess BRCA1 pathogenicity evidence.",
+            "gene_disease_association",
+            "variant_pathogenicity",
+        ),
+    )
+    entries: list[dict[str, object]] = []
+    for index, (label, run_id, goal, first_shape, second_shape) in enumerate(
+        packet_specs,
+        start=1,
+    ):
+        packet_path = tmp_path / f"{label}-packet.json"
+        packet_path.write_text(
+            json.dumps(
+                _completed_packet_for_cli_batch(
+                    study_id=f"shadow-study-{label}",
+                    source_run_id=run_id,
+                    goal=goal,
+                    first_shape=first_shape,
+                    second_shape=second_shape,
+                    review_ranking_decision_count=review_ranking_counts[index - 1],
+                    bad_quality=bad_quality,
+                ),
+            ),
+        )
+        entries.append(
+            _manifest_entry(
+                entry_id=f"study-{index}",
+                packet_path=packet_path,
+                output_subdir=f"study-{index}",
+                export_id=f"shadow-export-{index}",
+            ),
+        )
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "evidence_selection_shadow_review_study_batch.v1",
+                "batch_id": batch_id,
+                "entries": entries,
+            },
+        ),
+    )
+    return manifest_path
+
+
 def _manifest_payload(tmp_path: Path) -> dict[str, object]:
     good_packet_path = tmp_path / "good-packet.json"
     weak_packet_path = tmp_path / "weak-packet.json"
@@ -268,4 +525,51 @@ def _low_quality_packet() -> dict[str, object]:
     first_form = selection_forms[0]
     assert isinstance(first_form, dict)
     first_form["explanation_quality_score"] = 2
+    return packet
+
+
+def _completed_packet_for_cli_batch(
+    *,
+    study_id: str,
+    source_run_id: str,
+    goal: str,
+    first_shape: str,
+    second_shape: str,
+    review_ranking_decision_count: int = 2,
+    bad_quality: bool = False,
+) -> dict[str, object]:
+    packet = copy.deepcopy(_completed_packet())
+    packet["study_id"] = study_id
+    packet["source_run_id"] = source_run_id
+    packet["goal"] = goal
+    selection_forms = packet["selection_review_forms"]
+    assert isinstance(selection_forms, list)
+    for form in selection_forms:
+        assert isinstance(form, dict)
+        form["run_id"] = source_run_id
+        form["goal"] = goal
+        if bad_quality:
+            form["human_selected_record_ids"] = ["pubmed:search-1:1"]
+            form["explanation_quality_score"] = 1
+    ranking_forms = packet["review_ranking_forms"]
+    assert isinstance(ranking_forms, list)
+    shapes = (first_shape, second_shape)
+    while len(ranking_forms) < review_ranking_decision_count:
+        index = len(ranking_forms)
+        positive = index % 2 == 0
+        ranking_forms.append(
+            {
+                "source_kind": "proposal" if positive else "review_item",
+                "item_id": f"ranking-{study_id}-{index}",
+                "ranking_score": 1.0 if positive else 0.0,
+                "outcome": "positive" if positive else "negative",
+                "reviewer_id": "reviewer-a",
+                "goal": goal,
+                "evidence_shape": shapes[index % len(shapes)],
+            },
+        )
+    for index, form in enumerate(ranking_forms):
+        assert isinstance(form, dict)
+        form["goal"] = goal
+        form["evidence_shape"] = shapes[index % len(shapes)]
     return packet
