@@ -102,6 +102,20 @@ reviewer IDs, explanation-quality scores, overclaim counts, and
 positive/negative review-ranking outcomes before the data can be converted into
 the source-export inputs below.
 
+Convert a completed packet into raw source-export writer inputs with:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_source_inputs.py \
+  --packet path/to/completed-shadow-review-packet.json \
+  --selection-reviews-output path/to/selection-review-labels.json \
+  --review-ranking-output path/to/review-ranking-study.json \
+  --adjudication-note "Reviewer adjudicated all labels."
+```
+
+This conversion step is still not a readiness claim. It only creates the strict
+selection-review label file and review-ranking study file that the source-export
+writer consumes next.
+
 For a complete expert/shadow study, store selection reviews and review-ranking
 decisions as self-describing source exports. The selection-review export shape
 is:

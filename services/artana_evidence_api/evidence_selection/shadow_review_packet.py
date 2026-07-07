@@ -65,6 +65,13 @@ class EvidenceSelectionShadowCandidateRecord(BaseModel):
     excluded_terms: tuple[str, ...] = ()
     caveats: tuple[str, ...] = ()
 
+    @field_validator("matched_terms", "excluded_terms", "caveats", mode="before")
+    @classmethod
+    def _accept_json_string_array(cls, value: object) -> object:
+        if isinstance(value, list):
+            return tuple(value)
+        return value
+
 
 class EvidenceSelectionShadowSelectionReviewForm(BaseModel):
     """Incomplete selection-review form that must be filled by a human."""

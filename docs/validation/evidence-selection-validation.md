@@ -139,6 +139,22 @@ and deferred candidate IDs but keeps human labels and ranking outcomes blank.
 Do not use it as a source export or expert-study input until those required
 fields have been filled by a human reviewer.
 
+After reviewers fill the packet, convert it into the raw source-export writer
+inputs:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_source_inputs.py \
+  --packet path/to/completed-shadow-review-packet.json \
+  --selection-reviews-output path/to/selection-review-labels.json \
+  --review-ranking-output path/to/review-ranking-study.json \
+  --adjudication-note "Reviewer adjudicated all labels."
+```
+
+The converter fails closed on blank reviewer IDs, blank ranking outcomes,
+missing explanation scores, missing overclaim counts, unknown record IDs, or
+output paths that overwrite the completed packet. It writes paired outputs so a
+failed second write does not leave a half-converted review set.
+
 Full expert/shadow study gate:
 
 ```bash
