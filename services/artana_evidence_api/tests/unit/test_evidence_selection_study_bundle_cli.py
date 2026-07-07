@@ -71,6 +71,32 @@ def test_expert_study_bundle_builder_cli_writes_gate_compatible_bundle(
     )
 
 
+def test_cli_derives_manifest_identity_from_source_exports(
+    tmp_path: Path,
+) -> None:
+    selection_path, ranking_path, _adjudication_path = _write_source_exports(tmp_path)
+    output_path = tmp_path / "expert-study-bundle.json"
+
+    exit_code = main(
+        _base_args_without_source_identity(
+            selection_path=selection_path,
+            ranking_path=ranking_path,
+            output_path=output_path,
+        ),
+    )
+
+    assert exit_code == 0
+    payload = json.loads(output_path.read_text())
+    assert payload["source_manifest"]["source_system"] == "artana-shadow-review"
+    assert payload["source_manifest"]["export_id"] == "shadow-export-2026-07-07"
+    assert payload["source_manifest"]["exported_at"] == "2026-07-07T07:00:00Z"
+    assert payload["source_manifest"]["exporter_id"] == "review-ops-a"
+    assert (
+        payload["source_manifest"]["redaction_statement"]
+        == "No PHI or raw patient text included."
+    )
+
+
 @pytest.mark.parametrize(
     "collision_source",
     ["selection", "ranking", "adjudication"],
@@ -199,12 +225,192 @@ def test_cli_rejects_invalid_export_timestamps(
     assert "Traceback" not in captured.err
 
 
+@pytest.mark.parametrize("export_kind", ["selection", "ranking"])
+def test_cli_rejects_source_export_without_timezone(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    export_kind: str,
+) -> None:
+    selection_export = _selection_review_export()
+    ranking_export = _review_ranking_export()
+    if export_kind == "selection":
+        selection_export["exported_at"] = "2026-07-07T07:00:00"
+    else:
+        ranking_export["exported_at"] = "2026-07-07T07:00:00"
+    selection_path, ranking_path, _adjudication_path = _write_source_exports(
+        tmp_path,
+        selection_export=selection_export,
+        ranking_export=ranking_export,
+    )
+
+    exit_code = main(
+        _base_args_without_source_identity(
+            selection_path=selection_path,
+            ranking_path=ranking_path,
+            output_path=tmp_path / "bundle.json",
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "timezone" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_rejects_noncanonical_source_export_timestamp_offset(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    ranking_export = _review_ranking_export()
+    ranking_export["exported_at"] = "2026-07-07T08:00:00+01:00"
+    selection_path, ranking_path, _adjudication_path = _write_source_exports(
+        tmp_path,
+        ranking_export=ranking_export,
+    )
+
+    exit_code = main(
+        _base_args_without_source_identity(
+            selection_path=selection_path,
+            ranking_path=ranking_path,
+            output_path=tmp_path / "bundle.json",
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "canonical UTC" in captured.err
+    assert "Traceback" not in captured.err
+
+
+@pytest.mark.parametrize(
+    "alternate_exported_at",
+    [
+        "2026-07-07T07:00:00.000Z",
+        "2026-07-07T07:00:00+00:00",
+        "2026-07-07 07:00:00Z",
+        "2026-07-07T07:00Z",
+    ],
+)
+def test_cli_rejects_alternate_utc_source_export_timestamp_spellings(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    alternate_exported_at: str,
+) -> None:
+    ranking_export = _review_ranking_export()
+    ranking_export["exported_at"] = alternate_exported_at
+    selection_path, ranking_path, _adjudication_path = _write_source_exports(
+        tmp_path,
+        ranking_export=ranking_export,
+    )
+
+    exit_code = main(
+        _base_args_without_source_identity(
+            selection_path=selection_path,
+            ranking_path=ranking_path,
+            output_path=tmp_path / "bundle.json",
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "YYYY-MM-DDTHH:MM:SSZ" in captured.err
+    assert "Traceback" not in captured.err
+
+
+@pytest.mark.parametrize(
+    "identity_field",
+    ["source_system", "export_id", "exporter_id", "redaction_statement"],
+)
+def test_cli_rejects_source_export_identity_field_with_outer_whitespace(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    identity_field: str,
+) -> None:
+    selection_export = _selection_review_export()
+    selection_export[identity_field] = f" {selection_export[identity_field]} "
+    selection_path, ranking_path, _adjudication_path = _write_source_exports(
+        tmp_path,
+        selection_export=selection_export,
+    )
+
+    exit_code = main(
+        _base_args_without_source_identity(
+            selection_path=selection_path,
+            ranking_path=ranking_path,
+            output_path=tmp_path / "bundle.json",
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "leading or trailing whitespace" in captured.err
+    assert "Traceback" not in captured.err
+
+
+@pytest.mark.parametrize(
+    ("override_field", "override_value"),
+    [
+        ("source_system", "other-system"),
+        ("export_id", "other-export"),
+        ("exported_at", "2026-07-07T08:00:00Z"),
+        ("exporter_id", "other-exporter"),
+        ("redaction_statement", "Different redaction statement."),
+    ],
+)
+def test_cli_rejects_source_identity_override_mismatch(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    override_field: str,
+    override_value: str,
+) -> None:
+    selection_path, ranking_path, _adjudication_path = _write_source_exports(tmp_path)
+
+    exit_code = main(
+        _base_args(
+            selection_path=selection_path,
+            ranking_path=ranking_path,
+            output_path=tmp_path / "bundle.json",
+            **{override_field: override_value},
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "source export identity" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_rejects_noncanonical_source_identity_override_timestamp(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    selection_path, ranking_path, _adjudication_path = _write_source_exports(tmp_path)
+
+    exit_code = main(
+        _base_args(
+            selection_path=selection_path,
+            ranking_path=ranking_path,
+            output_path=tmp_path / "bundle.json",
+            exported_at="2026-07-07T08:00:00+01:00",
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "canonical UTC" in captured.err
+    assert "Traceback" not in captured.err
+
+
 def _base_args(
     *,
     selection_path: Path,
     ranking_path: Path,
     output_path: Path,
+    source_system: str = "artana-shadow-review",
+    export_id: str = "shadow-export-2026-07-07",
     exported_at: str = "2026-07-07T07:00:00Z",
+    exporter_id: str = "review-ops-a",
+    redaction_statement: str = "No PHI or raw patient text included.",
     adjudication_path: Path | None = None,
 ) -> tuple[str, ...]:
     args = [
@@ -217,15 +423,39 @@ def _base_args(
         "--review-ranking",
         str(ranking_path),
         "--source-system",
-        "artana-shadow-review",
+        source_system,
         "--export-id",
-        "shadow-export-2026-07-07",
+        export_id,
         "--exported-at",
         exported_at,
         "--exporter-id",
-        "review-ops-a",
+        exporter_id,
         "--redaction-statement",
-        "No PHI or raw patient text included.",
+        redaction_statement,
+        "--output",
+        str(output_path),
+    ]
+    if adjudication_path is not None:
+        args.extend(("--adjudication-log", str(adjudication_path)))
+    return tuple(args)
+
+
+def _base_args_without_source_identity(
+    *,
+    selection_path: Path,
+    ranking_path: Path,
+    output_path: Path,
+    adjudication_path: Path | None = None,
+) -> tuple[str, ...]:
+    args = [
+        "--study-id",
+        "shadow-study-2026-07-07",
+        "--study-evidence-kind",
+        "synthetic_fixture",
+        "--selection-reviews",
+        str(selection_path),
+        "--review-ranking",
+        str(ranking_path),
         "--output",
         str(output_path),
     ]
@@ -238,15 +468,43 @@ def _write_source_exports(
     tmp_path: Path,
     *,
     include_adjudication: bool = False,
+    selection_export: dict[str, object] | None = None,
+    ranking_export: dict[str, object] | None = None,
 ) -> tuple[Path, Path, Path]:
     selection_path = tmp_path / "selection-reviews.json"
     ranking_path = tmp_path / "review-ranking.json"
     adjudication_path = tmp_path / "adjudication-log.txt"
-    selection_path.write_text(json.dumps({"selection_reviews": _selection_reviews()}))
-    ranking_path.write_text(json.dumps(_review_ranking()))
+    selection_path.write_text(json.dumps(selection_export or _selection_review_export()))
+    ranking_path.write_text(json.dumps(ranking_export or _review_ranking_export()))
     if include_adjudication:
         adjudication_path.write_text("reviewer-a accepted all calibration labels\n")
     return selection_path, ranking_path, adjudication_path
+
+
+def _source_export_identity() -> dict[str, object]:
+    return {
+        "source_system": "artana-shadow-review",
+        "export_id": "shadow-export-2026-07-07",
+        "exported_at": "2026-07-07T07:00:00Z",
+        "exporter_id": "review-ops-a",
+        "redaction_statement": "No PHI or raw patient text included.",
+    }
+
+
+def _selection_review_export() -> dict[str, object]:
+    return {
+        "schema_version": "evidence_selection_review_export.v1",
+        **_source_export_identity(),
+        "selection_reviews": _selection_reviews(),
+    }
+
+
+def _review_ranking_export() -> dict[str, object]:
+    return {
+        "schema_version": "evidence_selection_review_ranking_export.v1",
+        **_source_export_identity(),
+        "review_ranking": _review_ranking(),
+    }
 
 
 def _selection_reviews() -> list[dict[str, object]]:

@@ -14,13 +14,19 @@ from artana_evidence_api.evidence_selection.provenance import (
     EvidenceSelectionExpertStudySourceArtifactKind,
     EvidenceSelectionExpertStudySourceManifest,
 )
+from artana_evidence_api.evidence_selection.source_exports import (
+    EvidenceSelectionReviewExport,
+    EvidenceSelectionSourceExportIdentity,
+    ReviewRankingCalibrationExport,
+    ensure_matching_source_export_identity,
+    parse_canonical_source_exported_at,
+)
 from artana_evidence_api.evidence_selection_validation import (
     EvidenceSelectionExpertStudyEvidenceKind,
     EvidenceSelectionExpertStudyInput,
     EvidenceSelectionReviewInput,
     ReviewRankingCalibrationStudyInput,
 )
-from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class EvidenceSelectionExpertStudyBundleError(ValueError):
@@ -35,16 +41,16 @@ class EvidenceSelectionExpertStudyBundleRequest:
     study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
     selection_reviews_path: Path
     review_ranking_path: Path
-    source_system: str
-    export_id: str
-    exported_at: datetime
-    exporter_id: str
-    redaction_statement: str
     description: str | None = None
     selection_reviews_uri: str | None = None
     review_ranking_uri: str | None = None
     adjudication_log_path: Path | None = None
     adjudication_log_uri: str | None = None
+    source_system: str | None = None
+    export_id: str | None = None
+    exported_at: datetime | str | None = None
+    exporter_id: str | None = None
+    redaction_statement: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,21 +61,6 @@ class _LoadedSourceArtifact:
     uri: str
     content: bytes
     sha256: str
-
-
-class _SelectionReviewExport(BaseModel):
-    """Strict source export envelope for selection-review labels."""
-
-    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
-
-    selection_reviews: tuple[EvidenceSelectionReviewInput, ...]
-
-    @field_validator("selection_reviews", mode="before")
-    @classmethod
-    def _accept_json_selection_review_array(cls, value: object) -> object:
-        if isinstance(value, list):
-            return tuple(value)
-        return value
 
 
 def build_evidence_selection_expert_study_bundle(
@@ -93,22 +84,27 @@ def build_evidence_selection_expert_study_bundle(
         if request.adjudication_log_path is not None
         else None
     )
-    selection_reviews = _load_selection_reviews(selection_source)
-    review_ranking = _load_review_ranking(ranking_source)
-    source_manifest = _build_source_manifest(
+    selection_export = _load_selection_export(selection_source)
+    ranking_export = _load_review_ranking_export(ranking_source)
+    source_identity = _source_identity(
         request=request,
+        selection_export=selection_export,
+        ranking_export=ranking_export,
+    )
+    source_manifest = _build_source_manifest(
+        source_identity=source_identity,
         selection_source=selection_source,
         ranking_source=ranking_source,
         adjudication_source=adjudication_source,
-        selection_reviews=selection_reviews,
-        review_ranking=review_ranking,
+        selection_reviews=selection_export.selection_reviews,
+        review_ranking=ranking_export.review_ranking,
     )
     return EvidenceSelectionExpertStudyInput(
         schema_version="evidence_selection_expert_study.v1",
         study_id=request.study_id,
         study_evidence_kind=request.study_evidence_kind,
-        selection_reviews=selection_reviews,
-        review_ranking=review_ranking,
+        selection_reviews=selection_export.selection_reviews,
+        review_ranking=ranking_export.review_ranking,
         source_manifest=source_manifest,
         description=request.description,
     )
@@ -153,24 +149,87 @@ def validate_evidence_selection_expert_study_bundle_output_path(
             raise EvidenceSelectionExpertStudyBundleError(msg)
 
 
-def _load_selection_reviews(
+def _load_selection_export(
     source: _LoadedSourceArtifact,
-) -> tuple[EvidenceSelectionReviewInput, ...]:
+) -> EvidenceSelectionReviewExport:
     payload = _load_json_object(source)
-    export = _SelectionReviewExport.model_validate(payload)
-    return export.selection_reviews
+    return EvidenceSelectionReviewExport.model_validate(payload)
 
 
-def _load_review_ranking(
+def _load_review_ranking_export(
     source: _LoadedSourceArtifact,
-) -> ReviewRankingCalibrationStudyInput:
+) -> ReviewRankingCalibrationExport:
     payload = _load_json_object(source)
-    return ReviewRankingCalibrationStudyInput.model_validate(payload)
+    return ReviewRankingCalibrationExport.model_validate(payload)
+
+
+def _source_identity(
+    *,
+    request: EvidenceSelectionExpertStudyBundleRequest,
+    selection_export: EvidenceSelectionReviewExport,
+    ranking_export: ReviewRankingCalibrationExport,
+) -> EvidenceSelectionSourceExportIdentity:
+    try:
+        source_identity = ensure_matching_source_export_identity(
+            selection_export=selection_export,
+            ranking_export=ranking_export,
+        )
+    except ValueError as exc:
+        raise EvidenceSelectionExpertStudyBundleError(str(exc)) from exc
+    requested_identity = _requested_source_identity(request)
+    if requested_identity is not None and requested_identity != source_identity:
+        msg = (
+            "Requested source export identity does not match the source export "
+            "identity embedded in the selection-review and review-ranking files."
+        )
+        raise EvidenceSelectionExpertStudyBundleError(msg)
+    return source_identity
+
+
+def _requested_source_identity(
+    request: EvidenceSelectionExpertStudyBundleRequest,
+) -> EvidenceSelectionSourceExportIdentity | None:
+    values = (
+        request.source_system,
+        request.export_id,
+        request.exported_at,
+        request.exporter_id,
+        request.redaction_statement,
+    )
+    if all(value is None for value in values):
+        return None
+    if any(value is None for value in values):
+        msg = (
+            "All source identity override fields must be provided together: "
+            "source_system, export_id, exported_at, exporter_id, and "
+            "redaction_statement."
+        )
+        raise EvidenceSelectionExpertStudyBundleError(msg)
+    return EvidenceSelectionSourceExportIdentity(
+        source_system=cast("str", request.source_system),
+        export_id=cast("str", request.export_id),
+        exported_at=_requested_exported_at(request.exported_at),
+        exporter_id=cast("str", request.exporter_id),
+        redaction_statement=cast("str", request.redaction_statement),
+    )
+
+
+def _requested_exported_at(value: datetime | str | None) -> datetime:
+    if isinstance(value, datetime | str):
+        try:
+            return parse_canonical_source_exported_at(
+                value,
+                field_name="Requested source export identity exported_at",
+            )
+        except ValueError as exc:
+            raise EvidenceSelectionExpertStudyBundleError(str(exc)) from exc
+    msg = "Requested source export identity is missing exported_at."
+    raise EvidenceSelectionExpertStudyBundleError(msg)
 
 
 def _build_source_manifest(
     *,
-    request: EvidenceSelectionExpertStudyBundleRequest,
+    source_identity: EvidenceSelectionSourceExportIdentity,
     selection_source: _LoadedSourceArtifact,
     ranking_source: _LoadedSourceArtifact,
     adjudication_source: _LoadedSourceArtifact | None,
@@ -178,11 +237,11 @@ def _build_source_manifest(
     review_ranking: ReviewRankingCalibrationStudyInput,
 ) -> EvidenceSelectionExpertStudySourceManifest:
     return EvidenceSelectionExpertStudySourceManifest(
-        source_system=request.source_system,
-        export_id=request.export_id,
-        exported_at=request.exported_at,
-        exporter_id=request.exporter_id,
-        redaction_statement=request.redaction_statement,
+        source_system=source_identity.source_system,
+        export_id=source_identity.export_id,
+        exported_at=source_identity.exported_at,
+        exporter_id=source_identity.exporter_id,
+        redaction_statement=source_identity.redaction_statement,
         source_artifacts=_source_artifacts(
             selection_source=selection_source,
             ranking_source=ranking_source,

@@ -18,6 +18,9 @@ for _path in (_REPO_ROOT, _SERVICES_ROOT):
     if _path_text not in sys.path:
         sys.path.insert(0, _path_text)
 
+from artana_evidence_api.evidence_selection.source_exports import (  # noqa: E402
+    parse_canonical_source_exported_at,
+)
 from artana_evidence_api.evidence_selection.study_bundle import (  # noqa: E402
     EvidenceSelectionExpertStudyBundleError,
     EvidenceSelectionExpertStudyBundleRequest,
@@ -60,15 +63,34 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Optional adjudication log artifact to hash into the source manifest.",
     )
-    parser.add_argument("--source-system", required=True)
-    parser.add_argument("--export-id", required=True)
+    parser.add_argument(
+        "--source-system",
+        default=None,
+        help="Optional compatibility check; source exports are authoritative.",
+    )
+    parser.add_argument(
+        "--export-id",
+        default=None,
+        help="Optional compatibility check; source exports are authoritative.",
+    )
     parser.add_argument(
         "--exported-at",
-        required=True,
-        help="Source export timestamp as ISO-8601, for example 2026-07-07T07:00:00Z.",
+        default=None,
+        help=(
+            "Optional compatibility check as ISO-8601, for example "
+            "2026-07-07T07:00:00Z. Source exports are authoritative."
+        ),
     )
-    parser.add_argument("--exporter-id", required=True)
-    parser.add_argument("--redaction-statement", required=True)
+    parser.add_argument(
+        "--exporter-id",
+        default=None,
+        help="Optional compatibility check; source exports are authoritative.",
+    )
+    parser.add_argument(
+        "--redaction-statement",
+        default=None,
+        help="Optional compatibility check; source exports are authoritative.",
+    )
     parser.add_argument("--description", default=None)
     parser.add_argument("--selection-reviews-uri", default=None)
     parser.add_argument("--review-ranking-uri", default=None)
@@ -100,7 +122,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 adjudication_log_path=args.adjudication_log,
                 source_system=args.source_system,
                 export_id=args.export_id,
-                exported_at=_parse_exported_at(args.exported_at),
+                exported_at=(
+                    _parse_exported_at(args.exported_at)
+                    if args.exported_at is not None
+                    else None
+                ),
                 exporter_id=args.exporter_id,
                 redaction_statement=args.redaction_statement,
                 description=args.description,
@@ -132,14 +158,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def _parse_exported_at(value: str) -> datetime:
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return parse_canonical_source_exported_at(
+            value,
+            field_name="--exported-at",
+        )
     except ValueError as exc:
-        msg = "--exported-at must be valid ISO-8601."
-        raise EvidenceSelectionExpertStudyBundleError(msg) from exc
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        msg = "--exported-at must include a timezone offset or Z."
-        raise EvidenceSelectionExpertStudyBundleError(msg)
-    return parsed
+        raise EvidenceSelectionExpertStudyBundleError(str(exc)) from exc
 
 
 def _source_paths_from_args(args: argparse.Namespace) -> tuple[Path, ...]:

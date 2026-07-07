@@ -21,14 +21,225 @@ from artana_evidence_api.evidence_selection_validation import (
 from pydantic import ValidationError
 
 
+def test_build_derives_source_manifest_identity_from_source_exports(
+    tmp_path: Path,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+
+    bundle = build_evidence_selection_expert_study_bundle(
+        EvidenceSelectionExpertStudyBundleRequest(
+            study_id="shadow-study-2026-07-07",
+            study_evidence_kind="synthetic_fixture",
+            selection_reviews_path=selection_path,
+            review_ranking_path=ranking_path,
+            description="Self-describing source export bundle.",
+        ),
+    )
+
+    source_manifest = bundle.source_manifest
+    assert source_manifest is not None
+    assert source_manifest.source_system == "artana-shadow-review"
+    assert source_manifest.export_id == "shadow-export-2026-07-07"
+    assert source_manifest.exported_at == datetime(2026, 7, 7, 7, 0, tzinfo=UTC)
+    assert source_manifest.exporter_id == "review-ops-a"
+    assert source_manifest.redaction_statement == "No PHI or raw patient text included."
+
+
+def test_build_rejects_mismatched_source_export_identity(
+    tmp_path: Path,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    ranking_export = _review_ranking_export()
+    ranking_export["export_id"] = "different-export"
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(ranking_export))
+
+    with pytest.raises(ValueError, match="source export identity"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="mismatched-shadow-study",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
+@pytest.mark.parametrize("export_kind", ["selection", "ranking"])
+def test_build_rejects_source_export_without_timezone(
+    tmp_path: Path,
+    export_kind: str,
+) -> None:
+    selection_export = _selection_review_export()
+    ranking_export = _review_ranking_export()
+    if export_kind == "selection":
+        selection_export["exported_at"] = "2026-07-07T07:00:00"
+    else:
+        ranking_export["exported_at"] = "2026-07-07T07:00:00"
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_path.write_text(json.dumps(selection_export))
+    ranking_path.write_text(json.dumps(ranking_export))
+
+    with pytest.raises(ValueError, match="timezone"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="naive-timestamp-shadow-study",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
+def test_build_rejects_noncanonical_source_export_timestamp_offset(
+    tmp_path: Path,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    ranking_export = _review_ranking_export()
+    ranking_export["exported_at"] = "2026-07-07T08:00:00+01:00"
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(ranking_export))
+
+    with pytest.raises(ValueError, match="canonical UTC"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="offset-timestamp-shadow-study",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    "alternate_exported_at",
+    [
+        "2026-07-07T07:00:00.000Z",
+        "2026-07-07T07:00:00+00:00",
+        "2026-07-07 07:00:00Z",
+        "2026-07-07T07:00Z",
+    ],
+)
+def test_build_rejects_alternate_utc_source_export_timestamp_spellings(
+    tmp_path: Path,
+    alternate_exported_at: str,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    ranking_export = _review_ranking_export()
+    ranking_export["exported_at"] = alternate_exported_at
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(ranking_export))
+
+    with pytest.raises(ValueError, match="YYYY-MM-DDTHH:MM:SSZ"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="alternate-timestamp-shadow-study",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    "identity_field",
+    ["source_system", "export_id", "exporter_id", "redaction_statement"],
+)
+def test_build_rejects_source_export_identity_field_with_outer_whitespace(
+    tmp_path: Path,
+    identity_field: str,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_export = _selection_review_export()
+    selection_export[identity_field] = f" {selection_export[identity_field]} "
+    selection_path.write_text(json.dumps(selection_export))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+
+    with pytest.raises(ValueError, match="leading or trailing whitespace"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="whitespace-identity-shadow-study",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("override_field", "override_value"),
+    [
+            ("source_system", "other-system"),
+            ("export_id", "other-export"),
+            ("exported_at", "2026-07-07T08:00:00Z"),
+            ("exporter_id", "other-exporter"),
+            ("redaction_statement", "Different redaction statement."),
+        ],
+    )
+def test_build_rejects_source_identity_override_mismatch(
+    tmp_path: Path,
+    override_field: str,
+    override_value: str,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+    request_kwargs: dict[str, object] = {
+        "study_id": "override-mismatch-shadow-study",
+        "study_evidence_kind": "synthetic_fixture",
+        "selection_reviews_path": selection_path,
+        "review_ranking_path": ranking_path,
+        **_source_export_identity(),
+    }
+    request_kwargs[override_field] = override_value
+
+    with pytest.raises(ValueError, match="source export identity"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(**request_kwargs),
+        )
+
+
+def test_build_rejects_noncanonical_source_identity_override_timestamp(
+    tmp_path: Path,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+
+    with pytest.raises(ValueError, match="canonical UTC"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="override-noncanonical-shadow-study",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+                source_system="artana-shadow-review",
+                export_id="shadow-export-2026-07-07",
+                exported_at="2026-07-07T08:00:00+01:00",
+                exporter_id="review-ops-a",
+                redaction_statement="No PHI or raw patient text included.",
+            ),
+        )
+
+
 def test_builds_expert_study_bundle_with_computed_source_manifest(
     tmp_path: Path,
 ) -> None:
     selection_path = tmp_path / "selection-reviews.json"
     ranking_path = tmp_path / "review-ranking.json"
     adjudication_path = tmp_path / "adjudication-log.txt"
-    selection_path.write_text(json.dumps({"selection_reviews": _selection_reviews()}))
-    ranking_path.write_text(json.dumps(_review_ranking()))
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
     adjudication_path.write_text("reviewer-a accepted all calibration labels\n")
 
     bundle = build_evidence_selection_expert_study_bundle(
@@ -38,11 +249,6 @@ def test_builds_expert_study_bundle_with_computed_source_manifest(
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
             adjudication_log_path=adjudication_path,
-            source_system="artana-shadow-review",
-            export_id="shadow-export-2026-07-07",
-            exported_at=datetime(2026, 7, 7, 7, 0, tzinfo=UTC),
-            exporter_id="review-ops-a",
-            redaction_statement="No PHI or raw patient text included.",
             description="Reproducible expert/shadow study bundle.",
         ),
     )
@@ -98,8 +304,10 @@ def test_build_preserves_duplicate_selection_run_ids_for_gate_detection(
     selection_reviews[1]["run_id"] = duplicate_run_id
     selection_path = tmp_path / "selection-reviews.json"
     ranking_path = tmp_path / "review-ranking.json"
-    selection_path.write_text(json.dumps({"selection_reviews": selection_reviews}))
-    ranking_path.write_text(json.dumps(_review_ranking()))
+    selection_path.write_text(
+        json.dumps(_selection_review_export(selection_reviews=selection_reviews)),
+    )
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
 
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
@@ -107,11 +315,6 @@ def test_build_preserves_duplicate_selection_run_ids_for_gate_detection(
             study_evidence_kind="real_shadow_review",
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
-            source_system="artana-shadow-review",
-            export_id="shadow-export-duplicate",
-            exported_at=datetime(2026, 7, 7, 7, 0, tzinfo=UTC),
-            exporter_id="review-ops-a",
-            redaction_statement="No PHI or raw patient text included.",
         ),
     )
 
@@ -149,8 +352,8 @@ def test_build_preserves_duplicate_review_ranking_keys_for_gate_detection(
     duplicate_key = f"{first_decision['source_kind']}:{first_decision['item_id']}"
     selection_path = tmp_path / "selection-reviews.json"
     ranking_path = tmp_path / "review-ranking.json"
-    selection_path.write_text(json.dumps({"selection_reviews": _selection_reviews()}))
-    ranking_path.write_text(json.dumps(ranking))
+    selection_path.write_text(json.dumps(_selection_review_export()))
+    ranking_path.write_text(json.dumps(_review_ranking_export(review_ranking=ranking)))
 
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
@@ -158,11 +361,6 @@ def test_build_preserves_duplicate_review_ranking_keys_for_gate_detection(
             study_evidence_kind="real_shadow_review",
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
-            source_system="artana-shadow-review",
-            export_id="shadow-export-duplicate-ranking",
-            exported_at=datetime(2026, 7, 7, 7, 0, tzinfo=UTC),
-            exporter_id="review-ops-a",
-            redaction_statement="No PHI or raw patient text included.",
         ),
     )
 
@@ -193,9 +391,9 @@ def test_build_hashes_same_bytes_used_to_parse_source_exports(
     ranking_path = tmp_path / "review-ranking.json"
     adjudication_path = tmp_path / "adjudication-log.txt"
     selection_path.write_bytes(
-        json.dumps({"selection_reviews": _selection_reviews()}).encode(),
+        json.dumps(_selection_review_export()).encode(),
     )
-    ranking_path.write_bytes(json.dumps(_review_ranking()).encode())
+    ranking_path.write_bytes(json.dumps(_review_ranking_export()).encode())
     adjudication_path.write_bytes(b"reviewer-a accepted all calibration labels\n")
     original_read_bytes = Path.read_bytes
     read_counts: dict[Path, int] = {}
@@ -217,11 +415,6 @@ def test_build_hashes_same_bytes_used_to_parse_source_exports(
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
             adjudication_log_path=adjudication_path,
-            source_system="artana-shadow-review",
-            export_id="shadow-export-read-once",
-            exported_at=datetime(2026, 7, 7, 7, 0, tzinfo=UTC),
-            exporter_id="review-ops-a",
-            redaction_statement="No PHI or raw patient text included.",
         ),
     )
 
@@ -238,7 +431,7 @@ def test_build_rejects_selection_export_without_reviews(tmp_path: Path) -> None:
     selection_path = tmp_path / "bad-selection.json"
     ranking_path = tmp_path / "review-ranking.json"
     selection_path.write_text(json.dumps({"items": _selection_reviews()}))
-    ranking_path.write_text(json.dumps(_review_ranking()))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
 
     with pytest.raises(ValidationError):
         build_evidence_selection_expert_study_bundle(
@@ -247,11 +440,6 @@ def test_build_rejects_selection_export_without_reviews(tmp_path: Path) -> None:
                 study_evidence_kind="real_shadow_review",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
-                source_system="artana-shadow-review",
-                export_id="shadow-export-bad",
-                exported_at=datetime(2026, 7, 7, 7, 0, tzinfo=UTC),
-                exporter_id="review-ops-a",
-                redaction_statement="No PHI or raw patient text included.",
             ),
         )
 
@@ -281,6 +469,38 @@ def _selection_reviews() -> list[dict[str, object]]:
         }
         for index, goal in enumerate(goals)
     ]
+
+
+def _source_export_identity() -> dict[str, object]:
+    return {
+        "source_system": "artana-shadow-review",
+        "export_id": "shadow-export-2026-07-07",
+        "exported_at": "2026-07-07T07:00:00Z",
+        "exporter_id": "review-ops-a",
+        "redaction_statement": "No PHI or raw patient text included.",
+    }
+
+
+def _selection_review_export(
+    *,
+    selection_reviews: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    return {
+        "schema_version": "evidence_selection_review_export.v1",
+        **_source_export_identity(),
+        "selection_reviews": selection_reviews or _selection_reviews(),
+    }
+
+
+def _review_ranking_export(
+    *,
+    review_ranking: dict[str, object] | None = None,
+) -> dict[str, object]:
+    return {
+        "schema_version": "evidence_selection_review_ranking_export.v1",
+        **_source_export_identity(),
+        "review_ranking": review_ranking or _review_ranking(),
+    }
 
 
 def _review_ranking() -> dict[str, object]:

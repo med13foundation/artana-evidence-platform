@@ -128,6 +128,27 @@ evidence that the harness is production ready.
 Full expert/shadow study gate:
 
 ```bash
+uv run python scripts/build_evidence_selection_expert_study_bundle.py \
+  --study-id <study-id> \
+  --study-evidence-kind real_shadow_review \
+  --selection-reviews path/to/selection-review-export.json \
+  --review-ranking path/to/review-ranking-export.json \
+  --output path/to/evidence_selection_expert_study.json
+```
+
+The selection-review source export must use
+`schema_version: "evidence_selection_review_export.v1"`. The review-ranking
+source export must use
+`schema_version: "evidence_selection_review_ranking_export.v1"`. Both exports
+must carry matching `source_system`, `export_id`, `exported_at`, `exporter_id`,
+and `redaction_statement` values. The builder derives the source manifest from
+those export fields and rejects identity drift before writing the final bundle.
+`exported_at` must be canonical UTC ISO-8601 with a trailing `Z`; timezone-naive
+values and offset spellings such as `+00:00` or `+01:00` are rejected so source
+identity remains literal and reproducible. Identity text fields are not
+trimmed; leading or trailing whitespace is rejected instead of normalized.
+
+```bash
 uv run python scripts/run_evidence_selection_expert_study_gate.py \
   --input path/to/evidence_selection_expert_study.json \
   --output-dir reports/evidence_selection_expert_study/<date>-<study-id>

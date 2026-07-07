@@ -85,59 +85,74 @@ Run
 decisions before claiming the ranking threshold is ready.
 
 For a complete expert/shadow study, store selection reviews and review-ranking
-decisions in one bundle:
+decisions as self-describing source exports. The selection-review export shape
+is:
 
 ```json
 {
-  "schema_version": "evidence_selection_expert_study.v1",
-  "study_id": "",
-  "study_evidence_kind": "real_shadow_review",
-  "description": "",
-  "selection_reviews": [],
+  "schema_version": "evidence_selection_review_export.v1",
+  "source_system": "",
+  "export_id": "",
+  "exported_at": "2026-07-07T00:00:00Z",
+  "exporter_id": "",
+  "redaction_statement": "",
+  "selection_reviews": []
+}
+```
+
+The review-ranking export shape is:
+
+```json
+{
+  "schema_version": "evidence_selection_review_ranking_export.v1",
+  "source_system": "",
+  "export_id": "",
+  "exported_at": "2026-07-07T00:00:00Z",
+  "exporter_id": "",
+  "redaction_statement": "",
   "review_ranking": {
     "schema_version": "evidence_selection_review_ranking_calibration.v1",
     "study_id": "",
     "adjudication_note": "",
     "decisions": []
-  },
-  "source_manifest": {
-    "source_system": "",
-    "export_id": "",
-    "exported_at": "2026-07-07T00:00:00Z",
-    "exporter_id": "",
-    "redaction_statement": "",
-    "source_artifacts": [
-      {
-        "artifact_id": "",
-        "artifact_kind": "selection_review_export",
-        "uri": "",
-        "sha256": ""
-      },
-      {
-        "artifact_id": "",
-        "artifact_kind": "review_ranking_export",
-        "uri": "",
-        "sha256": ""
-      }
-    ],
-    "selection_review_run_ids": [],
-    "review_ranking_decision_keys": [],
-    "reviewer_roster": []
   }
 }
 ```
+
+The two source exports must have matching `source_system`, `export_id`,
+`exported_at`, `exporter_id`, and `redaction_statement` values. The
+`exported_at` value must be canonical UTC ISO-8601 with a trailing `Z`, such as
+`2026-07-07T00:00:00Z`; timezone-naive values and offset spellings such as
+`+00:00` or `+01:00` are rejected. Identity text fields are compared literally
+and must not contain leading or trailing whitespace. Build the final study
+bundle with:
+
+```bash
+uv run python scripts/build_evidence_selection_expert_study_bundle.py \
+  --study-id <study-id> \
+  --study-evidence-kind real_shadow_review \
+  --selection-reviews path/to/selection-review-export.json \
+  --review-ranking path/to/review-ranking-export.json \
+  --output path/to/evidence-selection-expert-study.json
+```
+
+`--source-system`, `--export-id`, `--exported-at`, `--exporter-id`, and
+`--redaction-statement` are optional compatibility checks only. When supplied,
+they must all be supplied together and must exactly match the identity embedded
+in both source exports.
 
 Run `scripts/run_evidence_selection_expert_study_gate.py` on the bundle before
 using the study to support a production-readiness claim. Use
 `study_evidence_kind: "synthetic_fixture"` for mechanics fixtures; those bundles
 must fail the production-style study gate.
 
-The `source_manifest` must describe the real export used to create the bundle.
-Use lowercase 64-character SHA-256 hashes for each source artifact. The
+The generated `source_manifest` must describe the real export used to create
+the bundle. The builder computes lowercase 64-character SHA-256 hashes for each
+source artifact from the same bytes it parses. The generated
 `selection_review_run_ids` list must match the selection reviews exactly. The
-`review_ranking_decision_keys` list must use `<source_kind>:<item_id>` and match
-the review-ranking decisions exactly. The `reviewer_roster` must contain every
-selection-review and review-ranking reviewer ID.
+generated `review_ranking_decision_keys` list must use `<source_kind>:<item_id>`
+and match the review-ranking decisions exactly. The generated `reviewer_roster`
+must contain every selection-review and review-ranking reviewer ID.
 
 Production-readiness requires real shadow-mode comparisons with human reviewers
 on real research questions. Passing the MED13 fixture alone is not enough.
