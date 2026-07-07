@@ -84,5 +84,29 @@ Run
 `scripts/run_evidence_selection_review_calibration_gate.py` on the collected
 decisions before claiming the ranking threshold is ready.
 
+For a complete expert/shadow study, store selection reviews and review-ranking
+decisions in one bundle:
+
+```json
+{
+  "schema_version": "evidence_selection_expert_study.v1",
+  "study_id": "",
+  "study_evidence_kind": "real_shadow_review",
+  "description": "",
+  "selection_reviews": [],
+  "review_ranking": {
+    "schema_version": "evidence_selection_review_ranking_calibration.v1",
+    "study_id": "",
+    "adjudication_note": "",
+    "decisions": []
+  }
+}
+```
+
+Run `scripts/run_evidence_selection_expert_study_gate.py` on the bundle before
+using the study to support a production-readiness claim. Use
+`study_evidence_kind: "synthetic_fixture"` for mechanics fixtures; those bundles
+must fail the production-style study gate.
+
 Production-readiness requires real shadow-mode comparisons with human reviewers
 on real research questions. Passing the MED13 fixture alone is not enough.

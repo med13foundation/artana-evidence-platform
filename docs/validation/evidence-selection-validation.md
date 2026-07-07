@@ -125,6 +125,24 @@ run, and an adjudication note for disagreements or borderline calls. Offline
 fixtures and helper metrics are necessary foundation checks, but they are not
 evidence that the harness is production ready.
 
+Full expert/shadow study gate:
+
+```bash
+uv run python scripts/run_evidence_selection_expert_study_gate.py \
+  --input path/to/evidence_selection_expert_study.json \
+  --output-dir reports/evidence_selection_expert_study/<date>-<study-id>
+```
+
+This runner combines selection-review precision/recall, reviewer coverage,
+explanation quality, high-severity overclaim checks, and the review-ranking
+calibration gate above. It fails closed if either the selection-review study or
+the review-ranking calibration study is undercovered or below threshold. The
+study bundle must declare `study_evidence_kind: "real_shadow_review"` before it
+can pass. Synthetic fixtures remain valid for mechanics testing, but they must
+not produce a passing production-style study gate. Every selection review must
+include a reviewer ID, a nonblank goal, measurable precision, measurable recall,
+and an explanation-quality score.
+
 ## Expert-Review Study
 
 Use a small expert-review study before production rollout.

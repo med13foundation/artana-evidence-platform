@@ -21,6 +21,13 @@ ReviewRankingGateStatus = Literal["passed", "failed"]
 ReviewRankingCalibrationSchemaVersion = Literal[
     "evidence_selection_review_ranking_calibration.v1"
 ]
+EvidenceSelectionExpertStudySchemaVersion = Literal[
+    "evidence_selection_expert_study.v1"
+]
+EvidenceSelectionExpertStudyEvidenceKind = Literal[
+    "real_shadow_review",
+    "synthetic_fixture",
+]
 
 _SOURCE_KINDS: tuple[ReviewRankingSourceKind, ...] = ("proposal", "review_item")
 _OUTCOMES: tuple[ReviewRankingOutcome, ...] = ("negative", "positive")
@@ -29,10 +36,11 @@ _OUTCOMES: tuple[ReviewRankingOutcome, ...] = ("negative", "positive")
 class EvidenceSelectionReviewInput(BaseModel):
     """Reviewer-labeled comparison input for one evidence-selection run."""
 
-    model_config = ConfigDict(strict=True, frozen=True)
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     run_id: UUID
     goal: str
+    reviewer_id: str | None = Field(default=None, min_length=1)
     harness_selected_record_ids: tuple[str, ...]
     human_selected_record_ids: tuple[str, ...]
     harness_skipped_record_ids: tuple[str, ...] = ()
@@ -40,6 +48,26 @@ class EvidenceSelectionReviewInput(BaseModel):
     explanation_quality_score: int | None = Field(default=None, ge=1, le=5)
     high_severity_overclaim_count: int = Field(default=0, ge=0)
     reviewer_notes: str | None = None
+
+    @field_validator("run_id", mode="before")
+    @classmethod
+    def _accept_json_run_id(cls, value: object) -> object:
+        if isinstance(value, str):
+            return UUID(value)
+        return value
+
+    @field_validator(
+        "harness_selected_record_ids",
+        "human_selected_record_ids",
+        "harness_skipped_record_ids",
+        "duplicate_suggestion_ids",
+        mode="before",
+    )
+    @classmethod
+    def _accept_json_record_id_array(cls, value: object) -> object:
+        if isinstance(value, list):
+            return tuple(value)
+        return value
 
     @model_validator(mode="after")
     def _selected_and_skipped_must_not_overlap(
@@ -72,6 +100,7 @@ class EvidenceSelectionReviewReport(BaseModel):
     explanation_quality_score: int | None
     high_severity_overclaim_count: int
     overclaim_gate_passed: bool
+    reviewer_id: str | None
     reviewer_notes: str | None
 
 
@@ -121,6 +150,40 @@ class ReviewRankingCalibrationStudyInput(BaseModel):
     @field_validator("decisions", mode="before")
     @classmethod
     def _accept_json_decision_array(cls, value: object) -> object:
+        if isinstance(value, list):
+            return tuple(value)
+        return value
+
+
+class EvidenceSelectionExpertStudyGateThresholds(BaseModel):
+    """Fail-closed thresholds for a complete expert/shadow study."""
+
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
+
+    min_selection_review_count: int = Field(default=3, ge=1)
+    min_distinct_selection_goals: int = Field(default=3, ge=1)
+    min_selection_reviewer_count: int = Field(default=1, ge=1)
+    min_mean_precision: float = Field(default=0.8, ge=0.0, le=1.0)
+    min_mean_recall: float = Field(default=0.8, ge=0.0, le=1.0)
+    min_mean_explanation_quality: float = Field(default=3.0, ge=1.0, le=5.0)
+    require_zero_high_severity_overclaims: bool = True
+
+
+class EvidenceSelectionExpertStudyInput(BaseModel):
+    """Strict JSON envelope for a full evidence-selection expert study."""
+
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
+
+    schema_version: EvidenceSelectionExpertStudySchemaVersion
+    study_id: str = Field(min_length=1)
+    study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
+    selection_reviews: tuple[EvidenceSelectionReviewInput, ...]
+    review_ranking: ReviewRankingCalibrationStudyInput
+    description: str | None = Field(default=None, min_length=1)
+
+    @field_validator("selection_reviews", mode="before")
+    @classmethod
+    def _accept_json_selection_review_array(cls, value: object) -> object:
         if isinstance(value, list):
             return tuple(value)
         return value
@@ -189,6 +252,52 @@ class ReviewRankingCalibrationGateReport:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class EvidenceSelectionExpertStudyGateReport:
+    """Gate decision and evidence for a complete expert/shadow study."""
+
+    passed: bool
+    status: ReviewRankingGateStatus
+    thresholds: EvidenceSelectionExpertStudyGateThresholds
+    selection_summary: JSONObject
+    selection_reports: tuple[EvidenceSelectionReviewReport, ...]
+    review_ranking_gate: ReviewRankingCalibrationGateReport
+    blocking_reasons: tuple[str, ...]
+
+    def to_json(self) -> JSONObject:
+        """Return a stable JSON payload for artifacts."""
+        return {
+            "passed": self.passed,
+            "status": self.status,
+            "thresholds": {
+                "min_selection_review_count": (
+                    self.thresholds.min_selection_review_count
+                ),
+                "min_distinct_selection_goals": (
+                    self.thresholds.min_distinct_selection_goals
+                ),
+                "min_selection_reviewer_count": (
+                    self.thresholds.min_selection_reviewer_count
+                ),
+                "min_mean_precision": self.thresholds.min_mean_precision,
+                "min_mean_recall": self.thresholds.min_mean_recall,
+                "min_mean_explanation_quality": (
+                    self.thresholds.min_mean_explanation_quality
+                ),
+                "require_zero_high_severity_overclaims": (
+                    self.thresholds.require_zero_high_severity_overclaims
+                ),
+            },
+            "selection_summary": dict(self.selection_summary),
+            "selection_reports": [
+                _selection_report_to_json(report)
+                for report in self.selection_reports
+            ],
+            "review_ranking_gate": self.review_ranking_gate.to_json(),
+            "blocking_reasons": list(self.blocking_reasons),
+        }
+
+
 def compare_evidence_selection_review(
     review: EvidenceSelectionReviewInput,
 ) -> EvidenceSelectionReviewReport:
@@ -226,6 +335,7 @@ def compare_evidence_selection_review(
         explanation_quality_score=review.explanation_quality_score,
         high_severity_overclaim_count=review.high_severity_overclaim_count,
         overclaim_gate_passed=review.high_severity_overclaim_count == 0,
+        reviewer_id=review.reviewer_id,
         reviewer_notes=review.reviewer_notes,
     )
 
@@ -286,6 +396,45 @@ def evaluate_review_ranking_calibration_gate(
         roc_auc=roc_auc,
         study_design=study_design,
         duplicate_decision_keys=duplicate_decision_keys,
+        blocking_reasons=blocking_reasons,
+    )
+
+
+def evaluate_evidence_selection_expert_study_gate(
+    study: EvidenceSelectionExpertStudyInput,
+    *,
+    thresholds: EvidenceSelectionExpertStudyGateThresholds | None = None,
+    review_ranking_thresholds: ReviewRankingCalibrationGateThresholds | None = None,
+) -> EvidenceSelectionExpertStudyGateReport:
+    """Evaluate whether a full expert/shadow study is production-usable."""
+
+    active_thresholds = thresholds or EvidenceSelectionExpertStudyGateThresholds()
+    selection_reports = tuple(
+        compare_evidence_selection_review(review)
+        for review in study.selection_reviews
+    )
+    selection_summary = _selection_study_summary(
+        reports=selection_reports,
+        study_evidence_kind=study.study_evidence_kind,
+    )
+    review_ranking_gate = evaluate_review_ranking_calibration_gate(
+        decisions=study.review_ranking.decisions,
+        adjudication_note=study.review_ranking.adjudication_note,
+        thresholds=review_ranking_thresholds,
+    )
+    blocking_reasons = _expert_study_blocking_reasons(
+        selection_summary=selection_summary,
+        thresholds=active_thresholds,
+        review_ranking_gate=review_ranking_gate,
+    )
+    passed = not blocking_reasons
+    return EvidenceSelectionExpertStudyGateReport(
+        passed=passed,
+        status="passed" if passed else "failed",
+        thresholds=active_thresholds,
+        selection_summary=selection_summary,
+        selection_reports=selection_reports,
+        review_ranking_gate=review_ranking_gate,
         blocking_reasons=blocking_reasons,
     )
 
@@ -570,7 +719,230 @@ def _normalized_study_label(value: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")
 
 
+def _selection_study_summary(
+    *,
+    reports: tuple[EvidenceSelectionReviewReport, ...],
+    study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind,
+) -> JSONObject:
+    precision_values = tuple(
+        report.precision for report in reports if report.precision is not None
+    )
+    recall_values = tuple(
+        report.recall for report in reports if report.recall is not None
+    )
+    explanation_values = tuple(
+        report.explanation_quality_score
+        for report in reports
+        if report.explanation_quality_score is not None
+    )
+    reviewer_ids = {
+        reviewer_id.strip()
+        for report in reports
+        if (reviewer_id := report.reviewer_id) and reviewer_id.strip()
+    }
+    goals = {
+        normalized_goal
+        for report in reports
+        if (normalized_goal := _normalized_study_label(report.goal))
+    }
+    return {
+        "study_evidence_kind": study_evidence_kind,
+        "review_count": len(reports),
+        "distinct_goal_count": len(goals),
+        "reviewer_count": len(reviewer_ids),
+        "missing_reviewer_id_count": sum(
+            1
+            for report in reports
+            if not (report.reviewer_id and report.reviewer_id.strip())
+        ),
+        "missing_goal_count": sum(
+            1 for report in reports if not _normalized_study_label(report.goal)
+        ),
+        "unmeasurable_precision_count": sum(
+            1 for report in reports if report.precision is None
+        ),
+        "unmeasurable_recall_count": sum(
+            1 for report in reports if report.recall is None
+        ),
+        "missing_explanation_quality_count": sum(
+            1 for report in reports if report.explanation_quality_score is None
+        ),
+        "mean_precision": _round_gate_metric(_mean(precision_values)),
+        "mean_recall": _round_gate_metric(_mean(recall_values)),
+        "mean_explanation_quality": _round_gate_metric(_mean(explanation_values)),
+        "high_severity_overclaim_count": sum(
+            report.high_severity_overclaim_count for report in reports
+        ),
+        "duplicate_suggestion_count": sum(
+            report.duplicate_suggestion_count for report in reports
+        ),
+    }
+
+
+def _selection_report_to_json(report: EvidenceSelectionReviewReport) -> JSONObject:
+    return {
+        "run_id": str(report.run_id),
+        "goal": report.goal,
+        "reviewer_id": report.reviewer_id,
+        "true_positive_ids": list(report.true_positive_ids),
+        "false_positive_ids": list(report.false_positive_ids),
+        "false_negative_ids": list(report.false_negative_ids),
+        "confirmed_skip_ids": list(report.confirmed_skip_ids),
+        "duplicate_suggestion_ids": list(report.duplicate_suggestion_ids),
+        "precision": report.precision,
+        "recall": report.recall,
+        "duplicate_suggestion_count": report.duplicate_suggestion_count,
+        "explanation_quality_score": report.explanation_quality_score,
+        "high_severity_overclaim_count": report.high_severity_overclaim_count,
+        "overclaim_gate_passed": report.overclaim_gate_passed,
+        "reviewer_notes": report.reviewer_notes,
+    }
+
+
+def _mean(values: tuple[float | int, ...]) -> float:
+    if not values:
+        return 0.0
+    return sum(values) / len(values)
+
+
+def _expert_study_blocking_reasons(
+    *,
+    selection_summary: JSONObject,
+    thresholds: EvidenceSelectionExpertStudyGateThresholds,
+    review_ranking_gate: ReviewRankingCalibrationGateReport,
+) -> tuple[str, ...]:
+    return (
+        *_expert_study_provenance_blocking_reasons(selection_summary),
+        *_expert_study_coverage_blocking_reasons(
+            selection_summary=selection_summary,
+            thresholds=thresholds,
+        ),
+        *_expert_study_quality_blocking_reasons(
+            selection_summary=selection_summary,
+            thresholds=thresholds,
+        ),
+        *_expert_study_ranking_blocking_reasons(review_ranking_gate),
+    )
+
+
+def _expert_study_provenance_blocking_reasons(
+    selection_summary: JSONObject,
+) -> tuple[str, ...]:
+    if selection_summary.get("study_evidence_kind") == "real_shadow_review":
+        return ()
+    return (
+        "The expert study must be real shadow-review evidence before it can "
+        "support production readiness.",
+    )
+
+
+def _expert_study_coverage_blocking_reasons(
+    *,
+    selection_summary: JSONObject,
+    thresholds: EvidenceSelectionExpertStudyGateThresholds,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if (
+        _int_from_json(selection_summary, "review_count")
+        < thresholds.min_selection_review_count
+    ):
+        reasons.append(
+            "At least "
+            f"{thresholds.min_selection_review_count} selection review runs are "
+            "required for production study evidence.",
+        )
+    if (
+        _int_from_json(selection_summary, "distinct_goal_count")
+        < thresholds.min_distinct_selection_goals
+    ):
+        reasons.append(
+            "At least "
+            f"{thresholds.min_distinct_selection_goals} distinct selection goals "
+            "are required for production study evidence.",
+        )
+    if (
+        _int_from_json(selection_summary, "reviewer_count")
+        < thresholds.min_selection_reviewer_count
+    ):
+        reasons.append(
+            "At least "
+            f"{thresholds.min_selection_reviewer_count} selection reviewer is "
+            "required for production study evidence.",
+        )
+    if _int_from_json(selection_summary, "missing_reviewer_id_count") > 0:
+        reasons.append("Every selection review must include a reviewer ID.")
+    if _int_from_json(selection_summary, "missing_goal_count") > 0:
+        reasons.append("Every selection review must include a research goal.")
+    if _int_from_json(selection_summary, "unmeasurable_precision_count") > 0:
+        reasons.append("Every selection review must have measurable precision.")
+    if _int_from_json(selection_summary, "unmeasurable_recall_count") > 0:
+        reasons.append("Every selection review must have measurable recall.")
+    if _int_from_json(selection_summary, "missing_explanation_quality_count") > 0:
+        reasons.append(
+            "Every selection review must include an explanation-quality score.",
+        )
+    return tuple(reasons)
+
+
+def _expert_study_quality_blocking_reasons(
+    *,
+    selection_summary: JSONObject,
+    thresholds: EvidenceSelectionExpertStudyGateThresholds,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if _float_from_json(selection_summary, "mean_precision") < thresholds.min_mean_precision:
+        reasons.append(
+            "Expert/shadow mean selection precision is below target: "
+            f"{_float_from_json(selection_summary, 'mean_precision'):.6f} < "
+            f"{thresholds.min_mean_precision:.6f}.",
+        )
+    if _float_from_json(selection_summary, "mean_recall") < thresholds.min_mean_recall:
+        reasons.append(
+            "Expert/shadow mean selection recall is below target: "
+            f"{_float_from_json(selection_summary, 'mean_recall'):.6f} < "
+            f"{thresholds.min_mean_recall:.6f}.",
+        )
+    if (
+        _float_from_json(selection_summary, "mean_explanation_quality")
+        < thresholds.min_mean_explanation_quality
+    ):
+        reasons.append(
+            "Expert/shadow mean explanation quality is below target: "
+            f"{_float_from_json(selection_summary, 'mean_explanation_quality'):.6f} < "
+            f"{thresholds.min_mean_explanation_quality:.6f}.",
+        )
+    if (
+        thresholds.require_zero_high_severity_overclaims
+        and _int_from_json(selection_summary, "high_severity_overclaim_count") > 0
+    ):
+        reasons.append("High-severity overclaim count must be zero.")
+    return tuple(reasons)
+
+
+def _expert_study_ranking_blocking_reasons(
+    review_ranking_gate: ReviewRankingCalibrationGateReport,
+) -> tuple[str, ...]:
+    if review_ranking_gate.passed:
+        return ()
+    return (
+        "Review-ranking gate failed: "
+        f"{'; '.join(review_ranking_gate.blocking_reasons)}",
+    )
+
+
+def _float_from_json(payload: JSONObject, key: str) -> float:
+    value = payload.get(key)
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, int | float):
+        return float(value)
+    return 0.0
+
+
 __all__ = [
+    "EvidenceSelectionExpertStudyGateReport",
+    "EvidenceSelectionExpertStudyGateThresholds",
+    "EvidenceSelectionExpertStudyInput",
     "EvidenceSelectionReviewInput",
     "EvidenceSelectionReviewReport",
     "ReviewRankingCalibrationDecision",
@@ -578,5 +950,6 @@ __all__ = [
     "ReviewRankingCalibrationStudyInput",
     "ReviewRankingCalibrationGateThresholds",
     "compare_evidence_selection_review",
+    "evaluate_evidence_selection_expert_study_gate",
     "evaluate_review_ranking_calibration_gate",
 ]
