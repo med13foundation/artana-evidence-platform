@@ -46,6 +46,7 @@ class EvidenceSelectionShadowReviewStudyArtifactRequest:
     exporter_id: str
     redaction_statement: str
     packet_path: Path | None = None
+    protected_source_paths: tuple[Path, ...] = ()
     study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind = "real_shadow_review"
     description: str | None = None
 
@@ -71,11 +72,12 @@ def build_evidence_selection_shadow_review_study_artifacts(
 
     _validate_output_dir(request.output_dir)
     paths = _study_artifact_paths(request.output_dir)
+    source_paths = request.protected_source_paths
+    if request.packet_path is not None:
+        source_paths = (request.packet_path, *source_paths)
     _validate_output_paths(
         paths=paths,
-        source_paths=(
-            (request.packet_path,) if request.packet_path is not None else ()
-        ),
+        source_paths=source_paths,
     )
     source_inputs = build_evidence_selection_shadow_review_source_inputs(
         EvidenceSelectionShadowReviewSourceInputRequest(

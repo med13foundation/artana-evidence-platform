@@ -36,6 +36,7 @@ EVIDENCE_API_PREFIXES = (
 EVIDENCE_API_FILES = (
     "scripts/build_evidence_selection_shadow_review_packet.py",
     "scripts/build_evidence_selection_shadow_review_source_inputs.py",
+    "scripts/build_evidence_selection_shadow_review_study_batch.py",
     "scripts/build_evidence_selection_shadow_review_study_artifacts.py",
     "scripts/build_evidence_selection_source_exports.py",
     "scripts/build_evidence_selection_expert_study_bundle.py",

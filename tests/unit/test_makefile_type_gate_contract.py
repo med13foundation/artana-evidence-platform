@@ -72,6 +72,18 @@ def test_evidence_api_gates_cover_shadow_review_study_pipeline_cli_script() -> N
     )
 
 
+def test_evidence_api_gates_cover_shadow_review_study_batch_cli_script() -> None:
+    makefile_text = _makefile_text()
+    type_check_body = _target_body(makefile_text, "artana-evidence-api-type-check")
+
+    assert "../scripts/build_evidence_selection_shadow_review_study_batch.py" in (
+        type_check_body
+    )
+    assert "scripts/build_evidence_selection_shadow_review_study_batch.py \\" in (
+        makefile_text
+    )
+
+
 def test_evidence_api_strict_import_target_remains_explicit_alias() -> None:
     makefile_text = _makefile_text()
     strict_import_body = _target_body(
