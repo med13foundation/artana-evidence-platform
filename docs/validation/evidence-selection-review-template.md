@@ -84,6 +84,24 @@ Run
 `scripts/run_evidence_selection_review_calibration_gate.py` on the collected
 decisions before claiming the ranking threshold is ready.
 
+Before collected labels exist, generate a reviewer-facing packet from a saved
+evidence-selection result artifact:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_packet.py \
+  --run-result path/to/evidence-selection-result.json \
+  --study-id <study-id> \
+  --output path/to/shadow-review-packet.json
+```
+
+The packet uses
+`schema_version: "evidence_selection_shadow_review_packet.v1"` and sets
+`production_readiness_claim: false`. It is a collection aid, not completed
+expert evidence. Reviewers must fill the required human selection labels,
+reviewer IDs, explanation-quality scores, overclaim counts, and
+positive/negative review-ranking outcomes before the data can be converted into
+the source-export inputs below.
+
 For a complete expert/shadow study, store selection reviews and review-ranking
 decisions as self-describing source exports. The selection-review export shape
 is:

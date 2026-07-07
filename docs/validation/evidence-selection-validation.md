@@ -125,6 +125,20 @@ run, and an adjudication note for disagreements or borderline calls. Offline
 fixtures and helper metrics are necessary foundation checks, but they are not
 evidence that the harness is production ready.
 
+Reviewer packet generation before labels:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_packet.py \
+  --run-result path/to/evidence-selection-result.json \
+  --study-id <study-id> \
+  --output path/to/shadow-review-packet.json
+```
+
+The packet is explicitly incomplete: it records the harness-selected, skipped,
+and deferred candidate IDs but keeps human labels and ranking outcomes blank.
+Do not use it as a source export or expert-study input until those required
+fields have been filled by a human reviewer.
+
 Full expert/shadow study gate:
 
 ```bash

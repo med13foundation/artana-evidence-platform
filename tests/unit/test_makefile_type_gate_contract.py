@@ -36,6 +36,18 @@ def test_evidence_api_type_gate_uses_strict_package_invocation() -> None:
         assert forbidden_flag not in type_check_body
 
 
+def test_evidence_api_gates_cover_shadow_review_packet_cli_script() -> None:
+    makefile_text = _makefile_text()
+    type_check_body = _target_body(makefile_text, "artana-evidence-api-type-check")
+
+    assert "../scripts/build_evidence_selection_shadow_review_packet.py" in (
+        type_check_body
+    )
+    assert "scripts/build_evidence_selection_shadow_review_packet.py \\" in (
+        makefile_text
+    )
+
+
 def test_evidence_api_strict_import_target_remains_explicit_alias() -> None:
     makefile_text = _makefile_text()
     strict_import_body = _target_body(

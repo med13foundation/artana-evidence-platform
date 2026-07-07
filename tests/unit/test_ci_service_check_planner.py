@@ -73,6 +73,20 @@ def test_evidence_api_source_export_script_pr_runs_evidence_api_gate() -> None:
     assert plan.targeted_test_paths == ()
 
 
+def test_evidence_api_shadow_review_packet_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_shadow_review_packet.py"],
+        event_name="pull_request",
+        ref="refs/pull/147/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
 def test_graph_service_code_pr_runs_graph_gate_only() -> None:
     plan = plan_checks(
         ["services/artana_evidence_db/governance.py"],
