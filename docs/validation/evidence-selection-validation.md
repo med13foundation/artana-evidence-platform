@@ -66,6 +66,35 @@ confirmed skips, duplicate counts, precision, recall, explanation quality, and
 the zero high-severity-overclaim gate. The helper aggregates reviewer-supplied
 labels and counts; it does not replace reviewer judgment.
 
+Review-ranking calibration is gated separately from per-run precision/recall.
+Use
+`artana_evidence_api.evidence_selection_validation.evaluate_review_ranking_calibration_gate`
+or the runner below to compare prior `ranking_score` values with expert or
+shadow-mode outcomes. The gate fails closed unless the review set has enough
+decisions, both positive and negative outcomes, both proposal and review-item
+sources, no duplicate decision keys, expected calibration error under the
+configured threshold, and evidence that scores discriminate positive outcomes
+from negative outcomes. Calibration alone is not enough: a constant score can be
+well calibrated to the base positive rate while still being useless for review
+queue prioritization.
+
+Seed command:
+
+```bash
+uv run python scripts/run_evidence_selection_review_calibration_gate.py \
+  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json \
+  --max-expected-calibration-error 0.15 \
+  --output-dir reports/evidence_selection_review_calibration/2026-07-07-pr39-seed \
+  --fail-on-not-ready
+```
+
+The seed fixture proves the JSON format and threshold mechanics only. It is not
+production-representative evidence and must not be used to claim production
+readiness by itself. Production use should keep the runner's default `0.05`
+expected-calibration-error threshold, `0.70` ROC-AUC threshold, and `0.10`
+positive-vs-negative mean-score separation threshold unless a reviewed
+calibration plan sets stricter thresholds.
+
 Production-readiness requires real shadow-mode runs reviewed by human experts
 on real research questions. Start with at least three distinct research
 questions across different evidence shapes, at least one domain reviewer per

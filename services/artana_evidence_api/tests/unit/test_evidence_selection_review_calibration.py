@@ -1,0 +1,143 @@
+"""Tests for expert/shadow review-ranking calibration gates."""
+
+from __future__ import annotations
+
+import pytest
+from artana_evidence_api.evidence_selection_validation import (
+    ReviewRankingCalibrationDecision,
+    ReviewRankingCalibrationGateThresholds,
+    evaluate_review_ranking_calibration_gate,
+)
+from pydantic import ValidationError
+
+
+def test_review_ranking_calibration_gate_passes_balanced_shadow_set() -> None:
+    report = evaluate_review_ranking_calibration_gate(
+        decisions=(
+            _decision("proposal", "proposal-1", 0.95, "positive"),
+            _decision("review_item", "review-item-1", 0.9, "positive"),
+            _decision("proposal", "proposal-2", 0.05, "negative"),
+            _decision("review_item", "review-item-2", 0.1, "negative"),
+        ),
+        thresholds=ReviewRankingCalibrationGateThresholds(
+            min_sample_count=4,
+            max_expected_calibration_error=0.08,
+        ),
+    )
+
+    assert report.passed is True
+    assert report.status == "passed"
+    assert report.blocking_reasons == ()
+    assert report.calibration.sample_count == 4
+    assert report.calibration.mean_score == 0.5
+    assert report.calibration.observed_positive_rate == 0.5
+    assert report.calibration.expected_calibration_error == 0.075
+    assert report.roc_auc == 1.0
+    assert report.mean_score_separation == 0.85
+    assert report.source_counts == {"proposal": 2, "review_item": 2}
+    assert report.outcome_counts == {"negative": 2, "positive": 2}
+
+
+def test_review_ranking_calibration_gate_fails_closed_for_weak_review_sets() -> None:
+    report = evaluate_review_ranking_calibration_gate(
+        decisions=(
+            _decision("proposal", "duplicate", 0.9, "positive"),
+            _decision("proposal", "duplicate", 0.8, "positive"),
+            _decision("proposal", "proposal-3", 0.7, "positive"),
+        ),
+        thresholds=ReviewRankingCalibrationGateThresholds(
+            min_sample_count=4,
+            max_expected_calibration_error=0.01,
+        ),
+    )
+
+    assert report.passed is False
+    assert report.status == "failed"
+    assert any("At least 4" in reason for reason in report.blocking_reasons)
+    assert any("negative reviewer outcome" in reason for reason in report.blocking_reasons)
+    assert any("review_item source" in reason for reason in report.blocking_reasons)
+    assert any("Duplicate" in reason for reason in report.blocking_reasons)
+    assert any("ECE is above target" in reason for reason in report.blocking_reasons)
+
+
+def test_review_ranking_calibration_gate_blocks_constant_base_rate_scores() -> None:
+    report = evaluate_review_ranking_calibration_gate(
+        decisions=(
+            _decision("proposal", "positive-1", 0.7, "positive"),
+            _decision("review_item", "positive-2", 0.7, "positive"),
+            _decision("proposal", "positive-3", 0.7, "positive"),
+            _decision("review_item", "positive-4", 0.7, "positive"),
+            _decision("proposal", "positive-5", 0.7, "positive"),
+            _decision("review_item", "positive-6", 0.7, "positive"),
+            _decision("proposal", "positive-7", 0.7, "positive"),
+            _decision("review_item", "negative-1", 0.7, "negative"),
+            _decision("proposal", "negative-2", 0.7, "negative"),
+            _decision("review_item", "negative-3", 0.7, "negative"),
+        ),
+    )
+
+    assert report.passed is False
+    assert report.calibration.expected_calibration_error == 0.0
+    assert report.roc_auc == 0.5
+    assert report.mean_score_separation == 0.0
+    assert any("ROC AUC" in reason for reason in report.blocking_reasons)
+    assert any("score separation" in reason for reason in report.blocking_reasons)
+
+
+def test_review_ranking_calibration_decision_rejects_invalid_labels() -> None:
+    with pytest.raises(ValidationError):
+        ReviewRankingCalibrationDecision.model_validate(
+            {
+                "source_kind": "document",
+                "item_id": "item-1",
+                "ranking_score": 0.5,
+                "outcome": "positive",
+            },
+        )
+
+    with pytest.raises(ValidationError):
+        ReviewRankingCalibrationDecision.model_validate(
+            {
+                "source_kind": "proposal",
+                "item_id": "item-1",
+                "ranking_score": 1.2,
+                "outcome": "positive",
+            },
+        )
+
+    with pytest.raises(ValidationError):
+        ReviewRankingCalibrationDecision.model_validate(
+            {
+                "source_kind": "proposal",
+                "item_id": "item-1",
+                "ranking_score": 0.5,
+                "outcome": "maybe",
+            },
+        )
+
+    with pytest.raises(ValidationError):
+        ReviewRankingCalibrationDecision.model_validate(
+            {
+                "source_kind": "proposal",
+                "item_id": "item-1",
+                "ranking_score": 0.5,
+                "outcome": "positive",
+                "unexpected": "ignored would be unsafe",
+            },
+        )
+
+
+def _decision(
+    source_kind: str,
+    item_id: str,
+    ranking_score: float,
+    outcome: str,
+) -> ReviewRankingCalibrationDecision:
+    return ReviewRankingCalibrationDecision.model_validate(
+        {
+            "source_kind": source_kind,
+            "item_id": item_id,
+            "ranking_score": ranking_score,
+            "outcome": outcome,
+        },
+    )

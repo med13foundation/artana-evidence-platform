@@ -43,5 +43,32 @@ suggestions, confirmed skips, and the production overclaim gate from this kind
 of reviewer-supplied input. It aggregates the review; it does not decide the
 gate without human labels.
 
+For review-ranking calibration, record each decided proposal or review item in
+this format:
+
+```json
+{
+  "source_kind": "proposal",
+  "item_id": "",
+  "ranking_score": 0.0,
+  "outcome": "positive",
+  "reviewer_id": "",
+  "goal": ""
+}
+```
+
+Interpretation:
+
+- `source_kind`: `proposal` or `review_item`.
+- `ranking_score`: the production score shown before the reviewer decision.
+- `outcome`: `positive` for promoted proposals or resolved review items;
+  `negative` for rejected proposals or dismissed review items.
+- `item_id`: stable source item ID. Do not duplicate the same source/item pair
+  in one calibration study.
+
+Run
+`scripts/run_evidence_selection_review_calibration_gate.py` on the collected
+decisions before claiming the ranking threshold is ready.
+
 Production-readiness requires real shadow-mode comparisons with human reviewers
 on real research questions. Passing the MED13 fixture alone is not enough.
