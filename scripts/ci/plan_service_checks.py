@@ -34,6 +34,7 @@ EVIDENCE_API_PREFIXES = (
     "tests/e2e/artana_evidence_api/",
 )
 EVIDENCE_API_FILES = (
+    "scripts/build_evidence_selection_expert_study_bundle.py",
     "scripts/export_artana_evidence_api_openapi.py",
     "scripts/validate_artana_evidence_api_service_boundary.py",
 )
