@@ -90,6 +90,54 @@ def test_audit_scores_specific_supported_relations_as_valuable() -> None:
     assert report.case_results[0].candidate_assessments[0].is_valuable is True
 
 
+def test_audit_reports_candidate_score_calibration_error() -> None:
+    cases = (
+        _case(
+            case_id="calibration_pair",
+            text=(
+                "MED13 activates cardiac septal development. "
+                "BRAF activates MAPK signaling in melanoma cells."
+            ),
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="cardiac septal development",
+                    support_sentence="MED13 activates cardiac septal development.",
+                    value_level="high",
+                    rationale="Specific gene-to-process mechanism.",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence="MED13 activates cardiac septal development.",
+            ),
+            ExtractedRelation(
+                subject="BRAF",
+                relation_type="ACTIVATES",
+                object="MAPK signaling",
+                sentence="BRAF activates MAPK signaling in melanoma cells.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    summary_payload = report.summary.to_json()
+
+    assert report.summary.candidate_score_calibration_sample_count == 2
+    assert report.summary.trusted_candidate_score_calibration_sample_count == 2
+    assert report.summary.candidate_score_ece == 0.5
+    assert report.summary.trusted_candidate_score_ece == 0.5
+    assert summary_payload["candidate_score_ece"] == 0.5
+    assert summary_payload["trusted_candidate_score_ece"] == 0.5
+
+
 def test_audit_rejects_off_target_support_sentence_for_matching_triple() -> None:
     cases = (
         _case(

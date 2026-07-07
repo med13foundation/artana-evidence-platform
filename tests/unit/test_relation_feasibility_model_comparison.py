@@ -37,6 +37,10 @@ def _write_report(
     trusted_generic_rate: float | None = None,
     trusted_endpoint_rate: float = 0.96,
     verified_curie_rate: float = 0.96,
+    trusted_candidate_score_calibration_sample_count: int = 10,
+    candidate_score_calibration_sample_count: int = 20,
+    trusted_candidate_score_ece: float = 0.0,
+    candidate_score_ece: float = 0.0,
     entailment_checked_rate: float = 1.0,
     fallback_cases: int = 0,
     invalid_agent_cases: int = 0,
@@ -79,6 +83,14 @@ def _write_report(
                 trusted_endpoint_rate
             ),
             "verified_curie_match_rate": verified_curie_rate,
+            "trusted_candidate_score_calibration_sample_count": (
+                trusted_candidate_score_calibration_sample_count
+            ),
+            "candidate_score_calibration_sample_count": (
+                candidate_score_calibration_sample_count
+            ),
+            "trusted_candidate_score_ece": trusted_candidate_score_ece,
+            "candidate_score_ece": candidate_score_ece,
             "entailment_checked_rate": entailment_checked_rate,
             "fallback_case_count": fallback_cases,
             "invalid_agent_case_count": invalid_agent_cases,
@@ -100,9 +112,27 @@ def test_model_comparison_adopts_candidate_when_worst_run_readiness_improves(
     tmp_path: Path,
 ) -> None:
     current_reports = (
-        _write_report(tmp_path, "current1", model_label="current", precision=0.86),
-        _write_report(tmp_path, "current2", model_label="current", precision=0.88),
-        _write_report(tmp_path, "current3", model_label="current", precision=0.9),
+        _write_report(
+            tmp_path,
+            "current1",
+            model_label="current",
+            precision=0.86,
+            trusted_candidate_score_ece=0.03,
+        ),
+        _write_report(
+            tmp_path,
+            "current2",
+            model_label="current",
+            precision=0.88,
+            trusted_candidate_score_ece=0.03,
+        ),
+        _write_report(
+            tmp_path,
+            "current3",
+            model_label="current",
+            precision=0.9,
+            trusted_candidate_score_ece=0.03,
+        ),
     )
     candidate_reports = (
         _write_report(
@@ -111,6 +141,7 @@ def test_model_comparison_adopts_candidate_when_worst_run_readiness_improves(
             model_label="candidate",
             precision=0.9,
             trusted_endpoint_rate=0.98,
+            trusted_candidate_score_ece=0.01,
         ),
         _write_report(
             tmp_path,
@@ -118,6 +149,7 @@ def test_model_comparison_adopts_candidate_when_worst_run_readiness_improves(
             model_label="candidate",
             precision=0.91,
             trusted_endpoint_rate=0.99,
+            trusted_candidate_score_ece=0.01,
         ),
         _write_report(
             tmp_path,
@@ -125,6 +157,7 @@ def test_model_comparison_adopts_candidate_when_worst_run_readiness_improves(
             model_label="candidate",
             precision=0.92,
             trusted_endpoint_rate=0.99,
+            trusted_candidate_score_ece=0.01,
         ),
     )
 
@@ -151,6 +184,9 @@ def test_model_comparison_adopts_candidate_when_worst_run_readiness_improves(
     assert decision.metric_deltas[
         "worst_trusted_eligible_curie_linked_gold_endpoint_rate"
     ] == pytest.approx(0.02)
+    assert decision.metric_deltas["worst_trusted_candidate_score_ece"] == pytest.approx(
+        -0.02,
+    )
     assert report["decision"]["adopted_model_label"] == "candidate"
     assert report["candidate_readiness"]["readiness_status"] == "ready"
     assert "Decision: **ADOPT_CANDIDATE**" in markdown

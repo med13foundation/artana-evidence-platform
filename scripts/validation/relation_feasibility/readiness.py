@@ -21,6 +21,7 @@ class ReadinessThresholds:
     max_generic_rate: float = 0.05
     min_curie_linked_endpoint_rate: float = 0.95
     min_entailment_checked_rate: float = 1.0
+    max_trusted_candidate_score_ece: float = 0.05
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +37,8 @@ class _BlockingReasonContext:
 
 _DEFAULT_THRESHOLDS = ReadinessThresholds()
 _LOWER_IS_BETTER_METRICS = (
+    "trusted_candidate_score_ece",
+    "candidate_score_ece",
     "trusted_candidate_generic_relation_rate",
     "generic_relation_rate",
 )
@@ -47,6 +50,8 @@ _HIGHER_IS_BETTER_METRICS = (
     "high_value_recall",
     "trusted_candidate_valuable_rate",
     "completed_agent_valuable_candidate_rate",
+    "trusted_candidate_score_calibration_sample_count",
+    "candidate_score_calibration_sample_count",
     "trusted_eligible_curie_linked_gold_endpoint_rate",
     "curie_linked_gold_endpoint_rate",
     "verified_curie_match_rate",
@@ -125,6 +130,9 @@ def build_readiness_report(
             ),
             "min_entailment_checked_rate": (
                 active_thresholds.min_entailment_checked_rate
+            ),
+            "max_trusted_candidate_score_ece": (
+                active_thresholds.max_trusted_candidate_score_ece
             ),
         },
     }
@@ -329,6 +337,13 @@ def _threshold_blocking_reasons(
                 _float_from_object(worst_metrics.get("entailment_checked_rate"))
                 < thresholds.min_entailment_checked_rate,
                 "Worst-run entailment checked rate is below target.",
+            ),
+            (
+                _float_from_object(
+                    worst_metrics.get("trusted_candidate_score_ece"),
+                )
+                > thresholds.max_trusted_candidate_score_ece,
+                "Worst-run trusted candidate score calibration ECE is above target.",
             ),
         )
         if blocked

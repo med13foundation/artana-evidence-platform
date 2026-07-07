@@ -8,6 +8,10 @@ from scripts.validation.relation_feasibility.endpoint_metrics import (
     EndpointMetricSummary,
     build_endpoint_metric_summary,
 )
+from scripts.validation.relation_feasibility.metrics.calibration import (
+    ScoreCalibrationMetricCounts,
+    build_score_calibration_metric_counts,
+)
 from scripts.validation.relation_feasibility.metrics.trust_lane import (
     TrustLaneMetricCounts,
     build_trust_lane_metric_counts,
@@ -171,6 +175,8 @@ class _SummaryMetricGroups:
     curie: _CurieMetricCounts
     value: _ValueMetricCounts
     trust_lane: TrustLaneMetricCounts
+    candidate_calibration: ScoreCalibrationMetricCounts
+    trusted_candidate_calibration: ScoreCalibrationMetricCounts
     negative_control: _NegativeControlMetricCounts
     agent: _AgentMetricCounts
 
@@ -180,6 +186,11 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
 
     candidates = _all_candidate_assessments(inputs)
     candidate_metrics = _candidate_metric_counts(candidates)
+    candidate_calibration_metrics = build_score_calibration_metric_counts(candidates)
+    trusted_candidate_calibration_metrics = build_score_calibration_metric_counts(
+        candidates,
+        trusted_only=True,
+    )
     trace_metrics = _trace_metric_counts(inputs)
     relation_type_metrics = _relation_type_metric_counts(inputs, candidates)
     proposal_metrics = _proposal_metric_counts(inputs, candidates)
@@ -212,6 +223,8 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         curie=curie_metrics,
         value=value_metrics,
         trust_lane=trust_lane_metrics,
+        candidate_calibration=candidate_calibration_metrics,
+        trusted_candidate_calibration=trusted_candidate_calibration_metrics,
         negative_control=negative_control_metrics,
         agent=agent_metrics,
     )
@@ -368,6 +381,28 @@ def build_summary(inputs: SummaryInputs) -> FeasibilitySummary:
         ),
         trusted_candidate_generic_relation_rate=(
             trust_lane_metrics.trusted_candidate_generic_relation_rate
+        ),
+        candidate_score_calibration_sample_count=(
+            candidate_calibration_metrics.sample_count
+        ),
+        candidate_score_mean=candidate_calibration_metrics.mean_score,
+        candidate_score_observed_positive_rate=(
+            candidate_calibration_metrics.observed_positive_rate
+        ),
+        candidate_score_ece=(
+            candidate_calibration_metrics.expected_calibration_error
+        ),
+        trusted_candidate_score_calibration_sample_count=(
+            trusted_candidate_calibration_metrics.sample_count
+        ),
+        trusted_candidate_score_mean=(
+            trusted_candidate_calibration_metrics.mean_score
+        ),
+        trusted_candidate_score_observed_positive_rate=(
+            trusted_candidate_calibration_metrics.observed_positive_rate
+        ),
+        trusted_candidate_score_ece=(
+            trusted_candidate_calibration_metrics.expected_calibration_error
         ),
         completed_agent_precision_against_gold=_ratio(
             agent_metrics.completed_agent_supported_candidate_count,
