@@ -15,6 +15,69 @@ class ProposalRanking:
     metadata: JSONObject
 
 
+@dataclass(frozen=True, slots=True)
+class ReviewRankingCalibrationObservation:
+    """One decided review-ranking observation for calibration accounting."""
+
+    ranking_score: float
+    outcome_positive: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewRankingCalibrationSummary:
+    """Expected calibration error summary for human-review ranking scores."""
+
+    sample_count: int
+    mean_score: float
+    observed_positive_rate: float
+    expected_calibration_error: float
+
+    def to_json(self) -> JSONObject:
+        """Return a stable JSON payload for artifacts and snapshots."""
+        return {
+            "sample_count": self.sample_count,
+            "mean_score": self.mean_score,
+            "observed_positive_rate": self.observed_positive_rate,
+            "expected_calibration_error": self.expected_calibration_error,
+        }
+
+
+def build_review_ranking_calibration_summary(
+    observations: tuple[ReviewRankingCalibrationObservation, ...],
+    *,
+    bin_count: int = 10,
+) -> ReviewRankingCalibrationSummary:
+    """Measure review-ranking calibration against human decision outcomes."""
+    scored_observations = tuple(
+        (
+            _bounded_score(observation.ranking_score),
+            1.0 if observation.outcome_positive else 0.0,
+        )
+        for observation in observations
+    )
+    sample_count = len(scored_observations)
+    if sample_count == 0:
+        return ReviewRankingCalibrationSummary(
+            sample_count=0,
+            mean_score=0.0,
+            observed_positive_rate=0.0,
+            expected_calibration_error=0.0,
+        )
+    return ReviewRankingCalibrationSummary(
+        sample_count=sample_count,
+        mean_score=_round_score(
+            sum(score for score, _outcome in scored_observations) / sample_count,
+        ),
+        observed_positive_rate=_round_score(
+            sum(outcome for _score, outcome in scored_observations) / sample_count,
+        ),
+        expected_calibration_error=_expected_calibration_error(
+            scored_observations=scored_observations,
+            bin_count=bin_count,
+        ),
+    )
+
+
 def rank_candidate_claim(
     *,
     confidence: float,
@@ -22,7 +85,7 @@ def rank_candidate_claim(
     evidence_reference_count: int,
 ) -> ProposalRanking:
     """Compute a bounded ranking score for one candidate claim."""
-    confidence_component = max(0.0, min(confidence, 1.0))
+    confidence_component = _bounded_score(confidence)
     document_component = min(max(supporting_document_count, 0), 5) / 5
     evidence_component = min(max(evidence_reference_count, 0), 5) / 5
     score = round(
@@ -59,9 +122,9 @@ def rank_reviewed_candidate_claim(
     relation_specific: bool | None = None,
 ) -> ProposalRanking:
     """Compute a ranking score for one reviewed document-extraction claim."""
-    factual_component = max(0.0, min(factual_confidence, 1.0))
-    relevance_component = max(0.0, min(goal_relevance, 1.0))
-    priority_component = max(0.0, min(priority, 1.0))
+    factual_component = _bounded_score(factual_confidence)
+    relevance_component = _bounded_score(goal_relevance)
+    priority_component = _bounded_score(priority)
     document_component = min(max(supporting_document_count, 0), 5) / 5
     evidence_component = min(max(evidence_reference_count, 0), 5) / 5
     grounded_component = _optional_binary_component(grounded_sentence)
@@ -112,6 +175,45 @@ def _optional_binary_component(value: bool | None) -> float:
     return 1.0 if value else 0.0
 
 
+def _bounded_score(value: float) -> float:
+    return max(0.0, min(value, 1.0))
+
+
+def _round_score(value: float) -> float:
+    return round(value, 6)
+
+
+def _expected_calibration_error(
+    *,
+    scored_observations: tuple[tuple[float, float], ...],
+    bin_count: int,
+) -> float:
+    if bin_count < 1:
+        msg = "bin_count must be at least 1"
+        raise ValueError(msg)
+    total_count = len(scored_observations)
+    error = 0.0
+    for bin_index in range(bin_count):
+        bin_items = tuple(
+            item
+            for item in scored_observations
+            if _calibration_bin_index(score=item[0], bin_count=bin_count) == bin_index
+        )
+        if not bin_items:
+            continue
+        bin_confidence = sum(score for score, _outcome in bin_items) / len(bin_items)
+        bin_accuracy = sum(outcome for _score, outcome in bin_items) / len(bin_items)
+        error += (len(bin_items) / total_count) * abs(bin_confidence - bin_accuracy)
+    return _round_score(error)
+
+
+def _calibration_bin_index(*, score: float, bin_count: int) -> int:
+    bounded_score = _bounded_score(score)
+    if bounded_score == 1.0:
+        return bin_count - 1
+    return int(bounded_score * bin_count)
+
+
 def rank_chat_graph_write_candidate(
     *,
     evidence_relevance: float,
@@ -121,11 +223,11 @@ def rank_chat_graph_write_candidate(
     relation_prior_score: float,
 ) -> ProposalRanking:
     """Compute a bounded ranking score for one chat-derived graph-write candidate."""
-    evidence_component = max(0.0, min(evidence_relevance, 1.0))
-    suggestion_component = max(0.0, min(suggestion_final_score, 1.0))
-    vector_component = max(0.0, min(vector_score, 1.0))
-    overlap_component = max(0.0, min(graph_overlap_score, 1.0))
-    prior_component = max(0.0, min(relation_prior_score, 1.0))
+    evidence_component = _bounded_score(evidence_relevance)
+    suggestion_component = _bounded_score(suggestion_final_score)
+    vector_component = _bounded_score(vector_score)
+    overlap_component = _bounded_score(graph_overlap_score)
+    prior_component = _bounded_score(relation_prior_score)
     score = round(
         min(
             1.0,
@@ -158,7 +260,7 @@ def rank_mechanism_candidate(
     average_path_length: float,
 ) -> ProposalRanking:
     """Compute a bounded ranking score for one mechanism candidate."""
-    confidence_component = max(0.0, min(confidence, 1.0))
+    confidence_component = _bounded_score(confidence)
     path_count_component = min(max(path_count, 0), 6) / 6
     support_component = min(max(supporting_claim_count, 0), 8) / 8
     evidence_component = min(max(evidence_reference_count, 0), 8) / 8
@@ -195,6 +297,9 @@ def rank_mechanism_candidate(
 
 __all__ = [
     "ProposalRanking",
+    "ReviewRankingCalibrationObservation",
+    "ReviewRankingCalibrationSummary",
+    "build_review_ranking_calibration_summary",
     "rank_chat_graph_write_candidate",
     "rank_candidate_claim",
     "rank_mechanism_candidate",
