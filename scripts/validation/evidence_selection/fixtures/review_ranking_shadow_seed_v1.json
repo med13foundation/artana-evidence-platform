@@ -2,6 +2,7 @@
   "schema_version": "evidence_selection_review_ranking_calibration.v1",
   "study_id": "review_ranking_shadow_seed_v1",
   "description": "Seed expert/shadow review-ranking calibration fixture. This proves the gate format and threshold mechanics; it is not production-representative evidence by itself.",
+  "adjudication_note": "Seed fixture includes no reviewer disagreements; production studies must replace this with real adjudication notes for disagreements or borderline calls.",
   "decisions": [
     {
       "source_kind": "proposal",
@@ -9,7 +10,8 @@
       "ranking_score": 0.95,
       "outcome": "positive",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "review_item",
@@ -17,7 +19,8 @@
       "ranking_score": 0.92,
       "outcome": "positive",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "proposal",
@@ -25,7 +28,8 @@
       "ranking_score": 0.9,
       "outcome": "positive",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "review_item",
@@ -33,7 +37,8 @@
       "ranking_score": 0.88,
       "outcome": "positive",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "proposal",
@@ -41,7 +46,8 @@
       "ranking_score": 0.86,
       "outcome": "positive",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "review_item",
@@ -49,7 +55,8 @@
       "ranking_score": 0.84,
       "outcome": "positive",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "proposal",
@@ -57,7 +64,8 @@
       "ranking_score": 0.82,
       "outcome": "positive",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "review_item",
@@ -65,7 +73,8 @@
       "ranking_score": 0.05,
       "outcome": "negative",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "proposal",
@@ -73,7 +82,8 @@
       "ranking_score": 0.08,
       "outcome": "negative",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     },
     {
       "source_kind": "review_item",
@@ -81,7 +91,8 @@
       "ranking_score": 0.12,
       "outcome": "negative",
       "reviewer_id": "seed-reviewer-a",
-      "goal": "Find MED13 congenital heart disease evidence."
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
     }
   ]
 }

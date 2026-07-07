@@ -53,7 +53,8 @@ this format:
   "ranking_score": 0.0,
   "outcome": "positive",
   "reviewer_id": "",
-  "goal": ""
+  "goal": "",
+  "evidence_shape": ""
 }
 ```
 
@@ -65,6 +66,19 @@ Interpretation:
   `negative` for rejected proposals or dismissed review items.
 - `item_id`: stable source item ID. Do not duplicate the same source/item pair
   in one calibration study.
+- `goal`: the reviewed research question used for this decision. Use the real
+  study goal, not cosmetic variants to inflate coverage counts.
+- `evidence_shape`: the stable evidence category represented by the item, such as
+  `variant_disease_relation`, `drug_response_relation`, or
+  `fusion_treatment_relation`. Use the reviewed category, not ad hoc synonyms.
+
+Each calibration study must also include a top-level `adjudication_note` that
+summarizes disagreements, borderline calls, or why there were none. The
+production gate requires at least three distinct goals, at least three distinct
+evidence shapes, and reviewer IDs on all decisions. Blank adjudication notes do
+not count. Goal and evidence-shape labels are normalized before counting, so
+case, spacing, or punctuation variants of the same label do not create fake
+study coverage.
 
 Run
 `scripts/run_evidence_selection_review_calibration_gate.py` on the collected

@@ -33,6 +33,8 @@ def build_review_ranking_calibration_gate_report(
     input_path: Path,
     min_sample_count: int = 10,
     max_expected_calibration_error: float = 0.05,
+    min_distinct_goals: int = 3,
+    min_distinct_evidence_shapes: int = 3,
 ) -> JSONObject:
     """Load expert/shadow labels and return a calibration gate report."""
 
@@ -41,9 +43,14 @@ def build_review_ranking_calibration_gate_report(
     thresholds = ReviewRankingCalibrationGateThresholds(
         min_sample_count=min_sample_count,
         max_expected_calibration_error=max_expected_calibration_error,
+        min_distinct_goals=min_distinct_goals,
+        min_distinct_evidence_shapes=min_distinct_evidence_shapes,
+        require_reviewer_ids=True,
+        require_adjudication_note=True,
     )
     gate_report = evaluate_review_ranking_calibration_gate(
         decisions=study_input.decisions,
+        adjudication_note=study_input.adjudication_note,
         thresholds=thresholds,
     )
     return {
@@ -62,6 +69,7 @@ def render_review_ranking_calibration_gate_markdown(report: JSONObject) -> str:
     calibration = _object_value(gate, "calibration")
     thresholds = _object_value(gate, "thresholds")
     discrimination = _object_value(gate, "discrimination")
+    study_design = _object_value(gate, "study_design")
     blocking_reasons = _string_list(gate.get("blocking_reasons"))
     passed = gate.get("passed") is True
     status = "PASSED" if passed else "FAILED"
@@ -86,6 +94,20 @@ def render_review_ranking_calibration_gate_markdown(report: JSONObject) -> str:
         f"- mean_negative_score: {discrimination.get('mean_negative_score')}",
         f"- mean_score_separation: {discrimination.get('mean_score_separation')}",
         "",
+        "## Study Design",
+        "",
+        f"- distinct_goal_count: {study_design.get('distinct_goal_count')}",
+        "- distinct_evidence_shape_count: "
+        f"{study_design.get('distinct_evidence_shape_count')}",
+        f"- reviewer_count: {study_design.get('reviewer_count')}",
+        f"- missing_goal_count: {study_design.get('missing_goal_count')}",
+        "- missing_evidence_shape_count: "
+        f"{study_design.get('missing_evidence_shape_count')}",
+        "- missing_reviewer_id_count: "
+        f"{study_design.get('missing_reviewer_id_count')}",
+        "- adjudication_note_present: "
+        f"{study_design.get('adjudication_note_present')}",
+        "",
         "## Thresholds",
         "",
         f"- min_sample_count: {thresholds.get('min_sample_count')}",
@@ -94,6 +116,9 @@ def render_review_ranking_calibration_gate_markdown(report: JSONObject) -> str:
         f"- min_roc_auc: {thresholds.get('min_roc_auc')}",
         "- min_mean_score_separation: "
         f"{thresholds.get('min_mean_score_separation')}",
+        f"- min_distinct_goals: {thresholds.get('min_distinct_goals')}",
+        "- min_distinct_evidence_shapes: "
+        f"{thresholds.get('min_distinct_evidence_shapes')}",
         "",
         "## Blocking Reasons",
         "",
@@ -151,6 +176,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Maximum allowed expected calibration error.",
     )
     parser.add_argument(
+        "--min-distinct-goals",
+        type=int,
+        default=3,
+        help="Minimum distinct research goals required for production calibration.",
+    )
+    parser.add_argument(
+        "--min-distinct-evidence-shapes",
+        type=int,
+        default=3,
+        help="Minimum distinct evidence shapes required for production calibration.",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
@@ -177,6 +214,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         input_path=args.input,
         min_sample_count=args.min_sample_count,
         max_expected_calibration_error=args.max_expected_calibration_error,
+        min_distinct_goals=args.min_distinct_goals,
+        min_distinct_evidence_shapes=args.min_distinct_evidence_shapes,
     )
     output_dir = args.output_dir or _timestamped_output_dir()
     manifest = write_review_ranking_calibration_gate_report(

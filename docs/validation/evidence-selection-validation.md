@@ -78,22 +78,45 @@ from negative outcomes. Calibration alone is not enough: a constant score can be
 well calibrated to the base positive rate while still being useless for review
 queue prioritization.
 
-Seed command:
+Production calibration studies must also prove study-design coverage. The core
+helper and runner default to at least three distinct research goals, at least
+three distinct evidence shapes, reviewer IDs on every decision, and a
+study-level adjudication note. Missing these fields should fail the gate rather
+than producing a production-readiness claim from a narrow or under-reviewed
+sample. Goal and evidence-shape counts are normalized before counting, so
+whitespace, case, or punctuation variants of the same label do not count as
+separate study coverage.
+
+Production-default seed check. This is expected to fail because the seed fixture
+is a single-goal mechanics fixture, not production-ready calibration evidence:
 
 ```bash
 uv run python scripts/run_evidence_selection_review_calibration_gate.py \
   --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json \
   --max-expected-calibration-error 0.15 \
-  --output-dir reports/evidence_selection_review_calibration/2026-07-07-pr39-seed \
-  --fail-on-not-ready
+  --output-dir reports/evidence_selection_review_calibration/2026-07-07-pr40-seed-production-default
 ```
 
 The seed fixture proves the JSON format and threshold mechanics only. It is not
 production-representative evidence and must not be used to claim production
 readiness by itself. Production use should keep the runner's default `0.05`
-expected-calibration-error threshold, `0.70` ROC-AUC threshold, and `0.10`
-positive-vs-negative mean-score separation threshold unless a reviewed
-calibration plan sets stricter thresholds.
+expected-calibration-error threshold, `0.70` ROC-AUC threshold, `0.10`
+positive-vs-negative mean-score separation threshold, three-goal minimum, and
+three-evidence-shape minimum unless a reviewed calibration plan sets stricter
+thresholds.
+
+Mechanics-only smoke command. This explicitly relaxes study diversity so the
+fixture can prove report rendering and threshold math without claiming
+production readiness:
+
+```bash
+uv run python scripts/run_evidence_selection_review_calibration_gate.py \
+  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json \
+  --max-expected-calibration-error 0.15 \
+  --min-distinct-goals 1 \
+  --min-distinct-evidence-shapes 1 \
+  --output-dir reports/evidence_selection_review_calibration/2026-07-07-pr40-seed-mechanics
+```
 
 Production-readiness requires real shadow-mode runs reviewed by human experts
 on real research questions. Start with at least three distinct research

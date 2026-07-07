@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
@@ -85,6 +86,7 @@ class ReviewRankingCalibrationDecision(BaseModel):
     outcome: ReviewRankingOutcome
     reviewer_id: str | None = Field(default=None, min_length=1)
     goal: str | None = Field(default=None, min_length=1)
+    evidence_shape: str | None = Field(default=None, min_length=1)
 
 
 class ReviewRankingCalibrationGateThresholds(BaseModel):
@@ -96,6 +98,10 @@ class ReviewRankingCalibrationGateThresholds(BaseModel):
     max_expected_calibration_error: float = Field(default=0.05, ge=0.0, le=1.0)
     min_roc_auc: float = Field(default=0.7, ge=0.0, le=1.0)
     min_mean_score_separation: float = Field(default=0.1, ge=0.0, le=1.0)
+    min_distinct_goals: int = Field(default=3, ge=0)
+    min_distinct_evidence_shapes: int = Field(default=3, ge=0)
+    require_reviewer_ids: bool = True
+    require_adjudication_note: bool = True
     require_positive_and_negative_outcomes: bool = True
     require_proposal_and_review_item_sources: bool = True
     bin_count: int = Field(default=10, ge=1)
@@ -109,6 +115,7 @@ class ReviewRankingCalibrationStudyInput(BaseModel):
     schema_version: ReviewRankingCalibrationSchemaVersion
     study_id: str = Field(min_length=1)
     decisions: tuple[ReviewRankingCalibrationDecision, ...]
+    adjudication_note: str | None = Field(default=None, min_length=1)
     description: str | None = Field(default=None, min_length=1)
 
     @field_validator("decisions", mode="before")
@@ -133,6 +140,7 @@ class ReviewRankingCalibrationGateReport:
     mean_negative_score: float
     mean_score_separation: float
     roc_auc: float
+    study_design: JSONObject
     duplicate_decision_keys: tuple[str, ...]
     blocking_reasons: tuple[str, ...]
 
@@ -151,6 +159,14 @@ class ReviewRankingCalibrationGateReport:
                 "min_mean_score_separation": (
                     self.thresholds.min_mean_score_separation
                 ),
+                "min_distinct_goals": self.thresholds.min_distinct_goals,
+                "min_distinct_evidence_shapes": (
+                    self.thresholds.min_distinct_evidence_shapes
+                ),
+                "require_reviewer_ids": self.thresholds.require_reviewer_ids,
+                "require_adjudication_note": (
+                    self.thresholds.require_adjudication_note
+                ),
                 "require_positive_and_negative_outcomes": (
                     self.thresholds.require_positive_and_negative_outcomes
                 ),
@@ -167,6 +183,7 @@ class ReviewRankingCalibrationGateReport:
                 "mean_score_separation": self.mean_score_separation,
                 "roc_auc": self.roc_auc,
             },
+            "study_design": dict(self.study_design),
             "duplicate_decision_keys": list(self.duplicate_decision_keys),
             "blocking_reasons": list(self.blocking_reasons),
         }
@@ -216,6 +233,7 @@ def compare_evidence_selection_review(
 def evaluate_review_ranking_calibration_gate(
     *,
     decisions: tuple[ReviewRankingCalibrationDecision, ...],
+    adjudication_note: str | None = None,
     thresholds: ReviewRankingCalibrationGateThresholds | None = None,
 ) -> ReviewRankingCalibrationGateReport:
     """Evaluate whether expert/shadow review-ranking calibration is mergeable."""
@@ -239,6 +257,10 @@ def evaluate_review_ranking_calibration_gate(
         mean_positive_score - mean_negative_score,
     )
     roc_auc = _roc_auc(decisions)
+    study_design = _study_design(
+        decisions=decisions,
+        adjudication_note=adjudication_note,
+    )
     duplicate_decision_keys = _duplicate_decision_keys(decisions)
     blocking_reasons = _blocking_reasons(
         calibration=calibration,
@@ -247,6 +269,7 @@ def evaluate_review_ranking_calibration_gate(
         outcome_counts=outcome_counts,
         mean_score_separation=mean_score_separation,
         roc_auc=roc_auc,
+        study_design=study_design,
         duplicate_decision_keys=duplicate_decision_keys,
     )
     passed = not blocking_reasons
@@ -261,6 +284,7 @@ def evaluate_review_ranking_calibration_gate(
         mean_negative_score=mean_negative_score,
         mean_score_separation=mean_score_separation,
         roc_auc=roc_auc,
+        study_design=study_design,
         duplicate_decision_keys=duplicate_decision_keys,
         blocking_reasons=blocking_reasons,
     )
@@ -339,6 +363,49 @@ def _roc_auc(decisions: tuple[ReviewRankingCalibrationDecision, ...]) -> float:
     return _round_gate_metric(pair_score / pair_count)
 
 
+def _study_design(
+    *,
+    decisions: tuple[ReviewRankingCalibrationDecision, ...],
+    adjudication_note: str | None,
+) -> JSONObject:
+    goals = {
+        normalized_goal
+        for decision in decisions
+        if (normalized_goal := _normalized_study_label(decision.goal))
+    }
+    evidence_shapes = {
+        normalized_shape
+        for decision in decisions
+        if (normalized_shape := _normalized_study_label(decision.evidence_shape))
+    }
+    reviewer_ids = {
+        reviewer_id.strip()
+        for decision in decisions
+        if (reviewer_id := decision.reviewer_id) and reviewer_id.strip()
+    }
+    return {
+        "distinct_goal_count": len(goals),
+        "distinct_evidence_shape_count": len(evidence_shapes),
+        "reviewer_count": len(reviewer_ids),
+        "missing_goal_count": sum(
+            1 for decision in decisions if not _normalized_study_label(decision.goal)
+        ),
+        "missing_evidence_shape_count": sum(
+            1
+            for decision in decisions
+            if not _normalized_study_label(decision.evidence_shape)
+        ),
+        "missing_reviewer_id_count": sum(
+            1
+            for decision in decisions
+            if not (decision.reviewer_id and decision.reviewer_id.strip())
+        ),
+        "adjudication_note_present": bool(
+            adjudication_note and adjudication_note.strip()
+        ),
+    }
+
+
 def _blocking_reasons(
     *,
     calibration: ReviewRankingCalibrationSummary,
@@ -347,7 +414,37 @@ def _blocking_reasons(
     outcome_counts: dict[str, int],
     mean_score_separation: float,
     roc_auc: float,
+    study_design: JSONObject,
     duplicate_decision_keys: tuple[str, ...],
+) -> tuple[str, ...]:
+    reasons = [
+        *_coverage_blocking_reasons(
+            calibration=calibration,
+            thresholds=thresholds,
+            source_counts=source_counts,
+            outcome_counts=outcome_counts,
+        ),
+        *_study_design_blocking_reasons(
+            study_design=study_design,
+            thresholds=thresholds,
+        ),
+        *_ranking_quality_blocking_reasons(
+            calibration=calibration,
+            thresholds=thresholds,
+            mean_score_separation=mean_score_separation,
+            roc_auc=roc_auc,
+            duplicate_decision_keys=duplicate_decision_keys,
+        ),
+    ]
+    return tuple(reasons)
+
+
+def _coverage_blocking_reasons(
+    *,
+    calibration: ReviewRankingCalibrationSummary,
+    thresholds: ReviewRankingCalibrationGateThresholds,
+    source_counts: dict[str, int],
+    outcome_counts: dict[str, int],
 ) -> tuple[str, ...]:
     reasons: list[str] = []
     if calibration.sample_count < thresholds.min_sample_count:
@@ -366,6 +463,65 @@ def _blocking_reasons(
             reasons.append("At least one proposal source decision is required.")
         if source_counts["review_item"] == 0:
             reasons.append("At least one review_item source decision is required.")
+    return tuple(reasons)
+
+
+def _study_design_blocking_reasons(
+    *,
+    study_design: JSONObject,
+    thresholds: ReviewRankingCalibrationGateThresholds,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if (
+        _int_from_json(study_design, "distinct_goal_count")
+        < thresholds.min_distinct_goals
+    ):
+        reasons.append(
+            "At least "
+            f"{thresholds.min_distinct_goals} distinct research goals are "
+            "required for production review-ranking calibration.",
+        )
+    if (
+        _int_from_json(study_design, "distinct_evidence_shape_count")
+        < thresholds.min_distinct_evidence_shapes
+    ):
+        reasons.append(
+            "At least "
+            f"{thresholds.min_distinct_evidence_shapes} distinct evidence "
+            "shapes are required for production review-ranking calibration.",
+        )
+    if (
+        thresholds.require_reviewer_ids
+        and _int_from_json(study_design, "missing_reviewer_id_count") > 0
+    ):
+        reasons.append("Every review-ranking decision must include a reviewer ID.")
+    if (
+        thresholds.min_distinct_goals > 0
+        and _int_from_json(study_design, "missing_goal_count") > 0
+    ):
+        reasons.append("Every review-ranking decision must include a research goal.")
+    if (
+        thresholds.min_distinct_evidence_shapes > 0
+        and _int_from_json(study_design, "missing_evidence_shape_count") > 0
+    ):
+        reasons.append("Every review-ranking decision must include an evidence shape.")
+    if (
+        thresholds.require_adjudication_note
+        and study_design.get("adjudication_note_present") is not True
+    ):
+        reasons.append("A study-level adjudication note is required.")
+    return tuple(reasons)
+
+
+def _ranking_quality_blocking_reasons(
+    *,
+    calibration: ReviewRankingCalibrationSummary,
+    thresholds: ReviewRankingCalibrationGateThresholds,
+    mean_score_separation: float,
+    roc_auc: float,
+    duplicate_decision_keys: tuple[str, ...],
+) -> tuple[str, ...]:
+    reasons: list[str] = []
     if duplicate_decision_keys:
         reasons.append(
             "Duplicate review-ranking decision keys were observed: "
@@ -397,6 +553,21 @@ def _blocking_reasons(
 
 def _round_gate_metric(value: float) -> float:
     return round(value, 6)
+
+
+def _int_from_json(payload: JSONObject, key: str) -> int:
+    value = payload.get(key)
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, int):
+        return value
+    return 0
+
+
+def _normalized_study_label(value: str | None) -> str:
+    if value is None:
+        return ""
+    return re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")
 
 
 __all__ = [
