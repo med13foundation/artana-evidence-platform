@@ -57,7 +57,7 @@ def build_evidence_selection_expert_study_gate_report(
     payload = _load_json_object(input_path)
     study_input = EvidenceSelectionExpertStudyInput.model_validate(payload)
     active_thresholds = thresholds or EvidenceSelectionExpertStudyRunnerThresholds()
-    thresholds = EvidenceSelectionExpertStudyGateThresholds(
+    study_thresholds = EvidenceSelectionExpertStudyGateThresholds(
         min_selection_review_count=active_thresholds.min_selection_review_count,
         min_distinct_selection_goals=active_thresholds.min_distinct_selection_goals,
         min_selection_reviewer_count=active_thresholds.min_selection_reviewer_count,
@@ -76,7 +76,7 @@ def build_evidence_selection_expert_study_gate_report(
     )
     gate_report = evaluate_evidence_selection_expert_study_gate(
         study_input,
-        thresholds=thresholds,
+        thresholds=study_thresholds,
         review_ranking_thresholds=ranking_thresholds,
     )
     return {
