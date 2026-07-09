@@ -42,6 +42,9 @@ async def discover_relation_candidates_strict(
     pruned_generic_relation_count = int(
         getattr(llm_candidates, "pruned_generic_relation_count", 0),
     )
+    quality_filtered_candidate_count = int(
+        getattr(llm_candidates, "quality_filtered_candidate_count", 0),
+    )
     llm_extraction_chunk_count = int(
         getattr(llm_candidates, "llm_extraction_chunk_count", 0),
     )
@@ -53,6 +56,7 @@ async def discover_relation_candidates_strict(
         return candidates, candidate_completed(
             candidate_count=len(candidates),
             pruned_generic_relation_count=pruned_generic_relation_count,
+            quality_filtered_candidate_count=quality_filtered_candidate_count,
             llm_extraction_chunk_count=llm_extraction_chunk_count,
             llm_extraction_text_char_count=llm_extraction_text_char_count,
         )
@@ -60,6 +64,7 @@ async def discover_relation_candidates_strict(
     return [], candidate_llm_empty(
         fallback_candidate_count=0,
         pruned_generic_relation_count=pruned_generic_relation_count,
+        quality_filtered_candidate_count=quality_filtered_candidate_count,
         llm_extraction_chunk_count=llm_extraction_chunk_count,
         llm_extraction_text_char_count=llm_extraction_text_char_count,
     )

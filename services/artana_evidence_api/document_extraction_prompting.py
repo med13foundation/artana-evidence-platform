@@ -6,6 +6,7 @@ from artana_evidence_api.document_extraction_contracts import (
     FactualSupportScale,
     GoalRelevanceScale,
     PriorityScale,
+    RelationReviewStatus,
 )
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     LLM_EXTRACTION_RELATION_TYPES,
@@ -19,6 +20,39 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
     """Build the structured output schema for one LLM extraction pass."""
 
+    return _build_llm_extraction_output_schema(
+        max_relations=max_relations,
+        strict_relation_type=True,
+    )
+
+
+def build_llm_guarded_extraction_output_schema(max_relations: int) -> type[BaseModel]:
+    """Build a primary extraction schema that lets code guard raw relation types."""
+
+    return _build_llm_extraction_output_schema(
+        max_relations=max_relations,
+        strict_relation_type=False,
+    )
+
+
+def build_llm_weak_review_extraction_output_schema(
+    max_relations: int,
+) -> type[BaseModel]:
+    """Build the schema for weak-review extraction with raw-type guardrails."""
+
+    return _build_llm_extraction_output_schema(
+        max_relations=max_relations,
+        strict_relation_type=False,
+    )
+
+
+def _build_llm_extraction_output_schema(
+    *,
+    max_relations: int,
+    strict_relation_type: bool,
+) -> type[BaseModel]:
+    """Build a relation extraction output schema."""
+
     class LLMRelation(BaseModel):
         model_config = ConfigDict(strict=True)
 
@@ -27,7 +61,8 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
             min_length=1,
             max_length=50,
             description=(
-                "Short canonical entity name, 1-4 words "
+                "Short canonical entity name, usually 1-4 words; preserve "
+                "specific disease-subtype labels up to 6 tokens "
                 "(e.g. BRCA1, cisplatin, EGFR T790M)"
             ),
         )
@@ -72,7 +107,8 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
             min_length=1,
             max_length=50,
             description=(
-                "Short canonical entity name, 1-4 words "
+                "Short canonical entity name, usually 1-4 words; preserve "
+                "specific disease-subtype labels up to 6 tokens "
                 "(e.g. TNBC, osimertinib, DNA damage repair)"
             ),
         )
@@ -86,6 +122,23 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
             ),
         )
         sentence: str = Field(..., min_length=1, max_length=1000)
+        review_status: RelationReviewStatus = Field(
+            default="candidate",
+            description=(
+                "Set to review_only only for weak, hedged, trend-only, "
+                "possible biomarker, may-link, or correlation-only claims that "
+                "are useful for human review."
+            ),
+        )
+        review_reason_codes: list[str] = Field(
+            default_factory=list,
+            max_length=8,
+            description=(
+                "Short snake_case reasons when review_status is review_only, "
+                "for example hedged_language, trend_only, may_link, or "
+                "correlated_only."
+            ),
+        )
 
         @field_validator("relation_type")
         @classmethod
@@ -93,6 +146,8 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
             normalized = _normalize_relation_type(value)
             canonical = LLM_RELATION_SYNONYMS.get(normalized, normalized)
             if canonical not in LLM_EXTRACTION_RELATION_TYPES:
+                if not strict_relation_type:
+                    return canonical
                 raise ValueError(
                     "relation_type must be a canonical relation type or "
                     f"{LLM_PROPOSE_NEW_RELATION_TYPE}",
@@ -128,10 +183,18 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
                         "relation proposals",
                     )
             elif self.proposed_relation_type is not None:
-                raise ValueError(
-                    "proposed_relation_type is only allowed when relation_type is "
-                    f"{LLM_PROPOSE_NEW_RELATION_TYPE}",
-                )
+                if self.proposed_relation_type not in LLM_VALID_RELATION_TYPES:
+                    raise ValueError(
+                        "proposed_relation_type on canonical relation_type must "
+                        "resolve to the same canonical relation type",
+                    )
+                if self.proposed_relation_type != self.relation_type:
+                    raise ValueError(
+                        "proposed_relation_type conflicts with canonical "
+                        "relation_type",
+                    )
+                self.proposed_relation_type = None
+                self.new_relation_type_rationale = None
             return self
 
     class LLMExtractionResult(BaseModel):
@@ -184,9 +247,13 @@ LLM_EXTRACTION_SYSTEM_PROMPT = f"""You are a biomedical knowledge extraction sys
 
 Each triple has:
 - subject: a single named biomedical entity. This MUST be a short canonical name, not a sentence fragment.
-  GOOD: "BRCA1", "cisplatin", "EGFR", "T790M", "HRD", "PD-L1", "osimertinib", "triple-negative breast cancer", "DNA damage repair"
+  GOOD: "BRCA1", "BRCA1 truncating variants", "cisplatin", "EGFR", "T790M", "HRD", "PD-L1", "osimertinib", "triple-negative breast cancer", "DNA damage repair"
   BAD: "Inherited pathogenic variants in BRCA1", "In order to examine whether", "there are DNA repair functions", "the compound was found to"
-  Rules: max 4 words. Use gene symbols (BRCA1 not "breast cancer gene 1"). Use drug names (cisplatin not "the platinum agent"). Use standard abbreviations (TNBC, NSCLC, HRD). For mutations, use the notation (T790M, V600E).
+  Rules: usually max 4 words, but preserve disease-subtype labels up to 6 tokens when the modifier changes the claim. Use gene symbols (BRCA1 not "breast cancer gene 1"). Use drug names (cisplatin not "the platinum agent"). Use standard abbreviations (TNBC, NSCLC, HRD). For mutations, use the notation (T790M, V600E).
+  Do not discard direct gene-variant-to-disease associations just because the
+  subject includes "pathogenic variants", "loss-of-function variants", or
+  "truncating variants"; keep the specific variant-state label when it is the
+  evidence subject.
 - relation_type: exactly one of these canonical types:
 {_relation_type_prompt_lines()}
 
@@ -196,13 +263,24 @@ Each triple has:
   and a specific mechanism, output only the specific mechanism.
   Use PREDISPOSES_TO for risk or susceptibility language.
   Use SENSITIZES_TO for drug-sensitivity language.
+  Use CONFERS_RESISTANCE_TO when a variant, amplification, gene state, or
+  biomarker confers resistance to a specific drug.
   Use BIOMARKER_FOR when an expression, score, variant, or signature predicts
   a condition or treatment response.
+  Use SENSITIZES_TO for constructions like "BRCA1 loss sensitizes
+  triple-negative breast cancer to cisplatin": subject BRCA1 loss, object
+  cisplatin. Do not replace this with ASSOCIATED_WITH DNA repair defects when
+  the sentence supports the specific drug-sensitivity relation.
 
-- object: the target entity. Same rules as subject: short canonical name, max 4 words, no sentence fragments.
+- object: the target entity. Same rules as subject: short canonical name, usually max 4 words, no sentence fragments.
   Preserve modifiers that define the biomedical entity or clinical subgroup.
   Do not shorten "BRCA-mutated ovarian cancer" to "ovarian cancer".
   Do not shorten "early-onset breast cancer" to "breast cancer".
+  Do not shorten "EGFR exon 19 deletion lung adenocarcinoma" to "EGFR".
+  Do not shorten "NTRK fusion solid tumors" to "solid tumors".
+  For "Alectinib treats ALK fusion-positive lung cancer with central nervous
+  system involvement", object is "ALK fusion-positive lung cancer", not
+  "central nervous system involvement".
   Do not shorten "response to pembrolizumab" to "pembrolizumab response"
   unless both arguments remain explicit in the sentence.
 - subject_curie and object_curie: stable biomedical identifiers for the subject/object when directly knowable from the exact entity name. Use CURIEs such as HGNC:22474, HP:0001263, MONDO:0000001, CHEBI:63637, GO:0006281, or MESH:D009369. If uncertain, ambiguous, unsupported by the name, or unavailable, return null rather than guessing.
@@ -213,13 +291,30 @@ IMPORTANT — do NOT extract:
 - Author names or contributions
 - Study design descriptions that don't state a biological finding
 - Sentences about methods or protocols without a biological conclusion
-- Vague or speculative statements ("may play a role", "further research is needed")
+- Vague non-relational statements ("may play a role", "further research is needed")
 - Relations where subject or object is not a specific named entity
+
+WEAK REVIEW-ONLY RELATIONS:
+Reject vague non-relational role statements. Preserve direct weak claims when
+the sentence still names a concrete subject, relation cue, and object. Emit
+these only as review_only with review_reason_codes; do not treat them as
+trusted evidence and do not invent relations absent from the support sentence.
+Examples to keep for human review:
+- "MED13 may be linked to congenital heart disease" -> ASSOCIATED_WITH,
+  review_only, reasons: hedged_language, may_link
+- "EGFR expression trended with erlotinib response" -> ASSOCIATED_WITH,
+  subject: EGFR expression, object: erlotinib response, review_only,
+  reasons: hedged_language, trend_only
+- "MET amplification was correlated with resistance to EGFR inhibition" ->
+  ASSOCIATED_WITH, subject: MET amplification, object: resistance to EGFR
+  inhibition, review_only, reasons: hedged_language, correlated_only
+- "AKT activation showed a trend toward association with reduced survival" ->
+  ASSOCIATED_WITH, review_only, reasons: hedged_language, trend_only
 
 Focus on:
 - Concrete findings from results and conclusions
 - Drug-target interactions (osimertinib TARGETS EGFR T790M)
-- Resistance mechanisms (MET amplification CAUSES resistance to erlotinib)
+- Resistance mechanisms (MET amplification CONFERS_RESISTANCE_TO erlotinib)
 - Biomarker associations (HRD score BIOMARKER_FOR platinum sensitivity)
 - Pathway interactions (BRCA1 REGULATES DNA damage repair)
 - Gene expression (PD-L1 EXPRESSED_IN tumor microenvironment)
@@ -227,7 +322,9 @@ Focus on:
 - Risk relationships (TP53 loss PREDISPOSES_TO early-onset breast cancer)
 - Sensitivity relationships (BRCA1 loss SENSITIZES_TO cisplatin)
 - Treatment-response biomarkers (PD-L1 expression BIOMARKER_FOR response to pembrolizumab)
-- Governed relation proposals (MET amplification PROPOSE_NEW_RELATION_TYPE CONFERS_RESISTANCE_TO erlotinib)
+- Rare-disease gene-variant associations (FBN1 loss-of-function variants ASSOCIATED_WITH Marfan syndrome)
+- Neurodevelopmental gene-variant associations (MECP2 pathogenic variants ASSOCIATED_WITH Rett syndrome)
+- Governed relation proposals only when no canonical relation type fits
 
 Return up to 10 of the strongest, most specific relationships. Quality over quantity."""
 
@@ -266,5 +363,7 @@ __all__ = [
     "DOCUMENT_PROPOSAL_REVIEW_SYSTEM_PROMPT",
     "LLM_EXTRACTION_SYSTEM_PROMPT",
     "build_llm_extraction_output_schema",
+    "build_llm_guarded_extraction_output_schema",
+    "build_llm_weak_review_extraction_output_schema",
     "build_proposal_review_output_schema",
 ]

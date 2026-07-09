@@ -8,6 +8,15 @@ from typing import Literal, Protocol
 
 from artana_evidence_api.document_extraction_support.evidence_grounding import (
     args_present,
+    argument_aliases,
+)
+from artana_evidence_api.document_extraction_support.evidence_support.clauses import (
+    split_claim_clauses,
+)
+from artana_evidence_api.document_extraction_support.evidence_support.cues import (
+    is_symmetric_relation,
+    passive_cues_for_relation,
+    relation_cues,
 )
 from artana_evidence_api.types.common import JSONObject
 
@@ -95,15 +104,32 @@ def _heuristic_support(
             rationale="Sentence does not contain both relation endpoints.",
             model_id=_MODEL_ID,
         )
-    normalized_sentence = _normalize_text(sentence)
-    cues = _relation_cues(relation_type)
     normalized_relation_type = _normalized_relation_type(relation_type)
-    if _has_negated_relation_support(
-        sentence=normalized_sentence,
-        subject=subject,
-        object_=object_,
-        normalized_relation_type=normalized_relation_type,
-        cues=cues,
+    cues = relation_cues(normalized_relation_type)
+    claim_clauses = tuple(
+        _normalize_text(clause)
+        for clause in split_claim_clauses(
+            sentence,
+            inherited_subject=subject,
+        )
+        if (
+            presence := args_present(
+                sentence=clause,
+                subject=subject,
+                object_=object_,
+            )
+        ).subject_present
+        and presence.object_present
+    )
+    if any(
+        _has_negated_relation_support(
+            sentence=clause,
+            subject=subject,
+            object_=object_,
+            normalized_relation_type=normalized_relation_type,
+            cues=cues,
+        )
+        for clause in claim_clauses
     ):
         return TripleSupportResult(
             support="CONTRADICTS",
@@ -113,12 +139,15 @@ def _heuristic_support(
             ),
             model_id=_MODEL_ID,
         )
-    if _has_entailing_relation_support(
-        sentence=normalized_sentence,
-        subject=subject,
-        object_=object_,
-        normalized_relation_type=normalized_relation_type,
-        cues=cues,
+    if any(
+        _has_entailing_relation_support(
+            sentence=clause,
+            subject=subject,
+            object_=object_,
+            normalized_relation_type=normalized_relation_type,
+            cues=cues,
+        )
+        for clause in claim_clauses
     ):
         return TripleSupportResult(
             support="ENTAILS",
@@ -132,18 +161,6 @@ def _heuristic_support(
         support="NEUTRAL",
         rationale="Sentence contains both endpoints but no relation cue.",
         model_id=_MODEL_ID,
-    )
-
-
-def _relation_cues(relation_type: str) -> tuple[str, ...]:
-    normalized = _normalized_relation_type(relation_type)
-    cues = _RELATION_CUES.get(normalized)
-    if cues is not None:
-        return cues
-    return tuple(
-        token.casefold()
-        for token in normalized.split("_")
-        if len(token) >= _MIN_FALLBACK_CUE_LENGTH
     )
 
 
@@ -197,10 +214,27 @@ def _has_oriented_relation_support(
     normalized_relation_type: str,
     cue: str,
 ) -> bool:
-    subject_spans = _phrase_spans(sentence, _normalize_text(subject))
-    object_spans = _phrase_spans(sentence, _normalize_text(object_))
+    return _clause_has_oriented_relation_support(
+        sentence=sentence,
+        subject=subject,
+        object_=object_,
+        normalized_relation_type=normalized_relation_type,
+        cue=cue,
+    )
+
+
+def _clause_has_oriented_relation_support(
+    *,
+    sentence: str,
+    subject: str,
+    object_: str,
+    normalized_relation_type: str,
+    cue: str,
+) -> bool:
+    subject_spans = _argument_spans(sentence=sentence, label=subject)
+    object_spans = _argument_spans(sentence=sentence, label=object_)
     cue_spans = _phrase_spans(sentence, cue)
-    if normalized_relation_type in _SYMMETRIC_RELATION_TYPES:
+    if is_symmetric_relation(normalized_relation_type):
         return any(
             _span_between(
                 cue_span=cue_span,
@@ -216,7 +250,7 @@ def _has_oriented_relation_support(
             for object_span in object_spans
             for cue_span in cue_spans
         )
-    passive_cues = _PASSIVE_CUES_BY_RELATION.get(normalized_relation_type, ())
+    passive_cues = passive_cues_for_relation(normalized_relation_type)
     return any(
         (
             cue not in passive_cues
@@ -259,10 +293,25 @@ def _is_negated_cue(*, sentence: str, cue: str) -> bool:
 def _phrase_spans(sentence: str, phrase: str) -> tuple[tuple[int, int], ...]:
     if not phrase:
         return ()
+    prefix_boundary = r"(?<![a-z0-9])" if phrase[0].isalnum() else ""
+    suffix_boundary = r"(?![a-z0-9])" if phrase[-1].isalnum() else ""
+    pattern = f"{prefix_boundary}{re.escape(phrase)}{suffix_boundary}"
     return tuple(
         (match.start(), match.end())
-        for match in re.finditer(rf"\b{re.escape(phrase)}\b", sentence)
+        for match in re.finditer(pattern, sentence)
     )
+
+
+def _argument_spans(*, sentence: str, label: str) -> tuple[tuple[int, int], ...]:
+    spans: list[tuple[int, int]] = []
+    seen_spans: set[tuple[int, int]] = set()
+    for alias in argument_aliases(label):
+        for span in _phrase_spans(sentence, _normalize_text(alias)):
+            if span in seen_spans:
+                continue
+            seen_spans.add(span)
+            spans.append(span)
+    return tuple(spans)
 
 
 def _span_before(
@@ -292,66 +341,11 @@ def _normalized_relation_type(relation_type: str) -> str:
     return re.sub(r"[^A-Z0-9]+", "_", relation_type.upper()).strip("_")
 
 
-_MIN_FALLBACK_CUE_LENGTH = 4
 _NEGATED_CUE_PATTERNS = (
     r"\b(?:does not|do not|did not|not|never)\s+{cue}\b",
     r"\b(?:fails to|failed to|failure to)\s+{cue}\b",
     r"\bwithout\s+{cue}\b",
 )
-_SYMMETRIC_RELATION_TYPES = frozenset(
-    {
-        "ASSOCIATED_WITH",
-        "PHYSICALLY_INTERACTS_WITH",
-    }
-)
-_PASSIVE_CUES_BY_RELATION: dict[str, tuple[str, ...]] = {
-    "ACTIVATES": ("activated by", "activation by"),
-    "CAUSES": ("caused by",),
-    "INHIBITS": ("inhibited by", "suppressed by", "reduced by"),
-    "REGULATES": ("regulated by",),
-    "TARGETS": ("targeted by",),
-    "TREATS": ("responsive to",),
-}
-_RELATION_CUES: dict[str, tuple[str, ...]] = {
-    "ACTIVATES": (
-        "activate",
-        "activates",
-        "activated",
-        "activated by",
-        "activation",
-        "activation by",
-        "upregulates",
-        "increases",
-    ),
-    "ASSOCIATED_WITH": (
-        "associated with",
-        "linked to",
-        "correlated with",
-        "correlates with",
-    ),
-    "CAUSES": ("causes", "caused", "caused by", "leads to", "results in"),
-    "INHIBITS": (
-        "inhibits",
-        "inhibit",
-        "inhibited",
-        "inhibited by",
-        "suppresses",
-        "suppressed",
-        "suppressed by",
-        "reduces",
-        "reduced by",
-    ),
-    "PHYSICALLY_INTERACTS_WITH": (
-        "interacts with",
-        "binds",
-        "binds to",
-        "bound to",
-    ),
-    "PROTECTS_AGAINST": ("protects against", "protective against"),
-    "REGULATES": ("regulates", "regulated", "regulated by", "regulation", "controls"),
-    "TARGETS": ("targets", "targeted", "targeted by", "binds"),
-    "TREATS": ("treats", "treated", "treatment with", "responsive to"),
-}
 
 
 __all__ = [

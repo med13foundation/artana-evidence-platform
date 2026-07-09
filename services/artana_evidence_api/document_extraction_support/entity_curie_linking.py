@@ -4,16 +4,24 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Literal
 
+from artana_evidence_api.document_extraction_support.entity_grounding.contracts import (
+    CurieSource,
+    ModelHintStatus,
+    ReviewOnlyEntityRecord,
+    VerifiedEntityRecord,
+)
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    review_only_record_for_label,
+    verified_record_for_label,
+)
 from artana_evidence_api.types.common import JSONObject
-
-CurieSource = Literal["none", "model", "verified_linker"]
 
 _CURIE_RE = re.compile(r"^(?P<prefix>[A-Za-z][A-Za-z0-9_.-]{1,31}):(?P<local>[A-Za-z0-9][A-Za-z0-9_.:-]{0,127})$")
 _GENE_TOKEN_RE = re.compile(r"^[A-Z][A-Z0-9-]{1,11}$")
 _CURIE_PREFIXES: dict[str, tuple[str, str, str]] = {
     "CHEBI": ("CHEBI", "chebi_id", "DRUG"),
+    "CLINVAR": ("ClinVar", "clinvar_id", "VARIANT"),
     "DRUGBANK": ("DRUGBANK", "drugbank_id", "DRUG"),
     "GO": ("GO", "go_id", "BIOLOGICAL_PROCESS"),
     "HGNC": ("HGNC", "hgnc_id", "GENE"),
@@ -22,6 +30,7 @@ _CURIE_PREFIXES: dict[str, tuple[str, str, str]] = {
     "MESH": ("MESH", "mesh_id", "BIOMEDICAL_CONCEPT"),
     "MONDO": ("MONDO", "mondo_id", "DISEASE"),
     "NCBIGENE": ("NCBIGene", "ncbigene_id", "GENE"),
+    "NCIT": ("NCIT", "ncit_id", "BIOMEDICAL_CONCEPT"),
     "OMIM": ("OMIM", "omim_id", "DISEASE"),
     "UMLS": ("UMLS", "umls_id", "BIOMEDICAL_CONCEPT"),
 }
@@ -38,6 +47,11 @@ class EntityCurieLink:
     entity_type: str | None = None
     source: CurieSource = "none"
     reason: str | None = None
+    grounding_curation_status: str | None = None
+    grounding_reason_code: str | None = None
+    trusted_identifier_allowed: bool | None = None
+    model_hint_curie: str | None = None
+    model_hint_status: ModelHintStatus | None = None
 
     @property
     def identifiers(self) -> dict[str, str]:
@@ -65,8 +79,18 @@ class EntityCurieLink:
         payload["trusted_identifier"] = (
             self.status == "linked" and self.source == "verified_linker"
         )
+        if self.trusted_identifier_allowed is not None:
+            payload["trusted_identifier_allowed"] = self.trusted_identifier_allowed
         if self.reason is not None:
             payload["reason"] = self.reason
+        if self.grounding_curation_status is not None:
+            payload["grounding_curation_status"] = self.grounding_curation_status
+        if self.grounding_reason_code is not None:
+            payload["grounding_reason_code"] = self.grounding_reason_code
+        if self.model_hint_curie is not None:
+            payload["model_hint_curie"] = self.model_hint_curie
+        if self.model_hint_status is not None:
+            payload["model_hint_status"] = self.model_hint_status
         return payload
 
 
@@ -77,6 +101,34 @@ def normalize_entity_curie(
     source: CurieSource = "model",
 ) -> EntityCurieLink:
     """Normalize a model-supplied CURIE or return a typed abstention."""
+
+    if source in {"model", "verified_linker", "none"}:
+        review_record = review_only_record_for_label(label)
+        if review_record is not None:
+            return _review_only_link_from_record(review_record, raw_curie=raw_curie)
+
+    if source in {"model", "verified_linker"}:
+        record = verified_record_for_label(label)
+        if record is not None:
+            return _link_from_verified_record_with_hint(
+                record,
+                raw_curie=raw_curie,
+            )
+
+    if source == "verified_linker":
+        return _normalize_raw_curie(raw_curie, label=label, source="model")
+
+    return _normalize_raw_curie(raw_curie, label=label, source=source)
+
+
+def _normalize_raw_curie(
+    raw_curie: str | None,
+    *,
+    label: str,
+    source: CurieSource,
+    enforce_label_type: bool = True,
+) -> EntityCurieLink:
+    """Normalize a raw CURIE without upgrading model hints to trusted links."""
 
     if raw_curie is None or raw_curie.strip() == "":
         return EntityCurieLink(
@@ -104,7 +156,10 @@ def normalize_entity_curie(
 
     namespace, identifier_key, entity_type = prefix_config
     normalized = f"{namespace}:{match.group('local')}"
-    if _label_conflicts_with_entity_type(label=label, entity_type=entity_type):
+    if enforce_label_type and _label_conflicts_with_entity_type(
+        label=label,
+        entity_type=entity_type,
+    ):
         return EntityCurieLink(
             status="abstained",
             source=source,
@@ -148,6 +203,103 @@ def entity_candidate_payload_from_curie(
         "evidence_excerpt": evidence_excerpt,
         "evidence_locator": evidence_locator,
     }
+
+
+def _link_from_verified_record(
+    record: VerifiedEntityRecord,
+    *,
+    model_hint_curie: str | None = None,
+    model_hint_status: ModelHintStatus | None = None,
+) -> EntityCurieLink:
+    link = _normalize_raw_curie(
+        record.curie,
+        label=record.label,
+        source="verified_linker",
+        enforce_label_type=False,
+    )
+    if link.status != "linked":
+        return link
+    return EntityCurieLink(
+        status=link.status,
+        curie=link.curie,
+        namespace=link.namespace,
+        identifier_key=link.identifier_key,
+        entity_type=link.entity_type,
+        source=link.source,
+        reason=link.reason,
+        model_hint_curie=model_hint_curie,
+        model_hint_status=model_hint_status,
+    )
+
+
+def _link_from_verified_record_with_hint(
+    record: VerifiedEntityRecord,
+    *,
+    raw_curie: str | None,
+) -> EntityCurieLink:
+    if raw_curie is None or raw_curie.strip() == "":
+        return _link_from_verified_record(record)
+    normalized_hint = _normalize_supported_curie_value(raw_curie)
+    if normalized_hint is None:
+        return _link_from_verified_record(
+            record,
+            model_hint_curie=raw_curie.strip(),
+            model_hint_status="invalid",
+        )
+    model_hint_status: ModelHintStatus = (
+        "matched" if _curies_equal(normalized_hint, record.curie) else "replaced"
+    )
+    return _link_from_verified_record(
+        record,
+        model_hint_curie=normalized_hint,
+        model_hint_status=model_hint_status,
+    )
+
+
+def _review_only_link_from_record(
+    record: ReviewOnlyEntityRecord,
+    *,
+    raw_curie: str | None,
+) -> EntityCurieLink:
+    model_hint_curie: str | None = None
+    model_hint_status: ModelHintStatus | None = None
+    if raw_curie is not None and raw_curie.strip() != "":
+        normalized_hint = _normalize_supported_curie_value(raw_curie)
+        model_hint_curie = normalized_hint or raw_curie.strip()
+        if normalized_hint is None:
+            model_hint_status = "invalid"
+    return EntityCurieLink(
+        status="abstained",
+        source="none",
+        reason=record.reason,
+        grounding_curation_status=record.curation_status,
+        grounding_reason_code=record.reason_code,
+        trusted_identifier_allowed=record.trusted_identifier_allowed,
+        model_hint_curie=model_hint_curie,
+        model_hint_status=model_hint_status,
+    )
+
+
+def _curies_equal(left: str, right: str) -> bool:
+    return _normalize_curie_for_match(left) == _normalize_curie_for_match(right)
+
+
+def _normalize_curie_for_match(value: str) -> str:
+    prefix, separator, local = value.strip().partition(":")
+    if separator == "":
+        return value.strip().upper()
+    return f"{prefix.upper()}:{local}"
+
+
+def _normalize_supported_curie_value(raw_curie: str) -> str | None:
+    match = _CURIE_RE.match(raw_curie.strip())
+    if match is None:
+        return None
+    prefix_config = _CURIE_PREFIXES.get(match.group("prefix").upper())
+    if prefix_config is None:
+        return None
+    namespace = prefix_config[0]
+    return f"{namespace}:{match.group('local')}"
 
 
 def _label_conflicts_with_entity_type(*, label: str, entity_type: str) -> bool:

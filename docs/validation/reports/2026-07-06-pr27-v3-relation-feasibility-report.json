@@ -1,0 +1,433 @@
+{
+  "summary": {
+    "case_count": 40,
+    "gold_relation_count": 30,
+    "candidate_count": 30,
+    "supported_candidate_count": 22,
+    "valuable_candidate_count": 11,
+    "generic_relation_count": 9,
+    "pruned_generic_relation_count": 0,
+    "quality_filtered_candidate_count": 11,
+    "raw_unknown_relation_type_count": 0,
+    "relation_type_surface_count": 30,
+    "raw_unknown_relation_type_surface_count": 0,
+    "proposal_candidate_count": 0,
+    "proposal_gold_match_count": 0,
+    "proposal_eligible_gold_count": 0,
+    "proposal_recall_against_gold": 0.0,
+    "proposal_recall_against_proposal_eligible_gold": 0.0,
+    "gold_curie_endpoint_count": 60,
+    "candidate_curie_endpoint_count": 35,
+    "curie_linked_gold_endpoint_count": 16,
+    "verified_curie_match_count": 16,
+    "model_curie_wrong_count": 9,
+    "wrong_verified_curie_link_count": 0,
+    "support_sentence_aligned_count": 22,
+    "both_arguments_present_count": 30,
+    "entailment_required_count": 22,
+    "entailment_checked_count": 22,
+    "entailment_supported_count": 22,
+    "agent_completed_case_count": 40,
+    "agent_zero_candidate_case_count": 15,
+    "fallback_case_count": 0,
+    "fallback_candidate_count": 0,
+    "fallback_credited_as_agent_count": 0,
+    "completed_agent_candidate_count": 30,
+    "completed_agent_supported_candidate_count": 22,
+    "completed_agent_valuable_candidate_count": 11,
+    "completed_agent_gold_relation_count": 30,
+    "completed_agent_missed_gold_count": 8,
+    "invalid_agent_case_count": 0,
+    "high_value_gold_relation_count": 20,
+    "high_value_missed_gold_count": 6,
+    "high_value_recall": 0.7,
+    "trusted_high_value_match_count": 4,
+    "trusted_high_value_recall": 0.2,
+    "low_value_gold_relation_count": 10,
+    "low_value_missed_gold_count": 2,
+    "low_value_recall": 0.8,
+    "low_value_review_candidate_count": 8,
+    "low_value_review_gold_match_count": 8,
+    "low_value_review_recall": 0.8,
+    "trusted_eligible_gold_curie_endpoint_count": 40,
+    "trusted_eligible_curie_linked_gold_endpoint_count": 12,
+    "trusted_eligible_curie_linked_gold_endpoint_rate": 0.3,
+    "low_value_review_gold_curie_endpoint_count": 20,
+    "low_value_review_curie_linked_gold_endpoint_count": 4,
+    "low_value_review_curie_endpoint_capture_rate": 0.2,
+    "weak_claim_trusted_leakage_count": 0,
+    "negative_control_case_count": 10,
+    "negative_control_empty_count": 10,
+    "negative_control_empty_rate": 1.0,
+    "negative_control_leakage_count": 0,
+    "missed_gold_count": 8,
+    "precision_against_gold": 0.7333,
+    "recall_against_gold": 0.7333,
+    "completed_agent_precision_against_gold": 0.7333,
+    "completed_agent_recall_against_gold": 0.7333,
+    "specificity_rate": 1.0,
+    "relation_specificity_rate": 0.7,
+    "generic_relation_rate": 0.3,
+    "raw_unknown_relation_type_rate": 0.0,
+    "raw_unknown_relation_type_surface_rate": 0.0,
+    "curie_linked_gold_endpoint_rate": 0.2667,
+    "candidate_curie_present_rate": 0.5833,
+    "verified_curie_match_rate": 0.2667,
+    "valuable_candidate_rate": 0.3667,
+    "completed_agent_valuable_candidate_rate": 0.3667,
+    "grounded_sentence_rate": 1.0,
+    "both_arguments_present_rate": 1.0,
+    "support_sentence_alignment_rate": 0.7333,
+    "entailment_checked_rate": 1.0,
+    "entailment_supported_rate": 1.0,
+    "verdict": "RED",
+    "verdict_reason": "Too few trusted-eligible CURIE-linked gold endpoints were recovered by extraction.",
+    "blocking_reasons": [
+      "Too few trusted-eligible CURIE-linked gold endpoints were recovered by extraction."
+    ],
+    "warning_reasons": [
+      "Precision is below trusted graph construction target.",
+      "Trusted high-value recall is below target.",
+      "Valuable candidate rate is below target.",
+      "Generic relation rate is above target."
+    ]
+  },
+  "case_results": [
+    {
+      "case": {
+        "case_id": "v3_osimertinib_treats_egfr_exon19_luad"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "Osimertinib",
+          "relation_type": "TREATS",
+          "object": "EGFR exon 19 deletion lung adenocarcinoma",
+          "support_sentence": "Osimertinib treats EGFR exon 19 deletion lung adenocarcinoma after first-line molecular testing.",
+          "value_level": "high",
+          "rationale": "Specific drug-to-molecular-subtype treatment relation.",
+          "subject_curie": "DrugBank:DB09330",
+          "object_curie": "MONDO:0005061",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_alectinib_treats_alk_fusion_lung_cancer"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_sotorasib_targets_kras_g12c"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_vemurafenib_targets_braf_v600e"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_larotrectinib_treats_ntrk_fusion_tumors"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "Larotrectinib",
+          "relation_type": "TREATS",
+          "object": "NTRK fusion solid tumors",
+          "support_sentence": "Larotrectinib treats solid tumors harboring NTRK gene fusions regardless of tissue origin.",
+          "value_level": "high",
+          "rationale": "Tumor-agnostic targeted therapy relation.",
+          "subject_curie": "DrugBank:DB14723",
+          "object_curie": "MONDO:0100342",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_mecp2_associated_with_rett_syndrome"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_fbn1_associated_with_marfan_syndrome"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "FBN1 loss-of-function variants",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "Marfan syndrome",
+          "support_sentence": "FBN1 loss-of-function variants are associated with Marfan syndrome and aortic root dilation.",
+          "value_level": "high",
+          "rationale": "Specific rare disease association.",
+          "subject_curie": "HGNC:3603",
+          "object_curie": "MONDO:0007947",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_gla_associated_with_fabry_disease"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_pah_associated_with_phenylketonuria"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_ldlr_predisposes_familial_hypercholesterolemia"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "LDLR loss-of-function variants",
+          "relation_type": "PREDISPOSES_TO",
+          "object": "familial hypercholesterolemia",
+          "support_sentence": "LDLR loss-of-function variants predispose carriers to familial hypercholesterolemia.",
+          "value_level": "high",
+          "rationale": "Specific variant class to disease risk relation.",
+          "subject_curie": "HGNC:6547",
+          "object_curie": "MONDO:0007750",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_brca1_predisposes_hereditary_breast_ovarian_cancer"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "BRCA1 truncating variants",
+          "relation_type": "PREDISPOSES_TO",
+          "object": "hereditary breast and ovarian cancer syndrome",
+          "support_sentence": "BRCA1 truncating variants predispose carriers to hereditary breast and ovarian cancer syndrome.",
+          "value_level": "high",
+          "rationale": "Specific cancer-risk relation.",
+          "subject_curie": "HGNC:1100",
+          "object_curie": "MONDO:0011450",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_apc_predisposes_fap"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "APC pathogenic variants",
+          "relation_type": "PREDISPOSES_TO",
+          "object": "familial adenomatous polyposis",
+          "support_sentence": "APC pathogenic variants predispose carriers to familial adenomatous polyposis.",
+          "value_level": "high",
+          "rationale": "Specific inherited cancer-risk relation.",
+          "subject_curie": "HGNC:583",
+          "object_curie": "MONDO:0008840",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_braf_v600e_activates_mapk"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_pten_loss_activates_pi3k_akt"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_il6_regulates_inflammatory_signaling"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_kras_g12d_activates_mapk"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_pdl1_biomarker_pembrolizumab_response"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_msi_high_biomarker_checkpoint_response"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_egfr_t790m_confers_resistance_gefitinib"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_long_document_med13_regulates_septal_development"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_med13_may_link_congenital_heart_disease"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_akt_trend_survival"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_hrd_possible_biomarker_platinum"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_il6_may_regulate_inflammation"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_met_correlated_resistance"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "MET amplification",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "resistance to EGFR inhibition",
+          "support_sentence": "MET amplification was correlated with resistance to EGFR inhibition in a small exploratory cohort.",
+          "value_level": "low",
+          "rationale": "Correlated-only evidence is useful for review but not trusted promotion.",
+          "subject_curie": "HGNC:7029",
+          "object_curie": "NCIT:C165567",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_tp53_potential_predictor_chemo"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_mtor_might_activate_autophagy"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_jak2_possible_link_thrombosis"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_egfr_trend_response_erlotinib"
+      },
+      "missed_gold_relations": [
+        {
+          "subject": "EGFR expression",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "erlotinib response",
+          "support_sentence": "EGFR expression trended with erlotinib response but did not meet the prespecified threshold.",
+          "value_level": "low",
+          "rationale": "Trend-only drug-response evidence is review-only.",
+          "subject_curie": "HGNC:3236",
+          "object_curie": "DrugBank:DB00530",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case": {
+        "case_id": "v3_weak_ntrk_may_predict_larotrectinib_response"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_egfr_gefitinib_negated_relation"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_brca1_olaparib_background_only"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_mecp2_rett_family_history_only"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_braf_mapk_inhibitor_control"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_pdl1_pembrolizumab_threshold_not_met"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_cftr_lung_cancer_unrelated"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_kras_sotorasib_prior_therapy"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_il6_inflammation_assay_failed"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_msi_checkpoint_response_covariate"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "v3_negative_long_document_distractor"
+      },
+      "missed_gold_relations": []
+    }
+  ]
+}

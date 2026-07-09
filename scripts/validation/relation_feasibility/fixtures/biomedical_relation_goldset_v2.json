@@ -17,7 +17,7 @@
           "value_level": "high",
           "rationale": "Direct gene-to-process activation claim.",
           "subject_curie": "HGNC:22474",
-          "object_curie": null,
+          "object_curie": "GO:0003279",
           "requires_entailment": true
         }
       ]
@@ -55,7 +55,7 @@
           "value_level": "high",
           "rationale": "Specific gene-to-process regulatory relation.",
           "subject_curie": "HGNC:1100",
-          "object_curie": null,
+          "object_curie": "GO:0000724",
           "requires_entailment": true
         }
       ]
@@ -169,7 +169,7 @@
           "value_level": "high",
           "rationale": "Specific variant-to-pathway activation.",
           "subject_curie": "ClinVar:BRAF_V600E",
-          "object_curie": null,
+          "object_curie": "GO:0000165",
           "requires_entailment": true
         }
       ]
@@ -356,7 +356,7 @@
           "value_level": "high",
           "rationale": "Variant aliases should not fragment the entity identity.",
           "subject_curie": "ClinVar:RET_ARG1174TER",
-          "object_curie": null,
+          "object_curie": "GO:0000165",
           "requires_entailment": true
         }
       ]
@@ -426,8 +426,8 @@
       "gold_relations": [
         {
           "subject": "EGFR T790M",
-          "relation_type": "CAUSES",
-          "object": "resistance to gefitinib",
+          "relation_type": "CONFERS_RESISTANCE_TO",
+          "object": "gefitinib",
           "support_sentence": "EGFR T790M causes resistance to gefitinib and is associated with disease progression.",
           "value_level": "high",
           "rationale": "Specific resistance cause should suppress a redundant generic association.",
@@ -470,7 +470,7 @@
           "value_level": "high",
           "rationale": "Tail relation should remain measurable as long-document coverage expands.",
           "subject_curie": "ClinVar:BRAF_V600E",
-          "object_curie": null,
+          "object_curie": "GO:0000165",
           "requires_entailment": true
         }
       ]

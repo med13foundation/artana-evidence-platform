@@ -13,8 +13,10 @@ from scripts.validation.relation_feasibility.models import (
     RelationExtractionResult,
 )
 from scripts.validation.relation_feasibility.scoring import (
-    SummaryInputs,
     assess_case,
+)
+from scripts.validation.relation_feasibility.summary_scoring import (
+    SummaryInputs,
     build_summary,
 )
 

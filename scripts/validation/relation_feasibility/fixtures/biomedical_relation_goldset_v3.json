@@ -1,0 +1,713 @@
+{
+  "benchmark_name": "biomedical_relation_feasibility_v3",
+  "description": "Broader synthetic benchmark for trusted-graph readiness confidence. V3 keeps v2 as the stable regression seed while adding domain breadth, weak review-only rows, negative controls, long-document chunking, and adversarial near-misses.",
+  "provenance": "curated_synthetic_breadth_fixture",
+  "cases": [
+    {
+      "case_id": "v3_osimertinib_treats_egfr_exon19_luad",
+      "title": "Osimertinib treats EGFR exon 19 lung adenocarcinoma",
+      "category": "strong_specific",
+      "topics": ["oncology_drug_response"],
+      "text": "Osimertinib treats EGFR exon 19 deletion lung adenocarcinoma after first-line molecular testing.",
+      "gold_relations": [
+        {
+          "subject": "Osimertinib",
+          "relation_type": "TREATS",
+          "object": "EGFR exon 19 deletion lung adenocarcinoma",
+          "support_sentence": "Osimertinib treats EGFR exon 19 deletion lung adenocarcinoma after first-line molecular testing.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific drug-to-molecular-subtype treatment relation.",
+          "subject_curie": "DrugBank:DB09330",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_alectinib_treats_alk_fusion_lung_cancer",
+      "title": "Alectinib treats ALK fusion lung cancer",
+      "category": "strong_specific",
+      "topics": ["oncology_drug_response"],
+      "text": "Alectinib treats ALK fusion-positive lung cancer with central nervous system involvement.",
+      "gold_relations": [
+        {
+          "subject": "Alectinib",
+          "relation_type": "TREATS",
+          "object": "ALK fusion-positive lung cancer",
+          "support_sentence": "Alectinib treats ALK fusion-positive lung cancer with central nervous system involvement.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific targeted therapy relation.",
+          "subject_curie": "DrugBank:DB11363",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_sotorasib_targets_kras_g12c",
+      "title": "Sotorasib targets KRAS G12C",
+      "category": "strong_specific",
+      "topics": ["oncology_drug_response", "variant_disease_risk"],
+      "text": "Sotorasib targets KRAS G12C by binding the switch-II pocket in mutant lung cancer.",
+      "gold_relations": [
+        {
+          "subject": "Sotorasib",
+          "relation_type": "TARGETS",
+          "object": "KRAS G12C",
+          "support_sentence": "Sotorasib targets KRAS G12C by binding the switch-II pocket in mutant lung cancer.",
+          "value_level": "high",
+          "rationale": "Direct drug-to-variant target relation.",
+          "subject_curie": "DrugBank:DB15569",
+          "object_curie": "ClinVar:KRAS_G12C",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_vemurafenib_targets_braf_v600e",
+      "title": "Vemurafenib targets BRAF V600E",
+      "category": "strong_specific",
+      "topics": ["oncology_drug_response", "pathway_regulation"],
+      "text": "Vemurafenib targets BRAF V600E and suppresses downstream MAPK signaling in melanoma.",
+      "gold_relations": [
+        {
+          "subject": "Vemurafenib",
+          "relation_type": "TARGETS",
+          "object": "BRAF V600E",
+          "support_sentence": "Vemurafenib targets BRAF V600E and suppresses downstream MAPK signaling in melanoma.",
+          "value_level": "high",
+          "rationale": "Specific inhibitor-to-variant target relation.",
+          "subject_curie": "DrugBank:DB08881",
+          "object_curie": "ClinVar:BRAF_V600E",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_larotrectinib_treats_ntrk_fusion_tumors",
+      "title": "Larotrectinib treats NTRK fusion tumors",
+      "category": "strong_specific",
+      "topics": ["oncology_drug_response"],
+      "text": "Larotrectinib treats solid tumors harboring NTRK gene fusions regardless of tissue origin.",
+      "gold_relations": [
+        {
+          "subject": "Larotrectinib",
+          "relation_type": "TREATS",
+          "object": "NTRK fusion solid tumors",
+          "support_sentence": "Larotrectinib treats solid tumors harboring NTRK gene fusions regardless of tissue origin.",
+          "value_level": "high",
+          "rationale": "Tumor-agnostic targeted therapy relation.",
+          "subject_curie": "DrugBank:DB14723",
+          "object_curie": "MONDO:0700215",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_mecp2_associated_with_rett_syndrome",
+      "title": "MECP2 is associated with Rett syndrome",
+      "category": "strong_specific",
+      "topics": ["rare_disease_gene_phenotype"],
+      "text": "MECP2 pathogenic variants are associated with Rett syndrome and developmental regression.",
+      "gold_relations": [
+        {
+          "subject": "MECP2 pathogenic variants",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "Rett syndrome",
+          "support_sentence": "MECP2 pathogenic variants are associated with Rett syndrome and developmental regression.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific rare-disease gene-to-phenotype relation.",
+          "subject_curie": null,
+          "object_curie": "MONDO:0010726",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_fbn1_associated_with_marfan_syndrome",
+      "title": "FBN1 is associated with Marfan syndrome",
+      "category": "strong_specific",
+      "topics": ["rare_disease_gene_phenotype"],
+      "text": "FBN1 loss-of-function variants are associated with Marfan syndrome and aortic root dilation.",
+      "gold_relations": [
+        {
+          "subject": "FBN1 loss-of-function variants",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "Marfan syndrome",
+          "support_sentence": "FBN1 loss-of-function variants are associated with Marfan syndrome and aortic root dilation.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific rare disease association.",
+          "subject_curie": null,
+          "object_curie": "MONDO:0007947",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_gla_associated_with_fabry_disease",
+      "title": "GLA is associated with Fabry disease",
+      "category": "strong_specific",
+      "topics": ["rare_disease_gene_phenotype"],
+      "text": "GLA variants are associated with Fabry disease through deficient alpha-galactosidase A activity.",
+      "gold_relations": [
+        {
+          "subject": "GLA variants",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "Fabry disease",
+          "support_sentence": "GLA variants are associated with Fabry disease through deficient alpha-galactosidase A activity.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific rare disease association.",
+          "subject_curie": null,
+          "object_curie": "MONDO:0010526",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_pah_associated_with_phenylketonuria",
+      "title": "PAH is associated with phenylketonuria",
+      "category": "strong_specific",
+      "topics": ["rare_disease_gene_phenotype"],
+      "text": "PAH pathogenic variants are associated with phenylketonuria and elevated phenylalanine.",
+      "gold_relations": [
+        {
+          "subject": "PAH pathogenic variants",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "phenylketonuria",
+          "support_sentence": "PAH pathogenic variants are associated with phenylketonuria and elevated phenylalanine.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific gene-to-metabolic disease relation.",
+          "subject_curie": null,
+          "object_curie": "MONDO:0009861",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_ldlr_predisposes_familial_hypercholesterolemia",
+      "title": "LDLR predisposes to familial hypercholesterolemia",
+      "category": "strong_specific",
+      "topics": ["rare_disease_gene_phenotype", "variant_disease_risk"],
+      "text": "LDLR loss-of-function variants predispose carriers to familial hypercholesterolemia.",
+      "gold_relations": [
+        {
+          "subject": "LDLR loss-of-function variants",
+          "relation_type": "PREDISPOSES_TO",
+          "object": "familial hypercholesterolemia",
+          "support_sentence": "LDLR loss-of-function variants predispose carriers to familial hypercholesterolemia.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific variant class to disease risk relation.",
+          "subject_curie": null,
+          "object_curie": "MONDO:0005439",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_brca1_predisposes_hereditary_breast_ovarian_cancer",
+      "title": "BRCA1 predisposes to hereditary breast and ovarian cancer",
+      "category": "strong_specific",
+      "topics": ["variant_disease_risk"],
+      "text": "BRCA1 truncating variants predispose carriers to hereditary breast and ovarian cancer syndrome.",
+      "gold_relations": [
+        {
+          "subject": "BRCA1 truncating variants",
+          "relation_type": "PREDISPOSES_TO",
+          "object": "hereditary breast and ovarian cancer syndrome",
+          "support_sentence": "BRCA1 truncating variants predispose carriers to hereditary breast and ovarian cancer syndrome.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific cancer-risk relation.",
+          "subject_curie": null,
+          "object_curie": "MONDO:0003582",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_apc_predisposes_fap",
+      "title": "APC predisposes to familial adenomatous polyposis",
+      "category": "strong_specific",
+      "topics": ["variant_disease_risk"],
+      "text": "APC pathogenic variants predispose carriers to familial adenomatous polyposis.",
+      "gold_relations": [
+        {
+          "subject": "APC pathogenic variants",
+          "relation_type": "PREDISPOSES_TO",
+          "object": "familial adenomatous polyposis",
+          "support_sentence": "APC pathogenic variants predispose carriers to familial adenomatous polyposis.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific inherited cancer-risk relation.",
+          "subject_curie": null,
+          "object_curie": "NCIT:C3339",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_braf_v600e_activates_mapk",
+      "title": "BRAF V600E activates MAPK signaling",
+      "category": "strong_specific",
+      "topics": ["pathway_regulation"],
+      "text": "BRAF V600E activates MAPK signaling in melanoma cells with constitutive kinase output.",
+      "gold_relations": [
+        {
+          "subject": "BRAF V600E",
+          "relation_type": "ACTIVATES",
+          "object": "MAPK signaling",
+          "support_sentence": "BRAF V600E activates MAPK signaling in melanoma cells with constitutive kinase output.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific variant-to-pathway activation relation with a broad pathway endpoint that must remain review-only.",
+          "subject_curie": "ClinVar:BRAF_V600E",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_pten_loss_activates_pi3k_akt",
+      "title": "PTEN loss activates PI3K-AKT signaling",
+      "category": "strong_specific",
+      "topics": ["pathway_regulation"],
+      "text": "PTEN loss activates PI3K-AKT signaling by removing lipid phosphatase restraint.",
+      "gold_relations": [
+        {
+          "subject": "PTEN loss",
+          "relation_type": "ACTIVATES",
+          "object": "PI3K-AKT signaling",
+          "support_sentence": "PTEN loss activates PI3K-AKT signaling by removing lipid phosphatase restraint.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific loss-of-function to pathway activation relation.",
+          "subject_curie": null,
+          "object_curie": "GO:0043491",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_il6_regulates_inflammatory_signaling",
+      "title": "IL6 regulates inflammatory signaling",
+      "category": "strong_specific",
+      "topics": ["pathway_regulation"],
+      "text": "IL6 regulates inflammatory signaling through JAK-STAT activation in macrophages.",
+      "gold_relations": [
+        {
+          "subject": "IL6",
+          "relation_type": "REGULATES",
+          "object": "inflammatory signaling",
+          "support_sentence": "IL6 regulates inflammatory signaling through JAK-STAT activation in macrophages.",
+          "value_level": "high",
+          "rationale": "Specific cytokine-to-process regulation relation with a broad process endpoint that must remain review-only.",
+          "subject_curie": "HGNC:6018",
+          "object_curie": null,
+          "requires_entailment": true,
+          "review_status": "review_only"
+        }
+      ]
+    },
+    {
+      "case_id": "v3_kras_g12d_activates_mapk",
+      "title": "KRAS G12D activates MAPK signaling",
+      "category": "strong_specific",
+      "topics": ["pathway_regulation", "variant_disease_risk"],
+      "text": "KRAS G12D activates MAPK signaling and increases pancreatic cancer cell proliferation.",
+      "gold_relations": [
+        {
+          "subject": "KRAS G12D",
+          "relation_type": "ACTIVATES",
+          "object": "MAPK signaling",
+          "support_sentence": "KRAS G12D activates MAPK signaling and increases pancreatic cancer cell proliferation.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific variant-to-pathway activation relation with a broad pathway endpoint that must remain review-only.",
+          "subject_curie": "ClinVar:KRAS_G12D",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_pdl1_biomarker_pembrolizumab_response",
+      "title": "PD-L1 is a biomarker for pembrolizumab response",
+      "category": "strong_specific",
+      "topics": ["biomarker_treatment_response", "oncology_drug_response"],
+      "text": "PD-L1 expression is a biomarker for response to pembrolizumab in non-small cell lung cancer.",
+      "gold_relations": [
+        {
+          "subject": "PD-L1 expression",
+          "relation_type": "BIOMARKER_FOR",
+          "object": "response to pembrolizumab",
+          "support_sentence": "PD-L1 expression is a biomarker for response to pembrolizumab in non-small cell lung cancer.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific biomarker-to-treatment-response relation.",
+          "subject_curie": null,
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_msi_high_biomarker_checkpoint_response",
+      "title": "MSI-high status is a biomarker for checkpoint inhibitor response",
+      "category": "strong_specific",
+      "topics": ["biomarker_treatment_response"],
+      "text": "MSI-high status is a biomarker for immune checkpoint inhibitor response in colorectal cancer.",
+      "gold_relations": [
+        {
+          "subject": "MSI-high status",
+          "relation_type": "BIOMARKER_FOR",
+          "object": "immune checkpoint inhibitor response",
+          "support_sentence": "MSI-high status is a biomarker for immune checkpoint inhibitor response in colorectal cancer.",
+          "value_level": "high",
+          "review_status": "review_only",
+          "rationale": "Specific biomarker response relation.",
+          "subject_curie": "NCIT:C36493",
+          "object_curie": null,
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_egfr_t790m_confers_resistance_gefitinib",
+      "title": "EGFR T790M confers resistance to gefitinib",
+      "category": "strong_specific",
+      "topics": ["oncology_drug_response", "biomarker_treatment_response"],
+      "text": "EGFR T790M confers resistance to gefitinib in previously responsive lung tumors.",
+      "gold_relations": [
+        {
+          "subject": "EGFR T790M",
+          "relation_type": "CONFERS_RESISTANCE_TO",
+          "object": "gefitinib",
+          "support_sentence": "EGFR T790M confers resistance to gefitinib in previously responsive lung tumors.",
+          "value_level": "high",
+          "rationale": "Specific variant-to-drug resistance relation.",
+          "subject_curie": "ClinVar:EGFR_T790M",
+          "object_curie": "DrugBank:DB00317",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_long_document_med13_regulates_septal_development",
+      "title": "Long document MED13 regulation case",
+      "category": "strong_specific",
+      "topics": ["long_document_chunking", "pathway_regulation"],
+      "text": "Background sections describe unrelated chromatin remodeling, murine atrial morphology, and cohort ascertainment. The methods then discuss sequencing controls, variant filters, and imaging protocols across several paragraphs. A supplemental paragraph lists EGFR, BRAF, MAPK signaling, pembrolizumab, and congenital heart disease only as examples used by the annotation team. Another section explains that reviewer calibration included negative controls, weak association examples, and entity-linking edge cases. In the mechanistic results, MED13 regulates cardiac septal development by coordinating transcriptional programs in embryonic cardiomyocytes. The discussion separately mentions EGFR and MAPK signaling only as examples of unrelated pathway curation challenges.",
+      "gold_relations": [
+        {
+          "subject": "MED13",
+          "relation_type": "REGULATES",
+          "object": "cardiac septal development",
+          "support_sentence": "In the mechanistic results, MED13 regulates cardiac septal development by coordinating transcriptional programs in embryonic cardiomyocytes.",
+          "value_level": "high",
+          "rationale": "Specific long-document relation requiring chunk-local extraction.",
+          "subject_curie": "HGNC:22474",
+          "object_curie": "GO:0003279",
+          "requires_entailment": true
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_med13_may_link_congenital_heart_disease",
+      "title": "MED13 may link to congenital heart disease",
+      "category": "weak_association",
+      "topics": ["low_value_review"],
+      "text": "MED13 may be linked to congenital heart disease in a small family series.",
+      "gold_relations": [
+        {
+          "subject": "MED13",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "congenital heart disease",
+          "support_sentence": "MED13 may be linked to congenital heart disease in a small family series.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Hedged weak association should stay in review.",
+          "subject_curie": "HGNC:22474",
+          "object_curie": "MONDO:0005267",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_akt_trend_survival",
+      "title": "AKT activation trends with reduced survival",
+      "category": "weak_association",
+      "topics": ["low_value_review"],
+      "text": "AKT activation showed a trend toward reduced survival in an exploratory subgroup.",
+      "gold_relations": [
+        {
+          "subject": "AKT activation",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "reduced survival",
+          "support_sentence": "AKT activation showed a trend toward reduced survival in an exploratory subgroup.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Trend-only outcome evidence is review-only.",
+          "subject_curie": null,
+          "object_curie": null,
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_hrd_possible_biomarker_platinum",
+      "title": "HRD score possible biomarker for platinum sensitivity",
+      "category": "weak_association",
+      "topics": ["low_value_review", "biomarker_treatment_response"],
+      "text": "HRD score was described as a possible biomarker for platinum sensitivity in a pilot cohort.",
+      "gold_relations": [
+        {
+          "subject": "HRD score",
+          "relation_type": "BIOMARKER_FOR",
+          "object": "platinum sensitivity",
+          "support_sentence": "HRD score was described as a possible biomarker for platinum sensitivity in a pilot cohort.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Possible biomarker language requires review.",
+          "subject_curie": null,
+          "object_curie": null,
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_il6_may_regulate_inflammation",
+      "title": "IL6 may regulate inflammation",
+      "category": "weak_association",
+      "topics": ["low_value_review", "pathway_regulation"],
+      "text": "IL6 may regulate inflammatory signaling under hypoxic culture conditions.",
+      "gold_relations": [
+        {
+          "subject": "IL6",
+          "relation_type": "REGULATES",
+          "object": "inflammatory signaling",
+          "support_sentence": "IL6 may regulate inflammatory signaling under hypoxic culture conditions.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "May-regulate language is review-only.",
+          "subject_curie": "HGNC:6018",
+          "object_curie": null,
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_met_correlated_resistance",
+      "title": "MET amplification correlated with resistance",
+      "category": "weak_association",
+      "topics": ["low_value_review", "oncology_drug_response"],
+      "text": "MET amplification was correlated with resistance to EGFR inhibition in a small exploratory cohort.",
+      "gold_relations": [
+        {
+          "subject": "MET amplification",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "resistance to EGFR inhibition",
+          "support_sentence": "MET amplification was correlated with resistance to EGFR inhibition in a small exploratory cohort.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Correlated-only evidence is useful for review but not trusted promotion.",
+          "subject_curie": null,
+          "object_curie": "NCIT:C165567",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_tp53_potential_predictor_chemo",
+      "title": "TP53 status potential predictor of chemotherapy response",
+      "category": "weak_association",
+      "topics": ["low_value_review", "biomarker_treatment_response"],
+      "text": "TP53 mutation status was a potential predictor of chemotherapy response in retrospective analysis.",
+      "gold_relations": [
+        {
+          "subject": "TP53 mutation status",
+          "relation_type": "BIOMARKER_FOR",
+          "object": "chemotherapy response",
+          "support_sentence": "TP53 mutation status was a potential predictor of chemotherapy response in retrospective analysis.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Potential predictor language stays review-only.",
+          "subject_curie": "HGNC:11998",
+          "object_curie": "NCIT:C15632",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_mtor_might_activate_autophagy",
+      "title": "MTOR might activate autophagy",
+      "category": "weak_association",
+      "topics": ["low_value_review", "pathway_regulation"],
+      "text": "MTOR signaling might activate autophagy markers after nutrient withdrawal in one assay.",
+      "gold_relations": [
+        {
+          "subject": "MTOR signaling",
+          "relation_type": "ACTIVATES",
+          "object": "autophagy markers",
+          "support_sentence": "MTOR signaling might activate autophagy markers after nutrient withdrawal in one assay.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Might-activate language is weak review evidence.",
+          "subject_curie": "HGNC:3942",
+          "object_curie": "GO:0006914",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_jak2_possible_link_thrombosis",
+      "title": "JAK2 possible link to thrombosis",
+      "category": "weak_association",
+      "topics": ["low_value_review", "variant_disease_risk"],
+      "text": "JAK2 V617F was noted as a possible link to thrombosis in a small registry.",
+      "gold_relations": [
+        {
+          "subject": "JAK2 V617F",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "thrombosis",
+          "support_sentence": "JAK2 V617F was noted as a possible link to thrombosis in a small registry.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Possible-link evidence should be reviewed.",
+          "subject_curie": "ClinVar:JAK2_V617F",
+          "object_curie": "MONDO:0000831",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_egfr_trend_response_erlotinib",
+      "title": "EGFR expression trends with erlotinib response",
+      "category": "weak_association",
+      "topics": ["low_value_review", "oncology_drug_response"],
+      "text": "EGFR expression trended with erlotinib response but did not meet the prespecified threshold.",
+      "gold_relations": [
+        {
+          "subject": "EGFR expression",
+          "relation_type": "ASSOCIATED_WITH",
+          "object": "erlotinib response",
+          "support_sentence": "EGFR expression trended with erlotinib response but did not meet the prespecified threshold.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Trend-only drug-response evidence is review-only.",
+          "subject_curie": "HGNC:3236",
+          "object_curie": "DrugBank:DB00530",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_weak_ntrk_may_predict_larotrectinib_response",
+      "title": "NTRK fusion may predict larotrectinib response",
+      "category": "weak_association",
+      "topics": ["low_value_review", "biomarker_treatment_response"],
+      "text": "NTRK fusion may predict larotrectinib response in a limited basket cohort.",
+      "gold_relations": [
+        {
+          "subject": "NTRK fusion",
+          "relation_type": "BIOMARKER_FOR",
+          "object": "larotrectinib response",
+          "support_sentence": "NTRK fusion may predict larotrectinib response in a limited basket cohort.",
+          "value_level": "low",
+          "review_status": "review_only",
+          "rationale": "Hedged prediction claim belongs in review-only lane.",
+          "subject_curie": "NCIT:C129626",
+          "object_curie": "DrugBank:DB14723",
+          "requires_entailment": false
+        }
+      ]
+    },
+    {
+      "case_id": "v3_negative_egfr_gefitinib_negated_relation",
+      "title": "Negated EGFR/gefitinib near miss",
+      "category": "negative_control",
+      "topics": ["negative_control", "adversarial_negated_near_miss", "oncology_drug_response"],
+      "near_miss_entities": ["EGFR expression", "gefitinib response"],
+      "text": "EGFR and gefitinib were both measured, but the authors found no evidence that EGFR expression predicted gefitinib response in this cohort.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_brca1_olaparib_background_only",
+      "title": "BRCA1 and olaparib background mention",
+      "category": "negative_control",
+      "topics": ["negative_control", "oncology_drug_response"],
+      "text": "The introduction discussed BRCA1 and olaparib as background examples, while the experiment tested unrelated imaging endpoints.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_mecp2_rett_family_history_only",
+      "title": "MECP2 and Rett syndrome family-history mention",
+      "category": "negative_control",
+      "topics": ["negative_control", "rare_disease_gene_phenotype"],
+      "text": "A family history form listed Rett syndrome and MECP2 testing, but the paper did not claim a relation for the enrolled patient.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_braf_mapk_inhibitor_control",
+      "title": "BRAF and MAPK co-mentioned in control arm",
+      "category": "negative_control",
+      "topics": ["negative_control", "pathway_regulation"],
+      "text": "BRAF V600E and MAPK signaling were used to describe a control plasmid, not a result about pathway activation.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_pdl1_pembrolizumab_threshold_not_met",
+      "title": "PD-L1 biomarker threshold not met",
+      "category": "negative_control",
+      "topics": ["negative_control", "biomarker_treatment_response"],
+      "text": "PD-L1 staining and pembrolizumab response were collected, but the association was not significant and no biomarker claim was made.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_cftr_lung_cancer_unrelated",
+      "title": "CFTR and lung cancer unrelated mention",
+      "category": "negative_control",
+      "topics": ["negative_control", "rare_disease_gene_phenotype"],
+      "text": "CFTR carrier screening was listed in baseline demographics for lung cancer patients, without a disease association claim.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_kras_sotorasib_prior_therapy",
+      "title": "KRAS and sotorasib prior therapy only",
+      "category": "negative_control",
+      "topics": ["negative_control", "oncology_drug_response"],
+      "text": "KRAS G12C and sotorasib appeared only in prior-therapy history; the current study evaluated a different investigational compound.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_il6_inflammation_assay_failed",
+      "title": "IL6 inflammation assay failed",
+      "category": "negative_control",
+      "topics": ["negative_control", "pathway_regulation"],
+      "text": "IL6 and inflammatory signaling were planned assay endpoints, but the assay failed quality control and no regulation result was reported.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_msi_checkpoint_response_covariate",
+      "title": "MSI and checkpoint response covariate only",
+      "category": "negative_control",
+      "topics": ["negative_control", "biomarker_treatment_response"],
+      "text": "MSI-high status and checkpoint inhibitor response were included as covariates in a table, not as a tested biomarker relation.",
+      "gold_relations": []
+    },
+    {
+      "case_id": "v3_negative_long_document_distractor",
+      "title": "Long document distractor with many entity mentions",
+      "category": "negative_control",
+      "topics": ["negative_control", "long_document_chunking"],
+      "text": "The opening review paragraph mentions MED13, EGFR, BRAF, MAPK signaling, pembrolizumab, and congenital heart disease as examples of terms used in the annotation guideline. A methods section then discusses data entry workflows, adjudication forms, and reviewer calibration without presenting experimental results. A later quality-control section lists pathway labels, drug names, and phenotype labels to show how curators should avoid over-linking co-mentioned entities. The document also includes a table-caption narrative about blinded review, duplicate adjudication, and conflict resolution. No sentence asserts a biomedical relation among these entities.",
+      "gold_relations": []
+    }
+  ]
+}

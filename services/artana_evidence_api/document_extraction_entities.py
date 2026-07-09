@@ -174,10 +174,47 @@ _GENERIC_CLASS_TOKENS = frozenset(
         "features",
         "genes",
         "modules",
+        "programs",
         "proteins",
     },
 )
 _GENE_SYMBOL_STOPWORDS = _LEADING_FRAGMENT_TOKENS | _STANDALONE_FRAGMENT_TOKENS
+_BIOMEDICAL_SUBTYPE_TOKENS = frozenset(
+    {
+        "amplification",
+        "deletion",
+        "exon",
+        "fusion",
+        "fusions",
+        "harboring",
+        "loss",
+        "mutated",
+        "mutation",
+        "pathogenic",
+        "positive",
+        "variant",
+        "variants",
+    },
+)
+_DISEASE_CLASS_TOKENS = frozenset(
+    {
+        "adenocarcinoma",
+        "cancer",
+        "cancers",
+        "carcinoma",
+        "disease",
+        "hypercholesterolemia",
+        "leukemia",
+        "lymphoma",
+        "melanoma",
+        "neoplasm",
+        "neoplasms",
+        "polyposis",
+        "syndrome",
+        "tumor",
+        "tumors",
+    },
+)
 
 
 def clean_llm_entity_label(raw: str) -> str:
@@ -191,6 +228,8 @@ def clean_llm_entity_label(raw: str) -> str:
         len(words) <= _MAX_ENTITY_LABEL_WORDS
         and canonical_entity_label_rejection_reason(label) is None
     ):
+        return label
+    if _should_preserve_specific_biomedical_label(label):
         return label
 
     gene_match = _GENE_SYMBOL_RE.search(label)
@@ -236,6 +275,24 @@ def clean_llm_entity_label(raw: str) -> str:
     if canonical_entity_label_rejection_reason(cleaned) is not None:
         return ""
     return cleaned
+
+
+def _should_preserve_specific_biomedical_label(label: str) -> bool:
+    normalized_label = " ".join(label.split())
+    tokens = tuple(
+        token.casefold() for token in _ENTITY_LABEL_TOKEN_RE.findall(normalized_label)
+    )
+    if not (_MAX_ENTITY_LABEL_WORDS < len(tokens) <= _MAX_CANONICAL_ENTITY_LABEL_TOKENS):
+        return False
+    if canonical_entity_label_rejection_reason(normalized_label) is not None:
+        return False
+    return bool(
+        _DISEASE_CLASS_TOKENS.intersection(tokens)
+        and (
+            _BIOMEDICAL_SUBTYPE_TOKENS.intersection(tokens)
+            or tokens[-1] in _DISEASE_CLASS_TOKENS
+        )
+    )
 
 
 def is_canonical_entity_label(label: str) -> bool:

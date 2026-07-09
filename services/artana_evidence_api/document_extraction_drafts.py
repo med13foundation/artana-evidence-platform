@@ -220,6 +220,8 @@ def build_document_extraction_drafts(
                     relation_type=candidate.relation_type,
                     object_label=object_label,
                     sentence=candidate.sentence,
+                    review_status=candidate.review_status,
+                    review_reason_codes=candidate.review_reason_codes,
                 ),
                 review_context=normalized_review_context,
             )
@@ -242,7 +244,6 @@ def build_document_extraction_drafts(
             )
             support_verification = _verify_grounded_candidate_support(
                 evidence_grounding=evidence_grounding,
-                sentence=candidate.sentence,
                 subject=candidate.subject_label,
                 relation_type=candidate.relation_type,
                 object_=object_label,
@@ -260,7 +261,7 @@ def build_document_extraction_drafts(
                         f"Extracted claim: {resolved_subject_label} "
                         f"{candidate.relation_type} {resolved_object_label}"
                     ),
-                    summary=candidate.sentence,
+                    summary=evidence_grounding.source_sentence or candidate.sentence,
                     confidence=_candidate_confidence_for_support(
                         support_verification,
                     ),
@@ -270,7 +271,10 @@ def build_document_extraction_drafts(
                     reasoning_path={
                         "document_id": document.id,
                         "document_title": document.title,
-                        "sentence": candidate.sentence,
+                        "sentence": (
+                            evidence_grounding.source_sentence or candidate.sentence
+                        ),
+                        "model_sentence": candidate.sentence,
                         "resolution_method": (
                             "graph_entity_search"
                             if subject_match is not None and object_match is not None
@@ -284,7 +288,9 @@ def build_document_extraction_drafts(
                         {
                             "source_type": "paper",
                             "locator": f"document:{document.id}",
-                            "excerpt": candidate.sentence,
+                            "excerpt": (
+                                evidence_grounding.source_sentence or candidate.sentence
+                            ),
                             "relevance": 0.5,
                         },
                     ],
@@ -295,7 +301,10 @@ def build_document_extraction_drafts(
                             entity_candidate_payload_from_curie(
                                 label=candidate.subject_label,
                                 link=subject_curie_link,
-                                evidence_excerpt=candidate.sentence,
+                                evidence_excerpt=(
+                                    evidence_grounding.source_sentence
+                                    or candidate.sentence
+                                ),
                                 evidence_locator=(
                                     f"document:{document.id}:candidate:{index}:subject"
                                 ),
@@ -308,7 +317,10 @@ def build_document_extraction_drafts(
                             entity_candidate_payload_from_curie(
                                 label=object_label,
                                 link=object_curie_link,
-                                evidence_excerpt=candidate.sentence,
+                                evidence_excerpt=(
+                                    evidence_grounding.source_sentence
+                                    or candidate.sentence
+                                ),
                                 evidence_locator=(
                                     f"document:{document.id}:candidate:{index}:object:{object_index}"
                                 ),
@@ -328,6 +340,7 @@ def build_document_extraction_drafts(
                             "subject_label": candidate.subject_label,
                             "object_label": object_label,
                             "original_object_label": candidate.object_label,
+                            **_candidate_review_metadata(candidate),
                             "resolved_subject_label": resolved_subject_label,
                             "resolved_object_label": resolved_object_label,
                             "subject_resolved": subject_match is not None,
@@ -398,15 +411,14 @@ def with_candidate_extraction_trust_metadata(
 def _verify_grounded_candidate_support(
     *,
     evidence_grounding: EvidenceGroundingResult,
-    sentence: str,
     subject: str,
     relation_type: str,
     object_: str,
 ) -> TripleSupportResult | None:
-    if not evidence_grounding.grounded:
+    if not evidence_grounding.grounded or evidence_grounding.source_sentence is None:
         return None
     return verify_triple_support(
-        sentence=sentence,
+        sentence=evidence_grounding.source_sentence,
         subject=subject,
         relation_type=relation_type,
         object_=object_,
@@ -529,6 +541,13 @@ def _curie_source_for_candidate(source: CurieSource) -> CurieSource:
     if source == "none":
         return "model"
     return source
+
+
+def _candidate_review_metadata(candidate: ExtractedRelationCandidate) -> JSONObject:
+    return {
+        "review_status": candidate.review_status,
+        "review_reason_codes": list(candidate.review_reason_codes),
+    }
 
 
 def _is_relation_type_governance_candidate(

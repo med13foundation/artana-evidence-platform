@@ -868,6 +868,215 @@ def test_graph_service_ai_claim_requires_entailing_support_verification(
     )
 
 
+@pytest.mark.parametrize(
+    ("metadata_override", "expected_message", "expected_action"),
+    [
+        (
+            {"review_status": "review_only"},
+            "Trusted AI evidence cannot use review-only relation evidence.",
+            "route_to_human_review",
+        ),
+        (
+            {"review_reason_codes": ["hedged_language", "may_link"]},
+            "Trusted AI evidence cannot use weak or hedged review reason codes.",
+            "route_to_human_review",
+        ),
+    ],
+)
+def test_graph_service_rejects_trusted_ai_claim_with_review_lane_metadata(
+    graph_client: TestClient,
+    metadata_override: dict[str, object],
+    expected_message: str,
+    expected_action: str,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    metadata = {
+        "origin": "graph_harness",
+        "agent_extraction_completed": True,
+        "fallback_output_used": False,
+        "trusted_evidence_eligible": True,
+        "trust_tier": "trusted",
+        "trust_floor_failures": [],
+        "evidence_grounding": {
+            "anchor_start": 0,
+            "anchor_end": 47,
+            "match_kind": "exact",
+            "score": 1.0,
+            "subject_present": True,
+            "object_present": True,
+            "grounded": True,
+        },
+        "support_verification": {
+            "support": "ENTAILS",
+            "rationale": "The sentence directly supports the relation.",
+            "model_id": "artana-heuristic-support-v1",
+        },
+        "entity_linking": {
+            "subject": {
+                "status": "linked",
+                "curie": "HGNC:22474",
+                "source": "verified_linker",
+                "trusted_identifier": True,
+            },
+            "object": {
+                "status": "linked",
+                "curie": "HP:0001263",
+                "source": "verified_linker",
+                "trusted_identifier": True,
+            },
+        },
+    }
+    metadata.update(metadata_override)
+    request_payload = {
+        "source_entity_id": source_id,
+        "target_entity_id": target_id,
+        "relation_type": "ASSOCIATED_WITH",
+        "assessment": _SUPPORTED_ASSESSMENT,
+        "claim_text": "MED13 is associated with developmental delay.",
+        "evidence_sentence": "MED13 was associated with developmental delay.",
+        "evidence_sentence_source": "artana_generated",
+        "source_document_ref": "pmid:123456",
+        "agent_run_id": "ai-run-review-lane-test",
+        "ai_provenance": {
+            "model_id": "artana-kernel",
+            "model_version": "test",
+            "prompt_id": "graph-validation-ai-claim",
+            "prompt_version": "v1",
+            "input_hash": uuid4().hex,
+            "rationale": "The sentence supports the relation.",
+            "evidence_references": ["pmid:123456"],
+        },
+        "metadata": metadata,
+    }
+
+    validation_response = graph_client.post(
+        f"/v1/spaces/{space_id}/validate/claim",
+        headers=admin_headers,
+        json=request_payload,
+    )
+    assert validation_response.status_code == 200, validation_response.text
+    validation_payload = validation_response.json()
+    assert validation_payload["valid"] is False
+    assert validation_payload["code"] == "insufficient_evidence"
+    assert validation_payload["message"] == expected_message
+    assert validation_payload["next_actions"][0]["action"] == expected_action
+
+    create_response = graph_client.post(
+        f"/v1/spaces/{space_id}/claims",
+        headers=admin_headers,
+        json=request_payload,
+    )
+    assert create_response.status_code == 400, create_response.text
+    detail = create_response.json()["detail"]
+    assert detail["code"] == "insufficient_evidence"
+    assert detail["message"] == expected_message
+    assert detail["next_actions"][0]["action"] == expected_action
+
+
+def test_graph_service_claims_reject_trusted_floor_failure_without_ai_provenance(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    request_payload = {
+        "source_entity_id": source_id,
+        "target_entity_id": target_id,
+        "relation_type": "ASSOCIATED_WITH",
+        "assessment": _SUPPORTED_ASSESSMENT,
+        "claim_text": "MED13 is associated with developmental delay.",
+        "evidence_sentence": "MED13 was associated with developmental delay.",
+        "evidence_sentence_source": "pubmed",
+        "source_document_ref": "pmid:123456",
+        "metadata": {
+            "agent_extraction_completed": True,
+            "fallback_output_used": False,
+            "trusted_evidence_eligible": True,
+            "trust_tier": "trusted",
+            "trust_floor_failures": [],
+            "evidence_grounding": {
+                "anchor_start": 0,
+                "anchor_end": 47,
+                "match_kind": "exact",
+                "score": 1.0,
+                "subject_present": True,
+                "object_present": True,
+                "grounded": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "rationale": "The sentence directly supports the relation.",
+                "model_id": "artana-heuristic-support-v1",
+            },
+            "entity_linking": {
+                "subject": {
+                    "status": "linked",
+                    "curie": "HGNC:22474",
+                    "source": "verified_linker",
+                    "trusted_identifier": True,
+                },
+                "object": {
+                    "status": "linked",
+                    "curie": "HP:0001263",
+                    "source": "verified_linker",
+                    "trusted_identifier": True,
+                },
+            },
+            "review_status": "review_only",
+        },
+    }
+
+    validation_response = graph_client.post(
+        f"/v1/spaces/{space_id}/validate/claim",
+        headers=admin_headers,
+        json=request_payload,
+    )
+    assert validation_response.status_code == 200, validation_response.text
+    validation_payload = validation_response.json()
+    assert validation_payload["valid"] is False
+    assert validation_payload["code"] == "insufficient_evidence"
+    assert validation_payload["next_actions"][0]["action"] == "route_to_human_review"
+
+    create_response = graph_client.post(
+        f"/v1/spaces/{space_id}/claims",
+        headers=admin_headers,
+        json=request_payload,
+    )
+    assert create_response.status_code == 400, create_response.text
+    detail = create_response.json()["detail"]
+    assert detail["code"] == "insufficient_evidence"
+    assert detail["message"] == (
+        "Trusted AI evidence cannot use review-only relation evidence."
+    )
+    assert detail["next_actions"][0]["action"] == "route_to_human_review"
+
+
 def test_graph_service_ai_claim_requires_structured_grounding(
     graph_client: TestClient,
 ) -> None:
@@ -1381,6 +1590,165 @@ def test_graph_service_create_relation_rejects_ai_generated_non_entailing_suppor
     assert payload["validation_state"] == "INVALID_COMPONENTS"
     assert payload["persistability"] == "NON_PERSISTABLE"
     assert payload["next_actions"][0]["action"] == "attach_support_verification"
+
+
+def test_graph_service_create_relation_rejects_review_only_trusted_ai_evidence(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+
+    response = graph_client.post(
+        f"/v1/spaces/{space_id}/relations",
+        headers=admin_headers,
+        json={
+            "source_id": source_id,
+            "target_id": target_id,
+            "relation_type": "ASSOCIATED_WITH",
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "evidence_sentence": "MED13 was associated with developmental delay.",
+            "evidence_sentence_source": "artana_generated",
+            "evidence_tier": "trusted",
+            "source_document_ref": "harness_proposal:proposal-1",
+            "metadata": {
+                "origin": "graph_harness",
+                "agent_extraction_completed": True,
+                "fallback_output_used": False,
+                "evidence_grounding": {
+                    "anchor_start": 0,
+                    "anchor_end": 47,
+                    "match_kind": "exact",
+                    "score": 1.0,
+                    "subject_present": True,
+                    "object_present": True,
+                    "grounded": True,
+                },
+                "support_verification": {
+                    "support": "ENTAILS",
+                    "rationale": "The sentence directly supports the relation.",
+                    "model_id": "artana-heuristic-support-v1",
+                },
+                "entity_linking": {
+                    "subject": {
+                        "status": "linked",
+                        "curie": "HGNC:22474",
+                        "source": "verified_linker",
+                        "trusted_identifier": True,
+                    },
+                    "object": {
+                        "status": "linked",
+                        "curie": "HP:0001263",
+                        "source": "verified_linker",
+                        "trusted_identifier": True,
+                    },
+                },
+                "review_status": "review_only",
+                "review_reason_codes": ["hedged_language"],
+            },
+        },
+    )
+
+    assert response.status_code == 400, response.text
+    payload = response.json()["detail"]
+    assert payload["code"] == "insufficient_evidence"
+    assert payload["message"] == (
+        "Trusted AI evidence cannot use review-only relation evidence."
+    )
+    assert payload["validation_state"] == "INVALID_COMPONENTS"
+    assert payload["persistability"] == "NON_PERSISTABLE"
+    assert payload["next_actions"][0]["action"] == "route_to_human_review"
+
+
+def test_graph_service_create_relation_rejects_weak_reason_trusted_ai_evidence(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+
+    response = graph_client.post(
+        f"/v1/spaces/{space_id}/relations",
+        headers=admin_headers,
+        json={
+            "source_id": source_id,
+            "target_id": target_id,
+            "relation_type": "ASSOCIATED_WITH",
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "evidence_sentence": "MED13 was associated with developmental delay.",
+            "evidence_sentence_source": "artana_generated",
+            "evidence_tier": "trusted",
+            "source_document_ref": "harness_proposal:proposal-1",
+            "metadata": {
+                "origin": "graph_harness",
+                "agent_extraction_completed": True,
+                "fallback_output_used": False,
+                "evidence_grounding": {
+                    "anchor_start": 0,
+                    "anchor_end": 47,
+                    "match_kind": "exact",
+                    "score": 1.0,
+                    "subject_present": True,
+                    "object_present": True,
+                    "grounded": True,
+                },
+                "support_verification": {
+                    "support": "ENTAILS",
+                    "rationale": "The sentence directly supports the relation.",
+                    "model_id": "artana-heuristic-support-v1",
+                },
+                "entity_linking": {
+                    "subject": {
+                        "status": "linked",
+                        "curie": "HGNC:22474",
+                        "source": "verified_linker",
+                        "trusted_identifier": True,
+                    },
+                    "object": {
+                        "status": "linked",
+                        "curie": "HP:0001263",
+                        "source": "verified_linker",
+                        "trusted_identifier": True,
+                    },
+                },
+                "review_reason_codes": ["hedged_language"],
+            },
+        },
+    )
+
+    assert response.status_code == 400, response.text
+    payload = response.json()["detail"]
+    assert payload["code"] == "insufficient_evidence"
+    assert payload["message"] == (
+        "Trusted AI evidence cannot use weak or hedged review reason codes."
+    )
+    assert payload["validation_state"] == "INVALID_COMPONENTS"
+    assert payload["persistability"] == "NON_PERSISTABLE"
+    assert payload["next_actions"][0]["action"] == "route_to_human_review"
 
 
 def test_graph_service_create_relation_rejects_review_only_triple(

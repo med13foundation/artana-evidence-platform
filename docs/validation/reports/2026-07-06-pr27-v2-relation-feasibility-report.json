@@ -1,0 +1,270 @@
+{
+  "summary": {
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "candidate_count": 25,
+    "supported_candidate_count": 25,
+    "valuable_candidate_count": 20,
+    "generic_relation_count": 3,
+    "pruned_generic_relation_count": 3,
+    "quality_filtered_candidate_count": 4,
+    "raw_unknown_relation_type_count": 0,
+    "relation_type_surface_count": 25,
+    "raw_unknown_relation_type_surface_count": 0,
+    "proposal_candidate_count": 0,
+    "proposal_gold_match_count": 0,
+    "proposal_eligible_gold_count": 0,
+    "proposal_recall_against_gold": 0.0,
+    "proposal_recall_against_proposal_eligible_gold": 0.0,
+    "gold_curie_endpoint_count": 42,
+    "candidate_curie_endpoint_count": 42,
+    "curie_linked_gold_endpoint_count": 42,
+    "verified_curie_match_count": 42,
+    "model_curie_wrong_count": 0,
+    "wrong_verified_curie_link_count": 0,
+    "support_sentence_aligned_count": 25,
+    "both_arguments_present_count": 25,
+    "entailment_required_count": 20,
+    "entailment_checked_count": 20,
+    "entailment_supported_count": 20,
+    "agent_completed_case_count": 30,
+    "agent_zero_candidate_case_count": 5,
+    "fallback_case_count": 0,
+    "fallback_candidate_count": 0,
+    "fallback_credited_as_agent_count": 0,
+    "completed_agent_candidate_count": 25,
+    "completed_agent_supported_candidate_count": 25,
+    "completed_agent_valuable_candidate_count": 20,
+    "completed_agent_gold_relation_count": 25,
+    "completed_agent_missed_gold_count": 0,
+    "invalid_agent_case_count": 0,
+    "high_value_gold_relation_count": 20,
+    "high_value_missed_gold_count": 0,
+    "high_value_recall": 1.0,
+    "trusted_high_value_match_count": 17,
+    "trusted_high_value_recall": 0.85,
+    "low_value_gold_relation_count": 5,
+    "low_value_missed_gold_count": 0,
+    "low_value_recall": 1.0,
+    "low_value_review_candidate_count": 5,
+    "low_value_review_gold_match_count": 5,
+    "low_value_review_recall": 1.0,
+    "trusted_eligible_gold_curie_endpoint_count": 37,
+    "trusted_eligible_curie_linked_gold_endpoint_count": 37,
+    "trusted_eligible_curie_linked_gold_endpoint_rate": 1.0,
+    "low_value_review_gold_curie_endpoint_count": 5,
+    "low_value_review_curie_linked_gold_endpoint_count": 5,
+    "low_value_review_curie_endpoint_capture_rate": 1.0,
+    "weak_claim_trusted_leakage_count": 0,
+    "negative_control_case_count": 5,
+    "negative_control_empty_count": 5,
+    "negative_control_empty_rate": 1.0,
+    "negative_control_leakage_count": 0,
+    "missed_gold_count": 0,
+    "precision_against_gold": 1.0,
+    "recall_against_gold": 1.0,
+    "completed_agent_precision_against_gold": 1.0,
+    "completed_agent_recall_against_gold": 1.0,
+    "specificity_rate": 1.0,
+    "relation_specificity_rate": 0.88,
+    "generic_relation_rate": 0.12,
+    "raw_unknown_relation_type_rate": 0.0,
+    "raw_unknown_relation_type_surface_rate": 0.0,
+    "curie_linked_gold_endpoint_rate": 1.0,
+    "candidate_curie_present_rate": 0.84,
+    "verified_curie_match_rate": 1.0,
+    "valuable_candidate_rate": 0.8,
+    "completed_agent_valuable_candidate_rate": 0.8,
+    "grounded_sentence_rate": 1.0,
+    "both_arguments_present_rate": 1.0,
+    "support_sentence_alignment_rate": 1.0,
+    "entailment_checked_rate": 1.0,
+    "entailment_supported_rate": 1.0,
+    "verdict": "GREEN",
+    "verdict_reason": "The benchmark outputs are mostly supported, specific, and valuable.",
+    "blocking_reasons": [],
+    "warning_reasons": []
+  },
+  "case_results": [
+    {
+      "case": {
+        "case_id": "strong_med13_activates_septal_development"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_osimertinib_targets_egfr_t790m"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_brca1_regulates_dna_repair"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_olaparib_treats_ovarian_cancer"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_sotorasib_targets_kras_g12c"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_tp53_loss_predisposes_cancer"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_mek_inhibits_erk"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_pdl1_biomarker_immunotherapy"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_braf_v600e_activates_mapk"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "strong_cisplatin_treats_tnbc"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "weak_med13_may_link_chd"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "weak_met_correlated_resistance"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "weak_hrd_possible_biomarker"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "weak_il6_may_regulate_inflammation"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "weak_akt_trend_survival"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "negative_methods_rna_seq"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "negative_funding_acknowledgment"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "negative_author_contribution"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "negative_database_search"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "negative_cell_culture_protocol"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "complex_sotorasib_mispairing"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "complex_ret_variant_alias"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "complex_nsclc_alias"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "complex_her2_amplification_growth"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "generic_sibling_met_resistance"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "generic_sibling_egfr_t790m_resistance"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "generic_sibling_brca1_loss_cisplatin"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "long_document_tail_relation_braf"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "long_document_tail_relation_jak2"
+      },
+      "missed_gold_relations": []
+    },
+    {
+      "case": {
+        "case_id": "long_document_tail_relation_vegf"
+      },
+      "missed_gold_relations": []
+    }
+  ]
+}
