@@ -276,8 +276,6 @@ def _validate_chase_selection(
             if output.stop_reason is not None and output.stop_reason.strip() != ""
             else "stop_reason_required"
         )
-    if output.action_type is not ResearchOrchestratorActionType.RUN_CHASE_ROUND:
-        return None
     return _validate_run_chase_round_selection(
         output=output,
         workspace_summary=workspace_summary,
