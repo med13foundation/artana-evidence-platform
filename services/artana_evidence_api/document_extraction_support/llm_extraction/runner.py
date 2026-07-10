@@ -87,6 +87,7 @@ async def _run_llm_relation_extraction_attempt(
     unknown_relation_types: set[str] = set()
     raw_relation_count = 0
     for chunk in chunks:
+        primary_candidates: list[ExtractedRelationCandidate] = []
         extraction_passes = (
             (
                 LLM_EXTRACTION_PROMPT_VERSION,
@@ -112,6 +113,14 @@ async def _run_llm_relation_extraction_attempt(
         for prompt_version, prompt, pass_output_schema, force_review_only_reason_codes in (
             extraction_passes
         ):
+            is_weak_review_pass = bool(force_review_only_reason_codes)
+            if (
+                is_weak_review_pass
+                and _has_usable_relation_candidate(primary_candidates)
+            ):
+                # The weak pass is a recovery path. It must not delay or replace
+                # a usable primary extraction result.
+                continue
             effective_prompt = (
                 prompt
                 if retry_prompt_suffix is None
@@ -143,26 +152,36 @@ async def _run_llm_relation_extraction_attempt(
                 total_chunks=len(chunks),
                 document_fingerprint=document_fingerprint,
             )
-            chunk_candidates, chunk_unknown_relation_types, chunk_raw_count = (
-                await _run_llm_relation_extraction_pass_with_schema_retry(
-                    step_runner=step_runner,
-                    client=client,
-                    tenant=tenant,
-                    model_id=model_id,
-                    prompt=effective_prompt,
-                    output_schema=pass_output_schema,
-                    step_key=effective_step_key,
-                    schema_retry_prompt=_prompt_with_retry_instruction(
-                        effective_prompt,
-                        _LLM_SCHEMA_RETRY_INSTRUCTION,
-                    ),
-                    schema_retry_step_key=schema_retry_step_key,
-                    force_review_only_reason_codes=force_review_only_reason_codes,
+            try:
+                chunk_candidates, chunk_unknown_relation_types, chunk_raw_count = (
+                    await _run_llm_relation_extraction_pass_with_schema_retry(
+                        step_runner=step_runner,
+                        client=client,
+                        tenant=tenant,
+                        model_id=model_id,
+                        prompt=effective_prompt,
+                        output_schema=pass_output_schema,
+                        step_key=effective_step_key,
+                        schema_retry_prompt=_prompt_with_retry_instruction(
+                            effective_prompt,
+                            _LLM_SCHEMA_RETRY_INSTRUCTION,
+                        ),
+                        schema_retry_step_key=schema_retry_step_key,
+                        force_review_only_reason_codes=force_review_only_reason_codes,
+                    )
                 )
-            )
+            except Exception:  # noqa: BLE001
+                if is_weak_review_pass:
+                    # A best-effort recovery must not turn an otherwise empty
+                    # attempt into a transport/schema failure. The zero-candidate
+                    # retry still gets a chance to recover a canonical relation.
+                    continue
+                raise
             raw_relation_count += chunk_raw_count
             candidates.extend(chunk_candidates)
             unknown_relation_types.update(chunk_unknown_relation_types)
+            if not is_weak_review_pass:
+                primary_candidates = chunk_candidates
     return LLMRelationExtractionAttempt(
         candidates=candidates,
         unknown_relation_types=unknown_relation_types,
@@ -251,8 +270,10 @@ async def run_llm_relation_extraction_with_zero_retry(
         retry_prompt_instruction=_LLM_ZERO_CANDIDATE_RETRY_INSTRUCTION,
     )
     return LLMRelationExtractionAttempt(
-        candidates=retry_attempt.candidates,
-        unknown_relation_types=retry_attempt.unknown_relation_types,
+        candidates=[*extraction_attempt.candidates, *retry_attempt.candidates],
+        unknown_relation_types=(
+            extraction_attempt.unknown_relation_types | retry_attempt.unknown_relation_types
+        ),
         raw_relation_count=(
             extraction_attempt.raw_relation_count + retry_attempt.raw_relation_count
         ),

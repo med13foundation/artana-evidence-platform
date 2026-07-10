@@ -12,6 +12,7 @@ _SYMMETRIC_RELATION_TYPES = frozenset(
 _PASSIVE_CUES_BY_RELATION: dict[str, tuple[str, ...]] = {
     "ACTIVATES": ("activated by", "activation by"),
     "CAUSES": ("caused by",),
+    "CONFERS_RESISTANCE_TO": ("caused by", "driven by", "mediated by"),
     "INHIBITS": ("inhibited by", "suppressed by", "reduced by"),
     "REGULATES": ("regulated by",),
     "TARGETS": ("targeted by",),
@@ -49,6 +50,9 @@ _RELATION_CUES: dict[str, tuple[str, ...]] = {
         "mediates resistance to",
         "renders resistant to",
         "resistant to",
+        "caused by",
+        "driven by",
+        "mediated by",
     ),
     "DOWNSTREAM_OF": ("downstream of", "downstream", "triggered by"),
     "INHIBITS": (

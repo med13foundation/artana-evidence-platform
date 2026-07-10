@@ -64,14 +64,19 @@ from artana_evidence_api.document_extraction_review import (
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
 )
+from artana_evidence_api.document_extraction_support.llm_extraction import (
+    runner as llm_extraction_runner,
+)
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     LLM_EXTRACTION_PROMPT_VERSION,
     build_llm_extraction_prompt,
     build_llm_weak_review_extraction_prompt,
     llm_relations_to_candidates,
+    merge_duplicate_relation_candidates,
 )
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.proposal_store import HarnessProposalDraft
+from pydantic import BaseModel
 
 
 class _GraphGateway:
@@ -917,6 +922,92 @@ def test_llm_conversion_repairs_resistance_proposal_typo_without_trusting_it() -
     assert "proposal_relation_type_repaired_to:CONFERS_RESISTANCE_TO" in (
         candidates[0].new_relation_type_rationale or ""
     )
+
+
+def test_duplicate_merging_keeps_distinct_relation_type_proposals() -> None:
+    shared_fields = {
+        "subject_label": "MET amplification",
+        "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+        "object_label": "erlotinib",
+        "sentence": "MET amplification mediates resistance to erlotinib.",
+        "relation_governance_status": "requires_relation_review",
+    }
+    candidates = [
+        ExtractedRelationCandidate(
+            **shared_fields,
+            proposed_relation_type="MEDIATES_RESISTANCE_TO",
+            new_relation_type_rationale="Mechanism-specific resistance proposal.",
+        ),
+        ExtractedRelationCandidate(
+            **shared_fields,
+            proposed_relation_type="CONFERS_DRUG_TOLERANCE_TO",
+            new_relation_type_rationale="Drug-tolerance proposal.",
+        ),
+    ]
+
+    merged = merge_duplicate_relation_candidates(candidates)
+
+    assert [candidate.proposed_relation_type for candidate in merged] == [
+        "MEDIATES_RESISTANCE_TO",
+        "CONFERS_DRUG_TOLERANCE_TO",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_zero_retry_preserves_first_pass_governance_candidates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="MET amplification",
+        relation_type="PROPOSE_NEW_RELATION_TYPE",
+        proposed_relation_type="MEDIATES_RESISTANCE_TO",
+        new_relation_type_rationale="Mechanism-specific resistance proposal.",
+        object_label="erlotinib",
+        sentence="MET amplification mediates resistance to erlotinib.",
+        relation_governance_status="requires_relation_review",
+    )
+    attempts = iter(
+        (
+            llm_extraction_runner.LLMRelationExtractionAttempt(
+                candidates=[candidate],
+                unknown_relation_types=set(),
+                raw_relation_count=1,
+            ),
+            llm_extraction_runner.LLMRelationExtractionAttempt(
+                candidates=[],
+                unknown_relation_types=set(),
+                raw_relation_count=0,
+            ),
+        ),
+    )
+
+    async def _fake_attempt(**_kwargs: object):
+        return next(attempts)
+
+    async def _unused_step_runner(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("the extraction attempt is mocked")
+
+    monkeypatch.setattr(
+        llm_extraction_runner,
+        "_run_llm_relation_extraction_attempt",
+        _fake_attempt,
+    )
+
+    result = await llm_extraction_runner.run_llm_relation_extraction_with_zero_retry(
+        normalized_text=candidate.sentence,
+        chunks=(),
+        max_relations=10,
+        document_fingerprint="fingerprint",
+        output_schema=BaseModel,
+        weak_review_output_schema=BaseModel,
+        client=object(),
+        tenant=object(),
+        model_id="openai:gpt-5-mini",
+        step_runner=_unused_step_runner,
+    )
+
+    assert result.candidates == [candidate]
+    assert result.raw_relation_count == 1
 
 
 def test_llm_conversion_verifies_model_curie_hints_against_dictionary() -> None:

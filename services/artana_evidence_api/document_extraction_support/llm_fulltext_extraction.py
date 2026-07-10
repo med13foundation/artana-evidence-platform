@@ -624,15 +624,10 @@ def merge_duplicate_relation_candidates(
 ) -> list[ExtractedRelationCandidate]:
     """Merge duplicate relation candidates while preserving safer review metadata."""
 
-    merged_by_key: dict[tuple[str, str, str, str], ExtractedRelationCandidate] = {}
-    ordered_keys: list[tuple[str, str, str, str]] = []
+    merged_by_key: dict[tuple[str, str, str, str, str], ExtractedRelationCandidate] = {}
+    ordered_keys: list[tuple[str, str, str, str, str]] = []
     for candidate in candidates:
-        key = (
-            candidate.subject_label.casefold(),
-            candidate.relation_type,
-            candidate.object_label.casefold(),
-            candidate.sentence.casefold(),
-        )
+        key = _relation_candidate_merge_key(candidate)
         existing = merged_by_key.get(key)
         if existing is None:
             merged_by_key[key] = candidate
@@ -667,6 +662,20 @@ def merge_duplicate_relation_candidates(
             review_reason_codes=review_reason_codes,
         )
     return [merged_by_key[key] for key in ordered_keys]
+
+
+def _relation_candidate_merge_key(
+    candidate: ExtractedRelationCandidate,
+) -> tuple[str, str, str, str, str]:
+    """Return a governance-aware identity for relation candidate deduplication."""
+
+    return (
+        candidate.subject_label.casefold(),
+        candidate.relation_type,
+        (candidate.proposed_relation_type or "").casefold(),
+        candidate.object_label.casefold(),
+        candidate.sentence.casefold(),
+    )
 
 
 async def run_llm_relation_extraction_pass(

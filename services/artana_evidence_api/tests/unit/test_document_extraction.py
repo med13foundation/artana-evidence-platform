@@ -952,20 +952,11 @@ async def test_extract_relation_candidates_with_llm_retries_zero_candidate_agent
                 "zero_candidate_retry.v1"
             ),
         ),
-        llm_extraction_step_key(
-            text=text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-            prompt_version=(
-                f"{LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION}."
-                "zero_candidate_retry.v1"
-            ),
-        ),
     ]
     assert "A prior relation extraction attempt returned zero usable relations" in (
         captured_prompts[2]
     )
-    assert "return an empty relation list" in captured_prompts[3]
+    assert "WEAK REVIEW-ONLY EXTRACTION PASS" not in captured_prompts[2]
 
 
 @pytest.mark.asyncio
@@ -1049,7 +1040,7 @@ async def test_extract_relation_candidates_with_llm_retries_zero_converted_candi
     assert candidates[0].subject_label == "Larotrectinib"
     assert candidates[0].relation_type == "TREATS"
     assert candidates[0].object_label == "NTRK fusion solid tumors"
-    assert len(captured_step_keys) == 4
+    assert len(captured_step_keys) == 3
 
 
 @pytest.mark.asyncio
@@ -1107,15 +1098,6 @@ async def test_extract_relation_candidates_with_llm_retries_zero_causes_candidat
             model_id="openai:gpt-5.4-mini",
             prompt_version=(
                 f"{LLM_EXTRACTION_PROMPT_VERSION}."
-                "zero_candidate_retry.v1"
-            ),
-        ),
-        llm_extraction_step_key(
-            text=text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-            prompt_version=(
-                f"{LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION}."
                 "zero_candidate_retry.v1"
             ),
         ),
@@ -1203,7 +1185,7 @@ async def test_extract_relation_candidates_with_llm_retries_schema_validation_fa
     assert candidates[0].subject_label == "MSI-high status"
     assert candidates[0].relation_type == "BIOMARKER_FOR"
     assert candidates[0].object_label == "immune checkpoint inhibitor response"
-    assert len(captured_step_keys) == 3
+    assert len(captured_step_keys) == 2
     assert captured_step_keys[1] == llm_extraction_step_key(
         text=(
             "MSI-high status is a biomarker for immune checkpoint inhibitor "
@@ -1311,20 +1293,11 @@ async def test_extract_relation_candidates_with_llm_chains_schema_retry_to_zero_
                 "zero_candidate_retry.v1"
             ),
         ),
-        llm_extraction_step_key(
-            text=text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-            prompt_version=(
-                f"{LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION}."
-                "zero_candidate_retry.v1"
-            ),
-        ),
     ]
 
 
 @pytest.mark.asyncio
-async def test_extract_relation_candidates_with_llm_preserves_primary_after_weak_schema_retry(
+async def test_extract_relation_candidates_with_llm_skips_weak_pass_after_usable_primary(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured_step_keys: list[str] = []
@@ -1348,21 +1321,7 @@ async def test_extract_relation_candidates_with_llm_preserves_primary_after_weak
                     ],
                 },
             )
-        if len(captured_step_keys) == 2:
-            kwargs["output_schema"].model_validate(
-                {
-                    "relations": [
-                        {
-                            "subject": "BRCA1 truncating variants",
-                            "relation_type": "ASSOCIATED_WITH",
-                            "proposed_relation_type": "CAUSES",
-                            "object": "hereditary breast and ovarian cancer",
-                            "sentence": text,
-                        },
-                    ],
-                },
-            )
-        return SimpleNamespace(output={"relations": []})
+        raise AssertionError("weak review pass must not run after a usable primary result")
 
     _configure_llm_extraction_test_runtime(
         monkeypatch,
@@ -1380,20 +1339,6 @@ async def test_extract_relation_candidates_with_llm_preserves_primary_after_weak
             text=text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
-        ),
-        llm_extraction_step_key(
-            text=text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-            prompt_version=LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
-        ),
-        llm_extraction_step_key(
-            text=text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-            prompt_version=(
-                f"{LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION}.schema_retry.v1"
-            ),
         ),
     ]
 
@@ -2396,36 +2341,15 @@ async def test_extract_relation_candidates_with_llm_scopes_step_key_to_document_
             text=first_text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
-            prompt_version=LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
-        ),
-        llm_extraction_step_key(
-            text=first_text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-        ),
-        llm_extraction_step_key(
-            text=first_text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-            prompt_version=LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
         ),
         llm_extraction_step_key(
             text=second_text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
-        ),
-        llm_extraction_step_key(
-            text=second_text,
-            max_relations=10,
-            model_id="openai:gpt-5.4-mini",
-            prompt_version=LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
         ),
     ]
-    assert captured_step_keys[0] == captured_step_keys[2]
-    assert captured_step_keys[1] == captured_step_keys[3]
-    assert captured_step_keys[0] != captured_step_keys[1]
-    assert captured_step_keys[0] != captured_step_keys[4]
-    assert captured_step_keys[1] != captured_step_keys[5]
+    assert captured_step_keys[0] == captured_step_keys[1]
+    assert captured_step_keys[0] != captured_step_keys[2]
 
 
 @pytest.mark.asyncio

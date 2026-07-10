@@ -131,6 +131,17 @@ def test_confers_resistance_sentence_returns_entails() -> None:
     assert result.support == "ENTAILS"
 
 
+def test_passive_resistance_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="Resistance to erlotinib was caused by MET amplification.",
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
 def test_predispose_carriers_sentence_returns_entails() -> None:
     result = verify_triple_support(
         sentence=(
