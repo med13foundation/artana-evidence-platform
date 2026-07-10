@@ -186,6 +186,7 @@ def test_result_serializers_keep_artifact_payloads_small() -> None:
         "document_id": "document-1",
         "title": "MED13 evidence",
         "status": "pending_review",
+        "ranking_score": 0.7,
         "claim_fingerprint": "fingerprint-1",
     }
     assert review_item_result_payload(review_item) == {
@@ -196,6 +197,7 @@ def test_result_serializers_keep_artifact_payloads_small() -> None:
         "title": "Review MED13",
         "priority": "high",
         "status": "pending_review",
+        "ranking_score": 0.5,
         "review_fingerprint": "review-fingerprint-1",
     }
 

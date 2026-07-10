@@ -35,6 +35,13 @@ EVIDENCE_API_PREFIXES = (
     "tests/e2e/artana_evidence_api/",
 )
 EVIDENCE_API_FILES = (
+    "scripts/build_evidence_selection_shadow_review_packet.py",
+    "scripts/build_evidence_selection_shadow_review_source_inputs.py",
+    "scripts/build_evidence_selection_shadow_review_study_batch_manifest.py",
+    "scripts/build_evidence_selection_shadow_review_study_batch.py",
+    "scripts/build_evidence_selection_shadow_review_study_artifacts.py",
+    "scripts/build_evidence_selection_source_exports.py",
+    "scripts/build_evidence_selection_expert_study_bundle.py",
     "scripts/export_artana_evidence_api_openapi.py",
     "scripts/run_evidence_selection_expert_study_gate.py",
     "scripts/run_evidence_selection_review_calibration_gate.py",

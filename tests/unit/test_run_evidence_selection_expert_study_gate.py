@@ -36,10 +36,21 @@ def test_evidence_selection_expert_study_gate_runner_passes_balanced_study(
     assert report["gate"]["selection_summary"]["mean_recall"] == 1.0
     assert report["gate"]["selection_reports"][0]["reviewer_id"] == "reviewer-a"
     assert report["gate"]["selection_reports"][0]["precision"] == 1.0
+    assert report["gate"]["provenance_summary"]["source_manifest_present"] is True
+    assert report["gate"]["provenance_summary"]["artifact_count"] == 3
+    assert report["gate"]["provenance_summary"]["missing_selection_run_id_count"] == 0
+    assert (
+        report["gate"]["provenance_summary"][
+            "missing_review_ranking_decision_key_count"
+        ]
+        == 0
+    )
     assert report["gate"]["review_ranking_gate"]["passed"] is True
     assert report["gate"]["blocking_reasons"] == []
     assert "Evidence-selection expert study gate: **PASSED**" in markdown
     assert "## Selection Review" in markdown
+    assert "## Source Manifest" in markdown
+    assert "- artifact_count: 3" in markdown
     assert "## Review-Ranking Calibration" in markdown
 
 
@@ -140,6 +151,28 @@ def test_evidence_selection_expert_study_gate_runner_blocks_synthetic_fixture(
     )
 
 
+def test_evidence_selection_expert_study_gate_runner_blocks_missing_manifest(
+    tmp_path: Path,
+) -> None:
+    payload = _balanced_study_payload()
+    payload.pop("source_manifest")
+    input_path = tmp_path / "missing-manifest-study.json"
+    input_path.write_text(json.dumps(payload) + "\n")
+
+    report = build_evidence_selection_expert_study_gate_report(input_path=input_path)
+    markdown = render_evidence_selection_expert_study_gate_markdown(report)
+
+    assert report["gate"]["passed"] is False
+    assert report["gate"]["provenance_summary"]["source_manifest_present"] is False
+    assert any(
+        "source manifest" in reason
+        for reason in report["gate"]["blocking_reasons"]
+        if isinstance(reason, str)
+    )
+    assert "## Source Manifest" in markdown
+    assert "- source_manifest_present: False" in markdown
+
+
 def test_evidence_selection_expert_study_gate_cli_returns_nonzero_when_failed(
     tmp_path: Path,
 ) -> None:
@@ -200,6 +233,7 @@ def _balanced_study_payload() -> dict[str, object]:
             ),
             "decisions": _ranking_decisions(goals),
         },
+        "source_manifest": _source_manifest(goals),
     }
 
 
@@ -234,3 +268,46 @@ def _ranking_decisions(goals: list[str]) -> list[dict[str, object]]:
         for index in range(5)
     ]
     return positive_decisions + negative_decisions
+
+
+def _source_manifest(goals: list[str]) -> dict[str, object]:
+    return {
+        "source_system": "artana-shadow-review",
+        "export_id": "shadow-export-2026-07-07",
+        "exported_at": "2026-07-07T07:00:00Z",
+        "exporter_id": "review-ops-a",
+        "redaction_statement": "No PHI or raw patient text included.",
+        "source_artifacts": [
+            {
+                "artifact_id": "selection-review-export",
+                "artifact_kind": "selection_review_export",
+                "uri": "s3://artana-validation/selection-review-export.json",
+                "sha256": "a" * 64,
+            },
+            {
+                "artifact_id": "review-ranking-export",
+                "artifact_kind": "review_ranking_export",
+                "uri": "s3://artana-validation/review-ranking-export.json",
+                "sha256": "b" * 64,
+            },
+            {
+                "artifact_id": "adjudication-log",
+                "artifact_kind": "adjudication_log",
+                "uri": "s3://artana-validation/adjudication-log.json",
+                "sha256": "c" * 64,
+            },
+        ],
+        "selection_review_run_ids": [
+            f"00000000-0000-0000-0000-00000000000{index}"
+            for index, _goal in enumerate(goals)
+        ],
+        "review_ranking_decision_keys": [
+            f"proposal:positive-{index}" if index % 2 == 0 else f"review_item:positive-{index}"
+            for index in range(5)
+        ]
+        + [
+            f"proposal:negative-{index}" if index % 2 == 0 else f"review_item:negative-{index}"
+            for index in range(5)
+        ],
+        "reviewer_roster": ["reviewer-a"],
+    }

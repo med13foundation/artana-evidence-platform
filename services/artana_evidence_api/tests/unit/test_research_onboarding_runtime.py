@@ -206,6 +206,217 @@ def test_onboarding_contract_coerces_plan_ready_with_questions() -> None:
     ) in contract.warnings
 
 
+def test_onboarding_contract_derives_clarification_pending_question_count() -> None:
+    contract = OnboardingAssistantContract.model_validate(
+        {
+            "message_type": "clarification_request",
+            "title": "Synthetic onboarding turn",
+            "summary": "Synthetic onboarding response for unit tests.",
+            "sections": [
+                {
+                    "heading": "Summary",
+                    "body": "Synthetic content",
+                },
+            ],
+            "questions": [
+                {
+                    "id": "q-1",
+                    "prompt": "Which evidence types should the system prioritize first?",
+                    "suggested_answers": [
+                        {
+                            "id": "q-1-answer-1",
+                            "label": "Clinical evidence",
+                        },
+                    ],
+                },
+            ],
+            "suggested_actions": [],
+            "artifacts": [],
+            "state_patch": {
+                "thread_status": "your_turn",
+                "onboarding_status": "awaiting_researcher_reply",
+                "pending_question_count": 0,
+                "objective": "Identify evidence-backed resistance biomarkers for review.",
+                "explored_questions": [],
+                "pending_questions": [
+                    "Which evidence types should the system prioritize first?",
+                ],
+                "current_hypotheses": [],
+            },
+            "confidence_score": 0.85,
+            "rationale": "Synthetic rationale",
+            "evidence": [
+                {
+                    "source_type": "note",
+                    "locator": "synthetic",
+                    "excerpt": "Synthetic evidence",
+                    "relevance": 0.9,
+                },
+            ],
+            "agent_run_id": "onboarding-agent:test",
+        },
+    )
+
+    assert contract.message_type == "clarification_request"
+    assert contract.state_patch.pending_question_count == 1
+    assert contract.state_patch.pending_questions == [
+        "Which evidence types should the system prioritize first?",
+    ]
+
+
+def test_onboarding_contract_derives_plan_ready_pending_question_count() -> None:
+    contract = OnboardingAssistantContract.model_validate(
+        {
+            "message_type": "plan_ready",
+            "title": "Synthetic onboarding turn",
+            "summary": "Synthetic onboarding response for unit tests.",
+            "sections": [
+                {
+                    "heading": "Summary",
+                    "body": "Synthetic content",
+                },
+            ],
+            "questions": [],
+            "suggested_actions": [
+                {
+                    "id": "approve-plan",
+                    "label": "Review plan",
+                    "action_type": "review",
+                },
+            ],
+            "artifacts": [],
+            "state_patch": {
+                "thread_status": "review_needed",
+                "onboarding_status": "plan_ready",
+                "pending_question_count": 1,
+                "objective": "Identify evidence-backed resistance biomarkers for review.",
+                "explored_questions": [
+                    "Which evidence types should the system prioritize first?",
+                ],
+                "pending_questions": [],
+                "current_hypotheses": [],
+            },
+            "confidence_score": 0.85,
+            "rationale": "Synthetic rationale",
+            "evidence": [
+                {
+                    "source_type": "note",
+                    "locator": "synthetic",
+                    "excerpt": "Synthetic evidence",
+                    "relevance": 0.9,
+                },
+            ],
+            "agent_run_id": "onboarding-agent:test",
+        },
+    )
+
+    assert contract.message_type == "plan_ready"
+    assert contract.state_patch.thread_status == "review_needed"
+    assert contract.state_patch.onboarding_status == "plan_ready"
+    assert contract.state_patch.pending_question_count == 0
+    assert contract.state_patch.pending_questions == []
+
+
+def test_onboarding_contract_rejects_non_string_pending_question_items() -> None:
+    with pytest.raises(ValidationError, match="pending_questions"):
+        OnboardingAssistantContract.model_validate(
+            {
+                "message_type": "plan_ready",
+                "title": "Synthetic onboarding turn",
+                "summary": "Synthetic onboarding response for unit tests.",
+                "sections": [
+                    {
+                        "heading": "Summary",
+                        "body": "Synthetic content",
+                    },
+                ],
+                "questions": [],
+                "suggested_actions": [
+                    {
+                        "id": "approve-plan",
+                        "label": "Review plan",
+                        "action_type": "review",
+                    },
+                ],
+                "artifacts": [],
+                "state_patch": {
+                    "thread_status": "review_needed",
+                    "onboarding_status": "plan_ready",
+                    "pending_question_count": 1,
+                    "objective": (
+                        "Identify evidence-backed resistance biomarkers for review."
+                    ),
+                    "explored_questions": [],
+                    "pending_questions": [
+                        {"prompt": "Which cohort should be reviewed first?"},
+                    ],
+                    "current_hypotheses": [],
+                },
+                "confidence_score": 0.85,
+                "rationale": "Synthetic rationale",
+                "evidence": [
+                    {
+                        "source_type": "note",
+                        "locator": "synthetic",
+                        "excerpt": "Synthetic evidence",
+                        "relevance": 0.9,
+                    },
+                ],
+                "agent_run_id": "onboarding-agent:test",
+            },
+        )
+
+
+def test_onboarding_contract_rejects_review_needed_with_real_pending_questions() -> None:
+    with pytest.raises(ValidationError, match="review_needed state"):
+        OnboardingAssistantContract.model_validate(
+            {
+                "message_type": "plan_ready",
+                "title": "Synthetic onboarding turn",
+                "summary": "Synthetic onboarding response for unit tests.",
+                "sections": [
+                    {
+                        "heading": "Summary",
+                        "body": "Synthetic content",
+                    },
+                ],
+                "questions": [],
+                "suggested_actions": [
+                    {
+                        "id": "approve-plan",
+                        "label": "Review plan",
+                        "action_type": "review",
+                    },
+                ],
+                "artifacts": [],
+                "state_patch": {
+                    "thread_status": "review_needed",
+                    "onboarding_status": "plan_ready",
+                    "pending_question_count": 0,
+                    "objective": (
+                        "Identify evidence-backed resistance biomarkers for review."
+                    ),
+                    "explored_questions": [],
+                    "pending_questions": [
+                        "Which cohort should be reviewed first?",
+                    ],
+                    "current_hypotheses": [],
+                },
+                "confidence_score": 0.85,
+                "rationale": "Synthetic rationale",
+                "evidence": [
+                    {
+                        "source_type": "note",
+                        "locator": "synthetic",
+                        "excerpt": "Synthetic evidence",
+                        "relevance": 0.9,
+                    },
+                ],
+                "agent_run_id": "onboarding-agent:test",
+            },
+        )
+
+
 class _SuccessRunner:
     async def run_initial(
         self,

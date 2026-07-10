@@ -69,6 +69,13 @@ ARTANA_EVIDENCE_API_LINT_PATHS := \
  services/artana_evidence_api \
  scripts/run_evidence_selection_expert_study_gate.py \
  scripts/run_evidence_selection_review_calibration_gate.py \
+ scripts/build_evidence_selection_shadow_review_packet.py \
+ scripts/build_evidence_selection_shadow_review_source_inputs.py \
+ scripts/build_evidence_selection_shadow_review_study_batch_manifest.py \
+ scripts/build_evidence_selection_shadow_review_study_batch.py \
+ scripts/build_evidence_selection_shadow_review_study_artifacts.py \
+ scripts/build_evidence_selection_source_exports.py \
+ scripts/build_evidence_selection_expert_study_bundle.py \
  scripts/export_artana_evidence_api_openapi.py \
  scripts/validate_artana_evidence_api_service_boundary.py \
  tests/e2e/artana_evidence_api
@@ -292,6 +299,13 @@ artana-evidence-api-type-check: ## Run strict mypy on evidence API package
 	cd services && $(USE_PYTHON_ABS) -m mypy -p artana_evidence_api --exclude '$(ARTANA_EVIDENCE_API_TYPE_EXCLUDE)' --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_evidence_selection_expert_study_gate.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_evidence_selection_review_calibration_gate.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_shadow_review_packet.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_shadow_review_source_inputs.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_shadow_review_study_batch_manifest.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_shadow_review_study_batch.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_shadow_review_study_artifacts.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_source_exports.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_expert_study_bundle.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 
 artana-evidence-api-type-check-strict-imports: ## Explicit strict-import evidence API mypy gate
 	$(call check_venv)

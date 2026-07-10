@@ -125,7 +125,105 @@ run, and an adjudication note for disagreements or borderline calls. Offline
 fixtures and helper metrics are necessary foundation checks, but they are not
 evidence that the harness is production ready.
 
+Reviewer packet generation before labels:
+
+```bash
+# Set this in the producer environment, not a reviewer workspace.
+export ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY=<producer-held-secret>
+
+uv run python scripts/build_evidence_selection_shadow_review_packet.py \
+  --run-result path/to/evidence-selection-result.json \
+  --study-id <study-id> \
+  --output path/to/completed-shadow-review-packet.json
+```
+
+The command writes two files: the editable
+`completed-shadow-review-packet.json` and the producer-signed
+`completed-shadow-review-packet.machine.json`. The packet is explicitly
+incomplete: it records the harness-selected, skipped, and deferred candidate
+IDs but keeps human labels and ranking outcomes blank. A reviewer may edit only
+the first file. Keep the signed machine sidecar under producer control; the
+converter rejects a completed packet unless its machine-owned fields and
+signature match that sidecar.
+
+After reviewers fill the packet, convert it into the raw source-export writer
+inputs:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_source_inputs.py \
+  --machine-packet path/to/completed-shadow-review-packet.machine.json \
+  --packet path/to/completed-shadow-review-packet.json \
+  --selection-reviews-output path/to/selection-review-labels.json \
+  --review-ranking-output path/to/review-ranking-study.json \
+  --adjudication-note "Reviewer adjudicated all labels."
+```
+
+The converter defaults to the same `.machine.json` sidecar when
+`--machine-packet` is omitted. It fails closed on invalid signatures, changed
+machine-owned fields, blank reviewer IDs, blank ranking outcomes, missing
+explanation scores, missing overclaim counts, unknown record IDs, or output
+paths that overwrite either packet. It writes paired outputs so a failed second
+write does not leave a half-converted review set.
+
+When at least three completed packets are ready, build a strict batch manifest
+instead of hand-authoring entry metadata:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_study_batch_manifest.py \
+  --batch-id <batch-id> \
+  --packet path/to/completed-shadow-review-packet-1.json \
+  --packet path/to/completed-shadow-review-packet-2.json \
+  --packet path/to/completed-shadow-review-packet-3.json \
+  --output path/to/shadow-review-study-batch-manifest.json \
+  --adjudication-note "Reviewer adjudicated every packet." \
+  --source-system artana-shadow-review \
+  --export-id-prefix <export-id-prefix> \
+  --exported-at 2026-07-07T00:00:00Z \
+  --exporter-id <exporter-id> \
+  --redaction-statement "No PHI or raw patient text included."
+```
+
+The manifest builder validates each source packet with the same completed-packet
+contract as the source-input converter, derives entry IDs and output
+subdirectories from packet study IDs, stores packet paths relative to the
+manifest, derives unique source-export IDs from the export prefix, and refuses
+to overwrite a source packet.
+
 Full expert/shadow study gate:
+
+```bash
+uv run python scripts/build_evidence_selection_source_exports.py \
+  --selection-reviews path/to/selection-review-labels.json \
+  --review-ranking path/to/review-ranking-study.json \
+  --selection-export-output path/to/selection-review-export.json \
+  --review-ranking-export-output path/to/review-ranking-export.json \
+  --source-system artana-shadow-review \
+  --export-id <export-id> \
+  --exported-at 2026-07-07T00:00:00Z \
+  --exporter-id <exporter-id> \
+  --redaction-statement "No PHI or raw patient text included."
+```
+
+```bash
+uv run python scripts/build_evidence_selection_expert_study_bundle.py \
+  --study-id <study-id> \
+  --study-evidence-kind real_shadow_review \
+  --selection-reviews path/to/selection-review-export.json \
+  --review-ranking path/to/review-ranking-export.json \
+  --output path/to/evidence_selection_expert_study.json
+```
+
+The selection-review source export must use
+`schema_version: "evidence_selection_review_export.v1"`. The review-ranking
+source export must use
+`schema_version: "evidence_selection_review_ranking_export.v1"`. Both exports
+must carry matching `source_system`, `export_id`, `exported_at`, `exporter_id`,
+and `redaction_statement` values. The builder derives the source manifest from
+those export fields and rejects identity drift before writing the final bundle.
+`exported_at` must be canonical UTC ISO-8601 with a trailing `Z`; timezone-naive
+values and offset spellings such as `+00:00` or `+01:00` are rejected so source
+identity remains literal and reproducible. Identity text fields are not
+trimmed; leading or trailing whitespace is rejected instead of normalized.
 
 ```bash
 uv run python scripts/run_evidence_selection_expert_study_gate.py \
@@ -135,13 +233,33 @@ uv run python scripts/run_evidence_selection_expert_study_gate.py \
 
 This runner combines selection-review precision/recall, reviewer coverage,
 explanation quality, high-severity overclaim checks, and the review-ranking
-calibration gate above. It fails closed if either the selection-review study or
-the review-ranking calibration study is undercovered or below threshold. The
-study bundle must declare `study_evidence_kind: "real_shadow_review"` before it
-can pass. Synthetic fixtures remain valid for mechanics testing, but they must
-not produce a passing production-style study gate. Every selection review must
+calibration gate above. It also requires a source manifest with hashed export
+artifacts, exact selection-review run IDs, exact review-ranking decision keys,
+and a reviewer roster covering every reviewer ID in the bundle. It fails closed
+if either the selection-review study, source manifest, or review-ranking
+calibration study is undercovered or below threshold. The study bundle must
+declare `study_evidence_kind: "real_shadow_review"` before it can pass.
+Synthetic fixtures remain valid for mechanics testing, but they must not
+produce a passing production-style study gate. Every selection review must
 include a reviewer ID, a nonblank goal, measurable precision, measurable recall,
 and an explanation-quality score.
+
+Batch production-readiness gate:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_study_batch.py \
+  --manifest path/to/shadow-review-study-batch-manifest.json \
+  --output-dir reports/evidence_selection_shadow_review_batch/<date>-<batch-id>
+```
+
+The batch gate runs the packet-to-source-export-to-study-bundle-to-study-gate
+pipeline for every manifest entry, preserves per-entry gate reports, and writes
+aggregate JSON and Markdown reports. It fails closed unless the suite proves
+minimum entry count, successful entry rate, zero failed entries, total sample
+size, independent source/study identity, cross-batch goal/evidence-shape
+diversity, aggregate precision/recall/explanation quality, and review-ranking
+calibration together. `--allow-failed-gate` is diagnostic only; it lets reports
+be written with exit success but does not make a failed suite production-ready.
 
 ## Expert-Review Study
 

@@ -17,6 +17,7 @@ def proposal_result_payload(proposal: HarnessProposalRecord) -> JSONObject:
         "document_id": proposal.document_id,
         "title": proposal.title,
         "status": proposal.status,
+        "ranking_score": proposal.ranking_score,
         "claim_fingerprint": proposal.claim_fingerprint,
     }
 
@@ -32,6 +33,7 @@ def review_item_result_payload(review_item: HarnessReviewItemRecord) -> JSONObje
         "title": review_item.title,
         "priority": review_item.priority,
         "status": review_item.status,
+        "ranking_score": review_item.ranking_score,
         "review_fingerprint": review_item.review_fingerprint,
     }
 
