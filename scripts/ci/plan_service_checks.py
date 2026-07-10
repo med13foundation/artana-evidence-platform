@@ -31,6 +31,7 @@ HIGH_RISK_PREFIXES = (
 )
 EVIDENCE_API_PREFIXES = (
     "services/artana_evidence_api/",
+    "scripts/validation/evidence_selection/",
     "tests/e2e/artana_evidence_api/",
 )
 EVIDENCE_API_FILES = (

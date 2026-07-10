@@ -62,6 +62,19 @@ def test_evidence_selection_gate_runners_run_evidence_api_gate() -> None:
         assert plan.targeted_test_paths == ()
 
 
+def test_evidence_selection_validation_fixtures_run_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json"],
+        event_name="pull_request",
+        ref="refs/pull/14/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
 def test_graph_service_code_pr_runs_graph_gate_only() -> None:
     plan = plan_checks(
         ["services/artana_evidence_db/governance.py"],

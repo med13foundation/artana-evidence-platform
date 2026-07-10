@@ -383,6 +383,14 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
         updated_at=now,
         review_fingerprint="resolved-review-fingerprint",
     )
+    converted_review_item = replace(
+        resolved_review_item,
+        id="review-4",
+        ranking_score=0.95,
+        metadata={"converted_to_proposal": True},
+        linked_proposal_id="proposal-2",
+        review_fingerprint="converted-review-fingerprint",
+    )
     approval = HarnessApprovalRecord(
         space_id=str(space_id),
         run_id="run-prior",
@@ -408,7 +416,12 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
         document_store=_ListStore([document]),
         proposal_store=_ListStore([proposal, rejected_proposal]),
         review_item_store=_ListStore(
-            [review_item, dismissed_review_item, resolved_review_item],
+            [
+                review_item,
+                dismissed_review_item,
+                resolved_review_item,
+                converted_review_item,
+            ],
         ),
         approval_store=_ListStore([approval]),
     )
@@ -418,7 +431,7 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
     assert snapshot["review_item_status_counts"] == {
         "dismissed": 1,
         "pending_review": 1,
-        "resolved": 1,
+        "resolved": 2,
     }
     assert snapshot["approval_status_counts"] == {"approved": 1}
     assert snapshot["graph_state_summary"]["approved_evidence_count"] == 1
@@ -428,7 +441,7 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
         "observed_positive_rate": 0.5,
         "expected_calibration_error": 0.475,
         "basis": (
-            "Promoted proposals and resolved review items are positive outcomes; "
+            "Promoted proposals and resolved, non-converted review items are positive outcomes; "
             "rejected proposals and dismissed review items are negative outcomes."
         ),
     }
@@ -437,6 +450,7 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
         "rejected-claim-fingerprint",
     ]
     assert snapshot["deduplication"]["review_fingerprints"] == [
+        "converted-review-fingerprint",
         "dismissed-review-fingerprint",
         "resolved-review-fingerprint",
         "review-fingerprint",

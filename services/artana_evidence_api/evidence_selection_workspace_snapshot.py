@@ -32,7 +32,7 @@ from artana_evidence_api.source_document_selection_identity import (
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 
 _REVIEW_RANKING_CALIBRATION_BASIS = (
-    "Promoted proposals and resolved review items are positive outcomes; "
+    "Promoted proposals and resolved, non-converted review items are positive outcomes; "
     "rejected proposals and dismissed review items are negative outcomes."
 )
 
@@ -299,7 +299,9 @@ def _review_item_ranking_calibration_observations(
 ) -> tuple[ReviewRankingCalibrationObservation, ...]:
     observations: list[ReviewRankingCalibrationObservation] = []
     for review_item in review_items:
-        if review_item.status == "resolved":
+        if review_item.status == "resolved" and not _was_converted_to_proposal(
+            review_item,
+        ):
             observations.append(
                 ReviewRankingCalibrationObservation(
                     ranking_score=review_item.ranking_score,
@@ -314,6 +316,12 @@ def _review_item_ranking_calibration_observations(
                 ),
             )
     return tuple(observations)
+
+
+def _was_converted_to_proposal(review_item: HarnessReviewItemRecord) -> bool:
+    """Return whether a resolution only escalated the item to proposal review."""
+
+    return review_item.metadata.get("converted_to_proposal") is True
 
 
 __all__ = ["build_evidence_selection_workspace_snapshot"]
