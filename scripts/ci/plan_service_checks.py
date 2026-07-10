@@ -35,6 +35,8 @@ EVIDENCE_API_PREFIXES = (
 )
 EVIDENCE_API_FILES = (
     "scripts/export_artana_evidence_api_openapi.py",
+    "scripts/run_evidence_selection_expert_study_gate.py",
+    "scripts/run_evidence_selection_review_calibration_gate.py",
     "scripts/validate_artana_evidence_api_service_boundary.py",
 )
 GRAPH_SERVICE_PREFIXES = (

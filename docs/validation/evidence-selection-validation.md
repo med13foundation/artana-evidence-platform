@@ -66,12 +66,82 @@ confirmed skips, duplicate counts, precision, recall, explanation quality, and
 the zero high-severity-overclaim gate. The helper aggregates reviewer-supplied
 labels and counts; it does not replace reviewer judgment.
 
+Review-ranking calibration is gated separately from per-run precision/recall.
+Use
+`artana_evidence_api.evidence_selection_validation.evaluate_review_ranking_calibration_gate`
+or the runner below to compare prior `ranking_score` values with expert or
+shadow-mode outcomes. The gate fails closed unless the review set has enough
+decisions, both positive and negative outcomes, both proposal and review-item
+sources, no duplicate decision keys, expected calibration error under the
+configured threshold, and evidence that scores discriminate positive outcomes
+from negative outcomes. Calibration alone is not enough: a constant score can be
+well calibrated to the base positive rate while still being useless for review
+queue prioritization.
+
+Production calibration studies must also prove study-design coverage. The core
+helper and runner default to at least three distinct research goals, at least
+three distinct evidence shapes, reviewer IDs on every decision, and a
+study-level adjudication note. Missing these fields should fail the gate rather
+than producing a production-readiness claim from a narrow or under-reviewed
+sample. Goal and evidence-shape counts are normalized before counting, so
+whitespace, case, or punctuation variants of the same label do not count as
+separate study coverage.
+
+Production-default seed check. This is expected to fail because the seed fixture
+is a single-goal mechanics fixture, not production-ready calibration evidence:
+
+```bash
+uv run python scripts/run_evidence_selection_review_calibration_gate.py \
+  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json \
+  --max-expected-calibration-error 0.15 \
+  --output-dir reports/evidence_selection_review_calibration/2026-07-07-pr40-seed-production-default
+```
+
+The seed fixture proves the JSON format and threshold mechanics only. It is not
+production-representative evidence and must not be used to claim production
+readiness by itself. Production use should keep the runner's default `0.05`
+expected-calibration-error threshold, `0.70` ROC-AUC threshold, `0.10`
+positive-vs-negative mean-score separation threshold, three-goal minimum, and
+three-evidence-shape minimum unless a reviewed calibration plan sets stricter
+thresholds.
+
+Mechanics-only smoke command. This explicitly relaxes study diversity so the
+fixture can prove report rendering and threshold math without claiming
+production readiness:
+
+```bash
+uv run python scripts/run_evidence_selection_review_calibration_gate.py \
+  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json \
+  --max-expected-calibration-error 0.15 \
+  --min-distinct-goals 1 \
+  --min-distinct-evidence-shapes 1 \
+  --output-dir reports/evidence_selection_review_calibration/2026-07-07-pr40-seed-mechanics
+```
+
 Production-readiness requires real shadow-mode runs reviewed by human experts
 on real research questions. Start with at least three distinct research
 questions across different evidence shapes, at least one domain reviewer per
 run, and an adjudication note for disagreements or borderline calls. Offline
 fixtures and helper metrics are necessary foundation checks, but they are not
 evidence that the harness is production ready.
+
+Full expert/shadow study gate:
+
+```bash
+uv run python scripts/run_evidence_selection_expert_study_gate.py \
+  --input path/to/evidence_selection_expert_study.json \
+  --output-dir reports/evidence_selection_expert_study/<date>-<study-id>
+```
+
+This runner combines selection-review precision/recall, reviewer coverage,
+explanation quality, high-severity overclaim checks, and the review-ranking
+calibration gate above. It fails closed if either the selection-review study or
+the review-ranking calibration study is undercovered or below threshold. The
+study bundle must declare `study_evidence_kind: "real_shadow_review"` before it
+can pass. Synthetic fixtures remain valid for mechanics testing, but they must
+not produce a passing production-style study gate. Every selection review must
+include a reviewer ID, a nonblank goal, measurable precision, measurable recall,
+and an explanation-quality score.
 
 ## Expert-Review Study
 

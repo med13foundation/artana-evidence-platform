@@ -397,6 +397,14 @@ class FeasibilitySummary:
     trusted_candidate_precision_against_gold: float
     trusted_candidate_valuable_rate: float
     trusted_candidate_generic_relation_rate: float
+    candidate_score_calibration_sample_count: int
+    candidate_score_mean: float
+    candidate_score_observed_positive_rate: float
+    candidate_score_ece: float
+    trusted_candidate_score_calibration_sample_count: int
+    trusted_candidate_score_mean: float
+    trusted_candidate_score_observed_positive_rate: float
+    trusted_candidate_score_ece: float
     completed_agent_precision_against_gold: float
     completed_agent_recall_against_gold: float
     specificity_rate: float
@@ -505,6 +513,14 @@ class FeasibilitySummary:
             "trusted_candidate_precision_against_gold": self.trusted_candidate_precision_against_gold,
             "trusted_candidate_valuable_rate": self.trusted_candidate_valuable_rate,
             "trusted_candidate_generic_relation_rate": self.trusted_candidate_generic_relation_rate,
+            "candidate_score_calibration_sample_count": self.candidate_score_calibration_sample_count,
+            "candidate_score_mean": self.candidate_score_mean,
+            "candidate_score_observed_positive_rate": self.candidate_score_observed_positive_rate,
+            "candidate_score_ece": self.candidate_score_ece,
+            "trusted_candidate_score_calibration_sample_count": self.trusted_candidate_score_calibration_sample_count,
+            "trusted_candidate_score_mean": self.trusted_candidate_score_mean,
+            "trusted_candidate_score_observed_positive_rate": self.trusted_candidate_score_observed_positive_rate,
+            "trusted_candidate_score_ece": self.trusted_candidate_score_ece,
             "completed_agent_precision_against_gold": self.completed_agent_precision_against_gold,
             "completed_agent_recall_against_gold": self.completed_agent_recall_against_gold,
             "specificity_rate": self.specificity_rate,
