@@ -507,7 +507,7 @@ class OnboardingAssistantContract(BaseAgentContract):
             raw_questions if isinstance(raw_questions, list) else [],
         )
 
-        force_awaiting_reply = False
+        force_awaiting_reply = message_type == "clarification_request"
         if message_type == "plan_ready" and _has_onboarding_questions(raw_questions):
             normalized["message_type"] = "clarification_request"
             force_awaiting_reply = True

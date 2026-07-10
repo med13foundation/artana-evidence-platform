@@ -126,6 +126,85 @@ def test_shadow_review_packet_cli_maps_real_result_artifact_shape(
     ]
 
 
+def test_shadow_review_packet_cli_derives_ranking_forms_from_shadow_candidates(
+    tmp_path: Path,
+) -> None:
+    cli = _cli_module()
+    run_result_path = tmp_path / "evidence-selection-result.json"
+    output_path = tmp_path / "shadow-review-packet.json"
+    payload = _run_result_payload()
+    payload["selected_records"] = []
+    payload["skipped_records"] = []
+    payload["deferred_records"] = [
+        {
+            **_decision(source_key="clinvar", decision="deferred", record_index=0),
+            "deferral_reason": "shadow_mode",
+            "shadow_decision": "selected",
+            "would_have_been_selected": True,
+            "score": 9.1,
+        },
+    ]
+    payload.pop("review_ranking_items")
+    run_result_path.write_text(json.dumps(payload))
+
+    exit_code = cli.main(
+        (
+            "--run-result",
+            str(run_result_path),
+            "--study-id",
+            "shadow-study-2026-07-07",
+            "--output",
+            str(output_path),
+        ),
+    )
+
+    assert exit_code == 0
+    packet = json.loads(output_path.read_text())
+    assert packet["review_ranking_forms"] == [
+        {
+            "source_kind": "review_item",
+            "item_id": f"clinvar:{_SEARCH_ID}:0",
+            "ranking_score": 0.91,
+            "outcome": None,
+            "reviewer_id": None,
+            "goal": _GOAL,
+            "evidence_shape": "literature",
+        },
+    ]
+
+
+def test_shadow_review_packet_cli_rejects_result_without_rankable_items(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    cli = _cli_module()
+    run_result_path = tmp_path / "evidence-selection-result.json"
+    output_path = tmp_path / "shadow-review-packet.json"
+    payload = _run_result_payload()
+    payload["selected_records"] = []
+    payload["skipped_records"] = []
+    payload["deferred_records"] = []
+    payload.pop("review_ranking_items")
+    run_result_path.write_text(json.dumps(payload))
+
+    exit_code = cli.main(
+        (
+            "--run-result",
+            str(run_result_path),
+            "--study-id",
+            "shadow-study-2026-07-07",
+            "--output",
+            str(output_path),
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "no rankable items" in captured.err
+    assert not output_path.exists()
+    assert not machine_packet_sidecar_path(output_path).exists()
+
+
 def test_shadow_review_packet_cli_rejects_invalid_run_result_without_traceback(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

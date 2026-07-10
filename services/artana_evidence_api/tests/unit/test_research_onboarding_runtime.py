@@ -233,8 +233,8 @@ def test_onboarding_contract_derives_clarification_pending_question_count() -> N
             "suggested_actions": [],
             "artifacts": [],
             "state_patch": {
-                "thread_status": "your_turn",
-                "onboarding_status": "awaiting_researcher_reply",
+                "thread_status": "review_needed",
+                "onboarding_status": "plan_ready",
                 "pending_question_count": 0,
                 "objective": "Identify evidence-backed resistance biomarkers for review.",
                 "explored_questions": [],
@@ -258,6 +258,8 @@ def test_onboarding_contract_derives_clarification_pending_question_count() -> N
     )
 
     assert contract.message_type == "clarification_request"
+    assert contract.state_patch.thread_status == "your_turn"
+    assert contract.state_patch.onboarding_status == "awaiting_researcher_reply"
     assert contract.state_patch.pending_question_count == 1
     assert contract.state_patch.pending_questions == [
         "Which evidence types should the system prioritize first?",

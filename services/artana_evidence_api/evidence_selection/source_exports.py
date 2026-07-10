@@ -135,6 +135,12 @@ def parse_canonical_source_exported_at(
     if parsed.utcoffset() != timedelta(0):
         msg = f"{field_name} must be canonical UTC."
         raise ValueError(msg)
+    if parsed.microsecond != 0:
+        msg = (
+            f"{field_name} must use canonical UTC format "
+            f"{SOURCE_EXPORTED_AT_FORMAT}."
+        )
+        raise ValueError(msg)
     if (
         isinstance(value, str)
         and _CANONICAL_SOURCE_EXPORTED_AT_RE.fullmatch(value) is None

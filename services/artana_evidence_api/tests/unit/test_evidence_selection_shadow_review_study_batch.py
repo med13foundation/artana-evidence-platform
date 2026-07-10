@@ -161,6 +161,7 @@ def test_shadow_review_study_batch_passes_diverse_suite_gate(
             first_shape="drug_resistance",
             second_shape="mechanistic_context",
             review_ranking_decision_count=3,
+            reverse_source_outcomes=True,
         ),
     )
     third_packet_path = _write_packet(
@@ -266,6 +267,7 @@ def test_shadow_review_study_batch_default_thresholds_aggregate_single_run_packe
                 first_shape=first_shape,
                 second_shape=second_shape,
                 review_ranking_decision_count=decision_count,
+                reverse_source_outcomes=label == "two",
             ),
         )
         for (
@@ -304,6 +306,89 @@ def test_shadow_review_study_batch_default_thresholds_aggregate_single_run_packe
     assert result.passed_entry_count == 3
     assert result.suite_gate["summary"]["total_selection_review_count"] == 3
     assert result.suite_gate["summary"]["total_review_ranking_decision_count"] == 10
+
+
+def test_shadow_review_study_batch_requires_per_source_ranking_outcomes(
+    tmp_path: Path,
+) -> None:
+    batch = _batch_module()
+    packet_specs = (
+        (
+            "one",
+            "11111111-1111-4111-8111-111111111111",
+            "Assess BRAF targeted therapy evidence.",
+            "variant_drug_response",
+            "background_context",
+        ),
+        (
+            "two",
+            "22222222-2222-4222-8222-222222222222",
+            "Assess EGFR resistance evidence.",
+            "drug_resistance",
+            "mechanistic_context",
+        ),
+        (
+            "three",
+            "33333333-3333-4333-8333-333333333333",
+            "Assess BRCA1 pathogenicity evidence.",
+            "gene_disease_association",
+            "variant_pathogenicity",
+        ),
+    )
+    packet_paths = tuple(
+        _write_packet(
+            tmp_path,
+            f"{label}.json",
+            _completed_packet_for_batch(
+                study_id=f"shadow-study-{label}",
+                source_run_id=source_run_id,
+                goal=goal,
+                first_shape=first_shape,
+                second_shape=second_shape,
+                review_ranking_decision_count=4,
+            ),
+        )
+        for label, source_run_id, goal, first_shape, second_shape in packet_specs
+    )
+    manifest = batch.EvidenceSelectionShadowReviewStudyBatchManifest.model_validate(
+        {
+            "schema_version": "evidence_selection_shadow_review_study_batch.v1",
+            "batch_id": "one-sided-source-outcomes-batch-2026-07-10",
+            "entries": [
+                _manifest_entry(
+                    entry_id=f"study-{index}",
+                    packet_path=packet_path,
+                    output_subdir=f"study-{index}",
+                    export_id=f"shadow-export-{index}",
+                )
+                for index, packet_path in enumerate(packet_paths, start=1)
+            ],
+        },
+    )
+
+    result = batch.build_evidence_selection_shadow_review_study_batch(
+        batch.EvidenceSelectionShadowReviewStudyBatchRequest(
+            manifest=manifest,
+            output_dir=tmp_path / "batch-output",
+        ),
+    )
+
+    assert result.passed_entry_count == 3
+    assert result.passed is False
+    assert result.suite_gate["summary"]["review_ranking_source_outcomes"] == {
+        "proposal": ["positive"],
+        "review_item": ["negative"],
+    }
+    assert any(
+        "negative reviewer outcome is required for source kind proposal"
+        in reason
+        for reason in result.suite_gate["blocking_reasons"]
+    )
+    assert any(
+        "positive reviewer outcome is required for source kind review_item"
+        in reason
+        for reason in result.suite_gate["blocking_reasons"]
+    )
 
 
 def test_shadow_review_study_batch_blocks_thin_total_ranking_sample(
@@ -736,6 +821,81 @@ def test_shadow_review_study_batch_quality_gate_uses_unrounded_metrics() -> None
     assert any("suite mean explanation quality" in reason for reason in reasons)
 
 
+def test_shadow_review_study_batch_rolls_back_published_entries_after_later_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    batch = _batch_module()
+    first_packet_path = _write_packet(
+        tmp_path,
+        "first-packet.json",
+        _completed_packet(),
+    )
+    second_packet_path = _write_packet(
+        tmp_path,
+        "second-packet.json",
+        _completed_packet(),
+    )
+    output_dir = tmp_path / "batch-output"
+    manifest = batch.EvidenceSelectionShadowReviewStudyBatchManifest.model_validate(
+        {
+            "schema_version": "evidence_selection_shadow_review_study_batch.v1",
+            "batch_id": "rollback-batch-2026-07-10",
+            "entries": [
+                _manifest_entry(
+                    entry_id="first",
+                    packet_path=first_packet_path,
+                    output_subdir="first",
+                    export_id="shadow-export-first",
+                ),
+                _manifest_entry(
+                    entry_id="second",
+                    packet_path=second_packet_path,
+                    output_subdir="second",
+                    export_id="shadow-export-second",
+                ),
+            ],
+        },
+    )
+    request = batch.EvidenceSelectionShadowReviewStudyBatchRequest(
+        manifest=manifest,
+        output_dir=output_dir,
+        thresholds=batch.EvidenceSelectionShadowReviewStudyBatchThresholds(
+            min_selection_review_count=1,
+            min_distinct_selection_goals=1,
+            min_review_ranking_sample_count=2,
+            min_distinct_ranking_goals=1,
+            min_distinct_evidence_shapes=2,
+        ),
+    )
+    original_gate_report = batch.build_evidence_selection_shadow_review_study_gate_report
+    call_count = 0
+
+    def _fail_second_gate_report(*args: object, **kwargs: object) -> object:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise RuntimeError("simulated second gate failure")
+        return original_gate_report(*args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            batch,
+            "build_evidence_selection_shadow_review_study_gate_report",
+            _fail_second_gate_report,
+        )
+        with pytest.raises(RuntimeError, match="simulated second gate failure"):
+            batch.build_evidence_selection_shadow_review_study_batch(request)
+
+    assert not output_dir.exists()
+
+    retry_result = batch.build_evidence_selection_shadow_review_study_batch(request)
+
+    assert retry_result.entry_count == 2
+    assert (output_dir / "first").is_dir()
+    assert (output_dir / "second").is_dir()
+
+
 def test_shadow_review_study_batch_rejects_duplicate_entry_ids_before_writing(
     tmp_path: Path,
 ) -> None:
@@ -1035,6 +1195,7 @@ def _completed_packet_for_batch(
     first_shape: str,
     second_shape: str,
     review_ranking_decision_count: int = 2,
+    reverse_source_outcomes: bool = False,
 ) -> dict[str, object]:
     packet = copy.deepcopy(_completed_packet())
     packet["study_id"] = study_id
@@ -1069,4 +1230,10 @@ def _completed_packet_for_batch(
         assert isinstance(form, dict)
         form["goal"] = goal
         form["evidence_shape"] = shapes[index % len(shapes)]
+        if reverse_source_outcomes:
+            source_kind = "proposal" if index % 2 == 0 else "review_item"
+            positive = source_kind == "review_item"
+            form["source_kind"] = source_kind
+            form["ranking_score"] = 1.0 if positive else 0.0
+            form["outcome"] = "positive" if positive else "negative"
     return packet

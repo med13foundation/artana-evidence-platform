@@ -35,6 +35,11 @@ from artana_evidence_api.evidence_selection.shadow_review_packet import (  # noq
     EvidenceSelectionShadowReviewRankingItem,
     build_evidence_selection_shadow_review_packet,
 )
+from artana_evidence_api.evidence_selection_candidates import (  # noqa: E402
+    record_dedup_key,
+    required_decision_int,
+    required_decision_string,
+)
 from artana_evidence_api.types.common import (  # noqa: E402
     JSONObject,
     JSONValue,
@@ -175,7 +180,23 @@ def _review_ranking_items_from_result(
         shape_field="review_type",
         goal=goal,
     )
-    return (*direct_items, *proposal_items, *review_item_items)
+    ranking_items = (*direct_items, *proposal_items, *review_item_items)
+    if ranking_items:
+        return ranking_items
+
+    shadow_candidate_items = _ranking_items_from_shadow_candidates(
+        payload.get("deferred_records"),
+        goal=goal,
+    )
+    if shadow_candidate_items:
+        return shadow_candidate_items
+
+    msg = (
+        "Evidence-selection result has no rankable items. Provide "
+        "review_ranking_items, proposals, review_items, or deferred shadow "
+        "candidates."
+    )
+    raise ValueError(msg)
 
 
 def _direct_review_ranking_items(
@@ -220,6 +241,43 @@ def _ranking_items_from_artifact_records(
                 ),
                 goal=goal,
                 evidence_shape=_optional_artifact_string(item, shape_field),
+            ),
+        )
+    return tuple(items)
+
+
+def _ranking_items_from_shadow_candidates(
+    value: JSONValue | None,
+    *,
+    goal: str,
+) -> tuple[EvidenceSelectionShadowReviewRankingItem, ...]:
+    """Map shadow-deferred candidates into human-review ranking forms."""
+
+    raw_array = json_array(value)
+    if raw_array is None:
+        return ()
+    items: list[EvidenceSelectionShadowReviewRankingItem] = []
+    for index, raw_item in enumerate(raw_array):
+        item = json_object(raw_item)
+        if item is None:
+            msg = f"Expected JSON object at deferred_records[{index}]."
+            raise ValueError(msg)
+        source_key = required_decision_string(item, "source_key")
+        search_id = required_decision_string(item, "search_id")
+        record_index = required_decision_int(item, "record_index")
+        items.append(
+            EvidenceSelectionShadowReviewRankingItem(
+                source_kind="review_item",
+                item_id=record_dedup_key(
+                    source_key=source_key,
+                    search_id=search_id,
+                    record_index=record_index,
+                ),
+                ranking_score=_calibration_score(
+                    _required_artifact_number(item, "score"),
+                ),
+                goal=goal,
+                evidence_shape=_optional_artifact_string(item, "source_family"),
             ),
         )
     return tuple(items)

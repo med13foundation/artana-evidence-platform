@@ -161,6 +161,12 @@ def source_manifest_blocking_reasons(
 ) -> tuple[str, ...]:
     """Return fail-closed reasons for source-manifest provenance gaps."""
 
+    if (
+        not require_source_manifest
+        and provenance_summary.get("source_manifest_present") is not True
+    ):
+        return ()
+
     reasons: list[str] = []
     if (
         require_source_manifest

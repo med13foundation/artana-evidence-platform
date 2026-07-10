@@ -14,6 +14,10 @@ from artana_evidence_api.evidence_selection.output_paths import paths_alias
 from artana_evidence_api.evidence_selection.shadow_review_completion import (
     machine_packet_sidecar_path,
 )
+from artana_evidence_api.evidence_selection.shadow_review_study_batch_outputs import (
+    prepare_batch_output_dir,
+    rollback_published_batch_outputs,
+)
 from artana_evidence_api.evidence_selection.shadow_review_study_pipeline import (
     EvidenceSelectionShadowReviewStudyArtifactRequest,
     EvidenceSelectionShadowReviewStudyArtifactResult,
@@ -39,6 +43,8 @@ _ENTRY_ARTIFACT_FILENAMES = (
     "review-ranking-export.json",
     "evidence-selection-expert-study.json",
 )
+_REVIEW_RANKING_SOURCE_KINDS = ("proposal", "review_item")
+_REVIEW_RANKING_OUTCOMES = ("positive", "negative")
 
 
 class EvidenceSelectionShadowReviewStudyBatchEntry(BaseModel):
@@ -398,67 +404,87 @@ def build_evidence_selection_shadow_review_study_batch(
     """Run the single-packet shadow-review study pipeline for every batch entry."""
 
     _validate_suite_thresholds(request.suite_thresholds)
-    _validate_output_dir(request.output_dir)
-    protected_source_paths = collect_evidence_selection_shadow_review_study_batch_source_paths(
-        manifest=request.manifest,
-        manifest_path=request.manifest_path,
-    )
-    _validate_batch_artifact_source_collisions(
-        output_dir=request.output_dir,
-        manifest=request.manifest,
-        manifest_path=request.manifest_path,
-        source_paths=protected_source_paths,
-    )
+    output_dir_created = prepare_batch_output_dir(request.output_dir)
     entries: list[EvidenceSelectionShadowReviewStudyBatchEntryResult] = []
-    for entry in request.manifest.entries:
-        machine_packet_path = _resolve_packet_path(
-            packet_path=_machine_packet_path(entry),
+    published_entry_output_dirs: list[Path] = []
+    try:
+        protected_source_paths = (
+            collect_evidence_selection_shadow_review_study_batch_source_paths(
+                manifest=request.manifest,
+                manifest_path=request.manifest_path,
+            )
+        )
+        _validate_batch_artifact_source_collisions(
+            output_dir=request.output_dir,
+            manifest=request.manifest,
             manifest_path=request.manifest_path,
+            source_paths=protected_source_paths,
         )
-        packet_path = _resolve_packet_path(
-            packet_path=entry.packet_path,
-            manifest_path=request.manifest_path,
-        )
-        output_dir = request.output_dir / entry.output_subdir
-        artifact_result = build_evidence_selection_shadow_review_study_artifacts(
-            EvidenceSelectionShadowReviewStudyArtifactRequest(
-                machine_packet=_load_json_object(machine_packet_path),
-                packet=_load_json_object(packet_path),
-                machine_packet_path=machine_packet_path,
-                packet_path=packet_path,
-                protected_source_paths=protected_source_paths,
-                output_dir=output_dir,
-                adjudication_note=entry.adjudication_note,
-                source_system=entry.source_system,
-                export_id=entry.export_id,
-                exported_at=entry.exported_at,
-                exporter_id=entry.exporter_id,
-                redaction_statement=entry.redaction_statement,
-                description=entry.description,
-            ),
-        )
-        entries.append(
-            EvidenceSelectionShadowReviewStudyBatchEntryResult(
-                entry_id=entry.entry_id,
-                machine_packet_path=machine_packet_path,
-                packet_path=packet_path,
-                output_dir=output_dir,
-                artifact_result=artifact_result,
-                gate_report=build_evidence_selection_shadow_review_study_gate_report(
-                    input_path=artifact_result.bundle_path,
-                    thresholds=request.thresholds,
+        for entry in request.manifest.entries:
+            machine_packet_path = _resolve_packet_path(
+                packet_path=_machine_packet_path(entry),
+                manifest_path=request.manifest_path,
+            )
+            packet_path = _resolve_packet_path(
+                packet_path=entry.packet_path,
+                manifest_path=request.manifest_path,
+            )
+            entry_output_dir = request.output_dir / entry.output_subdir
+            artifact_result = build_evidence_selection_shadow_review_study_artifacts(
+                EvidenceSelectionShadowReviewStudyArtifactRequest(
+                    machine_packet=_load_json_object(machine_packet_path),
+                    packet=_load_json_object(packet_path),
+                    machine_packet_path=machine_packet_path,
+                    packet_path=packet_path,
+                    protected_source_paths=protected_source_paths,
+                    output_dir=entry_output_dir,
+                    adjudication_note=entry.adjudication_note,
+                    source_system=entry.source_system,
+                    export_id=entry.export_id,
+                    exported_at=entry.exported_at,
+                    exporter_id=entry.exporter_id,
+                    redaction_statement=entry.redaction_statement,
+                    description=entry.description,
                 ),
-            ),
+            )
+            published_entry_output_dirs.append(entry_output_dir)
+            entries.append(
+                EvidenceSelectionShadowReviewStudyBatchEntryResult(
+                    entry_id=entry.entry_id,
+                    machine_packet_path=machine_packet_path,
+                    packet_path=packet_path,
+                    output_dir=entry_output_dir,
+                    artifact_result=artifact_result,
+                    gate_report=build_evidence_selection_shadow_review_study_gate_report(
+                        input_path=artifact_result.bundle_path,
+                        thresholds=request.thresholds,
+                    ),
+                ),
+            )
+        suite_gate = build_evidence_selection_shadow_review_study_batch_suite_gate(
+            entries=tuple(entries),
+            thresholds=request.suite_thresholds,
         )
+    except Exception:
+        try:
+            rollback_published_batch_outputs(
+                entry_output_dirs=published_entry_output_dirs,
+                batch_output_dir=request.output_dir,
+                remove_empty_batch_output_dir=output_dir_created,
+            )
+        except OSError as cleanup_error:
+            msg = (
+                "Shadow-review batch failed and published entry artifacts could "
+                "not be rolled back."
+            )
+            raise RuntimeError(msg) from cleanup_error
+        raise
     return EvidenceSelectionShadowReviewStudyBatchResult(
         batch_id=request.manifest.batch_id,
         output_dir=request.output_dir,
         generated_at=datetime.now(UTC).isoformat(),
         entries=tuple(entries),
-        suite_gate=build_evidence_selection_shadow_review_study_batch_suite_gate(
-            entries=tuple(entries),
-            thresholds=request.suite_thresholds,
-        ),
+        suite_gate=suite_gate,
     )
 
 
@@ -485,6 +511,7 @@ def build_evidence_selection_shadow_review_study_batch_suite_gate(
     quality_metrics = _batch_quality_metrics(passed_entries)
     selection_goals = _batch_selection_goals(passed_entries)
     review_ranking_goals, evidence_shapes = _batch_review_ranking_labels(passed_entries)
+    source_outcomes = _batch_review_ranking_source_outcomes(passed_entries)
     source_run_ids, study_ids = _batch_study_identity_labels(passed_entries)
     summary: JSONObject = {
         "entry_count": len(entries),
@@ -499,11 +526,16 @@ def build_evidence_selection_shadow_review_study_batch_suite_gate(
         "distinct_selection_goal_count": len(selection_goals),
         "distinct_review_ranking_goal_count": len(review_ranking_goals),
         "distinct_evidence_shape_count": len(evidence_shapes),
+        "review_ranking_source_outcomes": {
+            source_kind: sorted(source_outcomes[source_kind])
+            for source_kind in _REVIEW_RANKING_SOURCE_KINDS
+        },
     }
     blocking_reasons = _batch_suite_blocking_reasons(
         summary=summary,
         raw_passed_entry_rate=passed_entry_rate,
         raw_quality_metrics=quality_metrics,
+        source_outcomes=source_outcomes,
         thresholds=effective_thresholds,
     )
     return {
@@ -570,13 +602,6 @@ def _load_json_object(path: Path) -> JSONObject:
         msg = f"{path} does not contain a JSON object."
         raise ValueError(msg)
     return result
-
-
-def _validate_output_dir(output_dir: Path) -> None:
-    if output_dir.exists() and not output_dir.is_dir():
-        msg = f"Output directory must be a directory: {output_dir}"
-        raise ValueError(msg)
-    output_dir.mkdir(parents=True, exist_ok=True)
 
 
 def _validate_suite_thresholds(
@@ -818,6 +843,21 @@ def _batch_review_ranking_labels(
     return goals, evidence_shapes
 
 
+def _batch_review_ranking_source_outcomes(
+    entries: tuple[EvidenceSelectionShadowReviewStudyBatchEntryResult, ...],
+) -> dict[str, set[str]]:
+    source_outcomes = {
+        source_kind: set[str]() for source_kind in _REVIEW_RANKING_SOURCE_KINDS
+    }
+    for entry in entries:
+        study_input = EvidenceSelectionExpertStudyInput.model_validate(
+            _load_json_object(entry.artifact_result.bundle_path),
+        )
+        for decision in study_input.review_ranking.decisions:
+            source_outcomes[decision.source_kind].add(decision.outcome)
+    return source_outcomes
+
+
 def _batch_quality_metrics(
     entries: tuple[EvidenceSelectionShadowReviewStudyBatchEntryResult, ...],
 ) -> _BatchQualityMetrics:
@@ -887,6 +927,7 @@ def _batch_suite_blocking_reasons(
     summary: JSONObject,
     raw_passed_entry_rate: float,
     raw_quality_metrics: _BatchQualityMetrics,
+    source_outcomes: Mapping[str, set[str]],
     thresholds: EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
 ) -> tuple[str, ...]:
     return (
@@ -910,6 +951,9 @@ def _batch_suite_blocking_reasons(
         *_batch_suite_diversity_blocking_reasons(
             summary=summary,
             thresholds=thresholds,
+        ),
+        *_batch_suite_source_outcome_blocking_reasons(
+            source_outcomes=source_outcomes,
         ),
     )
 
@@ -1075,6 +1119,19 @@ def _batch_suite_diversity_blocking_reasons(
             "are required across the batch.",
         )
     return tuple(reasons)
+
+
+def _batch_suite_source_outcome_blocking_reasons(
+    *,
+    source_outcomes: Mapping[str, set[str]],
+) -> tuple[str, ...]:
+    return tuple(
+        f"At least one {outcome} reviewer outcome is required for source kind "
+        f"{source_kind} across passed batch entries."
+        for source_kind in _REVIEW_RANKING_SOURCE_KINDS
+        for outcome in _REVIEW_RANKING_OUTCOMES
+        if outcome not in source_outcomes.get(source_kind, set())
+    )
 
 
 def _object_value(payload: Mapping[str, object], key: str) -> JSONObject:
