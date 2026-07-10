@@ -181,6 +181,24 @@ def test_causes_resistance_sentence_returns_entails_for_drug_target() -> None:
     assert result.support == "ENTAILS"
 
 
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "MET amplification caused resistance to erlotinib.",
+        "MET amplification drove resistance to erlotinib.",
+    ],
+)
+def test_past_tense_resistance_sentence_returns_entails(sentence: str) -> None:
+    result = verify_triple_support(
+        sentence=sentence,
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
 def test_correlated_resistance_sentence_is_not_canonical_resistance_support() -> None:
     result = verify_triple_support(
         sentence="MET amplification was correlated with resistance.",

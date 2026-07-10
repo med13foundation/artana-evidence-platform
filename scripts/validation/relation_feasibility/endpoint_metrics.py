@@ -86,6 +86,7 @@ def build_endpoint_metric_summary(
         weak_claim_trusted_leakage_count=_weak_claim_trusted_leakage_count(
             case_assessments=case_assessments,
             case_gold_relations=case_gold_relations,
+            case_agent_completed_flags=case_agent_completed_flags,
         ),
     )
 
@@ -177,9 +178,14 @@ def _weak_claim_trusted_leakage_count(
     *,
     case_assessments: tuple[tuple[CandidateAssessment, ...], ...],
     case_gold_relations: tuple[tuple[GoldRelation, ...], ...],
+    case_agent_completed_flags: tuple[bool, ...],
 ) -> int:
     leaked_gold: set[tuple[int, int]] = set()
-    for case_index, assessments in enumerate(case_assessments):
+    for case_index, (assessments, agent_completed) in enumerate(
+        zip(case_assessments, case_agent_completed_flags, strict=True),
+    ):
+        if not agent_completed:
+            continue
         for assessment in assessments:
             matched_index = assessment.matched_gold_index
             if matched_index is None:

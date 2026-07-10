@@ -125,6 +125,7 @@ class _CollectionStores:
 class _AssessmentContext:
     assessment: JSONObject
     candidate: JSONObject
+    matched_gold_relation: JSONObject | None
     case_id: str
     run_label: str
 
@@ -383,7 +384,13 @@ def _collect_assessments(
     trusted_proposal_capture_count = 0
     for assessment in _object_list(case_result.get("candidate_assessments")):
         candidate = _object_dict(assessment.get("candidate"))
-        if not _bool_value(assessment.get("is_supported_by_gold")):
+        is_governed_proposal = _bool_value(
+            assessment.get("is_governed_relation_proposal"),
+        )
+        proposal_match = assessment.get("proposal_matched_gold_index") is not None
+        if not _bool_value(assessment.get("is_supported_by_gold")) and not (
+            is_governed_proposal and proposal_match
+        ):
             key = _FalsePositiveKey(
                 case_id=case_id,
                 subject=_string_value(candidate.get("subject")),
@@ -397,8 +404,7 @@ def _collect_assessments(
                 ),
             )
             _add_occurrence(stores.false_positives, key, run_label)
-        proposal_match = assessment.get("proposal_matched_gold_index") is not None
-        if _bool_value(assessment.get("is_governed_relation_proposal")) and proposal_match:
+        if is_governed_proposal and proposal_match:
             trusted_eligible = _bool_value(
                 assessment.get("is_trusted_evidence_eligible"),
             ) or _bool_value(candidate.get("trusted_evidence_eligible"))
@@ -418,24 +424,24 @@ def _collect_assessments(
             )
             _add_occurrence(stores.governed_proposals, proposal_key, run_label)
         if _bool_value(assessment.get("is_supported_by_gold")):
+            context = _AssessmentContext(
+                assessment=assessment,
+                candidate=candidate,
+                matched_gold_relation=_matched_gold_relation(
+                    case_result=case_result,
+                    assessment=assessment,
+                ),
+                case_id=case_id,
+                run_label=run_label,
+            )
             _collect_curie_gap(
                 stores.curie_gaps,
-                context=_AssessmentContext(
-                    assessment=assessment,
-                    candidate=candidate,
-                    case_id=case_id,
-                    run_label=run_label,
-                ),
+                context=context,
                 role="subject",
             )
             _collect_curie_gap(
                 stores.curie_gaps,
-                context=_AssessmentContext(
-                    assessment=assessment,
-                    candidate=candidate,
-                    case_id=case_id,
-                    run_label=run_label,
-                ),
+                context=context,
                 role="object",
             )
     return trusted_proposal_capture_count
@@ -449,6 +455,12 @@ def _collect_curie_gap(
 ) -> None:
     assessment = context.assessment
     candidate = context.candidate
+    matched_gold_relation = context.matched_gold_relation
+    if (
+        matched_gold_relation is not None
+        and _optional_string(matched_gold_relation.get(f"{role}_curie")) is None
+    ):
+        return
     verified_key = f"has_verified_{role}_curie"
     match_key = f"{role}_curie_matches_gold"
     if _bool_value(assessment.get(verified_key)) and _bool_value(assessment.get(match_key)):
@@ -483,6 +495,21 @@ def _collect_curie_gap(
         ),
     )
     _add_occurrence(curie_gaps, key, context.run_label)
+
+
+def _matched_gold_relation(
+    *,
+    case_result: JSONObject,
+    assessment: JSONObject,
+) -> JSONObject | None:
+    matched_gold_index = assessment.get("matched_gold_index")
+    if isinstance(matched_gold_index, bool) or not isinstance(matched_gold_index, int):
+        return None
+    case = _object_dict(case_result.get("case"))
+    gold_relations = _object_list(case.get("gold_relations"))
+    if matched_gold_index < 0 or matched_gold_index >= len(gold_relations):
+        return None
+    return gold_relations[matched_gold_index]
 
 
 def _curie_gap_type(
@@ -623,7 +650,10 @@ def _model_comparison_rows(summaries_by_model: dict[str, list[JSONObject]]) -> l
 def _worst_metric(key: str, values: list[float]) -> float:
     if not values:
         return 0.0
-    if key == "generic_relation_rate":
+    if key in {
+        "generic_relation_rate",
+        "trusted_candidate_generic_relation_rate",
+    }:
         return _round_metric(max(values))
     return _round_metric(min(values))
 

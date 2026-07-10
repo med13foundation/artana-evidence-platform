@@ -403,12 +403,39 @@ def test_model_comparison_cli_refuses_run_mode_without_candidate_env(
         )
 
 
+@pytest.mark.parametrize(
+    "candidate_model",
+    ["openai:not-registered", "openai:gpt-4o-mini"],
+)
+def test_model_comparison_cli_rejects_invalid_candidate_model_override(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    candidate_model: str,
+) -> None:
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", candidate_model)
+
+    with pytest.raises(SystemExit, match="registered, enabled evidence-extraction"):
+        comparison_main(
+            [
+                "--current-model-label",
+                "current",
+                "--candidate-model-label",
+                "candidate",
+                "--runs-per-model",
+                "3",
+                "--run-audits",
+                "--output-dir",
+                str(tmp_path / "comparison"),
+            ],
+        )
+
+
 def test_model_comparison_cli_orchestrates_repeated_audit_runs(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     run_calls: list[tuple[Path, str | None]] = []
-    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5.5")
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5")
 
     def _fake_run_audit(*, output_dir: Path, env: Mapping[str, str]) -> None:
         run_calls.append(
@@ -421,7 +448,7 @@ def test_model_comparison_cli_orchestrates_repeated_audit_runs(
             output_dir,
             "relation_feasibility_report",
             model_label="candidate"
-            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5.5"
+            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5"
             else "current",
         )
 
@@ -449,9 +476,9 @@ def test_model_comparison_cli_orchestrates_repeated_audit_runs(
         (Path("runs/current/run1"), original_model),
         (Path("runs/current/run2"), original_model),
         (Path("runs/current/run3"), original_model),
-        (Path("runs/candidate/run1"), "openai:gpt-5.5"),
-        (Path("runs/candidate/run2"), "openai:gpt-5.5"),
-        (Path("runs/candidate/run3"), "openai:gpt-5.5"),
+        (Path("runs/candidate/run1"), "openai:gpt-5"),
+        (Path("runs/candidate/run2"), "openai:gpt-5"),
+        (Path("runs/candidate/run3"), "openai:gpt-5"),
     ]
     assert (output_dir / "relation_model_comparison_report.json").exists()
 
@@ -463,7 +490,7 @@ def test_model_comparison_cli_passes_cases_to_repeated_audit_runs(
     run_cases: list[Path | None] = []
     cases_path = tmp_path / "benchmark_v3.json"
     cases_path.write_text("[]\n")
-    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5.5")
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5")
 
     def _fake_run_audit(
         *,
@@ -476,7 +503,7 @@ def test_model_comparison_cli_passes_cases_to_repeated_audit_runs(
             output_dir,
             "relation_feasibility_report",
             model_label="candidate"
-            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5.5"
+            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5"
             else "current",
         )
 
@@ -506,7 +533,7 @@ def test_model_comparison_cli_writes_fail_closed_report_for_failed_candidate_run
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5.5")
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5")
 
     def _fake_run_audit(*, output_dir: Path, env: Mapping[str, str]) -> None:
         relative_output = output_dir.relative_to(tmp_path / "comparison")
@@ -519,7 +546,7 @@ def test_model_comparison_cli_writes_fail_closed_report_for_failed_candidate_run
             output_dir,
             "relation_feasibility_report",
             model_label="candidate"
-            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5.5"
+            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5"
             else "current",
         )
 
@@ -564,7 +591,7 @@ def test_model_comparison_cli_writes_fail_closed_report_for_failed_current_run(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5.5")
+    monkeypatch.setenv("ARTANA_STRONGER_MODEL_CANDIDATE", "openai:gpt-5")
 
     def _fake_run_audit(*, output_dir: Path, env: Mapping[str, str]) -> None:
         relative_output = output_dir.relative_to(tmp_path / "comparison")
@@ -577,7 +604,7 @@ def test_model_comparison_cli_writes_fail_closed_report_for_failed_current_run(
             output_dir,
             "relation_feasibility_report",
             model_label="candidate"
-            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5.5"
+            if env.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL") == "openai:gpt-5"
             else "current",
         )
 

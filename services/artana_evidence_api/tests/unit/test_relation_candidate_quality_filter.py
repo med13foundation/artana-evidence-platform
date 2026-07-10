@@ -1334,3 +1334,31 @@ def test_quality_filter_keeps_governed_relation_proposal_for_review() -> None:
 
     assert result.candidates == (candidate,)
     assert result.filtered_candidates == ()
+
+
+def test_quality_filter_keeps_distinct_governed_relation_type_proposals() -> None:
+    shared_fields = {
+        "subject_label": "BRCA1 loss",
+        "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+        "object_label": "cisplatin",
+        "sentence": "BRCA1 loss changes cisplatin toxicity.",
+        "relation_governance_status": "requires_relation_review",
+    }
+    candidates = (
+        ExtractedRelationCandidate(
+            **shared_fields,
+            proposed_relation_type="REDUCES_TOXICITY_OF",
+        ),
+        ExtractedRelationCandidate(
+            **shared_fields,
+            proposed_relation_type="INCREASES_TOXICITY_OF",
+        ),
+    )
+
+    result = filter_low_value_relation_candidates(candidates)
+
+    assert result.filtered_candidates == ()
+    assert [candidate.proposed_relation_type for candidate in result.candidates] == [
+        "REDUCES_TOXICITY_OF",
+        "INCREASES_TOXICITY_OF",
+    ]

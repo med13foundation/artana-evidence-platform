@@ -46,7 +46,9 @@ _RELATION_CUES: dict[str, tuple[str, ...]] = {
     "CONFERS_RESISTANCE_TO": (
         "confers resistance to",
         "causes resistance to",
+        "caused resistance to",
         "drives resistance to",
+        "drove resistance to",
         "mediates resistance to",
         "renders resistant to",
         "resistant to",

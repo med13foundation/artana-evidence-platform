@@ -19,6 +19,11 @@ for _path in (_REPO_ROOT, _SERVICES_ROOT):
     if _path_text not in sys.path:
         sys.path.insert(0, _path_text)
 
+from artana_evidence_api.runtime.model_registry import (  # noqa: E402
+    ModelCapability,
+    get_model_registry,
+)
+
 from scripts.validation.relation_feasibility.model_comparison import (  # noqa: E402
     build_model_comparison_report,
     write_model_comparison_report,
@@ -209,7 +214,16 @@ def _run_audit_group_reports(
     if not candidate_model:
         msg = f"{candidate_model_env_var} must be set when --run-audits is used"
         raise SystemExit(msg)
+    candidate_model = _require_evidence_extraction_model(
+        model_id=candidate_model,
+        source_name=candidate_model_env_var,
+    )
     original_model = os.environ.get("ARTANA_AI_EVIDENCE_EXTRACTION_MODEL")
+    if original_model is not None:
+        original_model = _require_evidence_extraction_model(
+            model_id=original_model,
+            source_name="ARTANA_AI_EVIDENCE_EXTRACTION_MODEL",
+        )
     current_reports = _run_model_audits(
         model_label="current",
         output_dir=output_dir / "runs" / "current",
@@ -225,6 +239,24 @@ def _run_audit_group_reports(
         cases_path=cases_path,
     )
     return current_reports, candidate_reports
+
+
+def _require_evidence_extraction_model(*, model_id: str, source_name: str) -> str:
+    normalized_model_id = model_id.strip()
+    if not normalized_model_id:
+        msg = f"{source_name} must name an enabled evidence-extraction model."
+        raise SystemExit(msg)
+    registry = get_model_registry()
+    if not registry.validate_model_for_capability(
+        normalized_model_id,
+        ModelCapability.EVIDENCE_EXTRACTION,
+    ):
+        msg = (
+            f"{source_name} must name a registered, enabled "
+            f"evidence-extraction model; got {normalized_model_id!r}."
+        )
+        raise SystemExit(msg)
+    return normalized_model_id
 
 
 def _run_model_audits(

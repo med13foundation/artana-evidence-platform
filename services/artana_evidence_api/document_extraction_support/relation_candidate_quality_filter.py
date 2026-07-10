@@ -257,14 +257,21 @@ def filter_low_value_relation_candidates(
 def _merge_duplicate_kept_candidates(
     candidates: list[ExtractedRelationCandidate],
 ) -> tuple[ExtractedRelationCandidate, ...]:
-    merged_by_key: dict[tuple[str, str, str, str], ExtractedRelationCandidate] = {}
-    ordered_keys: list[tuple[str, str, str, str]] = []
+    merged_by_key: dict[
+        tuple[str, str, str, str, str | None], ExtractedRelationCandidate
+    ] = {}
+    ordered_keys: list[tuple[str, str, str, str, str | None]] = []
     for candidate in candidates:
         key = (
             candidate.subject_label.casefold(),
             candidate.relation_type,
             candidate.object_label.casefold(),
             candidate.sentence.casefold(),
+            (
+                candidate.proposed_relation_type.casefold()
+                if candidate.proposed_relation_type is not None
+                else None
+            ),
         )
         existing = merged_by_key.get(key)
         if existing is None:

@@ -18,9 +18,13 @@ def _write_report(
     *,
     missed: list[dict[str, object]] | None = None,
     assessments: list[dict[str, object]] | None = None,
+    gold_relations: list[dict[str, object]] | None = None,
     summary: dict[str, object] | None = None,
 ) -> Path:
     path = tmp_path / f"{name}.json"
+    case: dict[str, object] = {"case_id": "case_a"}
+    if gold_relations is not None:
+        case["gold_relations"] = gold_relations
     payload = {
         "summary": {
             "verdict": "RED",
@@ -32,7 +36,7 @@ def _write_report(
         },
         "case_results": [
             {
-                "case": {"case_id": "case_a"},
+                "case": case,
                 "candidate_assessments": assessments or [],
                 "missed_gold_relations": missed or [],
             },
@@ -208,6 +212,7 @@ def test_failure_analysis_keeps_governed_proposal_capture_separate_from_trust(
             "occurrence_count": 1,
         },
     ]
+    assert report["repeated_false_positive_candidates"] == []
 
 
 def test_failure_analysis_does_not_call_verified_proposal_links_wrong(
@@ -237,6 +242,45 @@ def test_failure_analysis_does_not_call_verified_proposal_links_wrong(
         "support_verification": "NEUTRAL",
     }
     report_path = _write_report(tmp_path, "run1", assessments=[assessment])
+
+    report = build_failure_analysis_report(
+        (FailureAnalysisInput(path=report_path, label="run1"),),
+    )
+
+    assert report["curie_gaps"] == []
+
+
+def test_failure_analysis_skips_curie_gap_when_gold_endpoint_has_no_curie(
+    tmp_path: Path,
+) -> None:
+    assessment = {
+        "candidate": {
+            "subject": "MET amplification",
+            "relation_type": "CONFERS_RESISTANCE_TO",
+            "object": "erlotinib",
+            "subject_curie": "HGNC:7029",
+            "object_curie": "DrugBank:DB00530",
+            "subject_curie_source": "verified_linker",
+            "object_curie_source": "verified_linker",
+        },
+        "matched_gold_index": 0,
+        "is_supported_by_gold": True,
+        "has_verified_subject_curie": True,
+        "has_verified_object_curie": True,
+        "subject_curie_matches_gold": True,
+        "object_curie_matches_gold": False,
+    }
+    report_path = _write_report(
+        tmp_path,
+        "run1",
+        assessments=[assessment],
+        gold_relations=[
+            {
+                "subject_curie": "HGNC:7029",
+                "object_curie": None,
+            },
+        ],
+    )
 
     report = build_failure_analysis_report(
         (FailureAnalysisInput(path=report_path, label="run1"),),
@@ -311,6 +355,37 @@ def test_failure_analysis_model_comparison_includes_trust_lane_metrics(
     assert candidate["worst_entailment_checked_rate"] == 1.0
     assert candidate["total_fallback_case_count"] == 0
     assert candidate["total_wrong_verified_curie_link_count"] == 0
+
+
+def test_failure_analysis_uses_maximum_trusted_generic_rate_for_worst_run(
+    tmp_path: Path,
+) -> None:
+    first_report = _write_report(
+        tmp_path,
+        "candidate-low-generic",
+        summary={
+            "model_label": "candidate",
+            "trusted_candidate_generic_relation_rate": 0.02,
+        },
+    )
+    second_report = _write_report(
+        tmp_path,
+        "candidate-high-generic",
+        summary={
+            "model_label": "candidate",
+            "trusted_candidate_generic_relation_rate": 0.4,
+        },
+    )
+
+    report = build_failure_analysis_report(
+        (
+            FailureAnalysisInput(path=first_report, label="run1"),
+            FailureAnalysisInput(path=second_report, label="run2"),
+        ),
+    )
+
+    candidate = report["model_comparison"][0]
+    assert candidate["worst_trusted_candidate_generic_relation_rate"] == 0.4
 
 
 def test_failure_analysis_reports_review_only_grounding_decision(

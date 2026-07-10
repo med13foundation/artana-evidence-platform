@@ -1706,20 +1706,68 @@ def test_weak_low_value_claim_trusted_leakage_is_counted() -> None:
         ),
     )
 
-    def extractor(_: str) -> list[ExtractedRelation]:
-        return [
-            ExtractedRelation(
-                subject="IL6",
-                relation_type="REGULATES",
-                object="inflammatory signaling",
-                sentence="IL6 may regulate inflammatory signaling.",
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    sentence="IL6 may regulate inflammatory signaling.",
+                ),
             ),
-        ]
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="completed",
+                llm_candidate_count=1,
+            ),
+        )
 
     report = run_feasibility_audit(cases=cases, extractor=extractor)
 
     assert report.summary.weak_claim_trusted_leakage_count == 1
     assert report.summary.low_value_review_candidate_count == 0
+
+
+def test_fallback_low_value_claim_does_not_count_as_trusted_leakage() -> None:
+    cases = (
+        _case(
+            case_id="fallback_weak_claim",
+            text="IL6 may regulate inflammatory signaling.",
+            gold=(
+                GoldRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    support_sentence="IL6 may regulate inflammatory signaling.",
+                    value_level="low",
+                    rationale="Fallback output is not trusted agent evidence.",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> RelationExtractionResult:
+        return RelationExtractionResult(
+            relations=(
+                ExtractedRelation(
+                    subject="IL6",
+                    relation_type="REGULATES",
+                    object="inflammatory signaling",
+                    sentence="IL6 may regulate inflammatory signaling.",
+                ),
+            ),
+            trace=ExtractionTrace(
+                extractor_mode="agent",
+                llm_candidate_status="fallback",
+                fallback_candidate_count=1,
+            ),
+        )
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+
+    assert report.summary.fallback_case_count == 1
+    assert report.summary.weak_claim_trusted_leakage_count == 0
 
 
 def test_verdict_uses_trusted_eligible_endpoint_rate_not_all_gold_rate() -> None:
