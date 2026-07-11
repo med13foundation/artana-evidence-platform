@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import cast
 from uuid import uuid4
 
-from artana_evidence_api.evidence_selection.output_paths import paths_alias
+from artana_evidence_api.evidence_selection.output_paths import (
+    paths_alias,
+    paths_nested,
+)
 from artana_evidence_api.evidence_selection.source_exports import (
     EvidenceSelectionReviewExport,
     EvidenceSelectionSourceExportIdentity,
@@ -130,7 +133,7 @@ def validate_evidence_selection_source_export_output_paths(
     if paths_alias(selection_export_path, review_ranking_export_path):
         msg = "Selection-review and review-ranking export outputs must be different files."
         raise EvidenceSelectionSourceExportWriterError(msg)
-    if _paths_are_nested(selection_export_path, review_ranking_export_path):
+    if paths_nested(selection_export_path, review_ranking_export_path):
         msg = (
             "Selection-review and review-ranking export outputs must not use "
             "nested parent/child paths."
@@ -149,17 +152,6 @@ def validate_evidence_selection_source_export_output_paths(
                 f"{review_ranking_export_path} matches {source_path}."
             )
             raise EvidenceSelectionSourceExportWriterError(msg)
-
-
-def _paths_are_nested(left: Path, right: Path) -> bool:
-    resolved_left = left.resolve(strict=False)
-    resolved_right = right.resolve(strict=False)
-    return (
-        resolved_left in resolved_right.parents
-        or resolved_right in resolved_left.parents
-    )
-
-
 def _source_identity(
     request: EvidenceSelectionSourceExportWriteRequest,
 ) -> EvidenceSelectionSourceExportIdentity:

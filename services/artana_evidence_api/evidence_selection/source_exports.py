@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-import re
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Literal
 
+from artana_evidence_api.evidence_selection.provenance import (
+    parse_canonical_source_exported_at,
+    validate_source_identity_text,
+)
 from artana_evidence_api.evidence_selection_validation import (
     EvidenceSelectionReviewInput,
     ReviewRankingCalibrationStudyInput,
@@ -18,12 +21,6 @@ EvidenceSelectionReviewExportSchemaVersion = Literal[
 ReviewRankingCalibrationExportSchemaVersion = Literal[
     "evidence_selection_review_ranking_export.v1"
 ]
-SOURCE_EXPORTED_AT_FORMAT = "YYYY-MM-DDTHH:MM:SSZ"
-_CANONICAL_SOURCE_EXPORTED_AT_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$",
-)
-
-
 class EvidenceSelectionSourceExportIdentity(BaseModel):
     """Shared source identity fields embedded in expert-study source exports."""
 
@@ -43,16 +40,7 @@ class EvidenceSelectionSourceExportIdentity(BaseModel):
     )
     @classmethod
     def _reject_nonliteral_identity_text(cls, value: str) -> str:
-        if not value.strip():
-            msg = "source export identity fields must be nonblank"
-            raise ValueError(msg)
-        if value != value.strip():
-            msg = (
-                "source export identity fields must not have leading or "
-                "trailing whitespace"
-            )
-            raise ValueError(msg)
-        return value
+        return validate_source_identity_text(value)
 
     @field_validator("exported_at", mode="before")
     @classmethod
@@ -113,56 +101,6 @@ def ensure_matching_source_export_identity(
         )
         raise ValueError(msg)
     return selection_identity
-
-
-def parse_canonical_source_exported_at(
-    value: datetime | str,
-    *,
-    field_name: str = "source export exported_at",
-) -> datetime:
-    """Parse canonical source-export timestamps without lossy normalization."""
-
-    if isinstance(value, str):
-        parsed = _parse_source_exported_at_string(value=value, field_name=field_name)
-    else:
-        parsed = value
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        msg = (
-            f"{field_name} must include a timezone and use canonical UTC "
-            f"format {SOURCE_EXPORTED_AT_FORMAT}."
-        )
-        raise ValueError(msg)
-    if parsed.utcoffset() != timedelta(0):
-        msg = f"{field_name} must be canonical UTC."
-        raise ValueError(msg)
-    if parsed.microsecond != 0:
-        msg = (
-            f"{field_name} must use canonical UTC format "
-            f"{SOURCE_EXPORTED_AT_FORMAT}."
-        )
-        raise ValueError(msg)
-    if (
-        isinstance(value, str)
-        and _CANONICAL_SOURCE_EXPORTED_AT_RE.fullmatch(value) is None
-    ):
-        msg = (
-            f"{field_name} must use canonical UTC format "
-            f"{SOURCE_EXPORTED_AT_FORMAT}."
-        )
-        raise ValueError(msg)
-    return parsed.astimezone(UTC)
-
-
-def _parse_source_exported_at_string(*, value: str, field_name: str) -> datetime:
-    normalized_value = value.removesuffix("Z") + "+00:00" if value.endswith("Z") else value
-    try:
-        return datetime.fromisoformat(normalized_value)
-    except ValueError as exc:
-        msg = (
-            f"{field_name} must be valid ISO-8601 and use canonical UTC "
-            f"format {SOURCE_EXPORTED_AT_FORMAT}."
-        )
-        raise ValueError(msg) from exc
 
 
 __all__ = [

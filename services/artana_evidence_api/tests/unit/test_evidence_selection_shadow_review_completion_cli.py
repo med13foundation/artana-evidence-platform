@@ -178,6 +178,44 @@ def test_shadow_review_completion_cli_rejects_directory_output(
     assert not ranking_output.exists()
 
 
+@pytest.mark.parametrize(
+    ("selection_relative_path", "ranking_relative_path"),
+    [
+        ("source-input", "source-input/review-ranking-study.json"),
+        ("source-input/selection-review-labels.json", "source-input"),
+    ],
+)
+def test_shadow_review_completion_cli_rejects_nested_outputs(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    selection_relative_path: str,
+    ranking_relative_path: str,
+) -> None:
+    cli = _cli_module()
+    packet_path = tmp_path / "completed-shadow-review-packet.json"
+    _write_completed_packet(packet_path, _completed_packet())
+    selection_output = tmp_path / selection_relative_path
+    ranking_output = tmp_path / ranking_relative_path
+
+    exit_code = cli.main(
+        (
+            "--packet",
+            str(packet_path),
+            "--selection-reviews-output",
+            str(selection_output),
+            "--review-ranking-output",
+            str(ranking_output),
+            "--adjudication-note",
+            "Reviewer A completed all labels.",
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "must not use nested parent/child paths" in captured.err
+    assert not (tmp_path / "source-input").exists()
+
+
 def test_shadow_review_completion_cli_overwrites_files_without_backup_artifacts(
     tmp_path: Path,
 ) -> None:

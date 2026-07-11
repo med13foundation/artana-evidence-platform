@@ -26,6 +26,7 @@ from artana_evidence_api.evidence_selection.cli_errors import (
 )
 from artana_evidence_api.evidence_selection.output_paths import (
     paths_alias,  # noqa: E402
+    paths_nested,  # noqa: E402
 )
 from artana_evidence_api.evidence_selection.shadow_review_completion import (  # noqa: E402
     EvidenceSelectionShadowReviewSourceInputRequest,
@@ -137,6 +138,12 @@ def _validate_output_paths(
     source_packets = (machine_packet_path, packet_path)
     if paths_alias(selection_output_path, review_ranking_output_path):
         msg = "Selection-review and review-ranking outputs must be different files."
+        raise ValueError(msg)
+    if paths_nested(selection_output_path, review_ranking_output_path):
+        msg = (
+            "Selection-review and review-ranking outputs must not use nested "
+            "parent/child paths."
+        )
         raise ValueError(msg)
     for source_packet in source_packets:
         if paths_alias(selection_output_path, source_packet):

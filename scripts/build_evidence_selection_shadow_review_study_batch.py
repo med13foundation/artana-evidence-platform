@@ -24,6 +24,7 @@ from artana_evidence_api.evidence_selection.cli_errors import (
 )
 from artana_evidence_api.evidence_selection.output_paths import (
     paths_alias,  # noqa: E402
+    paths_nested,  # noqa: E402
 )
 from artana_evidence_api.evidence_selection.shadow_review_study_batch import (  # noqa: E402
     EvidenceSelectionShadowReviewStudyBatchManifest,
@@ -290,11 +291,11 @@ def _validate_report_output_paths(
         output_paths.append(gate_dir / _GATE_REPORT_MARKDOWN_FILENAME)
 
     if any(
-        paths_alias(left, right)
+        paths_alias(left, right) or paths_nested(left, right)
         for index, left in enumerate(output_paths)
         for right in output_paths[index + 1 :]
     ):
-        msg = "Shadow-review batch report output paths must be unique."
+        msg = "Shadow-review batch report output paths must be unique and not nested."
         raise ValueError(msg)
     for source_path in source_paths:
         for output_path in output_paths:

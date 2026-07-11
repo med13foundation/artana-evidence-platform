@@ -403,6 +403,18 @@ def test_evidence_selection_expert_study_input_rejects_blank_source_identity() -
         EvidenceSelectionExpertStudyInput.model_validate(payload)
 
 
+@pytest.mark.parametrize(
+    "field_name",
+    ["source_system", "export_id", "exporter_id", "redaction_statement"],
+)
+def test_source_manifest_rejects_padded_identity_fields(field_name: str) -> None:
+    manifest = _source_manifest_payload()
+    manifest[field_name] = f" {manifest[field_name]} "
+
+    with pytest.raises(ValidationError, match="leading or trailing whitespace"):
+        EvidenceSelectionExpertStudySourceManifest.model_validate(manifest)
+
+
 def test_evidence_selection_expert_study_input_rejects_invalid_source_hash() -> None:
     manifest = _source_manifest_payload()
     manifest["source_artifacts"][0]["sha256"] = "not-a-sha"
@@ -431,6 +443,8 @@ def test_evidence_selection_expert_study_input_rejects_invalid_source_hash() -> 
         "2026-07-07T07:00:00",
         "2026-07-07T07:00:00+00:00",
         "2026-07-07T08:00:00+01:00",
+        "2026-07-07 07:00:00Z",
+        "2026-07-07T07:00:00.123456Z",
     ],
 )
 def test_source_manifest_rejects_noncanonical_export_timestamps(

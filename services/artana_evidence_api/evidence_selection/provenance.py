@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
 from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+SOURCE_EXPORTED_AT_FORMAT = "YYYY-MM-DDTHH:MM:SSZ"
+_CANONICAL_SOURCE_EXPORTED_AT_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$",
+)
 
 EvidenceSelectionExpertStudySourceArtifactKind = Literal[
     "selection_review_export",
@@ -27,6 +33,63 @@ _REQUIRED_SOURCE_ARTIFACT_KINDS: tuple[
     "selection_review_export",
     "review_ranking_export",
 )
+
+
+def validate_source_identity_text(value: str) -> str:
+    """Return literal nonblank identity text or reject lossy normalization."""
+
+    if not value.strip():
+        msg = "source identity fields must be nonblank"
+        raise ValueError(msg)
+    if value != value.strip():
+        msg = "source identity fields must not have leading or trailing whitespace"
+        raise ValueError(msg)
+    return value
+
+
+def parse_canonical_source_exported_at(
+    value: datetime | str,
+    *,
+    field_name: str = "source exported_at",
+) -> datetime:
+    """Parse canonical source timestamps without lossy normalization."""
+
+    parsed = (
+        _parse_source_exported_at_string(value=value, field_name=field_name)
+        if isinstance(value, str)
+        else value
+    )
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        msg = (
+            f"{field_name} must include a timezone and use canonical UTC "
+            f"format {SOURCE_EXPORTED_AT_FORMAT}."
+        )
+        raise ValueError(msg)
+    if parsed.utcoffset() != timedelta(0):
+        msg = f"{field_name} must be canonical UTC."
+        raise ValueError(msg)
+    if parsed.microsecond != 0 or (
+        isinstance(value, str)
+        and _CANONICAL_SOURCE_EXPORTED_AT_RE.fullmatch(value) is None
+    ):
+        msg = (
+            f"{field_name} must use canonical UTC format "
+            f"{SOURCE_EXPORTED_AT_FORMAT}."
+        )
+        raise ValueError(msg)
+    return parsed.astimezone(UTC)
+
+
+def _parse_source_exported_at_string(*, value: str, field_name: str) -> datetime:
+    normalized_value = value.removesuffix("Z") + "+00:00" if value.endswith("Z") else value
+    try:
+        return datetime.fromisoformat(normalized_value)
+    except ValueError as exc:
+        msg = (
+            f"{field_name} must be valid ISO-8601 and use canonical UTC "
+            f"format {SOURCE_EXPORTED_AT_FORMAT}."
+        )
+        raise ValueError(msg) from exc
 
 
 class EvidenceSelectionExpertStudySourceArtifact(BaseModel):
@@ -67,34 +130,18 @@ class EvidenceSelectionExpertStudySourceManifest(BaseModel):
         "redaction_statement",
     )
     @classmethod
-    def _strip_nonblank_manifest_text(cls, value: str) -> str:
-        return _strip_nonblank_text(value)
+    def _validate_manifest_identity_text(cls, value: str) -> str:
+        return validate_source_identity_text(value)
 
     @field_validator("exported_at", mode="before")
     @classmethod
     def _accept_json_exported_at(cls, value: object) -> object:
-        if isinstance(value, str):
-            try:
-                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            except ValueError as exc:
-                msg = "exported_at must be a valid canonical UTC timestamp."
-                raise ValueError(msg) from exc
-            if not value.endswith("Z"):
-                msg = "exported_at must use canonical UTC Z notation."
-                raise ValueError(msg)
-            return parsed
+        if isinstance(value, datetime | str):
+            return parse_canonical_source_exported_at(
+                value,
+                field_name="source manifest exported_at",
+            )
         return value
-
-    @field_validator("exported_at")
-    @classmethod
-    def _exported_at_must_be_aware_utc(cls, value: datetime) -> datetime:
-        if value.tzinfo is None or value.utcoffset() is None:
-            msg = "exported_at must include a UTC timezone."
-            raise ValueError(msg)
-        if value.utcoffset() != timedelta(0):
-            msg = "exported_at must be canonical UTC."
-            raise ValueError(msg)
-        return value.astimezone(UTC)
 
     @field_validator(
         "source_artifacts",
@@ -509,5 +556,7 @@ __all__ = [
     "EvidenceSelectionExpertStudySourceArtifact",
     "EvidenceSelectionExpertStudySourceManifest",
     "build_evidence_selection_provenance_summary",
+    "parse_canonical_source_exported_at",
     "source_manifest_blocking_reasons",
+    "validate_source_identity_text",
 ]

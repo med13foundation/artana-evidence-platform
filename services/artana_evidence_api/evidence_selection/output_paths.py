@@ -18,4 +18,15 @@ def paths_alias(left: Path, right: Path) -> bool:
         return False
 
 
-__all__ = ["paths_alias"]
+def paths_nested(left: Path, right: Path) -> bool:
+    """Return whether either resolved path is an ancestor of the other."""
+
+    resolved_left = left.resolve(strict=False)
+    resolved_right = right.resolve(strict=False)
+    return (
+        resolved_left in resolved_right.parents
+        or resolved_right in resolved_left.parents
+    )
+
+
+__all__ = ["paths_alias", "paths_nested"]

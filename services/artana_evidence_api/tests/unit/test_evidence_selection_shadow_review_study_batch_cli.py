@@ -437,6 +437,52 @@ def test_shadow_review_study_batch_cli_rejects_report_packet_collision(
     assert packet_path.read_text() == original_packet_text
 
 
+@pytest.mark.parametrize(
+    "output_subdir",
+    ["shadow-review-study-batch.json", "shadow-review-study-batch.json/study"],
+)
+def test_shadow_review_study_batch_cli_rejects_nested_report_paths(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    output_subdir: str,
+) -> None:
+    cli = _cli_module()
+    packet_path = tmp_path / "packet.json"
+    _write_packet(packet_path, _completed_packet())
+    manifest_path = tmp_path / "shadow-review-batch.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "evidence_selection_shadow_review_study_batch.v1",
+                "batch_id": "batch-2026-07-07",
+                "entries": [
+                    _manifest_entry(
+                        entry_id="study-a",
+                        packet_path=packet_path,
+                        output_subdir=output_subdir,
+                        export_id="shadow-export-study-a",
+                    ),
+                ],
+            },
+        ),
+    )
+    output_dir = tmp_path / "batch-output"
+
+    exit_code = cli.main(
+        (
+            "--manifest",
+            str(manifest_path),
+            "--output-dir",
+            str(output_dir),
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "report output paths must be unique and not nested" in captured.err
+    assert not output_dir.exists()
+
+
 def _cli_module() -> object:
     try:
         return importlib.import_module(
