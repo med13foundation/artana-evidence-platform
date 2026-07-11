@@ -409,6 +409,7 @@ def _normalize_onboarding_state_patch_payload(
     raw_state_patch: object,
     *,
     pending_question_prompts: list[str],
+    force_awaiting_reply: bool = False,
 ) -> dict[str, object] | None:
     state_patch: dict[str, object] | None = None
     if isinstance(raw_state_patch, dict):
@@ -418,25 +419,61 @@ def _normalize_onboarding_state_patch_payload(
     if state_patch is None:
         return None
 
-    state_patch["thread_status"] = "your_turn"
-    state_patch["onboarding_status"] = "awaiting_researcher_reply"
+    if force_awaiting_reply:
+        state_patch["thread_status"] = "your_turn"
+        state_patch["onboarding_status"] = "awaiting_researcher_reply"
     raw_pending_questions = state_patch.get("pending_questions")
-    if not isinstance(raw_pending_questions, list) or not [
-        value
-        for value in raw_pending_questions
-        if isinstance(value, str) and value.strip()
-    ]:
-        state_patch["pending_questions"] = pending_question_prompts
-    pending_questions = state_patch.get("pending_questions")
-    if isinstance(pending_questions, list):
-        state_patch["pending_question_count"] = len(
-            [
-                value
-                for value in pending_questions
-                if isinstance(value, str) and value.strip()
-            ],
-        )
+    normalized_pending_questions = _derive_onboarding_pending_questions(
+        raw_pending_questions,
+        pending_question_prompts=pending_question_prompts,
+    )
+    if normalized_pending_questions is not None:
+        state_patch["pending_questions"] = normalized_pending_questions
+        state_patch["pending_question_count"] = len(normalized_pending_questions)
     return state_patch
+
+
+def _derive_onboarding_pending_questions(
+    raw_pending_questions: object,
+    *,
+    pending_question_prompts: list[str],
+) -> list[str] | None:
+    if isinstance(raw_pending_questions, list):
+        if not all(isinstance(value, str) for value in raw_pending_questions):
+            return None
+        normalized_questions = [
+            value.strip() for value in raw_pending_questions if value.strip()
+        ]
+        return normalized_questions or pending_question_prompts
+    if raw_pending_questions is None:
+        return pending_question_prompts
+    return None
+
+
+def _normalize_onboarding_warnings(
+    raw_warnings: object,
+    *,
+    warning_message: str,
+) -> list[str]:
+    warnings = (
+        [warning for warning in raw_warnings if isinstance(warning, str)]
+        if isinstance(raw_warnings, list)
+        else []
+    )
+    if warning_message not in warnings:
+        warnings.append(warning_message)
+    return warnings
+
+
+def _has_onboarding_questions(raw_questions: object) -> bool:
+    return bool(
+        isinstance(raw_questions, list)
+        and [
+            value
+            for value in raw_questions
+            if isinstance(value, dict | OnboardingQuestion)
+        ]
+    )
 
 
 class OnboardingAssistantContract(BaseAgentContract):
@@ -457,40 +494,36 @@ class OnboardingAssistantContract(BaseAgentContract):
 
     @model_validator(mode="before")
     @classmethod
-    def _coerce_plan_ready_with_questions(
+    def _normalize_onboarding_payload(
         cls,
         data: object,
     ) -> object:
         if not isinstance(data, dict):
             return data
+        normalized = dict(data)
         message_type = data.get("message_type")
         raw_questions = data.get("questions")
-        if message_type != "plan_ready" or not isinstance(raw_questions, list):
-            return data
-        if not raw_questions:
-            return data
+        question_prompts = _extract_onboarding_question_prompts(
+            raw_questions if isinstance(raw_questions, list) else [],
+        )
 
-        normalized = dict(data)
-        normalized["message_type"] = "clarification_request"
-        raw_warnings = normalized.get("warnings")
-        warnings = (
-            [warning for warning in raw_warnings if isinstance(warning, str)]
-            if isinstance(raw_warnings, list)
-            else []
-        )
-        warning_message = (
-            "Normalized plan_ready output with open questions into "
-            "clarification_request."
-        )
-        if warning_message not in warnings:
-            warnings.append(warning_message)
-        normalized["warnings"] = warnings
+        force_awaiting_reply = message_type == "clarification_request"
+        if message_type == "plan_ready" and _has_onboarding_questions(raw_questions):
+            normalized["message_type"] = "clarification_request"
+            force_awaiting_reply = True
+            warning_message = (
+                "Normalized plan_ready output with open questions into "
+                "clarification_request."
+            )
+            normalized["warnings"] = _normalize_onboarding_warnings(
+                normalized.get("warnings"),
+                warning_message=warning_message,
+            )
 
         state_patch = _normalize_onboarding_state_patch_payload(
             normalized.get("state_patch"),
-            pending_question_prompts=_extract_onboarding_question_prompts(
-                raw_questions,
-            ),
+            pending_question_prompts=question_prompts,
+            force_awaiting_reply=force_awaiting_reply,
         )
         if state_patch is not None:
             normalized["state_patch"] = state_patch

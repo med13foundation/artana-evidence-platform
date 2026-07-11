@@ -71,6 +71,105 @@ def test_evidence_selection_validation_fixtures_run_evidence_api_gate() -> None:
 
     assert plan.evidence_api
     assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+def test_evidence_api_builder_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_expert_study_bundle.py"],
+        event_name="pull_request",
+        ref="refs/pull/141/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+def test_evidence_api_source_export_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_source_exports.py"],
+        event_name="pull_request",
+        ref="refs/pull/145/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+def test_evidence_api_shadow_review_packet_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_shadow_review_packet.py"],
+        event_name="pull_request",
+        ref="refs/pull/147/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+def test_evidence_api_shadow_review_source_input_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_shadow_review_source_inputs.py"],
+        event_name="pull_request",
+        ref="refs/pull/148/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+def test_evidence_api_shadow_review_study_pipeline_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_shadow_review_study_artifacts.py"],
+        event_name="pull_request",
+        ref="refs/pull/149/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+def test_evidence_api_shadow_review_study_batch_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_shadow_review_study_batch.py"],
+        event_name="pull_request",
+        ref="refs/pull/150/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+def test_evidence_api_shadow_review_study_batch_manifest_script_pr_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/build_evidence_selection_shadow_review_study_batch_manifest.py"],
+        event_name="pull_request",
+        ref="refs/pull/153/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
     assert not plan.full
     assert plan.targeted_test_paths == ()
 

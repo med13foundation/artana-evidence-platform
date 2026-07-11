@@ -5,6 +5,9 @@ from __future__ import annotations
 from uuid import uuid4
 
 import pytest
+from artana_evidence_api.evidence_selection.provenance import (
+    EvidenceSelectionExpertStudySourceManifest,
+)
 from artana_evidence_api.evidence_selection_validation import (
     EvidenceSelectionExpertStudyGateThresholds,
     EvidenceSelectionExpertStudyInput,
@@ -167,13 +170,16 @@ def test_expert_study_rejects_blank_outer_study_id() -> None:
 
 
 def test_evidence_selection_expert_study_gate_passes_balanced_study() -> None:
+    selection_reviews = _selection_reviews()
+    review_ranking = _review_ranking_study("balanced-shadow-study")
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
             schema_version="evidence_selection_expert_study.v1",
             study_id="balanced-shadow-study",
             study_evidence_kind="real_shadow_review",
-            selection_reviews=_selection_reviews(),
-            review_ranking=_review_ranking_study("balanced-shadow-study"),
+            selection_reviews=selection_reviews,
+            review_ranking=review_ranking,
+            source_manifest=_source_manifest(selection_reviews=selection_reviews),
             description="Multi-goal expert shadow-review study.",
         ),
         thresholds=EvidenceSelectionExpertStudyGateThresholds(
@@ -196,7 +202,279 @@ def test_evidence_selection_expert_study_gate_passes_balanced_study() -> None:
     assert report.selection_summary["mean_recall"] == 1.0
     assert report.selection_summary["high_severity_overclaim_count"] == 0
     assert report.selection_summary["study_evidence_kind"] == "real_shadow_review"
+    assert report.provenance_summary["source_manifest_present"] is True
+    assert report.provenance_summary["artifact_count"] == 3
+    assert report.provenance_summary["missing_selection_run_id_count"] == 0
+    assert report.provenance_summary["missing_review_ranking_decision_key_count"] == 0
+    assert report.provenance_summary["unknown_reviewer_id_count"] == 0
     assert report.review_ranking_gate.passed is True
+
+
+def test_evidence_selection_expert_study_gate_blocks_missing_source_manifest() -> None:
+    report = evaluate_evidence_selection_expert_study_gate(
+        EvidenceSelectionExpertStudyInput(
+            schema_version="evidence_selection_expert_study.v1",
+            study_id="missing-source-manifest",
+            study_evidence_kind="real_shadow_review",
+            selection_reviews=_selection_reviews(),
+            review_ranking=_review_ranking_study("missing-source-manifest"),
+        ),
+        thresholds=EvidenceSelectionExpertStudyGateThresholds(
+            min_selection_review_count=3,
+            min_distinct_selection_goals=3,
+            min_selection_reviewer_count=1,
+            min_mean_precision=0.8,
+            min_mean_recall=0.8,
+            min_mean_explanation_quality=3.0,
+        ),
+    )
+
+    assert report.passed is False
+    assert report.provenance_summary["source_manifest_present"] is False
+    assert any(
+        "source manifest" in reason for reason in report.blocking_reasons
+    )
+
+
+def test_evidence_selection_expert_study_gate_blocks_incomplete_source_manifest() -> None:
+    selection_reviews = _selection_reviews()
+    review_ranking = _review_ranking_study("incomplete-source-manifest")
+    manifest = _source_manifest_payload(selection_reviews=selection_reviews)
+    manifest["source_artifacts"] = manifest["source_artifacts"][:1]
+    manifest["selection_review_run_ids"] = manifest["selection_review_run_ids"][:2]
+    manifest["review_ranking_decision_keys"] = (
+        manifest["review_ranking_decision_keys"][:9]
+        + ["review_item:unexpected-ranking-item"]
+    )
+    manifest["reviewer_roster"] = ["other-reviewer"]
+
+    report = evaluate_evidence_selection_expert_study_gate(
+        EvidenceSelectionExpertStudyInput.model_validate(
+            {
+                "schema_version": "evidence_selection_expert_study.v1",
+                    "study_id": "incomplete-source-manifest",
+                    "study_evidence_kind": "real_shadow_review",
+                    "selection_reviews": [
+                        review.model_dump(mode="json")
+                        for review in selection_reviews
+                    ],
+                    "review_ranking": review_ranking.model_dump(mode="json"),
+                    "source_manifest": manifest,
+                },
+        ),
+        thresholds=EvidenceSelectionExpertStudyGateThresholds(
+            min_selection_review_count=3,
+            min_distinct_selection_goals=3,
+            min_selection_reviewer_count=1,
+            min_mean_precision=0.8,
+            min_mean_recall=0.8,
+            min_mean_explanation_quality=3.0,
+            min_source_artifact_count=3,
+        ),
+    )
+
+    assert report.passed is False
+    assert report.provenance_summary["artifact_count"] == 1
+    assert report.provenance_summary["missing_selection_run_id_count"] == 1
+    assert report.provenance_summary["extra_review_ranking_decision_key_count"] == 1
+    assert report.provenance_summary["unknown_reviewer_id_count"] == 1
+    assert any("source artifacts" in reason for reason in report.blocking_reasons)
+    assert any("selection review run IDs" in reason for reason in report.blocking_reasons)
+    assert any("review-ranking decision keys" in reason for reason in report.blocking_reasons)
+    assert any("reviewer roster" in reason for reason in report.blocking_reasons)
+
+
+def test_evidence_selection_expert_study_gate_blocks_duplicate_selection_run_ids() -> None:
+    shared_run_id = uuid4()
+    reviews = tuple(
+        EvidenceSelectionReviewInput(
+            run_id=shared_run_id,
+            goal=goal,
+            reviewer_id="reviewer-a",
+            harness_selected_record_ids=(f"record-{index}",),
+            human_selected_record_ids=(f"record-{index}",),
+            explanation_quality_score=4,
+            high_severity_overclaim_count=0,
+        )
+        for index, goal in enumerate(
+            (
+                "Find MED13 congenital heart disease evidence.",
+                "Find EGFR inhibitor response evidence.",
+                "Find NTRK fusion treatment evidence.",
+            ),
+        )
+    )
+
+    report = evaluate_evidence_selection_expert_study_gate(
+        EvidenceSelectionExpertStudyInput(
+            schema_version="evidence_selection_expert_study.v1",
+            study_id="duplicate-selection-run-ids",
+            study_evidence_kind="real_shadow_review",
+            selection_reviews=reviews,
+            review_ranking=_review_ranking_study("duplicate-selection-run-ids"),
+            source_manifest=_source_manifest(selection_reviews=reviews),
+        ),
+        thresholds=EvidenceSelectionExpertStudyGateThresholds(
+            min_selection_review_count=3,
+            min_distinct_selection_goals=3,
+            min_selection_reviewer_count=1,
+            min_mean_precision=0.8,
+            min_mean_recall=0.8,
+            min_mean_explanation_quality=3.0,
+        ),
+    )
+
+    assert report.passed is False
+    assert report.provenance_summary["duplicate_selection_run_id_count"] == 1
+    assert any("Selection review run IDs must be unique" in reason for reason in report.blocking_reasons)
+
+
+def test_evidence_selection_expert_study_gate_requires_source_export_artifacts() -> None:
+    selection_reviews = _selection_reviews()
+    manifest = _source_manifest_payload(selection_reviews=selection_reviews)
+    manifest["source_artifacts"] = [
+        {
+            "artifact_id": f"adjudication-log-{index}",
+            "artifact_kind": "adjudication_log",
+            "uri": f"s3://artana-validation/adjudication-log-{index}.json",
+            "sha256": f"{index}" * 64,
+        }
+        for index in range(1, 4)
+    ]
+
+    report = evaluate_evidence_selection_expert_study_gate(
+        EvidenceSelectionExpertStudyInput.model_validate(
+            {
+                "schema_version": "evidence_selection_expert_study.v1",
+                "study_id": "missing-source-export-artifacts",
+                "study_evidence_kind": "real_shadow_review",
+                "selection_reviews": [
+                    review.model_dump(mode="json")
+                    for review in selection_reviews
+                ],
+                "review_ranking": _review_ranking_study(
+                    "missing-source-export-artifacts",
+                ).model_dump(mode="json"),
+                "source_manifest": manifest,
+            },
+        ),
+        thresholds=EvidenceSelectionExpertStudyGateThresholds(
+            min_selection_review_count=3,
+            min_distinct_selection_goals=3,
+            min_selection_reviewer_count=1,
+            min_mean_precision=0.8,
+            min_mean_recall=0.8,
+            min_mean_explanation_quality=3.0,
+            min_source_artifact_count=3,
+        ),
+    )
+
+    assert report.passed is False
+    assert report.provenance_summary["source_artifact_kind_counts"] == {
+        "adjudication_log": 3,
+        "review_ranking_export": 0,
+        "selection_review_export": 0,
+    }
+    assert any("selection_review_export" in reason for reason in report.blocking_reasons)
+    assert any("review_ranking_export" in reason for reason in report.blocking_reasons)
+
+
+def test_evidence_selection_expert_study_input_rejects_blank_source_identity() -> None:
+    manifest = _source_manifest_payload()
+    manifest["source_system"] = "   "
+    manifest["export_id"] = "\t"
+    manifest["exporter_id"] = " "
+    manifest["redaction_statement"] = " "
+    payload = {
+        "schema_version": "evidence_selection_expert_study.v1",
+        "study_id": "blank-source-identity",
+        "study_evidence_kind": "real_shadow_review",
+        "selection_reviews": [
+            review.model_dump(mode="json")
+            for review in _selection_reviews()
+        ],
+        "review_ranking": _review_ranking_study(
+            "blank-source-identity",
+        ).model_dump(mode="json"),
+        "source_manifest": manifest,
+    }
+
+    with pytest.raises(ValidationError, match="source_system"):
+        EvidenceSelectionExpertStudyInput.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    ["source_system", "export_id", "exporter_id", "redaction_statement"],
+)
+def test_source_manifest_rejects_padded_identity_fields(field_name: str) -> None:
+    manifest = _source_manifest_payload()
+    manifest[field_name] = f" {manifest[field_name]} "
+
+    with pytest.raises(ValidationError, match="leading or trailing whitespace"):
+        EvidenceSelectionExpertStudySourceManifest.model_validate(manifest)
+
+
+def test_evidence_selection_expert_study_input_rejects_invalid_source_hash() -> None:
+    manifest = _source_manifest_payload()
+    manifest["source_artifacts"][0]["sha256"] = "not-a-sha"
+
+    payload = {
+        "schema_version": "evidence_selection_expert_study.v1",
+        "study_id": "invalid-source-hash",
+        "study_evidence_kind": "real_shadow_review",
+        "selection_reviews": [
+            review.model_dump(mode="json")
+            for review in _selection_reviews()
+        ],
+        "review_ranking": _review_ranking_study(
+            "invalid-source-hash",
+        ).model_dump(mode="json"),
+        "source_manifest": manifest,
+    }
+
+    with pytest.raises(ValidationError, match="sha256"):
+        EvidenceSelectionExpertStudyInput.model_validate(payload)
+
+
+def test_source_manifest_rejects_padded_artifact_uri() -> None:
+    manifest = _source_manifest_payload()
+    source_artifacts = manifest["source_artifacts"]
+    assert isinstance(source_artifacts, list)
+    first_artifact = source_artifacts[0]
+    assert isinstance(first_artifact, dict)
+    first_artifact["uri"] = " s3://example/source.json "
+
+    with pytest.raises(ValidationError, match="source artifact uri"):
+        EvidenceSelectionExpertStudySourceManifest.model_validate(manifest)
+
+
+def test_source_manifest_rejects_padded_reviewer_roster_entry() -> None:
+    manifest = _source_manifest_payload()
+    manifest["reviewer_roster"] = [" reviewer-a "]
+
+    with pytest.raises(ValidationError, match="reviewer roster entries"):
+        EvidenceSelectionExpertStudySourceManifest.model_validate(manifest)
+
+
+@pytest.mark.parametrize(
+    "exported_at",
+    [
+        "2026-07-07T07:00:00",
+        "2026-07-07T07:00:00+00:00",
+        "2026-07-07T08:00:00+01:00",
+        "2026-07-07 07:00:00Z",
+        "2026-07-07T07:00:00.123456Z",
+    ],
+)
+def test_source_manifest_rejects_noncanonical_export_timestamps(
+    exported_at: str,
+) -> None:
+    payload = _source_manifest_payload()
+    payload["exported_at"] = exported_at
+
+    with pytest.raises(ValidationError, match="UTC"):
+        EvidenceSelectionExpertStudySourceManifest.model_validate(payload)
 
 
 def test_evidence_selection_expert_study_gate_blocks_synthetic_studies() -> None:
@@ -207,6 +485,7 @@ def test_evidence_selection_expert_study_gate_blocks_synthetic_studies() -> None
             study_evidence_kind="synthetic_fixture",
             selection_reviews=_selection_reviews(),
             review_ranking=_review_ranking_study("synthetic-shadow-study"),
+            source_manifest=_source_manifest(),
             description="Synthetic mechanics proof for the study gate.",
         ),
         thresholds=EvidenceSelectionExpertStudyGateThresholds(
@@ -255,6 +534,7 @@ def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews
             study_evidence_kind="real_shadow_review",
             selection_reviews=tuple(reviews),
             review_ranking=_review_ranking_study("partially-unlabeled-shadow-study"),
+            source_manifest=_source_manifest(selection_reviews=tuple(reviews)),
         ),
         thresholds=EvidenceSelectionExpertStudyGateThresholds(
             min_selection_review_count=3,
@@ -295,6 +575,7 @@ def test_evidence_selection_expert_study_gate_blocks_unmeasurable_selection_metr
             study_evidence_kind="real_shadow_review",
             selection_reviews=tuple(reviews),
             review_ranking=_review_ranking_study("unmeasurable-shadow-study"),
+            source_manifest=_source_manifest(selection_reviews=tuple(reviews)),
         ),
         thresholds=EvidenceSelectionExpertStudyGateThresholds(
             min_selection_review_count=3,
@@ -386,6 +667,10 @@ def test_evidence_selection_expert_study_gate_blocks_weak_or_underreviewed_study
                 study_id="weak-shadow-study",
                 decisions=_review_ranking_decisions()[:2],
                 adjudication_note=None,
+            ),
+            source_manifest=_source_manifest(
+                selection_reviews=weak_reviews,
+                review_ranking_decisions=_review_ranking_decisions()[:2],
             ),
         ),
         thresholds=EvidenceSelectionExpertStudyGateThresholds(
@@ -495,6 +780,61 @@ def _review_ranking_study(study_id: str) -> ReviewRankingCalibrationStudyInput:
         decisions=_review_ranking_decisions(),
         adjudication_note="No reviewer disagreements in this calibration sample.",
     )
+
+
+def _source_manifest(
+    *,
+    selection_reviews: tuple[EvidenceSelectionReviewInput, ...] | None = None,
+    review_ranking_decisions: tuple[ReviewRankingCalibrationDecision, ...] | None = None,
+) -> object:
+    return _source_manifest_payload(
+        selection_reviews=selection_reviews,
+        review_ranking_decisions=review_ranking_decisions,
+    )
+
+
+def _source_manifest_payload(
+    *,
+    selection_reviews: tuple[EvidenceSelectionReviewInput, ...] | None = None,
+    review_ranking_decisions: tuple[ReviewRankingCalibrationDecision, ...] | None = None,
+) -> dict[str, object]:
+    active_selection_reviews = selection_reviews or _selection_reviews()
+    active_ranking_decisions = review_ranking_decisions or _review_ranking_decisions()
+    return {
+        "source_system": "artana-shadow-review",
+        "export_id": "shadow-export-2026-07-07",
+        "exported_at": "2026-07-07T07:00:00Z",
+        "exporter_id": "review-ops-a",
+        "redaction_statement": "No PHI or raw patient text included.",
+        "source_artifacts": [
+            {
+                "artifact_id": "selection-review-export",
+                "artifact_kind": "selection_review_export",
+                "uri": "s3://artana-validation/selection-review-export.json",
+                "sha256": "a" * 64,
+            },
+            {
+                "artifact_id": "review-ranking-export",
+                "artifact_kind": "review_ranking_export",
+                "uri": "s3://artana-validation/review-ranking-export.json",
+                "sha256": "b" * 64,
+            },
+            {
+                "artifact_id": "adjudication-log",
+                "artifact_kind": "adjudication_log",
+                "uri": "s3://artana-validation/adjudication-log.json",
+                "sha256": "c" * 64,
+            },
+        ],
+        "selection_review_run_ids": [
+            str(review.run_id) for review in active_selection_reviews
+        ],
+        "review_ranking_decision_keys": [
+            f"{decision.source_kind}:{decision.item_id}"
+            for decision in active_ranking_decisions
+        ],
+        "reviewer_roster": ["reviewer-a"],
+    }
 
 
 def _review_ranking_decisions() -> tuple[ReviewRankingCalibrationDecision, ...]:

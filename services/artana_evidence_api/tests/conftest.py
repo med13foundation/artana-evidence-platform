@@ -14,6 +14,7 @@ _TEST_DB_PATH = (
 )
 _TEST_DATABASE_URL = f"sqlite:///{_TEST_DB_PATH}"
 _TEST_SECRET = "test-jwt-secret-0123456789abcdefghijklmnopqrstuvwxyz"
+_TEST_SHADOW_REVIEW_PACKET_SIGNING_KEY = "test-shadow-review-packet-signing-key"
 _ACTIVE_DATABASE_URL = os.environ.get("DATABASE_URL", "")
 _USE_POSTGRES = os.environ.get(
     "ARTANA_EVIDENCE_API_TEST_USE_POSTGRES",
@@ -32,6 +33,10 @@ else:
     os.environ.setdefault("GRAPH_DB_SCHEMA", "public")
 os.environ.setdefault("AUTH_JWT_SECRET", _TEST_SECRET)
 os.environ.setdefault("GRAPH_JWT_SECRET", _TEST_SECRET)
+os.environ.setdefault(
+    "ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY",
+    _TEST_SHADOW_REVIEW_PACKET_SIGNING_KEY,
+)
 os.environ.setdefault("GRAPH_SERVICE_RELOAD", "0")
 os.environ.setdefault("ARTANA_EVIDENCE_API_SERVICE_RELOAD", "0")
 

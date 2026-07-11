@@ -87,16 +87,71 @@ Run
 `scripts/run_evidence_selection_review_calibration_gate.py` on the collected
 decisions before claiming the ranking threshold is ready.
 
+Before collected labels exist, generate a reviewer-facing packet from a saved
+evidence-selection result artifact:
+
+```bash
+# Set this only in the producer environment.
+export ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY=<producer-held-secret>
+
+uv run python scripts/build_evidence_selection_shadow_review_packet.py \
+  --run-result path/to/evidence-selection-result.json \
+  --study-id <study-id> \
+  --output path/to/completed-shadow-review-packet.json
+```
+
+The packet uses
+`schema_version: "evidence_selection_shadow_review_packet.v1"` and sets
+`production_readiness_claim: false`. It is a collection aid, not completed
+expert evidence. The command also writes
+`completed-shadow-review-packet.machine.json`, containing the producer-signed
+machine facts. Keep that sidecar under producer control and let reviewers edit
+only `completed-shadow-review-packet.json`. Reviewers must fill the required
+human selection labels, reviewer IDs, explanation-quality scores, overclaim
+counts, and positive/negative review-ranking outcomes before the data can be
+converted into the source-export inputs below.
+
+Convert a completed packet into raw source-export writer inputs with:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_source_inputs.py \
+  --machine-packet path/to/completed-shadow-review-packet.machine.json \
+  --packet path/to/completed-shadow-review-packet.json \
+  --selection-reviews-output path/to/selection-review-labels.json \
+  --review-ranking-output path/to/review-ranking-study.json \
+  --adjudication-note "Reviewer adjudicated all labels."
+```
+
+This conversion step is still not a readiness claim. It only creates the strict
+selection-review label file and review-ranking study file that the source-export
+writer consumes next.
+
 For a complete expert/shadow study, store selection reviews and review-ranking
-decisions in one bundle:
+decisions as self-describing source exports. The selection-review export shape
+is:
 
 ```json
 {
-  "schema_version": "evidence_selection_expert_study.v1",
-  "study_id": "",
-  "study_evidence_kind": "real_shadow_review",
-  "description": "",
-  "selection_reviews": [],
+  "schema_version": "evidence_selection_review_export.v1",
+  "source_system": "",
+  "export_id": "",
+  "exported_at": "2026-07-07T00:00:00Z",
+  "exporter_id": "",
+  "redaction_statement": "",
+  "selection_reviews": []
+}
+```
+
+The review-ranking export shape is:
+
+```json
+{
+  "schema_version": "evidence_selection_review_ranking_export.v1",
+  "source_system": "",
+  "export_id": "",
+  "exported_at": "2026-07-07T00:00:00Z",
+  "exporter_id": "",
+  "redaction_statement": "",
   "review_ranking": {
     "schema_version": "evidence_selection_review_ranking_calibration.v1",
     "study_id": "",
@@ -106,10 +161,82 @@ decisions in one bundle:
 }
 ```
 
+The two source exports must have matching `source_system`, `export_id`,
+`exported_at`, `exporter_id`, and `redaction_statement` values. The
+`exported_at` value must be canonical UTC ISO-8601 with a trailing `Z`, such as
+`2026-07-07T00:00:00Z`; timezone-naive values and offset spellings such as
+`+00:00` or `+01:00` are rejected. Identity text fields are compared literally
+and must not contain leading or trailing whitespace. Build the source exports
+from collected review JSON with:
+
+```bash
+uv run python scripts/build_evidence_selection_source_exports.py \
+  --selection-reviews path/to/selection-review-labels.json \
+  --review-ranking path/to/review-ranking-study.json \
+  --selection-export-output path/to/selection-review-export.json \
+  --review-ranking-export-output path/to/review-ranking-export.json \
+  --source-system artana-shadow-review \
+  --export-id <export-id> \
+  --exported-at 2026-07-07T00:00:00Z \
+  --exporter-id <exporter-id> \
+  --redaction-statement "No PHI or raw patient text included."
+```
+
+Then build the final study bundle with:
+
+```bash
+uv run python scripts/build_evidence_selection_expert_study_bundle.py \
+  --study-id <study-id> \
+  --study-evidence-kind real_shadow_review \
+  --selection-reviews path/to/selection-review-export.json \
+  --review-ranking path/to/review-ranking-export.json \
+  --output path/to/evidence-selection-expert-study.json
+```
+
+`--source-system`, `--export-id`, `--exported-at`, `--exporter-id`, and
+`--redaction-statement` are optional compatibility checks only. When supplied,
+they must all be supplied together and must exactly match the identity embedded
+in both source exports.
+
 Run `scripts/run_evidence_selection_expert_study_gate.py` on the bundle before
 using the study to support a production-readiness claim. Use
 `study_evidence_kind: "synthetic_fixture"` for mechanics fixtures; those bundles
 must fail the production-style study gate.
 
+The generated `source_manifest` must describe the real export used to create
+the bundle. The builder computes lowercase 64-character SHA-256 hashes for each
+source artifact from the same bytes it parses. The generated
+`selection_review_run_ids` list must match the selection reviews exactly. The
+generated `review_ranking_decision_keys` list must use `<source_kind>:<item_id>`
+and match the review-ranking decisions exactly. The generated `reviewer_roster`
+must contain every selection-review and review-ranking reviewer ID.
+
+For multi-study production-readiness evidence, build a strict batch manifest
+from completed packets before running the batch gate:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_study_batch_manifest.py \
+  --batch-id <batch-id> \
+  --packet path/to/completed-shadow-review-packet-1.json \
+  --packet path/to/completed-shadow-review-packet-2.json \
+  --packet path/to/completed-shadow-review-packet-3.json \
+  --output path/to/shadow-review-study-batch-manifest.json \
+  --adjudication-note "Reviewer adjudicated every packet." \
+  --source-system artana-shadow-review \
+  --export-id-prefix <export-id-prefix> \
+  --exported-at 2026-07-07T00:00:00Z \
+  --exporter-id <exporter-id> \
+  --redaction-statement "No PHI or raw patient text included."
+```
+
+Then run:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_study_batch.py \
+  --manifest path/to/shadow-review-study-batch-manifest.json \
+  --output-dir reports/evidence_selection_shadow_review_batch/<date>-<batch-id>
+```
+
 Production-readiness requires real shadow-mode comparisons with human reviewers
-on real research questions. Passing the MED13 fixture alone is not enough.
+on real research questions. Passing the MED13 fixture alone is not enough, and a
+single completed packet is not enough.
