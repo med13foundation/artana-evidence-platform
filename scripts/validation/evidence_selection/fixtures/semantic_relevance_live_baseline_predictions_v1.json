@@ -1,0 +1,207 @@
+{
+  "schema_version": "evidence_selection_semantic_predictions.v1",
+  "provenance": "manually_transcribed_live_shadow_results",
+  "baseline_commit": "9f95b2277b0fcb30cd8eb06116af484c841f8319",
+  "baseline_model": "openai:gpt-5.4-mini",
+  "source_artifacts": [
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "evaluation_role": "primary",
+      "source_run_id": "ed628a98-3eb0-4a98-8beb-0b94614c2641",
+      "source_artifact_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_t790m_primary_evidence.json",
+      "source_artifact_sha256": "eb757ece0f13815d41e9dc0d0122de0293971f0309d423d1a23d3f14c26b4abe",
+      "upstream_source_artifact_sha256": "213fa9ef8a2c46379d665391ea9064259522d64fd2a57717dc28c407296129b3"
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "evaluation_role": "primary",
+      "source_run_id": "a8361ae7-7bb3-4122-85e7-37b207f11d04",
+      "source_artifact_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/brca1_risk_penetrance.json",
+      "source_artifact_sha256": "7254d4cd0f74fb92e67d1caf1f545c2ff6bf471774047212ab1de344808baeb7",
+      "upstream_source_artifact_sha256": "8f0dcdb076ebb0985be4177908d110017876463c170a2d26aed5e82e3612ffd9"
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "evaluation_role": "primary",
+      "source_run_id": "ea0ae3b8-df5e-4875-81b7-83a9cfe77328",
+      "source_artifact_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/cftr_f508del_eti_response.json",
+      "source_artifact_sha256": "b8fdf86290b33f4d7b9ae29cada157952f43d6eb0d1ec6527d84ca82c3f33477",
+      "upstream_source_artifact_sha256": "0b6901128ee361c6e67ec5e5631cef6e537a8ae41d818d3979e60a784ef128b9"
+    },
+    {
+      "case_id": "egfr_exclusion_token_canary",
+      "evaluation_role": "canary",
+      "source_run_id": "d2cb282f-5b38-4f43-a0b0-aa20cae266d2",
+      "source_artifact_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_exclusion_token_canary.json",
+      "source_artifact_sha256": "a935301454764c1c54b8ccb2cb857ffd73d24d6f206f6ef5fb914ca57d354d32",
+      "upstream_source_artifact_sha256": "e071c01c86179eab249e8569eaf40ae22a095932b642516be8e1b018ccf0de43"
+    }
+  ],
+  "predictions": [
+    {
+      "record_id": "egfr:pmid:27959700",
+      "decision": "reject",
+      "reason": "The deterministic selector treated generic exclusion tokens as a hard rejection."
+    },
+    {
+      "record_id": "egfr:pmid:25923549",
+      "decision": "reject",
+      "reason": "The deterministic selector rejected a direct primary clinical record."
+    },
+    {
+      "record_id": "egfr:pmid:27393503",
+      "decision": "select",
+      "reason": "The baseline selector selected this directly overlapping record."
+    },
+    {
+      "record_id": "egfr:pmid:41512290",
+      "decision": "select",
+      "reason": "Generic EGFR and lung-cancer overlap outweighed study-type semantics."
+    },
+    {
+      "record_id": "egfr:pmid:30657347",
+      "decision": "select",
+      "reason": "The selector rewarded broad objective vocabulary without primary-study verification."
+    },
+    {
+      "record_id": "egfr:pmid:26314834",
+      "decision": "select",
+      "reason": "Generic lung-cancer and inhibitor terms produced a high score."
+    },
+    {
+      "record_id": "egfr:pmid:31039766",
+      "decision": "select",
+      "reason": "EGFR, plasma, response, and osimertinib terms produced a high score."
+    },
+    {
+      "record_id": "egfr:pmid:23985030",
+      "decision": "select",
+      "reason": "Weak overlap was sufficient for selection."
+    },
+    {
+      "record_id": "brca1:pmid:40403695",
+      "decision": "reject",
+      "reason": "The word study collided with the flattened exclusion token set."
+    },
+    {
+      "record_id": "brca1:pmid:22889855",
+      "decision": "reject",
+      "reason": "The direct BRCA1 risk record was excluded by token-level policy."
+    },
+    {
+      "record_id": "brca1:pmid:26195121",
+      "decision": "select",
+      "reason": "BRCA1 and risk vocabulary produced a selected baseline decision."
+    },
+    {
+      "record_id": "brca1:pmid:30191368",
+      "decision": "select",
+      "reason": "The baseline selected the directly matching family record."
+    },
+    {
+      "record_id": "brca1:pmid:40288678",
+      "decision": "select",
+      "reason": "The baseline selected the directly relevant population record."
+    },
+    {
+      "record_id": "brca1:pmid:17018160",
+      "decision": "select",
+      "reason": "The baseline selected the directly matching record."
+    },
+    {
+      "record_id": "brca1:pmid:34237702",
+      "decision": "select",
+      "reason": "BRCA1 and hereditary cancer terms were sufficient for selection."
+    },
+    {
+      "record_id": "brca1:pmid:21356067",
+      "decision": "select",
+      "reason": "Broad gene and cancer overlap produced selection."
+    },
+    {
+      "record_id": "brca1:pmid:32658311",
+      "decision": "select",
+      "reason": "Generic pathogenic variant, breast cancer, and risk vocabulary produced selection."
+    },
+    {
+      "record_id": "brca1:pmid:31206626:selected-duplicate",
+      "decision": "select",
+      "reason": "Generic pathogenic variant and breast cancer terms overrode the off-target gene population."
+    },
+    {
+      "record_id": "brca1:pmid:31206626:rejected-duplicate",
+      "decision": "reject",
+      "reason": "One copy was skipped while another copy was selected."
+    },
+    {
+      "record_id": "brca1:pmid:34642874",
+      "decision": "select",
+      "reason": "Penetrance and breast cancer terms produced a high baseline score."
+    },
+    {
+      "record_id": "brca1:pmid:27913932",
+      "decision": "select",
+      "reason": "Generic pathogenic, breast cancer, and family terms produced selection."
+    },
+    {
+      "record_id": "brca1:pmid:30610487",
+      "decision": "select",
+      "reason": "Generic germline and breast cancer terms produced selection."
+    },
+    {
+      "record_id": "brca1:pmid:26344711",
+      "decision": "select",
+      "reason": "Familial breast and ovarian cancer terms produced selection despite missing BRCA1 support."
+    },
+    {
+      "record_id": "cftr:pmid:35816621",
+      "decision": "reject",
+      "reason": "The word study matched the flattened non-human exclusion criterion."
+    },
+    {
+      "record_id": "cftr:pmid:40210412",
+      "decision": "reject",
+      "reason": "The generic word study triggered the exclusion matcher."
+    },
+    {
+      "record_id": "cftr:pmid:41138737",
+      "decision": "reject",
+      "reason": "The generic word study triggered the exclusion matcher."
+    },
+    {
+      "record_id": "cftr:pmid:40209082",
+      "decision": "reject",
+      "reason": "The generic word study triggered the exclusion matcher."
+    },
+    {
+      "record_id": "cftr:pmid:38198345",
+      "decision": "select",
+      "reason": "Population and intervention vocabulary outweighed evidence-type semantics."
+    },
+    {
+      "record_id": "cftr:pmid:35681464",
+      "decision": "select",
+      "reason": "CFTR, cystic fibrosis, people, and evidence terms produced selection."
+    },
+    {
+      "record_id": "cftr:pmid:39227072",
+      "decision": "select",
+      "reason": "Cystic fibrosis, ETI, and F508del tokens scored highly without negation understanding."
+    },
+    {
+      "record_id": "canary:pmid:27959700",
+      "decision": "reject",
+      "reason": "The isolated token study was treated as proof of the whole exclusion phrase."
+    },
+    {
+      "record_id": "canary:pmid:25923549",
+      "decision": "reject",
+      "reason": "The isolated evidence and study tokens triggered the exclusion matcher."
+    },
+    {
+      "record_id": "canary:pmid:27393503",
+      "decision": "reject",
+      "reason": "A generic exclusion token overrode the phrase meaning."
+    }
+  ]
+}
