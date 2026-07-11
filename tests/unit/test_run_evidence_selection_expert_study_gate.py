@@ -43,6 +43,24 @@ def test_evidence_selection_expert_study_gate_runner_passes_balanced_study(
     assert "## Review-Ranking Calibration" in markdown
 
 
+def test_evidence_selection_expert_study_gate_accepts_integer_json_scores(
+    tmp_path: Path,
+) -> None:
+    payload = _balanced_study_payload()
+    decisions = payload["review_ranking"]["decisions"]
+    for decision in decisions:
+        decision["ranking_score"] = 1 if decision["outcome"] == "positive" else 0
+    input_path = tmp_path / "integer-score-study.json"
+    input_path.write_text(json.dumps(payload) + "\n")
+
+    report = build_evidence_selection_expert_study_gate_report(
+        input_path=input_path,
+    )
+
+    assert report["gate"]["passed"] is True
+    assert report["gate"]["review_ranking_gate"]["calibration"]["mean_score"] == 0.5
+
+
 def test_evidence_selection_expert_study_gate_accepts_documented_note_objects(
     tmp_path: Path,
 ) -> None:

@@ -41,7 +41,7 @@ def build_score_calibration_metric_counts(
     scored_pairs = tuple(
         (
             _candidate_quality_score(candidate),
-            1.0 if candidate.is_supported_by_gold else 0.0,
+            1.0 if candidate.is_valuable else 0.0,
         )
         for candidate in scored_candidates
     )

@@ -138,6 +138,44 @@ def test_audit_reports_candidate_score_calibration_error() -> None:
     assert summary_payload["trusted_candidate_score_ece"] == 0.5
 
 
+def test_audit_calibrates_supported_low_value_relation_as_negative() -> None:
+    cases = (
+        _case(
+            case_id="low_value_calibration",
+            text="MED13 activates broad cellular signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="broad cellular signaling",
+                    support_sentence="MED13 activates broad cellular signaling.",
+                    value_level="low",
+                    rationale="Correct but too broad to promote as valuable evidence.",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="broad cellular signaling",
+                sentence="MED13 activates broad cellular signaling.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.is_supported_by_gold is True
+    assert assessment.is_trusted_evidence_eligible is True
+    assert assessment.is_valuable is False
+    assert report.summary.candidate_score_ece == 1.0
+    assert report.summary.trusted_candidate_score_ece == 1.0
+
+
 def test_audit_rejects_off_target_support_sentence_for_matching_triple() -> None:
     cases = (
         _case(

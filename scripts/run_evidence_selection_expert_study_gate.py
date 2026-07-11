@@ -53,8 +53,9 @@ def build_evidence_selection_expert_study_gate_report(
 ) -> JSONObject:
     """Load expert/shadow study labels and return a study gate report."""
 
-    payload = _load_json_object(input_path)
-    study_input = EvidenceSelectionExpertStudyInput.model_validate(payload)
+    study_input = EvidenceSelectionExpertStudyInput.model_validate_json(
+        input_path.read_text(),
+    )
     active_thresholds = thresholds or EvidenceSelectionExpertStudyRunnerThresholds()
     gate_thresholds = EvidenceSelectionExpertStudyGateThresholds(
         min_selection_review_count=active_thresholds.min_selection_review_count,
@@ -293,14 +294,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if gate.get("passed") is not True:
         return 1
     return 0
-
-
-def _load_json_object(path: Path) -> JSONObject:
-    payload = json.loads(path.read_text())
-    if not isinstance(payload, dict):
-        msg = f"{path} does not contain a JSON object"
-        raise TypeError(msg)
-    return dict(payload)
 
 
 def _object_value(payload: JSONObject, key: str) -> JSONObject:
