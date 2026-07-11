@@ -110,6 +110,9 @@ def _request_from_result_payload(
     payload: JSONObject,
     study_id: str,
 ) -> EvidenceSelectionShadowReviewPacketRequest:
+    if payload.get("mode") != "shadow":
+        msg = "Evidence-selection result mode must be 'shadow'."
+        raise ValueError(msg)
     goal = _required_payload_string(payload, "goal")
     return EvidenceSelectionShadowReviewPacketRequest(
         study_id=study_id,

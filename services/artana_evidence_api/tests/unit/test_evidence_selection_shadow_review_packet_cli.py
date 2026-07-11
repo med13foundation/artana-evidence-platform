@@ -279,6 +279,40 @@ def test_shadow_review_packet_cli_requires_producer_signing_key(
     assert not machine_packet_sidecar_path(output_path).exists()
 
 
+@pytest.mark.parametrize("mode", ["guarded", "full", None])
+def test_shadow_review_packet_cli_rejects_non_shadow_result(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    mode: str | None,
+) -> None:
+    cli = _cli_module()
+    run_result_path = tmp_path / "evidence-selection-result.json"
+    output_path = tmp_path / "shadow-review-packet.json"
+    payload = _run_result_payload()
+    if mode is None:
+        payload.pop("mode")
+    else:
+        payload["mode"] = mode
+    run_result_path.write_text(json.dumps(payload))
+
+    exit_code = cli.main(
+        (
+            "--run-result",
+            str(run_result_path),
+            "--study-id",
+            "shadow-study-2026-07-07",
+            "--output",
+            str(output_path),
+        ),
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "mode must be 'shadow'" in captured.err
+    assert not output_path.exists()
+    assert not machine_packet_sidecar_path(output_path).exists()
+
+
 def _cli_module() -> object:
     try:
         return importlib.import_module(
@@ -291,6 +325,7 @@ def _cli_module() -> object:
 def _run_result_payload() -> dict[str, object]:
     return {
         "run": {"id": _RUN_ID},
+        "mode": "shadow",
         "goal": _GOAL,
         "selected_records": [
             _decision(source_key="pubmed", decision="selected", record_index=0),

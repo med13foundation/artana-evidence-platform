@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import importlib
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -959,6 +960,60 @@ def test_shadow_review_study_batch_rejects_duplicate_output_subdirs(
                     ),
                 ],
             },
+        )
+
+
+def test_shadow_review_study_batch_rejects_nested_output_subdirs() -> None:
+    batch = _batch_module()
+
+    with pytest.raises(ValueError, match="output_subdir values must not be nested"):
+        batch.EvidenceSelectionShadowReviewStudyBatchManifest.model_validate(
+            {
+                "schema_version": "evidence_selection_shadow_review_study_batch.v1",
+                "batch_id": "nested-output-batch",
+                "entries": [
+                    _manifest_entry(
+                        entry_id="child",
+                        packet_path=Path("child.json"),
+                        output_subdir="study/nested",
+                        export_id="child-export",
+                    ),
+                    _manifest_entry(
+                        entry_id="parent",
+                        packet_path=Path("parent.json"),
+                        output_subdir="study",
+                        export_id="parent-export",
+                    ),
+                ],
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    "threshold_name",
+    [
+        "min_passed_entry_rate",
+        "min_suite_mean_precision",
+        "min_suite_mean_recall",
+        "min_suite_mean_explanation_quality",
+        "max_suite_expected_calibration_error",
+    ],
+)
+@pytest.mark.parametrize("non_finite_value", [float("nan"), float("inf"), float("-inf")])
+def test_shadow_review_study_batch_rejects_non_finite_suite_thresholds(
+    threshold_name: str,
+    non_finite_value: float,
+) -> None:
+    batch = _batch_module()
+    thresholds = replace(
+        batch.EvidenceSelectionShadowReviewStudyBatchSuiteThresholds(),
+        **{threshold_name: non_finite_value},
+    )
+
+    with pytest.raises(ValueError, match=f"{threshold_name} must be finite"):
+        batch.build_evidence_selection_shadow_review_study_batch_suite_gate(
+            entries=(),
+            thresholds=thresholds,
         )
 
 

@@ -437,6 +437,26 @@ def test_evidence_selection_expert_study_input_rejects_invalid_source_hash() -> 
         EvidenceSelectionExpertStudyInput.model_validate(payload)
 
 
+def test_source_manifest_rejects_padded_artifact_uri() -> None:
+    manifest = _source_manifest_payload()
+    source_artifacts = manifest["source_artifacts"]
+    assert isinstance(source_artifacts, list)
+    first_artifact = source_artifacts[0]
+    assert isinstance(first_artifact, dict)
+    first_artifact["uri"] = " s3://example/source.json "
+
+    with pytest.raises(ValidationError, match="source artifact uri"):
+        EvidenceSelectionExpertStudySourceManifest.model_validate(manifest)
+
+
+def test_source_manifest_rejects_padded_reviewer_roster_entry() -> None:
+    manifest = _source_manifest_payload()
+    manifest["reviewer_roster"] = [" reviewer-a "]
+
+    with pytest.raises(ValidationError, match="reviewer roster entries"):
+        EvidenceSelectionExpertStudySourceManifest.model_validate(manifest)
+
+
 @pytest.mark.parametrize(
     "exported_at",
     [

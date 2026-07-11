@@ -18,6 +18,12 @@ from artana_evidence_api.evidence_selection.shadow_review_study_batch_outputs im
     prepare_batch_output_dir,
     rollback_published_batch_outputs,
 )
+from artana_evidence_api.evidence_selection.shadow_review_study_batch_validation import (
+    EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
+)
+from artana_evidence_api.evidence_selection.shadow_review_study_batch_validation import (
+    validate_shadow_review_study_batch_suite_thresholds as _validate_suite_thresholds,
+)
 from artana_evidence_api.evidence_selection.shadow_review_study_pipeline import (
     EvidenceSelectionShadowReviewStudyArtifactRequest,
     EvidenceSelectionShadowReviewStudyArtifactResult,
@@ -34,8 +40,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 _MANIFEST_SCHEMA_VERSION = "evidence_selection_shadow_review_study_batch.v1"
 _REPORT_SCHEMA_VERSION = "evidence_selection_shadow_review_study_batch_report.v1"
-_MIN_EXPLANATION_QUALITY = 1.0
-_MAX_EXPLANATION_QUALITY = 5.0
 _ENTRY_ARTIFACT_FILENAMES = (
     "selection-review-labels.json",
     "review-ranking-study.json",
@@ -172,6 +176,7 @@ class EvidenceSelectionShadowReviewStudyBatchManifest(BaseModel):
             label="batch output_subdir",
             values=(entry.output_subdir for entry in self.entries),
         )
+        _reject_nested_output_subdirs(self.entries)
         _reject_duplicates(
             label="batch export_id",
             values=(entry.export_id for entry in self.entries),
@@ -194,27 +199,6 @@ class EvidenceSelectionShadowReviewStudyBatchThresholds:
     max_expected_calibration_error: float = 0.05
     min_distinct_ranking_goals: int = 1
     min_distinct_evidence_shapes: int = 1
-
-
-@dataclass(frozen=True, slots=True)
-class EvidenceSelectionShadowReviewStudyBatchSuiteThresholds:
-    """Thresholds for claiming a completed-packet batch is study-level evidence."""
-
-    min_entry_count: int = 3
-    min_passed_entry_count: int = 3
-    max_failed_entry_count: int = 0
-    min_passed_entry_rate: float = 1.0
-    min_suite_mean_precision: float = 0.8
-    min_suite_mean_recall: float = 0.8
-    min_suite_mean_explanation_quality: float = 3.0
-    max_suite_expected_calibration_error: float = 0.05
-    min_total_selection_review_count: int = 3
-    min_total_review_ranking_decision_count: int = 10
-    min_distinct_source_run_ids: int = 3
-    min_distinct_study_ids: int = 3
-    min_distinct_selection_goals: int = 3
-    min_distinct_review_ranking_goals: int = 3
-    min_distinct_evidence_shapes: int = 3
 
 
 _PRODUCTION_SUITE_THRESHOLD_FLOORS = (
@@ -604,51 +588,6 @@ def _load_json_object(path: Path) -> JSONObject:
     return result
 
 
-def _validate_suite_thresholds(
-    thresholds: EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
-) -> None:
-    count_thresholds = {
-        "min_entry_count": thresholds.min_entry_count,
-        "min_passed_entry_count": thresholds.min_passed_entry_count,
-        "max_failed_entry_count": thresholds.max_failed_entry_count,
-        "min_total_selection_review_count": thresholds.min_total_selection_review_count,
-        "min_total_review_ranking_decision_count": (
-            thresholds.min_total_review_ranking_decision_count
-        ),
-        "min_distinct_source_run_ids": thresholds.min_distinct_source_run_ids,
-        "min_distinct_study_ids": thresholds.min_distinct_study_ids,
-        "min_distinct_selection_goals": thresholds.min_distinct_selection_goals,
-        "min_distinct_review_ranking_goals": (
-            thresholds.min_distinct_review_ranking_goals
-        ),
-        "min_distinct_evidence_shapes": thresholds.min_distinct_evidence_shapes,
-    }
-    for count_name, count_value in count_thresholds.items():
-        if count_value < 0:
-            msg = f"{count_name} must be non-negative."
-            raise ValueError(msg)
-    if thresholds.min_passed_entry_rate < 0 or thresholds.min_passed_entry_rate > 1:
-        msg = "min_passed_entry_rate must be between 0 and 1."
-        raise ValueError(msg)
-    bounded_float_thresholds: dict[str, float] = {
-        "min_suite_mean_precision": thresholds.min_suite_mean_precision,
-        "min_suite_mean_recall": thresholds.min_suite_mean_recall,
-        "max_suite_expected_calibration_error": (
-            thresholds.max_suite_expected_calibration_error
-        ),
-    }
-    for float_name, float_value in bounded_float_thresholds.items():
-        if float_value < 0 or float_value > 1:
-            msg = f"{float_name} must be between 0 and 1."
-            raise ValueError(msg)
-    if (
-        thresholds.min_suite_mean_explanation_quality < _MIN_EXPLANATION_QUALITY
-        or thresholds.min_suite_mean_explanation_quality > _MAX_EXPLANATION_QUALITY
-    ):
-        msg = "min_suite_mean_explanation_quality must be between 1 and 5."
-        raise ValueError(msg)
-
-
 def _production_suite_thresholds(
     thresholds: EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
 ) -> EvidenceSelectionShadowReviewStudyBatchSuiteThresholds:
@@ -807,6 +746,19 @@ def _reject_duplicates(*, label: str, values: Iterable[str]) -> None:
             msg = f"Duplicate {label}: {value_text}"
             raise ValueError(msg)
         seen.add(value_text)
+
+
+def _reject_nested_output_subdirs(
+    entries: tuple[EvidenceSelectionShadowReviewStudyBatchEntry, ...],
+) -> None:
+    output_subdirs = tuple(PurePosixPath(entry.output_subdir) for entry in entries)
+    if any(
+        left in right.parents or right in left.parents
+        for index, left in enumerate(output_subdirs)
+        for right in output_subdirs[index + 1 :]
+    ):
+        msg = "Batch output_subdir values must not be nested."
+        raise ValueError(msg)
 
 
 def _batch_selection_goals(

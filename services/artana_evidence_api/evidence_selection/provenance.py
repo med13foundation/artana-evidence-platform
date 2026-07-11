@@ -38,13 +38,7 @@ _REQUIRED_SOURCE_ARTIFACT_KINDS: tuple[
 def validate_source_identity_text(value: str) -> str:
     """Return literal nonblank identity text or reject lossy normalization."""
 
-    if not value.strip():
-        msg = "source identity fields must be nonblank"
-        raise ValueError(msg)
-    if value != value.strip():
-        msg = "source identity fields must not have leading or trailing whitespace"
-        raise ValueError(msg)
-    return value
+    return _validate_literal_nonblank_text(value, field_name="source identity fields")
 
 
 def parse_canonical_source_exported_at(
@@ -102,10 +96,15 @@ class EvidenceSelectionExpertStudySourceArtifact(BaseModel):
     uri: str = Field(min_length=1)
     sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
-    @field_validator("artifact_id", "uri")
+    @field_validator("artifact_id")
     @classmethod
     def _strip_nonblank_artifact_text(cls, value: str) -> str:
         return _strip_nonblank_text(value)
+
+    @field_validator("uri")
+    @classmethod
+    def _validate_literal_artifact_uri(cls, value: str) -> str:
+        return _validate_literal_nonblank_text(value, field_name="source artifact uri")
 
 
 class EvidenceSelectionExpertStudySourceManifest(BaseModel):
@@ -161,6 +160,20 @@ class EvidenceSelectionExpertStudySourceManifest(BaseModel):
         if isinstance(value, list):
             return tuple(UUID(item) if isinstance(item, str) else item for item in value)
         return value
+
+    @field_validator("reviewer_roster")
+    @classmethod
+    def _validate_literal_reviewer_roster(
+        cls,
+        value: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        return tuple(
+            _validate_literal_nonblank_text(
+                reviewer_id,
+                field_name="reviewer roster entries",
+            )
+            for reviewer_id in value
+        )
 
 
 def build_evidence_selection_provenance_summary(
@@ -301,11 +314,7 @@ def _present_source_manifest_summary(
 ) -> JSONObject:
     manifest_selection_run_ids = set(source_manifest.selection_review_run_ids)
     manifest_decision_keys = set(source_manifest.review_ranking_decision_keys)
-    manifest_reviewer_ids = {
-        reviewer_id.strip()
-        for reviewer_id in source_manifest.reviewer_roster
-        if reviewer_id.strip()
-    }
+    manifest_reviewer_ids = set(source_manifest.reviewer_roster)
     artifact_ids = tuple(
         artifact.artifact_id for artifact in source_manifest.source_artifacts
     )
@@ -534,6 +543,16 @@ def _strip_nonblank_text(value: str) -> str:
         msg = "value must not be blank"
         raise ValueError(msg)
     return stripped_value
+
+
+def _validate_literal_nonblank_text(value: str, *, field_name: str) -> str:
+    if not value.strip():
+        msg = f"{field_name} must be nonblank"
+        raise ValueError(msg)
+    if value != value.strip():
+        msg = f"{field_name} must not have leading or trailing whitespace"
+        raise ValueError(msg)
+    return value
 
 
 def _int_from_json(payload: JSONObject, key: str) -> int:
