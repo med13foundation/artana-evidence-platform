@@ -112,6 +112,56 @@ def test_shadow_review_study_batch_cli_allows_failed_gate_when_requested(
     assert batch_report["failed_entry_count"] == 1
 
 
+@pytest.mark.parametrize(
+    "failing_writer",
+    ["_write_entry_gate_reports", "write_evidence_selection_shadow_review_study_batch_report"],
+)
+def test_shadow_review_study_batch_cli_rolls_back_report_phase_failures(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failing_writer: str,
+) -> None:
+    cli = _cli_module()
+    manifest_path = _write_manifest(tmp_path)
+    output_dir = tmp_path / "batch-output"
+    args = (
+        "--manifest",
+        str(manifest_path),
+        "--output-dir",
+        str(output_dir),
+        "--allow-failed-gate",
+        "--min-selection-review-count",
+        "1",
+        "--min-distinct-selection-goals",
+        "1",
+        "--min-review-ranking-sample-count",
+        "2",
+        "--min-distinct-ranking-goals",
+        "1",
+        "--min-distinct-evidence-shapes",
+        "2",
+    )
+
+    def _fail_report_write(*_args: object, **_kwargs: object) -> None:
+        partial_output = (
+            output_dir / "shadow-review-study-batch.json"
+            if failing_writer.startswith("write_")
+            else output_dir / "good-study" / "gate" / "partial.json"
+        )
+        partial_output.parent.mkdir(parents=True, exist_ok=True)
+        partial_output.write_text("partial report\n")
+        raise OSError("simulated report publication failure")
+
+    with monkeypatch.context() as patch_context:
+        patch_context.setattr(cli, failing_writer, _fail_report_write)
+        assert cli.main(args) == 1
+
+    assert output_dir.is_dir()
+    assert list(output_dir.iterdir()) == []
+    assert cli.main(args) == 0
+    assert (output_dir / "shadow-review-study-batch.json").exists()
+
+
 def test_shadow_review_study_batch_cli_does_not_relax_production_suite_floor(
     tmp_path: Path,
 ) -> None:

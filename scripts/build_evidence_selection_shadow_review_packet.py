@@ -267,7 +267,11 @@ def _ranking_items_from_shadow_candidates(
         record_index = required_decision_int(item, "record_index")
         items.append(
             EvidenceSelectionShadowReviewRankingItem(
-                source_kind="review_item",
+                source_kind=(
+                    "proposal"
+                    if _is_shadow_selected_candidate(item)
+                    else "review_item"
+                ),
                 item_id=record_dedup_key(
                     source_key=source_key,
                     search_id=search_id,
@@ -281,6 +285,13 @@ def _ranking_items_from_shadow_candidates(
             ),
         )
     return tuple(items)
+
+
+def _is_shadow_selected_candidate(candidate: JSONObject) -> bool:
+    return (
+        candidate.get("shadow_decision") == "selected"
+        or candidate.get("would_have_been_selected") is True
+    )
 
 
 def _required_artifact_string(payload: JSONObject, key: str) -> str:

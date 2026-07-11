@@ -128,6 +128,8 @@ def build_evidence_selection_shadow_review_study_artifacts(
                 study_evidence_kind=request.study_evidence_kind,
                 selection_reviews_path=paths.selection_export_path,
                 review_ranking_path=paths.review_ranking_export_path,
+                selection_reviews_uri=str(final_paths.selection_export_path),
+                review_ranking_uri=str(final_paths.review_ranking_export_path),
                 description=request.description,
             ),
         )

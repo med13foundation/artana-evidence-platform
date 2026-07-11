@@ -130,6 +130,12 @@ def validate_evidence_selection_source_export_output_paths(
     if paths_alias(selection_export_path, review_ranking_export_path):
         msg = "Selection-review and review-ranking export outputs must be different files."
         raise EvidenceSelectionSourceExportWriterError(msg)
+    if _paths_are_nested(selection_export_path, review_ranking_export_path):
+        msg = (
+            "Selection-review and review-ranking export outputs must not use "
+            "nested parent/child paths."
+        )
+        raise EvidenceSelectionSourceExportWriterError(msg)
     for source_path in source_paths:
         if paths_alias(selection_export_path, source_path):
             msg = (
@@ -143,6 +149,15 @@ def validate_evidence_selection_source_export_output_paths(
                 f"{review_ranking_export_path} matches {source_path}."
             )
             raise EvidenceSelectionSourceExportWriterError(msg)
+
+
+def _paths_are_nested(left: Path, right: Path) -> bool:
+    resolved_left = left.resolve(strict=False)
+    resolved_right = right.resolve(strict=False)
+    return (
+        resolved_left in resolved_right.parents
+        or resolved_right in resolved_left.parents
+    )
 
 
 def _source_identity(

@@ -143,6 +143,13 @@ def test_shadow_review_packet_cli_derives_ranking_forms_from_shadow_candidates(
             "would_have_been_selected": True,
             "score": 9.1,
         },
+        {
+            **_decision(source_key="pubmed", decision="deferred", record_index=1),
+            "deferral_reason": "shadow_mode",
+            "shadow_decision": "skipped",
+            "would_have_been_selected": False,
+            "score": 2.5,
+        },
     ]
     payload.pop("review_ranking_items")
     run_result_path.write_text(json.dumps(payload))
@@ -162,9 +169,18 @@ def test_shadow_review_packet_cli_derives_ranking_forms_from_shadow_candidates(
     packet = json.loads(output_path.read_text())
     assert packet["review_ranking_forms"] == [
         {
-            "source_kind": "review_item",
+            "source_kind": "proposal",
             "item_id": f"clinvar:{_SEARCH_ID}:0",
             "ranking_score": 0.91,
+            "outcome": None,
+            "reviewer_id": None,
+            "goal": _GOAL,
+            "evidence_shape": "literature",
+        },
+        {
+            "source_kind": "review_item",
+            "item_id": f"pubmed:{_SEARCH_ID}:1",
+            "ranking_score": 0.25,
             "outcome": None,
             "reviewer_id": None,
             "goal": _GOAL,

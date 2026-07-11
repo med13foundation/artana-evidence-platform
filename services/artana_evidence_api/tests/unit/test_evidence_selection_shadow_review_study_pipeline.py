@@ -65,6 +65,15 @@ def test_shadow_review_study_pipeline_builds_bundle_ready_artifacts(
     assert bundle["schema_version"] == "evidence_selection_expert_study.v1"
     assert bundle["study_evidence_kind"] == "real_shadow_review"
     assert bundle["source_manifest"]["export_id"] == "shadow-export-2026-07-07"
+    source_artifact_uris = {
+        artifact["artifact_id"]: artifact["uri"]
+        for artifact in bundle["source_manifest"]["source_artifacts"]
+    }
+    assert source_artifact_uris == {
+        "selection-review-export": str(result.selection_export_path),
+        "review-ranking-export": str(result.review_ranking_export_path),
+    }
+    assert all(Path(uri).exists() for uri in source_artifact_uris.values())
 
 
 def test_shadow_review_study_pipeline_rejects_file_output_dir(

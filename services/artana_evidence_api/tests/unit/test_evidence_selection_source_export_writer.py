@@ -141,6 +141,45 @@ def test_source_export_writer_rejects_colliding_output_paths(tmp_path: Path) -> 
         )
 
 
+@pytest.mark.parametrize(
+    ("selection_relative_path", "ranking_relative_path"),
+    [
+        ("source-export", "source-export/review-ranking-export.json"),
+        ("source-export/selection-review-export.json", "source-export"),
+    ],
+)
+def test_source_export_writer_rejects_nested_output_paths(
+    tmp_path: Path,
+    selection_relative_path: str,
+    ranking_relative_path: str,
+) -> None:
+    writer = _writer_module()
+    selection_input_path = tmp_path / "selection-review-labels.json"
+    ranking_input_path = tmp_path / "review-ranking-study.json"
+    parent_output_path = tmp_path / "source-export"
+    selection_export_path = tmp_path / selection_relative_path
+    ranking_export_path = tmp_path / ranking_relative_path
+    selection_input_path.write_text(json.dumps({"selection_reviews": _selection_reviews()}))
+    ranking_input_path.write_text(json.dumps(_review_ranking()))
+
+    with pytest.raises(ValueError, match="must not use nested parent/child paths"):
+        writer.write_evidence_selection_source_exports(
+            writer.EvidenceSelectionSourceExportWriteRequest(
+                selection_reviews_path=selection_input_path,
+                review_ranking_path=ranking_input_path,
+                selection_export_path=selection_export_path,
+                review_ranking_export_path=ranking_export_path,
+                source_system="artana-shadow-review",
+                export_id="shadow-export-2026-07-07",
+                exported_at="2026-07-07T07:00:00Z",
+                exporter_id="review-ops-a",
+                redaction_statement="No PHI or raw patient text included.",
+            ),
+        )
+
+    assert not parent_output_path.exists()
+
+
 def test_source_export_writer_keeps_paired_outputs_all_or_nothing(
     tmp_path: Path,
 ) -> None:

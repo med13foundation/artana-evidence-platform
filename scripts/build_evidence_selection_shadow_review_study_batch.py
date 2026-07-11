@@ -35,6 +35,9 @@ from artana_evidence_api.evidence_selection.shadow_review_study_batch import (  
     collect_evidence_selection_shadow_review_study_batch_source_paths,
     load_evidence_selection_shadow_review_study_batch_manifest,
 )
+from artana_evidence_api.evidence_selection.shadow_review_study_batch_outputs import (  # noqa: E402
+    rollback_published_batch_outputs,
+)
 
 from scripts.run_evidence_selection_expert_study_gate import (  # noqa: E402
     write_evidence_selection_expert_study_gate_report,
@@ -110,13 +113,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 suite_thresholds=_suite_thresholds_from_args(args),
             ),
         )
-        gate_report_manifests = _write_entry_gate_reports(result)
-        batch_manifest = write_evidence_selection_shadow_review_study_batch_report(
+        gate_report_manifests, batch_manifest = _write_reports_transactionally(
             result=result,
             output_dir=args.output_dir,
-            gate_report_manifests=gate_report_manifests,
         )
-    except (OSError, ValueError, TypeError, ValidationError) as exc:
+    except (OSError, RuntimeError, ValueError, TypeError, ValidationError) as exc:
         print(f"error: {cli_error_message(exc)}", file=sys.stderr)
         return 1
 
@@ -223,6 +224,43 @@ def write_evidence_selection_shadow_review_study_batch_report(
     }
 
 
+def _write_reports_transactionally(
+    *,
+    result: EvidenceSelectionShadowReviewStudyBatchResult,
+    output_dir: Path,
+) -> tuple[dict[str, JSONObject], JSONObject]:
+    try:
+        gate_report_manifests = _write_entry_gate_reports(result)
+        batch_manifest = write_evidence_selection_shadow_review_study_batch_report(
+            result=result,
+            output_dir=output_dir,
+            gate_report_manifests=gate_report_manifests,
+        )
+    except Exception:
+        try:
+            _remove_batch_report_outputs(output_dir)
+            rollback_published_batch_outputs(
+                entry_output_dirs=tuple(entry.output_dir for entry in result.entries),
+                batch_output_dir=output_dir,
+                remove_empty_batch_output_dir=False,
+            )
+        except OSError as cleanup_error:
+            msg = (
+                "Shadow-review batch report publication failed and published "
+                "outputs could not be rolled back."
+            )
+            raise RuntimeError(msg) from cleanup_error
+        raise
+    return gate_report_manifests, batch_manifest
+
+
+def _remove_batch_report_outputs(output_dir: Path) -> None:
+    for filename in (_BATCH_REPORT_JSON_FILENAME, _BATCH_REPORT_MARKDOWN_FILENAME):
+        path = output_dir / filename
+        if path.is_file() or path.is_symlink():
+            path.unlink()
+
+
 def _write_entry_gate_reports(
     result: EvidenceSelectionShadowReviewStudyBatchResult,
 ) -> dict[str, JSONObject]:
@@ -271,8 +309,15 @@ def _validate_report_output_paths(
                 )
                 raise ValueError(msg)
     for output_path in output_paths:
-        if output_path.exists() and output_path.is_dir():
-            msg = f"Report output path must be a file: {output_path}"
+        if output_path.exists():
+            msg = (
+                f"Report output path must be a file: {output_path}"
+                if output_path.is_dir()
+                else (
+                    "Shadow-review batch reports must not overwrite existing "
+                    f"output: {output_path}."
+                )
+            )
             raise ValueError(msg)
         if output_path.parent.exists() and not output_path.parent.is_dir():
             msg = f"Report output parent must be a directory: {output_path.parent}"
