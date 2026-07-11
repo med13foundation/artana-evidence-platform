@@ -18,6 +18,7 @@ GoalRelevanceScale = Literal[
 PriorityScale = Literal["prioritize", "review", "background", "ignore"]
 RelationGovernanceStatus = Literal["canonical", "requires_relation_review"]
 CurieSource = Literal["none", "model", "verified_linker"]
+RelationReviewStatus = Literal["candidate", "review_only"]
 PdfTextExtractionOutcome = Literal[
     "text",
     "no_text_image_likely",
@@ -98,12 +99,17 @@ class ExtractedRelationCandidate:
     proposed_relation_type: str | None = None
     new_relation_type_rationale: str | None = None
     relation_governance_status: RelationGovernanceStatus = "canonical"
+    review_status: RelationReviewStatus = "candidate"
+    review_reason_codes: tuple[str, ...] = ()
 
     @property
     def trusted_evidence_eligible(self) -> bool:
         """Return whether this candidate can be treated as a trusted graph edge."""
 
-        return self.relation_governance_status == "canonical"
+        return (
+            self.relation_governance_status == "canonical"
+            and self.review_status != "review_only"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,6 +189,7 @@ class DocumentCandidateExtractionDiagnostics:
     llm_candidate_count: int = 0
     fallback_candidate_count: int = 0
     pruned_generic_relation_count: int = 0
+    quality_filtered_candidate_count: int = 0
     llm_extraction_chunk_count: int = 0
     llm_extraction_text_char_count: int = 0
 
@@ -228,6 +235,10 @@ class DocumentCandidateExtractionDiagnostics:
         if self.pruned_generic_relation_count > 0:
             payload["pruned_generic_relation_count"] = (
                 self.pruned_generic_relation_count
+            )
+        if self.quality_filtered_candidate_count > 0:
+            payload["quality_filtered_candidate_count"] = (
+                self.quality_filtered_candidate_count
             )
         if self.llm_extraction_chunk_count > 0:
             payload["llm_extraction_chunk_count"] = self.llm_extraction_chunk_count

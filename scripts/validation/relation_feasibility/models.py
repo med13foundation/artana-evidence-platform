@@ -15,6 +15,7 @@ Verdict = Literal["GREEN", "YELLOW", "RED"]
 ExtractorMode = Literal["agent", "deterministic", "custom"]
 RelationGovernanceStatus = Literal["canonical", "requires_relation_review"]
 CurieSource = Literal["none", "model", "verified_linker"]
+RelationReviewStatus = Literal["candidate", "review_only"]
 CandidateExtractionStatus = Literal[
     "not_needed",
     "completed",
@@ -38,6 +39,7 @@ class GoldRelation:
     subject_curie: str | None = None
     object_curie: str | None = None
     requires_entailment: bool = True
+    review_status: RelationReviewStatus = "candidate"
 
     def to_json(self) -> dict[str, object]:
         """Return a JSON-compatible representation."""
@@ -52,6 +54,7 @@ class GoldRelation:
             "subject_curie": self.subject_curie,
             "object_curie": self.object_curie,
             "requires_entailment": self.requires_entailment,
+            "review_status": self.review_status,
         }
 
 
@@ -92,12 +95,17 @@ class ExtractedRelation:
     proposed_relation_type: str | None = None
     new_relation_type_rationale: str | None = None
     relation_governance_status: RelationGovernanceStatus = "canonical"
+    review_status: RelationReviewStatus = "candidate"
+    review_reason_codes: tuple[str, ...] = ()
 
     @property
     def trusted_evidence_eligible(self) -> bool:
         """Return whether this candidate can be treated as a trusted graph edge."""
 
-        return self.relation_governance_status == "canonical"
+        return (
+            self.relation_governance_status == "canonical"
+            and self.review_status != "review_only"
+        )
 
     def to_json(self) -> dict[str, object]:
         """Return a JSON-compatible representation."""
@@ -109,6 +117,8 @@ class ExtractedRelation:
             "new_relation_type_rationale": self.new_relation_type_rationale,
             "relation_governance_status": self.relation_governance_status,
             "trusted_evidence_eligible": self.trusted_evidence_eligible,
+            "review_status": self.review_status,
+            "review_reason_codes": list(self.review_reason_codes),
             "object": self.object,
             "sentence": self.sentence,
             "subject_curie": self.subject_curie,
@@ -125,6 +135,7 @@ class RelationTypeSurface:
     surface: str
     relation_type: str
     source_ref: str
+    governance_status: RelationGovernanceStatus | None = None
 
     def to_json(self) -> dict[str, object]:
         """Return a JSON-compatible representation."""
@@ -133,6 +144,7 @@ class RelationTypeSurface:
             "surface": self.surface,
             "relation_type": self.relation_type,
             "source_ref": self.source_ref,
+            "governance_status": self.governance_status,
         }
 
 
@@ -146,6 +158,7 @@ class ExtractionTrace:
     llm_candidate_count: int = 0
     fallback_candidate_count: int = 0
     pruned_generic_relation_count: int = 0
+    quality_filtered_candidate_count: int = 0
 
     @property
     def agent_completed(self) -> bool:
@@ -183,6 +196,7 @@ class ExtractionTrace:
             "llm_candidate_count": self.llm_candidate_count,
             "fallback_candidate_count": self.fallback_candidate_count,
             "pruned_generic_relation_count": self.pruned_generic_relation_count,
+            "quality_filtered_candidate_count": self.quality_filtered_candidate_count,
             "agent_completed": self.agent_completed,
             "fallback_used": self.fallback_used,
         }
@@ -316,6 +330,7 @@ class FeasibilitySummary:
     valuable_candidate_count: int
     generic_relation_count: int
     pruned_generic_relation_count: int
+    quality_filtered_candidate_count: int
     raw_unknown_relation_type_count: int
     relation_type_surface_count: int
     raw_unknown_relation_type_surface_count: int
@@ -327,6 +342,7 @@ class FeasibilitySummary:
     curie_linked_gold_endpoint_count: int
     verified_curie_match_count: int
     model_curie_wrong_count: int
+    wrong_verified_curie_link_count: int
     support_sentence_aligned_count: int
     both_arguments_present_count: int
     entailment_required_count: int
@@ -344,8 +360,32 @@ class FeasibilitySummary:
     invalid_agent_case_count: int
     high_value_gold_relation_count: int
     high_value_missed_gold_count: int
+    trusted_high_value_match_count: int
+    trusted_high_value_recall: float
+    trusted_eligible_high_value_gold_relation_count: int
+    trusted_eligible_high_value_match_count: int
+    trusted_eligible_high_value_recall: float
+    trusted_candidate_count: int
+    trusted_candidate_supported_count: int
+    trusted_candidate_valuable_count: int
+    trusted_candidate_generic_relation_count: int
+    review_only_gold_trusted_leakage_count: int
+    high_value_review_gold_relation_count: int
+    high_value_review_candidate_count: int
+    high_value_review_gold_match_count: int
+    high_value_review_recall: float
     low_value_gold_relation_count: int
     low_value_missed_gold_count: int
+    low_value_review_candidate_count: int
+    low_value_review_gold_match_count: int
+    low_value_review_recall: float
+    trusted_eligible_gold_curie_endpoint_count: int
+    trusted_eligible_curie_linked_gold_endpoint_count: int
+    trusted_eligible_curie_linked_gold_endpoint_rate: float
+    low_value_review_gold_curie_endpoint_count: int
+    low_value_review_curie_linked_gold_endpoint_count: int
+    low_value_review_curie_endpoint_capture_rate: float
+    weak_claim_trusted_leakage_count: int
     negative_control_case_count: int
     negative_control_empty_count: int
     negative_control_leakage_count: int
@@ -354,6 +394,9 @@ class FeasibilitySummary:
     recall_against_gold: float
     high_value_recall: float
     low_value_recall: float
+    trusted_candidate_precision_against_gold: float
+    trusted_candidate_valuable_rate: float
+    trusted_candidate_generic_relation_rate: float
     completed_agent_precision_against_gold: float
     completed_agent_recall_against_gold: float
     specificity_rate: float
@@ -391,6 +434,7 @@ class FeasibilitySummary:
             "valuable_candidate_count": self.valuable_candidate_count,
             "generic_relation_count": self.generic_relation_count,
             "pruned_generic_relation_count": self.pruned_generic_relation_count,
+            "quality_filtered_candidate_count": self.quality_filtered_candidate_count,
             "raw_unknown_relation_type_count": self.raw_unknown_relation_type_count,
             "relation_type_surface_count": self.relation_type_surface_count,
             "raw_unknown_relation_type_surface_count": self.raw_unknown_relation_type_surface_count,
@@ -404,6 +448,7 @@ class FeasibilitySummary:
             "curie_linked_gold_endpoint_count": self.curie_linked_gold_endpoint_count,
             "verified_curie_match_count": self.verified_curie_match_count,
             "model_curie_wrong_count": self.model_curie_wrong_count,
+            "wrong_verified_curie_link_count": self.wrong_verified_curie_link_count,
             "support_sentence_aligned_count": self.support_sentence_aligned_count,
             "both_arguments_present_count": self.both_arguments_present_count,
             "entailment_required_count": self.entailment_required_count,
@@ -423,9 +468,33 @@ class FeasibilitySummary:
             "high_value_gold_relation_count": self.high_value_gold_relation_count,
             "high_value_missed_gold_count": self.high_value_missed_gold_count,
             "high_value_recall": self.high_value_recall,
+            "trusted_high_value_match_count": self.trusted_high_value_match_count,
+            "trusted_high_value_recall": self.trusted_high_value_recall,
+            "trusted_eligible_high_value_gold_relation_count": self.trusted_eligible_high_value_gold_relation_count,
+            "trusted_eligible_high_value_match_count": self.trusted_eligible_high_value_match_count,
+            "trusted_eligible_high_value_recall": self.trusted_eligible_high_value_recall,
+            "trusted_candidate_count": self.trusted_candidate_count,
+            "trusted_candidate_supported_count": self.trusted_candidate_supported_count,
+            "trusted_candidate_valuable_count": self.trusted_candidate_valuable_count,
+            "trusted_candidate_generic_relation_count": self.trusted_candidate_generic_relation_count,
+            "review_only_gold_trusted_leakage_count": self.review_only_gold_trusted_leakage_count,
+            "high_value_review_gold_relation_count": self.high_value_review_gold_relation_count,
+            "high_value_review_candidate_count": self.high_value_review_candidate_count,
+            "high_value_review_gold_match_count": self.high_value_review_gold_match_count,
+            "high_value_review_recall": self.high_value_review_recall,
             "low_value_gold_relation_count": self.low_value_gold_relation_count,
             "low_value_missed_gold_count": self.low_value_missed_gold_count,
             "low_value_recall": self.low_value_recall,
+            "low_value_review_candidate_count": self.low_value_review_candidate_count,
+            "low_value_review_gold_match_count": self.low_value_review_gold_match_count,
+            "low_value_review_recall": self.low_value_review_recall,
+            "trusted_eligible_gold_curie_endpoint_count": self.trusted_eligible_gold_curie_endpoint_count,
+            "trusted_eligible_curie_linked_gold_endpoint_count": self.trusted_eligible_curie_linked_gold_endpoint_count,
+            "trusted_eligible_curie_linked_gold_endpoint_rate": self.trusted_eligible_curie_linked_gold_endpoint_rate,
+            "low_value_review_gold_curie_endpoint_count": self.low_value_review_gold_curie_endpoint_count,
+            "low_value_review_curie_linked_gold_endpoint_count": self.low_value_review_curie_linked_gold_endpoint_count,
+            "low_value_review_curie_endpoint_capture_rate": self.low_value_review_curie_endpoint_capture_rate,
+            "weak_claim_trusted_leakage_count": self.weak_claim_trusted_leakage_count,
             "negative_control_case_count": self.negative_control_case_count,
             "negative_control_empty_count": self.negative_control_empty_count,
             "negative_control_empty_rate": self.negative_control_empty_rate,
@@ -433,6 +502,9 @@ class FeasibilitySummary:
             "missed_gold_count": self.missed_gold_count,
             "precision_against_gold": self.precision_against_gold,
             "recall_against_gold": self.recall_against_gold,
+            "trusted_candidate_precision_against_gold": self.trusted_candidate_precision_against_gold,
+            "trusted_candidate_valuable_rate": self.trusted_candidate_valuable_rate,
+            "trusted_candidate_generic_relation_rate": self.trusted_candidate_generic_relation_rate,
             "completed_agent_precision_against_gold": self.completed_agent_precision_against_gold,
             "completed_agent_recall_against_gold": self.completed_agent_recall_against_gold,
             "specificity_rate": self.specificity_rate,

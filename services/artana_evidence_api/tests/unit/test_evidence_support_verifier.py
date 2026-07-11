@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from artana_evidence_api.document_extraction_support.evidence_support_verifier import (
     TripleSupportResult,
     verify_triple_support,
@@ -30,6 +31,51 @@ def test_reversed_direction_returns_neutral() -> None:
     assert result.support == "NEUTRAL"
 
 
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "Ruxolitinib inhibits JAK1; JAK2 activity increased.",
+        "Ruxolitinib inhibits JAK1, JAK2 activity increased.",
+        "Ruxolitinib inhibits JAK1 and JAK2 activity increased.",
+        "Ruxolitinib inhibits JAK1 although JAK2 activity increased.",
+        "Ruxolitinib inhibits JAK1 but increases JAK2 activity.",
+    ],
+)
+def test_relation_cue_and_object_in_different_clauses_returns_neutral(
+    sentence: str,
+) -> None:
+    result = verify_triple_support(
+        sentence=sentence,
+        subject="Ruxolitinib",
+        relation_type="INHIBITS",
+        object_="JAK2",
+    )
+
+    assert result.support == "NEUTRAL"
+
+
+def test_coordinated_relation_objects_remain_supported() -> None:
+    result = verify_triple_support(
+        sentence="Ruxolitinib inhibits JAK1 and JAK2 activity.",
+        subject="Ruxolitinib",
+        relation_type="INHIBITS",
+        object_="JAK2",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_coordinated_predicate_inherits_relation_subject() -> None:
+    result = verify_triple_support(
+        sentence="Vemurafenib targets melanoma and inhibits MAPK signaling.",
+        subject="Vemurafenib",
+        relation_type="INHIBITS",
+        object_="MAPK signaling",
+    )
+
+    assert result.support == "ENTAILS"
+
+
 def test_reversed_passive_direction_returns_neutral() -> None:
     result = verify_triple_support(
         sentence="EGFR is activated by MED13 in cardiomyocytes.",
@@ -50,6 +96,118 @@ def test_passive_sentence_returns_entails_for_correct_direction() -> None:
     )
 
     assert result.support == "ENTAILS"
+
+
+def test_symbolic_variant_label_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="RET p.Arg1174* activates MAPK signaling in engineered cells.",
+        subject="RET p.Arg1174*",
+        relation_type="ACTIVATES",
+        object_="MAPK signaling",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_biomarker_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="PD-L1 expression is a biomarker for response to pembrolizumab.",
+        subject="PD-L1 expression",
+        relation_type="BIOMARKER_FOR",
+        object_="response to pembrolizumab",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_confers_resistance_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="MET amplification confers resistance to erlotinib.",
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_passive_resistance_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence="Resistance to erlotinib was caused by MET amplification.",
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_predispose_carriers_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence=(
+            "LDLR loss-of-function variants predispose carriers to familial "
+            "hypercholesterolemia."
+        ),
+        subject="LDLR loss-of-function variants",
+        relation_type="PREDISPOSES_TO",
+        object_="familial hypercholesterolemia",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_tumor_agnostic_fusion_treatment_sentence_returns_entails() -> None:
+    result = verify_triple_support(
+        sentence=(
+            "Larotrectinib treats solid tumors harboring NTRK gene fusions "
+            "regardless of tissue origin."
+        ),
+        subject="Larotrectinib",
+        relation_type="TREATS",
+        object_="NTRK fusion solid tumors",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_causes_resistance_sentence_returns_entails_for_drug_target() -> None:
+    result = verify_triple_support(
+        sentence="EGFR T790M causes resistance to gefitinib.",
+        subject="EGFR T790M",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="gefitinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "MET amplification caused resistance to erlotinib.",
+        "MET amplification drove resistance to erlotinib.",
+    ],
+)
+def test_past_tense_resistance_sentence_returns_entails(sentence: str) -> None:
+    result = verify_triple_support(
+        sentence=sentence,
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "ENTAILS"
+
+
+def test_correlated_resistance_sentence_is_not_canonical_resistance_support() -> None:
+    result = verify_triple_support(
+        sentence="MET amplification was correlated with resistance.",
+        subject="MET amplification",
+        relation_type="CONFERS_RESISTANCE_TO",
+        object_="erlotinib",
+    )
+
+    assert result.support == "NEUTRAL"
 
 
 def test_unrelated_sentence_returns_neutral() -> None:

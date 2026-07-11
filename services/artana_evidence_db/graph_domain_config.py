@@ -56,6 +56,7 @@ GRAPH_SERVICE_VIEW_CONFIG = GraphViewConfig(
     mechanism_relation_types=frozenset(
         {
             "CAUSES",
+            "CONFERS_RESISTANCE_TO",
             "UPSTREAM_OF",
             "DOWNSTREAM_OF",
             "REFINES",

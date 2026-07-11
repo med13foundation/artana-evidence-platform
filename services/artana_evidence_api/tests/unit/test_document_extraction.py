@@ -29,6 +29,15 @@ from artana_evidence_api.document_extraction import (
     pre_resolve_entities_with_ai,
     review_document_extraction_drafts_with_diagnostics,
 )
+from artana_evidence_api.document_extraction_prompting import (
+    LLM_EXTRACTION_SYSTEM_PROMPT,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    LLM_EXTRACTION_PROMPT_VERSION,
+    LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
+    ModelStepRunner,
+    llm_extraction_step_key,
+)
 from artana_evidence_api.document_extraction_support.strict_relation_discovery import (
     discover_relation_candidates_strict,
 )
@@ -38,6 +47,7 @@ from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
     KernelEntityResponse,
 )
+from pydantic import ValidationError
 
 
 class _EmptyGraphApiGateway:
@@ -136,6 +146,51 @@ class _FakeKernel:
 class _FakeSingleStepClient:
     def __init__(self, *, kernel) -> None:
         self.kernel = kernel
+
+
+def _configure_llm_extraction_test_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+    step_runner: ModelStepRunner,
+) -> None:
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(document_extraction, "run_single_step_with_policy", step_runner)
+
+
+def test_llm_extraction_prompt_covers_rare_disease_gene_variant_associations() -> None:
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v7"
+    assert (
+        "FBN1 loss-of-function variants ASSOCIATED_WITH Marfan syndrome"
+        in LLM_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert (
+        "MECP2 pathogenic variants ASSOCIATED_WITH Rett syndrome"
+        in LLM_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert (
+        "Do not discard direct gene-variant-to-disease associations"
+        in LLM_EXTRACTION_SYSTEM_PROMPT
+    )
 
 
 def test_extract_pdf_text_marks_blank_pdf_as_image_likely() -> None:
@@ -665,7 +720,7 @@ async def test_extract_relation_candidates_with_llm_uses_fresh_store_and_closes(
 
 
 @pytest.mark.asyncio
-async def test_extract_relation_candidates_with_llm_preserves_valid_curies_and_abstains_invalid(
+async def test_extract_relation_candidates_with_llm_repairs_known_label_curies(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     async def _fake_run_single_step_with_policy(*_args, **_kwargs):
@@ -726,32 +781,37 @@ async def test_extract_relation_candidates_with_llm_preserves_valid_curies_and_a
 
     assert len(candidates) == 2
     assert candidates[0].subject_curie == "HGNC:22474"
-    assert candidates[0].subject_curie_source == "model"
+    assert candidates[0].subject_curie_source == "verified_linker"
     assert candidates[0].object_curie == "HP:0001263"
-    assert candidates[0].object_curie_source == "model"
-    assert candidates[1].subject_curie is None
-    assert candidates[1].subject_curie_source == "none"
+    assert candidates[0].object_curie_source == "verified_linker"
+    assert candidates[1].subject_curie == "HGNC:22474"
+    assert candidates[1].subject_curie_source == "verified_linker"
     assert candidates[1].object_curie == "HGNC:3236"
     assert candidates[1].object_curie_source == "model"
 
 
 @pytest.mark.asyncio
-async def test_extract_relation_candidates_with_llm_keeps_structured_new_type_proposals(
+async def test_extract_relation_candidates_with_llm_uses_agent_review_only_pass(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+    prompts: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        prompts.append(prompt)
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" not in prompt:
+            return SimpleNamespace(output={"relations": []})
         return SimpleNamespace(
             output={
                 "relations": [
                     {
-                        "subject": "MET amplification",
-                        "relation_type": "PROPOSE_NEW_RELATION_TYPE",
-                        "proposed_relation_type": "CONFERS_RESISTANCE_TO",
-                        "new_relation_type_rationale": (
-                            "Specific resistance relation not covered by canonical types."
+                        "subject": "MED13",
+                        "relation_type": "ASSOCIATED_WITH",
+                        "object": "congenital heart disease",
+                        "sentence": (
+                            "MED13 may be linked to congenital heart disease "
+                            "in a subset of families."
                         ),
-                        "object": "erlotinib",
-                        "sentence": "MET amplification confers resistance to erlotinib.",
                     },
                 ],
             },
@@ -786,17 +846,1024 @@ async def test_extract_relation_candidates_with_llm_keeps_structured_new_type_pr
     )
 
     candidates = await extract_relation_candidates_with_llm(
-        "MET amplification confers resistance to erlotinib.",
+        "MED13 may be linked to congenital heart disease in a subset of families.",
+    )
+
+    assert len(prompts) == 2
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MED13"
+    assert candidates[0].object_label == "congenital heart disease"
+    assert candidates[0].review_status == "review_only"
+    assert set(candidates[0].review_reason_codes) >= {
+        "hedged_language",
+        "may_link",
+        "weak_review_agent_pass",
+        "gene_phenotype_association_requires_variant_state",
+    }
+    assert candidates[0].trusted_evidence_eligible is False
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_retries_zero_candidate_agent_pass(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_prompts: list[str] = []
+    captured_step_keys: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        captured_prompts.append(str(kwargs["prompt"]))
+        captured_step_keys.append(kwargs["step_key"])
+        if len(captured_step_keys) <= 2:
+            return SimpleNamespace(output={"relations": []})
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" in str(kwargs["prompt"]):
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "Larotrectinib",
+                        "relation_type": "TREATS",
+                        "object": "NTRK fusion solid tumors",
+                        "sentence": (
+                            "Larotrectinib treats solid tumors harboring "
+                            "NTRK gene fusions regardless of tissue origin."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    text = (
+        "Larotrectinib treats solid tumors harboring NTRK gene fusions "
+        "regardless of tissue origin."
+    )
+    candidates = await extract_relation_candidates_with_llm(text)
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "Larotrectinib"
+    assert candidates[0].relation_type == "TREATS"
+    assert candidates[0].object_label == "NTRK fusion solid tumors"
+    assert captured_step_keys == [
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+        ),
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+            prompt_version=LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
+        ),
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+            prompt_version=(
+                f"{LLM_EXTRACTION_PROMPT_VERSION}."
+                "zero_candidate_retry.v1"
+            ),
+        ),
+    ]
+    assert "A prior relation extraction attempt returned zero usable relations" in (
+        captured_prompts[2]
+    )
+    assert "WEAK REVIEW-ONLY EXTRACTION PASS" not in captured_prompts[2]
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_retries_zero_converted_candidates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_step_keys: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        captured_step_keys.append(kwargs["step_key"])
+        if len(captured_step_keys) == 1:
+            return SimpleNamespace(
+                output={
+                    "relations": [
+                        {
+                            "subject": "a",
+                            "relation_type": "TREATS",
+                            "object": "NTRK fusion solid tumors",
+                            "sentence": (
+                                "Larotrectinib treats solid tumors harboring "
+                                "NTRK gene fusions regardless of tissue origin."
+                            ),
+                        },
+                    ],
+                },
+            )
+        if len(captured_step_keys) == 2 or "WEAK REVIEW-ONLY EXTRACTION PASS" in str(
+            kwargs["prompt"],
+        ):
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "Larotrectinib",
+                        "relation_type": "TREATS",
+                        "object": "NTRK fusion solid tumors",
+                        "sentence": (
+                            "Larotrectinib treats solid tumors harboring "
+                            "NTRK gene fusions regardless of tissue origin."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "Larotrectinib treats solid tumors harboring NTRK gene fusions "
+        "regardless of tissue origin.",
     )
 
     assert len(candidates) == 1
-    assert candidates[0].subject_label == "MET amplification"
-    assert candidates[0].relation_type == "PROPOSE_NEW_RELATION_TYPE"
-    assert candidates[0].proposed_relation_type == "CONFERS_RESISTANCE_TO"
-    assert candidates[0].new_relation_type_rationale == (
-        "Specific resistance relation not covered by canonical types."
+    assert candidates[0].subject_label == "Larotrectinib"
+    assert candidates[0].relation_type == "TREATS"
+    assert candidates[0].object_label == "NTRK fusion solid tumors"
+    assert len(captured_step_keys) == 3
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_retries_zero_causes_candidate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_step_keys: list[str] = []
+    text = "SMN1 loss causes spinal muscular atrophy."
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        captured_step_keys.append(kwargs["step_key"])
+        if len(captured_step_keys) <= 2:
+            return SimpleNamespace(output={"relations": []})
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" in str(kwargs["prompt"]):
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "SMN1 loss",
+                        "relation_type": "CAUSES",
+                        "object": "spinal muscular atrophy",
+                        "sentence": text,
+                    },
+                ],
+            },
+        )
+
+    _configure_llm_extraction_test_runtime(
+        monkeypatch,
+        _fake_run_single_step_with_policy,
     )
-    assert candidates[0].object_label == "erlotinib"
+
+    candidates = await extract_relation_candidates_with_llm(text)
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "SMN1 loss"
+    assert candidates[0].relation_type == "CAUSES"
+    assert candidates[0].object_label == "spinal muscular atrophy"
+    assert captured_step_keys == [
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+        ),
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+            prompt_version=LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
+        ),
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+            prompt_version=(
+                f"{LLM_EXTRACTION_PROMPT_VERSION}."
+                "zero_candidate_retry.v1"
+            ),
+        ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_retries_schema_validation_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_prompts: list[str] = []
+    captured_step_keys: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        captured_prompts.append(str(kwargs["prompt"]))
+        captured_step_keys.append(kwargs["step_key"])
+        if len(captured_step_keys) == 1:
+            kwargs["output_schema"].model_validate(
+                {
+                    "relations": [
+                        {
+                            "subject": "MSI-high status",
+                            "relation_type": "BIOMARKER_FOR",
+                            "proposed_relation_type": "PREDICTS_RESPONSE_TO",
+                            "object": "immune checkpoint inhibitor response",
+                            "sentence": (
+                                "MSI-high status is a biomarker for immune "
+                                "checkpoint inhibitor response."
+                            ),
+                        },
+                    ],
+                },
+            )
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" in str(kwargs["prompt"]):
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MSI-high status",
+                        "relation_type": "BIOMARKER_FOR",
+                        "object": "immune checkpoint inhibitor response",
+                        "sentence": (
+                            "MSI-high status is a biomarker for immune "
+                            "checkpoint inhibitor response."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MSI-high status is a biomarker for immune checkpoint inhibitor response.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MSI-high status"
+    assert candidates[0].relation_type == "BIOMARKER_FOR"
+    assert candidates[0].object_label == "immune checkpoint inhibitor response"
+    assert len(captured_step_keys) == 2
+    assert captured_step_keys[1] == llm_extraction_step_key(
+        text=(
+            "MSI-high status is a biomarker for immune checkpoint inhibitor "
+            "response."
+        ),
+        max_relations=10,
+        model_id="openai:gpt-5.4-mini",
+        prompt_version=f"{LLM_EXTRACTION_PROMPT_VERSION}.schema_retry.v1",
+    )
+    assert "failed schema validation" in captured_prompts[1]
+    assert "Do not set proposed_relation_type" in captured_prompts[1]
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_chains_schema_retry_to_zero_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_step_keys: list[str] = []
+    text = "MSI-high status is a biomarker for immune checkpoint inhibitor response."
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        captured_step_keys.append(kwargs["step_key"])
+        if len(captured_step_keys) == 1:
+            kwargs["output_schema"].model_validate(
+                {
+                    "relations": [
+                        {
+                            "subject": "MSI-high status",
+                            "relation_type": "BIOMARKER_FOR",
+                            "proposed_relation_type": "PREDICTS_RESPONSE_TO",
+                            "object": "immune checkpoint inhibitor response",
+                            "sentence": text,
+                        },
+                    ],
+                },
+            )
+        if "ZERO-CANDIDATE RETRY" in prompt and (
+            "WEAK REVIEW-ONLY EXTRACTION PASS" not in prompt
+        ):
+            return SimpleNamespace(
+                output={
+                    "relations": [
+                        {
+                            "subject": "MSI-high status",
+                            "relation_type": "BIOMARKER_FOR",
+                            "object": "immune checkpoint inhibitor response",
+                            "sentence": text,
+                        },
+                    ],
+                },
+            )
+        if "SCHEMA REPAIR RETRY" in prompt and (
+            "WEAK REVIEW-ONLY EXTRACTION PASS" not in prompt
+        ):
+            return SimpleNamespace(
+                output={
+                    "relations": [
+                        {
+                            "subject": "a",
+                            "relation_type": "BIOMARKER_FOR",
+                            "object": "immune checkpoint inhibitor response",
+                            "sentence": text,
+                        },
+                    ],
+                },
+            )
+        return SimpleNamespace(output={"relations": []})
+
+    _configure_llm_extraction_test_runtime(
+        monkeypatch,
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(text)
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MSI-high status"
+    assert candidates[0].relation_type == "BIOMARKER_FOR"
+    assert candidates[0].object_label == "immune checkpoint inhibitor response"
+    assert captured_step_keys == [
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+        ),
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+            prompt_version=f"{LLM_EXTRACTION_PROMPT_VERSION}.schema_retry.v1",
+        ),
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+            prompt_version=LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
+        ),
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+            prompt_version=(
+                f"{LLM_EXTRACTION_PROMPT_VERSION}."
+                "zero_candidate_retry.v1"
+            ),
+        ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_skips_weak_pass_after_usable_primary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_step_keys: list[str] = []
+    text = (
+        "BRCA1 truncating variants are associated with hereditary breast and "
+        "ovarian cancer."
+    )
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        captured_step_keys.append(kwargs["step_key"])
+        if len(captured_step_keys) == 1:
+            return SimpleNamespace(
+                output={
+                    "relations": [
+                        {
+                            "subject": "BRCA1 truncating variants",
+                            "relation_type": "ASSOCIATED_WITH",
+                            "object": "hereditary breast and ovarian cancer",
+                            "sentence": text,
+                        },
+                    ],
+                },
+            )
+        raise AssertionError("weak review pass must not run after a usable primary result")
+
+    _configure_llm_extraction_test_runtime(
+        monkeypatch,
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(text)
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "BRCA1 truncating variants"
+    assert candidates[0].relation_type == "ASSOCIATED_WITH"
+    assert candidates[0].object_label == "hereditary breast and ovarian cancer"
+    assert captured_step_keys == [
+        llm_extraction_step_key(
+            text=text,
+            max_relations=10,
+            model_id="openai:gpt-5.4-mini",
+        ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_propagates_invalid_schema_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    text = "MSI-high status is a biomarker for immune checkpoint inhibitor response."
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        kwargs["output_schema"].model_validate(
+            {
+                "relations": [
+                    {
+                        "subject": "MSI-high status",
+                        "relation_type": "BIOMARKER_FOR",
+                        "proposed_relation_type": "PREDICTS_RESPONSE_TO",
+                        "object": "immune checkpoint inhibitor response",
+                        "sentence": text,
+                    },
+                ],
+            },
+        )
+
+    _configure_llm_extraction_test_runtime(
+        monkeypatch,
+        _fake_run_single_step_with_policy,
+    )
+
+    with pytest.raises(ValidationError):
+        await extract_relation_candidates_with_llm(text)
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_propagates_runtime_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+        raise RuntimeError("model transport failed")
+
+    _configure_llm_extraction_test_runtime(
+        monkeypatch,
+        _fake_run_single_step_with_policy,
+    )
+
+    with pytest.raises(RuntimeError, match="model transport failed"):
+        await extract_relation_candidates_with_llm(
+            "MSI-high status is a biomarker for immune checkpoint inhibitor response.",
+        )
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_filters_pathway_target_sibling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "Vemurafenib",
+                        "relation_type": "TARGETS",
+                        "object": "BRAF V600E",
+                        "sentence": (
+                            "Vemurafenib targets BRAF V600E and inhibits "
+                            "MAPK signaling."
+                        ),
+                    },
+                    {
+                        "subject": "Vemurafenib",
+                        "relation_type": "INHIBITS",
+                        "object": "MAPK signaling",
+                        "sentence": (
+                            "Vemurafenib targets BRAF V600E and inhibits "
+                            "MAPK signaling."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "Vemurafenib targets BRAF V600E and inhibits MAPK signaling.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].relation_type == "TARGETS"
+    assert candidates[0].trusted_evidence_eligible is True
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_drops_invalid_weak_pass_type(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        prompts.append(prompt)
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" not in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MED13",
+                        "relation_type": "CASES",
+                        "object": "congenital heart disease",
+                        "sentence": (
+                            "MED13 may be linked to congenital heart disease "
+                            "in a subset of families."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MED13 may be linked to congenital heart disease in a subset of families.",
+    )
+
+    assert len(prompts) == 4
+    assert "ZERO-CANDIDATE RETRY" in prompts[2]
+    assert "ZERO-CANDIDATE RETRY" in prompts[3]
+    assert candidates == []
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_drops_invalid_primary_pass_type(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        prompts.append(prompt)
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MED13",
+                        "relation_type": "CASES",
+                        "object": "congenital heart disease",
+                        "sentence": "MED13 cases included congenital heart disease.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "_graph_ai_preflight_service",
+        lambda: (_ for _ in ()).throw(RuntimeError("resolver unavailable")),
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MED13 cases included congenital heart disease.",
+    )
+
+    assert len(prompts) == 4
+    assert "ZERO-CANDIDATE RETRY" in prompts[2]
+    assert "ZERO-CANDIDATE RETRY" in prompts[3]
+    assert candidates == []
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_does_not_downgrade_strong_claims(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" not in str(kwargs["prompt"]):
+            return SimpleNamespace(
+                output={
+                    "relations": [
+                        {
+                            "subject": "BRCA1",
+                            "relation_type": "ACTIVATES",
+                            "object": "EGFR",
+                            "sentence": "BRCA1 activates EGFR.",
+                        },
+                    ],
+                },
+            )
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "BRCA1",
+                        "relation_type": "ACTIVATES",
+                        "object": "EGFR",
+                        "sentence": "BRCA1 activates EGFR.",
+                        "review_status": "review_only",
+                        "review_reason_codes": ["weak_review_only"],
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm("BRCA1 activates EGFR.")
+
+    assert len(candidates) == 1
+    assert candidates[0].review_status == "candidate"
+    assert candidates[0].review_reason_codes == ()
+    assert candidates[0].trusted_evidence_eligible is True
+
+
+@pytest.mark.asyncio
+async def test_weak_pass_does_not_poison_strong_claim_in_mixed_sentence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sentence = (
+        "BRCA1 activates EGFR, while MED13 may be linked to congenital heart "
+        "disease."
+    )
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "BRCA1",
+                        "relation_type": "ACTIVATES",
+                        "object": "EGFR",
+                        "sentence": sentence,
+                        "review_status": (
+                            "review_only"
+                            if "WEAK REVIEW-ONLY EXTRACTION PASS"
+                            in str(kwargs["prompt"])
+                            else "candidate"
+                        ),
+                        "review_reason_codes": (
+                            ["weak_review_only"]
+                            if "WEAK REVIEW-ONLY EXTRACTION PASS"
+                            in str(kwargs["prompt"])
+                            else []
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(sentence)
+
+    assert len(candidates) == 1
+    assert candidates[0].review_status == "candidate"
+    assert candidates[0].review_reason_codes == ()
+    assert candidates[0].trusted_evidence_eligible is True
+
+
+@pytest.mark.asyncio
+async def test_weak_pass_drops_structured_relation_type_proposals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts: list[str] = []
+
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        prompts.append(prompt)
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" not in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MED13",
+                        "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+                        "proposed_relation_type": "WEAKLY_LINKED_TO",
+                        "new_relation_type_rationale": (
+                            "Hedged association should stay out of relation "
+                            "governance from the weak pass."
+                        ),
+                        "object": "congenital heart disease",
+                        "sentence": (
+                            "MED13 may be linked to congenital heart disease."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MED13 may be linked to congenital heart disease.",
+    )
+
+    assert len(prompts) == 4
+    assert "ZERO-CANDIDATE RETRY" in prompts[2]
+    assert "ZERO-CANDIDATE RETRY" in prompts[3]
+    assert candidates == []
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_keeps_structured_new_type_proposals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "BRCA1 loss",
+                        "relation_type": "PROPOSE_NEW_RELATION_TYPE",
+                        "proposed_relation_type": "REDUCES_TOXICITY_OF",
+                        "new_relation_type_rationale": (
+                            "Toxicity-specific treatment effect needs governance."
+                        ),
+                        "object": "cisplatin",
+                        "sentence": "BRCA1 loss reduces cisplatin toxicity.",
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "BRCA1 loss reduces cisplatin toxicity.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "BRCA1 loss"
+    assert candidates[0].relation_type == "PROPOSE_NEW_RELATION_TYPE"
+    assert candidates[0].proposed_relation_type == "REDUCES_TOXICITY_OF"
+    assert candidates[0].new_relation_type_rationale == (
+        "Toxicity-specific treatment effect needs governance."
+    )
+    assert candidates[0].object_label == "cisplatin"
     assert candidates[0].relation_governance_status == "requires_relation_review"
     assert candidates[0].trusted_evidence_eligible is False
 
@@ -827,10 +1894,10 @@ async def test_extract_relation_candidates_with_llm_filters_review_required_raw_
 
     class _ReviewRequiredPreflight:
         async def resolve_relation_type(self, **kwargs):
-            assert kwargs["relation_type"] == "CONFERS_RESISTANCE_TO"
+            assert kwargs["relation_type"] == "PROTECTS_AGAINST"
             return RelationTypeDecision(
                 action=RelationTypeAction.REQUIRES_REVIEW,
-                canonical_type="CONFERS_RESISTANCE_TO",
+                canonical_type="PROTECTS_AGAINST",
                 reasoning="Governed review required before use.",
             )
 
@@ -840,9 +1907,9 @@ async def test_extract_relation_candidates_with_llm_filters_review_required_raw_
                 "relations": [
                     {
                         "subject": "MET amplification",
-                        "relation_type": "CONFERS_RESISTANCE_TO",
+                        "relation_type": "PROTECTS_AGAINST",
                         "object": "erlotinib",
-                        "sentence": "MET amplification confers resistance to erlotinib.",
+                        "sentence": "MET amplification protects against erlotinib.",
                     },
                 ],
             },
@@ -887,7 +1954,7 @@ async def test_extract_relation_candidates_with_llm_filters_review_required_raw_
     )
 
     candidates = await extract_relation_candidates_with_llm(
-        "MET amplification confers resistance to erlotinib.",
+        "MET amplification protects against erlotinib.",
     )
 
     assert candidates == []
@@ -996,7 +2063,7 @@ async def test_discover_relation_candidates_reports_llm_pruned_generic_siblings(
 
 
 @pytest.mark.asyncio
-async def test_extract_relation_candidates_with_llm_suppresses_weak_generic_correlations(
+async def test_extract_relation_candidates_with_llm_keeps_weak_generic_review_only(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     async def _fake_run_single_step_with_policy(*_args, **_kwargs):
@@ -1048,7 +2115,78 @@ async def test_extract_relation_candidates_with_llm_suppresses_weak_generic_corr
         "MET amplification was correlated with resistance in a small exploratory cohort.",
     )
 
-    assert candidates == []
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MET amplification"
+    assert candidates[0].relation_type == "ASSOCIATED_WITH"
+    assert candidates[0].object_label == "resistance"
+    assert candidates[0].review_status == "review_only"
+    assert candidates[0].trusted_evidence_eligible is False
+
+
+@pytest.mark.asyncio
+async def test_extract_relation_candidates_with_llm_repairs_weak_met_resistance_object(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
+        prompt = str(kwargs["prompt"])
+        if "WEAK REVIEW-ONLY EXTRACTION PASS" not in prompt:
+            return SimpleNamespace(output={"relations": []})
+        return SimpleNamespace(
+            output={
+                "relations": [
+                    {
+                        "subject": "MET amplification",
+                        "relation_type": "ASSOCIATED_WITH",
+                        "object": "EGFR inhibition",
+                        "sentence": (
+                            "MET amplification was correlated with resistance "
+                            "to EGFR inhibition in a small exploratory cohort."
+                        ),
+                    },
+                ],
+            },
+        )
+
+    monkeypatch.setattr(runtime_support, "has_configured_openai_api_key", lambda: True)
+    monkeypatch.setattr(
+        runtime_support,
+        "get_model_registry",
+        lambda: SimpleNamespace(
+            get_default_model=lambda _capability: SimpleNamespace(
+                model_id="openai:gpt-5.4-mini",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "normalize_litellm_model_id",
+        lambda model_id: model_id,
+    )
+    monkeypatch.setattr(
+        runtime_support,
+        "create_artana_postgres_store",
+        lambda: _FakeKernelStore(),
+    )
+    monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
+    monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
+    monkeypatch.setattr(
+        document_extraction,
+        "run_single_step_with_policy",
+        _fake_run_single_step_with_policy,
+    )
+
+    candidates = await extract_relation_candidates_with_llm(
+        "MET amplification was correlated with resistance to EGFR inhibition "
+        "in a small exploratory cohort.",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].subject_label == "MET amplification"
+    assert candidates[0].relation_type == "ASSOCIATED_WITH"
+    assert candidates[0].object_label == "resistance to EGFR inhibition"
+    assert candidates[0].review_status == "review_only"
+    assert "correlated_only" in candidates[0].review_reason_codes
+    assert candidates[0].trusted_evidence_eligible is False
 
 
 def test_llm_extraction_step_key_uses_full_text_beyond_prefix() -> None:
@@ -1057,11 +2195,11 @@ def test_llm_extraction_step_key_uses_full_text_beyond_prefix() -> None:
     second_text = f"{shared_prefix} MED13 regulates cardiomyopathy."
 
     assert first_text[:4000] == second_text[:4000]
-    assert document_extraction._llm_extraction_step_key(
+    assert llm_extraction_step_key(
         text=first_text,
         max_relations=10,
         model_id="openai/gpt-5.4-mini",
-    ) != document_extraction._llm_extraction_step_key(
+    ) != llm_extraction_step_key(
         text=second_text,
         max_relations=10,
         model_id="openai/gpt-5.4-mini",
@@ -1194,17 +2332,17 @@ async def test_extract_relation_candidates_with_llm_scopes_step_key_to_document_
     await extract_relation_candidates_with_llm(second_text)
 
     assert captured_step_keys == [
-        document_extraction._llm_extraction_step_key(
+        llm_extraction_step_key(
             text=first_text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
         ),
-        document_extraction._llm_extraction_step_key(
+        llm_extraction_step_key(
             text=first_text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
         ),
-        document_extraction._llm_extraction_step_key(
+        llm_extraction_step_key(
             text=second_text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",

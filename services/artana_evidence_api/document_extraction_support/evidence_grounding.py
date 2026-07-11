@@ -60,6 +60,7 @@ class EvidenceGroundingResult:
     """Grounding state for one extracted relation sentence."""
 
     anchor: SentenceAnchor
+    source_sentence: str | None
     subject_present: bool
     object_present: bool
 
@@ -153,11 +154,11 @@ def args_present(*, sentence: str, subject: str, object_: str) -> ArgumentPresen
     return ArgumentPresence(
         subject_present=_contains_any_alias(
             normalized_sentence=normalized_sentence,
-            aliases=_argument_aliases(subject),
+            aliases=argument_aliases(subject),
         ),
         object_present=_contains_any_alias(
             normalized_sentence=normalized_sentence,
-            aliases=_argument_aliases(object_),
+            aliases=argument_aliases(object_),
         ),
     )
 
@@ -172,12 +173,29 @@ def ground_relation_sentence(
     """Anchor a relation sentence and require both relation endpoints in it."""
 
     anchor = anchor_sentence(source_text=source_text, sentence=sentence)
-    presence = args_present(sentence=sentence, subject=subject, object_=object_)
+    source_sentence = _anchored_source_sentence(source_text=source_text, anchor=anchor)
+    presence = args_present(
+        sentence=source_sentence or "",
+        subject=subject,
+        object_=object_,
+    )
     return EvidenceGroundingResult(
         anchor=anchor,
+        source_sentence=source_sentence,
         subject_present=presence.subject_present,
         object_present=presence.object_present,
     )
+
+
+def _anchored_source_sentence(
+    *,
+    source_text: str,
+    anchor: SentenceAnchor,
+) -> str | None:
+    if anchor.start is None or anchor.end is None:
+        return None
+    anchored = source_text[anchor.start : anchor.end].strip()
+    return anchored or None
 
 
 def _whitespace_normalized_span(
@@ -217,18 +235,59 @@ def _contains_any_alias(
     return any(f" {alias} " in padded_sentence for alias in aliases if alias)
 
 
-def _argument_aliases(label: str) -> tuple[str, ...]:
-    aliases = {_normalize_argument_text(label)}
+def argument_aliases(label: str) -> tuple[str, ...]:
+    """Return normalized label surfaces accepted as the same argument."""
+
+    aliases = {
+        _normalize_argument_text(label),
+        _normalize_literal_argument_text(label),
+    }
     protein_alias = _protein_alias(label)
     if protein_alias is not None:
         aliases.add(_normalize_argument_text(protein_alias))
         aliases.add(_normalize_argument_text(protein_alias.removesuffix("*")))
+    aliases.update(_tumor_agnostic_fusion_aliases(label))
     return tuple(sorted(alias for alias in aliases if alias))
+
+
+def _tumor_agnostic_fusion_aliases(label: str) -> set[str]:
+    match = re.fullmatch(
+        r"\s*(?P<driver>[A-Za-z0-9+./_-]+(?:\s+[A-Za-z0-9+./_-]+){0,2})"
+        r"\s+fusion\s+solid\s+tumors\s*",
+        label,
+        flags=re.IGNORECASE,
+    )
+    if match is None:
+        return set()
+    driver = match.group("driver").strip()
+    surfaces = set(tumor_agnostic_fusion_surfaces(driver))
+    return {_normalize_argument_text(surface) for surface in surfaces}
+
+
+def tumor_agnostic_fusion_surfaces(driver: str) -> tuple[str, ...]:
+    """Return supported sentence surfaces for tumor-agnostic fusion labels."""
+
+    normalized_driver = " ".join(driver.split())
+    if normalized_driver == "":
+        return ()
+    return (
+        f"solid tumors harboring {normalized_driver} fusions",
+        f"solid tumors harboring {normalized_driver} gene fusions",
+        f"solid tumors with {normalized_driver} fusions",
+        f"solid tumors with {normalized_driver} gene fusions",
+    )
 
 
 def _normalize_argument_text(value: str) -> str:
     normalized = value.casefold()
     normalized = normalized.replace("p.", " ")
+    normalized = re.sub(r"[^a-z0-9*]+", " ", normalized)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def _normalize_literal_argument_text(value: str) -> str:
+    normalized = value.casefold()
+    normalized = normalized.replace("p.", "p ")
     normalized = re.sub(r"[^a-z0-9*]+", " ", normalized)
     return re.sub(r"\s+", " ", normalized).strip()
 
@@ -258,6 +317,8 @@ __all__ = [
     "GroundingMatchKind",
     "SentenceAnchor",
     "anchor_sentence",
+    "argument_aliases",
     "args_present",
     "ground_relation_sentence",
+    "tumor_agnostic_fusion_surfaces",
 ]

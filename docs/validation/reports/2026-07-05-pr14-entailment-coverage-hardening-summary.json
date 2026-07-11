@@ -1,0 +1,62 @@
+{
+  "report": "PR-14 Entailment Coverage Hardening Evidence Snapshot",
+  "date": "2026-07-05",
+  "branch": "alvaro/evidence-pr14-entailment-coverage-hardening",
+  "base_branch": "alvaro/evidence-pr13-specificity-noise-reduction",
+  "scope": [
+    "Treat missing source grounding or missing relation arguments as checked NEUTRAL support instead of unchecked support.",
+    "Preserve the support_not_entailed quality flag for those candidates.",
+    "Preserve adversarial warnings for ungrounded evidence sentences after the fail-closed entailment change.",
+    "Remove the adversarial entailment_not_checked illusion when missing arguments are already counted as checked non-entailment.",
+    "Keep fallback/unavailable strict-agent runs ineligible for success."
+  ],
+  "strict_live_agent_summary": {
+    "verdict": "RED",
+    "completed_agent_precision": 0.7727,
+    "completed_agent_recall": 0.68,
+    "high_value_recall": 0.85,
+    "completed_agent_valuable_rate": 0.7727,
+    "generic_relation_rate": 0.0455,
+    "pruned_generic_relations": 5,
+    "quality_filtered_candidates": 5,
+    "candidate_curie_present_rate": 0.8636,
+    "verified_curie_match_rate": 0.7027,
+    "entailment_required_count": 22,
+    "entailment_checked_count": 22,
+    "entailment_checked_rate": 1.0,
+    "entailment_supported_count": 20,
+    "entailment_supported_rate": 0.9091,
+    "model_curie_wrong_count": 0,
+    "fallback_cases": 0,
+    "invalid_agent_cases": 0,
+    "negative_control_leakage_cases": 0,
+    "governed_proposal_recall_among_proposal_eligible_gold": 1.0
+  },
+  "delta_from_pr13": {
+    "completed_agent_precision": "-0.0368",
+    "completed_agent_recall": "+0.0000",
+    "high_value_recall": "+0.0000",
+    "completed_agent_valuable_rate": "-0.0368",
+    "generic_relation_rate": "+0.0455",
+    "verified_curie_match_rate": "+0.0000",
+    "entailment_checked_rate": "+0.0000"
+  },
+  "validation": {
+    "failing_regression_reproduced": "passed",
+    "focused_entailment_regressions": "passed",
+    "adversarial_review_issue_addressed": "passed",
+    "relation_feasibility_audit_unit_suite": "passed",
+    "relation_feasibility_quality_gate": "passed",
+    "artana_evidence_api_lint": "passed",
+    "artana_evidence_api_type_check": "passed",
+    "service_checks": "passed",
+    "service_checks_coverage": "86.86%"
+  },
+  "artifacts": {
+    "live_agent_json": "reports/relation_feasibility/2026-07-05-pr14-entailment-coverage-hardening/relation_feasibility_report.json",
+    "live_agent_markdown": "reports/relation_feasibility/2026-07-05-pr14-entailment-coverage-hardening/relation_feasibility_report.md",
+    "live_agent_json_sha256": "479126236f20a4bba00585e874e9a368ea5c02efa9ec223e4f0870ab481c7edd",
+    "live_agent_markdown_sha256": "7ef2e3c6db0898d2f99c77c5acd64773d384dda2cd753f65f1bf5fa7716ff012"
+  },
+  "known_remaining_risk": "The strict live-agent gate remains RED because verified CURIE-linked endpoint recovery and precision remain below trusted graph targets."
+}

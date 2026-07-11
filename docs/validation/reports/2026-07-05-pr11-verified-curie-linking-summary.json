@@ -1,0 +1,67 @@
+{
+  "report": "PR-11 Verified CURIE Linking Evidence Snapshot",
+  "date": "2026-07-05",
+  "branch": "alvaro/evidence-pr11-verified-curie-linking",
+  "scope": [
+    "Add a small verified biomedical entity dictionary for the current benchmark surface.",
+    "Treat model-supplied CURIEs as hints only.",
+    "Replace wrong model hints with verified dictionary identifiers when the extracted label is known exactly.",
+    "Preserve hint provenance in metadata with model_hint_curie and model_hint_status.",
+    "Add a scorecard blocker for wrong verified CURIE links."
+  ],
+  "strict_live_agent_summary": {
+    "verdict": "RED",
+    "verdict_reason": "Too few CURIE-linked gold endpoints were recovered by extraction.",
+    "case_count": 30,
+    "gold_relation_count": 25,
+    "candidate_count": 29,
+    "agent_completed_cases": 30,
+    "agent_zero_candidate_cases": 8,
+    "negative_control_cases": 5,
+    "negative_control_empty_cases": 5,
+    "negative_control_leakage_cases": 0,
+    "fallback_cases": 0,
+    "invalid_agent_cases": 0,
+    "completed_agent_precision": 0.6897,
+    "completed_agent_recall": 0.8,
+    "high_value_recall": 0.9,
+    "low_value_recall": 0.4,
+    "completed_agent_valuable_rate": 0.5862,
+    "generic_relation_rate": 0.1379,
+    "pruned_generic_relations": 3,
+    "governed_proposal_candidates": 2,
+    "governed_proposal_gold_matches": 1,
+    "governed_proposal_eligible_gold_relations": 2,
+    "governed_proposal_recall_among_proposal_eligible_gold": 0.5,
+    "governed_proposal_matches_over_all_gold": 0.04,
+    "gold_curie_endpoint_count": 37,
+    "candidate_curie_endpoint_count": 48,
+    "candidate_curie_present_rate": 0.8276,
+    "verified_curie_matches": 29,
+    "verified_curie_match_rate": 0.7838,
+    "model_curie_wrong_count": 0,
+    "wrong_verified_curie_link_count": 0,
+    "verified_curie_linked_gold_endpoint_rate": 0.7838
+  },
+  "delta": {
+    "previous_live_agent_verified_curie_match_rate": 0.0,
+    "previous_live_agent_model_curie_wrong_count": 13,
+    "first_pr11_live_agent_verified_curie_match_rate": 0.3514,
+    "second_pr11_live_agent_verified_curie_match_rate": 0.7838,
+    "second_pr11_wrong_verified_curie_link_count": 0
+  },
+  "validation": {
+    "focused_regression_bundle": "passed",
+    "artana_evidence_api_lint": "passed",
+    "artana_evidence_api_type_check": "passed",
+    "relation_feasibility_quality_gate": "passed",
+    "service_checks": "passed; coverage 86.86% against an 86% floor"
+  },
+  "artifacts": {
+    "live_agent_json": "reports/relation_feasibility/2026-07-05-pr11-verified-curie-linking-r2/relation_feasibility_report.json",
+    "live_agent_markdown": "reports/relation_feasibility/2026-07-05-pr11-verified-curie-linking-r2/relation_feasibility_report.md",
+    "live_agent_json_sha256": "a028031aa69b53357a67f14979208d3b73821d4b145a878aa28a2728592d2285",
+    "live_agent_markdown_sha256": "0fc05c2c93e38c941b347a3448e7e68171c5084b14343ce0019f56d50ae50578"
+  },
+  "known_remaining_risk": "The strict live-agent gate remains RED because verified CURIE-linked gold endpoint recovery is below 0.95, precision is below trusted graph target, and valuable candidate rate is below target."
+}

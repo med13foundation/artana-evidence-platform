@@ -143,4 +143,5 @@ def test_seed_builtin_dictionary_entries_persists_core_relation_constraints() ->
         if constraint.is_active and constraint.review_status == "ACTIVE"
     }
     assert ("GENE", "ASSOCIATED_WITH", "PHENOTYPE") in constraint_triples
+    assert ("GENE", "CONFERS_RESISTANCE_TO", "DRUG") in constraint_triples
     assert ("GENE", "PHYSICALLY_INTERACTS_WITH", "GENE") in constraint_triples

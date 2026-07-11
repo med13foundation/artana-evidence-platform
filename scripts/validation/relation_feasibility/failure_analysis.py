@@ -1,0 +1,791 @@
+"""Failure attribution for repeated relation feasibility reports."""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
+    review_only_record_for_label,
+)
+
+JSONObject = dict[str, object]
+_METRIC_KEYS = (
+    "trusted_candidate_precision_against_gold",
+    "completed_agent_precision_against_gold",
+    "completed_agent_recall_against_gold",
+    "trusted_eligible_high_value_recall",
+    "high_value_recall",
+    "trusted_high_value_recall",
+    "low_value_review_recall",
+    "low_value_review_curie_endpoint_capture_rate",
+    "trusted_candidate_valuable_rate",
+    "completed_agent_valuable_candidate_rate",
+    "trusted_candidate_generic_relation_rate",
+    "curie_linked_gold_endpoint_rate",
+    "trusted_eligible_curie_linked_gold_endpoint_rate",
+    "verified_curie_match_rate",
+    "entailment_checked_rate",
+    "generic_relation_rate",
+)
+_HARD_FAILURE_COUNT_KEYS = (
+    "fallback_case_count",
+    "invalid_agent_case_count",
+    "negative_control_leakage_count",
+    "raw_unknown_relation_type_count",
+    "raw_unknown_relation_type_surface_count",
+    "wrong_verified_curie_link_count",
+    "weak_claim_trusted_leakage_count",
+    "review_only_gold_trusted_leakage_count",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class FailureAnalysisInput:
+    """One relation feasibility report and optional comparison labels."""
+
+    path: Path
+    label: str | None = None
+    model_label: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _MissedGoldKey:
+    case_id: str
+    subject: str
+    relation_type: str
+    object: str
+    value_level: str
+
+
+@dataclass(frozen=True, slots=True)
+class _MissedGoldCurieEndpointKey:
+    case_id: str
+    endpoint_role: str
+    label: str
+    gold_curie: str
+    value_level: str
+
+
+@dataclass(frozen=True, slots=True)
+class _FalsePositiveKey:
+    case_id: str
+    subject: str
+    relation_type: str
+    proposed_relation_type: str | None
+    object: str
+    support_verification: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class _CurieGapKey:
+    case_id: str
+    endpoint_role: str
+    label: str
+    candidate_curie: str | None
+    candidate_curie_source: str
+    gap_type: str
+    grounding_curation_status: str | None
+    grounding_reason_code: str | None
+    trusted_identifier_allowed: bool | None
+
+
+@dataclass(frozen=True, slots=True)
+class _GovernedProposalKey:
+    case_id: str
+    subject: str
+    proposed_relation_type: str | None
+    object: str
+    trusted_evidence_eligible: bool
+    support_verification: str | None
+
+
+@dataclass(slots=True)
+class _Accumulator:
+    count: int = 0
+    run_labels: set[str] = field(default_factory=set)
+
+    def add(self, label: str) -> None:
+        """Record one occurrence in a run."""
+
+        self.count += 1
+        self.run_labels.add(label)
+
+
+@dataclass(frozen=True, slots=True)
+class _CollectionStores:
+    false_positives: dict[_FalsePositiveKey, _Accumulator]
+    curie_gaps: dict[_CurieGapKey, _Accumulator]
+    governed_proposals: dict[_GovernedProposalKey, _Accumulator]
+
+
+@dataclass(frozen=True, slots=True)
+class _AssessmentContext:
+    assessment: JSONObject
+    candidate: JSONObject
+    matched_gold_relation: JSONObject | None
+    case_id: str
+    run_label: str
+
+
+def build_failure_analysis_report(
+    inputs: Sequence[FailureAnalysisInput],
+) -> JSONObject:
+    """Build a read-only failure attribution report from feasibility reports."""
+
+    missed_gold: dict[_MissedGoldKey, _Accumulator] = {}
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator] = {}
+    false_positives: dict[_FalsePositiveKey, _Accumulator] = {}
+    curie_gaps: dict[_CurieGapKey, _Accumulator] = {}
+    governed_proposals: dict[_GovernedProposalKey, _Accumulator] = {}
+    summaries_by_model: dict[str, list[JSONObject]] = {}
+    input_reports: list[JSONObject] = []
+    proposal_candidate_count = 0
+    proposal_gold_match_count = 0
+    proposal_eligible_gold_count = 0
+    trusted_proposal_capture_count = 0
+
+    for index, report_input in enumerate(inputs, start=1):
+        report_path = _resolve_report_path(report_input.path)
+        payload = _load_report(report_path)
+        summary = _object_dict(payload.get("summary"))
+        label = report_input.label or _default_label(report_path, index)
+        model_label = report_input.model_label or _model_label_from_summary(summary)
+        input_reports.append(
+            {
+                "path": str(report_path),
+                "label": label,
+                "model_label": model_label,
+            },
+        )
+        summaries_by_model.setdefault(model_label, []).append(summary)
+        proposal_candidate_count += _int_value(summary.get("proposal_candidate_count"))
+        proposal_gold_match_count += _int_value(summary.get("proposal_gold_match_count"))
+        proposal_eligible_gold_count += _int_value(
+            summary.get("proposal_eligible_gold_count"),
+        )
+
+        for case_result in _object_list(payload.get("case_results")):
+            case_id = _case_id(case_result)
+            _collect_missed_gold(
+                missed_gold,
+                missed_gold_curie_endpoints,
+                case_result=case_result,
+                case_id=case_id,
+                run_label=label,
+            )
+            trusted_proposal_capture_count += _collect_assessments(
+                _CollectionStores(
+                    false_positives=false_positives,
+                    curie_gaps=curie_gaps,
+                    governed_proposals=governed_proposals,
+                ),
+                case_result=case_result,
+                case_id=case_id,
+                run_label=label,
+            )
+
+    return {
+        "run_count": len(inputs),
+        "input_reports": input_reports,
+        "repeated_missed_gold_relations": _missed_gold_rows(missed_gold),
+        "missed_gold_curie_endpoints": _missed_gold_curie_endpoint_rows(
+            missed_gold_curie_endpoints,
+        ),
+        "repeated_false_positive_candidates": _false_positive_rows(false_positives),
+        "curie_gaps": _curie_gap_rows(curie_gaps),
+        "proposal_capture": {
+            "proposal_candidate_count": proposal_candidate_count,
+            "proposal_gold_match_count": proposal_gold_match_count,
+            "proposal_eligible_gold_count": proposal_eligible_gold_count,
+            "proposal_recall_against_proposal_eligible_gold": _ratio(
+                proposal_gold_match_count,
+                proposal_eligible_gold_count,
+            ),
+            "trusted_proposal_capture_count": trusted_proposal_capture_count,
+        },
+        "governed_proposal_captures": _governed_proposal_rows(governed_proposals),
+        "model_comparison": _model_comparison_rows(summaries_by_model),
+    }
+
+
+def render_failure_analysis_markdown(report: JSONObject) -> str:
+    """Render a compact Markdown failure attribution report."""
+
+    lines = [
+        "# Relation Feasibility Failure Attribution",
+        "",
+        f"- Runs analyzed: {report.get('run_count')}",
+        "",
+        "## Repeated Missed Gold Relations",
+        "",
+    ]
+    lines.extend(
+        _table_lines(
+            report.get("repeated_missed_gold_relations"),
+            ("occurrence_count", "value_level", "case_id", "subject", "relation_type", "object"),
+        ),
+    )
+    lines.extend(["", "## CURIE Endpoints Lost To Missed Gold", ""])
+    lines.extend(
+        _table_lines(
+            report.get("missed_gold_curie_endpoints"),
+            (
+                "occurrence_count",
+                "value_level",
+                "case_id",
+                "endpoint_role",
+                "label",
+                "gold_curie",
+            ),
+        ),
+    )
+    lines.extend(["", "## Repeated False Positives", ""])
+    lines.extend(
+        _table_lines(
+            report.get("repeated_false_positive_candidates"),
+            (
+                "occurrence_count",
+                "case_id",
+                "subject",
+                "relation_type",
+                "proposed_relation_type",
+                "object",
+                "support_verification",
+            ),
+        ),
+    )
+    lines.extend(["", "## CURIE Gaps", ""])
+    lines.extend(
+        _table_lines(
+            report.get("curie_gaps"),
+            (
+                "occurrence_count",
+                "gap_type",
+                "case_id",
+                "endpoint_role",
+                "label",
+                "candidate_curie",
+                "candidate_curie_source",
+                "grounding_reason_code",
+                "grounding_curation_status",
+                "trusted_identifier_allowed",
+            ),
+        ),
+    )
+    lines.extend(["", "## Proposal Capture", ""])
+    proposal_capture = report.get("proposal_capture")
+    if isinstance(proposal_capture, dict):
+        lines.extend(f"- {key}: {value}" for key, value in sorted(proposal_capture.items()))
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Model Comparison", ""])
+    lines.extend(
+        _table_lines(
+            report.get("model_comparison"),
+            (
+                "model_label",
+                "run_count",
+                "mean_trusted_candidate_precision_against_gold",
+                "mean_completed_agent_precision_against_gold",
+                "worst_trusted_candidate_precision_against_gold",
+                "worst_completed_agent_precision_against_gold",
+                "worst_trusted_eligible_high_value_recall",
+                "worst_trusted_high_value_recall",
+                "worst_trusted_candidate_valuable_rate",
+                "worst_trusted_candidate_generic_relation_rate",
+                "worst_trusted_eligible_curie_linked_gold_endpoint_rate",
+                "total_wrong_verified_curie_link_count",
+                "total_weak_claim_trusted_leakage_count",
+                "total_review_only_gold_trusted_leakage_count",
+            ),
+        ),
+    )
+    return "\n".join(lines) + "\n"
+
+
+def write_failure_analysis_report(*, report: JSONObject, output_dir: Path) -> JSONObject:
+    """Write failure attribution JSON and Markdown artifacts."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "relation_feasibility_failure_analysis_report.json"
+    markdown_path = output_dir / "relation_feasibility_failure_analysis_report.md"
+    json_path.write_text(json.dumps(report, indent=2) + "\n")
+    markdown_path.write_text(render_failure_analysis_markdown(report))
+    return {
+        "json_path": str(json_path),
+        "markdown_path": str(markdown_path),
+    }
+
+
+def _collect_missed_gold(
+    missed_gold: dict[_MissedGoldKey, _Accumulator],
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator],
+    *,
+    case_result: JSONObject,
+    case_id: str,
+    run_label: str,
+) -> None:
+    for missed_relation in _object_list(case_result.get("missed_gold_relations")):
+        key = _MissedGoldKey(
+            case_id=case_id,
+            subject=_string_value(missed_relation.get("subject")),
+            relation_type=_string_value(missed_relation.get("relation_type")),
+            object=_string_value(missed_relation.get("object")),
+            value_level=_string_value(missed_relation.get("value_level")),
+        )
+        _add_occurrence(missed_gold, key, run_label)
+        _collect_missed_gold_curie_endpoint(
+            missed_gold_curie_endpoints,
+            missed_relation=missed_relation,
+            case_id=case_id,
+            run_label=run_label,
+            role="subject",
+        )
+        _collect_missed_gold_curie_endpoint(
+            missed_gold_curie_endpoints,
+            missed_relation=missed_relation,
+            case_id=case_id,
+            run_label=run_label,
+            role="object",
+        )
+
+
+def _collect_missed_gold_curie_endpoint(
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator],
+    *,
+    missed_relation: JSONObject,
+    case_id: str,
+    run_label: str,
+    role: str,
+) -> None:
+    gold_curie = _optional_string(missed_relation.get(f"{role}_curie"))
+    if gold_curie is None:
+        return
+    key = _MissedGoldCurieEndpointKey(
+        case_id=case_id,
+        endpoint_role=role,
+        label=_string_value(missed_relation.get(role)),
+        gold_curie=gold_curie,
+        value_level=_string_value(missed_relation.get("value_level")),
+    )
+    _add_occurrence(missed_gold_curie_endpoints, key, run_label)
+
+
+def _collect_assessments(
+    stores: _CollectionStores,
+    *,
+    case_result: JSONObject,
+    case_id: str,
+    run_label: str,
+) -> int:
+    trusted_proposal_capture_count = 0
+    for assessment in _object_list(case_result.get("candidate_assessments")):
+        candidate = _object_dict(assessment.get("candidate"))
+        is_governed_proposal = _bool_value(
+            assessment.get("is_governed_relation_proposal"),
+        )
+        proposal_match = assessment.get("proposal_matched_gold_index") is not None
+        if not _bool_value(assessment.get("is_supported_by_gold")) and not (
+            is_governed_proposal and proposal_match
+        ):
+            key = _FalsePositiveKey(
+                case_id=case_id,
+                subject=_string_value(candidate.get("subject")),
+                relation_type=_string_value(candidate.get("relation_type")),
+                proposed_relation_type=_optional_string(
+                    candidate.get("proposed_relation_type"),
+                ),
+                object=_string_value(candidate.get("object")),
+                support_verification=_optional_string(
+                    assessment.get("support_verification"),
+                ),
+            )
+            _add_occurrence(stores.false_positives, key, run_label)
+        if is_governed_proposal and proposal_match:
+            trusted_eligible = _bool_value(
+                assessment.get("is_trusted_evidence_eligible"),
+            ) or _bool_value(candidate.get("trusted_evidence_eligible"))
+            if trusted_eligible:
+                trusted_proposal_capture_count += 1
+            proposal_key = _GovernedProposalKey(
+                case_id=case_id,
+                subject=_string_value(candidate.get("subject")),
+                proposed_relation_type=_optional_string(
+                    candidate.get("proposed_relation_type"),
+                ),
+                object=_string_value(candidate.get("object")),
+                trusted_evidence_eligible=trusted_eligible,
+                support_verification=_optional_string(
+                    assessment.get("support_verification"),
+                ),
+            )
+            _add_occurrence(stores.governed_proposals, proposal_key, run_label)
+        if _bool_value(assessment.get("is_supported_by_gold")):
+            context = _AssessmentContext(
+                assessment=assessment,
+                candidate=candidate,
+                matched_gold_relation=_matched_gold_relation(
+                    case_result=case_result,
+                    assessment=assessment,
+                ),
+                case_id=case_id,
+                run_label=run_label,
+            )
+            _collect_curie_gap(
+                stores.curie_gaps,
+                context=context,
+                role="subject",
+            )
+            _collect_curie_gap(
+                stores.curie_gaps,
+                context=context,
+                role="object",
+            )
+    return trusted_proposal_capture_count
+
+
+def _collect_curie_gap(
+    curie_gaps: dict[_CurieGapKey, _Accumulator],
+    *,
+    context: _AssessmentContext,
+    role: str,
+) -> None:
+    assessment = context.assessment
+    candidate = context.candidate
+    matched_gold_relation = context.matched_gold_relation
+    if (
+        matched_gold_relation is not None
+        and _optional_string(matched_gold_relation.get(f"{role}_curie")) is None
+    ):
+        return
+    verified_key = f"has_verified_{role}_curie"
+    match_key = f"{role}_curie_matches_gold"
+    if _bool_value(assessment.get(verified_key)) and _bool_value(assessment.get(match_key)):
+        return
+    curie = _optional_string(candidate.get(f"{role}_curie"))
+    curie_source = _string_value(candidate.get(f"{role}_curie_source")) or "none"
+    label = _string_value(candidate.get(role))
+    review_record = review_only_record_for_label(label)
+    has_verified_curie = _bool_value(assessment.get(verified_key))
+    key = _CurieGapKey(
+        case_id=context.case_id,
+        endpoint_role=role,
+        label=label,
+        candidate_curie=curie,
+        candidate_curie_source=curie_source,
+        gap_type=_curie_gap_type(
+            curie=curie,
+            curie_source=curie_source,
+            has_verified_curie=has_verified_curie,
+            has_review_only_policy=review_record is not None,
+        ),
+        grounding_curation_status=(
+            review_record.curation_status if review_record is not None else None
+        ),
+        grounding_reason_code=(
+            review_record.reason_code if review_record is not None else None
+        ),
+        trusted_identifier_allowed=(
+            review_record.trusted_identifier_allowed
+            if review_record is not None
+            else None
+        ),
+    )
+    _add_occurrence(curie_gaps, key, context.run_label)
+
+
+def _matched_gold_relation(
+    *,
+    case_result: JSONObject,
+    assessment: JSONObject,
+) -> JSONObject | None:
+    matched_gold_index = assessment.get("matched_gold_index")
+    if isinstance(matched_gold_index, bool) or not isinstance(matched_gold_index, int):
+        return None
+    case = _object_dict(case_result.get("case"))
+    gold_relations = _object_list(case.get("gold_relations"))
+    if matched_gold_index < 0 or matched_gold_index >= len(gold_relations):
+        return None
+    return gold_relations[matched_gold_index]
+
+
+def _curie_gap_type(
+    *,
+    curie: str | None,
+    curie_source: str,
+    has_verified_curie: bool,
+    has_review_only_policy: bool,
+) -> str:
+    if has_verified_curie:
+        return "wrong_verified_match"
+    if has_review_only_policy:
+        return "review_only_endpoint"
+    if curie is None:
+        return "missing_curie"
+    if curie_source == "model":
+        return "unverified_model_hint"
+    return "unverified_candidate_curie"
+
+
+def _missed_gold_rows(
+    missed_gold: dict[_MissedGoldKey, _Accumulator],
+) -> list[JSONObject]:
+    rows: list[JSONObject] = []
+    for key, accumulator in missed_gold.items():
+        rows.append(
+            {
+                "case_id": key.case_id,
+                "subject": key.subject,
+                "relation_type": key.relation_type,
+                "object": key.object,
+                "value_level": key.value_level,
+                "occurrence_count": accumulator.count,
+                "run_labels": sorted(accumulator.run_labels),
+            },
+        )
+    return _sort_rows(rows)
+
+
+def _false_positive_rows(
+    false_positives: dict[_FalsePositiveKey, _Accumulator],
+) -> list[JSONObject]:
+    rows: list[JSONObject] = []
+    for key, accumulator in false_positives.items():
+        rows.append(
+            {
+                "case_id": key.case_id,
+                "subject": key.subject,
+                "relation_type": key.relation_type,
+                "proposed_relation_type": key.proposed_relation_type,
+                "object": key.object,
+                "support_verification": key.support_verification,
+                "occurrence_count": accumulator.count,
+                "run_labels": sorted(accumulator.run_labels),
+            },
+        )
+    return _sort_rows(rows)
+
+
+def _missed_gold_curie_endpoint_rows(
+    missed_gold_curie_endpoints: dict[_MissedGoldCurieEndpointKey, _Accumulator],
+) -> list[JSONObject]:
+    rows: list[JSONObject] = []
+    for key, accumulator in missed_gold_curie_endpoints.items():
+        rows.append(
+            {
+                "case_id": key.case_id,
+                "endpoint_role": key.endpoint_role,
+                "label": key.label,
+                "gold_curie": key.gold_curie,
+                "value_level": key.value_level,
+                "occurrence_count": accumulator.count,
+                "run_labels": sorted(accumulator.run_labels),
+            },
+        )
+    return _sort_rows(rows)
+
+
+def _curie_gap_rows(curie_gaps: dict[_CurieGapKey, _Accumulator]) -> list[JSONObject]:
+    rows: list[JSONObject] = []
+    for key, accumulator in curie_gaps.items():
+        row: JSONObject = {
+            "case_id": key.case_id,
+            "endpoint_role": key.endpoint_role,
+            "label": key.label,
+            "candidate_curie": key.candidate_curie,
+            "candidate_curie_source": key.candidate_curie_source,
+            "gap_type": key.gap_type,
+            "occurrence_count": accumulator.count,
+            "run_labels": sorted(accumulator.run_labels),
+        }
+        if key.grounding_curation_status is not None:
+            row["grounding_curation_status"] = key.grounding_curation_status
+        if key.grounding_reason_code is not None:
+            row["grounding_reason_code"] = key.grounding_reason_code
+        if key.trusted_identifier_allowed is not None:
+            row["trusted_identifier_allowed"] = key.trusted_identifier_allowed
+        rows.append(row)
+    return _sort_rows(rows)
+
+
+def _governed_proposal_rows(
+    governed_proposals: dict[_GovernedProposalKey, _Accumulator],
+) -> list[JSONObject]:
+    rows: list[JSONObject] = []
+    for key, accumulator in governed_proposals.items():
+        rows.append(
+            {
+                "case_id": key.case_id,
+                "subject": key.subject,
+                "proposed_relation_type": key.proposed_relation_type,
+                "object": key.object,
+                "trusted_evidence_eligible": key.trusted_evidence_eligible,
+                "support_verification": key.support_verification,
+                "occurrence_count": accumulator.count,
+                "run_labels": sorted(accumulator.run_labels),
+            },
+        )
+    return _sort_rows(rows)
+
+
+def _model_comparison_rows(summaries_by_model: dict[str, list[JSONObject]]) -> list[JSONObject]:
+    rows: list[JSONObject] = []
+    for model_label, summaries in summaries_by_model.items():
+        row: JSONObject = {"model_label": model_label, "run_count": len(summaries)}
+        for key in _METRIC_KEYS:
+            values = [_float_value(summary.get(key)) for summary in summaries]
+            row[f"mean_{key}"] = _round_metric(sum(values) / len(values)) if values else 0.0
+            row[f"worst_{key}"] = _worst_metric(key, values)
+        for key in _HARD_FAILURE_COUNT_KEYS:
+            row[f"total_{key}"] = sum(
+                _int_value(summary.get(key)) for summary in summaries
+            )
+        rows.append(row)
+    return sorted(rows, key=lambda row: str(row.get("model_label", "")))
+
+
+def _worst_metric(key: str, values: list[float]) -> float:
+    if not values:
+        return 0.0
+    if key in {
+        "generic_relation_rate",
+        "trusted_candidate_generic_relation_rate",
+    }:
+        return _round_metric(max(values))
+    return _round_metric(min(values))
+
+
+def _sort_rows(rows: list[JSONObject]) -> list[JSONObject]:
+    return sorted(
+        rows,
+        key=lambda row: (
+            -_int_value(row.get("occurrence_count")),
+            str(row.get("case_id", "")),
+            str(row.get("subject", "")),
+            str(row.get("relation_type", "")),
+            str(row.get("object", "")),
+        ),
+    )
+
+
+def _add_occurrence[KeyT](
+    values: dict[KeyT, _Accumulator],
+    key: KeyT,
+    run_label: str,
+) -> None:
+    accumulator = values.setdefault(key, _Accumulator())
+    accumulator.add(run_label)
+
+
+def _load_report(path: Path) -> JSONObject:
+    payload = json.loads(path.read_text())
+    if not isinstance(payload, dict):
+        msg = f"{path} does not contain a JSON object"
+        raise TypeError(msg)
+    return payload
+
+
+def _resolve_report_path(path: Path) -> Path:
+    if path.is_dir():
+        return path / "relation_feasibility_report.json"
+    return path
+
+
+def _default_label(path: Path, index: int) -> str:
+    if path.name == "relation_feasibility_report.json":
+        return path.parent.name
+    return path.stem or f"run{index}"
+
+
+def _model_label_from_summary(summary: JSONObject) -> str:
+    for key in ("model_label", "model_id", "extraction_model"):
+        value = _optional_string(summary.get(key))
+        if value is not None:
+            return value
+    return "unlabeled"
+
+
+def _case_id(case_result: JSONObject) -> str:
+    case = _object_dict(case_result.get("case"))
+    return _string_value(case.get("case_id"))
+
+
+def _object_dict(value: object) -> JSONObject:
+    return value if isinstance(value, dict) else {}
+
+
+def _object_list(value: object) -> list[JSONObject]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _table_lines(value: object, keys: tuple[str, ...]) -> list[str]:
+    if not isinstance(value, list) or not value:
+        return ["- none"]
+    header = "| " + " | ".join(keys) + " |"
+    separator = "| " + " | ".join("---" for _ in keys) + " |"
+    lines = [header, separator]
+    for row in value:
+        if not isinstance(row, dict):
+            continue
+        lines.append(
+            "| "
+            + " | ".join(str(row.get(key, "")) if row.get(key) is not None else "" for key in keys)
+            + " |",
+        )
+    return lines
+
+
+def _ratio(numerator: int, denominator: int) -> float:
+    if denominator <= 0:
+        return 0.0
+    return _round_metric(numerator / denominator)
+
+
+def _round_metric(value: float) -> float:
+    return round(value, 4)
+
+
+def _int_value(value: object) -> int:
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    return 0
+
+
+def _float_value(value: object) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, int | float):
+        return float(value)
+    return 0.0
+
+
+def _bool_value(value: object) -> bool:
+    return value is True
+
+
+def _optional_string(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _string_value(value: object) -> str:
+    return _optional_string(value) or ""
+
+
+__all__ = [
+    "FailureAnalysisInput",
+    "build_failure_analysis_report",
+    "render_failure_analysis_markdown",
+    "write_failure_analysis_report",
+]

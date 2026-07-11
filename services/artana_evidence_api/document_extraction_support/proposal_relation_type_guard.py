@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     canonicalize_extraction_relation_type,
+    normalize_relation_type_label,
 )
 from artana_evidence_api.types.common import JSONObject
 
@@ -11,6 +14,17 @@ _LEGACY_PROPOSAL_RELATION_SYNONYMS = {
     "INCREASES_KINASE_MODULE_ACTIVITY": "MODULATES",
     "SUGGESTS": "ASSOCIATED_WITH",
 }
+_SAFE_PROPOSAL_RELATION_TYPE_REPAIRS = {
+    "CONFOERS_RESISTANCE_TO": "CONFERS_RESISTANCE_TO",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ProposedRelationTypeNormalization:
+    """Review-surface normalization result for a proposed relation type."""
+
+    relation_type: str
+    repair_applied: bool
 
 
 def normalize_candidate_claim_relation_payload(
@@ -50,4 +64,26 @@ def normalize_candidate_claim_relation_payload(
     }
 
 
-__all__ = ["normalize_candidate_claim_relation_payload"]
+def normalize_proposed_relation_type(
+    value: str | None,
+) -> ProposedRelationTypeNormalization:
+    """Normalize a proposed relation type without promoting it to trusted evidence."""
+
+    normalized = normalize_relation_type_label(value or "")
+    repaired = _SAFE_PROPOSAL_RELATION_TYPE_REPAIRS.get(normalized)
+    if repaired is None:
+        return ProposedRelationTypeNormalization(
+            relation_type=normalized,
+            repair_applied=False,
+        )
+    return ProposedRelationTypeNormalization(
+        relation_type=repaired,
+        repair_applied=True,
+    )
+
+
+__all__ = [
+    "ProposedRelationTypeNormalization",
+    "normalize_candidate_claim_relation_payload",
+    "normalize_proposed_relation_type",
+]

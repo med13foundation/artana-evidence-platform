@@ -90,6 +90,17 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/v1/spaces", tags=["claims"])
 
+_TRUSTED_AI_EVIDENCE_NEXT_ACTIONS = frozenset(
+    {
+        "attach_entity_links",
+        "attach_grounded_evidence",
+        "attach_support_verification",
+        "recompute_trust_tier",
+        "route_to_human_review",
+        "run_agent_extraction",
+    },
+)
+
 
 def _build_validation_error_detail(
     validation: KernelGraphValidationResponse,
@@ -104,6 +115,17 @@ def _build_validation_error_detail(
             action.model_dump(mode="json") for action in validation.next_actions
         ],
     }
+
+
+def _is_trusted_ai_evidence_rejection(
+    validation: KernelGraphValidationResponse,
+) -> bool:
+    if validation.code != "insufficient_evidence":
+        return False
+    return any(
+        action.action in _TRUSTED_AI_EVIDENCE_NEXT_ACTIONS
+        for action in validation.next_actions
+    )
 
 
 @router.get(
@@ -334,9 +356,9 @@ def create_claim(  # noqa: PLR0915
                     "persistability": validation.persistability,
                 },
             )
-        if (
-            validation.code == "insufficient_evidence"
-            and request.ai_provenance is not None
+        if validation.code == "insufficient_evidence" and (
+            request.ai_provenance is not None
+            or _is_trusted_ai_evidence_rejection(validation)
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

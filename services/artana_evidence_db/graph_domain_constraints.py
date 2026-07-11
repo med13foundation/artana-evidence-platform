@@ -379,6 +379,18 @@ GRAPH_SERVICE_BUILTIN_RELATION_CONSTRAINTS = (
         relation_type="SENSITIZES_TO",
         target_type="DRUG",
     ),
+    # --- CONFERS_RESISTANCE_TO constraints ---
+    BuiltinRelationConstraintDefinition(
+        source_type="VARIANT",
+        relation_type="CONFERS_RESISTANCE_TO",
+        target_type="DRUG",
+        profile="EXPECTED",
+    ),
+    BuiltinRelationConstraintDefinition(
+        source_type="GENE",
+        relation_type="CONFERS_RESISTANCE_TO",
+        target_type="DRUG",
+    ),
     # --- PHENOCOPY_OF constraints ---
     BuiltinRelationConstraintDefinition(
         source_type="DISEASE",
@@ -667,5 +679,4 @@ GRAPH_SERVICE_BUILTIN_RELATION_CONSTRAINTS = (
         profile="FORBIDDEN",
     ),
 )
-
 

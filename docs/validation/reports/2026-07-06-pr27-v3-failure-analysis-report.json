@@ -1,0 +1,546 @@
+{
+  "repeated_missed_gold_relations": [
+    {
+      "case_id": "v3_apc_predisposes_fap",
+      "subject": "APC pathogenic variants",
+      "relation_type": "PREDISPOSES_TO",
+      "object": "familial adenomatous polyposis",
+      "value_level": "high",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_brca1_predisposes_hereditary_breast_ovarian_cancer",
+      "subject": "BRCA1 truncating variants",
+      "relation_type": "PREDISPOSES_TO",
+      "object": "hereditary breast and ovarian cancer syndrome",
+      "value_level": "high",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_fbn1_associated_with_marfan_syndrome",
+      "subject": "FBN1 loss-of-function variants",
+      "relation_type": "ASSOCIATED_WITH",
+      "object": "Marfan syndrome",
+      "value_level": "high",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_larotrectinib_treats_ntrk_fusion_tumors",
+      "subject": "Larotrectinib",
+      "relation_type": "TREATS",
+      "object": "NTRK fusion solid tumors",
+      "value_level": "high",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_ldlr_predisposes_familial_hypercholesterolemia",
+      "subject": "LDLR loss-of-function variants",
+      "relation_type": "PREDISPOSES_TO",
+      "object": "familial hypercholesterolemia",
+      "value_level": "high",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_osimertinib_treats_egfr_exon19_luad",
+      "subject": "Osimertinib",
+      "relation_type": "TREATS",
+      "object": "EGFR exon 19 deletion lung adenocarcinoma",
+      "value_level": "high",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_egfr_trend_response_erlotinib",
+      "subject": "EGFR expression",
+      "relation_type": "ASSOCIATED_WITH",
+      "object": "erlotinib response",
+      "value_level": "low",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_met_correlated_resistance",
+      "subject": "MET amplification",
+      "relation_type": "ASSOCIATED_WITH",
+      "object": "resistance to EGFR inhibition",
+      "value_level": "low",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    }
+  ],
+  "repeated_false_positive_candidates": [
+    {
+      "case_id": "v3_alectinib_treats_alk_fusion_lung_cancer",
+      "subject": "Alectinib",
+      "relation_type": "TREATS",
+      "proposed_relation_type": null,
+      "object": "central nervous system involvement",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_larotrectinib_treats_ntrk_fusion_tumors",
+      "subject": "Larotrectinib",
+      "relation_type": "TREATS",
+      "proposed_relation_type": null,
+      "object": "solid tumors",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_mecp2_associated_with_rett_syndrome",
+      "subject": "MECP2 pathogenic variants",
+      "relation_type": "ASSOCIATED_WITH",
+      "proposed_relation_type": null,
+      "object": "developmental regression",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_msi_high_biomarker_checkpoint_response",
+      "subject": "MSI-high status",
+      "relation_type": "BIOMARKER_FOR",
+      "proposed_relation_type": null,
+      "object": "colorectal cancer",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_osimertinib_treats_egfr_exon19_luad",
+      "subject": "osimertinib",
+      "relation_type": "TREATS",
+      "proposed_relation_type": null,
+      "object": "EGFR",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_pah_associated_with_phenylketonuria",
+      "subject": "PAH pathogenic variants",
+      "relation_type": "ASSOCIATED_WITH",
+      "proposed_relation_type": null,
+      "object": "elevated phenylalanine",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_vemurafenib_targets_braf_v600e",
+      "subject": "vemurafenib",
+      "relation_type": "INHIBITS",
+      "proposed_relation_type": null,
+      "object": "MAPK signaling",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_met_correlated_resistance",
+      "subject": "MET amplification",
+      "relation_type": "ASSOCIATED_WITH",
+      "proposed_relation_type": null,
+      "object": "EGFR inhibition",
+      "support_verification": "ENTAILS",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    }
+  ],
+  "curie_gaps": [
+    {
+      "case_id": "v3_alectinib_treats_alk_fusion_lung_cancer",
+      "endpoint_role": "subject",
+      "label": "Alectinib",
+      "candidate_curie": "CHEBI:75086",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_alectinib_treats_alk_fusion_lung_cancer",
+      "endpoint_role": "object",
+      "label": "ALK fusion-positive lung cancer",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_gla_associated_with_fabry_disease",
+      "endpoint_role": "subject",
+      "label": "GLA variants",
+      "candidate_curie": "HGNC:4297",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_gla_associated_with_fabry_disease",
+      "endpoint_role": "object",
+      "label": "Fabry disease",
+      "candidate_curie": "MONDO:0007739",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_il6_regulates_inflammatory_signaling",
+      "endpoint_role": "object",
+      "label": "inflammatory signaling",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "review_only_endpoint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ],
+      "grounding_curation_status": "review_only_for_relation_feasibility_v2",
+      "grounding_reason_code": "broad_process_label",
+      "trusted_identifier_allowed": false
+    },
+    {
+      "case_id": "v3_kras_g12d_activates_mapk",
+      "endpoint_role": "subject",
+      "label": "KRAS G12D",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_mecp2_associated_with_rett_syndrome",
+      "endpoint_role": "subject",
+      "label": "MECP2 pathogenic variants",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_mecp2_associated_with_rett_syndrome",
+      "endpoint_role": "object",
+      "label": "Rett syndrome",
+      "candidate_curie": "MESH:C536314",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_msi_high_biomarker_checkpoint_response",
+      "endpoint_role": "subject",
+      "label": "MSI-high status",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_msi_high_biomarker_checkpoint_response",
+      "endpoint_role": "object",
+      "label": "immune checkpoint inhibitor response",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_pah_associated_with_phenylketonuria",
+      "endpoint_role": "subject",
+      "label": "PAH pathogenic variants",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_pah_associated_with_phenylketonuria",
+      "endpoint_role": "object",
+      "label": "phenylketonuria",
+      "candidate_curie": "MONDO:0005148",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_pdl1_biomarker_pembrolizumab_response",
+      "endpoint_role": "object",
+      "label": "response to pembrolizumab",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "review_only_endpoint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ],
+      "grounding_curation_status": "review_only_for_relation_feasibility_v2",
+      "grounding_reason_code": "composite_treatment_response_label",
+      "trusted_identifier_allowed": false
+    },
+    {
+      "case_id": "v3_pten_loss_activates_pi3k_akt",
+      "endpoint_role": "subject",
+      "label": "PTEN loss",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_pten_loss_activates_pi3k_akt",
+      "endpoint_role": "object",
+      "label": "PI3K-AKT signaling",
+      "candidate_curie": "GO:0007173",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_vemurafenib_targets_braf_v600e",
+      "endpoint_role": "subject",
+      "label": "vemurafenib",
+      "candidate_curie": "CHEBI:63637",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_akt_trend_survival",
+      "endpoint_role": "object",
+      "label": "reduced survival",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "review_only_endpoint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ],
+      "grounding_curation_status": "review_only_for_relation_feasibility_v2",
+      "grounding_reason_code": "prognosis_outcome_label",
+      "trusted_identifier_allowed": false
+    },
+    {
+      "case_id": "v3_weak_hrd_possible_biomarker_platinum",
+      "endpoint_role": "subject",
+      "label": "HRD score",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "review_only_endpoint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ],
+      "grounding_curation_status": "review_only_for_relation_feasibility_v2",
+      "grounding_reason_code": "biomarker_score_label",
+      "trusted_identifier_allowed": false
+    },
+    {
+      "case_id": "v3_weak_hrd_possible_biomarker_platinum",
+      "endpoint_role": "object",
+      "label": "platinum sensitivity",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "review_only_endpoint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ],
+      "grounding_curation_status": "review_only_for_relation_feasibility_v2",
+      "grounding_reason_code": "drug_response_phenotype_label",
+      "trusted_identifier_allowed": false
+    },
+    {
+      "case_id": "v3_weak_il6_may_regulate_inflammation",
+      "endpoint_role": "object",
+      "label": "inflammatory signaling",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "review_only_endpoint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ],
+      "grounding_curation_status": "review_only_for_relation_feasibility_v2",
+      "grounding_reason_code": "broad_process_label",
+      "trusted_identifier_allowed": false
+    },
+    {
+      "case_id": "v3_weak_jak2_possible_link_thrombosis",
+      "endpoint_role": "subject",
+      "label": "JAK2 V617F",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_jak2_possible_link_thrombosis",
+      "endpoint_role": "object",
+      "label": "thrombosis",
+      "candidate_curie": "MESH:D013927",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_mtor_might_activate_autophagy",
+      "endpoint_role": "subject",
+      "label": "MTOR signaling",
+      "candidate_curie": "GO:0032006",
+      "candidate_curie_source": "model",
+      "gap_type": "unverified_model_hint",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_mtor_might_activate_autophagy",
+      "endpoint_role": "object",
+      "label": "autophagy markers",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_ntrk_may_predict_larotrectinib_response",
+      "endpoint_role": "subject",
+      "label": "NTRK fusion",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_ntrk_may_predict_larotrectinib_response",
+      "endpoint_role": "object",
+      "label": "larotrectinib response",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_tp53_potential_predictor_chemo",
+      "endpoint_role": "subject",
+      "label": "TP53 mutation status",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    },
+    {
+      "case_id": "v3_weak_tp53_potential_predictor_chemo",
+      "endpoint_role": "object",
+      "label": "chemotherapy response",
+      "candidate_curie": null,
+      "candidate_curie_source": "none",
+      "gap_type": "missing_curie",
+      "occurrence_count": 1,
+      "run_labels": [
+        "2026-07-06-pr27-v3-run2"
+      ]
+    }
+  ]
+}

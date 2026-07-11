@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from artana_evidence_db.common_types import JSONObject
@@ -31,6 +31,7 @@ def trusted_evidence_floor_issue(
         or _grounding_floor_issue(metadata)
         or _support_floor_issue(metadata)
         or _failed_trust_floors_issue(metadata)
+        or _review_lane_floor_issue(metadata)
         or _entity_link_floor_issue(metadata)
     )
 
@@ -105,6 +106,27 @@ def _failed_trust_floors_issue(
     return None
 
 
+def _review_lane_floor_issue(metadata: JSONObject) -> TrustedEvidenceFloorIssue | None:
+    if _review_status_is_review_only(metadata):
+        return TrustedEvidenceFloorIssue(
+            message="Trusted AI evidence cannot use review-only relation evidence.",
+            next_action="route_to_human_review",
+            next_action_reason=(
+                "Weak, hedged, or low-value evidence must stay in the review lane."
+            ),
+        )
+    if _review_reason_codes_claimed(metadata):
+        return TrustedEvidenceFloorIssue(
+            message="Trusted AI evidence cannot use weak or hedged review reason codes.",
+            next_action="route_to_human_review",
+            next_action_reason=(
+                "Review-lane reason codes indicate evidence that must be reviewed "
+                "before trusted graph promotion."
+            ),
+        )
+    return None
+
+
 def _entity_link_floor_issue(
     metadata: JSONObject,
 ) -> TrustedEvidenceFloorIssue | None:
@@ -144,21 +166,48 @@ def _trusted_evidence_claimed(
 
 def _failed_trust_floors_claimed(metadata: JSONObject) -> bool:
     trust_floor_failures = metadata.get("trust_floor_failures")
-    if not isinstance(trust_floor_failures, list):
-        return False
-    return any(
-        isinstance(failure, str) and failure.strip() != ""
-        for failure in trust_floor_failures
+    return _has_non_empty_or_malformed_values(trust_floor_failures)
+
+
+def _review_status_is_review_only(metadata: JSONObject) -> bool:
+    review_status = metadata.get("review_status")
+    return (
+        isinstance(review_status, str)
+        and review_status.strip().casefold() == "review_only"
     )
+
+
+def _review_reason_codes_claimed(metadata: JSONObject) -> bool:
+    reason_codes = metadata.get("review_reason_codes")
+    return _has_non_empty_or_malformed_values(reason_codes)
 
 
 def _has_linked_endpoint(metadata: JSONObject, endpoint_name: str) -> bool:
     entity_linking = _object(metadata.get("entity_linking"))
     endpoint = _object(entity_linking.get(endpoint_name))
     curie = endpoint.get("curie")
-    return endpoint.get("status") == "linked" and isinstance(curie, str) and bool(
-        curie.strip(),
+    verified = (
+        endpoint.get("trusted_identifier") is True
+        or endpoint.get("source") == "verified_linker"
     )
+    return (
+        endpoint.get("status") == "linked"
+        and verified
+        and isinstance(curie, str)
+        and bool(curie.strip())
+    )
+
+
+def _has_non_empty_or_malformed_values(value: object) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, Mapping):
+        return bool(value)
+    if isinstance(value, Sequence):
+        return any(_has_non_empty_or_malformed_values(item) for item in value)
+    return True
 
 
 def _object(value: object) -> Mapping[str, object]:

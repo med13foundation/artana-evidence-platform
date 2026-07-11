@@ -156,6 +156,7 @@ def test_graph_governance_repository_seeds_builtin_entity_and_relation_types(
     assert {
         "ASSOCIATED_WITH",
         "CAUSES",
+        "CONFERS_RESISTANCE_TO",
         "REGULATES",
         "COMPONENT_OF",
         "PARTICIPATES_IN",
