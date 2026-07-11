@@ -38,8 +38,9 @@ def build_review_ranking_calibration_gate_report(
 ) -> JSONObject:
     """Load expert/shadow labels and return a calibration gate report."""
 
-    payload = _load_json_object(input_path)
-    study_input = ReviewRankingCalibrationStudyInput.model_validate(payload)
+    study_input = ReviewRankingCalibrationStudyInput.model_validate_json(
+        input_path.read_text(),
+    )
     thresholds = ReviewRankingCalibrationGateThresholds(
         min_sample_count=min_sample_count,
         max_expected_calibration_error=max_expected_calibration_error,
@@ -236,14 +237,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if gate.get("passed") is not True:
         return 1
     return 0
-
-
-def _load_json_object(path: Path) -> JSONObject:
-    payload = json.loads(path.read_text())
-    if not isinstance(payload, dict):
-        msg = f"{path} does not contain a JSON object"
-        raise TypeError(msg)
-    return dict(payload)
 
 
 def _object_value(payload: JSONObject, key: str) -> JSONObject:

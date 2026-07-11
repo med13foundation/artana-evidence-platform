@@ -123,6 +123,35 @@ def test_review_ranking_calibration_gate_runner_fails_closed_for_small_studies(
     assert "Review-ranking calibration gate: **FAILED**" in markdown
 
 
+def test_review_ranking_calibration_gate_runner_accepts_integer_json_scores(
+    tmp_path: Path,
+) -> None:
+    decisions = _passing_diverse_decisions()
+    for index, decision in enumerate(decisions):
+        decision["ranking_score"] = 1 if index < 2 else 0
+    input_path = tmp_path / "integer-scores.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "study_id": "integer-scores",
+                "adjudication_note": "No disagreements in this study.",
+                "decisions": decisions,
+            },
+        )
+        + "\n",
+    )
+
+    report = build_review_ranking_calibration_gate_report(
+        input_path=input_path,
+        min_sample_count=4,
+        max_expected_calibration_error=0.15,
+    )
+
+    assert report["gate"]["passed"] is True
+    assert report["gate"]["calibration"]["mean_score"] == 0.5
+
+
 def test_review_ranking_calibration_gate_cli_returns_nonzero_by_default_when_failed(
     tmp_path: Path,
 ) -> None:
