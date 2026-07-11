@@ -90,6 +90,92 @@ def test_audit_scores_specific_supported_relations_as_valuable() -> None:
     assert report.case_results[0].candidate_assessments[0].is_valuable is True
 
 
+def test_audit_reports_candidate_score_calibration_error() -> None:
+    cases = (
+        _case(
+            case_id="calibration_pair",
+            text=(
+                "MED13 activates cardiac septal development. "
+                "BRAF activates MAPK signaling in melanoma cells."
+            ),
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="cardiac septal development",
+                    support_sentence="MED13 activates cardiac septal development.",
+                    value_level="high",
+                    rationale="Specific gene-to-process mechanism.",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence="MED13 activates cardiac septal development.",
+            ),
+            ExtractedRelation(
+                subject="BRAF",
+                relation_type="ACTIVATES",
+                object="MAPK signaling",
+                sentence="BRAF activates MAPK signaling in melanoma cells.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    summary_payload = report.summary.to_json()
+
+    assert report.summary.candidate_score_calibration_sample_count == 2
+    assert report.summary.trusted_candidate_score_calibration_sample_count == 2
+    assert report.summary.candidate_score_ece == 0.5
+    assert report.summary.trusted_candidate_score_ece == 0.5
+    assert summary_payload["candidate_score_ece"] == 0.5
+    assert summary_payload["trusted_candidate_score_ece"] == 0.5
+
+
+def test_audit_calibrates_supported_low_value_relation_as_negative() -> None:
+    cases = (
+        _case(
+            case_id="low_value_calibration",
+            text="MED13 activates broad cellular signaling.",
+            gold=(
+                GoldRelation(
+                    subject="MED13",
+                    relation_type="ACTIVATES",
+                    object="broad cellular signaling",
+                    support_sentence="MED13 activates broad cellular signaling.",
+                    value_level="low",
+                    rationale="Correct but too broad to promote as valuable evidence.",
+                ),
+            ),
+        ),
+    )
+
+    def extractor(_: str) -> list[ExtractedRelation]:
+        return [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="broad cellular signaling",
+                sentence="MED13 activates broad cellular signaling.",
+            ),
+        ]
+
+    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.is_supported_by_gold is True
+    assert assessment.is_trusted_evidence_eligible is True
+    assert assessment.is_valuable is False
+    assert report.summary.candidate_score_ece == 1.0
+    assert report.summary.trusted_candidate_score_ece == 1.0
+
+
 def test_audit_rejects_off_target_support_sentence_for_matching_triple() -> None:
     cases = (
         _case(
@@ -565,6 +651,7 @@ def test_context_relations_do_not_count_as_trusted_high_value_recall() -> None:
     assert report.summary.trusted_eligible_high_value_match_count == 0
     assert report.summary.trusted_eligible_high_value_recall == 0.0
     assert report.summary.trusted_candidate_count == 0
+    assert report.summary.trusted_candidate_score_calibration_sample_count == 0
     assert report.summary.trusted_eligible_gold_curie_endpoint_count == 0
     assert report.summary.trusted_eligible_curie_linked_gold_endpoint_count == 0
     assert report.summary.verdict == "YELLOW"

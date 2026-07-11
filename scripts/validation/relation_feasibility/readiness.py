@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
+from math import isfinite
 from pathlib import Path
 
 JSONObject = dict[str, object]
@@ -21,6 +22,8 @@ class ReadinessThresholds:
     max_generic_rate: float = 0.05
     min_curie_linked_endpoint_rate: float = 0.95
     min_entailment_checked_rate: float = 1.0
+    max_trusted_candidate_score_ece: float = 0.05
+    min_trusted_candidate_score_calibration_sample_count: int = 10
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +39,8 @@ class _BlockingReasonContext:
 
 _DEFAULT_THRESHOLDS = ReadinessThresholds()
 _LOWER_IS_BETTER_METRICS = (
+    "trusted_candidate_score_ece",
+    "candidate_score_ece",
     "trusted_candidate_generic_relation_rate",
     "generic_relation_rate",
 )
@@ -47,6 +52,8 @@ _HIGHER_IS_BETTER_METRICS = (
     "high_value_recall",
     "trusted_candidate_valuable_rate",
     "completed_agent_valuable_candidate_rate",
+    "trusted_candidate_score_calibration_sample_count",
+    "candidate_score_calibration_sample_count",
     "trusted_eligible_curie_linked_gold_endpoint_rate",
     "curie_linked_gold_endpoint_rate",
     "verified_curie_match_rate",
@@ -61,6 +68,19 @@ _HARD_FAILURE_COUNT_KEYS = (
     "wrong_verified_curie_link_count",
     "weak_claim_trusted_leakage_count",
     "review_only_gold_trusted_leakage_count",
+)
+_CALIBRATION_SAMPLE_COUNT_KEYS = (
+    "trusted_candidate_score_calibration_sample_count",
+    "candidate_score_calibration_sample_count",
+)
+_REQUIRED_RATE_METRICS = tuple(
+    key
+    for key in (*_HIGHER_IS_BETTER_METRICS, *_LOWER_IS_BETTER_METRICS)
+    if key not in _CALIBRATION_SAMPLE_COUNT_KEYS
+)
+_REQUIRED_COUNT_METRICS = (
+    *_CALIBRATION_SAMPLE_COUNT_KEYS,
+    *_HARD_FAILURE_COUNT_KEYS,
 )
 _REQUIRED_NUMERIC_METRICS = (
     *_HIGHER_IS_BETTER_METRICS,
@@ -125,6 +145,12 @@ def build_readiness_report(
             ),
             "min_entailment_checked_rate": (
                 active_thresholds.min_entailment_checked_rate
+            ),
+            "max_trusted_candidate_score_ece": (
+                active_thresholds.max_trusted_candidate_score_ece
+            ),
+            "min_trusted_candidate_score_calibration_sample_count": (
+                active_thresholds.min_trusted_candidate_score_calibration_sample_count
             ),
         },
     }
@@ -330,6 +356,22 @@ def _threshold_blocking_reasons(
                 < thresholds.min_entailment_checked_rate,
                 "Worst-run entailment checked rate is below target.",
             ),
+            (
+                _float_from_object(
+                    worst_metrics.get("trusted_candidate_score_ece"),
+                )
+                > thresholds.max_trusted_candidate_score_ece,
+                "Worst-run trusted candidate score calibration ECE is above target.",
+            ),
+            (
+                _float_from_object(
+                    worst_metrics.get(
+                        "trusted_candidate_score_calibration_sample_count",
+                    ),
+                )
+                < thresholds.min_trusted_candidate_score_calibration_sample_count,
+                "Worst-run trusted candidate score calibration sample count is below target.",
+            ),
         )
         if blocked
     )
@@ -345,6 +387,17 @@ def _required_metric_errors(summaries: tuple[JSONObject, ...]) -> list[str]:
             if isinstance(summary[key], bool) or not isinstance(
                 summary[key],
                 int | float,
+            ):
+                errors.append(f"run{index} has invalid required metric {key}.")
+                continue
+            numeric_value = float(summary[key])
+            if not isfinite(numeric_value):
+                errors.append(f"run{index} has invalid required metric {key}.")
+                continue
+            if key in _REQUIRED_RATE_METRICS and not 0.0 <= numeric_value <= 1.0:
+                errors.append(f"run{index} has invalid required metric {key}.")
+            if key in _REQUIRED_COUNT_METRICS and (
+                numeric_value < 0.0 or not numeric_value.is_integer()
             ):
                 errors.append(f"run{index} has invalid required metric {key}.")
     return errors
@@ -374,7 +427,8 @@ def _float_from_object(value: object) -> float:
     if isinstance(value, bool):
         return 0.0
     if isinstance(value, int | float):
-        return float(value)
+        numeric_value = float(value)
+        return numeric_value if isfinite(numeric_value) else 0.0
     return 0.0
 
 
@@ -383,7 +437,7 @@ def _int_from_object(value: object) -> int:
         return 0
     if isinstance(value, int):
         return value
-    if isinstance(value, float):
+    if isinstance(value, float) and isfinite(value):
         return int(value)
     return 0
 

@@ -289,6 +289,8 @@ def main() -> int:
         f"completed_agent_precision={summary.completed_agent_precision_against_gold:.4f} "
         f"completed_agent_recall={summary.completed_agent_recall_against_gold:.4f} "
         f"completed_agent_valuable_rate={summary.completed_agent_valuable_candidate_rate:.4f} "
+        f"trusted_candidate_score_ece={summary.trusted_candidate_score_ece:.4f} "
+        f"all_candidate_score_ece={summary.candidate_score_ece:.4f} "
         f"all_candidate_generic_relation_rate={summary.generic_relation_rate:.4f} "
         f"pruned_generic_relations={summary.pruned_generic_relation_count} "
         f"quality_filtered_candidates={summary.quality_filtered_candidate_count} "

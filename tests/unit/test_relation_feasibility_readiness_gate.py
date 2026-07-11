@@ -26,6 +26,10 @@ def _write_report(
     trusted_generic_rate: float | None = None,
     verified_curie_rate: float = 0.96,
     trusted_eligible_curie_rate: float = 0.96,
+    trusted_candidate_score_calibration_sample_count: int = 10,
+    candidate_score_calibration_sample_count: int = 20,
+    trusted_candidate_score_ece: float = 0.0,
+    candidate_score_ece: float = 0.0,
     weak_claim_trusted_leakage_count: int = 0,
     entailment_checked_rate: float = 1.0,
     fallback_cases: int = 0,
@@ -67,6 +71,14 @@ def _write_report(
                 trusted_eligible_curie_rate
             ),
             "verified_curie_match_rate": verified_curie_rate,
+            "trusted_candidate_score_calibration_sample_count": (
+                trusted_candidate_score_calibration_sample_count
+            ),
+            "candidate_score_calibration_sample_count": (
+                candidate_score_calibration_sample_count
+            ),
+            "trusted_candidate_score_ece": trusted_candidate_score_ece,
+            "candidate_score_ece": candidate_score_ece,
             "entailment_checked_rate": entailment_checked_rate,
             "fallback_case_count": fallback_cases,
             "invalid_agent_case_count": invalid_agent_cases,
@@ -241,6 +253,64 @@ def test_readiness_gate_blocks_weak_claim_trusted_leakage(
     assert any("Weak low-value claims" in reason for reason in report["blocking_reasons"])
 
 
+def test_readiness_gate_blocks_poor_trusted_candidate_score_calibration(
+    tmp_path: Path,
+) -> None:
+    report_paths = (
+        _write_report(tmp_path, "run1", trusted_candidate_score_ece=0.02),
+        _write_report(tmp_path, "run2", trusted_candidate_score_ece=0.12),
+        _write_report(tmp_path, "run3", trusted_candidate_score_ece=0.03),
+    )
+
+    report = build_readiness_report(report_paths=report_paths, min_runs=3)
+
+    assert report["trusted_graph_ready"] is False
+    assert report["worst_metrics"]["trusted_candidate_score_ece"] == 0.12
+    assert any("score calibration" in reason for reason in report["blocking_reasons"])
+
+
+def test_readiness_gate_blocks_too_few_trusted_calibration_samples(
+    tmp_path: Path,
+) -> None:
+    report_paths = tuple(
+        _write_report(
+            tmp_path,
+            f"run{index}",
+            trusted_candidate_score_calibration_sample_count=1,
+        )
+        for index in range(1, 4)
+    )
+
+    report = build_readiness_report(report_paths=report_paths, min_runs=3)
+
+    assert report["trusted_graph_ready"] is False
+    assert any(
+        "calibration sample count" in reason
+        for reason in report["blocking_reasons"]
+    )
+
+
+def test_readiness_gate_blocks_non_finite_required_metrics(tmp_path: Path) -> None:
+    report_paths = (
+        _write_report(tmp_path, "valid"),
+        _write_report(tmp_path, "nan", trusted_candidate_score_ece=float("nan")),
+        _write_report(tmp_path, "infinite", candidate_score_ece=float("inf")),
+    )
+
+    report = build_readiness_report(report_paths=report_paths, min_runs=3)
+
+    assert report["trusted_graph_ready"] is False
+    assert any(
+        "invalid required metric trusted_candidate_score_ece" in reason
+        for reason in report["blocking_reasons"]
+    )
+    assert any(
+        "invalid required metric candidate_score_ece" in reason
+        for reason in report["blocking_reasons"]
+    )
+    assert report["worst_metrics"]["trusted_candidate_score_ece"] == 0.0
+
+
 def test_readiness_gate_blocks_missing_or_invalid_required_metrics(
     tmp_path: Path,
 ) -> None:
@@ -249,9 +319,11 @@ def test_readiness_gate_blocks_missing_or_invalid_required_metrics(
     invalid_report = _write_report(tmp_path, "invalid")
     missing_payload = json.loads(missing_report.read_text())
     del missing_payload["summary"]["fallback_case_count"]
+    del missing_payload["summary"]["trusted_candidate_score_ece"]
     missing_report.write_text(json.dumps(missing_payload) + "\n")
     invalid_payload = json.loads(invalid_report.read_text())
     invalid_payload["summary"]["generic_relation_rate"] = "0.00"
+    invalid_payload["summary"]["candidate_score_ece"] = "0.00"
     invalid_report.write_text(json.dumps(invalid_payload) + "\n")
 
     report = build_readiness_report(
@@ -266,6 +338,14 @@ def test_readiness_gate_blocks_missing_or_invalid_required_metrics(
     )
     assert any(
         "invalid required metric generic_relation_rate" in reason
+        for reason in report["blocking_reasons"]
+    )
+    assert any(
+        "missing required metric trusted_candidate_score_ece" in reason
+        for reason in report["blocking_reasons"]
+    )
+    assert any(
+        "invalid required metric candidate_score_ece" in reason
         for reason in report["blocking_reasons"]
     )
 

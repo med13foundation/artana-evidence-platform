@@ -31,10 +31,13 @@ HIGH_RISK_PREFIXES = (
 )
 EVIDENCE_API_PREFIXES = (
     "services/artana_evidence_api/",
+    "scripts/validation/evidence_selection/",
     "tests/e2e/artana_evidence_api/",
 )
 EVIDENCE_API_FILES = (
     "scripts/export_artana_evidence_api_openapi.py",
+    "scripts/run_evidence_selection_expert_study_gate.py",
+    "scripts/run_evidence_selection_review_calibration_gate.py",
     "scripts/validate_artana_evidence_api_service_boundary.py",
 )
 GRAPH_SERVICE_PREFIXES = (

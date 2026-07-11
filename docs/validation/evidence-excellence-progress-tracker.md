@@ -107,7 +107,7 @@ Evidence:
 | Kept raw relation types | Possible on resolver failure | 0 | 0/30 candidates and 0/30 inventory surfaces | 2026-07-03 PR8 live-agent remediation report | Passing |
 | CURIE-linked gold entities | 0% in extraction path | >= 0.95 | 0.0000 verified CURIE match rate; 0.5690 candidate CURIE present rate; 13 wrong model CURIE hints | 2026-07-03 PR8 live-agent remediation report | Strict gate RED |
 | Auto-created junk nodes | Possible unresolved fallthrough | 0 | Entity-candidate creation requires linked CURIE payloads in PR-6; graph junk-node count not separately audited | PR-6 tests | Ready for review; add graph-count audit later |
-| Score calibration ECE | Uncalibrated | < 0.05 | Evidence-quality score split 0.9220 vs 0.7220; ECE not measured | PR-7 ranking tests | Ready for review; calibration dataset pending |
+| Score calibration ECE | Uncalibrated | < 0.05 | Trusted candidate support-calibration ECE 0.0000 worst/mean; all-candidate support-calibration ECE 0.0732 worst, 0.0671 mean; production review-ranking ECE is now measured from decided workspace review outcomes | PR-37 v4 calibration readiness gate; PR-38 workspace review-ranking calibration | Trusted lane gated; production thresholding needs expert/shadow review set |
 | Trusted-tier precision | Not gold-gated | 1.00 | 1.00 on focused hard-floor adversarial suite; live gold run completes but remains RED because verified CURIE match is 0.0000 | PR-8 plus live-agent remediation report | Ready for review |
 | Reproducible extraction | text clipped, temp unset | deterministic and cache-safe | Full-text chunking plus prompt-version/model-aware replay keys | PR-9 blind-spot and key-collision tests | Ready for review |
 | CI quality gate | Not present | blocking | `relation-feasibility-quality-gate` runs in `service-checks` and CI repo-control jobs | PR-10 planner/control tests and final `make service-checks` | Ready for review |
@@ -155,6 +155,11 @@ Status values:
 | 23 | PR-34 | `alvaro/evidence-pr34-live-model-ab-proof` | Implemented locally; live A/B proof complete; final gates pass | Close the stronger-model question with a fail-closed live model comparison on the v3 benchmark. | Candidate model adoption requires three completed runs, zero hard safety failures, and no trusted endpoint regression. | Added fixture pinning to `scripts/run_relation_model_comparison.py`, made failed audit subprocesses produce a `KEEP_CURRENT` report with `audit_failures`, and added Markdown audit-failure rendering. Current `openai:gpt-5.4-mini` completed 3/3 strict v3 live runs with trusted readiness READY and hard failures 0; candidate `openai:gpt-5` completed only 1/3 runs and failed run2 preflight with a LiteLLM timeout, so the comparison decision is KEEP_CURRENT. Focused model-comparison tests pass (`13 passed`), `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and adversarial review found no blockers after symmetric failed-current-run coverage and doc wording cleanup. Summary: `docs/validation/reports/2026-07-06-pr34-live-model-ab-proof-summary.md`. |
 | 24 | PR-35 | `alvaro/evidence-pr35-benchmark-v4-100-case-proof` | Implemented locally; final local gates pass; adversarial re-review PASS | Make the Definition-of-Green benchmark scale requirement executable with a 100-case v4 fixture. | CI fails if the trusted-readiness benchmark fixture is below 100 cases, lacks balanced high-value/true-low-value/negative/long-document/near-miss coverage, pads scale with duplicate relation signatures, or adds new broad v4 pathway/gene rows as trusted gold. | Added `biomedical_relation_goldset_v4.json` by preserving the 40-case v3 seed and adding 60 labeled synthetic cases: 50 strong-specific, 25 weak review-only, and 25 negative-control cases overall. Added v4 validation coverage requiring at least 100 cases, 50 high-value specific cases, 25 true low-value review cases, 25 negative controls, at least five long-document cases, at least five adversarial negated near-misses, at least 74 unique gold relation signatures, and at most one repeated signature for the inherited v3 IL6 strong/weak contrast. RED test failed on the missing v4 fixture; adversarial review then found the low-value count mixed high-value review-only rows and that some v4 rows duplicated v3 or used broad trusted endpoints, so PR35 added `true_low_value_review_case_count`, signature-diversity counters, and a v4 trusted-context guard. GREEN focused fixture validation passes (`7 passed`) with validator issue count 0, touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, `make service-checks` passes with coverage `87.03%`, and final adversarial re-review reports PASS. Summary: `docs/validation/reports/2026-07-06-pr35-benchmark-v4-100-case-proof-summary.md`. |
 | 25 | PR-36 | `alvaro/evidence-pr36-v4-live-readiness` | Implemented locally; final gates pass; post-adversarial three-run v4 readiness READY | Run strict live-agent readiness against the 100-case v4 fixture and close trusted-lane blockers without relying on deterministic fallback. | Three strict v4 live-agent runs pass the repeated-run readiness gate with trusted precision, trusted valuable rate, trusted generic rate, trusted-eligible high-value recall, and trusted endpoint recovery all at target while hard failures stay 0. | Added a trusted-promotion safety policy for strong-but-unsafe relation shapes, wired it into relation quality filtering, fixed hyphenated modifier-loss pruning, aligned v3/v4 gold rows with promotion policy, and added fixture validation so trusted gold cannot violate the same safety policy. Adversarial review then exposed `CAUSES`/gene-state association leaks, `growth` over-demotion, reason-code loss, a live `JAK2 activity` endpoint repair gap, and a `growth factor-independent proliferation` phrase gap; PR36 added RED/GREEN regressions and fixes for all. Strict v4 postreview2 runs1-3 aggregate to READY: worst trusted precision 1.0000, trusted valuable rate 1.0000, trusted generic rate 0.0000, trusted-eligible high-value recall 1.0000, trusted-eligible endpoint rate 1.0000, fallback 0, invalid agent 0, negative leakage 0, review-only trusted leakage 0, weak trusted leakage 0, and wrong verified CURIE links 0. Focused tests pass, touched-file Ruff passes, `make relation-feasibility-quality-gate` passes, final adversarial re-review is PASS, and `make service-checks` passes with coverage `87.03%`. Summary: `docs/validation/reports/2026-07-06-pr36-v4-live-readiness-summary.md`. |
+| 26 | PR-37 | `alvaro/evidence-pr37-calibration-gate` | Implemented locally; post-adversarial three-run v4 readiness READY with calibration gate | Make audit support calibration measurable and blocking for trusted graph readiness. | Trusted candidate score ECE must be <= 0.0500 and required in every readiness source report. | Added support-calibration metrics, Markdown/JSON report fields, CLI output, readiness-gate thresholding, calibration sample counts, model-comparison calibration deltas, and direct missing/invalid calibration tests. RED tests proved the audit summary lacked calibration and the readiness gate ignored high trusted ECE. Adversarial review then found the first metric was self-fulfilling because it used `is_valuable`; PR37 fixed the metric to score only pre-gold verification signals against gold support and reran strict v4 live postreview runs1-3. The corrected aggregate is READY with trusted candidate score ECE 0.0000 worst/mean, all-candidate score ECE 0.0732 worst and 0.0671 mean, trusted precision 1.0000, trusted valuable rate 1.0000, trusted generic rate 0.0000, trusted endpoint rate 1.0000, and all hard failures 0. Production review-ranking calibration remains separate follow-up. Summary: `docs/validation/reports/2026-07-07-pr37-calibration-gate-summary.md`. |
+| 27 | PR-38 | `alvaro/evidence-pr38-review-ranking-calibration` | Implemented locally; focused tests pass; adversarial fixes applied | Make production review-ranking calibration measurable from real human review outcomes. | Evidence-selection workspace snapshots expose review-ranking sample count, mean score, observed positive rate, and ECE from decided proposals and review items. | Added review-ranking calibration observations and summaries to `services/artana_evidence_api/ranking.py`, wired evidence-selection workspace snapshots to derive positive outcomes from promoted proposals/resolved review items and negative outcomes from rejected proposals/dismissed review items, and ignored pending items. RED tests proved the calibration API was missing; adversarial review then found calibration used capped display lists and lacked resolved-positive coverage, so PR38 now queries decided outcomes separately and tests a promoted proposal outside the display cap. GREEN focused tests pass (`8 passed`) and touched-file Ruff passes. Expert/shadow-mode thresholding remains follow-up. Summary: `docs/validation/reports/2026-07-07-pr38-review-ranking-calibration-summary.md`. |
+| 28 | PR-39 | `alvaro/evidence-pr39-review-ranking-threshold-gate` | Implemented locally; adversarial blockers fixed; final gates pass | Make expert/shadow-mode review-ranking thresholding executable and fail-closed. | Calibration threshold gate rejects undersized, one-sided, source-incomplete, duplicate, non-discriminating, schema-invalid, or high-ECE review-ranking studies. | Added typed expert/shadow review-ranking decisions, strict study schema validation, threshold configuration, gate reports, a JSON/Markdown runner, and a committed seed fixture. RED tests proved the gate module and runner were missing; adversarial review then found fail-open CLI behavior, loose production ECE defaults, ECE-only constant-score false confidence, and schema drift acceptance. PR39 now exits nonzero on failed gates, defaults production ECE to 0.050, requires ROC AUC >= 0.700 and mean score separation >= 0.100, and rejects unknown study/decision fields. GREEN focused tests pass (`11 passed`), touched-file Ruff passes, API type-check passes, API service checks pass, and `make service-checks` passes with coverage `87.03%`. The seed fixture passes only with explicit relaxed seed ECE 0.150 and remains mechanics-only evidence. Production readiness still requires real expert/shadow labels at larger scale. Summary: `docs/validation/reports/2026-07-07-pr39-review-ranking-threshold-gate-summary.md`. |
+| 29 | PR-40 | `alvaro/evidence-pr40-review-ranking-study-design-gate` | Implemented locally; post-adversarial gates pass | Ensure production review-ranking calibration studies prove enough expert/shadow study coverage before threshold claims. | Calibration gate rejects undercovered studies with too few research goals, too few evidence shapes, missing reviewer IDs, missing or blank adjudication notes, and cosmetic label variants that fake distinct coverage. | Added `evidence_shape` to calibration decisions, added gate-required study-level `adjudication_note` while keeping v1 files parseable, added normalized study-design metrics to gate reports, and made the core helper plus runner default to three distinct goals, three distinct evidence shapes, reviewer IDs on every decision, and an adjudication note. RED tests proved the helper bypass, reviewer-ID gap, blank-note gap, raw-label counting gap, seed-as-production gap, and missing-adjudication schema drift; GREEN focused tests pass (`20 passed`). The seed fixture is now an honest single-goal MED13 mechanics fixture: production-default seed checks fail with 2 study-design blockers, while an explicitly relaxed mechanics smoke check passes only to prove report rendering and threshold math. Touched-file Ruff passes, API type-check passes, API service checks pass, and `make service-checks` passes with coverage `87.03%`. Summary: `docs/validation/reports/2026-07-07-pr40-review-ranking-study-design-gate-summary.md`. |
+| 30 | PR-41 | `alvaro/evidence-pr41-expert-study-gate` | Implemented locally; final gates pass; adversarial re-review PASS | Make a complete expert/shadow study bundle executable before it can support production-readiness claims. | Study gate fails closed unless the bundle declares real shadow-review evidence, every selection review is labeled and measurable, selection-review precision/recall, reviewer coverage, goal coverage, explanation quality, zero overclaiming, and review-ranking calibration all pass together. | Added `reviewer_id` preservation to selection reviews, strict nested selection-review schemas, `study_evidence_kind`, strict `evidence_selection_expert_study.v1` input, study-level thresholds/reporting, per-review JSON audit evidence, `scripts/run_evidence_selection_expert_study_gate.py`, and documented the bundle shape. RED tests proved the study gate and CLI were missing, JSON review inputs did not parse normal UUID/list fields, synthetic fixtures could pass, partially unlabeled reviews could pass, unmeasurable precision/recall and missing explanation scores could be averaged away, and nested selection extras were silently dropped. GREEN focused tests pass (`35 passed` across selection validation, review-ranking calibration, review-ranking runner, and expert-study runner). Touched-file Ruff passes, API type-check passes, API service checks pass, `make service-checks` passes with coverage `87.03%`, and final adversarial re-review reports PASS. Summary: `docs/validation/reports/2026-07-07-pr41-expert-study-gate-summary.md`. |
 
 ## PR Evidence Packet
 
@@ -215,6 +220,97 @@ Run only the service checks relevant to the changed boundary, then run the
 aggregate gate before merge when the PR is ready.
 
 ## Evidence Log
+
+### 2026-07-07 - PR-38 Review-Ranking Calibration
+
+PR: PR-38 review-ranking calibration
+
+Branch: `alvaro/evidence-pr38-review-ranking-calibration`
+
+Goal: Make production review-ranking calibration observable from actual human
+review decisions.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-07-pr38-review-ranking-calibration-summary.md`
+- `services/artana_evidence_api/ranking.py`
+- `services/artana_evidence_api/evidence_selection_workspace_snapshot.py`
+- `services/artana_evidence_api/tests/unit/test_ranking.py`
+- `services/artana_evidence_api/tests/unit/test_evidence_selection_artifact_modules.py`
+
+Result:
+
+- Review-ranking calibration summary includes sample count, mean score,
+  observed positive rate, and expected calibration error.
+- Evidence-selection workspace snapshots now include
+  `review_ranking_calibration`.
+- Positive outcomes are promoted proposals and resolved review items.
+- Negative outcomes are rejected proposals and dismissed review items.
+- Pending items do not affect calibration.
+
+Validation:
+
+- RED focused tests failed on missing calibration API.
+- GREEN focused tests passed: `2 passed`.
+- Expanded focused tests passed after adversarial fixes: `8 passed`.
+- Touched-file Ruff passed.
+
+Known remaining risk:
+
+- Production ranking thresholding still needs a larger expert or shadow-mode
+  review set before setting a hard ECE gate.
+
+### 2026-07-07 - PR-37 Calibration Gate
+
+PR: PR-37 calibration gate
+
+Branch: `alvaro/evidence-pr37-calibration-gate`
+
+Goal: Make score calibration a measured and blocking trusted-readiness metric
+instead of an unverified Definition-of-Green claim.
+
+Evidence:
+
+- `docs/validation/reports/2026-07-07-pr37-calibration-gate-summary.md`
+- `reports/relation_feasibility/2026-07-07-pr37-calibration-gate-postreview-run1/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-07-pr37-calibration-gate-postreview-run2/relation_feasibility_report.json`
+- `reports/relation_feasibility/2026-07-07-pr37-calibration-gate-postreview-run3/relation_feasibility_report.json`
+- `reports/relation_feasibility_readiness/2026-07-07-pr37-calibration-gate-postreview/relation_feasibility_readiness_report.json`
+- `scripts/validation/relation_feasibility/metrics/calibration.py`
+
+Final three-run strict live-agent trusted-lane metrics:
+
+| Metric | Worst | Mean |
+|---|---:|---:|
+| Trusted readiness | READY | READY |
+| Trusted candidate score ECE | 0.0000 | 0.0000 |
+| All-candidate score ECE | 0.0732 | 0.0671 |
+| Completed-agent precision | 0.9718 | 0.9770 |
+| Completed-agent recall | 0.9200 | 0.9467 |
+| Completed-agent valuable rate | 0.5493 | 0.5640 |
+| High-value recall | 0.9200 | 0.9600 |
+| Trusted candidate precision | 1.0000 | 1.0000 |
+| Trusted candidate valuable rate | 1.0000 | 1.0000 |
+| Trusted candidate generic rate | 0.0000 | 0.0000 |
+| Trusted-eligible high-value recall | 1.0000 | 1.0000 |
+| Trusted-eligible CURIE endpoint rate | 1.0000 | 1.0000 |
+| Entailment checked rate | 1.0000 | 1.0000 |
+| Verified CURIE match rate | 0.7931 | 0.8276 |
+| All-candidate generic relation rate | 0.3239 | 0.3166 |
+
+Hard failures:
+
+- fallback cases: `0`
+- invalid agent cases: `0`
+- negative-control leakage: `0`
+- raw unknown relation types/surfaces: `0`
+- review-only trusted leakage: `0`
+- weak trusted leakage: `0`
+- wrong verified CURIE links: `0`
+
+Interpretation: trusted auto-promotion support calibration is now measured and
+enforced by the readiness gate. Production review-ranking calibration remains a
+follow-up prioritization issue, not a trusted graph blocker.
 
 ### 2026-07-07 - PR-36 V4 Live-Agent Trusted Readiness
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -41,13 +41,25 @@ class _ListStore:
         del space_id
         return list(self.records)
 
-    def list_proposals(self, *, space_id):  # noqa: ANN001
+    def list_proposals(self, *, space_id, status=None):  # noqa: ANN001
         del space_id
-        return list(self.records)
+        if status is None:
+            return list(self.records)
+        return [
+            record
+            for record in self.records
+            if getattr(record, "status", None) == status
+        ]
 
-    def list_review_items(self, *, space_id):  # noqa: ANN001
+    def list_review_items(self, *, space_id, status=None):  # noqa: ANN001
         del space_id
-        return list(self.records)
+        if status is None:
+            return list(self.records)
+        return [
+            record
+            for record in self.records
+            if getattr(record, "status", None) == status
+        ]
 
     def list_space_approvals(self, *, space_id):  # noqa: ANN001
         del space_id
@@ -270,6 +282,29 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
         updated_at=now,
         claim_fingerprint="claim-fingerprint",
     )
+    rejected_proposal = HarnessProposalRecord(
+        id="proposal-2",
+        space_id=str(space_id),
+        run_id="run-prior",
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="document-1:1",
+        document_id="document-1",
+        title="Rejected MED13 claim",
+        summary="summary",
+        status="rejected",
+        confidence=0.5,
+        ranking_score=0.7,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={},
+        metadata={},
+        decision_reason="not useful",
+        decided_at=now,
+        created_at=now,
+        updated_at=now,
+        claim_fingerprint="rejected-claim-fingerprint",
+    )
     review_item = HarnessReviewItemRecord(
         id="review-1",
         space_id=str(space_id),
@@ -296,6 +331,66 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
         updated_at=now,
         review_fingerprint="review-fingerprint",
     )
+    dismissed_review_item = HarnessReviewItemRecord(
+        id="review-2",
+        space_id=str(space_id),
+        run_id="run-prior",
+        review_type="source_record",
+        source_family="literature",
+        source_kind="source_search",
+        source_key="pubmed:2",
+        document_id="document-1",
+        title="Dismissed review",
+        summary="summary",
+        priority="medium",
+        status="dismissed",
+        confidence=0.4,
+        ranking_score=0.8,
+        evidence_bundle=[],
+        payload={},
+        metadata={},
+        decision_reason="not useful",
+        decided_at=now,
+        linked_proposal_id=None,
+        linked_approval_key=None,
+        created_at=now,
+        updated_at=now,
+        review_fingerprint="dismissed-review-fingerprint",
+    )
+    resolved_review_item = HarnessReviewItemRecord(
+        id="review-3",
+        space_id=str(space_id),
+        run_id="run-prior",
+        review_type="source_record",
+        source_family="literature",
+        source_kind="source_search",
+        source_key="pubmed:3",
+        document_id="document-1",
+        title="Resolved review",
+        summary="summary",
+        priority="high",
+        status="resolved",
+        confidence=0.9,
+        ranking_score=0.4,
+        evidence_bundle=[],
+        payload={},
+        metadata={},
+        decision_reason="useful",
+        decided_at=now,
+        linked_proposal_id=None,
+        linked_approval_key=None,
+        created_at=now,
+        updated_at=now,
+        review_fingerprint="resolved-review-fingerprint",
+    )
+    converted_review_item = replace(
+        resolved_review_item,
+        id="review-4",
+        ranking_score=0.95,
+        metadata={"converted_to_proposal": True},
+        linked_proposal_id="proposal-2",
+        review_fingerprint="converted-review-fingerprint",
+    )
     approval = HarnessApprovalRecord(
         space_id=str(space_id),
         run_id="run-prior",
@@ -319,19 +414,122 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
         parent_run_id=None,
         run_registry=_ListStore([current_run, prior_run]),
         document_store=_ListStore([document]),
-        proposal_store=_ListStore([proposal]),
-        review_item_store=_ListStore([review_item]),
+        proposal_store=_ListStore([proposal, rejected_proposal]),
+        review_item_store=_ListStore(
+            [
+                review_item,
+                dismissed_review_item,
+                resolved_review_item,
+                converted_review_item,
+            ],
+        ),
         approval_store=_ListStore([approval]),
     )
 
     assert snapshot["prior_evidence_run_count"] == 1
-    assert snapshot["proposal_status_counts"] == {"promoted": 1}
-    assert snapshot["review_item_status_counts"] == {"pending_review": 1}
+    assert snapshot["proposal_status_counts"] == {"promoted": 1, "rejected": 1}
+    assert snapshot["review_item_status_counts"] == {
+        "dismissed": 1,
+        "pending_review": 1,
+        "resolved": 2,
+    }
     assert snapshot["approval_status_counts"] == {"approved": 1}
     assert snapshot["graph_state_summary"]["approved_evidence_count"] == 1
+    assert snapshot["review_ranking_calibration"] == {
+        "sample_count": 4,
+        "mean_score": 0.675,
+        "observed_positive_rate": 0.5,
+        "expected_calibration_error": 0.475,
+        "basis": (
+            "Promoted proposals and resolved, non-converted review items are positive outcomes; "
+            "rejected proposals and dismissed review items are negative outcomes."
+        ),
+    }
     assert snapshot["deduplication"]["proposal_fingerprints"] == [
         "claim-fingerprint",
+        "rejected-claim-fingerprint",
     ]
     assert snapshot["deduplication"]["review_fingerprints"] == [
+        "converted-review-fingerprint",
+        "dismissed-review-fingerprint",
+        "resolved-review-fingerprint",
         "review-fingerprint",
     ]
+
+
+def test_workspace_snapshot_calibration_uses_decided_items_beyond_display_cap() -> None:
+    now = datetime.now(UTC)
+    space_id = uuid4()
+    current_run = HarnessRunRecord(
+        id="run-current",
+        space_id=str(space_id),
+        harness_id="evidence-selection",
+        title="Current run",
+        status="running",
+        input_payload={"goal": "current"},
+        graph_service_status="ok",
+        graph_service_version="test",
+        created_at=now,
+        updated_at=now,
+    )
+    pending_template = HarnessProposalRecord(
+        id="proposal-pending",
+        space_id=str(space_id),
+        run_id="run-prior",
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="document-1:pending",
+        document_id="document-1",
+        title="Pending claim",
+        summary="summary",
+        status="pending_review",
+        confidence=0.9,
+        ranking_score=0.99,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={},
+        metadata={},
+        decision_reason=None,
+        decided_at=None,
+        created_at=now,
+        updated_at=now,
+        claim_fingerprint=None,
+    )
+    pending_proposals = [
+        replace(
+            pending_template,
+            id=f"proposal-pending-{index}",
+            source_key=f"document-1:pending:{index}",
+        )
+        for index in range(50)
+    ]
+    promoted_outside_display_cap = replace(
+        pending_template,
+        id="proposal-promoted",
+        source_key="document-1:promoted",
+        status="promoted",
+        ranking_score=0.2,
+        decision_reason="useful",
+        decided_at=now,
+        claim_fingerprint="promoted-outside-display-cap",
+    )
+
+    snapshot = build_evidence_selection_workspace_snapshot(
+        space_id=space_id,
+        run=current_run,
+        goal="current",
+        instructions=None,
+        parent_run_id=None,
+        run_registry=_ListStore([current_run]),
+        document_store=_ListStore([]),
+        proposal_store=_ListStore(
+            [*pending_proposals, promoted_outside_display_cap],
+        ),
+        review_item_store=_ListStore([]),
+        approval_store=_ListStore([]),
+    )
+
+    assert len(snapshot["proposals"]) == 20
+    assert snapshot["review_ranking_calibration"]["sample_count"] == 1
+    assert snapshot["review_ranking_calibration"]["mean_score"] == 0.2
+    assert snapshot["review_ranking_calibration"]["observed_positive_rate"] == 1.0

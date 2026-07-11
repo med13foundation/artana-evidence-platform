@@ -17,6 +17,10 @@ from artana_evidence_api.proposal_store import (
     HarnessProposalRecord,
     HarnessProposalStore,
 )
+from artana_evidence_api.ranking import (
+    ReviewRankingCalibrationObservation,
+    build_review_ranking_calibration_summary,
+)
 from artana_evidence_api.review_item_store import (
     HarnessReviewItemRecord,
     HarnessReviewItemStore,
@@ -26,6 +30,11 @@ from artana_evidence_api.source_document_selection_identity import (
     source_document_dedup_key,
 )
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+
+_REVIEW_RANKING_CALIBRATION_BASIS = (
+    "Promoted proposals and resolved, non-converted review items are positive outcomes; "
+    "rejected proposals and dismissed review items are negative outcomes."
+)
 
 
 def build_evidence_selection_workspace_snapshot(
@@ -50,8 +59,20 @@ def build_evidence_selection_workspace_snapshot(
     ][:20]
     prior_documents = document_store.list_documents(space_id=space_id)[:50]
     prior_proposals = proposal_store.list_proposals(space_id=space_id)[:50]
+    decided_calibration_proposals = [
+        *proposal_store.list_proposals(space_id=space_id, status="promoted"),
+        *proposal_store.list_proposals(space_id=space_id, status="rejected"),
+    ]
     prior_review_items = (
         review_item_store.list_review_items(space_id=space_id)[:50]
+        if review_item_store is not None
+        else []
+    )
+    decided_calibration_review_items = (
+        [
+            *review_item_store.list_review_items(space_id=space_id, status="resolved"),
+            *review_item_store.list_review_items(space_id=space_id, status="dismissed"),
+        ]
         if review_item_store is not None
         else []
     )
@@ -105,6 +126,10 @@ def build_evidence_selection_workspace_snapshot(
         "graph_state_summary": _graph_state_summary(
             proposals=prior_proposals,
             approvals=prior_approvals,
+        ),
+        "review_ranking_calibration": _review_ranking_calibration_snapshot(
+            proposals=decided_calibration_proposals,
+            review_items=decided_calibration_review_items,
         ),
         "deduplication": {
             "source_document_keys": sorted(
@@ -229,6 +254,74 @@ def _graph_state_summary(
             "still read through the graph service."
         ),
     }
+
+
+def _review_ranking_calibration_snapshot(
+    *,
+    proposals: list[HarnessProposalRecord],
+    review_items: list[HarnessReviewItemRecord],
+) -> JSONObject:
+    observations = (
+        *_proposal_ranking_calibration_observations(proposals),
+        *_review_item_ranking_calibration_observations(review_items),
+    )
+    summary = build_review_ranking_calibration_summary(observations)
+    return {
+        **summary.to_json(),
+        "basis": _REVIEW_RANKING_CALIBRATION_BASIS,
+    }
+
+
+def _proposal_ranking_calibration_observations(
+    proposals: list[HarnessProposalRecord],
+) -> tuple[ReviewRankingCalibrationObservation, ...]:
+    observations: list[ReviewRankingCalibrationObservation] = []
+    for proposal in proposals:
+        if proposal.status == "promoted":
+            observations.append(
+                ReviewRankingCalibrationObservation(
+                    ranking_score=proposal.ranking_score,
+                    outcome_positive=True,
+                ),
+            )
+        if proposal.status == "rejected":
+            observations.append(
+                ReviewRankingCalibrationObservation(
+                    ranking_score=proposal.ranking_score,
+                    outcome_positive=False,
+                ),
+            )
+    return tuple(observations)
+
+
+def _review_item_ranking_calibration_observations(
+    review_items: list[HarnessReviewItemRecord],
+) -> tuple[ReviewRankingCalibrationObservation, ...]:
+    observations: list[ReviewRankingCalibrationObservation] = []
+    for review_item in review_items:
+        if review_item.status == "resolved" and not _was_converted_to_proposal(
+            review_item,
+        ):
+            observations.append(
+                ReviewRankingCalibrationObservation(
+                    ranking_score=review_item.ranking_score,
+                    outcome_positive=True,
+                ),
+            )
+        if review_item.status == "dismissed":
+            observations.append(
+                ReviewRankingCalibrationObservation(
+                    ranking_score=review_item.ranking_score,
+                    outcome_positive=False,
+                ),
+            )
+    return tuple(observations)
+
+
+def _was_converted_to_proposal(review_item: HarnessReviewItemRecord) -> bool:
+    """Return whether a resolution only escalated the item to proposal review."""
+
+    return review_item.metadata.get("converted_to_proposal") is True
 
 
 __all__ = ["build_evidence_selection_workspace_snapshot"]
