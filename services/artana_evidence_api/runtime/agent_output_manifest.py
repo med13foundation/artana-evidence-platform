@@ -250,22 +250,9 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="graph_connection.agent.v1",
         schema_names=("_GraphConnectionExecutionContract",),
-        shape_hash="c02dac58f0bf8f3b703a6f45a2398f4590c1142c8c50fa876813c496ab800a2b",
+        shape_hash="8abaa06aefb8c10ee2b151274733f43e6795ac1e206d011e0c33dec9274c7a5d",
         producer_paths=("graph_connection_runtime.py",),
-        prompt_identifiers=("graph_connection.system_and_request.v1",),
-        numeric_fields=(
-            NumericFieldPolicy(path="$.confidence_score", debt_id="AON-GCON-001"),
-            NumericFieldPolicy(
-                path="$.proposed_relations[].confidence", debt_id="AON-GCON-002"
-            ),
-            NumericFieldPolicy(
-                path="$.proposed_relations[].supporting_document_count",
-                debt_id="AON-GCON-003",
-            ),
-            NumericFieldPolicy(
-                path="$.rejected_candidates[].confidence", debt_id="AON-GCON-004"
-            ),
-        ),
+        prompt_identifiers=("graph_connection.system_and_request.v2",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -291,18 +278,9 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="graph_search.agent.v1",
         schema_names=("_GraphSearchExecutionContract",),
-        shape_hash="754c069d4379463f2e5f01e91c4a4e863f39762bfed230bc7276b345dcd989c1",
+        shape_hash="7015f3a669f3d7794b2d287bc6b52081e5d4f976fd9d1c061f6b2e950faaa855",
         producer_paths=("graph_search_runtime.py",),
-        prompt_identifiers=("graph_search.system_and_request.v1",),
-        numeric_fields=(
-            NumericFieldPolicy(path="$.confidence_score", debt_id="AON-GSEA-001"),
-            NumericFieldPolicy(
-                path="$.results[].evidence_chain[].confidence", debt_id="AON-GSEA-002"
-            ),
-            NumericFieldPolicy(
-                path="$.results[].relevance_score", debt_id="AON-GSEA-003"
-            ),
-        ),
+        prompt_identifiers=("graph_search.system_and_request.v2",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -313,15 +291,6 @@ _POLICIES = (
                 "$.evidence[].source_type",
                 _SOURCE_TYPE,
                 evidence_requirement="Every item requires a stable locator.",
-            ),
-            _category(
-                "$.executed_path",
-                {
-                    "deterministic": "the result used only deterministic execution.",
-                    "agent": "the model agent produced the result.",
-                    "agent_fallback": "the agent failed and an explicit fallback produced the result.",
-                },
-                evidence_requirement="Runtime provenance must establish the path.",
             ),
             *_graph_categories("$.assessment"),
             *_graph_categories("$.results[].assessment"),

@@ -11569,6 +11569,13 @@
             "title": "Supporting Document Count",
             "type": "integer"
           },
+          "supporting_document_locators": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supporting Document Locators",
+            "type": "array"
+          },
           "supporting_provenance_ids": {
             "items": {
               "type": "string"

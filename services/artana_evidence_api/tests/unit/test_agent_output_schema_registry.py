@@ -388,13 +388,6 @@ def test_debt_manifest_exactly_covers_registered_legacy_fields() -> None:
 
     debt_ids = [item.debt_id for item in manifest]
     assert set(debt_ids) == {
-        "AON-GCON-001",
-        "AON-GCON-002",
-        "AON-GCON-003",
-        "AON-GCON-004",
-        "AON-GSEA-001",
-        "AON-GSEA-002",
-        "AON-GSEA-003",
         "AON-SEL-001",
         "AON-VEXT-001",
         "AON-VEXT-002",
@@ -411,8 +404,8 @@ def test_registry_report_exposes_merge_gate_counts() -> None:
     report = build_agent_output_registry_report()
 
     assert report["registered_schema_count"] == 15
-    assert report["registered_numeric_field_count"] == 15
+    assert report["registered_numeric_field_count"] == 8
     assert report["origin_governed_numeric_field_count"] == 0
-    assert report["debt_numeric_field_count"] == 15
-    assert report["active_debt_count"] == 15
-    assert report["unquarantined_debt_count"] == 14
+    assert report["debt_numeric_field_count"] == 8
+    assert report["active_debt_count"] == 8
+    assert report["unquarantined_debt_count"] == 7
