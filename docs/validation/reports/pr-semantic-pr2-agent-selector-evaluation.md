@@ -1,6 +1,6 @@
 # PR 2 Agent-First Semantic Selector Evaluation
 
-- Evaluated commit: `aea80143e1289f5161f30e6d7e4a08ac3822aca7`
+- Evaluated commit: `c2f0d725871bd2073be762d64ff21a6534550361`
 - Model: `openai:gpt-5.4-mini`
 - Baseline report SHA-256: `e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295`
 - Fixture provenance: **AI-adjudicated diagnostic**
