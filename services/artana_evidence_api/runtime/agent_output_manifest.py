@@ -10,6 +10,7 @@ from artana_evidence_api.runtime.agent_output_schema import (
     CategoryFieldPolicy,
     CategoryValuePolicy,
     NumericFieldPolicy,
+    NumericOrigin,
 )
 
 
@@ -513,21 +514,13 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="variant_extraction.agent.v1",
         schema_names=("LLMExtractionContract",),
-        shape_hash="390b7cd1001fcf49d7ac9bedfd9fa411a7f01e42ea3c3a3558759810ed781909",
+        shape_hash="3c4938c8f9dc9109277fc5e56af4a70d4b58519fa0fe30d2ed3ce2ce90bd1ed7",
         producer_paths=("variant_extraction_bridges.py",),
-        prompt_identifiers=("variant_extraction.context.v1",),
+        prompt_identifiers=("variant_extraction.context.v2",),
         numeric_fields=(
-            NumericFieldPolicy(path="$.confidence_score", debt_id="AON-VEXT-001"),
-            *(
-                NumericFieldPolicy(path=path, debt_id=debt_id)
-                for path, debt_id in (
-                    ("$.entities[].anchors[].value", "AON-VEXT-002"),
-                    ("$.entities[].metadata[].value", "AON-VEXT-003"),
-                    ("$.observations[].value", "AON-VEXT-004"),
-                    ("$.rejected_facts[].payload[].value", "AON-VEXT-005"),
-                    ("$.relations[].source_anchors[].value", "AON-VEXT-006"),
-                    ("$.relations[].target_anchors[].value", "AON-VEXT-007"),
-                )
+            NumericFieldPolicy(
+                path="$.observations[].value.value",
+                origin=NumericOrigin.SOURCE_MEASUREMENT,
             ),
         ),
         categorical_fields=(

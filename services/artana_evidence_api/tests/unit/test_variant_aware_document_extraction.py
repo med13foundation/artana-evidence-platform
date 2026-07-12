@@ -10,6 +10,7 @@ from uuid import uuid4
 import pytest
 from artana_evidence_api import variant_extraction_bridges
 from artana_evidence_api.document_store import HarnessDocumentRecord
+from artana_evidence_api.runtime.agent_output_schema import SourceMeasurementNumber
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
 )
@@ -29,8 +30,10 @@ from artana_evidence_api.variant_extraction_contracts import (
     ExtractedRelation,
     ExtractionContract,
     LLMExtractedEntityCandidate,
+    LLMExtractedObservation,
     LLMExtractionContract,
-    LLMKeyValueField,
+    LLMIdentifierField,
+    LLMLiteralField,
     RejectedFact,
 )
 
@@ -173,7 +176,6 @@ def _single_variant_contract(*, document_id: str) -> ExtractionContract:
 def _single_variant_llm_contract(*, document_id: str) -> LLMExtractionContract:
     return LLMExtractionContract(
         decision="generated",
-        confidence_score=0.0,
         rationale="Recovered one anchored variant from the source record.",
         evidence=[],
         source_type="pubmed",
@@ -183,14 +185,14 @@ def _single_variant_llm_contract(*, document_id: str) -> LLMExtractionContract:
                 entity_type="VARIANT",
                 label="NM_015335.6:c.977C>A (p.Thr326Lys)",
                 anchors=[
-                    LLMKeyValueField(key="gene_symbol", value="MED13"),
-                    LLMKeyValueField(key="hgvs_notation", value="c.977C>A"),
+                    LLMIdentifierField(key="gene_symbol", value="MED13"),
+                    LLMIdentifierField(key="hgvs_notation", value="c.977C>A"),
                 ],
                 metadata=[
-                    LLMKeyValueField(key="transcript", value="NM_015335.6"),
-                    LLMKeyValueField(key="hgvs_cdna", value="c.977C>A"),
-                    LLMKeyValueField(key="hgvs_protein", value="p.Thr326Lys"),
-                    LLMKeyValueField(key="classification", value="Likely Pathogenic"),
+                    LLMLiteralField(key="transcript", value="NM_015335.6"),
+                    LLMLiteralField(key="hgvs_cdna", value="c.977C>A"),
+                    LLMLiteralField(key="hgvs_protein", value="p.Thr326Lys"),
+                    LLMLiteralField(key="classification", value="Likely Pathogenic"),
                 ],
                 evidence_excerpt="MED13 NM_015335.6:c.977C>A (p.Thr326Lys)",
                 evidence_locator="text_span:10-34",
@@ -203,6 +205,195 @@ def _single_variant_llm_contract(*, document_id: str) -> LLMExtractionContract:
         shadow_mode=True,
         agent_run_id="variant-aware-source-test",
     )
+
+
+def test_llm_extraction_converts_verified_source_measurement() -> None:
+    source_hash = "source-hash-1"
+    contract = LLMExtractionContract(
+        rationale="Copied one source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type="pubmed",
+        document_id="document-1",
+        observations=[
+            LLMExtractedObservation(
+                field_name="allele_frequency",
+                variable_id="VAR_ALLELE_FREQUENCY",
+                value=SourceMeasurementNumber(
+                    value=0.125,
+                    source_locator="raw_record.text",
+                    literal_span="0.125",
+                    field_name="allele_frequency",
+                    unit="ratio",
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit="ratio",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+    contract = LLMExtractionContract.model_validate(contract.model_dump(mode="json"))
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash=source_hash,
+        source_values_by_locator={
+            "raw_record.text": "Allele frequency was 0.125.",
+        },
+    )
+
+    assert extracted.confidence_score == 0.9
+    assert extracted.observations[0].value == 0.125
+    assert extracted.observations[0].source_measurement is not None
+    assert extracted.observations[0].source_measurement.literal_span == "0.125"
+
+
+@pytest.mark.parametrize(
+    (
+        "source_hash",
+        "literal_span",
+        "value",
+        "source_locator",
+        "extraction_method",
+        "match",
+    ),
+    [
+        (
+            "wrong-source",
+            "0.125",
+            0.125,
+            "raw_record.text",
+            "literal_copy",
+            "source_hash",
+        ),
+        (
+            "source-hash-1",
+            "invented-value",
+            0.125,
+            "raw_record.text",
+            "literal_copy",
+            "literal_span",
+        ),
+        (
+            "source-hash-1",
+            "0.125",
+            999.0,
+            "raw_record.text",
+            "literal_copy",
+            "value",
+        ),
+        (
+            "source-hash-1",
+            "0.125",
+            0.125,
+            "invented.path",
+            "literal_copy",
+            "source_locator",
+        ),
+        (
+            "source-hash-1",
+            "0.1",
+            0.1,
+            "raw_record.text",
+            "literal_copy",
+            "source locator",
+        ),
+        (
+            "source-hash-1",
+            "0.125",
+            0.125,
+            "raw_record.text",
+            "model_inference",
+            "extraction_method",
+        ),
+    ],
+)
+def test_llm_extraction_rejects_unverified_source_measurement(
+    source_hash: str,
+    literal_span: str,
+    value: float,
+    source_locator: str,
+    extraction_method: str,
+    match: str,
+) -> None:
+    contract = LLMExtractionContract(
+        rationale="Attempted one source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type="pubmed",
+        document_id="document-1",
+        observations=[
+            LLMExtractedObservation(
+                field_name="allele_frequency",
+                variable_id="VAR_ALLELE_FREQUENCY",
+                value=SourceMeasurementNumber(
+                    value=value,
+                    source_locator=source_locator,
+                    literal_span=literal_span,
+                    field_name="allele_frequency",
+                    unit="ratio",
+                    extraction_method=extraction_method,
+                    source_hash=source_hash,
+                ),
+                unit="ratio",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match=match):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-1",
+            source_values_by_locator={
+                "raw_record.text": "Allele frequency was 0.125.",
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_type", "value"),
+    [
+        (LLMIdentifierField, 12345),
+        (LLMLiteralField, 0.99),
+        (LLMLiteralField, 1),
+    ],
+)
+def test_llm_dynamic_fields_reject_untyped_numbers(
+    field_type: type[LLMIdentifierField | LLMLiteralField],
+    value: object,
+) -> None:
+    with pytest.raises(ValueError, match="value"):
+        field_type.model_validate({"key": "source_field", "value": value})
+
+
+def test_llm_extraction_rejects_duplicate_dynamic_identifiers() -> None:
+    contract = LLMExtractionContract(
+        rationale="Returned conflicting identifiers.",
+        evidence=[],
+        decision="generated",
+        source_type="pubmed",
+        document_id="document-1",
+        entities=[
+            LLMExtractedEntityCandidate(
+                entity_type="VARIANT",
+                label="MED13 c.977C>A",
+                anchors=[
+                    LLMIdentifierField(key="gene_symbol", value="MED13"),
+                    LLMIdentifierField(key="gene_symbol", value="OTHER"),
+                ],
+                metadata=[],
+                evidence_excerpt="MED13 c.977C>A",
+                evidence_locator="raw_record.text",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="Duplicate dynamic field key"):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-1",
+            source_values_by_locator={"raw_record.text": "MED13 c.977C>A"},
+        )
 
 
 def _variant_context(*, document_id: str = "doc-variant-1") -> (
@@ -343,6 +534,59 @@ def test_artana_extraction_adapter_fails_closed_on_invalid_llm_output(
     assert result.agent_run_id is not None
     assert result.agent_run_id.startswith("variant_extraction:pubmed:")
     assert "failed closed" in result.rationale
+
+
+def test_artana_extraction_adapter_fails_closed_on_forged_measurement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = _variant_context()
+    contract = LLMExtractionContract(
+        rationale="Returned a forged source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type=context.source_type,
+        document_id=context.document_id,
+        observations=[
+            LLMExtractedObservation(
+                field_name="allele_frequency",
+                variable_id="VAR_ALLELE_FREQUENCY",
+                value=SourceMeasurementNumber(
+                    value=999.0,
+                    source_locator="raw_record.text",
+                    literal_span="MED13",
+                    field_name="allele_frequency",
+                    unit="ratio",
+                    extraction_method="literal_copy",
+                    source_hash="forged-source-hash",
+                ),
+                unit="ratio",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+    _patch_variant_adapter_runtime(
+        monkeypatch,
+        step_output=contract.model_dump(mode="json"),
+    )
+
+    result = asyncio.run(variant_extraction_bridges.ArtanaExtractionAdapter().extract(context))
+
+    assert result.decision == "fallback"
+    assert result.agent_run_id is not None
+    assert "source_hash" in result.rationale
+
+
+def test_variant_prompt_exposes_hash_and_valid_scalar_locators() -> None:
+    payload = variant_extraction_bridges._prompt_payload_from_context(
+        _variant_context(),
+    )
+
+    assert isinstance(payload["source_hash"], str)
+    assert len(payload["source_hash"]) == 64
+    locators = payload["allowed_source_locators"]
+    assert isinstance(locators, list)
+    assert "raw_record.text" in locators
+    assert "genomics_signals.variant_aware_recommended" in locators
 
 
 def test_document_supports_variant_aware_extraction_detects_genomics_signals() -> None:

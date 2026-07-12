@@ -396,13 +396,6 @@ def test_debt_manifest_exactly_covers_registered_legacy_fields() -> None:
         "AON-GSEA-002",
         "AON-GSEA-003",
         "AON-SEL-001",
-        "AON-VEXT-001",
-        "AON-VEXT-002",
-        "AON-VEXT-003",
-        "AON-VEXT-004",
-        "AON-VEXT-005",
-        "AON-VEXT-006",
-        "AON-VEXT-007",
     }
     assert any(not item.quarantined for item in manifest)
 
@@ -411,8 +404,8 @@ def test_registry_report_exposes_merge_gate_counts() -> None:
     report = build_agent_output_registry_report()
 
     assert report["registered_schema_count"] == 15
-    assert report["registered_numeric_field_count"] == 15
-    assert report["origin_governed_numeric_field_count"] == 0
-    assert report["debt_numeric_field_count"] == 15
-    assert report["active_debt_count"] == 15
-    assert report["unquarantined_debt_count"] == 14
+    assert report["registered_numeric_field_count"] == 9
+    assert report["origin_governed_numeric_field_count"] == 1
+    assert report["debt_numeric_field_count"] == 8
+    assert report["active_debt_count"] == 8
+    assert report["unquarantined_debt_count"] == 7

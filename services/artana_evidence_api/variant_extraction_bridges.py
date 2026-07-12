@@ -146,7 +146,7 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v1"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v2"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
 _VARIANT_EXTRACTION_SYSTEM_PROMPT = """
 You are the Artana Variant-Aware Extraction Agent.
@@ -174,6 +174,16 @@ Useful output conventions:
 - Represent anchors, metadata, source_anchors, target_anchors, and rejected
   payload as arrays of {"key": "...", "value": "..."} entries, not nested JSON
   objects.
+- Anchor values are identifiers: always return them as non-empty strings, even
+  when an identifier contains only digits.
+- Metadata and rejected payload values must be strings, booleans, or null. Keep
+  source numbers there as exact literal strings.
+- A numeric observation value must use the source_measurement envelope. Copy
+  source_hash from the request context; copy literal_span exactly from the
+  supplied source; use one allowed_source_locator; set extraction_method to
+  "literal_copy"; and set field_name and unit.
+- Do not return a run confidence score. Return the qualitative FactAssessment
+  fields and their evidence-based confidence_rationale instead.
 - Variant metadata can include transcript, hgvs_cdna, hgvs_protein,
   hgvs_genomic, genomic_position, genome_build, zygosity, inheritance,
   exon_or_intron, and classification.
@@ -731,6 +741,21 @@ def _truncate_prompt_value(value: object, *, limit: int = 4000) -> str:
 
 
 def _prompt_payload_from_context(context: ExtractionContext) -> JSONObject:
+    source_payload, _, source_hash, source_values = _variant_source_material(context)
+    return {
+        "document_id": context.document_id,
+        "source_type": context.source_type,
+        "research_space_id": context.research_space_id,
+        "shadow_mode": context.shadow_mode,
+        "source_hash": source_hash,
+        "allowed_source_locators": sorted(source_values),
+        **source_payload,
+    }
+
+
+def _variant_source_material(
+    context: ExtractionContext,
+) -> tuple[JSONObject, str, str, dict[str, JSONValue]]:
     raw_record = dict(context.raw_record)
     for key in ("text", "content", "abstract", "full_text"):
         value = raw_record.get(key)
@@ -739,16 +764,35 @@ def _prompt_payload_from_context(context: ExtractionContext) -> JSONObject:
                 value,
                 limit=_VARIANT_EXTRACTION_TEXT_LIMIT,
             )
-    return {
-        "document_id": context.document_id,
-        "source_type": context.source_type,
-        "research_space_id": context.research_space_id,
-        "shadow_mode": context.shadow_mode,
+    source_payload: JSONObject = {
         "raw_record": raw_record,
         "recognized_entities": context.recognized_entities,
         "recognized_observations": context.recognized_observations,
         "genomics_signals": context.genomics_signals,
     }
+    rendered = json.dumps(source_payload, sort_keys=True, separators=(",", ":"))
+    source_hash = stable_sha256_digest(rendered, length=64)
+    source_values = _json_scalar_values(source_payload)
+    return source_payload, rendered, source_hash, source_values
+
+
+def _json_scalar_values(
+    value: JSONValue,
+    *,
+    path: str = "",
+) -> dict[str, JSONValue]:
+    if isinstance(value, dict):
+        values: dict[str, JSONValue] = {}
+        for key, child in value.items():
+            child_path = f"{path}.{key}" if path else str(key)
+            values.update(_json_scalar_values(child, path=child_path))
+        return values
+    if isinstance(value, list):
+        values = {}
+        for index, child in enumerate(value):
+            values.update(_json_scalar_values(child, path=f"{path}[{index}]"))
+        return values
+    return {path: value} if path else {}
 
 
 class ArtanaExtractionAdapter:
@@ -831,7 +875,13 @@ class ArtanaExtractionAdapter:
                 if isinstance(output, LLMExtractionContract)
                 else LLMExtractionContract.model_validate(output)
             )
-            contract = llm_contract.to_extraction_contract()
+            _, _, source_hash, source_values = (
+                _variant_source_material(context)
+            )
+            contract = llm_contract.to_extraction_contract(
+                expected_source_hash=source_hash,
+                source_values_by_locator=source_values,
+            )
             return contract.model_copy(
                 update={
                     "source_type": context.source_type,

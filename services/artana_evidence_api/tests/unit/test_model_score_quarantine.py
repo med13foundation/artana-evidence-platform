@@ -161,6 +161,20 @@ def test_graph_search_execution_schema_rejects_agent_total_results() -> None:
         _GraphSearchExecutionContract.model_validate({"total_results": 1_000_000})
 
 
+def test_variant_extraction_schema_rejects_agent_confidence() -> None:
+    with pytest.raises(ValidationError, match="confidence_score"):
+        LLMExtractionContract.model_validate(
+            {
+                "rationale": "Extracted from a cited span.",
+                "evidence": [_citation_payload()],
+                "decision": "generated",
+                "source_type": "paper",
+                "document_id": "document-1",
+                "confidence_score": 0.99,
+            },
+        )
+
+
 @pytest.mark.asyncio
 async def test_pubmed_ingestion_order_ignores_llm_confidence(
     monkeypatch: pytest.MonkeyPatch,

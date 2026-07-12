@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import math
+import re
+from collections.abc import Mapping
 from typing import Literal, cast
 
 from artana_evidence_api.agent_contracts import (
     EvidenceBackedAgentContract,
     ModelEvidenceCitation,
 )
+from artana_evidence_api.runtime.agent_output_schema import SourceMeasurementNumber
 from artana_evidence_api.types.common import JSONObject, JSONValue
 from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
@@ -15,25 +19,53 @@ from artana_evidence_api.types.graph_fact_assessment import (
 )
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-LLMScalarValue = str | int | float | bool | None
+LLMLiteralValue = str | bool | None
+LLMObservationValue = LLMLiteralValue | SourceMeasurementNumber
+_SOURCE_NUMBER_PATTERN = re.compile(
+    r"(?<![\w.])[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][-+]?\d+)?(?!\w)",
+)
 
 
-class LLMKeyValueField(BaseModel):
-    """OpenAI structured-output-safe representation of a dynamic JSON field."""
+class LLMIdentifierField(BaseModel):
+    """A dynamic identifier whose lexical representation must remain a string."""
 
     key: str = Field(..., min_length=1, max_length=128)
-    value: LLMScalarValue
+    value: str = Field(..., min_length=1, max_length=512)
+
+    model_config = ConfigDict(strict=True, extra="forbid")
 
 
-def _fields_to_json_object(fields: list[LLMKeyValueField]) -> JSONObject:
+class LLMLiteralField(BaseModel):
+    """A nonnumeric literal field for metadata and rejected diagnostics."""
+
+    key: str = Field(..., min_length=1, max_length=128)
+    value: LLMLiteralValue
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+
+def _fields_to_json_object(
+    fields: list[LLMIdentifierField] | list[LLMLiteralField],
+) -> JSONObject:
     """Convert LLM-safe key/value fields back into the service JSON shape."""
     payload: JSONObject = {}
     for field in fields:
         key = field.key.strip()
         if key == "":
             continue
+        if key in payload:
+            msg = f"Duplicate dynamic field key {key!r} is not allowed."
+            raise ValueError(msg)
         payload[key] = cast("JSONValue", field.value)
     return payload
+
+
+def _text_contains_measurement(*, text: str, value: float) -> bool:
+    for match in _SOURCE_NUMBER_PATTERN.finditer(text):
+        candidate = float(match.group(0).replace(",", ""))
+        if math.isclose(candidate, value, rel_tol=1e-12, abs_tol=1e-12):
+            return True
+    return False
 
 
 class ExtractedObservation(BaseModel):
@@ -43,6 +75,10 @@ class ExtractedObservation(BaseModel):
     variable_id: str = Field(..., min_length=1, max_length=64)
     value: JSONValue
     unit: str | None = Field(default=None, max_length=64)
+    source_measurement: SourceMeasurementNumber | None = Field(
+        default=None,
+        description="Validated provenance retained when value is a source number.",
+    )
     assessment: FactAssessment
 
     @property
@@ -140,12 +176,61 @@ class LLMExtractedObservation(BaseModel):
 
     field_name: str = Field(..., min_length=1, max_length=128)
     variable_id: str = Field(..., min_length=1, max_length=64)
-    value: LLMScalarValue
+    value: LLMObservationValue
     unit: str | None = Field(default=None, max_length=64)
     assessment: FactAssessment
 
-    def to_extracted_observation(self) -> ExtractedObservation:
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    def to_extracted_observation(
+        self,
+        *,
+        expected_source_hash: str,
+        source_values_by_locator: Mapping[str, JSONValue],
+    ) -> ExtractedObservation:
         """Return the internal service observation contract."""
+        if isinstance(self.value, SourceMeasurementNumber):
+            measurement = self.value
+            if measurement.source_hash != expected_source_hash:
+                msg = "Numeric observation source_hash does not match request context."
+                raise ValueError(msg)
+            if measurement.source_locator not in source_values_by_locator:
+                msg = "Numeric observation source_locator is absent from request context."
+                raise ValueError(msg)
+            source_value = source_values_by_locator[measurement.source_locator]
+            source_text = source_value if isinstance(source_value, str) else str(source_value)
+            if measurement.literal_span not in source_text:
+                msg = "Numeric observation literal_span is absent from its source locator."
+                raise ValueError(msg)
+            if not _text_contains_measurement(
+                text=measurement.literal_span,
+                value=measurement.value,
+            ):
+                msg = "Numeric observation value is absent from its literal_span."
+                raise ValueError(msg)
+            if not _text_contains_measurement(
+                text=source_text,
+                value=measurement.value,
+            ):
+                msg = "Numeric observation value is absent from its source locator."
+                raise ValueError(msg)
+            if measurement.field_name != self.field_name:
+                msg = "Numeric observation field_name does not match its envelope."
+                raise ValueError(msg)
+            if measurement.extraction_method != "literal_copy":
+                msg = "Numeric observation extraction_method must be literal_copy."
+                raise ValueError(msg)
+            if self.unit is not None and measurement.unit != self.unit:
+                msg = "Numeric observation unit does not match its envelope."
+                raise ValueError(msg)
+            return ExtractedObservation(
+                field_name=self.field_name,
+                variable_id=self.variable_id,
+                value=measurement.value,
+                unit=measurement.unit,
+                source_measurement=measurement,
+                assessment=self.assessment,
+            )
         return ExtractedObservation(
             field_name=self.field_name,
             variable_id=self.variable_id,
@@ -160,11 +245,13 @@ class LLMExtractedEntityCandidate(BaseModel):
 
     entity_type: str = Field(..., min_length=1, max_length=64)
     label: str = Field(..., min_length=1, max_length=255)
-    anchors: list[LLMKeyValueField] = Field(default_factory=list)
-    metadata: list[LLMKeyValueField] = Field(default_factory=list)
+    anchors: list[LLMIdentifierField] = Field(default_factory=list)
+    metadata: list[LLMLiteralField] = Field(default_factory=list)
     evidence_excerpt: str = Field(..., min_length=1, max_length=1200)
     evidence_locator: str = Field(..., min_length=1, max_length=255)
     assessment: FactAssessment
+
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     def to_extracted_entity_candidate(self) -> ExtractedEntityCandidate:
         """Return the internal service entity candidate contract."""
@@ -192,11 +279,13 @@ class LLMExtractedRelation(BaseModel):
     claim_section: str | None = Field(default=None, max_length=64)
     source_label: str | None = Field(default=None, max_length=255)
     target_label: str | None = Field(default=None, max_length=255)
-    source_anchors: list[LLMKeyValueField] = Field(default_factory=list)
-    target_anchors: list[LLMKeyValueField] = Field(default_factory=list)
+    source_anchors: list[LLMIdentifierField] = Field(default_factory=list)
+    target_anchors: list[LLMIdentifierField] = Field(default_factory=list)
     evidence_excerpt: str | None = Field(default=None, max_length=1200)
     evidence_locator: str | None = Field(default=None, max_length=255)
     assessment: FactAssessment
+
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     def to_extracted_relation(self) -> ExtractedRelation:
         """Return the internal service relation contract."""
@@ -222,8 +311,10 @@ class LLMRejectedFact(BaseModel):
 
     fact_type: Literal["observation", "relation"]
     reason: str = Field(..., min_length=1, max_length=255)
-    payload: list[LLMKeyValueField] = Field(default_factory=list)
+    payload: list[LLMLiteralField] = Field(default_factory=list)
     assessment: FactAssessment | None = Field(default=None)
+
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     def to_rejected_fact(self) -> RejectedFact:
         """Return the internal service rejected fact contract."""
@@ -291,12 +382,6 @@ class LLMExtractionContract(BaseModel):
     """OpenAI structured-output-safe contract for live variant extraction."""
 
     rationale: str
-    confidence_score: float = Field(
-        default=0.0,
-        ge=0.0,
-        le=1.0,
-        description="Derived backend run-level confidence for routing decisions.",
-    )
     evidence: list[ModelEvidenceCitation] = Field(default_factory=list)
     decision: Literal["generated", "fallback", "escalate"] = Field(
         ...,
@@ -311,14 +396,18 @@ class LLMExtractionContract(BaseModel):
     shadow_mode: bool = Field(default=True)
     agent_run_id: str | None = Field(default=None)
 
-    model_config = ConfigDict(use_enum_values=True, extra="forbid")
+    model_config = ConfigDict(strict=True, use_enum_values=True, extra="forbid")
 
-    def to_extraction_contract(self) -> ExtractionContract:
+    def to_extraction_contract(
+        self,
+        *,
+        expected_source_hash: str,
+        source_values_by_locator: Mapping[str, JSONValue],
+    ) -> ExtractionContract:
         """Convert the LLM-safe schema into the internal service contract."""
         return ExtractionContract(
             rationale=self.rationale,
             evidence=[citation.to_legacy_evidence_item() for citation in self.evidence],
-            confidence_score=self.confidence_score,
             decision=self.decision,
             source_type=self.source_type,
             document_id=self.document_id,
@@ -326,7 +415,10 @@ class LLMExtractionContract(BaseModel):
                 entity.to_extracted_entity_candidate() for entity in self.entities
             ],
             observations=[
-                observation.to_extracted_observation()
+                observation.to_extracted_observation(
+                    expected_source_hash=expected_source_hash,
+                    source_values_by_locator=source_values_by_locator,
+                )
                 for observation in self.observations
             ],
             relations=[relation.to_extracted_relation() for relation in self.relations],
@@ -349,7 +441,8 @@ __all__ = [
     "LLMExtractedEntityCandidate",
     "LLMExtractedObservation",
     "LLMExtractedRelation",
-    "LLMKeyValueField",
+    "LLMIdentifierField",
+    "LLMLiteralField",
     "LLMRejectedFact",
     "RejectedFact",
 ]
