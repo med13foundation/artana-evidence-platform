@@ -9,6 +9,9 @@ from uuid import uuid4
 
 import pytest
 from artana_evidence_api import variant_extraction_bridges
+from artana_evidence_api.document_extraction_support.variant.source_measurement_drafts import (
+    build_source_measurement_observation_drafts,
+)
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.runtime.agent_output_schema import SourceMeasurementNumber
 from artana_evidence_api.types.graph_contracts import (
@@ -329,6 +332,7 @@ def test_llm_extraction_accepts_leading_dot_source_measurement() -> None:
         ("12kb", "12", 12, "kb"),
         ("3x", "3", 3, "x"),
         ("25%", "25", 25, "percent"),
+        ("$5", "5", 5, "usd"),
     ],
 )
 def test_llm_extraction_accepts_literal_unit_adjacent_measurement(
@@ -475,6 +479,10 @@ def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
         ("5 mg", "5", "mg", "Reported <=5 mg."),
         ("5-10 mg", "10", "mg", "Reported 5-10 mg."),
         ("10 mg", "10", "mg", "Reported 5-10 mg."),
+        ("5 mg", "5", "mg", "Reported less than 5 mg."),
+        ("10 mg", "10", "mg", "Reported 5 to 10 mg."),
+        ("5 mg", "5", "mg", "Reported between 5 mg and 10 mg."),
+        ("MG5", "5", "mg", "Marker MG5 was measured."),
     ],
 )
 def test_llm_extraction_rejects_unit_stripping_bounds_and_ranges(
@@ -995,6 +1003,12 @@ def test_variant_prompt_exposes_hash_and_valid_scalar_locators() -> None:
     assert "raw_record.source_span.start" not in locators
     assert "genomics_signals.variant_aware_recommended" not in locators
     assert not any("source_span" in locator for locator in locators)
+    assert "genomic_position, genome_build" not in (
+        variant_extraction_bridges._VARIANT_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert "numbered exons or introns" in (
+        variant_extraction_bridges._VARIANT_EXTRACTION_SYSTEM_PROMPT
+    )
 
 
 def test_document_supports_variant_aware_extraction_detects_genomics_signals() -> None:
@@ -1229,7 +1243,7 @@ def test_extract_variant_aware_document_stages_source_measurement_observation(
                     variable_id="VAR_ALLELE_FREQUENCY",
                     value=0.125,
                     unit="ratio",
-                    subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                    subject_label="MED13 c.977C>A",
                     subject_anchors={
                         "gene_symbol": "MED13",
                         "hgvs_notation": "c.977C>A",
@@ -1295,6 +1309,80 @@ def test_extract_variant_aware_document_stages_source_measurement_observation(
         "gene_symbol": "MED13",
         "hgvs_notation": "c.977C>A",
     }
+
+
+def test_source_measurement_fingerprint_includes_unit() -> None:
+    document = _document(text="Dose measurements were 5mg and 5g.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    observations = [
+        ExtractedObservation(
+            field_name="dose",
+            variable_id="DOSE",
+            value=5,
+            unit=unit,
+            subject_label="MED13 c.977C>A",
+            subject_anchors={
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.977C>A",
+            },
+            source_measurement=SourceMeasurementNumber(
+                value="5",
+                source_locator="raw_record.text",
+                literal_span=f"5{unit}",
+                field_name="dose",
+                unit=unit,
+                extraction_method="literal_copy",
+                source_hash="source-hash-fingerprint",
+            ),
+            assessment=_assessment(),
+        )
+        for unit in ("mg", "g")
+    ]
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=observations,
+        variant_entities=(candidate,),
+    )
+
+    assert skipped_items == []
+    assert len(drafts) == 2
+    assert len({draft.claim_fingerprint for draft in drafts}) == 2
+
+
+def test_source_measurement_skips_non_persistable_subject() -> None:
+    document = _document(text="MED13 had a measurement of 5mg.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"anchors": {"gene_symbol": "MED13"}},
+    )
+    observation = ExtractedObservation(
+        field_name="dose",
+        variable_id="DOSE",
+        value=5,
+        unit="mg",
+        subject_label=candidate.label,
+        subject_anchors={"gene_symbol": "MED13"},
+        source_measurement=SourceMeasurementNumber(
+            value="5",
+            source_locator="raw_record.text",
+            literal_span="5mg",
+            field_name="dose",
+            unit="mg",
+            extraction_method="literal_copy",
+            source_hash="source-hash-incomplete-subject",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "did not match" in str(skipped_items[0]["reason"])
 
 
 def test_extract_variant_aware_document_falls_back_to_deterministic_signals(

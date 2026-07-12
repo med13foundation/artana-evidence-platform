@@ -997,7 +997,7 @@
         "variant_extraction_bridges.py"
       ],
       "prompt_identifiers": [
-        "variant_extraction.context.v3"
+        "variant_extraction.context.v4"
       ],
       "schema_id": "variant_extraction.agent.v1",
       "schema_names": [

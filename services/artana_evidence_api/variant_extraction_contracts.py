@@ -31,6 +31,20 @@ _UNIT_ALIASES: Mapping[str, tuple[str, ...]] = {
     "percent": ("percent", "%"),
     "percentage": ("percentage", "percent", "%"),
 }
+_PREFIX_UNIT_ALIASES: Mapping[str, tuple[str, ...]] = {
+    "$": ("$",),
+    "eur": ("€", "eur"),
+    "gbp": ("£", "gbp"),
+    "jpy": ("¥", "jpy"),
+    "usd": ("$", "usd"),
+}
+_WORDED_BOUND_PREFIX = re.compile(
+    r"(?:\b(?:about|above|approximately|around|below|over|under)|"
+    r"\b(?:at\s+(?:least|most)|less\s+than|greater\s+than|no\s+(?:less|more)\s+than|up\s+to))\s*$",
+    re.IGNORECASE,
+)
+_WORDED_RANGE_SUFFIX = re.compile(r"^(?:and|through|to)\b", re.IGNORECASE)
+_WORDED_RANGE_PREFIX = re.compile(r"\b(?:and|through|to)\s*$", re.IGNORECASE)
 
 
 class LLMIdentifierField(BaseModel):
@@ -85,8 +99,9 @@ def _literal_span_is_exact_measurement(*, text: str, value: str, unit: str) -> b
             re.IGNORECASE,
         ):
             return True
+    for alias in _PREFIX_UNIT_ALIASES.get(normalized_unit, ()):
         if re.fullmatch(
-            rf"{escaped_alias}\s*{escaped_value}",
+            rf"{re.escape(alias)}\s*{re.escape(value)}",
             text,
             re.IGNORECASE,
         ):
@@ -117,9 +132,14 @@ def _source_contains_exact_literal_span(
             or after in {"_", "/"}
             or (after == "." and after_next.isdigit())
         )
-        bound_or_range_context = prefix.endswith(
+        symbolic_bound_or_range_context = prefix.endswith(
             ("<", ">", "<=", ">=", "≤", "≥", "~", "≈", "±", "-", "–", "—"),
         ) or suffix.startswith(("<", ">", "≤", "≥", "~", "≈", "±", "-", "–", "—"))
+        worded_bound_or_range_context = bool(
+            _WORDED_BOUND_PREFIX.search(prefix)
+            or _WORDED_RANGE_PREFIX.search(prefix)
+            or _WORDED_RANGE_SUFFIX.search(suffix),
+        )
         dimensionless_unit_context = False
         if unit.strip().casefold() in _DIMENSIONLESS_UNITS:
             dimensionless_unit_context = prefix.endswith(("$", "€", "£", "¥")) or (
@@ -129,7 +149,8 @@ def _source_contains_exact_literal_span(
         if not (
             invalid_before
             or invalid_after
-            or bound_or_range_context
+            or symbolic_bound_or_range_context
+            or worded_bound_or_range_context
             or dimensionless_unit_context
         ):
             return True

@@ -146,7 +146,7 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v5"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v6"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
 _MEASUREMENT_SOURCE_FIELDS = frozenset(
     {"abstract", "content", "full_text", "text", "title"},
@@ -197,8 +197,10 @@ Useful output conventions:
 - Do not return a run confidence score. Return the qualitative FactAssessment
   fields and their evidence-based confidence_rationale instead.
 - Variant metadata can include transcript, hgvs_cdna, hgvs_protein,
-  hgvs_genomic, genomic_position, genome_build, zygosity, inheritance,
-  exon_or_intron, and classification.
+  hgvs_genomic, genome_build, zygosity, inheritance, and classification when
+  their values contain no free numeric literal. Return genomic positions,
+  numbered exons or introns, read depths, counts, and other numeric-bearing
+  fields as source_measurement observations instead of entity metadata.
 - Relations should be small typed claims such as VARIANT CAUSES PHENOTYPE,
   VARIANT ASSOCIATED_WITH PHENOTYPE, VARIANT LOCATED_IN PROTEIN_DOMAIN, or
   VARIANT AFFECTS PROCESS.

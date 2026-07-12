@@ -22,6 +22,7 @@ from artana_evidence_api.variant_relation_drafts import (
     _entity_candidate_aliases,
     _entity_candidate_payload,
     _normalized_string,
+    _variant_candidate_is_persistable,
 )
 
 if TYPE_CHECKING:
@@ -78,6 +79,13 @@ def _matching_observation_subject(
         return None
     normalized_label = observation.subject_label.strip().casefold()
     for candidate in variant_entities:
+        if not _variant_candidate_is_persistable(candidate):
+            continue
+        if all(
+            candidate.anchors.get(key) == value
+            for key, value in observation.subject_anchors.items()
+        ):
+            return candidate
         candidate_labels = {
             candidate.label.strip().casefold(),
             *(
@@ -86,12 +94,7 @@ def _matching_observation_subject(
                 if alias.strip()
             ),
         }
-        if normalized_label not in candidate_labels:
-            continue
-        if all(
-            candidate.anchors.get(key) == value
-            for key, value in observation.subject_anchors.items()
-        ):
+        if normalized_label in candidate_labels and not observation.subject_anchors:
             return candidate
     return None
 
@@ -113,7 +116,10 @@ def _build_source_measurement_observation_draft(
     fingerprint = compute_claim_fingerprint(
         candidate_key,
         observation.variable_id,
-        str(observation.value),
+        (
+            f"{observation.value!s}|unit:"
+            f"{(observation.unit or '').strip().casefold()}"
+        ),
     )
     return HarnessProposalDraft(
         proposal_type="observation_candidate",
