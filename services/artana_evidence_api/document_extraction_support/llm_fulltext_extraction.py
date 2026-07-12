@@ -698,6 +698,7 @@ async def run_llm_relation_extraction_pass(
         model=model_id,
         prompt=prompt,
         output_schema=output_schema,
+        schema_id="document_extraction.relation.v2",
         step_key=step_key,
         replay_policy="fork_on_drift",
     )

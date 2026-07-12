@@ -1117,26 +1117,34 @@ async def _select_candidates_for_ingestion(
     )
 
     llm_success_count = 0
-    shortlisted: list[tuple[_PubMedCandidate, _PubMedCandidateReview]] = []
+    # Keep the LLM category/rationale while ranking only by the heuristic review.
+    shortlisted: list[
+        tuple[_PubMedCandidate, _PubMedCandidateReview, _PubMedCandidateReview]
+    ] = []
     for candidate, heuristic_review, llm_review, llm_succeeded in reviewed_candidates:
         if not llm_succeeded or llm_review is None:
-            shortlisted.append((candidate, heuristic_review))
+            shortlisted.append((candidate, heuristic_review, heuristic_review))
             continue
         llm_success_count += 1
         if llm_review.label == "relevant":
-            shortlisted.append((candidate, llm_review))
+            shortlisted.append((candidate, llm_review, heuristic_review))
 
     if llm_success_count == 0:
-        shortlisted = llm_shortlist
+        shortlisted = [
+            (candidate, heuristic_review, heuristic_review)
+            for candidate, heuristic_review in llm_shortlist
+        ]
 
     shortlisted.sort(
-        key=lambda item: (
-            item[1].confidence,
-            *_candidate_priority_key(item[0], item[1]),
-        ),
+        key=lambda item: _candidate_priority_key(item[0], item[2]),
         reverse=True,
     )
-    return shortlisted[:_MAX_CANDIDATES_TO_INGEST]
+    return [
+        (candidate, selected_review)
+        for candidate, selected_review, _priority_review in shortlisted[
+            :_MAX_CANDIDATES_TO_INGEST
+        ]
+    ]
 
 
 __all__ = [

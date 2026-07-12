@@ -27,6 +27,7 @@ from artana_evidence_api.runtime.model_registry import (
     get_model_registry,
 )
 from artana_evidence_api.runtime.postgres_store import create_artana_postgres_store
+from artana_evidence_api.step_helpers import run_single_step_with_policy
 from pydantic import BaseModel, ConfigDict, Field
 
 _MODEL_HEALTH_CACHE_TTL_SECONDS = 60.0
@@ -114,7 +115,8 @@ async def _run_model_health_probe(
     client = SingleStepModelClient(kernel=kernel)
     started_at = time.perf_counter()
     try:
-        await client.step(
+        await run_single_step_with_policy(
+            client,
             run_id=f"model-health:{uuid4()}",
             tenant=TenantContext(
                 tenant_id="model-health",
@@ -126,6 +128,7 @@ async def _run_model_health_probe(
                 "Return JSON with the exact field `status` set to `ok` and nothing else."
             ),
             output_schema=output_schema,
+            schema_id="model_health.probe.v1",
             step_key="model_health.probe.v1",
             replay_policy="fork_on_drift",
         )

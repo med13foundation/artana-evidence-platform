@@ -26,7 +26,7 @@ class ModelSourcePlanningError(ValueError):
 class PlannedSourceIntent(BaseModel):
     """Normalized source-search intent emitted by the model planner."""
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     source_key: str = Field(..., min_length=1, max_length=64)
     query: str | None = Field(default=None, min_length=1, max_length=512)
@@ -39,12 +39,9 @@ class PlannedSourceIntent(BaseModel):
     disease: str | None = Field(default=None, min_length=1, max_length=256)
     phenotype: str | None = Field(default=None, min_length=1, max_length=256)
     organism: str | None = Field(default=None, min_length=1, max_length=128)
-    taxon_id: int | None = Field(default=None, ge=1)
     panels: list[str] | None = Field(default=None, min_length=1, max_length=20)
     evidence_role: str = Field(..., min_length=1, max_length=256)
     reason: str = Field(..., min_length=1, max_length=512)
-    max_records: int | None = Field(default=None, ge=1, le=100)
-    timeout_seconds: float | None = Field(default=None, gt=0.0, le=120.0)
 
     @field_validator("source_key")
     @classmethod
@@ -95,7 +92,7 @@ class PlannedSourceIntent(BaseModel):
 class DeferredSourcePlan(BaseModel):
     """Model-reported source that should not be searched in this run."""
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     source_key: str = Field(..., min_length=1, max_length=64)
     reason: str = Field(..., min_length=1, max_length=512)
@@ -118,12 +115,16 @@ class DeferredSourcePlan(BaseModel):
 class ModelEvidenceSelectionSourcePlanContract(BaseModel):
     """Structured source plan returned by the model planner."""
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     planner_version: str = Field(default="model_source_planner.v1", min_length=1)
     reasoning_summary: str = Field(..., min_length=1, max_length=2000)
-    planned_searches: list[PlannedSourceIntent] = Field(default_factory=list, max_length=20)
-    deferred_sources: list[DeferredSourcePlan] = Field(default_factory=list, max_length=20)
+    planned_searches: list[PlannedSourceIntent] = Field(
+        default_factory=list, max_length=20
+    )
+    deferred_sources: list[DeferredSourcePlan] = Field(
+        default_factory=list, max_length=20
+    )
     agent_run_id: str | None = Field(default=None, min_length=1, max_length=128)
 
     @field_validator("planner_version", "reasoning_summary")
@@ -202,15 +203,11 @@ def adapt_model_source_plan(
             allowed_sources=allowed_sources,
         )
         query_payload = _query_payload_for_intent(intent)
-        max_records = _effective_max_records(
-            requested=intent.max_records,
-            max_records_per_search=max_records_per_search,
-        )
         source_search = EvidenceSelectionLiveSourceSearch(
             source_key=source_key,
             query_payload=query_payload,
-            max_records=max_records,
-            timeout_seconds=intent.timeout_seconds,
+            max_records=max_records_per_search,
+            timeout_seconds=None,
         )
         source_searches.append(source_search)
         source_definition = get_source_definition(source_key)
@@ -226,8 +223,8 @@ def adapt_model_source_plan(
                 "reason": intent.reason,
                 "evidence_role": intent.evidence_role,
                 "query_payload": query_payload,
-                "max_records": max_records,
-                "timeout_seconds": intent.timeout_seconds,
+                "max_records": max_records_per_search,
+                "timeout_seconds": None,
             },
         )
         validation_decisions.append(
@@ -263,16 +260,6 @@ def _validate_model_source_key(
         msg = f"Model planner returned source '{normalized}' without direct search support."
         raise ModelSourcePlanningError(msg)
     return normalized
-
-
-def _effective_max_records(
-    *,
-    requested: int | None,
-    max_records_per_search: int,
-) -> int:
-    if requested is None:
-        return max_records_per_search
-    return min(requested, max_records_per_search)
 
 
 def _query_payload_for_intent(intent: PlannedSourceIntent) -> JSONObject:

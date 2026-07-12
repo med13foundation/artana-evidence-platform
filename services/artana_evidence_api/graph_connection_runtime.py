@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from artana.kernel import ArtanaKernel
@@ -15,6 +15,7 @@ from artana.ports.model import LiteLLMAdapter
 from artana_evidence_api.agent_contracts import (
     EvidenceItem,
     GraphConnectionContract,
+    ModelEvidenceCitation,
     ProposedRelation,
     RejectedCandidate,
 )
@@ -42,6 +43,7 @@ from artana_evidence_api.runtime_support import (
     load_runtime_policy,
     normalize_litellm_model_id,
 )
+from artana_evidence_api.step_helpers import run_registered_agent
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
 from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -85,7 +87,7 @@ class _GraphConnectionExecutionContract(BaseModel):
 
     confidence_score: float | None = Field(default=None, ge=0.0, le=1.0)
     rationale: str | None = Field(default=None, min_length=1, max_length=4000)
-    evidence: list[EvidenceItem] = Field(default_factory=list)
+    evidence: list[ModelEvidenceCitation] = Field(default_factory=list)
     decision: Literal["generated", "fallback", "escalate"] | None = None
     source_type: str | None = Field(default=None, min_length=1, max_length=64)
     research_space_id: str | None = Field(default=None, min_length=1, max_length=64)
@@ -225,7 +227,9 @@ class HarnessGraphConnectionRunner:
                 replay_policy=self._runtime_policy.replay_policy,
             )
             stage = "agent_run"
-            contract = await agent.run(
+            model_output = await run_registered_agent(
+                agent,
+                schema_id="graph_connection.agent.v1",
                 run_id=run_id,
                 tenant=tenant,
                 model=execution_model_id,
@@ -234,10 +238,7 @@ class HarnessGraphConnectionRunner:
                     request=request,
                     source_type=resolved_source_type,
                 ),
-                output_schema=cast(
-                    "type[GraphConnectionContract]",
-                    _GraphConnectionExecutionContract,
-                ),
+                output_schema=_GraphConnectionExecutionContract,
                 max_iterations=_MAX_GRAPH_CONNECTION_ITERATIONS,
             )
             stage = "post_agent"
@@ -247,7 +248,7 @@ class HarnessGraphConnectionRunner:
                 step_key="graph_connection.active_skills",
             )
             normalized_contract = self._normalize_contract(
-                contract=cast("_GraphConnectionExecutionContract", contract),
+                contract=model_output,
                 request=request,
                 source_type=resolved_source_type,
                 agent_run_id=run_id,
@@ -483,7 +484,9 @@ class HarnessGraphConnectionRunner:
             decision=contract.decision or "fallback",
             confidence_score=confidence_score or 0.0,
             rationale=rationale,
-            evidence=contract.evidence,
+            evidence=[
+                citation.to_legacy_evidence_item() for citation in contract.evidence
+            ],
             source_type=source_type,
             research_space_id=request.research_space_id,
             seed_entity_id=request.seed_entity_id,

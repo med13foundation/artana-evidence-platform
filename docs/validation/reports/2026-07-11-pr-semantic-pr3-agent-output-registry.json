@@ -1,0 +1,1401 @@
+{
+  "active_debt_count": 18,
+  "debt_manifest": [
+    {
+      "consumers": [
+        "semantic assessment record mapping"
+      ],
+      "current_influence": "The numeric locator selects which retrieved record receives an assessment.",
+      "debt_id": "AON-SEL-001",
+      "field_path": "$.assessments[].record_index",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 3 semantic locator migration",
+      "producer": "semantic selection agent",
+      "quarantine_rule": "Validation requires exact input-index coverage, rejects duplicates, and resolves cited evidence against the claimed source record before any decision is accepted.",
+      "quarantined": true,
+      "removal_gate": "Use an opaque deterministic record reference with explicit locator provenance instead of an agent-authored number.",
+      "schema_ids": [
+        "evidence_selection.semantic.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "proposal review mapping",
+        "proposal priority"
+      ],
+      "current_influence": "The numeric locator chooses which draft receives the agent-authored review categories.",
+      "debt_id": "AON-PROP-001",
+      "field_path": "$.reviews[].index",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 4 proposal-review contract migration",
+      "producer": "proposal-review agent",
+      "quarantine_rule": "Not quarantined; missing indexes fall back, but duplicate or permuted valid indexes can misassociate reviews.",
+      "quarantined": false,
+      "removal_gate": "Use opaque draft references and require exact one-to-one validated coverage before applying reviews.",
+      "schema_ids": [
+        "document_extraction.proposal_review.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "graph connection result compatibility"
+      ],
+      "current_influence": "The execution schema accepts an agent-authored run confidence.",
+      "debt_id": "AON-GCON-001",
+      "field_path": "$.confidence_score",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8B categorical relation migration",
+      "producer": "graph-connection agent",
+      "quarantine_rule": "Not quarantined at the model boundary.",
+      "quarantined": false,
+      "removal_gate": "Execution schema omits confidence and derives compatibility values from registered categories.",
+      "schema_ids": [
+        "graph_connection.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "relation proposal normalization",
+        "review ordering"
+      ],
+      "current_influence": "The model-authored value can affect relation handling through compatibility paths.",
+      "debt_id": "AON-GCON-002",
+      "field_path": "$.proposed_relations[].confidence",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8B categorical relation migration",
+      "producer": "graph-connection agent",
+      "quarantine_rule": "Not quarantined at every relation consumer.",
+      "quarantined": false,
+      "removal_gate": "Relation output uses atomic support, grounding, mapping, and speculation categories only.",
+      "schema_ids": [
+        "graph_connection.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "relation support summary"
+      ],
+      "current_influence": "The model authors a count that should be computed from cited document IDs.",
+      "debt_id": "AON-GCON-003",
+      "field_path": "$.proposed_relations[].supporting_document_count",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8B categorical relation migration",
+      "producer": "graph-connection agent",
+      "quarantine_rule": "Not quarantined; no deterministic recomputation is mandatory yet.",
+      "quarantined": false,
+      "removal_gate": "Compute the count from unique validated document locators and reject model-authored counts.",
+      "schema_ids": [
+        "graph_connection.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "rejected relation diagnostics"
+      ],
+      "current_influence": "The model-authored value remains in rejected-candidate artifacts.",
+      "debt_id": "AON-GCON-004",
+      "field_path": "$.rejected_candidates[].confidence",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8B categorical relation migration",
+      "producer": "graph-connection agent",
+      "quarantine_rule": "Not proven quarantined from review ordering and diagnostics.",
+      "quarantined": false,
+      "removal_gate": "Rejected candidates expose categorical rejection reasons without confidence.",
+      "schema_ids": [
+        "graph_connection.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "graph search routing compatibility"
+      ],
+      "current_influence": "A model-authored confidence remains accepted before normalization.",
+      "debt_id": "AON-GSEA-001",
+      "field_path": "$.confidence_score",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8B categorical graph-search migration",
+      "producer": "graph-search agent",
+      "quarantine_rule": "Not quarantined at the execution boundary.",
+      "quarantined": false,
+      "removal_gate": "Execution schema omits confidence and routing consumes registered categories.",
+      "schema_ids": [
+        "graph_search.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "evidence-chain normalization"
+      ],
+      "current_influence": "The model-authored value can be converted into a support band.",
+      "debt_id": "AON-GSEA-002",
+      "field_path": "$.results[].evidence_chain[].confidence",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8B categorical graph-search migration",
+      "producer": "graph-search agent",
+      "quarantine_rule": "Not quarantined because a numeric-to-category adapter remains.",
+      "quarantined": false,
+      "removal_gate": "Remove numeric-to-category conversion and require direct categorical findings.",
+      "schema_ids": [
+        "graph_search.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "graph result ranking",
+        "assessment normalization"
+      ],
+      "current_influence": "The score can influence ordering and generate a support category.",
+      "debt_id": "AON-GSEA-003",
+      "field_path": "$.results[].relevance_score",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8B categorical graph-search migration",
+      "producer": "graph-search agent",
+      "quarantine_rule": "Not quarantined from ranking or category conversion.",
+      "quarantined": false,
+      "removal_gate": "Rank from deterministic policy over categorical findings and remove model relevance.",
+      "schema_ids": [
+        "graph_search.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "extraction routing compatibility"
+      ],
+      "current_influence": "The model-authored run confidence remains in the execution contract.",
+      "debt_id": "AON-VEXT-001",
+      "field_path": "$.confidence_score",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8A categorical extraction migration",
+      "producer": "variant-extraction agent",
+      "quarantine_rule": "Not quarantined at the model boundary.",
+      "quarantined": false,
+      "removal_gate": "Execution output omits confidence and uses categorical assessments only.",
+      "schema_ids": [
+        "variant_extraction.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "entity anchor persistence"
+      ],
+      "current_influence": "Untyped numeric anchor values lack an origin-specific provenance envelope.",
+      "debt_id": "AON-VEXT-002",
+      "field_path": "$.entities[].anchors[].value",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8A typed source-measurement migration",
+      "producer": "variant-extraction agent",
+      "quarantine_rule": "Not quarantined from persistence.",
+      "quarantined": false,
+      "removal_gate": "Numeric anchors use a typed source-measurement envelope with span and source hash.",
+      "schema_ids": [
+        "variant_extraction.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "entity metadata persistence"
+      ],
+      "current_influence": "Untyped numeric metadata can enter staged entity data.",
+      "debt_id": "AON-VEXT-003",
+      "field_path": "$.entities[].metadata[].value",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8A typed source-measurement migration",
+      "producer": "variant-extraction agent",
+      "quarantine_rule": "Not quarantined from persistence.",
+      "quarantined": false,
+      "removal_gate": "Remove arbitrary numeric metadata or require a typed origin envelope.",
+      "schema_ids": [
+        "variant_extraction.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "observation staging"
+      ],
+      "current_influence": "Scientific numbers can be staged without complete source-measurement provenance.",
+      "debt_id": "AON-VEXT-004",
+      "field_path": "$.observations[].value",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8A typed source-measurement migration",
+      "producer": "variant-extraction agent",
+      "quarantine_rule": "Not quarantined from staging.",
+      "quarantined": false,
+      "removal_gate": "Every numeric observation includes source locator, literal span, unit, method, and source hash.",
+      "schema_ids": [
+        "variant_extraction.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "rejected-fact diagnostics"
+      ],
+      "current_influence": "Untyped numbers remain in rejected-fact payloads.",
+      "debt_id": "AON-VEXT-005",
+      "field_path": "$.rejected_facts[].payload[].value",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8A typed source-measurement migration",
+      "producer": "variant-extraction agent",
+      "quarantine_rule": "Not proven isolated from retry or review behavior.",
+      "quarantined": false,
+      "removal_gate": "Rejected numeric values use typed provenance or remain literal text only.",
+      "schema_ids": [
+        "variant_extraction.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "relation source endpoint staging"
+      ],
+      "current_influence": "Untyped numeric source anchors can affect entity linking.",
+      "debt_id": "AON-VEXT-006",
+      "field_path": "$.relations[].source_anchors[].value",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8A typed source-measurement migration",
+      "producer": "variant-extraction agent",
+      "quarantine_rule": "Not quarantined from linking.",
+      "quarantined": false,
+      "removal_gate": "Numeric source anchors use typed provenance and validated identifier semantics.",
+      "schema_ids": [
+        "variant_extraction.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "relation target endpoint staging"
+      ],
+      "current_influence": "Untyped numeric target anchors can affect entity linking.",
+      "debt_id": "AON-VEXT-007",
+      "field_path": "$.relations[].target_anchors[].value",
+      "kind": "numeric_judgment",
+      "owner_pr": "PR 8A typed source-measurement migration",
+      "producer": "variant-extraction agent",
+      "quarantine_rule": "Not quarantined from linking.",
+      "quarantined": false,
+      "removal_gate": "Numeric target anchors use typed provenance and validated identifier semantics.",
+      "schema_ids": [
+        "variant_extraction.agent.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "shadow decision artifact",
+        "guarded planner policy"
+      ],
+      "current_influence": "The model authors a composite low/medium/high expected-value judgment.",
+      "debt_id": "AOC-SHADOW-001",
+      "field_path": "$.expected_value_band",
+      "kind": "categorical_ordinal",
+      "owner_pr": "PR 4 shadow-study contract migration",
+      "producer": "full-AI shadow-planner agent",
+      "quarantine_rule": "Not quarantined from decision artifacts.",
+      "quarantined": false,
+      "removal_gate": "Replace the band with atomic observable findings and derive value posture deterministically.",
+      "schema_ids": [
+        "full_ai.shadow_planner.v1"
+      ]
+    },
+    {
+      "consumers": [
+        "shadow decision artifact",
+        "guarded planner policy"
+      ],
+      "current_influence": "The model authors a composite low/medium/high risk judgment.",
+      "debt_id": "AOC-SHADOW-002",
+      "field_path": "$.risk_level",
+      "kind": "categorical_ordinal",
+      "owner_pr": "PR 4 shadow-study contract migration",
+      "producer": "full-AI shadow-planner agent",
+      "quarantine_rule": "Not quarantined from decision artifacts.",
+      "quarantined": false,
+      "removal_gate": "Replace the band with atomic risk findings and deterministic veto policy.",
+      "schema_ids": [
+        "full_ai.shadow_planner.v1"
+      ]
+    }
+  ],
+  "debt_numeric_field_count": 16,
+  "origin_governed_numeric_field_count": 0,
+  "registered_category_field_count": 67,
+  "registered_numeric_field_count": 16,
+  "registered_schema_count": 15,
+  "registered_schemas": [
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.reviews[].factual_support",
+          "values": [
+            "strong",
+            "moderate",
+            "tentative",
+            "unsupported"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.reviews[].goal_relevance",
+          "values": [
+            "direct",
+            "supporting",
+            "peripheral",
+            "off_target",
+            "unscoped"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.reviews[].priority",
+          "values": [
+            "prioritize",
+            "review",
+            "background",
+            "ignore"
+          ]
+        }
+      ],
+      "numeric_fields": [
+        {
+          "debt_id": "AON-PROP-001",
+          "origin": null,
+          "path": "$.reviews[].index"
+        }
+      ],
+      "producer_paths": [
+        "document_extraction.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.proposal_review.v1"
+      ],
+      "schema_id": "document_extraction.proposal_review.v1",
+      "schema_names": [
+        "ProposalReviewResult"
+      ],
+      "shape_hash": "2e7f22a9f032f64fb1e9dc0135fa812478246ca08a4ede16f211cc36c8e66d13"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].review_status",
+          "values": [
+            "candidate",
+            "review_only"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "document_extraction_support/llm_fulltext_extraction.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.relation.v2"
+      ],
+      "schema_id": "document_extraction.relation.v2",
+      "schema_names": [
+        "LLMExtractionResult"
+      ],
+      "shape_hash": "53bd185c9ca1906c8bad89ff584e2dd623b7ce49b3a1b2485c42f2fe1e8abc11"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.action",
+          "values": [
+            "match_existing",
+            "create_new"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "relation_type_resolver.py"
+      ],
+      "prompt_identifiers": [
+        "entity_resolution.system_and_request.v1"
+      ],
+      "schema_id": "entity_resolution.agent.v1",
+      "schema_names": [
+        "EntityDecision"
+      ],
+      "shape_hash": "1f930649a4bbc34b39bd204d05073fd27db6d8b5de88c9cda5050c7ac0d3835c"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.schema_version",
+          "values": [
+            "evidence_selection_semantic_agent.v1"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].decision",
+          "values": [
+            "select",
+            "reject",
+            "review"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].objective_match",
+          "values": [
+            "direct",
+            "supporting",
+            "context_only",
+            "off_objective",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].entity_variant_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].population_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].intervention_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].outcome_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].study_type_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].inclusion_assessment",
+          "values": [
+            "met",
+            "not_met",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].exclusion_assessment",
+          "values": [
+            "not_triggered",
+            "triggered",
+            "uncertain"
+          ]
+        }
+      ],
+      "numeric_fields": [
+        {
+          "debt_id": "AON-SEL-001",
+          "origin": null,
+          "path": "$.assessments[].record_index"
+        }
+      ],
+      "producer_paths": [
+        "evidence_selection/semantic/model.py"
+      ],
+      "prompt_identifiers": [
+        "evidence_selection.semantic_selector.v1"
+      ],
+      "schema_id": "evidence_selection.semantic.v1",
+      "schema_names": [
+        "EvidenceSelectionSemanticBatchContract"
+      ],
+      "shape_hash": "9e5a7d2909d1cc98d129c0bbd51e470660d45aec89c0c300fc9eb40e5b85d33e"
+    },
+    {
+      "categorical_fields": [],
+      "numeric_fields": [],
+      "producer_paths": [
+        "evidence_selection_model_planner.py"
+      ],
+      "prompt_identifiers": [
+        "evidence_selection.source_planner.v1"
+      ],
+      "schema_id": "evidence_selection.source_plan.v1",
+      "schema_names": [
+        "ModelEvidenceSelectionSourcePlanContract"
+      ],
+      "shape_hash": "4b0643668ca687eafd5796f669b25d728ca7cbac352dadb7c6a7f1800a4a7780"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": true,
+          "debt_id": null,
+          "path": "$.action_type",
+          "values": [
+            "DERIVE_DRIVEN_TERMS",
+            "ESCALATE_TO_HUMAN",
+            "GENERATE_BRIEF",
+            "INGEST_AND_EXTRACT_PUBMED",
+            "INITIALIZE_WORKSPACE",
+            "LOAD_MONDO_GROUNDING",
+            "QUERY_PUBMED",
+            "REVIEW_PDF_WORKSET",
+            "REVIEW_TEXT_WORKSET",
+            "RUN_BOOTSTRAP",
+            "RUN_CHASE_ROUND",
+            "RUN_GRAPH_CONNECTION",
+            "RUN_GRAPH_SEARCH",
+            "RUN_HGNC_GROUNDING",
+            "RUN_HYPOTHESIS_GENERATION",
+            "RUN_STRUCTURED_ENRICHMENT",
+            "RUN_UNIPROT_GROUNDING",
+            "SEARCH_DISCONFIRMING",
+            "STOP"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": "AOC-SHADOW-001",
+          "path": "$.expected_value_band",
+          "values": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": "AOC-SHADOW-002",
+          "path": "$.risk_level",
+          "values": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "full_ai_orchestrator/shadow_planner/runtime.py"
+      ],
+      "prompt_identifiers": [
+        "full_ai.shadow_planner.prompt.v1"
+      ],
+      "schema_id": "full_ai.shadow_planner.v1",
+      "schema_names": [
+        "ShadowPlannerLiveRecommendationOutput",
+        "ShadowPlannerRecommendationOutput"
+      ],
+      "shape_hash": "b913b878f814cc44765d65daaf58c33132ddd463fe8f28b0d4f87a291d216ffc"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.decision",
+          "values": [
+            "generated",
+            "fallback",
+            "escalate"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].evidence_tier",
+          "values": [
+            "COMPUTATIONAL"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        }
+      ],
+      "numeric_fields": [
+        {
+          "debt_id": "AON-GCON-001",
+          "origin": null,
+          "path": "$.confidence_score"
+        },
+        {
+          "debt_id": "AON-GCON-002",
+          "origin": null,
+          "path": "$.proposed_relations[].confidence"
+        },
+        {
+          "debt_id": "AON-GCON-003",
+          "origin": null,
+          "path": "$.proposed_relations[].supporting_document_count"
+        },
+        {
+          "debt_id": "AON-GCON-004",
+          "origin": null,
+          "path": "$.rejected_candidates[].confidence"
+        }
+      ],
+      "producer_paths": [
+        "graph_connection_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "graph_connection.system_and_request.v1"
+      ],
+      "schema_id": "graph_connection.agent.v1",
+      "schema_names": [
+        "_GraphConnectionExecutionContract"
+      ],
+      "shape_hash": "c02dac58f0bf8f3b703a6f45a2398f4590c1142c8c50fa876813c496ab800a2b"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.decision",
+          "values": [
+            "generated",
+            "fallback",
+            "escalate"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.executed_path",
+          "values": [
+            "deterministic",
+            "agent",
+            "agent_fallback"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessment.grounding_level",
+          "values": [
+            "NONE",
+            "ENTITY",
+            "RELATION",
+            "OBSERVATION",
+            "AGGREGATED"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].assessment.grounding_level",
+          "values": [
+            "NONE",
+            "ENTITY",
+            "RELATION",
+            "OBSERVATION",
+            "AGGREGATED"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].evidence_chain[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].evidence_chain[].assessment.grounding_level",
+          "values": [
+            "NONE",
+            "ENTITY",
+            "RELATION",
+            "OBSERVATION",
+            "AGGREGATED"
+          ]
+        }
+      ],
+      "numeric_fields": [
+        {
+          "debt_id": "AON-GSEA-001",
+          "origin": null,
+          "path": "$.confidence_score"
+        },
+        {
+          "debt_id": "AON-GSEA-002",
+          "origin": null,
+          "path": "$.results[].evidence_chain[].confidence"
+        },
+        {
+          "debt_id": "AON-GSEA-003",
+          "origin": null,
+          "path": "$.results[].relevance_score"
+        }
+      ],
+      "producer_paths": [
+        "graph_search_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "graph_search.system_and_request.v1"
+      ],
+      "schema_id": "graph_search.agent.v1",
+      "schema_names": [
+        "_GraphSearchExecutionContract"
+      ],
+      "shape_hash": "754c069d4379463f2e5f01e91c4a4e863f39762bfed230bc7276b345dcd989c1"
+    },
+    {
+      "categorical_fields": [],
+      "numeric_fields": [],
+      "producer_paths": [
+        "marrvel_enrichment.py"
+      ],
+      "prompt_identifiers": [
+        "marrvel.gene_inference.v1"
+      ],
+      "schema_id": "marrvel.gene_inference.v1",
+      "schema_names": [
+        "_MarrvelGeneInferenceResult"
+      ],
+      "shape_hash": "e36df65cd58006ebeef2350b47cc09662baa1ae957e17d1001fe64a0204a7d5e"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.status",
+          "values": [
+            "ok"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "runtime/model_health.py",
+        "runtime_support.py"
+      ],
+      "prompt_identifiers": [
+        "model_health.probe.v1"
+      ],
+      "schema_id": "model_health.probe.v1",
+      "schema_names": [
+        "_ProbeOutput"
+      ],
+      "shape_hash": "53ceee97278087ef366f8a0a8399cfab1b60ca83917bf20b3e1063310fe9fce4"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relevance",
+          "values": [
+            "relevant",
+            "non_relevant"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "pubmed_relevance.py"
+      ],
+      "prompt_identifiers": [
+        "pubmed.relevance.title_abstract.v1"
+      ],
+      "schema_id": "pubmed.relevance.v1",
+      "schema_names": [
+        "PubMedRelevanceModelOutput"
+      ],
+      "shape_hash": "edeba4193516a67036849983c26be40ce62ac17794e317d2fbc654e50c634e66"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.action",
+          "values": [
+            "map_to_existing",
+            "register_new",
+            "requires_review",
+            "typo_correction"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "relation_type_resolver.py"
+      ],
+      "prompt_identifiers": [
+        "relation_type_resolution.system_and_request.v1"
+      ],
+      "schema_id": "relation_type_resolution.agent.v1",
+      "schema_names": [
+        "RelationTypeDecision"
+      ],
+      "shape_hash": "4ae532517c388aa19610e41bbfa6ae129e11a3251a6b53a00ba671b1ba6b8f78"
+    },
+    {
+      "categorical_fields": [],
+      "numeric_fields": [],
+      "producer_paths": [
+        "research_init_brief.py"
+      ],
+      "prompt_identifiers": [
+        "research.llm_brief_synthesis.v1"
+      ],
+      "schema_id": "research.brief.v1",
+      "schema_names": [
+        "LLMBriefOutput"
+      ],
+      "shape_hash": "9c7621ed9f2066c3bc01806be1f8946caff0dcb1c6445db460431d91a8e5c019"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.message_type",
+          "values": [
+            "clarification_request",
+            "plan_ready"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.state_patch.onboarding_status",
+          "values": [
+            "awaiting_researcher_reply",
+            "plan_ready"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.state_patch.thread_status",
+          "values": [
+            "your_turn",
+            "review_needed"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.suggested_actions[].action_type",
+          "values": [
+            "reply",
+            "review"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "research_onboarding_agent_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "research_onboarding.system_and_turn.v1"
+      ],
+      "schema_id": "research_onboarding.agent.v1",
+      "schema_names": [
+        "OnboardingAssistantModelOutput"
+      ],
+      "shape_hash": "0fed46693511f4f2807d37e872c2f96677f80991a3cded883d5a7fbb319a6849"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.decision",
+          "values": [
+            "generated",
+            "fallback",
+            "escalate"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].fact_type",
+          "values": [
+            "observation",
+            "relation"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].polarity",
+          "values": [
+            "SUPPORT",
+            "REFUTE",
+            "UNCERTAIN",
+            "HYPOTHESIS"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        }
+      ],
+      "numeric_fields": [
+        {
+          "debt_id": "AON-VEXT-001",
+          "origin": null,
+          "path": "$.confidence_score"
+        },
+        {
+          "debt_id": "AON-VEXT-002",
+          "origin": null,
+          "path": "$.entities[].anchors[].value"
+        },
+        {
+          "debt_id": "AON-VEXT-003",
+          "origin": null,
+          "path": "$.entities[].metadata[].value"
+        },
+        {
+          "debt_id": "AON-VEXT-004",
+          "origin": null,
+          "path": "$.observations[].value"
+        },
+        {
+          "debt_id": "AON-VEXT-005",
+          "origin": null,
+          "path": "$.rejected_facts[].payload[].value"
+        },
+        {
+          "debt_id": "AON-VEXT-006",
+          "origin": null,
+          "path": "$.relations[].source_anchors[].value"
+        },
+        {
+          "debt_id": "AON-VEXT-007",
+          "origin": null,
+          "path": "$.relations[].target_anchors[].value"
+        }
+      ],
+      "producer_paths": [
+        "variant_extraction_bridges.py"
+      ],
+      "prompt_identifiers": [
+        "variant_extraction.context.v1"
+      ],
+      "schema_id": "variant_extraction.agent.v1",
+      "schema_names": [
+        "LLMExtractionContract"
+      ],
+      "shape_hash": "390b7cd1001fcf49d7ac9bedfd9fa411a7f01e42ea3c3a3558759810ed781909"
+    }
+  ],
+  "schema_version": "agent_output_registry_report.v1",
+  "unquarantined_debt_count": 17,
+  "unquarantined_debt_ids": [
+    "AOC-SHADOW-001",
+    "AOC-SHADOW-002",
+    "AON-GCON-001",
+    "AON-GCON-002",
+    "AON-GCON-003",
+    "AON-GCON-004",
+    "AON-GSEA-001",
+    "AON-GSEA-002",
+    "AON-GSEA-003",
+    "AON-PROP-001",
+    "AON-VEXT-001",
+    "AON-VEXT-002",
+    "AON-VEXT-003",
+    "AON-VEXT-004",
+    "AON-VEXT-005",
+    "AON-VEXT-006",
+    "AON-VEXT-007"
+  ]
+}

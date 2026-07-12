@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from artana.kernel import ArtanaKernel
@@ -18,6 +18,7 @@ from artana_evidence_api.agent_contracts import (
     GraphSearchContract,
     GraphSearchGroundingLevel,
     GraphSearchResultEntry,
+    ModelEvidenceCitation,
     build_graph_search_assessment_from_confidence,
     graph_search_assessment_confidence,
 )
@@ -45,6 +46,7 @@ from artana_evidence_api.runtime_support import (
     normalize_litellm_model_id,
     stable_sha256_digest,
 )
+from artana_evidence_api.step_helpers import run_registered_agent
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -76,13 +78,12 @@ class _GraphSearchExecutionContract(BaseModel):
         description="Derived numeric weight for routing compatibility.",
     )
     rationale: str | None = Field(default=None, min_length=1, max_length=4000)
-    evidence: list[EvidenceItem] = Field(default_factory=list)
+    evidence: list[ModelEvidenceCitation] = Field(default_factory=list)
     decision: Literal["generated", "fallback", "escalate"] | None = None
     research_space_id: str | None = Field(default=None, min_length=1, max_length=64)
     original_query: str | None = Field(default=None, min_length=1, max_length=2000)
     interpreted_intent: str | None = Field(default=None, min_length=1, max_length=2000)
     query_plan_summary: str | None = Field(default=None, min_length=1, max_length=4000)
-    total_results: int = Field(default=0, ge=0)
     results: list[GraphSearchResultEntry] = Field(default_factory=list)
     executed_path: Literal["deterministic", "agent", "agent_fallback"] | None = None
     warnings: list[str] = Field(default_factory=list)
@@ -190,7 +191,9 @@ class HarnessGraphSearchRunner:
                 replay_policy=self._runtime_policy.replay_policy,
             )
             stage = "agent_run"
-            contract = await agent.run(
+            model_output = await run_registered_agent(
+                agent,
+                schema_id="graph_search.agent.v1",
                 run_id=run_id,
                 tenant=tenant,
                 model=execution_model_id,
@@ -198,10 +201,7 @@ class HarnessGraphSearchRunner:
                     ARTANA_EVIDENCE_API_SEARCH_CONFIG.system_prompt,
                 ),
                 prompt=self._request_prompt(request),
-                output_schema=cast(
-                    "type[GraphSearchContract]",
-                    _GraphSearchExecutionContract,
-                ),
+                output_schema=_GraphSearchExecutionContract,
                 max_iterations=_MAX_GRAPH_SEARCH_ITERATIONS,
             )
             stage = "post_agent"
@@ -212,12 +212,20 @@ class HarnessGraphSearchRunner:
             )
             normalized_contract = GraphSearchContract.model_validate(
                 {
-                    **contract.model_dump(mode="json", exclude_none=True),
+                    **model_output.model_dump(
+                        mode="json",
+                        exclude_none=True,
+                        exclude={"evidence"},
+                    ),
+                    "evidence": [
+                        citation.to_legacy_evidence_item()
+                        for citation in model_output.evidence
+                    ],
                     "research_space_id": request.research_space_id,
                     "original_query": request.question,
-                    "total_results": len(contract.results),
+                    "total_results": len(model_output.results),
                     "executed_path": "agent",
-                    "agent_run_id": contract.agent_run_id or run_id,
+                    "agent_run_id": model_output.agent_run_id or run_id,
                 },
             )
             return HarnessGraphSearchResult(

@@ -36,6 +36,25 @@ def test_unit_test_only_pr_runs_targeted_tests() -> None:
     assert plan.targeted_test_paths == (changed_test,)
 
 
+def test_agent_output_guard_test_change_runs_static_registry_gate() -> None:
+    changed_test = (
+        "services/artana_evidence_api/tests/unit/"
+        "test_agent_output_schema_registry.py"
+    )
+
+    plan = plan_checks(
+        [changed_test],
+        event_name="pull_request",
+        ref="refs/pull/13/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
 def test_evidence_api_code_pr_runs_evidence_api_gate_only() -> None:
     plan = plan_checks(
         ["services/artana_evidence_api/research_init_runtime.py"],
@@ -276,6 +295,19 @@ def test_ci_planner_change_runs_repo_control_checks() -> None:
     )
 
     assert not plan.evidence_api
+    assert not plan.graph_service
+    assert plan.repo_control
+    assert not plan.full
+
+
+def test_agent_output_validator_change_runs_evidence_and_repo_control_gates() -> None:
+    plan = plan_checks(
+        ["scripts/ci/validate_agent_output_boundaries.py"],
+        event_name="pull_request",
+        ref="refs/pull/18/merge",
+    )
+
+    assert plan.evidence_api
     assert not plan.graph_service
     assert plan.repo_control
     assert not plan.full

@@ -43,6 +43,34 @@ class EvidenceItem(BaseModel):
     )
 
 
+LEGACY_EVIDENCE_RELEVANCE_COMPATIBILITY_VALUE = 0.0
+
+
+class ModelEvidenceCitation(BaseModel):
+    """Source citation accepted at a production model-output boundary."""
+
+    source_type: Literal["tool", "db", "paper", "web", "note", "api"]
+    locator: str = Field(
+        ...,
+        description="DOI, URL, query-id, row-id, run-id, or other unique identifier",
+    )
+    excerpt: str = Field(
+        ...,
+        description="Relevant excerpt or summary from the source",
+    )
+
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
+
+    def to_legacy_evidence_item(self) -> EvidenceItem:
+        """Convert to the legacy service contract without accepting a model score."""
+        return EvidenceItem(
+            source_type=self.source_type,
+            locator=self.locator,
+            excerpt=self.excerpt,
+            relevance=LEGACY_EVIDENCE_RELEVANCE_COMPATIBILITY_VALUE,
+        )
+
+
 class BaseAgentContract(BaseModel):
     """Base contract for graph-harness agent outputs."""
 
@@ -390,6 +418,20 @@ class OnboardingStatePatch(BaseModel):
         return self
 
 
+class OnboardingModelStatePatch(BaseModel):
+    """Onboarding state authored by a model before deterministic enrichment."""
+
+    thread_status: Literal["your_turn", "review_needed"]
+    onboarding_status: Literal["awaiting_researcher_reply", "plan_ready"]
+    objective: str | None = Field(default=None, max_length=4000)
+    seed_terms: list[str] = Field(default_factory=list)
+    explored_questions: list[str] = Field(default_factory=list)
+    pending_questions: list[str] = Field(default_factory=list)
+    current_hypotheses: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 def _extract_onboarding_question_prompts(raw_questions: list[object]) -> list[str]:
     prompts: list[str] = []
     for question in raw_questions:
@@ -541,6 +583,46 @@ class OnboardingAssistantContract(BaseAgentContract):
         return self
 
 
+class OnboardingAssistantModelOutput(BaseModel):
+    """Strict production model output adapted into OnboardingAssistantContract."""
+
+    rationale: str
+    evidence: list[ModelEvidenceCitation] = Field(default_factory=list)
+    message_type: Literal["clarification_request", "plan_ready"]
+    title: str = Field(..., min_length=1, max_length=160)
+    summary: str = Field(..., min_length=1, max_length=1200)
+    sections: list[OnboardingSection] = Field(default_factory=list)
+    questions: list[OnboardingQuestion] = Field(default_factory=list)
+    suggested_actions: list[OnboardingSuggestedAction] = Field(default_factory=list)
+    artifacts: list[OnboardingArtifact] = Field(default_factory=list)
+    state_patch: OnboardingModelStatePatch
+    warnings: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(use_enum_values=True, extra="forbid")
+
+    def to_assistant_contract(
+        self, *, agent_run_id: str
+    ) -> OnboardingAssistantContract:
+        """Add deterministic compatibility fields after model validation."""
+        state_patch = self.state_patch.model_dump(mode="python")
+        state_patch["pending_question_count"] = len(self.state_patch.pending_questions)
+        return OnboardingAssistantContract(
+            confidence_score=0.0,
+            rationale=self.rationale,
+            evidence=[citation.to_legacy_evidence_item() for citation in self.evidence],
+            message_type=self.message_type,
+            title=self.title,
+            summary=self.summary,
+            sections=self.sections,
+            questions=self.questions,
+            suggested_actions=self.suggested_actions,
+            artifacts=self.artifacts,
+            state_patch=OnboardingStatePatch.model_validate(state_patch),
+            agent_run_id=agent_run_id,
+            warnings=self.warnings,
+        )
+
+
 class ProposedRelation(BaseModel):
     """One relation candidate proposed by graph-level reasoning."""
 
@@ -621,6 +703,8 @@ __all__ = [
     "EvidenceChainItem",
     "EvidenceItem",
     "EvidenceSourceType",
+    "LEGACY_EVIDENCE_RELEVANCE_COMPATIBILITY_VALUE",
+    "ModelEvidenceCitation",
     "GraphConnectionContract",
     "GraphSearchAssessment",
     "GraphSearchGroundingLevel",
@@ -628,6 +712,8 @@ __all__ = [
     "GraphSearchResultEntry",
     "OnboardingArtifact",
     "OnboardingAssistantContract",
+    "OnboardingAssistantModelOutput",
+    "OnboardingModelStatePatch",
     "OnboardingQuestion",
     "OnboardingSection",
     "OnboardingStatePatch",

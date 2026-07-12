@@ -56,6 +56,7 @@ from artana_evidence_api.runtime import (
 from artana_evidence_api.runtime import (
     has_configured_openai_api_key as _default_has_configured_openai_api_key,
 )
+from artana_evidence_api.step_helpers import run_registered_harness_agent
 from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
 
 if TYPE_CHECKING:
@@ -305,7 +306,9 @@ async def recommend_shadow_planner_action(  # noqa: PLR0913, PLR0915
             checkpoint_key=checkpoint_key,
             action_registry=action_registry,
         )
-        output = await harness.run_agent(
+        output = await run_registered_harness_agent(
+            harness,
+            schema_id="full_ai.shadow_planner.v1",
             run_id=agent_run_id,
             prompt=_build_shadow_planner_prompt(
                 workspace_summary=normalized_workspace_summary
@@ -330,7 +333,9 @@ async def recommend_shadow_planner_action(  # noqa: PLR0913, PLR0915
         if validation_error in _REPAIRABLE_VALIDATION_ERRORS:
             repair_attempted = True
             repair_run_id = f"{agent_run_id}:repair"
-            repaired_output = await harness.run_agent(
+            repaired_output = await run_registered_harness_agent(
+                harness,
+                schema_id="full_ai.shadow_planner.v1",
                 run_id=repair_run_id,
                 prompt=_build_shadow_planner_repair_prompt(
                     workspace_summary=normalized_workspace_summary,

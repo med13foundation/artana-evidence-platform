@@ -4,9 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import subprocess
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
+from artana_evidence_api.runtime.agent_output_schema import (
+    AgentOutputSchemaRegistrationError,
+)
+from artana_evidence_api.runtime.model_health import (
+    build_model_health_probe_output_schema,
+)
 from artana_evidence_api.step_helpers import (
     get_step_execution_health,
     reset_step_execution_health,
@@ -58,6 +68,53 @@ class _GenericFailureStepClient:
         raise RuntimeError("synthetic failure")
 
 
+class _MustNotRunStepClient:
+    async def step(self, **_kwargs: object) -> _FakeStepResult:
+        raise AssertionError("unregistered schemas must fail before model execution")
+
+
+def test_run_single_step_with_policy_rejects_unknown_schema_before_call() -> None:
+    with pytest.raises(
+        AgentOutputSchemaRegistrationError,
+        match="Unregistered agent output schema ID",
+    ):
+        asyncio.run(
+            run_single_step_with_policy(
+                _MustNotRunStepClient(),
+                run_id="run-unknown-schema",
+                tenant=object(),
+                model="openai/gpt-5.4-mini",
+                prompt="return ok",
+                output_schema=build_model_health_probe_output_schema(),
+                schema_id="unregistered.schema.v1",
+                step_key="unregistered.schema.v1",
+                replay_policy="fork_on_drift",
+            ),
+        )
+
+
+def test_document_extraction_imports_in_fresh_interpreter_without_cycle() -> None:
+    repo_root = Path(__file__).resolve().parents[4]
+    child_env = dict(os.environ)
+    child_env["PYTHONPATH"] = str(repo_root / "services")
+
+    result = subprocess.run(  # noqa: S603
+        [
+            sys.executable,
+            "-c",
+            "from artana_evidence_api.document_extraction import "
+            "extract_relation_candidates_with_llm",
+        ],
+        cwd=repo_root,
+        env=child_env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
 def test_run_single_step_with_policy_logs_replayed_terminal_without_traceback(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -74,7 +131,8 @@ def test_run_single_step_with_policy_logs_replayed_terminal_without_traceback(
                 tenant=object(),
                 model="openai/gpt-5.4-mini",
                 prompt="return ok",
-                output_schema=dict,
+                output_schema=build_model_health_probe_output_schema(),
+                schema_id="model_health.probe.v1",
                 step_key="document_extraction.proposal_review.v1",
                 replay_policy="fork_on_drift",
             ),
@@ -113,7 +171,8 @@ def test_run_single_step_with_policy_logs_generic_failures_with_traceback(
                 tenant=object(),
                 model="openai/gpt-5.4-mini",
                 prompt="return ok",
-                output_schema=dict,
+                output_schema=build_model_health_probe_output_schema(),
+                schema_id="model_health.probe.v1",
                 step_key="document_extraction.proposal_review.v1",
                 replay_policy="fork_on_drift",
             ),
