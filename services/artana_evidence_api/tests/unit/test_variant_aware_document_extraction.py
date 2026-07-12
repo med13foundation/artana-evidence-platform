@@ -419,6 +419,29 @@ def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
         )
 
 
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [("genomic_position", "12345"), ("exon_or_intron", "exon 2")],
+)
+def test_llm_entity_rejects_numeric_observation_metadata(
+    field_name: str,
+    value: str,
+) -> None:
+    with pytest.raises(ValueError, match="source_measurement observation"):
+        LLMExtractedEntityCandidate(
+            entity_type="VARIANT",
+            label="MED13 c.977C>A",
+            anchors=[
+                LLMIdentifierField(key="gene_symbol", value="MED13"),
+                LLMIdentifierField(key="hgvs_notation", value="c.977C>A"),
+            ],
+            metadata=[LLMLiteralField(key=field_name, value=value)],
+            evidence_excerpt="Variant evidence includes exon 2 at position 12345.",
+            evidence_locator="raw_record.text",
+            assessment=_assessment(),
+        )
+
+
 @pytest.mark.parametrize("value", ["0.125", ".125", "stage 2"])
 def test_llm_extraction_rejects_numeric_observation_text(value: str) -> None:
     contract = LLMExtractionContract(
@@ -798,8 +821,16 @@ def test_artana_extraction_adapter_fails_closed_on_forged_measurement(
 
 
 def test_variant_prompt_exposes_hash_and_valid_scalar_locators() -> None:
+    context = _variant_context()
+    context.raw_record.update(
+        {
+            "selected_record_index": 0,
+            "retrieval_score": 0.98,
+            "source_span": {"start": 10, "end": 20},
+        },
+    )
     payload = variant_extraction_bridges._prompt_payload_from_context(
-        _variant_context(),
+        context,
     )
 
     assert isinstance(payload["source_hash"], str)
@@ -808,6 +839,9 @@ def test_variant_prompt_exposes_hash_and_valid_scalar_locators() -> None:
     assert isinstance(locators, list)
     assert "raw_record.text" in locators
     assert all(locator.startswith("raw_record.") for locator in locators)
+    assert "raw_record.selected_record_index" not in locators
+    assert "raw_record.retrieval_score" not in locators
+    assert "raw_record.source_span.start" not in locators
     assert "genomics_signals.variant_aware_recommended" not in locators
     assert not any("source_span" in locator for locator in locators)
 

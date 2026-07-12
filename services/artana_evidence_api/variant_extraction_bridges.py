@@ -146,8 +146,11 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v3"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v4"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
+_MEASUREMENT_SOURCE_FIELDS = frozenset(
+    {"abstract", "content", "full_text", "text", "title"},
+)
 _VARIANT_EXTRACTION_SYSTEM_PROMPT = """
 You are the Artana Variant-Aware Extraction Agent.
 
@@ -177,7 +180,9 @@ Useful output conventions:
 - Anchor values are identifiers: always return them as non-empty strings, even
   when an identifier contains only digits.
 - Metadata and rejected payload values must be strings, booleans, or null. Keep
-  source numbers there as exact literal strings.
+  source numbers there as exact literal strings for descriptive context only.
+  Numeric-looking entity metadata cannot become an observation; return any such
+  observation through the source_measurement envelope instead.
 - A numeric observation value must use the source_measurement envelope. Copy
   source_hash from the request context; copy literal_span exactly from the raw
   source, including the number and its adjacent unit when the measurement is not
@@ -777,27 +782,17 @@ def _variant_source_material(
     }
     rendered = json.dumps(source_payload, sort_keys=True, separators=(",", ":"))
     source_hash = stable_sha256_digest(rendered, length=64)
-    source_values = _json_scalar_values(raw_record, path="raw_record")
+    source_values = _measurement_source_values(raw_record)
     return source_payload, rendered, source_hash, source_values
 
 
-def _json_scalar_values(
-    value: JSONValue,
-    *,
-    path: str = "",
-) -> dict[str, JSONValue]:
-    if isinstance(value, dict):
-        values: dict[str, JSONValue] = {}
-        for key, child in value.items():
-            child_path = f"{path}.{key}" if path else str(key)
-            values.update(_json_scalar_values(child, path=child_path))
-        return values
-    if isinstance(value, list):
-        values = {}
-        for index, child in enumerate(value):
-            values.update(_json_scalar_values(child, path=f"{path}[{index}]"))
-        return values
-    return {path: value} if path else {}
+def _measurement_source_values(raw_record: JSONObject) -> dict[str, JSONValue]:
+    values: dict[str, JSONValue] = {}
+    for field_name in sorted(_MEASUREMENT_SOURCE_FIELDS):
+        value = raw_record.get(field_name)
+        if isinstance(value, str) and value.strip():
+            values[f"raw_record.{field_name}"] = value
+    return values
 
 
 class ArtanaExtractionAdapter:

@@ -29,6 +29,19 @@ _UNIT_ALIASES: Mapping[str, tuple[str, ...]] = {
     "percent": ("percent", "%"),
     "percentage": ("percentage", "percent", "%"),
 }
+_OBSERVATION_METADATA_FIELDS = frozenset(
+    {
+        "classification",
+        "exon_or_intron",
+        "genomic_position",
+        "hgvs_cdna",
+        "hgvs_genomic",
+        "hgvs_protein",
+        "inheritance",
+        "transcript",
+        "zygosity",
+    },
+)
 
 
 class LLMIdentifierField(BaseModel):
@@ -122,6 +135,11 @@ def _text_contains_measurement(
         _measurement_has_literal_unit(text=text, match=match, unit=unit)
         for match in matches
     )
+
+
+def observation_text_requires_source_measurement(value: str) -> bool:
+    """Return whether an observation-like string contains a numeric literal."""
+    return _SOURCE_NUMBER_PATTERN.search(value) is not None
 
 
 class ExtractedObservation(BaseModel):
@@ -295,7 +313,9 @@ class LLMExtractedObservation(BaseModel):
                 source_measurement=measurement,
                 assessment=self.assessment,
             )
-        if isinstance(self.value, str) and _SOURCE_NUMBER_PATTERN.search(self.value):
+        if isinstance(self.value, str) and observation_text_requires_source_measurement(
+            self.value,
+        ):
             msg = "Numeric observation text requires a source_measurement envelope."
             raise ValueError(msg)
         return ExtractedObservation(
@@ -319,6 +339,24 @@ class LLMExtractedEntityCandidate(BaseModel):
     assessment: FactAssessment
 
     model_config = ConfigDict(strict=True, extra="forbid")
+
+    @model_validator(mode="after")
+    def reject_numeric_observation_metadata(
+        self,
+    ) -> LLMExtractedEntityCandidate:
+        """Require numeric observation metadata to use the provenance envelope."""
+        for field in self.metadata:
+            if (
+                field.key.strip() in _OBSERVATION_METADATA_FIELDS
+                and isinstance(field.value, str)
+                and observation_text_requires_source_measurement(field.value)
+            ):
+                msg = (
+                    f"Numeric entity metadata {field.key!r} requires an explicit "
+                    "source_measurement observation."
+                )
+                raise ValueError(msg)
+        return self
 
     def to_extracted_entity_candidate(self) -> ExtractedEntityCandidate:
         """Return the internal service entity candidate contract."""
@@ -512,4 +550,5 @@ __all__ = [
     "LLMLiteralField",
     "LLMRejectedFact",
     "RejectedFact",
+    "observation_text_requires_source_measurement",
 ]
