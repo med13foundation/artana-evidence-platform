@@ -7,14 +7,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from artana_evidence_api.evidence_selection_semantic_contracts import (
+from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticCandidateAssessment,
 )
-from artana_evidence_api.evidence_selection_semantic_model import (
+from artana_evidence_api.evidence_selection.semantic.model import (
     EvidenceSelectionSemanticContext,
     EvidenceSelectionSemanticModelRunner,
 )
-from artana_evidence_api.evidence_selection_semantic_validation import (
+from artana_evidence_api.evidence_selection.semantic.validation import (
     assess_validated_semantic_batch,
 )
 from artana_evidence_api.types.common import JSONObject

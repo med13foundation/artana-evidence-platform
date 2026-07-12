@@ -17,6 +17,11 @@ from artana_evidence_api.direct_source_search import (
 from artana_evidence_api.document_store import (
     HarnessDocumentStore,
 )
+from artana_evidence_api.evidence_selection.semantic.screening import (
+    AgentEvidenceSelectionCandidateScreener,
+    EvidenceSelectionCandidateScreener,
+    EvidenceSelectionScreeningContext,
+)
 from artana_evidence_api.evidence_selection_candidate_handoffs import (
     create_selected_handoffs,
 )
@@ -38,11 +43,6 @@ from artana_evidence_api.evidence_selection_result_serialization import (
 )
 from artana_evidence_api.evidence_selection_review_staging import (
     stage_selected_records_for_review,
-)
-from artana_evidence_api.evidence_selection_semantic_screening import (
-    AgentEvidenceSelectionCandidateScreener,
-    EvidenceSelectionCandidateScreener,
-    EvidenceSelectionScreeningContext,
 )
 from artana_evidence_api.evidence_selection_source_plan_artifact import (
     build_source_plan,

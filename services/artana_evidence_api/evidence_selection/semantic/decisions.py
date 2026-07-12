@@ -5,6 +5,9 @@ from __future__ import annotations
 from uuid import UUID
 
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.semantic.contracts import (
+    EvidenceSelectionSemanticCandidateAssessment,
+)
 from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionCandidateDecision,
     EvidenceSelectionCandidateSearch,
@@ -13,9 +16,6 @@ from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionDecisionState,
     record_dedup_key,
     record_hash,
-)
-from artana_evidence_api.evidence_selection_semantic_contracts import (
-    EvidenceSelectionSemanticCandidateAssessment,
 )
 from artana_evidence_api.source_adapters import source_adapter
 from artana_evidence_api.source_document_selection_identity import (

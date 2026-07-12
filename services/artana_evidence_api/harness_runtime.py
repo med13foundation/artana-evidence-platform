@@ -119,7 +119,7 @@ if TYPE_CHECKING:
     from .direct_source_search import DirectSourceSearchStore
     from .document_binary_store import HarnessDocumentBinaryStore
     from .document_store import HarnessDocumentStore
-    from .evidence_selection_semantic_screening import (
+    from .evidence_selection.semantic.screening import (
         EvidenceSelectionCandidateScreener,
     )
     from .graph_chat_runtime import HarnessGraphChatRunner

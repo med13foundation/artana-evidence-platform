@@ -17,13 +17,13 @@ from artana_evidence_api.direct_source_search import (
     UniProtSourceSearchResponse,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.semantic.screening import (
+    DeterministicEvidenceSelectionCandidateScreener,
+)
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     EvidenceSelectionSourcePlanResult,
     execute_evidence_selection_run,
-)
-from artana_evidence_api.evidence_selection_semantic_screening import (
-    DeterministicEvidenceSelectionCandidateScreener,
 )
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,

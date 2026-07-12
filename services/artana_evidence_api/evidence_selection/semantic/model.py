@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from typing import Protocol
 from uuid import uuid4
 
-from artana_evidence_api.evidence_selection_semantic_contracts import (
+from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
 )
-from artana_evidence_api.runtime_support import (
+from artana_evidence_api.runtime import (
     GovernanceConfig,
     ModelCapability,
     create_artana_postgres_store,

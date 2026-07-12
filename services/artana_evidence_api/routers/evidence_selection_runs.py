@@ -14,6 +14,10 @@ from artana_evidence_api.dependencies import (
     get_run_registry,
     require_harness_space_write_access,
 )
+from artana_evidence_api.evidence_selection.semantic.model import (
+    is_semantic_selection_agent_available,
+    semantic_selection_agent_unavailable_detail,
+)
 from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionCandidateSearch,
 )
@@ -26,10 +30,6 @@ from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionProposalMode,
     EvidenceSelectionSourcePlannerMode,
     queue_evidence_selection_run,
-)
-from artana_evidence_api.evidence_selection_semantic_model import (
-    is_semantic_selection_agent_available,
-    semantic_selection_agent_unavailable_detail,
 )
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,

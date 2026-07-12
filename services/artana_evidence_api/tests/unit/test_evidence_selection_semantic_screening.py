@@ -18,19 +18,19 @@ from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import 
 from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     load_semantic_diagnostic_fixture,
 )
-from artana_evidence_api.evidence_selection_candidates import (
-    EvidenceSelectionCandidateSearch,
-)
-from artana_evidence_api.evidence_selection_semantic_contracts import (
+from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
     EvidenceSelectionSemanticCandidateAssessment,
 )
-from artana_evidence_api.evidence_selection_semantic_model import (
+from artana_evidence_api.evidence_selection.semantic.model import (
     EvidenceSelectionSemanticContext,
 )
-from artana_evidence_api.evidence_selection_semantic_screening import (
+from artana_evidence_api.evidence_selection.semantic.screening import (
     AgentEvidenceSelectionCandidateScreener,
     EvidenceSelectionScreeningContext,
+)
+from artana_evidence_api.evidence_selection_candidates import (
+    EvidenceSelectionCandidateSearch,
 )
 from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
 from artana_evidence_api.source_result_capture import (
@@ -302,7 +302,7 @@ async def test_agent_exception_defers_every_record_without_leaking_error_text() 
 @pytest.mark.asyncio
 async def test_agent_batch_failure_defers_only_failed_batch(monkeypatch) -> None:
     monkeypatch.setattr(
-        "artana_evidence_api.evidence_selection_semantic_screening."
+        "artana_evidence_api.evidence_selection.semantic.screening."
         "_MAX_AGENT_BATCH_RECORDS",
         2,
     )

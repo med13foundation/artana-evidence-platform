@@ -25,7 +25,7 @@ from artana_evidence_api.evidence_selection.diagnostics.report import (
     EvidenceSelectionSemanticDiagnosticReport,
 )
 from artana_evidence_api.evidence_selection.output_paths import paths_alias
-from artana_evidence_api.evidence_selection_semantic_model import (
+from artana_evidence_api.evidence_selection.semantic.model import (
     ArtanaEvidenceSelectionSemanticModelRunner,
 )
 

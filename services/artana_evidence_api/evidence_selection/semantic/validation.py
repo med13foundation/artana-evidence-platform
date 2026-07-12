@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from artana_evidence_api.evidence_selection_semantic_contracts import (
+from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
     EvidenceSelectionSemanticCandidateAssessment,
 )
-from artana_evidence_api.evidence_selection_semantic_model import (
+from artana_evidence_api.evidence_selection.semantic.model import (
     EvidenceSelectionSemanticContext,
     EvidenceSelectionSemanticModelRunner,
     SemanticSelectionAgentUnavailableError,
