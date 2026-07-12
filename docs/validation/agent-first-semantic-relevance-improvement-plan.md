@@ -2,7 +2,8 @@
 
 Date: 2026-07-11
 
-Status: Active; PR 1 implemented in GitHub PR `#139`
+Status: Active; PR 1 merged in GitHub PR `#139`; PR 2 merged in GitHub PR
+`#141`; PR 3 is next
 
 Baseline commit: `9f95b2277b0fcb30cd8eb06116af484c841f8319`
 
@@ -26,6 +27,41 @@ The immediate product problem is not source planning. The model produced useful
 queries and PubMed returned valuable records. The authoritative selector in
 `evidence_selection_candidate_screening.py` reduced natural-language criteria
 to token overlap and made the final relevance decision.
+
+## Execution Reconciliation After PR 141
+
+This section is authoritative when the original PR numbering below conflicts
+with implementation history.
+
+| Actual milestone | State | Merge-visible evidence |
+| --- | --- | --- |
+| PR 1: freeze the failure corpus | Merged as GitHub PR `#139` | Commit `1b2559aa`; categorical fixtures and reproducible baseline metrics |
+| PR 2: agent-first semantic selector and runtime authority | Merged as GitHub PR `#141` | Commit `451e6433`; strict agent path, grounded categorical findings, deterministic decision policy, provenance, and fail-closed behavior |
+| PR 3: framework-wide schema registry and numeric-origin guard | Next | Branch `alvaro/evidence-semantic-pr3-schema-registry`; acceptance gates defined below |
+
+PR 2 delivered the most important behavioral change first. The live diagnostic
+reported precision `1.0000`, recall `0.9231`, coverage `0.9333`, two explicit
+abstentions, invalid-agent selections `0`, semantic fallbacks `0`, and a passed
+injection canary. These are strong diagnostic results, not independent expert
+proof and not trusted-graph readiness.
+
+PR 2 did not deliver the framework-wide registry originally assigned to it in
+the first draft of this plan. PR 3 therefore owns the remaining systemic gap:
+
+- register every model-output schema and every agent-authored category;
+- inventory every numeric field by one allowed origin and typed provenance
+  envelope;
+- quarantine legacy model-authored numeric judgments in an exact-ID debt
+  manifest;
+- reject direct model-client calls and prose-to-decision parsing outside the
+  guarded adapter;
+- prove through taint tests that agent-authored numbers cannot influence
+  selection, extraction, staging, ranking, evaluation, trusted eligibility, or
+  promotion;
+- route the fast registry, debt, origin, and boundary checks through CI.
+
+PR 3 must preserve PR 2's live quality and strict no-fallback behavior. It is a
+framework enforcement PR, not an opportunity to retune semantic decisions.
 
 ## Non-Negotiable Principles
 
@@ -133,7 +169,7 @@ values, not to source measurements, retrieval scores, or runtime observations.
 No bare numeric field is accepted at an agent, evaluation, study, ranking, or
 promotion boundary.
 
-PR 2 must introduce a mandatory registry for every model-output schema. Runtime
+PR 3 must introduce a mandatory registry for every model-output schema. Runtime
 invocation rejects unregistered schemas, generic numeric metadata, and numeric
 judgment fields. Numeric source measurements use typed origin envelopes rather
 than arbitrary scalar dictionaries. Numbers may appear in explanations or
@@ -153,32 +189,32 @@ category presented as an atomic agent finding.
 Legacy violations must live in an explicit, shrinking debt manifest with a
 stable debt ID, schema and field path, producer, consumers, current influence,
 owner PR, quarantine rule, and removal gate. Exact debt IDs must only disappear;
-one violation cannot replace another while preserving the count. From PR 2
+one violation cannot replace another while preserving the count. From PR 3
 onward, a legacy numeric field may remain for compatibility only when runtime
 tests prove it is quarantined from selection, extraction, staging, ranking,
 evaluation, trusted eligibility, and promotion.
 
 ### Preliminary numeric-judgment debt ownership
 
-PR 2 must replace this preliminary inventory with a machine-readable complete
+PR 3 must replace this preliminary inventory with a machine-readable complete
 scan. These known items already have owners:
 
 | Current surface | Risk | Owner |
 | --- | --- | --- |
-| `agent_contracts.py::BaseAgentContract.confidence_score` | Shared agent self-confidence enters multiple workflows | PR 2 shared contract migration |
-| `agent_contracts.py::EvidenceItem.relevance` | Agent assigns numeric relevance to its own evidence | PR 2 shared evidence assessment |
-| `agent_contracts.py::GraphSearchResultEntry.relevance_score` | Graph-search output can present model-authored relevance as a rank | PR 2 registry and graph-search quarantine; removal in owning migration |
-| `agent_contracts.py::EvidenceChainItem.confidence` | Compatibility confidence can obscure whether the model or policy produced it | PR 2 typed provenance envelope and quarantine |
-| `agent_contracts.py::GraphSearchContract.confidence_score` | Live graph-search policy can consume a legacy number | PR 2 graph-search categorical migration |
-| `pubmed_relevance.py` confidence instruction | Categorical relevance result still demands a model probability | PR 2 semantic contract |
-| `variant_extraction_contracts.py::confidence_score` and generic scalar values | Extraction output and child observations expose model-authored confidence or untyped numbers | PR 2 quarantine and typed measurement envelope; PR 8A removal |
+| `agent_contracts.py::BaseAgentContract.confidence_score` | Shared agent self-confidence enters multiple workflows | PR 3 shared contract quarantine and owning migration |
+| `agent_contracts.py::EvidenceItem.relevance` | Agent assigns numeric relevance to its own evidence | PR 3 shared evidence quarantine and owning migration |
+| `agent_contracts.py::GraphSearchResultEntry.relevance_score` | Graph-search output can present model-authored relevance as a rank | PR 3 registry and graph-search quarantine; removal in owning migration |
+| `agent_contracts.py::EvidenceChainItem.confidence` | Compatibility confidence can obscure whether the model or policy produced it | PR 3 typed provenance envelope and quarantine |
+| `agent_contracts.py::GraphSearchContract.confidence_score` | Live graph-search policy can consume a legacy number | PR 3 graph-search quarantine and owning migration |
+| `pubmed_relevance.py` confidence instruction | Categorical relevance result still demands a model probability | PR 3 registry and debt quarantine |
+| `variant_extraction_contracts.py::confidence_score` and generic scalar values | Extraction output and child observations expose model-authored confidence or untyped numbers | PR 3 quarantine and typed measurement envelope; PR 8A removal |
 | `evidence_selection_validation.py::explanation_quality_score` | Subjective `1` through `5` judgment is treated as comparable measurement | PR 4 categorical review rubric |
 | Shadow-study `ranking_score` fields | Score origin can be unclear or mixed with reviewer judgment | PR 4 provenance split and PR 5 deterministic ranking policy |
 
-This table is explicitly incomplete until PR 2 generates the registry-backed
+This table is explicitly incomplete until PR 3 generates the registry-backed
 manifest. Existing `FactAssessment` and `DecisionConfidenceAssessment`
 categorical inputs follow the desired direction: the database or service
-computes compatibility weights from enums. PR 2 must still verify that no
+computes compatibility weights from enums. PR 3 must still verify that no
 model-written legacy number is converted into those categories before the
 deterministic policy runs.
 
@@ -238,9 +274,9 @@ remain vetoes regardless of the derived weight.
 ## Common PR Loop
 
 Every implementation PR from PR 2 onward follows the same loop. PR 1 predates
-the registry and is a historical categorical baseline; PR 2 must retrospectively
-scan its artifacts and prove that its frozen predictions contain no numeric
-agent judgments before PR 3 can merge.
+the registry and is a historical categorical baseline; PR 3 must retrospectively
+scan the merged PR 1 and PR 2 artifacts and prove that their agent outputs do
+not introduce unregistered numeric judgments before PR 3 can merge.
 
 1. Add RED unit and regression tests from a measured failure.
 2. Implement the smallest complete ownership-boundary change.
@@ -328,96 +364,81 @@ Acceptance:
 - Reports distinguish micro, macro, and per-case metrics.
 - Reports identify every number as a computed metric and preserve the exact
   categorical decisions used to derive it.
-- PR 1 is not used as the sole PR 3 quality gate or as literal-grounding proof.
+- PR 1 is not used as the sole live quality gate or as literal-grounding proof.
 - `make artana-evidence-api-service-checks` passes.
 
 Non-goal: Improve production behavior.
 
-## PR 2: Enforce The Categorical Agent-Judgment Boundary
+## PR 3 (Next): Enforce The Framework-Wide Categorical Boundary
 
-Branch: `alvaro/evidence-semantic-pr2-agent-contract`
+Branch: `alvaro/evidence-semantic-pr3-schema-registry`
 
-Base: PR 1
+Base: merged PR 2 (`#141`)
 
-Purpose: Create the framework-wide categorical-output rule, CI enforcement, and
-one typed semantic relevance boundary that demonstrates the required pattern.
+Purpose: Apply the categorical-output rule across every model boundary, add CI
+enforcement, and quarantine existing numeric-judgment debt without changing the
+merged selector's semantic policy.
 
 Likely files:
 
-- `services/artana_evidence_api/evidence_selection/semantic_judgment.py`
-- `services/artana_evidence_api/evidence_selection/semantic_judgment_models.py`
 - `services/artana_evidence_api/agent_contracts.py`
-- `services/artana_evidence_api/types/graph_fact_assessment.py`
-- `services/artana_evidence_api/prompts/evidence_selection_semantic_judgment_v1.md`
-- `services/artana_evidence_api/runtime/model_registry.py`
+- `services/artana_evidence_api/runtime/` registry and guarded-adapter modules
 - `services/artana_evidence_api/runtime_support.py`
-- `services/artana_evidence_api/tests/unit/test_evidence_selection_semantic_judgment.py`
-- repository-level contract test and numeric-judgment debt manifest
+- registered model-output and category manifests
+- numeric-origin inventory and numeric-judgment debt manifest
+- repository-level registry, boundary, and CI-routing tests
+- `scripts/ci/plan_service_checks.py`
+- `Makefile`
 
 Implementation:
 
-- Define immutable Pydantic contracts for objective decomposition,
-  criterion-level findings, citations to record text, categorical decision
-  bands, abstention reasons, model metadata, and prompt version.
 - Add a repository-level schema guard that rejects agent-authored numeric
   judgment fields, including aliases nested in metadata or generic payloads.
-- Register every model-output schema and runtime invocation; reject unregistered
-  schemas and arbitrary numeric scalar dictionaries at runtime.
-- Route every model/agent invocation through the guarded adapter and add a
-  boundary/AST test against direct client calls or prose-to-decision parsing.
+- Register every model-output schema, prompt, producer, and agent-authored enum;
+  reject unregistered schemas and arbitrary numeric scalar dictionaries.
+- Give every registered category an observable definition, evidence/locator
+  requirements, positive example, counterexample, and invalid/unknown behavior.
+- Inventory every numeric field in registered schemas and emitted artifacts.
+  Require exactly one of the six allowed origins and its complete typed
+  provenance envelope.
 - Add origin-specific numeric envelope contracts rather than one generic score
   wrapper.
 - Inventory current `confidence_score`, evidence `relevance`, subjective quality
   score, and equivalent agent-output fields in a versioned debt manifest. Assign
   each remaining violation a stable ID and owner PR; fail if any new or
   replacement ID appears, even when the total count is unchanged.
-- Replace semantic-selection confidence with criterion status, cited locator,
-  entity-match, population-match, and reported-study-design findings. Agents
-  emit only operationally anchored atomic categories; relevance, support, and
-  grounding bands are deterministic outputs.
-- Define one versioned deterministic mapping service that can derive an
-  operational ordering weight from valid categories. The mapping is not a
-  probability and cannot override categorical vetoes.
-- Add a narrow service/Protocol that evaluates one bounded candidate batch.
-- Require title plus abstract or equivalent source fields for a `direct`
-  grounded decision. Missing abstracts must normally produce `abstain`.
-- Treat retrieved text as untrusted data. Prompt content must delimit source
-  data and instruct the model not to follow instructions embedded in records.
-- Validate that cited evidence text exists literally in the supplied record.
-- Add a separate source-locked grounding corpus containing sanitized verbatim
-  retrieved title/abstract text, stable field/sentence locators, source hashes,
-  and capture provenance. Keep the PR 1 paraphrase corpus for mechanics only.
-- Validate that every caller-provided criterion receives exactly one finding.
-- Reject unsupported criterion IDs, duplicate findings, numeric self-scores,
-  and contradictory select decisions.
-- Record model ID, prompt version, latency, token/cost metadata when available,
-  and invalid-output attempts.
-- Permit bounded schema-repair retries; do not permit semantic fallback.
+- Route production model execution through the registered guarded adapter. Add
+  an AST/boundary check against direct model-client calls, authoritative
+  unstructured output, and prose parsed into decision fields.
+- Quarantine every retained debt field from selection, extraction, staging,
+  ranking, evaluation, trusted eligibility, and promotion. Record consumers and
+  the owning removal PR rather than hiding compatibility debt.
+- Retrospectively scan the merged PR 1 and PR 2 schemas and artifacts.
+- Add the fast registry/debt/origin/boundary gate to service-check planning and
+  path-routing tests so relevant non-doc changes cannot skip it.
 
 Adversarial tests:
 
-- prompt injection inside an abstract
-- missing abstract
-- truncated model output
-- invalid JSON and duplicate criterion IDs
-- select with an unknown required criterion
-- select while an exclusion is supported
-- fabricated evidence text
 - numeric confidence/relevance hidden in nested metadata or rationale
 - prompt attempts to demand a probability or percentage
 - unregistered dynamically generated output schema
 - arbitrary numeric value hidden in a generic scalar or metadata dictionary
 - ordinal confidence laundered as an unanchored category
-- timeout and model-unavailable behavior
+- one debt ID replaced by a differently named violation
+- source measurement missing its literal span, unit, or source hash
+- deterministic policy number missing its categorical inputs or vetoes
+- retrieval score relabeled as semantic confidence
+- direct model-client invocation outside the guarded adapter
+- numeric self-score injected at each production model boundary
+- explanation text changed while categories remain fixed
 
 Acceptance:
 
-- Invalid or unsupported decisions never become selected candidates.
-- The agent boundary returns a typed abstention or typed failure.
-- No token-overlap selector is invoked from this module.
-- Agent output contains no numeric semantic judgments.
-- Repeating the same categorical input through the same policy version produces
-  byte-identical derived score output.
+- Every production model-output schema and agent-authored category is present in
+  the machine-readable registry.
+- Every numeric schema/artifact field has exactly one allowed origin and the
+  origin's complete typed provenance envelope, or one stable quarantined debt
+  ID with an owning removal PR.
 - The CI guard fails when a test-only agent schema adds a judgment float and
   passes for allowed source measurements and computed metrics.
 - The category guard fails for an unanchored ordinal enum and passes only after
@@ -428,17 +449,21 @@ Acceptance:
   itself, including targeted-test-only PRs. CI path-routing tests prove this.
 - No production model call bypasses the guarded adapter; a deliberately direct
   test call fails the boundary check.
-- The source-locked grounding corpus, not the PR 1 paraphrase corpus, proves
-  literal citation validation.
+- Taint tests prove agent-authored numbers cannot influence selection,
+  extraction, staging, ranking, evaluation, trusted eligibility, or promotion.
+- The merged PR 2 selector retains precision and recall of at least `0.80`, with
+  semantic fallback `0` and invalid-agent selections `0`.
 - Focused tests, type checks, boundary checks, and adversarial review pass.
 
-Non-goal: Wire the agent into live runtime decisions.
+Non-goal: Change the merged semantic selector's decision policy or remove every
+legacy debt field. PR 3 must quarantine debt and assign each removal to its
+owning migration PR.
 
-## PR 3: Make Agent Findings Authoritative In Model-Planned Runs
+## PR 2 (Merged As GitHub PR 141): Make Agent Findings Authoritative
 
-Branch: `alvaro/evidence-semantic-pr3-runtime-integration`
+Branch: `alvaro/evidence-semantic-pr2-agent-selector`
 
-Base: PR 2
+Base: PR 1
 
 Purpose: Replace lexical semantic selection with agent-authored atomic findings
 and one deterministic authoritative decision policy over those findings.
@@ -459,8 +484,9 @@ Implementation:
   - deterministic eligibility: schema validity, durable identity, deduplication,
     source policy, budget, and already-captured checks;
   - semantic findings: agent-owned criterion categories, spans, and explanation;
-  - authoritative decision: deterministic PR 2 policy validates the agent's
-    recommendation and derives select/reject/abstain from the complete findings.
+  - authoritative decision: a versioned deterministic policy validates the
+    agent's recommendation and derives select/reject/abstain from the complete
+    findings.
 - For `planner_mode=model`, require the semantic judgment agent after retrieval.
 - Remove `_decision_for_record` token overlap as an authoritative decision in
   the model path.
@@ -472,9 +498,9 @@ Implementation:
 - Batch candidates within configured limits and preserve stable candidate IDs.
 - Serialize each criterion finding, evidence citation, categorical judgment,
   abstention, model ID, prompt version, agent invocation, and fallback status.
-- Derive any operational ranking weight after validation using the PR 2 policy;
-  serialize its `deterministic_policy` origin and policy version separately from
-  the agent payload.
+- Derive any operational ranking weight after validation using the versioned
+  policy; serialize its `deterministic_policy` origin and policy version
+  separately from the agent payload.
 - Ensure shadow mode records selected candidates without creating graph writes.
 - Add cache keys that include record hash, objective/criteria hash, model ID,
   prompt version, and relevant policy version.
@@ -488,7 +514,7 @@ Required regressions:
 - model mode cannot set a non-null semantic fallback result
 - duplicate PubMed records remain deterministic deduplication failures
 - all frozen PR 1 cases flow through the semantic agent boundary
-- all source-locked PR 2 cases prove literal-span grounding
+- all source-locked cases prove literal-span grounding
 - an agent response containing numeric confidence or relevance is invalid and
   cannot select, rank, or promote a candidate
 - every legacy numeric field in the selection path is ignored or rejected before
@@ -509,6 +535,14 @@ Acceptance:
 - Evidence API service checks and a three-case live diagnostic pass.
 - No new debt ID appears; selection-path numeric influence and debt are `0`.
 
+Delivered evidence in GitHub PR `#141`:
+
+- diagnostic precision `1.0000`, recall `0.9231`, and coverage `0.9333`;
+- two explicit abstentions, invalid-agent selections `0`, and semantic
+  fallbacks `0`;
+- prompt-injection canary passed;
+- required checks passed and all review threads were resolved before merge.
+
 Stop condition: If two implementation iterations cannot reach the threshold,
 do not tune thresholds. Review the decision contract, input evidence, and model
 capability before continuing.
@@ -517,8 +551,8 @@ capability before continuing.
 
 Branch: `alvaro/evidence-semantic-pr4-shadow-gate-contract`
 
-Base: PR 2. Development may start from PR 1 in parallel, but PR 4 must rebase
-onto the merged PR 2 registry and guard before review or merge.
+Base: PR 3. Design may proceed in parallel, but PR 4 must rebase onto the merged
+PR 3 registry and guard before review or merge.
 
 Purpose: Ensure the evaluation gate measures artifacts the shadow path can
 actually produce.
@@ -835,9 +869,9 @@ default remains human promotion.
 
 | PR | Agent emits | Deterministic code computes | Forbidden in this PR | Merge evidence |
 | --- | --- | --- | --- | --- |
-| 1 | Frozen `select/reject/abstain/invalid` decisions and reasons | TP, FP, FN, TN, precision, end-to-end recall, coverage | Agent-written baseline metrics | Prediction artifact plus reproducible report; PR 2 retrospective registry scan |
-| 2 | Operationally anchored criterion categories, evidence spans, explanations, abstention reason | Authoritative decision, grounding/composite bands, versioned operational weight, veto result | Confidence, disguised ordinal confidence, probability, relevance score, hidden numeric metadata | Mandatory schema registry, exact-ID debt manifest, source-locked corpus, adversarial contract tests |
-| 3 | Live atomic candidate findings, spans, explanations, recommendation | Authoritative decision, candidate order, outcome metrics, runtime counters | Direct use of recommendation, agent rank overrides, numeric fallback | Live trace proving finding authority, policy recomputation, and fallback `0` |
+| 1 | Frozen `select/reject/abstain/invalid` decisions and reasons | TP, FP, FN, TN, precision, end-to-end recall, coverage | Agent-written baseline metrics | Prediction artifact plus reproducible report; PR 3 retrospective registry scan |
+| 2 | Live atomic candidate findings, spans, explanations, recommendation | Authoritative decision, candidate order, outcome metrics, runtime counters | Direct use of recommendation, agent rank overrides, numeric fallback | Live trace proving finding authority, policy recomputation, and fallback `0` |
+| 3 | Operationally anchored categories, evidence spans, explanations, abstention reason | Registry validation, origin coverage, debt diff, deterministic policy outputs | Confidence, disguised ordinal confidence, probability, relevance score, hidden numeric metadata | Mandatory schema registry, exact-ID debt manifest, source-locked corpus, adversarial contract tests |
 | 4 | Reviewer categories, decisions, cited findings, notes | Agreement, precision, recall, category distributions | Explanation-quality integer or AI readiness score | Completed packet plus provenance-class checks |
 | 5 | No new agent judgment; consumes validated categories | Versioned ranking weight, calibration, ECE, reliability bins | Raw model confidence or gold-derived score | Mapping artifact, held-out protocol, score-origin audit |
 | 6 | Repeated categorical judgments from each model | Worst, mean, variance, disagreement, cost, latency | Model self-score used for adoption | Immutable repeated-run matrix |
@@ -858,31 +892,33 @@ The complete coverage report and injection results are merge evidence.
 ## Dependency And Parallelization
 
 ```text
-PR 1 Failure corpus --> PR 2 Categorical registry + CI guard
-                              |--> PR 3 Runtime integration --|
-                              |--> PR 4 Study contract -------|--> PR 5 Calibration
-                                                                    |
-                                                                    v
-                                                               PR 6 Live A/B
-                                                                    |
-                                                                    v
-                                                               PR 7 Expert pilot
-                                                                    |
-                                                                    v
-                                                          PR 8A Extraction migration
-                                                                    |
-                                                                    v
-                                                       PR 8B Relation/link migration
-                                                                    |
-                                                                    v
-                                                            PR 9 Trusted proof
+PR 1 Failure corpus --> PR 2 Runtime selector --> PR 3 Registry + CI guard
+                                                   |--> PR 4 Study contract
+                                                   |          |
+                                                   v          v
+                                                   PR 5 Calibration
+                                                          |
+                                                          v
+                                                     PR 6 Live A/B
+                                                          |
+                                                          v
+                                                     PR 7 Expert pilot
+                                                          |
+                                                          v
+                                                PR 8A Extraction migration
+                                                          |
+                                                          v
+                                             PR 8B Relation/link migration
+                                                          |
+                                                          v
+                                                  PR 9 Trusted proof
 ```
 
 Recommended lanes:
 
 - Lane A: PR 1, PR 2, PR 3
 - Lane B: PR 4 development may start after PR 1, but review and merge require
-  PR 2 plus a rebase onto its registry and CI guard
+  PR 3 plus a rebase onto its registry and CI guard
 - Lane C: prepare PR 6 automation while PR 3-5 are under review, without
   generating readiness claims before their merge
 - Lane D: inventory and design PR 8A/8B while PR 6/7 run; implementation and
@@ -896,18 +932,19 @@ results. PR 9 cannot begin until PR 8A and PR 8B remove their owned debt IDs.
 
 Update this table from merge-visible artifacts after every PR.
 
-| Metric | Baseline | PR 3 target | PR 6 target | PR 7 target | PR 9 target |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Selection precision | 0.2381 | >=0.80 | worst >=0.80 | >=0.80 | tracked |
-| Selection recall | 0.3846 | >=0.80 | worst >=0.80 | >=0.80 | tracked |
-| Semantic fallback count | 0 planner fallback; deterministic selector authoritative | 0 | 0 | 0 | 0 |
-| Invalid-agent selections | not measured | 0 | 0 | 0 | 0 |
-| Agent-authored numeric judgments in evaluated path | inventory required | 0 | 0 | 0 | 0 |
-| Numeric outputs with allowed origin and version | partial | 100% | 100% | 100% | 100% |
-| Abstention rate | not measured | measured | stable | measured | measured |
-| Ranking ECE | 0.6000-1.0000 across three cases | advisory | honest/held-out | <=0.05 | tracked |
-| Independent expert cases | 0 | 0 | 0 | >=10 questions | expert pilot set |
-| Trusted relation precision | not established | not claimed | not claimed | not claimed | 1.00 |
+| Metric | Baseline | Merged PR 2 | PR 3 target | PR 6 target | PR 7 target | PR 9 target |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Selection precision | 0.2381 | 1.0000 diagnostic | preserve >=0.80 | worst >=0.80 | >=0.80 | tracked |
+| Selection recall | 0.3846 | 0.9231 diagnostic | preserve >=0.80 | worst >=0.80 | >=0.80 | tracked |
+| Selection coverage | not measured | 0.9333 diagnostic | preserve/measured | stable | measured | measured |
+| Semantic fallback count | deterministic selector authoritative | 0 | 0 | 0 | 0 | 0 |
+| Invalid-agent selections | not measured | 0 | 0 | 0 | 0 | 0 |
+| Agent-authored numeric judgments in evaluated path | inventory required | selector rejects them | 0 unquarantined | 0 | 0 | 0 |
+| Numeric outputs with allowed origin and version | partial | selector-local | 100% registry coverage | 100% | 100% | 100% |
+| Abstention count/rate | not measured | 2 / measured | measured | stable | measured | measured |
+| Ranking ECE | 0.6000-1.0000 across three cases | not a readiness claim | advisory | honest/held-out | <=0.05 | tracked |
+| Independent expert cases | 0 | 0 | 0 | 0 | >=10 questions | expert pilot set |
+| Trusted relation precision | not established | not claimed | not claimed | not claimed | not claimed | 1.00 |
 
 ## Program Stop Rules
 
