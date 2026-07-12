@@ -1,0 +1,41 @@
+{
+  "schema_version": "evidence_selection_semantic_source_snapshot.v1",
+  "source_kind": "sanitized_live_shadow_result_snapshot",
+  "case": {
+    "case_id": "egfr_exclusion_token_canary",
+    "evaluation_role": "canary",
+    "source_run_id": "d2cb282f-5b38-4f43-a0b0-aa20cae266d2",
+    "upstream_source_artifact_sha256": "e071c01c86179eab249e8569eaf40ae22a095932b642516be8e1b018ccf0de43",
+    "goal": "Identify primary EGFR T790M and osimertinib evidence in non-small-cell lung cancer.",
+    "instructions": "Prioritize direct human clinical evidence and exclude generic reviews without study evidence.",
+    "inclusion_criteria": [
+      "Direct EGFR T790M clinical evidence"
+    ],
+    "exclusion_criteria": [
+      "Generic review without case-level or study evidence"
+    ],
+    "records": [
+      {
+        "record_id": "canary:pmid:27959700",
+        "source_key": "pubmed",
+        "source_record_id": "27959700",
+        "title": "Osimertinib or Platinum-Pemetrexed in EGFR T790M-Positive Lung Cancer.",
+        "evidence_excerpt": "This primary clinical study provides direct T790M-positive treatment evidence."
+      },
+      {
+        "record_id": "canary:pmid:25923549",
+        "source_key": "pubmed",
+        "source_record_id": "25923549",
+        "title": "AZD9291 in EGFR inhibitor-resistant non-small-cell lung cancer.",
+        "evidence_excerpt": "The evidence reports a primary human study of T790M-positive inhibitor-resistant lung cancer."
+      },
+      {
+        "record_id": "canary:pmid:27393503",
+        "source_key": "pubmed",
+        "source_record_id": "27393503",
+        "title": "Temporal changes of EGFR mutations and T790M levels in tumour and plasma DNA following AZD9291 treatment.",
+        "evidence_excerpt": "Case-level translational evidence follows T790M during AZD9291 treatment."
+      }
+    ]
+  }
+}

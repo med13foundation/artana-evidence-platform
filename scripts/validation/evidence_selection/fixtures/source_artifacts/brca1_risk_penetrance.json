@@ -1,0 +1,126 @@
+{
+  "schema_version": "evidence_selection_semantic_source_snapshot.v1",
+  "source_kind": "sanitized_live_shadow_result_snapshot",
+  "case": {
+    "case_id": "brca1_risk_penetrance",
+    "evaluation_role": "primary",
+    "source_run_id": "a8361ae7-7bb3-4122-85e7-37b207f11d04",
+    "upstream_source_artifact_sha256": "8f0dcdb076ebb0985be4177908d110017876463c170a2d26aed5e82e3612ffd9",
+    "goal": "Identify primary human evidence linking pathogenic BRCA1 variants to breast or ovarian cancer risk and clinically relevant penetrance.",
+    "instructions": "Prioritize primary cohort, case-control, or segregation studies with direct BRCA1 variant and cancer-risk evidence.",
+    "inclusion_criteria": [
+      "Human BRCA1 variant evidence",
+      "Breast or ovarian cancer risk outcome"
+    ],
+    "exclusion_criteria": [
+      "Animal-only study"
+    ],
+    "records": [
+      {
+        "record_id": "brca1:pmid:40403695",
+        "source_key": "pubmed",
+        "source_record_id": "40403695",
+        "title": "Impact of germline variants on breast and ovarian cancer risk in Japanese women: an original cohort study and meta-analysis.",
+        "evidence_excerpt": "A large human case-control cohort estimated breast and ovarian cancer risks associated with pathogenic BRCA1 and BRCA2 variants."
+      },
+      {
+        "record_id": "brca1:pmid:22889855",
+        "source_key": "pubmed",
+        "source_record_id": "22889855",
+        "title": "BRCA1 R1699Q variant displaying ambiguous functional abrogation confers intermediate breast and ovarian cancer risk.",
+        "evidence_excerpt": "Family and genetic evidence estimated intermediate breast and ovarian cancer risk for the BRCA1 R1699Q variant."
+      },
+      {
+        "record_id": "brca1:pmid:26195121",
+        "source_key": "pubmed",
+        "source_record_id": "26195121",
+        "title": "Breast cancer risk for Korean women with germline mutations in BRCA1 and BRCA2.",
+        "evidence_excerpt": "A hereditary cancer cohort estimated age-specific breast cancer penetrance for BRCA1 and BRCA2 mutation carriers."
+      },
+      {
+        "record_id": "brca1:pmid:30191368",
+        "source_key": "pubmed",
+        "source_record_id": "30191368",
+        "title": "A tandem duplication of BRCA1 exons 1-19 through DHX8 exon 2 in four families with hereditary breast and ovarian cancer syndrome.",
+        "evidence_excerpt": "Four families provided segregation and clinical-significance evidence for a large BRCA1 structural variant."
+      },
+      {
+        "record_id": "brca1:pmid:40288678",
+        "source_key": "pubmed",
+        "source_record_id": "40288678",
+        "title": "Association of gene variant type and location with breast cancer risk in the general population.",
+        "evidence_excerpt": "A population case-control analysis evaluated breast cancer risk by pathogenic variant type and location in BRCA1 and other susceptibility genes."
+      },
+      {
+        "record_id": "brca1:pmid:17018160",
+        "source_key": "pubmed",
+        "source_record_id": "17018160",
+        "title": "Contribution of germline BRCA1 and BRCA2 sequence alterations to breast cancer in Northern India.",
+        "evidence_excerpt": "Cases and controls were analyzed for BRCA1 and BRCA2 germline changes and breast cancer susceptibility."
+      },
+      {
+        "record_id": "brca1:pmid:34237702",
+        "source_key": "pubmed",
+        "source_record_id": "34237702",
+        "title": "BRCA1 and BRCA2 whole cDNA analysis in unsolved hereditary breast/ovarian cancer patients.",
+        "evidence_excerpt": "The analysis searched for non-coding splice variants in unsolved hereditary cancer cases but did not estimate penetrance or cancer risk."
+      },
+      {
+        "record_id": "brca1:pmid:21356067",
+        "source_key": "pubmed",
+        "source_record_id": "21356067",
+        "title": "Screening for BRCA1, BRCA2, CHEK2, PALB2, BRIP1, RAD50, and CDH1 mutations in high-risk Finnish BRCA1/2-founder mutation-negative breast and/or ovarian cancer individuals.",
+        "evidence_excerpt": "A mutation-screening project focused on unresolved founder-negative families and additional genes rather than BRCA1 penetrance."
+      },
+      {
+        "record_id": "brca1:pmid:32658311",
+        "source_key": "pubmed",
+        "source_record_id": "32658311",
+        "title": "Germline pathogenic variant spectrum in 25 cancer susceptibility genes in Turkish breast and colorectal cancer patients and elderly controls.",
+        "evidence_excerpt": "A broad panel described variant frequencies across 25 genes and two cancers without a direct BRCA1 penetrance estimate."
+      },
+      {
+        "record_id": "brca1:pmid:31206626:selected-duplicate",
+        "source_key": "pubmed",
+        "source_record_id": "31206626",
+        "title": "Pathogenic and likely pathogenic variants in PALB2, CHEK2, and other known breast cancer susceptibility genes among 1054 BRCA-negative Hispanics with breast cancer.",
+        "evidence_excerpt": "The cohort explicitly excluded BRCA mutation carriers and evaluated PALB2, CHEK2, and other susceptibility genes."
+      },
+      {
+        "record_id": "brca1:pmid:31206626:rejected-duplicate",
+        "source_key": "pubmed",
+        "source_record_id": "31206626",
+        "title": "Pathogenic and likely pathogenic variants in PALB2, CHEK2, and other known breast cancer susceptibility genes among 1054 BRCA-negative Hispanics with breast cancer.",
+        "evidence_excerpt": "The duplicate source record was returned by a second search and remained off target for BRCA1."
+      },
+      {
+        "record_id": "brca1:pmid:34642874",
+        "source_key": "pubmed",
+        "source_record_id": "34642874",
+        "title": "Penetrance of male breast cancer susceptibility genes: a systematic review.",
+        "evidence_excerpt": "A systematic review summarizes male breast cancer susceptibility genes rather than providing primary BRCA1 risk evidence for the requested population."
+      },
+      {
+        "record_id": "brca1:pmid:27913932",
+        "source_key": "pubmed",
+        "source_record_id": "27913932",
+        "title": "Almost 2% of Spanish breast cancer families are associated to germline pathogenic mutations in the ATM gene.",
+        "evidence_excerpt": "The family evidence concerns pathogenic ATM mutations in BRCA1/2-negative families."
+      },
+      {
+        "record_id": "brca1:pmid:30610487",
+        "source_key": "pubmed",
+        "source_record_id": "30610487",
+        "title": "Clinical implications of germline mutations in breast cancer genes: RECQL.",
+        "evidence_excerpt": "The article reviews evidence for RECQL as a proposed hereditary breast cancer gene."
+      },
+      {
+        "record_id": "brca1:pmid:26344711",
+        "source_key": "pubmed",
+        "source_record_id": "26344711",
+        "title": "Does familial breast cancer and thymoma suggest a cancer syndrome? A family perspective.",
+        "evidence_excerpt": "A family with breast or ovarian cancer and thymoma had an untested candidate variant without established BRCA1 pathogenicity."
+      }
+    ]
+  }
+}

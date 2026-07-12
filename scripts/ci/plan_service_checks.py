@@ -17,9 +17,7 @@ REPO_CONTROL_FILES = {
     "tests/unit/test_coverage_enforcement_contract.py",
     "tests/unit/test_makefile_type_gate_contract.py",
 }
-QUALITY_GATE_PREFIXES = (
-    "scripts/validation/relation_feasibility/",
-)
+QUALITY_GATE_PREFIXES = ("scripts/validation/relation_feasibility/",)
 QUALITY_GATE_FILES = {
     "scripts/run_relation_feasibility_audit.py",
     "tests/unit/test_relation_feasibility_audit.py",
@@ -35,6 +33,8 @@ EVIDENCE_API_PREFIXES = (
     "tests/e2e/artana_evidence_api/",
 )
 EVIDENCE_API_FILES = (
+    "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json",
+    "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.md",
     "scripts/build_evidence_selection_shadow_review_packet.py",
     "scripts/build_evidence_selection_shadow_review_source_inputs.py",
     "scripts/build_evidence_selection_shadow_review_study_batch_manifest.py",
@@ -42,6 +42,7 @@ EVIDENCE_API_FILES = (
     "scripts/build_evidence_selection_shadow_review_study_artifacts.py",
     "scripts/build_evidence_selection_source_exports.py",
     "scripts/build_evidence_selection_expert_study_bundle.py",
+    "scripts/generate_evidence_selection_semantic_baseline.py",
     "scripts/export_artana_evidence_api_openapi.py",
     "scripts/run_evidence_selection_expert_study_gate.py",
     "scripts/run_evidence_selection_review_calibration_gate.py",
@@ -91,7 +92,9 @@ def plan_checks(
         return _full_plan()
 
     docs_only = all(_is_docs_path(path) for path in normalized_paths)
-    test_paths = tuple(path for path in normalized_paths if _is_targeted_unit_test(path))
+    test_paths = tuple(
+        path for path in normalized_paths if _is_targeted_unit_test(path)
+    )
     tests_only = bool(test_paths) and len(test_paths) == len(normalized_paths)
     high_risk = any(_is_high_risk_path(path) for path in normalized_paths)
     repo_control = any(_is_repo_control_path(path) for path in normalized_paths)
@@ -103,9 +106,9 @@ def plan_checks(
         docs_only=docs_only,
         evidence_api=(evidence_api or high_risk or quality_gate) and not tests_only,
         graph_service=(graph_service or high_risk) and not tests_only,
-        repo_control=(
-            repo_control or high_risk or quality_gate
-        ) and not docs_only and not tests_only,
+        repo_control=(repo_control or high_risk or quality_gate)
+        and not docs_only
+        and not tests_only,
         full=high_risk,
         targeted_test_paths=test_paths if tests_only else (),
     )
