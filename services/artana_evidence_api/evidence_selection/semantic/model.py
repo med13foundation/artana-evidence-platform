@@ -10,6 +10,9 @@ from uuid import uuid4
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
 )
+from artana_evidence_api.evidence_selection.semantic.evidence import (
+    semantic_evidence_options,
+)
 from artana_evidence_api.runtime import (
     GovernanceConfig,
     ModelCapability,
@@ -195,7 +198,17 @@ def _build_semantic_selection_prompt(
             "search_id": context.search_id,
         },
         "records": [
-            {"record_index": index, "record": record}
+            {
+                "record_index": index,
+                "record": record,
+                "evidence_options": [
+                    {"reference": option.reference, "text": option.text}
+                    for option in semantic_evidence_options(
+                        record_index=index,
+                        record=record,
+                    )
+                ],
+            }
             for index, record in zip(
                 context.record_indices,
                 context.records,
@@ -219,10 +232,11 @@ def _build_semantic_selection_prompt(
         "wrong-intervention, wrong-outcome, or wrong-study-type records.\n"
         "- Use review whenever a decision-critical fact is uncertain or the available "
         "text is insufficient. Never guess.\n"
-        "- Do not output probabilities, confidence scores, rankings, or other numbers.\n"
+        "- Do not output probabilities, confidence scores, rankings, or numeric "
+        "judgments. Opaque record and evidence reference identifiers are required.\n"
         "- explanation must name the decisive criteria and why they were met or failed.\n"
-        "- evidence_spans must be exact, contiguous, verbatim substrings copied from "
-        "that record's values; preserve the original spelling and punctuation.\n"
+        "- evidence_references must contain 1-5 reference values copied exactly from "
+        "that record's evidence_options. Never write or paraphrase evidence text.\n"
         "- Do not use outside knowledge and do not invent citations or evidence.\n"
         "\nINPUT JSON:\n"
         f"{json.dumps(payload, ensure_ascii=False, sort_keys=True)}"

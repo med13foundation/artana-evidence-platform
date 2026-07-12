@@ -102,7 +102,6 @@ class _ExpectedLabelSemanticRunner:
                     index=index,
                     decision=expected,
                     objective="direct" if expected == "select" else "off_objective",
-                    evidence_span=title,
                 ),
             )
         return _contract(*assessments)
@@ -125,7 +124,6 @@ class _PartialBatchSemanticRunner:
                     index=index,
                     decision="select" if index == 0 else "reject",
                     objective="direct" if index == 0 else "off_objective",
-                    evidence_span=str(record["title"]),
                 )
                 for index, record in zip(
                     context.record_indices,
@@ -144,7 +142,7 @@ def _assessment(
     index: int,
     decision: str,
     objective: str,
-    evidence_span: str,
+    evidence_reference: str | None = None,
 ) -> EvidenceSelectionSemanticCandidateAssessment:
     payload = {
         "record_index": index,
@@ -158,7 +156,9 @@ def _assessment(
         "inclusion_assessment": "met",
         "exclusion_assessment": "not_triggered",
         "explanation": f"Categorical semantic decision for record {index}.",
-        "evidence_spans": [evidence_span],
+        "evidence_references": [
+            evidence_reference or f"record:{index}:evidence:1",
+        ],
     }
     if decision == "reject":
         payload["objective_match"] = "off_objective"
@@ -189,19 +189,16 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
                 index=0,
                 decision="select",
                 objective="direct",
-                evidence_span="EGFR T790M response",
             ),
             _assessment(
                 index=1,
                 decision="reject",
                 objective="off_objective",
-                evidence_span="KRAS colorectal review",
             ),
             _assessment(
                 index=2,
                 decision="review",
                 objective="uncertain",
-                evidence_span="EGFR commentary",
             ),
         ),
     )
@@ -215,6 +212,10 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
     assert result.selected_records[0].reason.startswith("Categorical semantic")
     assert result.selected_records[0].semantic_agent_run_id == "test-agent-run"
     assert "semantic_entity_variant=match" in result.selected_records[0].caveats
+    assert (
+        'evidence_span="EGFR T790M response in treated patients"'
+        in result.selected_records[0].caveats
+    )
     assert len(result.skipped_records) == 1
     assert result.skipped_records[0].score == 0.0
     assert len(result.deferred_records) == 1
@@ -234,7 +235,7 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
                 index=0,
                 decision="select",
                 objective="direct",
-                evidence_span="invented span",
+                evidence_reference="record:0:evidence:999",
             ),
         ),
         _contract(
@@ -242,19 +243,17 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
                 index=0,
                 decision="select",
                 objective="direct",
-                evidence_span="egfr t790m response",
+                evidence_reference="record:1:evidence:1",
             ),
             _assessment(
                 index=1,
                 decision="reject",
                 objective="off_objective",
-                evidence_span="KRAS colorectal review",
             ),
             _assessment(
                 index=2,
                 decision="review",
                 objective="uncertain",
-                evidence_span="EGFR commentary",
             ),
         ),
         _contract(
@@ -262,33 +261,11 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
                 index=0,
                 decision="select",
                 objective="direct",
-                evidence_span="title",
             ),
             _assessment(
                 index=1,
                 decision="reject",
                 objective="off_objective",
-                evidence_span="KRAS colorectal review",
-            ),
-            _assessment(
-                index=2,
-                decision="review",
-                objective="uncertain",
-                evidence_span="EGFR commentary",
-            ),
-        ),
-        _contract(
-            _assessment(
-                index=0,
-                decision="select",
-                objective="direct",
-                evidence_span="EGFR T790M response",
-            ),
-            _assessment(
-                index=1,
-                decision="reject",
-                objective="off_objective",
-                evidence_span="KRAS colorectal review",
             ),
         ),
     ],
@@ -348,7 +325,6 @@ def test_semantic_contract_forbids_numeric_agent_scores() -> None:
         index=0,
         decision="select",
         objective="direct",
-        evidence_span="EGFR T790M response",
     ).model_dump(mode="json")
     payload["confidence_score"] = 0.99
 
@@ -362,7 +338,6 @@ def test_model_output_contract_does_not_require_service_agent_run_id() -> None:
             index=0,
             decision="select",
             objective="direct",
-            evidence_span="EGFR T790M response",
         ),
     ).model_dump(mode="json")
     del payload["agent_run_id"]
@@ -397,7 +372,6 @@ def test_semantic_contract_rejects_contradictory_select() -> None:
         index=0,
         decision="select",
         objective="direct",
-        evidence_span="EGFR T790M response",
     ).model_dump(mode="json")
     payload["study_type_match"] = "no_match"
 
@@ -410,7 +384,6 @@ def test_semantic_contract_rejects_unexplained_rejection() -> None:
         index=0,
         decision="select",
         objective="direct",
-        evidence_span="EGFR T790M response",
     ).model_dump(mode="json")
     payload["decision"] = "reject"
 

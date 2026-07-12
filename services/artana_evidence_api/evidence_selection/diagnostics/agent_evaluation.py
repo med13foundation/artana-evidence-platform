@@ -40,6 +40,7 @@ class EvidenceSelectionSemanticAgentRecordResult(BaseModel):
     record_id: str = Field(min_length=1)
     agent_run_id: str = Field(min_length=1)
     assessment: EvidenceSelectionSemanticCandidateAssessment | None = None
+    evidence_spans: tuple[str, ...]
     prediction_decision: Literal["select", "reject", "abstain", "invalid_agent"]
     failure_type: str | None = None
 
@@ -134,6 +135,7 @@ async def evaluate_semantic_selection_agent(
                             record_id=record.record_id,
                             agent_run_id="invalid_agent",
                             assessment=None,
+                            evidence_spans=(),
                             prediction_decision="invalid_agent",
                             failure_type=failure_type,
                         ),
@@ -160,6 +162,7 @@ async def evaluate_semantic_selection_agent(
                         record_id=record.record_id,
                         agent_run_id=validated_batch.agent_run_id,
                         assessment=assessment,
+                        evidence_spans=validated_batch.evidence_spans[index],
                         prediction_decision=prediction_decision,
                     ),
                 )

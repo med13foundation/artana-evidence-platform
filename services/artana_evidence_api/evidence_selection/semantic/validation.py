@@ -8,12 +8,15 @@ from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
     EvidenceSelectionSemanticCandidateAssessment,
 )
+from artana_evidence_api.evidence_selection.semantic.evidence import (
+    resolve_semantic_evidence_references,
+)
 from artana_evidence_api.evidence_selection.semantic.model import (
     EvidenceSelectionSemanticContext,
     EvidenceSelectionSemanticModelRunner,
     SemanticSelectionAgentUnavailableError,
 )
-from artana_evidence_api.types.common import JSONObject, JSONValue
+from artana_evidence_api.types.common import JSONObject
 
 _MAX_AGENT_ATTEMPTS = 2
 
@@ -25,6 +28,7 @@ class ValidatedSemanticAssessmentBatch:
     contract: EvidenceSelectionSemanticBatchContract
     agent_run_id: str
     assessments: dict[int, EvidenceSelectionSemanticCandidateAssessment]
+    evidence_spans: dict[int, tuple[str, ...]]
     attempt_count: int
 
 
@@ -45,6 +49,17 @@ async def assess_validated_semantic_batch(
                 record_indices=context.record_indices,
             )
             agent_run_id = _require_agent_run_id(contract)
+            records_by_index = dict(
+                zip(context.record_indices, context.records, strict=True),
+            )
+            evidence_spans = {
+                index: resolve_semantic_evidence_references(
+                    record_index=index,
+                    record=records_by_index[index],
+                    references=assessment.evidence_references,
+                )
+                for index, assessment in assessments.items()
+            }
         except SemanticSelectionAgentUnavailableError:
             raise
         except Exception as exc:  # noqa: BLE001 - Agent retries are bounded.
@@ -54,6 +69,7 @@ async def assess_validated_semantic_batch(
             contract=contract,
             agent_run_id=agent_run_id,
             assessments=assessments,
+            evidence_spans=evidence_spans,
             attempt_count=attempt_count,
         )
     if last_error is None:
@@ -67,7 +83,7 @@ def validate_semantic_assessment_batch(
     records: tuple[JSONObject, ...],
     record_indices: tuple[int, ...] | None = None,
 ) -> dict[int, EvidenceSelectionSemanticCandidateAssessment]:
-    """Require exact record coverage and verbatim grounding in source values."""
+    """Require exact record coverage before resolving source-owned evidence."""
 
     by_index = {
         assessment.record_index: assessment for assessment in contract.assessments
@@ -84,15 +100,6 @@ def validate_semantic_assessment_batch(
             f"missing={missing}, unexpected={unexpected}"
         )
         raise ValueError(msg)
-    records_by_index = dict(zip(indices, records, strict=True))
-    for index, assessment in by_index.items():
-        source_strings = tuple(_source_string_values(records_by_index[index]))
-        if any(
-            not any(span in value for value in source_strings)
-            for span in assessment.evidence_spans
-        ):
-            msg = f"semantic agent evidence span was not found in record {index}"
-            raise ValueError(msg)
     return by_index
 
 
@@ -102,18 +109,6 @@ def _require_agent_run_id(
     if contract.agent_run_id is None:
         raise ValueError("semantic agent contract is missing service run identity")
     return contract.agent_run_id
-
-
-def _source_string_values(value: JSONValue) -> tuple[str, ...]:
-    if isinstance(value, str):
-        return (value,)
-    if isinstance(value, dict):
-        return tuple(
-            text for nested in value.values() for text in _source_string_values(nested)
-        )
-    if isinstance(value, list | tuple):
-        return tuple(text for nested in value for text in _source_string_values(nested))
-    return ()
 
 
 __all__ = [

@@ -35,6 +35,7 @@ def decision_from_semantic_assessment(
     record: JSONObject,
     assessment: EvidenceSelectionSemanticCandidateAssessment,
     agent_run_id: str,
+    evidence_spans: tuple[str, ...],
 ) -> EvidenceSelectionCandidateDecision:
     """Map categories to lifecycle state and deterministic ranking weight."""
 
@@ -80,7 +81,10 @@ def decision_from_semantic_assessment(
             index=assessment.record_index,
         ),
         score=score,
-        caveats=_assessment_caveats(assessment),
+        caveats=_assessment_caveats(
+            assessment=assessment,
+            evidence_spans=evidence_spans,
+        ),
         candidate_context=candidate_context(source_key=source_key, record=record),
         deferral_reason=deferral_reason,
         semantic_agent_run_id=agent_run_id,
@@ -212,7 +216,9 @@ def record_title(*, source_key: str, record: JSONObject, index: int) -> str:
 
 
 def _assessment_caveats(
+    *,
     assessment: EvidenceSelectionSemanticCandidateAssessment,
+    evidence_spans: tuple[str, ...],
 ) -> tuple[str, ...]:
     findings = {
         "entity_variant": assessment.entity_variant_match,
@@ -225,7 +231,8 @@ def _assessment_caveats(
     }
     return (
         *(f"semantic_{name}={value}" for name, value in findings.items()),
-        *(f'evidence_span="{span}"' for span in assessment.evidence_spans),
+        *(f'evidence_reference="{ref}"' for ref in assessment.evidence_references),
+        *(f'evidence_span="{span}"' for span in evidence_spans),
     )
 
 

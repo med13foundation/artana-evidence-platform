@@ -22,7 +22,7 @@ SemanticObjectiveAssessment = Literal[
 ]
 SemanticInclusionAssessment = Literal["met", "not_met", "uncertain"]
 SemanticExclusionAssessment = Literal["not_triggered", "triggered", "uncertain"]
-_MIN_EVIDENCE_SPAN_LENGTH = 4
+_MIN_EVIDENCE_REFERENCE_LENGTH = 4
 
 
 class EvidenceSelectionSemanticCandidateAssessment(BaseModel):
@@ -41,11 +41,11 @@ class EvidenceSelectionSemanticCandidateAssessment(BaseModel):
     inclusion_assessment: SemanticInclusionAssessment
     exclusion_assessment: SemanticExclusionAssessment
     explanation: str = Field(min_length=1, max_length=3000)
-    evidence_spans: tuple[str, ...] = Field(min_length=1, max_length=5)
+    evidence_references: tuple[str, ...] = Field(min_length=1, max_length=5)
 
-    @field_validator("evidence_spans", mode="before")
+    @field_validator("evidence_references", mode="before")
     @classmethod
-    def _accept_json_evidence_spans(cls, value: object) -> object:
+    def _accept_json_evidence_references(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
 
     @field_validator("explanation")
@@ -53,15 +53,17 @@ class EvidenceSelectionSemanticCandidateAssessment(BaseModel):
     def _require_literal_explanation(cls, value: str) -> str:
         return _literal_nonblank(value)
 
-    @field_validator("evidence_spans")
+    @field_validator("evidence_references")
     @classmethod
-    def _validate_evidence_spans(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        normalized = tuple(_literal_nonblank(span) for span in value)
-        if any(len(span) < _MIN_EVIDENCE_SPAN_LENGTH for span in normalized):
-            msg = "evidence_spans must contain at least four literal characters"
+    def _validate_evidence_references(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(_literal_nonblank(reference) for reference in value)
+        if any(
+            len(reference) < _MIN_EVIDENCE_REFERENCE_LENGTH for reference in normalized
+        ):
+            msg = "evidence_references must contain at least four literal characters"
             raise ValueError(msg)
         if len(set(normalized)) != len(normalized):
-            msg = "evidence_spans must be unique within one assessment"
+            msg = "evidence_references must be unique within one assessment"
             raise ValueError(msg)
         return normalized
 
