@@ -1,6 +1,6 @@
 # PR 2 Agent-First Semantic Selector Evaluation
 
-- Evaluated commit: `484cf571f307412c72202b19ec3d486e4feb6280`
+- Evaluated commit: `0e5c69a899fdad7bfddbd34dcfcad219bb7fb735`
 - Model: `openai:gpt-5.4-mini`
 - Baseline report SHA-256: `e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295`
 - Fixture provenance: **AI-adjudicated diagnostic**
@@ -21,7 +21,7 @@
 | Case | Role | TP | FP | FN | TN | Precision | Recall | Abstain | Invalid |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | EGFR T790M primary evidence | primary | 3 | 0 | 0 | 5 | 1.0000 | 1.0000 | 0 | 0 |
-| BRCA1 risk and penetrance | primary | 6 | 0 | 0 | 8 | 1.0000 | 1.0000 | 1 | 0 |
+| BRCA1 risk and penetrance | primary | 6 | 0 | 0 | 9 | 1.0000 | 1.0000 | 0 | 0 |
 | CFTR F508del ETI response | primary | 4 | 0 | 0 | 3 | 1.0000 | 1.0000 | 0 | 0 |
 | EGFR exclusion-token canary | canary | 3 | 0 | 0 | 0 | 1.0000 | 1.0000 | 0 | 0 |
 
