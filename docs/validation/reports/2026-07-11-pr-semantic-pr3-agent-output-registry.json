@@ -1,5 +1,5 @@
 {
-  "active_debt_count": 8,
+  "active_debt_count": 1,
   "debt_manifest": [
     {
       "consumers": [
@@ -17,133 +17,12 @@
       "schema_ids": [
         "evidence_selection.semantic.v1"
       ]
-    },
-    {
-      "consumers": [
-        "graph connection result compatibility"
-      ],
-      "current_influence": "The execution schema accepts an agent-authored run confidence.",
-      "debt_id": "AON-GCON-001",
-      "field_path": "$.confidence_score",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8B categorical relation migration",
-      "producer": "graph-connection agent",
-      "quarantine_rule": "Not quarantined at the model boundary.",
-      "quarantined": false,
-      "removal_gate": "Execution schema omits confidence and derives compatibility values from registered categories.",
-      "schema_ids": [
-        "graph_connection.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "relation proposal normalization",
-        "review ordering"
-      ],
-      "current_influence": "The model-authored value can affect relation handling through compatibility paths.",
-      "debt_id": "AON-GCON-002",
-      "field_path": "$.proposed_relations[].confidence",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8B categorical relation migration",
-      "producer": "graph-connection agent",
-      "quarantine_rule": "Not quarantined at every relation consumer.",
-      "quarantined": false,
-      "removal_gate": "Relation output uses atomic support, grounding, mapping, and speculation categories only.",
-      "schema_ids": [
-        "graph_connection.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "relation support summary"
-      ],
-      "current_influence": "The model authors a count that should be computed from cited document IDs.",
-      "debt_id": "AON-GCON-003",
-      "field_path": "$.proposed_relations[].supporting_document_count",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8B categorical relation migration",
-      "producer": "graph-connection agent",
-      "quarantine_rule": "Not quarantined; no deterministic recomputation is mandatory yet.",
-      "quarantined": false,
-      "removal_gate": "Compute the count from unique validated document locators and reject model-authored counts.",
-      "schema_ids": [
-        "graph_connection.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "rejected relation diagnostics"
-      ],
-      "current_influence": "The model-authored value remains in rejected-candidate artifacts.",
-      "debt_id": "AON-GCON-004",
-      "field_path": "$.rejected_candidates[].confidence",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8B categorical relation migration",
-      "producer": "graph-connection agent",
-      "quarantine_rule": "Not proven quarantined from review ordering and diagnostics.",
-      "quarantined": false,
-      "removal_gate": "Rejected candidates expose categorical rejection reasons without confidence.",
-      "schema_ids": [
-        "graph_connection.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "graph search routing compatibility"
-      ],
-      "current_influence": "A model-authored confidence remains accepted before normalization.",
-      "debt_id": "AON-GSEA-001",
-      "field_path": "$.confidence_score",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8B categorical graph-search migration",
-      "producer": "graph-search agent",
-      "quarantine_rule": "Not quarantined at the execution boundary.",
-      "quarantined": false,
-      "removal_gate": "Execution schema omits confidence and routing consumes registered categories.",
-      "schema_ids": [
-        "graph_search.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "evidence-chain normalization"
-      ],
-      "current_influence": "The model-authored value can be converted into a support band.",
-      "debt_id": "AON-GSEA-002",
-      "field_path": "$.results[].evidence_chain[].confidence",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8B categorical graph-search migration",
-      "producer": "graph-search agent",
-      "quarantine_rule": "Not quarantined because a numeric-to-category adapter remains.",
-      "quarantined": false,
-      "removal_gate": "Remove numeric-to-category conversion and require direct categorical findings.",
-      "schema_ids": [
-        "graph_search.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "graph result ranking",
-        "assessment normalization"
-      ],
-      "current_influence": "The score can influence ordering and generate a support category.",
-      "debt_id": "AON-GSEA-003",
-      "field_path": "$.results[].relevance_score",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8B categorical graph-search migration",
-      "producer": "graph-search agent",
-      "quarantine_rule": "Not quarantined from ranking or category conversion.",
-      "quarantined": false,
-      "removal_gate": "Rank from deterministic policy over categorical findings and remove model relevance.",
-      "schema_ids": [
-        "graph_search.agent.v1"
-      ]
     }
   ],
-  "debt_numeric_field_count": 8,
+  "debt_numeric_field_count": 1,
   "origin_governed_numeric_field_count": 1,
-  "registered_category_field_count": 67,
-  "registered_numeric_field_count": 9,
+  "registered_category_field_count": 66,
+  "registered_numeric_field_count": 2,
   "registered_schema_count": 15,
   "registered_schemas": [
     {
@@ -579,39 +458,18 @@
           ]
         }
       ],
-      "numeric_fields": [
-        {
-          "debt_id": "AON-GCON-001",
-          "origin": null,
-          "path": "$.confidence_score"
-        },
-        {
-          "debt_id": "AON-GCON-002",
-          "origin": null,
-          "path": "$.proposed_relations[].confidence"
-        },
-        {
-          "debt_id": "AON-GCON-003",
-          "origin": null,
-          "path": "$.proposed_relations[].supporting_document_count"
-        },
-        {
-          "debt_id": "AON-GCON-004",
-          "origin": null,
-          "path": "$.rejected_candidates[].confidence"
-        }
-      ],
+      "numeric_fields": [],
       "producer_paths": [
         "graph_connection_runtime.py"
       ],
       "prompt_identifiers": [
-        "graph_connection.system_and_request.v1"
+        "graph_connection.system_and_request.v2"
       ],
       "schema_id": "graph_connection.agent.v1",
       "schema_names": [
         "_GraphConnectionExecutionContract"
       ],
-      "shape_hash": "c02dac58f0bf8f3b703a6f45a2398f4590c1142c8c50fa876813c496ab800a2b"
+      "shape_hash": "8abaa06aefb8c10ee2b151274733f43e6795ac1e206d011e0c33dec9274c7a5d"
     },
     {
       "categorical_fields": [
@@ -636,16 +494,6 @@
             "web",
             "note",
             "api"
-          ]
-        },
-        {
-          "allow_schema_subset": false,
-          "debt_id": null,
-          "path": "$.executed_path",
-          "values": [
-            "deterministic",
-            "agent",
-            "agent_fallback"
           ]
         },
         {
@@ -718,34 +566,18 @@
           ]
         }
       ],
-      "numeric_fields": [
-        {
-          "debt_id": "AON-GSEA-001",
-          "origin": null,
-          "path": "$.confidence_score"
-        },
-        {
-          "debt_id": "AON-GSEA-002",
-          "origin": null,
-          "path": "$.results[].evidence_chain[].confidence"
-        },
-        {
-          "debt_id": "AON-GSEA-003",
-          "origin": null,
-          "path": "$.results[].relevance_score"
-        }
-      ],
+      "numeric_fields": [],
       "producer_paths": [
         "graph_search_runtime.py"
       ],
       "prompt_identifiers": [
-        "graph_search.system_and_request.v1"
+        "graph_search.system_and_request.v2"
       ],
       "schema_id": "graph_search.agent.v1",
       "schema_names": [
         "_GraphSearchExecutionContract"
       ],
-      "shape_hash": "754c069d4379463f2e5f01e91c4a4e863f39762bfed230bc7276b345dcd989c1"
+      "shape_hash": "7015f3a669f3d7794b2d287bc6b52081e5d4f976fd9d1c061f6b2e950faaa855"
     },
     {
       "categorical_fields": [],
@@ -1175,14 +1007,6 @@
     }
   ],
   "schema_version": "agent_output_registry_report.v1",
-  "unquarantined_debt_count": 7,
-  "unquarantined_debt_ids": [
-    "AON-GCON-001",
-    "AON-GCON-002",
-    "AON-GCON-003",
-    "AON-GCON-004",
-    "AON-GSEA-001",
-    "AON-GSEA-002",
-    "AON-GSEA-003"
-  ]
+  "unquarantined_debt_count": 0,
+  "unquarantined_debt_ids": []
 }
