@@ -164,7 +164,7 @@ def _assessment(
         "exclusion_assessment": "not_triggered",
         "explanation": f"Categorical semantic decision for record {index}.",
         "evidence_references": [
-            evidence_reference or f"record:{index}:evidence:1",
+            evidence_reference or f"record:{index}:evidence:0",
         ],
     }
     if decision == "reject":
@@ -471,6 +471,41 @@ def test_semantic_evidence_traversal_stops_when_option_budget_is_full() -> None:
 
     assert len(options) == 64
     assert options[-1].source_path == "$.provider_payload.field_63"
+
+
+def test_semantic_evidence_preserves_repeated_values_at_distinct_paths() -> None:
+    options = semantic_evidence_options(
+        record_index=0,
+        record={
+            "exome": {"af": 0, "observed": False},
+            "genome": {"af": 0, "observed": False},
+        },
+    )
+
+    groundings = {(option.source_path, option.text) for option in options}
+    assert ("$.exome.af", "0") in groundings
+    assert ("$.genome.af", "0") in groundings
+    assert ("$.exome.observed", "false") in groundings
+    assert ("$.genome.observed", "false") in groundings
+
+
+def test_semantic_evidence_prioritizes_canonical_fields_before_provider_data() -> None:
+    options = semantic_evidence_options(
+        record_index=0,
+        record={
+            "panel_payload": {
+                f"field_{index}": f"provider evidence {index}" for index in range(100)
+            },
+            "gene_symbol": "MED13",
+            "hgvs_notation": "c.326A>G",
+        },
+    )
+
+    assert options[0].source_path == "$.gene_symbol"
+    assert options[0].text == "MED13"
+    assert options[1].source_path == "$.hgvs_notation"
+    assert options[1].text == "c.326A>G"
+    assert len(options) == 64
 
 
 @pytest.mark.parametrize(

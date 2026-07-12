@@ -67,6 +67,9 @@ def main(argv: tuple[str, ...] | None = None) -> int:
             fixture=args.fixture,
         )
         _require_current_commit(args.evaluated_commit)
+        _require_clean_worktree(
+            allowed_outputs=(args.json_output, args.markdown_output),
+        )
         evaluation = asyncio.run(
             evaluate_semantic_selection_agent(
                 fixture_path=args.fixture,
@@ -162,6 +165,53 @@ def _require_current_commit(expected_commit: str) -> None:
     if current_commit != expected_commit:
         raise ValueError(
             "--evaluated-commit must equal the current checked-out HEAD",
+        )
+
+
+def _require_clean_worktree(*, allowed_outputs: tuple[Path, ...]) -> None:
+    git = shutil.which("git")
+    if git is None:
+        raise RuntimeError("git is required to verify the evaluation worktree")
+    root_result = subprocess.run(  # noqa: S603 - resolved executable.
+        [git, "rev-parse", "--show-toplevel"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    repository_root = Path(root_result.stdout.strip()).resolve()
+    allowed_relative_paths = frozenset(
+        output.resolve().relative_to(repository_root).as_posix()
+        for output in allowed_outputs
+        if output.resolve().is_relative_to(repository_root)
+    )
+    pathspecs = [
+        ".",
+        *(f":(exclude){path}" for path in sorted(allowed_relative_paths)),
+    ]
+    for diff_args in (("diff", "--quiet"), ("diff", "--cached", "--quiet")):
+        result = subprocess.run(  # noqa: S603 - resolved executable.
+            [git, *diff_args, "--", *pathspecs],
+            check=False,
+            cwd=repository_root,
+        )
+        if result.returncode == 1:
+            raise ValueError(
+                "evaluation requires a clean worktree outside report outputs",
+            )
+        if result.returncode != 0:
+            raise RuntimeError("git could not verify the evaluation worktree")
+    untracked_result = subprocess.run(  # noqa: S603 - resolved executable.
+        [git, "ls-files", "--others", "--exclude-standard", "-z"],
+        check=True,
+        capture_output=True,
+        cwd=repository_root,
+    )
+    untracked_paths = {
+        path.decode("utf-8") for path in untracked_result.stdout.split(b"\0") if path
+    }
+    if untracked_paths - allowed_relative_paths:
+        raise ValueError(
+            "evaluation requires a clean worktree outside report outputs",
         )
 
 

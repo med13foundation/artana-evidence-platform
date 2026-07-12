@@ -12,6 +12,34 @@ from artana_evidence_api.types.common import JSONObject, JSONValue
 _MAX_EVIDENCE_OPTION_CHARACTERS = 500
 _MAX_EVIDENCE_OPTIONS_PER_RECORD = 64
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+")
+_PRIORITY_SOURCE_FIELDS = (
+    "title",
+    "brief_title",
+    "official_title",
+    "name",
+    "label",
+    "gene_symbol",
+    "resolved_variant",
+    "hgvs_notation",
+    "variant",
+    "variant_id",
+    "rsid",
+    "accession",
+    "uniprot_id",
+    "abstract",
+    "summary",
+    "description",
+    "population",
+    "intervention",
+    "outcome",
+    "study_type",
+    "allele_frequency",
+    "af",
+    "allele_count",
+    "ac",
+    "allele_number",
+    "an",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,12 +59,13 @@ def semantic_evidence_options(
     """Expose exact bounded spans without asking the model to transcribe them."""
 
     options: list[SemanticEvidenceOption] = []
-    seen_text: set[str] = set()
-    for source_path, value in _iter_source_evidence_values(record):
+    seen_groundings: set[tuple[str, str]] = set()
+    for source_path, value in _iter_record_evidence_values(record):
         for span in _iter_bounded_source_spans(value):
-            if not span or span in seen_text:
+            grounding_key = (source_path, span)
+            if not span or grounding_key in seen_groundings:
                 continue
-            seen_text.add(span)
+            seen_groundings.add(grounding_key)
             options.append(
                 SemanticEvidenceOption(
                     reference=(f"record:{record_index}:evidence:{len(options)}"),
@@ -47,6 +76,16 @@ def semantic_evidence_options(
             if len(options) >= _MAX_EVIDENCE_OPTIONS_PER_RECORD:
                 return tuple(options)
     return tuple(options)
+
+
+def _iter_record_evidence_values(record: JSONObject) -> Iterator[tuple[str, str]]:
+    prioritized = frozenset(_PRIORITY_SOURCE_FIELDS)
+    for key in _PRIORITY_SOURCE_FIELDS:
+        if key in record:
+            yield from _iter_source_evidence_values(record[key], path=f"$.{key}")
+    for key, value in record.items():
+        if key not in prioritized:
+            yield from _iter_source_evidence_values(value, path=f"$.{key}")
 
 
 def resolve_semantic_evidence_references(
