@@ -7,18 +7,15 @@ import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from threading import Lock
-from typing import Protocol, TypeVar, cast, runtime_checkable
+from typing import Literal, Protocol, TypeVar, cast, runtime_checkable
 
-from artana_evidence_api.runtime.agent_output_manifest import (
-    validate_registered_agent_output_schema,
-)
-from artana_evidence_api.runtime.config import ReplayPolicy
 from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 _FAILURE_BREAKER_THRESHOLD = 3
 _STEP_EXECUTION_LOCK = Lock()
 AgentOutputT = TypeVar("AgentOutputT")
+ReplayPolicy = Literal["strict", "allow_prompt_drift", "fork_on_drift"]
 
 
 class StepResultLike(Protocol):
@@ -256,7 +253,7 @@ async def run_single_step_with_policy(  # noqa: PLR0913
     context_version: object | None = None,
 ) -> StepResultLike:
     """Execute ``SingleStepModelClient.step`` with replay policy support."""
-    validate_registered_agent_output_schema(
+    _validate_registered_output_schema(
         schema_id=schema_id,
         output_schema=output_schema,
     )
@@ -370,7 +367,7 @@ async def run_registered_agent(  # noqa: PLR0913
 ) -> AgentOutputT:
     """Run an autonomous agent only after schema-registry validation."""
 
-    validate_registered_agent_output_schema(
+    _validate_registered_output_schema(
         schema_id=schema_id,
         output_schema=output_schema,
     )
@@ -400,7 +397,7 @@ async def run_registered_harness_agent(
 ) -> AgentOutputT:
     """Run a strong-model harness only after schema-registry validation."""
 
-    validate_registered_agent_output_schema(
+    _validate_registered_output_schema(
         schema_id=schema_id,
         output_schema=output_schema,
     )
@@ -414,6 +411,23 @@ async def run_registered_harness_agent(
         workspace_aware=workspace_aware,
     )
     return cast("AgentOutputT", result)
+
+
+def _validate_registered_output_schema(
+    *,
+    schema_id: str,
+    output_schema: type[object],
+) -> None:
+    # Import lazily so runtime.model_health can import this module during
+    # runtime package initialization without creating a package cycle.
+    from artana_evidence_api.runtime.agent_output_manifest import (
+        validate_registered_agent_output_schema,
+    )
+
+    validate_registered_agent_output_schema(
+        schema_id=schema_id,
+        output_schema=output_schema,
+    )
 
 
 __all__ = [

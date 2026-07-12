@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import subprocess
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 from artana_evidence_api.runtime.agent_output_schema import (
@@ -87,6 +91,28 @@ def test_run_single_step_with_policy_rejects_unknown_schema_before_call() -> Non
                 replay_policy="fork_on_drift",
             ),
         )
+
+
+def test_document_extraction_imports_in_fresh_interpreter_without_cycle() -> None:
+    repo_root = Path(__file__).resolve().parents[4]
+    child_env = dict(os.environ)
+    child_env["PYTHONPATH"] = str(repo_root / "services")
+
+    result = subprocess.run(  # noqa: S603
+        [
+            sys.executable,
+            "-c",
+            "from artana_evidence_api.document_extraction import "
+            "extract_relation_candidates_with_llm",
+        ],
+        cwd=repo_root,
+        env=child_env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_run_single_step_with_policy_logs_replayed_terminal_without_traceback(
