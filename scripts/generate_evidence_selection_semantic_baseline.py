@@ -97,8 +97,9 @@ def main(argv: tuple[str, ...] | None = None) -> int:
         f"cases={score.scored_case_count} "
         f"precision={score.micro.precision:.4f} end_to_end_recall={score.micro.end_to_end_recall:.4f}",
     )
-    print(f"Wrote JSON report: {json_output}")
-    print(f"Wrote Markdown report: {markdown_output}")
+    output_action = "Checked" if args.check else "Wrote"
+    print(f"{output_action} JSON report: {json_output}")
+    print(f"{output_action} Markdown report: {markdown_output}")
     return 0
 
 
@@ -139,7 +140,7 @@ def _paths_alias(left: Path, right: Path) -> bool:
 
 
 def _parse_generated_at(value: str) -> datetime:
-    generated_at = datetime.fromisoformat(value)
+    generated_at = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if generated_at.tzinfo is None:
         raise ValueError("--generated-at must include a timezone")
     return generated_at

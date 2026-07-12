@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .fixture import (
     EvidenceSelectionSemanticDiagnosticCase,
     EvidenceSelectionSemanticDiagnosticFixture,
+    EvidenceSelectionSemanticEvaluationRole,
 )
 from .predictions import EvidenceSelectionSemanticPrediction
 
@@ -129,7 +130,7 @@ class EvidenceSelectionSemanticCaseResult(EvidenceSelectionSemanticAggregateMetr
 
     case_id: str
     display_name: str
-    evaluation_role: str
+    evaluation_role: EvidenceSelectionSemanticEvaluationRole
 
 
 class EvidenceSelectionSemanticDiagnosticScore(BaseModel):
@@ -221,12 +222,14 @@ def _score_case(
                 true_positive += 1
             else:
                 false_positive += 1
-        else:
+        elif decision == "reject":
             predicted_reject += 1
             if record.expected_label == "select":
                 false_negative += 1
             else:
                 true_negative += 1
+        else:
+            raise ValueError(f"unsupported prediction decision: {decision}")
     aggregate = _metrics(
         record_count=len(case.records),
         expected_positive=expected_positive,

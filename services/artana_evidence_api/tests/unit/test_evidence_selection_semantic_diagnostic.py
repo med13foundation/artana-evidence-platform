@@ -344,6 +344,16 @@ def test_checked_in_report_matches_fixture_and_baseline_score() -> None:
     ] == [case.source_artifact_sha256 for case in fixture.cases]
 
 
+def test_report_rejects_unknown_case_evaluation_role() -> None:
+    payload = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+    payload["score"]["case_results"][0]["evaluation_role"] = "future-role"
+
+    with pytest.raises(ValidationError, match="evaluation_role"):
+        EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
+            json.dumps(payload),
+        )
+
+
 def test_semantic_scoring_rejects_missing_duplicate_or_unknown_predictions() -> None:
     fixture = load_semantic_diagnostic_fixture(FIXTURE_PATH)
     predictions = list(_baseline_predictions())
@@ -364,6 +374,11 @@ def test_semantic_scoring_rejects_missing_duplicate_or_unknown_predictions() -> 
                 ),
             ),
         )
+
+    invalid_decision_predictions = list(_baseline_predictions())
+    object.__setattr__(invalid_decision_predictions[0], "decision", "future-decision")
+    with pytest.raises(ValueError, match="unsupported prediction decision"):
+        score_semantic_diagnostic(fixture, tuple(invalid_decision_predictions))
 
 
 @pytest.mark.parametrize(

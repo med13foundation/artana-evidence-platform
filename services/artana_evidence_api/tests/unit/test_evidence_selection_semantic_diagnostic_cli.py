@@ -197,7 +197,10 @@ def test_semantic_baseline_cli_rejects_case_alias_and_wrong_extensions(
     assert wrong_extension_exit == 1
 
 
-def test_semantic_baseline_cli_check_detects_report_drift(tmp_path: Path) -> None:
+def test_semantic_baseline_cli_check_detects_report_drift(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     cli = _cli_module()
     json_output = tmp_path / "baseline.json"
     markdown_output = tmp_path / "baseline.md"
@@ -209,10 +212,23 @@ def test_semantic_baseline_cli_check_detects_report_drift(tmp_path: Path) -> Non
         str(markdown_output),
     )
     assert cli.main(args) == 0
+    capsys.readouterr()
     assert cli.main((*args, "--check")) == 0
+    check_output = capsys.readouterr()
+    assert "Checked JSON report:" in check_output.out
+    assert "Checked Markdown report:" in check_output.out
+    assert "Wrote" not in check_output.out
     markdown_output.write_text("drift", encoding="utf-8")
 
     assert cli.main((*args, "--check")) == 1
+
+
+def test_semantic_baseline_cli_normalizes_utc_z_timestamp() -> None:
+    cli = _cli_module()
+
+    assert cli._parse_generated_at("2026-07-11T00:00:00Z") == (
+        cli._parse_generated_at("2026-07-11T00:00:00+00:00")
+    )
 
 
 @pytest.mark.parametrize("link_kind", ["hard", "symbolic"])
