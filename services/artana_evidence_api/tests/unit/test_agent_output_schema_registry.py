@@ -217,7 +217,7 @@ def test_source_measurement_envelope_requires_complete_provenance() -> None:
     with pytest.raises(ValueError, match="literal_span"):
         SourceMeasurementNumber.model_validate(
             {
-                "value": 1.25,
+                "value": "1.25",
                 "source_locator": "paper:doi:10.1/example",
                 "field_name": "effect_size",
                 "unit": "ratio",

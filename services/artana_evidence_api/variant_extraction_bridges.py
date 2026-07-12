@@ -146,7 +146,7 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v4"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v5"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
 _MEASUREMENT_SOURCE_FIELDS = frozenset(
     {"abstract", "content", "full_text", "text", "title"},
@@ -180,16 +180,18 @@ Useful output conventions:
 - Anchor values are identifiers: always return them as non-empty strings, even
   when an identifier contains only digits.
 - Metadata and rejected payload values must be strings, booleans, or null. Keep
-  source numbers there as exact literal strings for descriptive context only.
-  Numeric-looking entity metadata cannot become an observation; return any such
-  observation through the source_measurement envelope instead.
+  all numeric-looking values out of those fields. Return numeric observations
+  only through the source_measurement envelope.
 - A numeric observation value must use the source_measurement envelope. Copy
-  source_hash from the request context; copy literal_span exactly from the raw
-  source, including the number and its adjacent unit when the measurement is not
-  dimensionless; use one allowed_source_locator; set extraction_method to
-  "literal_copy"; and set field_name and the source-supported unit. Structured
-  genomics signals may guide categorical extraction but are not measurement
-  provenance.
+  value as the exact numeric token string from the source, without converting it
+  to a JSON number. Copy source_hash from the request context. literal_span must
+  be exactly that token for dimensionless values, or exactly that token plus its
+  adjacent unit for unit-bearing values. Do not encode ranges, bounds, or
+  comparators as scalar measurements. Use one allowed_source_locator; set
+  extraction_method to "literal_copy"; set field_name and the source-supported
+  unit; and provide subject_label plus subject_anchors matching an extracted
+  variant. Structured genomics signals may guide categorical extraction but are
+  not measurement provenance.
 - Any observation text containing a numeric literal also requires that envelope;
   do not quote a number to bypass source-measurement provenance.
 - Do not return a run confidence score. Return the qualitative FactAssessment

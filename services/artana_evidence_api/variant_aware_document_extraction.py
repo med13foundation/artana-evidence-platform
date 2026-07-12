@@ -10,6 +10,9 @@ from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     canonicalize_extraction_relation_type,
 )
+from artana_evidence_api.document_extraction_support.variant.source_measurement_drafts import (
+    build_source_measurement_observation_drafts,
+)
 from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
     with_variant_aware_trust_metadata,
 )
@@ -62,13 +65,7 @@ if TYPE_CHECKING:
     from artana_evidence_api.graph_client import GraphTransportBundle
 
 _SUPPORTED_VARIANT_AWARE_SOURCE_TYPES = frozenset(
-    {
-        "pubmed",
-        "text",
-        "pdf",
-        "clinvar",
-        "marrvel",
-    },
+    {"pubmed", "text", "pdf", "clinvar", "marrvel"},
 )
 _GENOMICS_VARIABLE_IDS: dict[str, str] = {
     "transcript": "VAR_TRANSCRIPT_ID",
@@ -607,6 +604,16 @@ def _build_variant_aware_proposal_drafts(  # noqa: PLR0914
         drafts.extend(observation_drafts)
         review_item_drafts.extend(observation_review_items)
         skipped_items.extend(observation_skips)
+
+    measurement_drafts, measurement_skips = (
+        build_source_measurement_observation_drafts(
+            document=document,
+            observations=contract.observations,
+            variant_entities=variant_entities,
+        )
+    )
+    drafts.extend(measurement_drafts)
+    skipped_items.extend(measurement_skips)
 
     for index, raw_relation in enumerate(contract.relations):
         canonical_relation_type = canonicalize_extraction_relation_type(

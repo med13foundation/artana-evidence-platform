@@ -12,6 +12,11 @@ from typing import Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+SOURCE_MEASUREMENT_VALUE_PATTERN = (
+    r"^[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
+    r"(?:[eE][-+]?\d+)?$"
+)
+
 
 class AgentOutputSchemaRegistrationError(ValueError):
     """Raised when an agent output schema violates its registered contract."""
@@ -38,7 +43,13 @@ class SourceMeasurementNumber(BaseModel):
     )
 
     origin: Literal["source_measurement"] = "source_measurement"
-    value: float
+    value: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        pattern=SOURCE_MEASUREMENT_VALUE_PATTERN,
+        description="Exact numeric token copied lexically from literal_span.",
+    )
     source_locator: str = Field(..., min_length=1)
     literal_span: str = Field(..., min_length=1)
     field_name: str = Field(..., min_length=1)
@@ -644,5 +655,6 @@ __all__ = [
     "RetrievalAlgorithmNumber",
     "RuntimeObservationNumber",
     "SourceMeasurementNumber",
+    "SOURCE_MEASUREMENT_VALUE_PATTERN",
     "agent_output_schema_shape_hash",
 ]

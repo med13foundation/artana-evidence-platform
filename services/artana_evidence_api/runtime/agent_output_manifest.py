@@ -483,9 +483,9 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="variant_extraction.agent.v1",
         schema_names=("LLMExtractionContract",),
-        shape_hash="3c4938c8f9dc9109277fc5e56af4a70d4b58519fa0fe30d2ed3ce2ce90bd1ed7",
+        shape_hash="6fa90f3c8d685e7829ad3ec44a89f5e435f525e1e77938fead762ed1a3ca65e4",
         producer_paths=("variant_extraction_bridges.py",),
-        prompt_identifiers=("variant_extraction.context.v2",),
+        prompt_identifiers=("variant_extraction.context.v3",),
         numeric_fields=(
             NumericFieldPolicy(
                 path="$.observations[].value.value",
