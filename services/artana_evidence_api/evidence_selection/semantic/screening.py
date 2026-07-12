@@ -190,7 +190,7 @@ class AgentEvidenceSelectionCandidateScreener:
                 agent_run_ids.update(
                     dict.fromkeys(
                         record_indices,
-                        validated_batch.contract.agent_run_id,
+                        validated_batch.agent_run_id,
                     ),
                 )
 

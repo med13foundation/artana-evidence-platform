@@ -148,7 +148,7 @@ async def evaluate_semantic_selection_agent(
                 EvidenceSelectionSemanticAgentRecordResult(
                     case_id=case.case_id,
                     record_id=record.record_id,
-                    agent_run_id=validated_batch.contract.agent_run_id,
+                    agent_run_id=validated_batch.agent_run_id,
                     assessment=assessment,
                     prediction_decision=prediction_decision,
                 ),

@@ -139,7 +139,7 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
     def model_id(self) -> str | None:
         try:
             return self._resolve_model_id()
-        except KeyError:
+        except (KeyError, ValueError):
             return None
 
     def _resolve_model_id(self) -> str:
@@ -162,7 +162,7 @@ def is_semantic_selection_agent_available() -> bool:
         return False
     try:
         get_model_registry().get_default_model(ModelCapability.JUDGE)
-    except KeyError:
+    except (KeyError, ValueError):
         return False
     return True
 

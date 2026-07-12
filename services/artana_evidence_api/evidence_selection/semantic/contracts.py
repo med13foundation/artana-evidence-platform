@@ -119,7 +119,7 @@ class EvidenceSelectionSemanticBatchContract(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     schema_version: Literal["evidence_selection_semantic_agent.v1"]
-    agent_run_id: str = Field(min_length=1, max_length=255)
+    agent_run_id: str | None = Field(default=None, min_length=1, max_length=255)
     reasoning_summary: str = Field(min_length=1, max_length=3000)
     assessments: tuple[EvidenceSelectionSemanticCandidateAssessment, ...] = Field(
         min_length=1,
@@ -130,10 +130,15 @@ class EvidenceSelectionSemanticBatchContract(BaseModel):
     def _accept_json_assessments(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
 
-    @field_validator("agent_run_id", "reasoning_summary")
+    @field_validator("reasoning_summary")
     @classmethod
     def _require_literal_text(cls, value: str) -> str:
         return _literal_nonblank(value)
+
+    @field_validator("agent_run_id")
+    @classmethod
+    def _validate_optional_agent_run_id(cls, value: str | None) -> str | None:
+        return _literal_nonblank(value) if value is not None else None
 
     @model_validator(mode="after")
     def _record_indices_must_be_unique(self) -> EvidenceSelectionSemanticBatchContract:

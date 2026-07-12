@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+import artana_evidence_api.evidence_selection.semantic.model as semantic_model_module
 import pytest
 from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
@@ -237,6 +238,26 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
                 index=0,
                 decision="select",
                 objective="direct",
+                evidence_span="egfr t790m response",
+            ),
+            _assessment(
+                index=1,
+                decision="reject",
+                objective="off_objective",
+                evidence_span="KRAS colorectal review",
+            ),
+            _assessment(
+                index=2,
+                decision="review",
+                objective="uncertain",
+                evidence_span="EGFR commentary",
+            ),
+        ),
+        _contract(
+            _assessment(
+                index=0,
+                decision="select",
+                objective="direct",
                 evidence_span="title",
             ),
             _assessment(
@@ -329,6 +350,42 @@ def test_semantic_contract_forbids_numeric_agent_scores() -> None:
 
     with pytest.raises(ValidationError, match="confidence_score"):
         EvidenceSelectionSemanticCandidateAssessment.model_validate(payload)
+
+
+def test_model_output_contract_does_not_require_service_agent_run_id() -> None:
+    payload = _contract(
+        _assessment(
+            index=0,
+            decision="select",
+            objective="direct",
+            evidence_span="EGFR T790M response",
+        ),
+    ).model_dump(mode="json")
+    del payload["agent_run_id"]
+
+    contract = EvidenceSelectionSemanticBatchContract.model_validate(payload)
+
+    assert contract.agent_run_id is None
+
+
+def test_semantic_preflight_handles_missing_judge_model(monkeypatch) -> None:
+    class _MissingJudgeRegistry:
+        @staticmethod
+        def get_default_model(_capability):
+            raise ValueError("no judge model")
+
+    monkeypatch.setattr(
+        semantic_model_module,
+        "has_configured_openai_api_key",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        semantic_model_module,
+        "get_model_registry",
+        _MissingJudgeRegistry,
+    )
+
+    assert semantic_model_module.is_semantic_selection_agent_available() is False
 
 
 def test_semantic_contract_rejects_contradictory_select() -> None:

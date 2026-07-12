@@ -23,6 +23,7 @@ class ValidatedSemanticAssessmentBatch:
     """One complete grounded contract and its indexed assessments."""
 
     contract: EvidenceSelectionSemanticBatchContract
+    agent_run_id: str
     assessments: dict[int, EvidenceSelectionSemanticCandidateAssessment]
     attempt_count: int
 
@@ -43,6 +44,7 @@ async def assess_validated_semantic_batch(
                 records=context.records,
                 record_indices=context.record_indices,
             )
+            agent_run_id = _require_agent_run_id(contract)
         except SemanticSelectionAgentUnavailableError:
             raise
         except Exception as exc:  # noqa: BLE001 - Agent retries are bounded.
@@ -50,6 +52,7 @@ async def assess_validated_semantic_batch(
             continue
         return ValidatedSemanticAssessmentBatch(
             contract=contract,
+            agent_run_id=agent_run_id,
             assessments=assessments,
             attempt_count=attempt_count,
         )
@@ -85,12 +88,20 @@ def validate_semantic_assessment_batch(
     for index, assessment in by_index.items():
         source_strings = tuple(_source_string_values(records_by_index[index]))
         if any(
-            not any(span.casefold() in value.casefold() for value in source_strings)
+            not any(span in value for value in source_strings)
             for span in assessment.evidence_spans
         ):
             msg = f"semantic agent evidence span was not found in record {index}"
             raise ValueError(msg)
     return by_index
+
+
+def _require_agent_run_id(
+    contract: EvidenceSelectionSemanticBatchContract,
+) -> str:
+    if contract.agent_run_id is None:
+        raise ValueError("semantic agent contract is missing service run identity")
+    return contract.agent_run_id
 
 
 def _source_string_values(value: JSONValue) -> tuple[str, ...]:
