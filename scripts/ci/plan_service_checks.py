@@ -35,6 +35,8 @@ EVIDENCE_API_PREFIXES = (
 EVIDENCE_API_FILES = (
     "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json",
     "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.md",
+    "docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.json",
+    "docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.md",
     "scripts/build_evidence_selection_shadow_review_packet.py",
     "scripts/build_evidence_selection_shadow_review_source_inputs.py",
     "scripts/build_evidence_selection_shadow_review_study_batch_manifest.py",

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from scripts.ci.plan_service_checks import emit_github_outputs, plan_checks
 
 
@@ -81,6 +83,29 @@ def test_evidence_selection_semantic_baseline_script_runs_evidence_api_gate() ->
 def test_evidence_selection_semantic_agent_script_runs_evidence_api_gate() -> None:
     plan = plan_checks(
         ["scripts/run_evidence_selection_semantic_agent_evaluation.py"],
+        event_name="pull_request",
+        ref="refs/pull/14/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
+@pytest.mark.parametrize(
+    "report_path",
+    [
+        "docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.json",
+        "docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.md",
+    ],
+)
+def test_evidence_selection_semantic_agent_reports_run_evidence_api_gate(
+    report_path: str,
+) -> None:
+    plan = plan_checks(
+        [report_path],
         event_name="pull_request",
         ref="refs/pull/14/merge",
     )
