@@ -248,6 +248,91 @@ def test_llm_extraction_converts_verified_source_measurement() -> None:
     assert extracted.observations[0].source_measurement.literal_span == "0.125"
 
 
+def test_llm_extraction_accepts_leading_dot_source_measurement() -> None:
+    source_hash = "source-hash-leading-dot"
+    contract = LLMExtractionContract(
+        rationale="Copied a leading-dot source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-leading-dot",
+        observations=[
+            LLMExtractedObservation(
+                field_name="p_value",
+                variable_id="STUDY_P_VALUE",
+                value=SourceMeasurementNumber(
+                    value=0.03,
+                    source_locator="raw_record.text",
+                    literal_span=".03",
+                    field_name="p_value",
+                    unit="unitless",
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit="unitless",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash=source_hash,
+        source_values_by_locator={"raw_record.text": "The result was p=.03."},
+    )
+
+    assert extracted.observations[0].value == 0.03
+
+
+@pytest.mark.parametrize("value", ["0.125", ".125", "stage 2"])
+def test_llm_extraction_rejects_numeric_observation_text(value: str) -> None:
+    contract = LLMExtractionContract(
+        rationale="Returned numeric-looking observation text.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-numeric-text",
+        observations=[
+            LLMExtractedObservation(
+                field_name="source_value",
+                variable_id="SOURCE_VALUE",
+                value=value,
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="source_measurement envelope"):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-1",
+            source_values_by_locator={"raw_record.text": value},
+        )
+
+
+def test_llm_extraction_keeps_categorical_observation_text() -> None:
+    contract = LLMExtractionContract(
+        rationale="Returned a categorical observation.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-category",
+        observations=[
+            LLMExtractedObservation(
+                field_name="classification",
+                variable_id="VAR_CLINVAR_CLASS",
+                value="Likely Pathogenic",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash="source-hash-1",
+        source_values_by_locator={},
+    )
+
+    assert extracted.observations[0].value == "Likely Pathogenic"
+
+
 @pytest.mark.parametrize(
     (
         "source_hash",

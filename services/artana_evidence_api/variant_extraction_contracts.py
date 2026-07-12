@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 LLMLiteralValue = str | bool | None
 LLMObservationValue = LLMLiteralValue | SourceMeasurementNumber
 _SOURCE_NUMBER_PATTERN = re.compile(
-    r"(?<![\w.])[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][-+]?\d+)?(?!\w)",
+    r"(?<![\w.])[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?(?!\w)",
 )
 
 
@@ -231,6 +231,9 @@ class LLMExtractedObservation(BaseModel):
                 source_measurement=measurement,
                 assessment=self.assessment,
             )
+        if isinstance(self.value, str) and _SOURCE_NUMBER_PATTERN.search(self.value):
+            msg = "Numeric observation text requires a source_measurement envelope."
+            raise ValueError(msg)
         return ExtractedObservation(
             field_name=self.field_name,
             variable_id=self.variable_id,

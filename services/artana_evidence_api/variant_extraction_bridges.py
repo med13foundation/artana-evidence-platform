@@ -182,6 +182,8 @@ Useful output conventions:
   source_hash from the request context; copy literal_span exactly from the
   supplied source; use one allowed_source_locator; set extraction_method to
   "literal_copy"; and set field_name and unit.
+- Any observation text containing a numeric literal also requires that envelope;
+  do not quote a number to bypass source-measurement provenance.
 - Do not return a run confidence score. Return the qualitative FactAssessment
   fields and their evidence-based confidence_rationale instead.
 - Variant metadata can include transcript, hgvs_cdna, hgvs_protein,
