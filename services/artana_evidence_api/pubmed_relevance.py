@@ -139,6 +139,7 @@ class ArtanaPubMedRelevanceAdapter:
                 model=execution_model_id,
                 prompt=self._build_prompt(context),
                 output_schema=PubMedRelevanceContract,
+                schema_id="pubmed.relevance.v1",
                 step_key="pubmed.relevance.title_abstract.v1",
                 replay_policy=self._runtime_policy.replay_policy,
             )

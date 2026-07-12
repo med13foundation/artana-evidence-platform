@@ -16,6 +16,8 @@ REPO_CONTROL_FILES = {
     "tests/unit/test_control_files.py",
     "tests/unit/test_coverage_enforcement_contract.py",
     "tests/unit/test_makefile_type_gate_contract.py",
+    "tests/unit/test_agent_output_boundary_validator.py",
+    "services/artana_evidence_api/tests/unit/test_agent_output_schema_registry.py",
 }
 QUALITY_GATE_PREFIXES = ("scripts/validation/relation_feasibility/",)
 QUALITY_GATE_FILES = {
@@ -45,6 +47,7 @@ EVIDENCE_API_FILES = (
     "scripts/build_evidence_selection_source_exports.py",
     "scripts/build_evidence_selection_expert_study_bundle.py",
     "scripts/generate_evidence_selection_semantic_baseline.py",
+    "scripts/ci/validate_agent_output_boundaries.py",
     "scripts/run_evidence_selection_semantic_agent_evaluation.py",
     "scripts/export_artana_evidence_api_openapi.py",
     "scripts/run_evidence_selection_expert_study_gate.py",
@@ -66,6 +69,10 @@ TEST_PREFIXES = (
     "services/artana_evidence_db/tests/",
     "tests/unit/",
 )
+FORCE_STATIC_TEST_FILES = {
+    "services/artana_evidence_api/tests/unit/test_agent_output_schema_registry.py",
+    "tests/unit/test_agent_output_boundary_validator.py",
+}
 INTEGRATION_TEST_PARTS = (
     "/integration/",
     "/e2e/",
@@ -98,7 +105,12 @@ def plan_checks(
     test_paths = tuple(
         path for path in normalized_paths if _is_targeted_unit_test(path)
     )
-    tests_only = bool(test_paths) and len(test_paths) == len(normalized_paths)
+    force_static = any(path in FORCE_STATIC_TEST_FILES for path in normalized_paths)
+    tests_only = (
+        bool(test_paths)
+        and len(test_paths) == len(normalized_paths)
+        and not force_static
+    )
     high_risk = any(_is_high_risk_path(path) for path in normalized_paths)
     repo_control = any(_is_repo_control_path(path) for path in normalized_paths)
     quality_gate = any(_is_quality_gate_path(path) for path in normalized_paths)

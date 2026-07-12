@@ -35,6 +35,7 @@ from artana_evidence_api.runtime_support import (
     normalize_litellm_model_id,
     stable_sha256_digest,
 )
+from artana_evidence_api.step_helpers import run_registered_agent
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 
@@ -220,7 +221,9 @@ class HarnessResearchOnboardingRunner:
         )
         try:
             execution_model_id = normalize_litellm_model_id(model_id)
-            contract = await agent.run(
+            contract = await run_registered_agent(
+                agent,
+                schema_id="research_onboarding.agent.v1",
                 run_id=run_id,
                 tenant=tenant,
                 model=execution_model_id,

@@ -42,6 +42,7 @@ from artana_evidence_api.runtime_support import (
     load_runtime_policy,
     normalize_litellm_model_id,
 )
+from artana_evidence_api.step_helpers import run_registered_agent
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
 from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -225,7 +226,13 @@ class HarnessGraphConnectionRunner:
                 replay_policy=self._runtime_policy.replay_policy,
             )
             stage = "agent_run"
-            contract = await agent.run(
+            output_schema = cast(
+                "type[GraphConnectionContract]",
+                _GraphConnectionExecutionContract,
+            )
+            contract = await run_registered_agent(
+                agent,
+                schema_id="graph_connection.agent.v1",
                 run_id=run_id,
                 tenant=tenant,
                 model=execution_model_id,
@@ -234,10 +241,7 @@ class HarnessGraphConnectionRunner:
                     request=request,
                     source_type=resolved_source_type,
                 ),
-                output_schema=cast(
-                    "type[GraphConnectionContract]",
-                    _GraphConnectionExecutionContract,
-                ),
+                output_schema=output_schema,
                 max_iterations=_MAX_GRAPH_CONNECTION_ITERATIONS,
             )
             stage = "post_agent"

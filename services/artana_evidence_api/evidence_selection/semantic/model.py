@@ -123,6 +123,7 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
                 model=execution_model_id,
                 prompt=_build_semantic_selection_prompt(context=context),
                 output_schema=EvidenceSelectionSemanticBatchContract,
+                schema_id="evidence_selection.semantic.v1",
                 step_key=_SEMANTIC_SELECTION_STEP_KEY,
                 replay_policy=self._runtime_policy.replay_policy,
             )

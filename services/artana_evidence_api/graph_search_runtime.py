@@ -45,6 +45,7 @@ from artana_evidence_api.runtime_support import (
     normalize_litellm_model_id,
     stable_sha256_digest,
 )
+from artana_evidence_api.step_helpers import run_registered_agent
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -190,7 +191,13 @@ class HarnessGraphSearchRunner:
                 replay_policy=self._runtime_policy.replay_policy,
             )
             stage = "agent_run"
-            contract = await agent.run(
+            output_schema = cast(
+                "type[GraphSearchContract]",
+                _GraphSearchExecutionContract,
+            )
+            contract = await run_registered_agent(
+                agent,
+                schema_id="graph_search.agent.v1",
                 run_id=run_id,
                 tenant=tenant,
                 model=execution_model_id,
@@ -198,10 +205,7 @@ class HarnessGraphSearchRunner:
                     ARTANA_EVIDENCE_API_SEARCH_CONFIG.system_prompt,
                 ),
                 prompt=self._request_prompt(request),
-                output_schema=cast(
-                    "type[GraphSearchContract]",
-                    _GraphSearchExecutionContract,
-                ),
+                output_schema=output_schema,
                 max_iterations=_MAX_GRAPH_SEARCH_ITERATIONS,
             )
             stage = "post_agent"

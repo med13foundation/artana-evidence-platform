@@ -821,6 +821,7 @@ class ArtanaExtractionAdapter:
                 model=execution_model_id,
                 prompt=self._build_prompt(context),
                 output_schema=LLMExtractionContract,
+                schema_id="variant_extraction.agent.v1",
                 step_key=_variant_extraction_step_key(context=context),
                 replay_policy=self._runtime_policy.replay_policy,
             )

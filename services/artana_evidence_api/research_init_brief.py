@@ -13,6 +13,7 @@ from uuid import UUID
 
 from artana_evidence_api.alias_yield_reporting import build_alias_yield_rollup
 from artana_evidence_api.types.common import json_object_or_empty
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from .artifact_store import HarnessArtifactStore
@@ -83,6 +84,27 @@ class ResearchBrief:
             parts.extend(f"- {step}" for step in self.next_steps)
             parts.append("")
         return "\n".join(parts)
+
+
+class LLMBriefOutput(BaseModel):
+    """Structured model output for cross-source research brief synthesis."""
+
+    title: str = Field(description="Brief title")
+    summary: str = Field(
+        description=(
+            "2-3 paragraph narrative summary organized by theme "
+            "and grounded in supplied source connections."
+        ),
+    )
+    key_findings: list[str] = Field(
+        description="Specific findings spanning supplied source records.",
+    )
+    gaps: list[str] = Field(
+        description="Missing evidence framed as concrete research questions.",
+    )
+    next_steps: list[str] = Field(
+        description="Specific suggested actions for the researcher.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -794,38 +816,6 @@ async def _generate_brief_with_kernel(
     from contextlib import suppress
     from uuid import uuid4
 
-    from pydantic import BaseModel, Field
-
-    # Define output schema
-    class LLMBriefOutput(BaseModel):
-        """Structured output from the LLM brief generation."""
-
-        title: str = Field(description="Brief title")
-        summary: str = Field(
-            description=(
-                "2-3 paragraph narrative summary organized by theme "
-                "(mechanism chains, drug-target relationships, variant "
-                "impact). Explicitly highlight cross-source connections."
-            ),
-        )
-        key_findings: list[str] = Field(
-            description=(
-                "3-5 specific findings that span multiple data sources. "
-                "Each finding should reference real entity chains "
-                "(e.g., 'ClinVar variant X disrupts AlphaFold domain Y, "
-                "which PubMed links to mechanism Z')."
-            ),
-        )
-        gaps: list[str] = Field(
-            description=(
-                "What the system could not find, framed as concrete "
-                "questions for the researcher to investigate."
-            ),
-        )
-        next_steps: list[str] = Field(
-            description="Suggested next actions for the researcher",
-        )
-
     # Build prompt — include the cross-source overlap candidates so the LLM
     # can reference real entity chains rather than invent them.
     brief_markdown = deterministic_brief.to_markdown()
@@ -916,6 +906,7 @@ async def _generate_brief_with_kernel(
             model=model_id,
             prompt=prompt,
             output_schema=LLMBriefOutput,
+            schema_id="research.brief.v1",
             step_key="research.llm_brief_synthesis.v1",
             replay_policy="fork_on_drift",
         )

@@ -244,6 +244,7 @@ async def _run_marrvel_gene_inference_step(
         model=runtime.model_id,
         prompt=_build_marrvel_gene_inference_prompt(objective=objective),
         output_schema=_MarrvelGeneInferenceResult,
+        schema_id="marrvel.gene_inference.v1",
         step_key="marrvel.gene_inference.v1",
         replay_policy="fork_on_drift",
     )

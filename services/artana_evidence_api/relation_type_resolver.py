@@ -207,6 +207,7 @@ async def _run_kernel_agent(
     system_prompt: str,
     prompt: str,
     output_schema: type[BaseModel],
+    schema_id: str,
     run_id_prefix: str,
     tenant_id: str,
     budget_usd: float = 0.50,
@@ -284,7 +285,11 @@ async def _run_kernel_agent(
             context_builder=context_builder,
             replay_policy="fork_on_drift",
         )
-        contract = await agent.run(
+        from artana_evidence_api.step_helpers import run_registered_agent
+
+        contract = await run_registered_agent(
+            agent,
+            schema_id=schema_id,
             run_id=run_id,
             tenant=tenant,
             model=model_id,
@@ -521,6 +526,7 @@ async def resolve_relation_type(
             system_prompt=_RELATION_RESOLUTION_SYSTEM_PROMPT,
             prompt=prompt,
             output_schema=RelationTypeDecision,
+            schema_id="relation_type_resolution.agent.v1",
             run_id_prefix="relation-type-resolution",
             tenant_id="relation-type-resolution",
             max_iterations=3,
@@ -783,6 +789,7 @@ async def resolve_entity_label(
             system_prompt=_ENTITY_RESOLUTION_SYSTEM_PROMPT,
             prompt=prompt,
             output_schema=EntityDecision,
+            schema_id="entity_resolution.agent.v1",
             run_id_prefix="entity-resolution",
             tenant_id="entity-resolution",
             max_iterations=3,

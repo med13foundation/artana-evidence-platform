@@ -7,6 +7,12 @@ import logging
 from dataclasses import dataclass
 
 import pytest
+from artana_evidence_api.runtime.agent_output_schema import (
+    AgentOutputSchemaRegistrationError,
+)
+from artana_evidence_api.runtime.model_health import (
+    build_model_health_probe_output_schema,
+)
 from artana_evidence_api.step_helpers import (
     get_step_execution_health,
     reset_step_execution_health,
@@ -58,6 +64,31 @@ class _GenericFailureStepClient:
         raise RuntimeError("synthetic failure")
 
 
+class _MustNotRunStepClient:
+    async def step(self, **_kwargs: object) -> _FakeStepResult:
+        raise AssertionError("unregistered schemas must fail before model execution")
+
+
+def test_run_single_step_with_policy_rejects_unknown_schema_before_call() -> None:
+    with pytest.raises(
+        AgentOutputSchemaRegistrationError,
+        match="Unregistered agent output schema ID",
+    ):
+        asyncio.run(
+            run_single_step_with_policy(
+                _MustNotRunStepClient(),
+                run_id="run-unknown-schema",
+                tenant=object(),
+                model="openai/gpt-5.4-mini",
+                prompt="return ok",
+                output_schema=build_model_health_probe_output_schema(),
+                schema_id="unregistered.schema.v1",
+                step_key="unregistered.schema.v1",
+                replay_policy="fork_on_drift",
+            ),
+        )
+
+
 def test_run_single_step_with_policy_logs_replayed_terminal_without_traceback(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -74,7 +105,8 @@ def test_run_single_step_with_policy_logs_replayed_terminal_without_traceback(
                 tenant=object(),
                 model="openai/gpt-5.4-mini",
                 prompt="return ok",
-                output_schema=dict,
+                output_schema=build_model_health_probe_output_schema(),
+                schema_id="model_health.probe.v1",
                 step_key="document_extraction.proposal_review.v1",
                 replay_policy="fork_on_drift",
             ),
@@ -113,7 +145,8 @@ def test_run_single_step_with_policy_logs_generic_failures_with_traceback(
                 tenant=object(),
                 model="openai/gpt-5.4-mini",
                 prompt="return ok",
-                output_schema=dict,
+                output_schema=build_model_health_probe_output_schema(),
+                schema_id="model_health.probe.v1",
                 step_key="document_extraction.proposal_review.v1",
                 replay_policy="fork_on_drift",
             ),

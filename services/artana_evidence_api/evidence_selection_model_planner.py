@@ -211,6 +211,7 @@ class _ArtanaKernelSourcePlanningModelRunner:
                 model=execution_model_id,
                 prompt=_build_model_prompt(context=context),
                 output_schema=ModelEvidenceSelectionSourcePlanContract,
+                schema_id="evidence_selection.source_plan.v1",
                 step_key=_MODEL_PLANNER_STEP_KEY,
                 replay_policy=self._runtime_policy.replay_policy,
             )
