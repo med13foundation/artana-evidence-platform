@@ -88,7 +88,7 @@ class _RaisingGraphHarnessSkillAutonomousAgent:
         return ()
 
 
-class _LegacyGraphHarnessSkillAutonomousAgent:
+class _CategoricalGraphHarnessSkillAutonomousAgent:
     last_run_kwargs: dict[str, object] | None = None
 
     def __init__(self, kernel: object, **kwargs: object) -> None:
@@ -98,14 +98,34 @@ class _LegacyGraphHarnessSkillAutonomousAgent:
     async def run(self, **kwargs: object) -> object:
         type(self).last_run_kwargs = kwargs
         return graph_connection_runtime._GraphConnectionExecutionContract(
-            confidence_score=0.41,
-            rationale="Legacy-compatible fallback.",
-            evidence=[],
-            decision="fallback",
-            proposed_relations=[],
+            rationale="Categorical relation proposal.",
+            evidence=[
+                {
+                    "source_type": "paper",
+                    "locator": "pmid:123",
+                    "excerpt": "BRCA1 is associated with the target phenotype.",
+                },
+            ],
+            decision="generated",
+            proposed_relations=[
+                {
+                    "source_id": "entity-brca1",
+                    "relation_type": "ASSOCIATED_WITH",
+                    "target_id": "phenotype-1",
+                    "assessment": {
+                        "support_band": "STRONG",
+                        "grounding_level": "SPAN",
+                        "mapping_status": "RESOLVED",
+                        "speculation_level": "DIRECT",
+                        "confidence_rationale": "Direct relation evidence.",
+                    },
+                    "evidence_summary": "Direct relation evidence.",
+                    "supporting_provenance_ids": ["provenance-1"],
+                    "supporting_document_locators": ["pmid:123", "pmid:123"],
+                    "reasoning": "The cited paper directly supports the relation.",
+                },
+            ],
             rejected_candidates=[],
-            shadow_mode=True,
-            agent_run_id=None,
         )
 
     async def emit_active_skill_summary(self, **kwargs: object) -> tuple[str, ...]:
@@ -113,7 +133,18 @@ class _LegacyGraphHarnessSkillAutonomousAgent:
         return ("graph_harness.graph_grounding",)
 
 
-class _LegacyGraphSearchAutonomousAgent:
+class _ForgedCitationGraphHarnessSkillAutonomousAgent(
+    _CategoricalGraphHarnessSkillAutonomousAgent,
+):
+    async def run(self, **kwargs: object) -> object:
+        output = await super().run(**kwargs)
+        relation = output.proposed_relations[0].model_copy(
+            update={"supporting_document_locators": ["pmid:forged"]},
+        )
+        return output.model_copy(update={"proposed_relations": [relation]})
+
+
+class _CategoricalGraphSearchAutonomousAgent:
     last_run_kwargs: dict[str, object] | None = None
 
     def __init__(self, kernel: object, **kwargs: object) -> None:
@@ -123,15 +154,18 @@ class _LegacyGraphSearchAutonomousAgent:
     async def run(self, **kwargs: object) -> object:
         type(self).last_run_kwargs = kwargs
         return graph_search_runtime._GraphSearchExecutionContract(
-            confidence_score=0.52,
-            rationale="Legacy-compatible graph-search answer.",
+            assessment={
+                "support_band": "SUPPORTED",
+                "grounding_level": "NONE",
+                "confidence_rationale": "No result-level graph grounding was found.",
+            },
+            rationale="Categorical graph-search answer.",
             evidence=[],
             decision="generated",
             interpreted_intent="Find BRCA1 evidence.",
             query_plan_summary="Search graph entities and supporting evidence.",
             results=[],
             warnings=[],
-            agent_run_id=None,
         )
 
     async def emit_active_skill_summary(self, **kwargs: object) -> tuple[str, ...]:
@@ -354,7 +388,7 @@ async def test_graph_connection_runner_logs_on_agent_failure(
 
 
 @pytest.mark.asyncio
-async def test_graph_connection_runner_normalizes_legacy_replay_contract(
+async def test_graph_connection_runner_derives_values_from_categorical_contract(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_graph_runner_runtime(
@@ -365,7 +399,7 @@ async def test_graph_connection_runner_normalizes_legacy_replay_contract(
     monkeypatch.setattr(
         graph_connection_runtime,
         "GraphHarnessSkillAutonomousAgent",
-        _LegacyGraphHarnessSkillAutonomousAgent,
+        _CategoricalGraphHarnessSkillAutonomousAgent,
     )
     runner = HarnessGraphConnectionRunner()
     request = HarnessGraphConnectionRequest(
@@ -384,17 +418,21 @@ async def test_graph_connection_runner_normalizes_legacy_replay_contract(
 
     result = await runner.run(request)
 
-    assert result.contract.decision == "fallback"
-    assert result.contract.confidence_score == pytest.approx(0.41)
+    assert result.contract.decision == "generated"
+    assert result.contract.confidence_score == pytest.approx(0.9)
     assert result.contract.research_space_id == "space-legacy"
     assert result.contract.seed_entity_id == "seed-legacy"
     assert result.contract.source_type == "pubmed"
     assert result.contract.shadow_mode is False
-    assert result.contract.rationale == "Legacy-compatible fallback."
+    assert result.contract.rationale == "Categorical relation proposal."
+    assert result.contract.proposed_relations[0].supporting_document_count == 1
+    assert result.contract.proposed_relations[0].supporting_document_locators == [
+        "pmid:123",
+    ]
     assert result.active_skill_names == ("graph_harness.graph_grounding",)
-    assert _LegacyGraphHarnessSkillAutonomousAgent.last_run_kwargs is not None
+    assert _CategoricalGraphHarnessSkillAutonomousAgent.last_run_kwargs is not None
     assert (
-        _LegacyGraphHarnessSkillAutonomousAgent.last_run_kwargs["output_schema"]
+        _CategoricalGraphHarnessSkillAutonomousAgent.last_run_kwargs["output_schema"]
         is graph_connection_runtime._GraphConnectionExecutionContract
     )
 
@@ -454,14 +492,60 @@ async def test_graph_connection_runner_warns_for_legacy_replay_validation(
 
 
 @pytest.mark.asyncio
-async def test_graph_search_runner_normalizes_replay_safe_execution_contract(
+async def test_graph_connection_runner_rejects_and_logs_uncited_locator(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    _patch_graph_runner_runtime(
+        monkeypatch,
+        graph_connection_runtime,
+        include_source_prompts=True,
+    )
+    monkeypatch.setattr(
+        graph_connection_runtime,
+        "GraphHarnessSkillAutonomousAgent",
+        _ForgedCitationGraphHarnessSkillAutonomousAgent,
+    )
+    runner = HarnessGraphConnectionRunner()
+    request = HarnessGraphConnectionRequest(
+        harness_id="research-bootstrap",
+        seed_entity_id="seed-forged",
+        research_space_id="space-forged",
+        source_type="pubmed",
+        source_id="source-forged",
+        model_id=None,
+        relation_types=None,
+        max_depth=2,
+        shadow_mode=True,
+        pipeline_run_id="pipeline-forged",
+        research_space_settings={},
+    )
+
+    with caplog.at_level(logging.ERROR, logger=graph_connection_runtime.__name__):
+        result = await runner.run(request)
+
+    assert result.contract.decision == "fallback"
+    assert result.contract.proposed_relations == []
+    failures = [
+        record
+        for record in caplog.records
+        if record.name == graph_connection_runtime.__name__
+        and record.getMessage() == "graph-connection run failed"
+    ]
+    assert failures
+    assert failures[-1].exception_type == "ValueError"
+    assert failures[-1].stage == "post_agent"
+
+
+@pytest.mark.asyncio
+async def test_graph_search_runner_derives_values_from_categorical_contract(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_graph_runner_runtime(monkeypatch, graph_search_runtime)
     monkeypatch.setattr(
         graph_search_runtime,
         "GraphHarnessSkillAutonomousAgent",
-        _LegacyGraphSearchAutonomousAgent,
+        _CategoricalGraphSearchAutonomousAgent,
     )
     runner = HarnessGraphSearchRunner()
     request = HarnessGraphSearchRequest(
@@ -488,9 +572,9 @@ async def test_graph_search_runner_normalizes_replay_safe_execution_contract(
     assert result.contract.executed_path == "agent"
     assert result.contract.total_results == 0
     assert result.active_skill_names == ("graph_harness.graph_grounding",)
-    assert _LegacyGraphSearchAutonomousAgent.last_run_kwargs is not None
+    assert _CategoricalGraphSearchAutonomousAgent.last_run_kwargs is not None
     assert (
-        _LegacyGraphSearchAutonomousAgent.last_run_kwargs["output_schema"]
+        _CategoricalGraphSearchAutonomousAgent.last_run_kwargs["output_schema"]
         is graph_search_runtime._GraphSearchExecutionContract
     )
 
@@ -621,10 +705,19 @@ def test_graph_connection_run_id_is_versioned_away_from_legacy_hash() -> None:
         "graph_connection:pubmed:"
         f"{sha256(v2_payload.encode('utf-8')).hexdigest()[:24]}"
     )
+    v3_payload = (
+        "v3|research-bootstrap|pubmed|openai:gpt-5.4-mini|space-1|"
+        "source-1|pipeline-1|seed-1"
+    )
+    v3_run_id = (
+        "graph_connection:pubmed:"
+        f"{sha256(v3_payload.encode('utf-8')).hexdigest()[:24]}"
+    )
 
     assert run_id.startswith("graph_connection:pubmed:")
     assert run_id != legacy_run_id
     assert run_id != v2_run_id
+    assert run_id != v3_run_id
 
 
 def test_graph_search_run_id_is_versioned_away_from_legacy_hash() -> None:
@@ -644,7 +737,12 @@ def test_graph_search_run_id_is_versioned_away_from_legacy_hash() -> None:
         "v2|graph-search|openai:gpt-5.4-mini|space-1|What is known about MED13?"
     )
     v2_run_id = f"graph_search:{graph_search_runtime.stable_sha256_digest(v2_payload)}"
+    v3_payload = (
+        "v3|graph-search|openai:gpt-5.4-mini|space-1|What is known about MED13?"
+    )
+    v3_run_id = f"graph_search:{graph_search_runtime.stable_sha256_digest(v3_payload)}"
 
     assert run_id.startswith("graph_search:")
     assert run_id != legacy_run_id
     assert run_id != v2_run_id
+    assert run_id != v3_run_id

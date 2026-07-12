@@ -644,12 +644,22 @@ class ProposedRelation(BaseModel):
     evidence_summary: str = Field(..., min_length=1, max_length=2000)
     evidence_tier: Literal["COMPUTATIONAL"] = "COMPUTATIONAL"
     supporting_provenance_ids: list[str] = Field(default_factory=list)
+    supporting_document_locators: list[str] = Field(default_factory=list)
     supporting_document_count: int = Field(default=0, ge=0)
     reasoning: str = Field(..., min_length=1, max_length=4000)
 
     @model_validator(mode="after")
     def _normalize_confidence(self) -> ProposedRelation:
         self.confidence = assessment_confidence(self.assessment)
+        if self.supporting_document_locators:
+            self.supporting_document_locators = list(
+                dict.fromkeys(
+                    locator.strip()
+                    for locator in self.supporting_document_locators
+                    if locator.strip()
+                ),
+            )
+            self.supporting_document_count = len(self.supporting_document_locators)
         return self
 
 
