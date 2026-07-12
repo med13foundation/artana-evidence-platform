@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Literal, cast
 
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.findings import (
+    derive_shadow_risk_level,
+)
 from artana_evidence_api.full_ai_orchestrator.shadow_planner.models import (
     _CONFIDENCE_SCORE_PATTERN,
     _MAX_CHASE_SELECTION_ENTITIES,
@@ -64,11 +67,26 @@ def validate_shadow_planner_output(
         ),
         _validate_stop_reason(output=output),
         _validate_qualitative_rationale(output=output),
+        _validate_risk_posture(output=output),
     )
     for error in validations:
         if error is not None:
             return error
     return None
+
+
+def _validate_risk_posture(
+    *,
+    output: ShadowPlannerRecommendationOutput,
+) -> str | None:
+    if derive_shadow_risk_level(output.risk_findings) != "high":
+        return None
+    if output.action_type in {
+        ResearchOrchestratorActionType.ESCALATE_TO_HUMAN,
+        ResearchOrchestratorActionType.STOP,
+    }:
+        return None
+    return "high_risk_action_requires_escalation"
 
 
 def _build_shadow_planner_output_schema(

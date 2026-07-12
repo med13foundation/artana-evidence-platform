@@ -5,6 +5,11 @@ from __future__ import annotations
 import json
 from typing import cast
 
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.findings import (
+    derive_shadow_risk_level,
+    derive_shadow_value_band,
+    shadow_findings_require_approval,
+)
 from artana_evidence_api.full_ai_orchestrator.shadow_planner.models import (
     ShadowPlannerRecommendationOutput,
     ShadowPlannerTelemetry,
@@ -66,10 +71,10 @@ def _build_shadow_decision(
         stop_reason=output.stop_reason,
         step_key=step_key,
         status="recommended",
-        expected_value_band=output.expected_value_band,
+        expected_value_band=derive_shadow_value_band(output.benefit_findings),
         qualitative_rationale=output.qualitative_rationale,
-        risk_level=output.risk_level,
-        requires_approval=output.requires_approval,
+        risk_level=derive_shadow_risk_level(output.risk_findings),
+        requires_approval=shadow_findings_require_approval(output.risk_findings),
         budget_estimate=cast("JSONObject | None", output.budget_estimate),
         fallback_reason=output.fallback_reason,
         metadata={
@@ -82,6 +87,12 @@ def _build_shadow_decision(
             "repair_attempted": repair_attempted,
             "repair_succeeded": repair_succeeded,
             "telemetry": _shadow_planner_telemetry_payload(telemetry),
+            "benefit_findings": [
+                finding.model_dump(mode="json") for finding in output.benefit_findings
+            ],
+            "risk_findings": [
+                finding.model_dump(mode="json") for finding in output.risk_findings
+            ],
         },
     )
 

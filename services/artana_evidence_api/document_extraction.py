@@ -86,6 +86,10 @@ from artana_evidence_api.document_extraction_support.relation_specificity_prunin
     is_low_value_generic_relation_candidate,
     prune_redundant_generic_relation_candidates,
 )
+from artana_evidence_api.document_extraction_support.review_policy.proposal_review_mapping import (
+    build_proposal_review_draft_refs,
+    map_proposal_reviews_by_ref,
+)
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.graph_integration.preflight import GraphAIPreflightService
 from artana_evidence_api.proposal_store import HarnessProposalDraft
@@ -109,7 +113,6 @@ _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 _MAX_AI_ENTITY_PRE_RESOLUTION_LABELS = 4
 _AI_ENTITY_PRE_RESOLUTION_TIMEOUT_SECONDS = 2.0
 _LLM_CANDIDATE_EXTRACTION_TIMEOUT_SECONDS = 5.0
-_LLM_PROPOSAL_REVIEW_TIMEOUT_SECONDS = 5.0
 _RELATION_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(
@@ -851,8 +854,12 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
     registry = get_model_registry()
     model_spec = registry.get_default_model(ModelCapability.JUDGE)
     model_id = normalize_litellm_model_id(model_spec.model_id)
+    draft_refs = build_proposal_review_draft_refs(
+        document_sha256=document.sha256,
+        drafts=drafts,
+    )
     claim_blocks: list[str] = []
-    for index, draft in enumerate(drafts):
+    for draft_ref, draft in zip(draft_refs, drafts, strict=True):
         subject_label = draft.metadata.get(
             "resolved_subject_label",
         ) or draft.metadata.get(
@@ -867,7 +874,7 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
         claim_blocks.append(
             "\n".join(
                 [
-                    f"Claim {index}",
+                    f"Claim reference: {draft_ref}",
                     f"- subject: {subject_label}",
                     f"- relation_type: {relation_type}",
                     f"- object: {object_label}",
@@ -884,7 +891,7 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
         f"- title: {shorten_text(document.title, max_length=200)}\n"
         f"- source_type: {document.source_type}\n\n"
         f"CLAIMS TO REVIEW\n{claims_text}\n\n"
-        "Return one review for each claim index."
+        "Return one review for each claim reference, copying every draft_ref exactly."
     )
     step_key = _proposal_review_step_key(
         document=document,
@@ -906,7 +913,7 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
         store = create_artana_postgres_store()
         kernel = ArtanaKernel(
             store=store,
-            model_port=LiteLLMAdapter(timeout_seconds=60.0),
+            model_port=LiteLLMAdapter(timeout_seconds=model_spec.timeout_seconds),
         )
         client = SingleStepModelClient(kernel=kernel)
         result = await asyncio.wait_for(
@@ -921,7 +928,7 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
                 step_key=step_key,
                 replay_policy="fork_on_drift",
             ),
-            timeout=_LLM_PROPOSAL_REVIEW_TIMEOUT_SECONDS,
+            timeout=model_spec.timeout_seconds,
         )
         output = result.output
         parsed = cast(
@@ -932,27 +939,18 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
                 else output_schema.model_validate(output)
             ),
         )
-        reviews_by_index = {
-            item.index: DocumentProposalReview(
-                factual_support=item.factual_support,
-                goal_relevance=item.goal_relevance,
-                priority=item.priority,
-                rationale=item.rationale.strip(),
-                factual_rationale=item.factual_rationale.strip(),
-                relevance_rationale=item.relevance_rationale.strip(),
-                method="llm_judge_v1",
-                model_id=model_spec.model_id,
-            )
-            for item in parsed.reviews
-            if 0 <= item.index < len(drafts)
-        }
+        reviews_by_ref = map_proposal_reviews_by_ref(
+            result=parsed,
+            expected_refs=draft_refs,
+            model_id=model_spec.model_id,
+        )
     except TimeoutError:
-        reviews_by_index = {}
+        reviews_by_ref = {}
         diagnostics = proposal_review_fallback_error(
             "LLM proposal review timed out",
         )
     except Exception as exc:  # noqa: BLE001
-        reviews_by_index = {}
+        reviews_by_ref = {}
         diagnostics = proposal_review_fallback_error(str(exc))
     else:
         diagnostics = proposal_review_completed()
@@ -968,10 +966,12 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
         tuple(
             apply_document_proposal_review(
                 draft=draft,
-                review=reviews_by_index.get(index, fallback_reviews[index]),
+                review=reviews_by_ref.get(draft_ref, fallback_reviews[index]),
                 review_context=normalized_context,
             )
-            for index, draft in enumerate(drafts)
+            for index, (draft_ref, draft) in enumerate(
+                zip(draft_refs, drafts, strict=True),
+            )
         ),
         diagnostics,
     )

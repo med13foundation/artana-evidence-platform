@@ -6,12 +6,17 @@ import re
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.findings import (
+    ShadowBenefitFinding,
+    ShadowRiskFinding,
+    validate_atomic_shadow_findings,
+)
 from artana_evidence_api.full_ai_orchestrator_contracts import (
     ResearchOrchestratorActionType,
     ResearchOrchestratorDecision,
 )
 from artana_evidence_api.types.common import JSONObject
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 _PERCENT_PATTERN = re.compile(
     r"(\d+(\.\d+)?)\s*%|\b\d+(\.\d+)?\s*percent\b",
@@ -127,6 +132,7 @@ _REPAIRABLE_VALIDATION_ERRORS = frozenset(
         "chase_selection_label_mismatch",
         "chase_selection_too_large",
         "objective_relevant_chase_required",
+        "high_risk_action_requires_escalation",
     },
 )
 _COST_SUMMARY_TYPES: tuple[str, ...] = ("trace::cost", "trace::cost_snapshot")
@@ -147,15 +153,26 @@ class ShadowPlannerRecommendationOutput(BaseModel):
     source_key: str | None = Field(default=None, min_length=1, max_length=64)
     evidence_basis: str = Field(..., min_length=1, max_length=4000)
     qualitative_rationale: str = Field(..., min_length=1, max_length=4000)
-    expected_value_band: Literal["low", "medium", "high"] | None = None
-    risk_level: Literal["low", "medium", "high"] | None = None
-    requires_approval: bool = False
+    benefit_findings: list[ShadowBenefitFinding] = Field(
+        ...,
+        min_length=1,
+        max_length=6,
+    )
+    risk_findings: list[ShadowRiskFinding] = Field(..., min_length=1, max_length=6)
     budget_estimate: dict[str, str] | None = None
     stop_reason: str | None = Field(default=None, min_length=1, max_length=512)
     fallback_reason: str | None = Field(default=None, min_length=1, max_length=512)
     selected_entity_ids: list[str] = Field(default_factory=list, max_length=10)
     selected_labels: list[str] = Field(default_factory=list, max_length=10)
     selection_basis: str | None = Field(default=None, min_length=1, max_length=4000)
+
+    @model_validator(mode="after")
+    def _validate_atomic_findings(self) -> ShadowPlannerRecommendationOutput:
+        validate_atomic_shadow_findings(
+            benefit_findings=self.benefit_findings,
+            risk_findings=self.risk_findings,
+        )
+        return self
 
 
 @dataclass(frozen=True, slots=True)

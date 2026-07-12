@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import UTC, datetime
 from io import BytesIO
 from types import SimpleNamespace
@@ -48,6 +49,12 @@ from artana_evidence_api.types.graph_contracts import (
     KernelEntityResponse,
 )
 from pydantic import ValidationError
+
+
+def _proposal_review_ref_from_prompt(prompt: str) -> str:
+    match = re.search(r"Claim reference: (draft_[0-9a-f]{24})", prompt)
+    assert match is not None
+    return match.group(1)
 
 
 class _EmptyGraphApiGateway:
@@ -667,7 +674,7 @@ async def test_extract_relation_candidates_with_llm_uses_fresh_store_and_closes(
         created_stores.append(store)
         return store
 
-    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
         return SimpleNamespace(
             output={
                 "relations": [
@@ -723,7 +730,7 @@ async def test_extract_relation_candidates_with_llm_uses_fresh_store_and_closes(
 async def test_extract_relation_candidates_with_llm_repairs_known_label_curies(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
         return SimpleNamespace(
             output={
                 "relations": [
@@ -2406,12 +2413,12 @@ async def test_review_document_extraction_drafts_with_diagnostics_closes_store(
         created_stores.append(store)
         return store
 
-    async def _fake_run_single_step_with_policy(*_args, **_kwargs):
+    async def _fake_run_single_step_with_policy(*_args, **kwargs):
         return SimpleNamespace(
             output={
                 "reviews": [
                     {
-                        "index": 0,
+                        "draft_ref": _proposal_review_ref_from_prompt(kwargs["prompt"]),
                         "factual_support": "moderate",
                         "goal_relevance": "direct",
                         "priority": "prioritize",
@@ -2430,6 +2437,7 @@ async def test_review_document_extraction_drafts_with_diagnostics_closes_store(
         lambda: SimpleNamespace(
             get_default_model=lambda _capability: SimpleNamespace(
                 model_id="openai:gpt-5.4-mini",
+                timeout_seconds=30.0,
             ),
         ),
     )
@@ -2530,7 +2538,7 @@ async def test_review_document_extraction_drafts_scopes_step_key_to_review_paylo
             output={
                 "reviews": [
                     {
-                        "index": 0,
+                        "draft_ref": _proposal_review_ref_from_prompt(kwargs["prompt"]),
                         "factual_support": "moderate",
                         "goal_relevance": "direct",
                         "priority": "prioritize",
@@ -2549,6 +2557,7 @@ async def test_review_document_extraction_drafts_scopes_step_key_to_review_paylo
         lambda: SimpleNamespace(
             get_default_model=lambda _capability: SimpleNamespace(
                 model_id="openai:gpt-5.4-mini",
+                timeout_seconds=30.0,
             ),
         ),
     )
@@ -2676,6 +2685,7 @@ async def test_review_document_extraction_drafts_with_diagnostics_times_out(
         lambda: SimpleNamespace(
             get_default_model=lambda _capability: SimpleNamespace(
                 model_id="openai:gpt-5.4-mini",
+                timeout_seconds=0.001,
             ),
         ),
     )
@@ -2687,11 +2697,6 @@ async def test_review_document_extraction_drafts_with_diagnostics_times_out(
     monkeypatch.setattr(runtime_support, "create_artana_postgres_store", _create_store)
     monkeypatch.setattr("artana.kernel.ArtanaKernel", _FakeKernel)
     monkeypatch.setattr("artana.agent.SingleStepModelClient", _FakeSingleStepClient)
-    monkeypatch.setattr(
-        document_extraction,
-        "_LLM_PROPOSAL_REVIEW_TIMEOUT_SECONDS",
-        0.001,
-    )
     monkeypatch.setattr(
         document_extraction,
         "run_single_step_with_policy",

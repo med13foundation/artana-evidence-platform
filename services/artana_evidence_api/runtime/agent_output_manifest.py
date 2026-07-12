@@ -459,12 +459,9 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.proposal_review.v1",
         schema_names=("ProposalReviewResult",),
-        shape_hash="2e7f22a9f032f64fb1e9dc0135fa812478246ca08a4ede16f211cc36c8e66d13",
+        shape_hash="172c1f2ab7a2a8d6f3b47dfab1fe2a50a185aac1460b30adb27a4fea22058247",
         producer_paths=("document_extraction.py",),
         prompt_identifiers=("document_extraction.proposal_review.v1",),
-        numeric_fields=(
-            NumericFieldPolicy(path="$.reviews[].index", debt_id="AON-PROP-001"),
-        ),
         categorical_fields=(
             _category(
                 "$.reviews[].factual_support",
@@ -580,7 +577,7 @@ _POLICIES = (
             "ShadowPlannerLiveRecommendationOutput",
             "ShadowPlannerRecommendationOutput",
         ),
-        shape_hash="b913b878f814cc44765d65daaf58c33132ddd463fe8f28b0d4f87a291d216ffc",
+        shape_hash="fd01368f0ece1492b7ab09d5db7188e82268c319729e83473339c576a98256dc",
         producer_paths=("full_ai_orchestrator/shadow_planner/runtime.py",),
         prompt_identifiers=("full_ai.shadow_planner.prompt.v1",),
         categorical_fields=(
@@ -593,24 +590,28 @@ _POLICIES = (
                 allow_schema_subset=True,
             ),
             _category(
-                "$.expected_value_band",
+                "$.benefit_findings[].kind",
                 {
-                    "low": "the agent predicts limited workflow value.",
-                    "medium": "the agent predicts intermediate workflow value.",
-                    "high": "the agent predicts substantial workflow value.",
+                    "closes_evidence_gap": "the cited workspace state identifies a specific unresolved evidence gap this action addresses.",
+                    "resolves_pending_question": "the cited workspace state identifies a pending question this action can address.",
+                    "adds_objective_relevant_evidence": "the action gathers evidence directly tied to the stated objective.",
+                    "corroborates_existing_evidence": "the action tests or independently supports an existing finding.",
+                    "enables_synthesis": "the cited workspace state shows this action completes a prerequisite for synthesis.",
+                    "no_material_benefit": "the cited workspace state shows continuing adds no material evidence or workflow benefit.",
                 },
-                evidence_requirement="The qualitative rationale currently supplies the basis.",
-                debt_id="AOC-SHADOW-001",
+                evidence_requirement="Every benefit finding requires its own workspace-grounded evidence statement.",
             ),
             _category(
-                "$.risk_level",
+                "$.risk_findings[].kind",
                 {
-                    "low": "the agent predicts limited workflow risk.",
-                    "medium": "the agent predicts intermediate workflow risk.",
-                    "high": "the agent predicts substantial workflow risk.",
+                    "external_side_effect": "the action can change state outside the shadow-planner decision artifact.",
+                    "irreversible_action": "the action can create a state change that the workflow cannot automatically undo.",
+                    "sensitive_data_exposure": "the action can disclose protected or sensitive data beyond its current boundary.",
+                    "requires_human_judgment": "the workspace identifies a semantic or governance decision reserved for a human.",
+                    "uncertain_cost": "the workspace lacks enough information to bound the action cost under policy.",
+                    "no_material_risk": "the cited workspace state identifies none of the registered material risks.",
                 },
-                evidence_requirement="The qualitative rationale currently supplies the basis.",
-                debt_id="AOC-SHADOW-002",
+                evidence_requirement="Every risk finding requires its own workspace-grounded evidence statement.",
             ),
         ),
     ),

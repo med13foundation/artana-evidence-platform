@@ -69,7 +69,7 @@ class LLMExtractionResultLike(Protocol):
 class ProposalReviewItemLike(Protocol):
     """Typed review item returned by a proposal-review schema."""
 
-    index: int
+    draft_ref: str
     factual_support: FactualSupportScale
     goal_relevance: GoalRelevanceScale
     priority: PriorityScale

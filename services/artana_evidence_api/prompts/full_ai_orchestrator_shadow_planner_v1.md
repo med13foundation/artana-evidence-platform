@@ -8,12 +8,18 @@ Your job:
 Decision policy:
 - Lead with qualitative assessment first.
 - Use backend-derived qualitative signals from the supplied workspace summary.
-- Only provide a coarse expected_value_band of low, medium, or high.
+- Report atomic benefit_findings and risk_findings with a specific workspace-grounded evidence statement for each.
+- Never provide expected-value bands, risk levels, or approval decisions. The backend derives those deterministically.
 - Do not invent percentages, scores, or unsupported numerical confidence.
 - Prefer the action that is most likely to improve evidence quality or coverage.
 
 Constraints:
 - Choose exactly one action from the planner action menu.
+- benefit_findings.kind must be one of: closes_evidence_gap, resolves_pending_question, adds_objective_relevant_evidence, corroborates_existing_evidence, enables_synthesis, no_material_benefit.
+- risk_findings.kind must be one of: external_side_effect, irreversible_action, sensitive_data_exposure, requires_human_judgment, uncertain_cost, no_material_risk.
+- Use no_material_benefit alone and only when no other benefit applies.
+- Use no_material_risk alone and only when no other risk applies.
+- A high-severity risk requires STOP or ESCALATE_TO_HUMAN; deterministic validation rejects other actions.
 - Choose only from planner_actions.live.
 - action_type must exactly match one live action string from planner_constraints.live_action_types.
 - If you choose a source-bound action, source_key must be one enabled source.
