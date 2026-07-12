@@ -141,7 +141,10 @@ def test_semantic_baseline_cli_restores_existing_outputs_on_second_publish_failu
     assert not tuple(tmp_path.glob(".*.bak"))
 
 
-def test_semantic_baseline_cli_rejects_output_collisions(tmp_path: Path) -> None:
+def test_semantic_baseline_cli_rejects_output_collisions(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     cli = _cli_module()
     output = tmp_path / "baseline.json"
 
@@ -163,9 +166,22 @@ def test_semantic_baseline_cli_rejects_output_collisions(tmp_path: Path) -> None
             str(tmp_path / "baseline.md"),
         ),
     )
+    prediction_collision_exit = cli.main(
+        (
+            *_source_args(),
+            "--json-output",
+            str(PREDICTION_PATH),
+            "--markdown-output",
+            str(tmp_path / "baseline.md"),
+        ),
+    )
 
     assert same_output_exit == 1
     assert fixture_collision_exit == 1
+    assert prediction_collision_exit == 1
+    assert capsys.readouterr().err.count(
+        "Report outputs must not overwrite source inputs.",
+    ) == 2
     assert not output.exists()
 
 

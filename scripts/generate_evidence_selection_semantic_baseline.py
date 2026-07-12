@@ -122,7 +122,7 @@ def _validate_paths(
         for source in (fixture_path, prediction_path)
         for output in (json_output, markdown_output)
     ):
-        msg = "Report outputs must not overwrite the source fixture."
+        msg = "Report outputs must not overwrite source inputs."
         raise ValueError(msg)
     for output in (json_output, markdown_output):
         if output.exists() and output.is_dir():
