@@ -3731,6 +3731,14 @@
             "title": "Artifact Keys",
             "type": "array"
           },
+          "candidate_selector_kind": {
+            "enum": [
+              "agent",
+              "deterministic"
+            ],
+            "title": "Candidate Selector Kind",
+            "type": "string"
+          },
           "deferred_count": {
             "title": "Deferred Count",
             "type": "integer"
@@ -3883,6 +3891,7 @@
           "run",
           "goal",
           "mode",
+          "candidate_selector_kind",
           "source_plan",
           "workspace_snapshot",
           "selected_records",

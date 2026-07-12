@@ -14,6 +14,9 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.semantic.screening import (
+    DeterministicEvidenceSelectionCandidateScreener,
+)
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     execute_evidence_selection_run,
@@ -45,7 +48,11 @@ def _fixture_search(*, space_id: UUID, search_id: UUID) -> ClinVarSourceSearchRe
     source_results = _load_json("source_results.json")
     records_value = source_results.get("records")
     records = (
-        [json_object_or_empty(record) for record in records_value if isinstance(record, dict)]
+        [
+            json_object_or_empty(record)
+            for record in records_value
+            if isinstance(record, dict)
+        ]
         if isinstance(records_value, list)
         else []
     )
@@ -107,6 +114,7 @@ async def test_med13_congenital_heart_disease_fixture_selection() -> None:
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
+        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
         space_id=space_id,
         run=run,
         goal=str(source_results["goal"]),

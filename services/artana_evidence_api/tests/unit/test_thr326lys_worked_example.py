@@ -15,6 +15,9 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.semantic.screening import (
+    DeterministicEvidenceSelectionCandidateScreener,
+)
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     EvidenceSelectionSourcePlanResult,
@@ -133,6 +136,7 @@ async def test_thr326lys_worked_example_stages_variant_review_candidates() -> No
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
+        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
         space_id=space_id,
         run=run,
         goal=_fixture_string(fixture, key="goal"),
@@ -172,12 +176,14 @@ async def test_thr326lys_worked_example_stages_variant_review_candidates() -> No
     assert len(result.selected_records) == 1
     assert result.selected_records[0]["source_key"] == expected["selected_source_key"]
     assert result.selected_records[0]["title"] == expected["selected_record_title"]
-    assert result.selected_records[0]["candidate_context"][
-        "variant_aware_recommended"
-    ] is True
-    assert result.selected_records[0]["candidate_context"]["normalized_record"][
-        "hgvs"
-    ] == "NM_015335.6:c.977C>A"
+    assert (
+        result.selected_records[0]["candidate_context"]["variant_aware_recommended"]
+        is True
+    )
+    assert (
+        result.selected_records[0]["candidate_context"]["normalized_record"]["hgvs"]
+        == "NM_015335.6:c.977C>A"
+    )
     assert len(result.skipped_records) == 1
     assert result.skipped_records[0]["title"] == expected["skipped_record_title"]
     assert "weak goal overlap" in result.skipped_records[0]["reason"]
@@ -191,9 +197,12 @@ async def test_thr326lys_worked_example_stages_variant_review_candidates() -> No
     assert len(result.review_items) == 1
     assert result.review_items[0].review_type == expected["review_type"]
     assert result.review_items[0].status == "pending_review"
-    assert result.review_items[0].metadata["normalized_extraction"]["fields"][
-        "gene_symbol"
-    ] == "MED13"
+    assert (
+        result.review_items[0].metadata["normalized_extraction"]["fields"][
+            "gene_symbol"
+        ]
+        == "MED13"
+    )
 
     deferred_sources = result.source_plan["planner"]["deferred_sources"]
     expected_source_keys = {

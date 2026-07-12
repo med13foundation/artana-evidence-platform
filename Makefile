@@ -77,6 +77,7 @@ ARTANA_EVIDENCE_API_LINT_PATHS := \
  scripts/build_evidence_selection_source_exports.py \
  scripts/build_evidence_selection_expert_study_bundle.py \
  scripts/generate_evidence_selection_semantic_baseline.py \
+ scripts/run_evidence_selection_semantic_agent_evaluation.py \
  scripts/export_artana_evidence_api_openapi.py \
  scripts/validate_artana_evidence_api_service_boundary.py \
  tests/e2e/artana_evidence_api
@@ -308,6 +309,7 @@ artana-evidence-api-type-check: ## Run strict mypy on evidence API package
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_source_exports.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_expert_study_bundle.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/generate_evidence_selection_semantic_baseline.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_evidence_selection_semantic_agent_evaluation.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 
 artana-evidence-api-type-check-strict-imports: ## Explicit strict-import evidence API mypy gate
 	$(call check_venv)
@@ -336,6 +338,11 @@ relation-feasibility-quality-gate: ## Run relation feasibility quality regressio
 evidence-selection-semantic-baseline-check: ## Verify the frozen semantic baseline reports
 	$(call check_venv)
 	PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) scripts/generate_evidence_selection_semantic_baseline.py --fixture scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json --predictions scripts/validation/evidence_selection/fixtures/semantic_relevance_live_baseline_predictions_v1.json --generated-at 2026-07-11T00:00:00Z --json-output docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json --markdown-output docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.md --check
+
+evidence-selection-semantic-agent-evaluation: ## Run PR 2 live-agent semantic quality gate
+	$(call check_venv)
+	@test -n "$(EVALUATED_COMMIT)" || (echo "EVALUATED_COMMIT is required" >&2; exit 2)
+	$(call run_with_postgres_env,PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) scripts/run_evidence_selection_semantic_agent_evaluation.py --fixture scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json --baseline-report docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json --evaluated-commit "$(EVALUATED_COMMIT)" --generated-at "$${GENERATED_AT:-$$(date -u +%Y-%m-%dT%H:%M:%SZ)}" --json-output docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.json --markdown-output docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.md)
 
 artana-evidence-api-static-checks-core: ## Run evidence API static gates except repo-wide size check
 	@$(MAKE) -s artana-evidence-api-lint
