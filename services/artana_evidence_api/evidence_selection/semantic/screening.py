@@ -41,7 +41,7 @@ from artana_evidence_api.evidence_selection_candidates import (
 )
 from artana_evidence_api.types.common import JSONObject
 
-_MAX_AGENT_BATCH_RECORDS = 10
+_MAX_AGENT_BATCH_RECORDS = 3
 _MAX_AGENT_BATCH_CHARACTERS = 80_000
 
 
@@ -147,7 +147,7 @@ class AgentEvidenceSelectionCandidateScreener:
             assessments: dict[int, EvidenceSelectionSemanticCandidateAssessment] = {}
             agent_run_ids: dict[int, str] = {}
             failed_decisions: list[EvidenceSelectionCandidateDecision] = []
-            for record_indices, batch_records in _record_batches(records):
+            for record_indices, batch_records in semantic_record_batches(records):
                 try:
                     semantic_context = EvidenceSelectionSemanticContext(
                         goal=context.goal,
@@ -270,7 +270,7 @@ class AgentEvidenceSelectionCandidateScreener:
         return "agent"
 
 
-def _record_batches(
+def semantic_record_batches(
     records: tuple[JSONObject, ...],
 ) -> tuple[tuple[tuple[int, ...], tuple[JSONObject, ...]], ...]:
     batches: list[tuple[tuple[int, ...], tuple[JSONObject, ...]]] = []
@@ -300,4 +300,5 @@ __all__ = [
     "DeterministicEvidenceSelectionCandidateScreener",
     "EvidenceSelectionCandidateScreener",
     "EvidenceSelectionScreeningContext",
+    "semantic_record_batches",
 ]

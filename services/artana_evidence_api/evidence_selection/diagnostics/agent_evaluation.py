@@ -14,6 +14,9 @@ from artana_evidence_api.evidence_selection.semantic.model import (
     EvidenceSelectionSemanticContext,
     EvidenceSelectionSemanticModelRunner,
 )
+from artana_evidence_api.evidence_selection.semantic.screening import (
+    semantic_record_batches,
+)
 from artana_evidence_api.evidence_selection.semantic.validation import (
     assess_validated_semantic_batch,
 )
@@ -93,66 +96,73 @@ async def evaluate_semantic_selection_agent(
             }
             for record in case.records
         )
-        try:
-            semantic_context = EvidenceSelectionSemanticContext(
-                goal=case.goal,
-                instructions=case.instructions,
-                inclusion_criteria=case.inclusion_criteria,
-                exclusion_criteria=case.exclusion_criteria,
-                population_context=None,
-                evidence_types=(),
-                priority_outcomes=(),
-                source_key="pubmed",
-                search_id=case.source_run_id,
-                records=records,
-                record_indices=tuple(range(len(records))),
-            )
-            validated_batch = await assess_validated_semantic_batch(
-                runner=runner,
-                context=semantic_context,
-            )
-        except Exception as exc:  # noqa: BLE001 - invalid agents are measured.
-            failure_type = type(exc).__name__
-            for record in case.records:
+        for record_indices, batch_records in semantic_record_batches(records):
+            try:
+                semantic_context = EvidenceSelectionSemanticContext(
+                    goal=case.goal,
+                    instructions=case.instructions,
+                    inclusion_criteria=case.inclusion_criteria,
+                    exclusion_criteria=case.exclusion_criteria,
+                    population_context=None,
+                    evidence_types=(),
+                    priority_outcomes=(),
+                    source_key="pubmed",
+                    search_id=case.source_run_id,
+                    records=batch_records,
+                    record_indices=record_indices,
+                )
+                validated_batch = await assess_validated_semantic_batch(
+                    runner=runner,
+                    context=semantic_context,
+                )
+            except Exception as exc:  # noqa: BLE001 - invalid agents are measured.
+                failure_type = type(exc).__name__
+                for index in record_indices:
+                    record = case.records[index]
+                    predictions.append(
+                        EvidenceSelectionSemanticPrediction(
+                            record_id=record.record_id,
+                            decision="invalid_agent",
+                            reason=(
+                                f"Semantic agent failed validation ({failure_type})."
+                            ),
+                        ),
+                    )
+                    record_results.append(
+                        EvidenceSelectionSemanticAgentRecordResult(
+                            case_id=case.case_id,
+                            record_id=record.record_id,
+                            agent_run_id="invalid_agent",
+                            assessment=None,
+                            prediction_decision="invalid_agent",
+                            failure_type=failure_type,
+                        ),
+                    )
+                continue
+            for index in record_indices:
+                record = case.records[index]
+                assessment = validated_batch.assessments[index]
+                prediction_decision = (
+                    "abstain"
+                    if assessment.decision == "review"
+                    else assessment.decision
+                )
                 predictions.append(
                     EvidenceSelectionSemanticPrediction(
                         record_id=record.record_id,
-                        decision="invalid_agent",
-                        reason=f"Semantic agent failed validation ({failure_type}).",
+                        decision=prediction_decision,
+                        reason=assessment.explanation,
                     ),
                 )
                 record_results.append(
                     EvidenceSelectionSemanticAgentRecordResult(
                         case_id=case.case_id,
                         record_id=record.record_id,
-                        agent_run_id="invalid_agent",
-                        assessment=None,
-                        prediction_decision="invalid_agent",
-                        failure_type=failure_type,
+                        agent_run_id=validated_batch.agent_run_id,
+                        assessment=assessment,
+                        prediction_decision=prediction_decision,
                     ),
                 )
-            continue
-        for index, record in enumerate(case.records):
-            assessment = validated_batch.assessments[index]
-            prediction_decision = (
-                "abstain" if assessment.decision == "review" else assessment.decision
-            )
-            predictions.append(
-                EvidenceSelectionSemanticPrediction(
-                    record_id=record.record_id,
-                    decision=prediction_decision,
-                    reason=assessment.explanation,
-                ),
-            )
-            record_results.append(
-                EvidenceSelectionSemanticAgentRecordResult(
-                    case_id=case.case_id,
-                    record_id=record.record_id,
-                    agent_run_id=validated_batch.agent_run_id,
-                    assessment=assessment,
-                    prediction_decision=prediction_decision,
-                ),
-            )
 
     score = score_semantic_diagnostic(fixture, tuple(predictions))
     canary_results = tuple(

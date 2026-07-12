@@ -90,7 +90,11 @@ class _ExpectedLabelSemanticRunner:
         context: EvidenceSelectionSemanticContext,
     ) -> EvidenceSelectionSemanticBatchContract:
         assessments = []
-        for index, record in enumerate(context.records):
+        for index, record in zip(
+            context.record_indices,
+            context.records,
+            strict=True,
+        ):
             title = str(record["title"])
             expected = self._expected_by_title[title]
             assessments.append(
