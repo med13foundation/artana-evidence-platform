@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from artana_evidence_api.types.common import JSONObject, JSONValue
 
 _MAX_EVIDENCE_OPTION_CHARACTERS = 500
+_MAX_EVIDENCE_OPTIONS_PER_RECORD = 64
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+")
 
 
@@ -16,6 +17,7 @@ class SemanticEvidenceOption:
     """One immutable source span that an agent may reference by identity."""
 
     reference: str
+    source_path: str
     text: str
 
 
@@ -26,19 +28,23 @@ def semantic_evidence_options(
 ) -> tuple[SemanticEvidenceOption, ...]:
     """Expose exact bounded spans without asking the model to transcribe them."""
 
-    spans = tuple(
-        span
-        for value in _source_string_values(record)
-        for span in _bounded_source_spans(value)
-        if span
-    )
-    return tuple(
-        SemanticEvidenceOption(
-            reference=f"record:{record_index}:evidence:{option_index}",
-            text=span,
-        )
-        for option_index, span in enumerate(dict.fromkeys(spans))
-    )
+    options: list[SemanticEvidenceOption] = []
+    seen_text: set[str] = set()
+    for source_path, value in _source_string_values(record):
+        for span in _bounded_source_spans(value):
+            if not span or span in seen_text:
+                continue
+            seen_text.add(span)
+            options.append(
+                SemanticEvidenceOption(
+                    reference=(f"record:{record_index}:evidence:{len(options)}"),
+                    source_path=source_path,
+                    text=span,
+                ),
+            )
+            if len(options) >= _MAX_EVIDENCE_OPTIONS_PER_RECORD:
+                return tuple(options)
+    return tuple(options)
 
 
 def resolve_semantic_evidence_references(
@@ -84,15 +90,25 @@ def _bounded_source_spans(value: str) -> tuple[str, ...]:
     return tuple(spans)
 
 
-def _source_string_values(value: JSONValue) -> tuple[str, ...]:
+def _source_string_values(
+    value: JSONValue,
+    *,
+    path: str = "$",
+) -> tuple[tuple[str, str], ...]:
     if isinstance(value, str):
-        return (value,)
+        return ((path, value),)
     if isinstance(value, dict):
         return tuple(
-            text for nested in value.values() for text in _source_string_values(nested)
+            item
+            for key, nested in value.items()
+            for item in _source_string_values(nested, path=f"{path}.{key}")
         )
     if isinstance(value, list | tuple):
-        return tuple(text for nested in value for text in _source_string_values(nested))
+        return tuple(
+            item
+            for index, nested in enumerate(value)
+            for item in _source_string_values(nested, path=f"{path}[{index}]")
+        )
     return ()
 
 

@@ -396,6 +396,7 @@ def test_v2_evidence_run_selects_and_hands_off_saved_source_results() -> None:
     assert response.status_code == 201
     payload = response.json()
     assert payload["run"]["harness_id"] == "evidence-selection"
+    assert payload["candidate_selector_kind"] == "deterministic"
     assert payload["selected_count"] == 1
     assert payload["handoff_count"] == 1
     assert payload["review_gate"]["approved_graph_facts_created"] == 0

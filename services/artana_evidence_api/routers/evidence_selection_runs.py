@@ -412,6 +412,7 @@ class EvidenceSelectionRunResponse(BaseModel):
     instructions: str | None = None
     mode: EvidenceSelectionMode
     planner_mode: EvidenceSelectionSourcePlannerMode = "deterministic"
+    candidate_selector_kind: Literal["agent", "deterministic"]
     source_plan: JSONObject
     workspace_snapshot: JSONObject
     selected_records: list[JSONObject]

@@ -221,12 +221,6 @@ class AgentEvidenceSelectionCandidateScreener:
             )
             selected_count = 0
             for decision in ranked:
-                if decision.decision is EvidenceSelectionDecisionState.DEFERRED:
-                    deferred.append(decision)
-                    continue
-                if decision.decision is EvidenceSelectionDecisionState.SKIPPED:
-                    skipped.append(decision)
-                    continue
                 if decision_is_duplicate(
                     decision=decision,
                     existing_keys=existing_keys,
@@ -242,6 +236,12 @@ class AgentEvidenceSelectionCandidateScreener:
                             ),
                         ),
                     )
+                    continue
+                if decision.decision is EvidenceSelectionDecisionState.DEFERRED:
+                    deferred.append(decision)
+                    continue
+                if decision.decision is EvidenceSelectionDecisionState.SKIPPED:
+                    skipped.append(decision)
                     continue
                 if selected_count >= search_limit:
                     deferred.append(
