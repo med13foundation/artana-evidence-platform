@@ -208,7 +208,16 @@ def candidate_context(*, source_key: str, record: JSONObject) -> JSONObject | No
 
 
 def record_title(*, source_key: str, record: JSONObject, index: int) -> str:
-    for key in ("title", "name", "label", "accession", "uniprot_id"):
+    for key in (
+        "title",
+        "brief_title",
+        "official_title",
+        "name",
+        "gene_symbol",
+        "label",
+        "accession",
+        "uniprot_id",
+    ):
         value = record.get(key)
         if isinstance(value, str) and value.strip():
             return value.strip()

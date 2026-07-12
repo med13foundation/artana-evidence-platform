@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 
@@ -30,7 +31,7 @@ def semantic_evidence_options(
 
     options: list[SemanticEvidenceOption] = []
     seen_text: set[str] = set()
-    for source_path, value in _source_string_values(record):
+    for source_path, value in _source_evidence_values(record):
         for span in _bounded_source_spans(value):
             if not span or span in seen_text:
                 continue
@@ -90,26 +91,39 @@ def _bounded_source_spans(value: str) -> tuple[str, ...]:
     return tuple(spans)
 
 
-def _source_string_values(
+def _source_evidence_values(
     value: JSONValue,
     *,
     path: str = "$",
 ) -> tuple[tuple[str, str], ...]:
-    if isinstance(value, str):
-        return ((path, value),)
+    scalar_text = _scalar_evidence_text(value)
+    if scalar_text is not None:
+        return ((path, scalar_text),)
     if isinstance(value, dict):
         return tuple(
             item
             for key, nested in value.items()
-            for item in _source_string_values(nested, path=f"{path}.{key}")
+            for item in _source_evidence_values(nested, path=f"{path}.{key}")
         )
     if isinstance(value, list | tuple):
         return tuple(
             item
             for index, nested in enumerate(value)
-            for item in _source_string_values(nested, path=f"{path}[{index}]")
+            for item in _source_evidence_values(nested, path=f"{path}[{index}]")
         )
     return ()
+
+
+def _scalar_evidence_text(value: JSONValue) -> str | None:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float) and math.isfinite(value):
+        return repr(value)
+    return None
 
 
 __all__ = [
