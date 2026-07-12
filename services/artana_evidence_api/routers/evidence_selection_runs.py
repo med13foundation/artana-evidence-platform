@@ -27,6 +27,10 @@ from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionSourcePlannerMode,
     queue_evidence_selection_run,
 )
+from artana_evidence_api.evidence_selection_semantic_model import (
+    is_semantic_selection_agent_available,
+    semantic_selection_agent_unavailable_detail,
+)
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
     EvidenceSelectionSourceSearchError,
@@ -247,10 +251,7 @@ class EvidenceSelectionRunRequest(BaseModel):
             msg = "guarded evidence runs require max_handoffs to be at least 1"
             raise ValueError(msg)
         if self.source_searches and not self.live_network_allowed:
-            msg = (
-                "live_network_allowed must be true when source_searches are "
-                "provided."
-            )
+            msg = "live_network_allowed must be true when source_searches are provided."
             raise ValueError(msg)
         if (
             self.planner_mode == "model"
@@ -272,8 +273,7 @@ class EvidenceSelectionRunRequest(BaseModel):
         if self.sources:
             return self
         candidate_sources = [
-            candidate.source_key
-            for candidate in self.candidate_searches
+            candidate.source_key for candidate in self.candidate_searches
         ]
         live_sources = [source.source_key for source in self.source_searches]
         if not candidate_sources and not live_sources:
@@ -366,13 +366,12 @@ class EvidenceSelectionFollowUpRequest(BaseModel):
     @model_validator(mode="after")
     def _default_sources_from_candidates(self) -> EvidenceSelectionFollowUpRequest:
         if self.mode == "guarded" and self.max_handoffs == 0:
-            msg = "guarded evidence-run follow-ups require max_handoffs to be at least 1"
+            msg = (
+                "guarded evidence-run follow-ups require max_handoffs to be at least 1"
+            )
             raise ValueError(msg)
         if self.source_searches and not self.live_network_allowed:
-            msg = (
-                "live_network_allowed must be true when source_searches are "
-                "provided."
-            )
+            msg = "live_network_allowed must be true when source_searches are provided."
             raise ValueError(msg)
         if (
             self.planner_mode == "model"
@@ -394,8 +393,7 @@ class EvidenceSelectionFollowUpRequest(BaseModel):
         if self.sources:
             return self
         candidate_sources = [
-            candidate.source_key
-            for candidate in self.candidate_searches
+            candidate.source_key for candidate in self.candidate_searches
         ]
         live_sources = [source.source_key for source in self.source_searches]
         if not candidate_sources and not live_sources:
@@ -461,7 +459,9 @@ async def create_evidence_selection_run(  # noqa: PLR0913
         mode=request.mode,
         planner_mode=request.planner_mode,
         live_network_allowed=request.live_network_allowed,
-        source_searches=tuple(search.to_runtime() for search in request.source_searches),
+        source_searches=tuple(
+            search.to_runtime() for search in request.source_searches
+        ),
         candidate_searches=tuple(
             candidate.to_runtime() for candidate in request.candidate_searches
         ),
@@ -542,7 +542,9 @@ async def create_evidence_selection_follow_up_run(  # noqa: PLR0913
         mode=request.mode,
         planner_mode=request.planner_mode,
         live_network_allowed=request.live_network_allowed,
-        source_searches=tuple(search.to_runtime() for search in request.source_searches),
+        source_searches=tuple(
+            search.to_runtime() for search in request.source_searches
+        ),
         candidate_searches=tuple(
             candidate.to_runtime() for candidate in request.candidate_searches
         ),
@@ -590,6 +592,14 @@ async def _create_evidence_selection_run_from_parts(  # noqa: PLR0913
     artifact_store: HarnessArtifactStore,
     execution_services: HarnessExecutionServices,
 ) -> EvidenceSelectionRunResponse | JSONResponse:
+    if (
+        execution_services.candidate_screener is None
+        and not is_semantic_selection_agent_available()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=semantic_selection_agent_unavailable_detail(),
+        )
     if (
         planner_mode == "model"
         and not source_searches

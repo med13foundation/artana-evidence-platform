@@ -78,6 +78,20 @@ def test_evidence_selection_semantic_baseline_script_runs_evidence_api_gate() ->
     assert plan.targeted_test_paths == ()
 
 
+def test_evidence_selection_semantic_agent_script_runs_evidence_api_gate() -> None:
+    plan = plan_checks(
+        ["scripts/run_evidence_selection_semantic_agent_evaluation.py"],
+        event_name="pull_request",
+        ref="refs/pull/14/merge",
+    )
+
+    assert plan.evidence_api
+    assert not plan.graph_service
+    assert not plan.repo_control
+    assert not plan.full
+    assert plan.targeted_test_paths == ()
+
+
 def test_evidence_selection_validation_fixtures_run_evidence_api_gate() -> None:
     plan = plan_checks(
         [

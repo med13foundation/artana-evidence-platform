@@ -64,6 +64,18 @@ def test_evidence_api_gates_cover_semantic_baseline_cli_script() -> None:
     )
 
 
+def test_evidence_api_gates_cover_semantic_agent_evaluation_script() -> None:
+    makefile_text = _makefile_text()
+    type_check_body = _target_body(makefile_text, "artana-evidence-api-type-check")
+
+    assert "../scripts/run_evidence_selection_semantic_agent_evaluation.py" in (
+        type_check_body
+    )
+    assert "scripts/run_evidence_selection_semantic_agent_evaluation.py \\" in (
+        makefile_text
+    )
+
+
 def test_evidence_api_gates_cover_shadow_review_packet_cli_script() -> None:
     makefile_text = _makefile_text()
     type_check_body = _target_body(makefile_text, "artana-evidence-api-type-check")

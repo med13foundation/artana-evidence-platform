@@ -119,6 +119,9 @@ if TYPE_CHECKING:
     from .direct_source_search import DirectSourceSearchStore
     from .document_binary_store import HarnessDocumentBinaryStore
     from .document_store import HarnessDocumentStore
+    from .evidence_selection_semantic_screening import (
+        EvidenceSelectionCandidateScreener,
+    )
     from .graph_chat_runtime import HarnessGraphChatRunner
     from .graph_client import GraphTransportBundle
     from .graph_connection_runtime import HarnessGraphConnectionRunner
@@ -182,6 +185,7 @@ class HarnessExecutionServices:
         default_factory=EvidenceSelectionSourceSearchRunner,
     )
     source_planner: EvidenceSelectionSourcePlanner | None = None
+    candidate_screener: EvidenceSelectionCandidateScreener | None = None
     graph_search_runner: HarnessGraphSearchRunner = field(
         default_factory=HarnessGraphSearchRunner,
     )
@@ -267,7 +271,8 @@ def _candidate_searches(value: object) -> tuple[EvidenceSelectionCandidateSearch
                 search_id=_uuid(search_id, field_name="candidate_searches.search_id"),
                 max_records=(
                     max_records
-                    if isinstance(max_records, int) and not isinstance(max_records, bool)
+                    if isinstance(max_records, int)
+                    and not isinstance(max_records, bool)
                     else None
                 ),
             ),
@@ -294,7 +299,8 @@ def _source_searches(value: object) -> tuple[EvidenceSelectionLiveSourceSearch, 
                 query_payload=json_object(query_payload) or {},
                 max_records=(
                     max_records
-                    if isinstance(max_records, int) and not isinstance(max_records, bool)
+                    if isinstance(max_records, int)
+                    and not isinstance(max_records, bool)
                     else None
                 ),
                 timeout_seconds=(
@@ -581,6 +587,7 @@ class EvidenceSelectionHarness(
             source_search_handoff_store=self._services.source_search_handoff_store,
             source_search_runner=self._services.source_search_runner,
             source_planner=self._services.source_planner,
+            candidate_screener=self._services.candidate_screener,
         )
 
 

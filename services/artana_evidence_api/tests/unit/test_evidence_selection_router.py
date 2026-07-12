@@ -41,6 +41,9 @@ from artana_evidence_api.evidence_selection_runtime import (
     build_source_plan,
     execute_evidence_selection_run,
 )
+from artana_evidence_api.evidence_selection_semantic_screening import (
+    DeterministicEvidenceSelectionCandidateScreener,
+)
 from artana_evidence_api.evidence_selection_source_search import (
     EvidenceSelectionLiveSourceSearch,
     EvidenceSelectionSourceSearchRunner,
@@ -114,6 +117,7 @@ async def _execute_test_harness_run(
                     ),
                 )
     return await execute_evidence_selection_run(
+        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
         space_id=UUID(run.space_id),
         run=run,
         goal=str(payload.get("goal", "")),
@@ -294,6 +298,7 @@ def _build_client(
     source_planner: EvidenceSelectionSourcePlanner | None = None,
     source_search_runner: EvidenceSelectionSourceSearchRunner | None = None,
     use_default_source_planner_override: bool = True,
+    use_default_candidate_screener_override: bool = True,
 ) -> tuple[
     TestClient,
     InMemoryDirectSourceSearchStore,
@@ -324,12 +329,18 @@ def _build_client(
         pubmed_discovery_service_factory=lambda: nullcontext(object()),
         direct_source_search_store=direct_search_store,
         source_search_handoff_store=handoff_store,
-        source_search_runner=source_search_runner or EvidenceSelectionSourceSearchRunner(),
+        source_search_runner=source_search_runner
+        or EvidenceSelectionSourceSearchRunner(),
         source_planner=(
             source_planner
             if source_planner is not None
             else _default_test_source_planner()
             if use_default_source_planner_override
+            else None
+        ),
+        candidate_screener=(
+            DeterministicEvidenceSelectionCandidateScreener()
+            if use_default_candidate_screener_override
             else None
         ),
         execution_override=_execute_test_harness_run,
@@ -443,6 +454,41 @@ def test_v2_evidence_run_rejects_goal_only_when_model_planner_unavailable(
 
     assert response.status_code == 503
     assert "Model source planning is unavailable" in response.json()["detail"]
+
+
+def test_v2_evidence_run_preflight_rejects_unavailable_semantic_agent(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "artana_evidence_api.routers.evidence_selection_runs."
+        "is_semantic_selection_agent_available",
+        lambda: False,
+    )
+    client, search_store, _run_registry = _build_client(
+        use_default_candidate_screener_override=False,
+    )
+    space_id = uuid4()
+    search_id = uuid4()
+    search_store.save(
+        _clinvar_search(space_id=space_id, search_id=search_id),
+        created_by=UUID("11111111-1111-1111-1111-111111111111"),
+    )
+
+    response = client.post(
+        f"/v2/spaces/{space_id}/evidence-runs",
+        json={
+            "goal": "Find MED13 evidence.",
+            "candidate_searches": [
+                {"source_key": "clinvar", "search_id": str(search_id)},
+            ],
+        },
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"].endswith(
+        "Deterministic semantic fallback is disabled.",
+    )
 
 
 def test_v2_evidence_run_rejects_goal_only_model_without_live_network_opt_in() -> None:
@@ -619,9 +665,8 @@ def test_v2_evidence_run_rejects_no_source_work() -> None:
     )
 
     assert response.status_code == 422
-    assert (
-        "Provide source_searches or candidate_searches"
-        in json.dumps(response.json())
+    assert "Provide source_searches or candidate_searches" in json.dumps(
+        response.json()
     )
 
 
@@ -727,7 +772,9 @@ def test_v2_evidence_run_rejects_ambiguous_live_search_limit() -> None:
     )
 
     assert response.status_code == 422
-    assert "Provide max_records or query_payload.max_results" in json.dumps(response.json())
+    assert "Provide max_records or query_payload.max_results" in json.dumps(
+        response.json()
+    )
 
 
 def test_v2_evidence_run_rejects_ambiguous_pubmed_search_limit() -> None:

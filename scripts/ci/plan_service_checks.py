@@ -43,6 +43,7 @@ EVIDENCE_API_FILES = (
     "scripts/build_evidence_selection_source_exports.py",
     "scripts/build_evidence_selection_expert_study_bundle.py",
     "scripts/generate_evidence_selection_semantic_baseline.py",
+    "scripts/run_evidence_selection_semantic_agent_evaluation.py",
     "scripts/export_artana_evidence_api_openapi.py",
     "scripts/run_evidence_selection_expert_study_gate.py",
     "scripts/run_evidence_selection_review_calibration_gate.py",

@@ -23,7 +23,6 @@ from artana_evidence_api.evidence_selection_candidate_handoffs import (
 from artana_evidence_api.evidence_selection_candidate_screening import (
     apply_handoff_budget,
     defer_selected_for_shadow_mode,
-    screen_candidate_searches,
 )
 from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionCandidateSearch,
@@ -39,6 +38,11 @@ from artana_evidence_api.evidence_selection_result_serialization import (
 )
 from artana_evidence_api.evidence_selection_review_staging import (
     stage_selected_records_for_review,
+)
+from artana_evidence_api.evidence_selection_semantic_screening import (
+    AgentEvidenceSelectionCandidateScreener,
+    EvidenceSelectionCandidateScreener,
+    EvidenceSelectionScreeningContext,
 )
 from artana_evidence_api.evidence_selection_source_plan_artifact import (
     build_source_plan,
@@ -331,6 +335,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
     source_search_handoff_store: SourceSearchHandoffStore | None = None,
     source_search_runner: EvidenceSelectionSourceSearchRunner | None = None,
     source_planner: EvidenceSelectionSourcePlanner | None = None,
+    candidate_screener: EvidenceSelectionCandidateScreener | None = None,
 ) -> EvidenceSelectionExecutionResult:
     """Screen durable source-search runs and hand off relevant records."""
 
@@ -437,16 +442,22 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         completed_steps=1,
         total_steps=5,
     )
-    screening = screen_candidate_searches(
-        space_id=space_id,
-        goal=goal,
-        instructions=instructions,
-        inclusion_criteria=inclusion_criteria,
-        exclusion_criteria=exclusion_criteria,
-        candidate_searches=candidate_searches,
-        max_records_per_search=max_records_per_search,
-        direct_source_search_store=direct_source_search_store,
-        document_store=document_store,
+    screener = candidate_screener or AgentEvidenceSelectionCandidateScreener()
+    screening = await screener.screen(
+        context=EvidenceSelectionScreeningContext(
+            space_id=space_id,
+            goal=goal,
+            instructions=instructions,
+            inclusion_criteria=inclusion_criteria,
+            exclusion_criteria=exclusion_criteria,
+            population_context=population_context,
+            evidence_types=evidence_types,
+            priority_outcomes=priority_outcomes,
+            candidate_searches=candidate_searches,
+            max_records_per_search=max_records_per_search,
+            direct_source_search_store=direct_source_search_store,
+            document_store=document_store,
+        ),
     )
     selected = list(screening.selected_records)
     skipped = list(screening.skipped_records)
@@ -511,6 +522,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         errors.extend(staging_errors)
 
     decisions_payload: JSONObject = {
+        "candidate_selector_kind": screener.selector_kind(),
         "selected_records": selected_payload,
         "skipped_records": skipped_payload,
         "deferred_records": deferred_payload,
@@ -543,6 +555,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         "instructions": instructions,
         "mode": mode,
         "planner_mode": planner_mode,
+        "candidate_selector_kind": screener.selector_kind(),
         "source_plan": source_plan,
         "workspace_snapshot": workspace_snapshot,
         "selected_records": selected_payload,
@@ -586,6 +599,7 @@ async def execute_evidence_selection_run(  # noqa: PLR0913, PLR0915
         ),
         workspace_patch={
             "evidence_selection_mode": mode,
+            "candidate_selector_kind": screener.selector_kind(),
             "selected_record_count": len(selected),
             "source_handoff_count": len(handoffs),
             "proposal_count": len(proposals),

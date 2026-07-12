@@ -36,6 +36,9 @@ from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     queue_evidence_selection_run,
 )
+from artana_evidence_api.evidence_selection_semantic_screening import (
+    DeterministicEvidenceSelectionCandidateScreener,
+)
 from artana_evidence_api.graph_chat_runtime import (
     GraphChatResult,
     HarnessGraphChatRequest,
@@ -1067,6 +1070,7 @@ def test_run_worker_tick_executes_queued_evidence_selection_runs() -> None:
         pubmed_discovery_service_factory=_fake_pubmed_discovery_context,
         direct_source_search_store=direct_search_store,
         source_search_handoff_store=handoff_store,
+        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
     )
 
     result = asyncio.run(

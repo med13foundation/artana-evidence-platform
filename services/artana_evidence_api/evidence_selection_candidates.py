@@ -40,6 +40,8 @@ class EvidenceSelectionDecisionDeferralReason(StrEnum):
     PER_SEARCH_BUDGET = "per_search_budget"
     RUN_HANDOFF_BUDGET = "run_handoff_budget"
     SHADOW_MODE = "shadow_mode"
+    SEMANTIC_REVIEW = "semantic_review"
+    SEMANTIC_AGENT_FAILURE = "semantic_agent_failure"
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +75,7 @@ class EvidenceSelectionCandidateDecision:
     deferral_reason: EvidenceSelectionDecisionDeferralReason | None = None
     shadow_decision: EvidenceSelectionDecisionState | None = None
     would_have_been_selected: bool = False
+    semantic_agent_run_id: str | None = None
 
     def with_decision(
         self,
@@ -114,6 +117,7 @@ class EvidenceSelectionCandidateDecision:
             deferral_reason=deferral_reason,
             shadow_decision=shadow_decision,
             would_have_been_selected=would_have_been_selected,
+            semantic_agent_run_id=self.semantic_agent_run_id,
         )
 
     def to_artifact_payload(self) -> JSONObject:
@@ -147,6 +151,8 @@ class EvidenceSelectionCandidateDecision:
             payload["shadow_decision"] = self.shadow_decision.value
         if self.would_have_been_selected:
             payload["would_have_been_selected"] = self.would_have_been_selected
+        if self.semantic_agent_run_id is not None:
+            payload["semantic_agent_run_id"] = self.semantic_agent_run_id
         return payload
 
 
@@ -171,7 +177,9 @@ def record_dedup_key(
     return f"{source_key}:{search_id}:{record_index}"
 
 
-def score_from_decision(decision: JSONObject | EvidenceSelectionCandidateDecision) -> float:
+def score_from_decision(
+    decision: JSONObject | EvidenceSelectionCandidateDecision,
+) -> float:
     """Return a numeric selection score from one serialized decision."""
 
     if isinstance(decision, EvidenceSelectionCandidateDecision):
@@ -214,7 +222,9 @@ def required_decision_int(decision: JSONObject, key: str) -> int:
     raise ValueError(msg)
 
 
-def relevance_label_for_selected_score(score: float) -> EvidenceSelectionDecisionRelevance:
+def relevance_label_for_selected_score(
+    score: float,
+) -> EvidenceSelectionDecisionRelevance:
     """Return the qualitative label for a selected record score."""
 
     if score >= HIGH_PRIORITY_SCORE_THRESHOLD:
