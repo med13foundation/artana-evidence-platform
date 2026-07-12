@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import math
 import re
 from collections.abc import Mapping
+from decimal import Decimal, InvalidOperation
 from typing import Literal, cast
 
 from artana_evidence_api.agent_contracts import (
@@ -22,8 +22,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 LLMLiteralValue = str | bool | None
 LLMObservationValue = LLMLiteralValue | SourceMeasurementNumber
 _SOURCE_NUMBER_PATTERN = re.compile(
-    r"(?<![\w.])[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?(?!\w)",
+    r"(?<![\w.])[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?(?!\d)",
 )
+_DIMENSIONLESS_UNITS = frozenset({"dimensionless", "ratio", "unitless"})
+_UNIT_ALIASES: Mapping[str, tuple[str, ...]] = {
+    "percent": ("percent", "%"),
+    "percentage": ("percentage", "percent", "%"),
+}
 
 
 class LLMIdentifierField(BaseModel):
@@ -60,12 +65,63 @@ def _fields_to_json_object(
     return payload
 
 
-def _text_contains_measurement(*, text: str, value: float) -> bool:
+def _matching_measurements(*, text: str, value: float) -> tuple[re.Match[str], ...]:
+    expected = Decimal(str(value))
+    matches: list[re.Match[str]] = []
     for match in _SOURCE_NUMBER_PATTERN.finditer(text):
-        candidate = float(match.group(0).replace(",", ""))
-        if math.isclose(candidate, value, rel_tol=1e-12, abs_tol=1e-12):
+        try:
+            candidate = Decimal(match.group(0).replace(",", ""))
+        except InvalidOperation:
+            continue
+        if candidate == expected:
+            matches.append(match)
+    return tuple(matches)
+
+
+def _measurement_has_literal_unit(
+    *,
+    text: str,
+    match: re.Match[str],
+    unit: str,
+) -> bool:
+    normalized_unit = unit.strip().casefold()
+    if normalized_unit == "":
+        return False
+    if normalized_unit in _DIMENSIONLESS_UNITS:
+        return True
+    aliases = _UNIT_ALIASES.get(normalized_unit, (unit.strip(),))
+    prefix = text[: match.start()]
+    suffix = text[match.end() :]
+    for alias in aliases:
+        escaped_alias = re.escape(alias)
+        if re.search(
+            rf"(?<![\w/]){escaped_alias}\s*$",
+            prefix,
+            re.IGNORECASE,
+        ):
+            return True
+        if re.match(
+            rf"\s*{escaped_alias}(?![\w/])",
+            suffix,
+            re.IGNORECASE,
+        ):
             return True
     return False
+
+
+def _text_contains_measurement(
+    *,
+    text: str,
+    value: float,
+    unit: str | None = None,
+) -> bool:
+    matches = _matching_measurements(text=text, value=value)
+    if unit is None:
+        return bool(matches)
+    return any(
+        _measurement_has_literal_unit(text=text, match=match, unit=unit)
+        for match in matches
+    )
 
 
 class ExtractedObservation(BaseModel):
@@ -205,14 +261,22 @@ class LLMExtractedObservation(BaseModel):
             if not _text_contains_measurement(
                 text=measurement.literal_span,
                 value=measurement.value,
+                unit=measurement.unit,
             ):
-                msg = "Numeric observation value is absent from its literal_span."
+                msg = (
+                    "Numeric observation value and unit are absent from its "
+                    "literal_span."
+                )
                 raise ValueError(msg)
             if not _text_contains_measurement(
                 text=source_text,
                 value=measurement.value,
+                unit=measurement.unit,
             ):
-                msg = "Numeric observation value is absent from its source locator."
+                msg = (
+                    "Numeric observation value and unit are absent from its "
+                    "source locator."
+                )
                 raise ValueError(msg)
             if measurement.field_name != self.field_name:
                 msg = "Numeric observation field_name does not match its envelope."
@@ -220,7 +284,7 @@ class LLMExtractedObservation(BaseModel):
             if measurement.extraction_method != "literal_copy":
                 msg = "Numeric observation extraction_method must be literal_copy."
                 raise ValueError(msg)
-            if self.unit is not None and measurement.unit != self.unit:
+            if measurement.unit != self.unit:
                 msg = "Numeric observation unit does not match its envelope."
                 raise ValueError(msg)
             return ExtractedObservation(

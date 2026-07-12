@@ -283,6 +283,142 @@ def test_llm_extraction_accepts_leading_dot_source_measurement() -> None:
     assert extracted.observations[0].value == 0.03
 
 
+@pytest.mark.parametrize(
+    ("literal_span", "value", "unit"),
+    [
+        ("5mg", 5.0, "mg"),
+        ("12kb", 12.0, "kb"),
+        ("3x", 3.0, "x"),
+        ("25%", 25.0, "percent"),
+    ],
+)
+def test_llm_extraction_accepts_literal_unit_adjacent_measurement(
+    literal_span: str,
+    value: float,
+    unit: str,
+) -> None:
+    source_hash = "source-hash-unit-adjacent"
+    contract = LLMExtractionContract(
+        rationale="Copied a measurement with its literal unit.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-unit-adjacent",
+        observations=[
+            LLMExtractedObservation(
+                field_name="source_value",
+                variable_id="SOURCE_VALUE",
+                value=SourceMeasurementNumber(
+                    value=value,
+                    source_locator="raw_record.text",
+                    literal_span=literal_span,
+                    field_name="source_value",
+                    unit=unit,
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit=unit,
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash=source_hash,
+        source_values_by_locator={
+            "raw_record.text": f"The reported measurement was {literal_span}."
+        },
+    )
+
+    assert extracted.observations[0].value == value
+    assert extracted.observations[0].unit == unit
+
+
+def test_llm_extraction_rejects_nearby_large_source_number() -> None:
+    source_hash = "source-hash-large-number"
+    contract = LLMExtractionContract(
+        rationale="Returned a nearby large number.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-large-number",
+        observations=[
+            LLMExtractedObservation(
+                field_name="coordinate",
+                variable_id="GENOMIC_COORDINATE",
+                value=SourceMeasurementNumber(
+                    value=1_000_000_000_001.0,
+                    source_locator="raw_record.text",
+                    literal_span="1000000000000",
+                    field_name="coordinate",
+                    unit="unitless",
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit="unitless",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="value and unit"):
+        contract.to_extraction_contract(
+            expected_source_hash=source_hash,
+            source_values_by_locator={
+                "raw_record.text": "Coordinate 1000000000000 was reported."
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    ("literal_span", "source_text", "measurement_unit", "outer_unit", "match"),
+    [
+        ("5", "Dose was 5.", "mg", "mg", "value and unit"),
+        ("5kg", "Dose was 5kg.", "mg", "mg", "value and unit"),
+        ("somemg 5", "Dose was somemg 5.", "mg", "mg", "value and unit"),
+        ("5mg", "Dose was 5mg.", "mg", None, "does not match"),
+    ],
+)
+def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
+    literal_span: str,
+    source_text: str,
+    measurement_unit: str,
+    outer_unit: str | None,
+    match: str,
+) -> None:
+    source_hash = "source-hash-unit-validation"
+    contract = LLMExtractionContract(
+        rationale="Returned a measurement with unsupported unit provenance.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-unit-validation",
+        observations=[
+            LLMExtractedObservation(
+                field_name="dose",
+                variable_id="DOSE",
+                value=SourceMeasurementNumber(
+                    value=5.0,
+                    source_locator="raw_record.text",
+                    literal_span=literal_span,
+                    field_name="dose",
+                    unit=measurement_unit,
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit=outer_unit,
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match=match):
+        contract.to_extraction_contract(
+            expected_source_hash=source_hash,
+            source_values_by_locator={"raw_record.text": source_text},
+        )
+
+
 @pytest.mark.parametrize("value", ["0.125", ".125", "stage 2"])
 def test_llm_extraction_rejects_numeric_observation_text(value: str) -> None:
     contract = LLMExtractionContract(
@@ -671,7 +807,9 @@ def test_variant_prompt_exposes_hash_and_valid_scalar_locators() -> None:
     locators = payload["allowed_source_locators"]
     assert isinstance(locators, list)
     assert "raw_record.text" in locators
-    assert "genomics_signals.variant_aware_recommended" in locators
+    assert all(locator.startswith("raw_record.") for locator in locators)
+    assert "genomics_signals.variant_aware_recommended" not in locators
+    assert not any("source_span" in locator for locator in locators)
 
 
 def test_document_supports_variant_aware_extraction_detects_genomics_signals() -> None:

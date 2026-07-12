@@ -146,7 +146,7 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v2"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v3"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
 _VARIANT_EXTRACTION_SYSTEM_PROMPT = """
 You are the Artana Variant-Aware Extraction Agent.
@@ -179,9 +179,12 @@ Useful output conventions:
 - Metadata and rejected payload values must be strings, booleans, or null. Keep
   source numbers there as exact literal strings.
 - A numeric observation value must use the source_measurement envelope. Copy
-  source_hash from the request context; copy literal_span exactly from the
-  supplied source; use one allowed_source_locator; set extraction_method to
-  "literal_copy"; and set field_name and unit.
+  source_hash from the request context; copy literal_span exactly from the raw
+  source, including the number and its adjacent unit when the measurement is not
+  dimensionless; use one allowed_source_locator; set extraction_method to
+  "literal_copy"; and set field_name and the source-supported unit. Structured
+  genomics signals may guide categorical extraction but are not measurement
+  provenance.
 - Any observation text containing a numeric literal also requires that envelope;
   do not quote a number to bypass source-measurement provenance.
 - Do not return a run confidence score. Return the qualitative FactAssessment
@@ -774,7 +777,7 @@ def _variant_source_material(
     }
     rendered = json.dumps(source_payload, sort_keys=True, separators=(",", ":"))
     source_hash = stable_sha256_digest(rendered, length=64)
-    source_values = _json_scalar_values(source_payload)
+    source_values = _json_scalar_values(raw_record, path="raw_record")
     return source_payload, rendered, source_hash, source_values
 
 
