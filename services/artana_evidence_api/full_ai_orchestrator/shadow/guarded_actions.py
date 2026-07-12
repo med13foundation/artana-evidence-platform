@@ -33,7 +33,19 @@ def _guarded_recommendation_decision_payload(
         return None, None
     if recommendation_payload.get("validation_error") is not None:
         return None, None
-    if not isinstance(rationale, str) or rationale.strip() == "":
+    action_type = decision.get("action_type")
+    approval_blocks_action = action_type not in {
+        ResearchOrchestratorActionType.STOP.value,
+        ResearchOrchestratorActionType.ESCALATE_TO_HUMAN.value,
+    } and (
+        decision.get("requires_approval") is not False
+        or decision.get("risk_level") != "low"
+    )
+    if (
+        not isinstance(rationale, str)
+        or rationale.strip() == ""
+        or approval_blocks_action
+    ):
         return None, None
     return decision, rationale
 

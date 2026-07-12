@@ -1,5 +1,5 @@
 {
-  "active_debt_count": 18,
+  "active_debt_count": 15,
   "debt_manifest": [
     {
       "consumers": [
@@ -16,24 +16,6 @@
       "removal_gate": "Use an opaque deterministic record reference with explicit locator provenance instead of an agent-authored number.",
       "schema_ids": [
         "evidence_selection.semantic.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "proposal review mapping",
-        "proposal priority"
-      ],
-      "current_influence": "The numeric locator chooses which draft receives the agent-authored review categories.",
-      "debt_id": "AON-PROP-001",
-      "field_path": "$.reviews[].index",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 4 proposal-review contract migration",
-      "producer": "proposal-review agent",
-      "quarantine_rule": "Not quarantined; missing indexes fall back, but duplicate or permuted valid indexes can misassociate reviews.",
-      "quarantined": false,
-      "removal_gate": "Use opaque draft references and require exact one-to-one validated coverage before applying reviews.",
-      "schema_ids": [
-        "document_extraction.proposal_review.v1"
       ]
     },
     {
@@ -275,48 +257,12 @@
       "schema_ids": [
         "variant_extraction.agent.v1"
       ]
-    },
-    {
-      "consumers": [
-        "shadow decision artifact",
-        "guarded planner policy"
-      ],
-      "current_influence": "The model authors a composite low/medium/high expected-value judgment.",
-      "debt_id": "AOC-SHADOW-001",
-      "field_path": "$.expected_value_band",
-      "kind": "categorical_ordinal",
-      "owner_pr": "PR 4 shadow-study contract migration",
-      "producer": "full-AI shadow-planner agent",
-      "quarantine_rule": "Not quarantined from decision artifacts.",
-      "quarantined": false,
-      "removal_gate": "Replace the band with atomic observable findings and derive value posture deterministically.",
-      "schema_ids": [
-        "full_ai.shadow_planner.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "shadow decision artifact",
-        "guarded planner policy"
-      ],
-      "current_influence": "The model authors a composite low/medium/high risk judgment.",
-      "debt_id": "AOC-SHADOW-002",
-      "field_path": "$.risk_level",
-      "kind": "categorical_ordinal",
-      "owner_pr": "PR 4 shadow-study contract migration",
-      "producer": "full-AI shadow-planner agent",
-      "quarantine_rule": "Not quarantined from decision artifacts.",
-      "quarantined": false,
-      "removal_gate": "Replace the band with atomic risk findings and deterministic veto policy.",
-      "schema_ids": [
-        "full_ai.shadow_planner.v1"
-      ]
     }
   ],
-  "debt_numeric_field_count": 16,
+  "debt_numeric_field_count": 15,
   "origin_governed_numeric_field_count": 0,
   "registered_category_field_count": 67,
-  "registered_numeric_field_count": 16,
+  "registered_numeric_field_count": 15,
   "registered_schema_count": 15,
   "registered_schemas": [
     {
@@ -356,13 +302,7 @@
           ]
         }
       ],
-      "numeric_fields": [
-        {
-          "debt_id": "AON-PROP-001",
-          "origin": null,
-          "path": "$.reviews[].index"
-        }
-      ],
+      "numeric_fields": [],
       "producer_paths": [
         "document_extraction.py"
       ],
@@ -373,7 +313,7 @@
       "schema_names": [
         "ProposalReviewResult"
       ],
-      "shape_hash": "2e7f22a9f032f64fb1e9dc0135fa812478246ca08a4ede16f211cc36c8e66d13"
+      "shape_hash": "172c1f2ab7a2a8d6f3b47dfab1fe2a50a185aac1460b30adb27a4fea22058247"
     },
     {
       "categorical_fields": [
@@ -597,22 +537,28 @@
         },
         {
           "allow_schema_subset": false,
-          "debt_id": "AOC-SHADOW-001",
-          "path": "$.expected_value_band",
+          "debt_id": null,
+          "path": "$.benefit_findings[].kind",
           "values": [
-            "low",
-            "medium",
-            "high"
+            "closes_evidence_gap",
+            "resolves_pending_question",
+            "adds_objective_relevant_evidence",
+            "corroborates_existing_evidence",
+            "enables_synthesis",
+            "no_material_benefit"
           ]
         },
         {
           "allow_schema_subset": false,
-          "debt_id": "AOC-SHADOW-002",
-          "path": "$.risk_level",
+          "debt_id": null,
+          "path": "$.risk_findings[].kind",
           "values": [
-            "low",
-            "medium",
-            "high"
+            "external_side_effect",
+            "irreversible_action",
+            "sensitive_data_exposure",
+            "requires_human_judgment",
+            "uncertain_cost",
+            "no_material_risk"
           ]
         }
       ],
@@ -628,7 +574,7 @@
         "ShadowPlannerLiveRecommendationOutput",
         "ShadowPlannerRecommendationOutput"
       ],
-      "shape_hash": "b913b878f814cc44765d65daaf58c33132ddd463fe8f28b0d4f87a291d216ffc"
+      "shape_hash": "fd01368f0ece1492b7ab09d5db7188e82268c319729e83473339c576a98256dc"
     },
     {
       "categorical_fields": [
@@ -1378,10 +1324,8 @@
     }
   ],
   "schema_version": "agent_output_registry_report.v1",
-  "unquarantined_debt_count": 17,
+  "unquarantined_debt_count": 14,
   "unquarantined_debt_ids": [
-    "AOC-SHADOW-001",
-    "AOC-SHADOW-002",
     "AON-GCON-001",
     "AON-GCON-002",
     "AON-GCON-003",
@@ -1389,7 +1333,6 @@
     "AON-GSEA-001",
     "AON-GSEA-002",
     "AON-GSEA-003",
-    "AON-PROP-001",
     "AON-VEXT-001",
     "AON-VEXT-002",
     "AON-VEXT-003",

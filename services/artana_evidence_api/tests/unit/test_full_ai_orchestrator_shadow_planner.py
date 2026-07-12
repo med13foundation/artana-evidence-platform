@@ -28,6 +28,30 @@ from artana_evidence_api.full_ai_orchestrator_shadow_planner import (
     validate_shadow_planner_output,
 )
 from artana_evidence_api.llm_costs import calculate_openai_usage_cost_usd
+from pydantic import ValidationError
+
+
+def _shadow_output(**overrides: object) -> ShadowPlannerRecommendationOutput:
+    payload: dict[str, object] = {
+        "action_type": ResearchOrchestratorActionType.QUERY_PUBMED,
+        "source_key": "pubmed",
+        "evidence_basis": "The workspace identifies a grounded next action.",
+        "qualitative_rationale": "Take the next grounded action described by the workspace.",
+        "benefit_findings": [
+            {
+                "kind": "adds_objective_relevant_evidence",
+                "evidence": "The action adds evidence tied to the active objective.",
+            },
+        ],
+        "risk_findings": [
+            {
+                "kind": "no_material_risk",
+                "evidence": "The recommendation is shadow-only and has no side effect.",
+            },
+        ],
+    }
+    payload.update(overrides)
+    return ShadowPlannerRecommendationOutput.model_validate(payload)
 
 
 def _install_shadow_planner_test_doubles(
@@ -127,6 +151,62 @@ def test_shadow_planner_prompt_includes_source_selection_guidance() -> None:
     assert "chase_decision_posture" in prompt
     assert "`continue_objective_relevant`" in prompt
     assert "synthesis_readiness.summary" in prompt
+    assert "Never provide expected-value bands, risk levels, or approval decisions" in prompt
+    assert "benefit_findings.kind" in prompt
+    assert "risk_findings.kind" in prompt
+
+
+def test_shadow_planner_schema_rejects_legacy_composite_judgments() -> None:
+    with pytest.raises(ValidationError, match="expected_value_band"):
+        _shadow_output(expected_value_band="high")
+
+
+def test_shadow_planner_schema_rejects_contradictory_atomic_findings() -> None:
+    with pytest.raises(ValidationError, match="no_material_benefit"):
+        _shadow_output(
+            benefit_findings=[
+                {
+                    "kind": "no_material_benefit",
+                    "evidence": "No material benefit is visible.",
+                },
+                {
+                    "kind": "closes_evidence_gap",
+                    "evidence": "The action closes a named evidence gap.",
+                },
+            ],
+        )
+
+
+def test_shadow_planner_schema_rejects_whitespace_only_finding_evidence() -> None:
+    with pytest.raises(ValidationError, match="evidence"):
+        _shadow_output(
+            risk_findings=[
+                {
+                    "kind": "requires_human_judgment",
+                    "evidence": "   ",
+                },
+            ],
+        )
+
+
+def test_shadow_planner_validation_vetoes_unescalated_high_risk_action() -> None:
+    output = _shadow_output(
+        risk_findings=[
+            {
+                "kind": "sensitive_data_exposure",
+                "evidence": "The proposed action would cross the sensitive-data boundary.",
+            },
+        ],
+    )
+
+    error = validate_shadow_planner_output(
+        output=output,
+        workspace_summary={"checkpoint_key": "before_first_action"},
+        sources={"pubmed": True},
+        action_registry=orchestrator_action_registry(),
+    )
+
+    assert error == "high_risk_action_requires_escalation"
 
 
 def test_workspace_summary_is_checkpoint_scoped_and_size_bounded() -> None:
@@ -511,43 +591,43 @@ def test_shadow_planner_output_rejects_numeric_budget_metadata() -> None:
 
 
 def test_validate_shadow_planner_output_rejects_non_live_or_invalid_outputs() -> None:
-    reserved_output = ShadowPlannerRecommendationOutput(
+    reserved_output = _shadow_output(
         action_type=ResearchOrchestratorActionType.RUN_GRAPH_CONNECTION,
         source_key=None,
         evidence_basis="Need a graph step.",
         qualitative_rationale="The evidence looks ready for a graph connection step.",
     )
-    disabled_source_output = ShadowPlannerRecommendationOutput(
+    disabled_source_output = _shadow_output(
         action_type=ResearchOrchestratorActionType.RUN_STRUCTURED_ENRICHMENT,
         source_key="clinvar",
         evidence_basis="A structured follow up is available.",
         qualitative_rationale="The run should broaden evidence through a structured source.",
     )
-    numeric_style_output = ShadowPlannerRecommendationOutput(
+    numeric_style_output = _shadow_output(
         action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
         source_key="pubmed",
         evidence_basis="Start with literature.",
         qualitative_rationale="PubMed is the top choice with 90 percent confidence.",
     )
-    missing_source_output = ShadowPlannerRecommendationOutput(
+    missing_source_output = _shadow_output(
         action_type=ResearchOrchestratorActionType.RUN_STRUCTURED_ENRICHMENT,
         source_key=None,
         evidence_basis="A structured follow up is available.",
         qualitative_rationale="The run should broaden evidence through a structured source.",
     )
-    invalid_control_source_output = ShadowPlannerRecommendationOutput(
+    invalid_control_source_output = _shadow_output(
         action_type=ResearchOrchestratorActionType.GENERATE_BRIEF,
         source_key="pubmed",
         evidence_basis="The evidence is ready for synthesis.",
         qualitative_rationale="The current run has enough grounded evidence to produce the brief.",
     )
-    stop_without_reason_output = ShadowPlannerRecommendationOutput(
+    stop_without_reason_output = _shadow_output(
         action_type=ResearchOrchestratorActionType.STOP,
         source_key=None,
         evidence_basis="No grounded action remains.",
         qualitative_rationale="The available live actions would not add meaningful evidence right now.",
     )
-    count_based_output = ShadowPlannerRecommendationOutput(
+    count_based_output = _shadow_output(
         action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
         source_key="pubmed",
         evidence_basis="PubMed has not been queried yet.",
@@ -608,7 +688,7 @@ def test_validate_shadow_planner_output_rejects_non_live_or_invalid_outputs() ->
     )
     assert (
         validate_shadow_planner_output(
-            output=ShadowPlannerRecommendationOutput(
+            output=_shadow_output(
                 action_type=ResearchOrchestratorActionType.RUN_STRUCTURED_ENRICHMENT,
                 source_key="clinvar",
                 evidence_basis="ClinVar is the strongest structured follow-up source.",
@@ -630,7 +710,7 @@ def test_validate_shadow_planner_output_rejects_non_live_or_invalid_outputs() ->
     )
     assert (
         validate_shadow_planner_output(
-            output=ShadowPlannerRecommendationOutput(
+            output=_shadow_output(
                 action_type=ResearchOrchestratorActionType.GENERATE_BRIEF,
                 source_key=None,
                 evidence_basis="The evidence is already sufficient for synthesis.",
@@ -1035,7 +1115,7 @@ async def test_shadow_planner_fallback_keeps_chase_round_when_structured_work_re
 
 
 def test_validate_shadow_planner_output_rejects_unknown_chase_entity() -> None:
-    output = ShadowPlannerRecommendationOutput(
+    output = _shadow_output(
         action_type=ResearchOrchestratorActionType.RUN_CHASE_ROUND,
         source_key=None,
         evidence_basis="The bounded chase round should continue.",
@@ -1071,7 +1151,7 @@ def test_validate_shadow_planner_output_rejects_unknown_chase_entity() -> None:
 
 
 def test_validate_shadow_planner_output_rejects_empty_chase_selection() -> None:
-    output = ShadowPlannerRecommendationOutput(
+    output = _shadow_output(
         action_type=ResearchOrchestratorActionType.RUN_CHASE_ROUND,
         source_key=None,
         evidence_basis="The bounded chase round should continue.",
@@ -1106,7 +1186,7 @@ def test_validate_shadow_planner_output_rejects_empty_chase_selection() -> None:
 def test_validate_shadow_planner_output_allows_stop_when_chase_threshold_is_met() -> (
     None
 ):
-    output = ShadowPlannerRecommendationOutput(
+    output = _shadow_output(
         action_type=ResearchOrchestratorActionType.STOP,
         source_key=None,
         evidence_basis="The chase set still looks weak enough to stop.",
@@ -1150,7 +1230,7 @@ def test_validate_shadow_planner_output_allows_stop_when_chase_threshold_is_met(
 def test_validate_shadow_planner_output_rejects_stop_for_objective_relevant_chase() -> (
     None
 ):
-    output = ShadowPlannerRecommendationOutput(
+    output = _shadow_output(
         action_type=ResearchOrchestratorActionType.STOP,
         source_key=None,
         evidence_basis="The run looks ready for synthesis.",
@@ -1197,7 +1277,7 @@ def test_validate_shadow_planner_output_rejects_stop_for_objective_relevant_chas
 def test_validate_shadow_planner_output_rejects_generate_brief_at_chase_checkpoint() -> (
     None
 ):
-    output = ShadowPlannerRecommendationOutput(
+    output = _shadow_output(
         action_type=ResearchOrchestratorActionType.GENERATE_BRIEF,
         source_key=None,
         evidence_basis="The run is already synthesis-ready.",
@@ -1295,7 +1375,7 @@ async def test_shadow_planner_harness_path_returns_structured_decision(
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key="pubmed",
                 evidence_basis="Literature should lead the run.",
@@ -1303,8 +1383,6 @@ async def test_shadow_planner_harness_path_returns_structured_decision(
                     "Begin with PubMed so the next deterministic step is grounded in "
                     "retrieved evidence."
                 ),
-                expected_value_band="high",
-                risk_level="low",
             )
 
     _install_shadow_planner_test_doubles(
@@ -1329,6 +1407,58 @@ async def test_shadow_planner_harness_path_returns_structured_decision(
     assert result.used_fallback is False
     assert result.decision.action_type is ResearchOrchestratorActionType.QUERY_PUBMED
     assert result.decision.source_key == "pubmed"
+    assert result.decision.expected_value_band == "medium"
+    assert result.decision.risk_level == "low"
+    assert result.decision.requires_approval is False
+    assert result.decision.metadata["benefit_findings"] == [
+        {
+            "kind": "adds_objective_relevant_evidence",
+            "evidence": "The action adds evidence tied to the active objective.",
+        },
+    ]
+
+
+@pytest.mark.asyncio
+async def test_shadow_planner_derives_approval_from_material_risk(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "artana_evidence_api.full_ai_orchestrator_shadow_planner.has_configured_openai_api_key",
+        lambda: True,
+    )
+
+    class _RiskFindingHarness:
+        def __init__(self, **_: object) -> None:
+            return None
+
+        async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
+            return _shadow_output(
+                risk_findings=[
+                    {
+                        "kind": "requires_human_judgment",
+                        "evidence": "The workspace identifies a governance decision.",
+                    },
+                ],
+            )
+
+    _install_shadow_planner_test_doubles(
+        monkeypatch,
+        harness_cls=_RiskFindingHarness,
+    )
+
+    result = await recommend_shadow_planner_action(
+        checkpoint_key="before_first_action",
+        objective="Investigate MED13 syndrome",
+        workspace_summary={"objective": "Investigate MED13 syndrome"},
+        sources={"pubmed": True},
+        action_registry=orchestrator_action_registry(),
+        harness_id="full-ai-orchestrator",
+        step_key_version="v1",
+    )
+
+    assert result.planner_status == "completed"
+    assert result.decision.risk_level == "medium"
+    assert result.decision.requires_approval is True
 
 
 @pytest.mark.asyncio
@@ -1348,7 +1478,7 @@ async def test_shadow_planner_harness_budget_is_reduced_by_prior_run_cost(
             observed_budgets.append(tenant.budget_usd_limit)
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key="pubmed",
                 evidence_basis="Literature should lead the run.",
@@ -1438,15 +1568,13 @@ async def test_shadow_planner_harness_repairs_pubmed_ingest_stage_violation(
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.RUN_STRUCTURED_ENRICHMENT,
                 source_key="drugbank",
                 evidence_basis="Drug mechanism evidence will matter next.",
                 qualitative_rationale=(
                     "Use DrugBank because the objective is about inhibitor response."
                 ),
-                expected_value_band="medium",
-                risk_level="low",
             )
 
     _install_shadow_planner_test_doubles(
@@ -1498,15 +1626,13 @@ async def test_shadow_planner_harness_repairs_terminal_checkpoint_violation(
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.GENERATE_BRIEF,
                 source_key=None,
                 evidence_basis="The evidence is already sufficient for synthesis.",
                 qualitative_rationale=(
                     "Generate the brief because the evidence is already assembled."
                 ),
-                expected_value_band="medium",
-                risk_level="low",
             )
 
     _install_shadow_planner_test_doubles(
@@ -1552,17 +1678,15 @@ async def test_shadow_planner_harness_repairs_chase_checkpoint_action_family(
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
             self._call_count += 1
             if self._call_count == 1:
-                return ShadowPlannerRecommendationOutput(
+                return _shadow_output(
                     action_type=ResearchOrchestratorActionType.GENERATE_BRIEF,
                     source_key=None,
                     evidence_basis="The workspace already feels synthesis-ready.",
                     qualitative_rationale=(
                         "Generate the brief because the evidence is already assembled."
                     ),
-                    expected_value_band="medium",
-                    risk_level="low",
                 )
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.RUN_CHASE_ROUND,
                 source_key=None,
                 evidence_basis=(
@@ -1577,8 +1701,6 @@ async def test_shadow_planner_harness_repairs_chase_checkpoint_action_family(
                 selected_entity_ids=["entity-1", "entity-2", "entity-3"],
                 selected_labels=["PARP1", "ATM", "ATR"],
                 selection_basis="The deterministic chase set is ready.",
-                expected_value_band="medium",
-                risk_level="low",
             )
 
     _install_shadow_planner_test_doubles(
@@ -1686,7 +1808,7 @@ async def test_shadow_planner_collects_model_terminal_telemetry(
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key="pubmed",
                 evidence_basis="Literature should lead the run.",
@@ -1781,7 +1903,7 @@ async def test_shadow_planner_prefers_trace_summary_cost_when_terminal_cost_is_z
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key="pubmed",
                 evidence_basis="Literature should lead the run.",
@@ -1867,7 +1989,7 @@ async def test_shadow_planner_derives_cost_from_tokens_when_provider_reports_zer
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key="pubmed",
                 evidence_basis="Literature should lead the run.",
@@ -1924,7 +2046,7 @@ async def test_shadow_planner_normalizes_thin_workspace_summary_for_prompt(
             prompt_value = kwargs.get("prompt")
             if isinstance(prompt_value, str):
                 prompt_log.append(prompt_value)
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key="pubmed",
                 evidence_basis="Literature should still lead the run.",
@@ -1969,7 +2091,7 @@ async def test_shadow_planner_normalizes_default_pubmed_source_key(
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key=None,
                 evidence_basis="Literature should still lead the run.",
@@ -2026,7 +2148,7 @@ async def test_shadow_planner_normalizes_missing_stop_reason(
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.STOP,
                 source_key=None,
                 evidence_basis="The workflow is already at its terminal checkpoint.",
@@ -2072,7 +2194,7 @@ async def test_shadow_planner_harness_accepts_conservative_stop_when_threshold_i
             return None
 
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.STOP,
                 source_key=None,
                 evidence_basis="The run looks synthesis-ready.",
@@ -2168,7 +2290,7 @@ async def test_shadow_planner_repairs_stop_when_objective_relevant_chase_require
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
             self._call_count += 1
             if self._call_count == 1:
-                return ShadowPlannerRecommendationOutput(
+                return _shadow_output(
                     action_type=ResearchOrchestratorActionType.STOP,
                     source_key=None,
                     evidence_basis="The workflow looks synthesis-ready.",
@@ -2177,7 +2299,7 @@ async def test_shadow_planner_repairs_stop_when_objective_relevant_chase_require
                     ),
                     stop_reason="synthesis_ready",
                 )
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.RUN_CHASE_ROUND,
                 source_key=None,
                 evidence_basis=(
@@ -2268,13 +2390,13 @@ async def test_shadow_planner_repairs_invalid_numeric_output_before_fallback(
         async def run_agent(self, **_: object) -> ShadowPlannerRecommendationOutput:
             self._call_count += 1
             if self._call_count == 1:
-                return ShadowPlannerRecommendationOutput(
+                return _shadow_output(
                     action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                     source_key="pubmed",
                     evidence_basis="Start with literature.",
                     qualitative_rationale="PubMed is the top choice with 90 percent confidence.",
                 )
-            return ShadowPlannerRecommendationOutput(
+            return _shadow_output(
                 action_type=ResearchOrchestratorActionType.QUERY_PUBMED,
                 source_key="pubmed",
                 evidence_basis="Start with literature.",

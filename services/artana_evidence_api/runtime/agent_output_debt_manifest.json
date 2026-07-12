@@ -13,19 +13,6 @@
     "removal_gate": "Use an opaque deterministic record reference with explicit locator provenance instead of an agent-authored number."
   },
   {
-    "debt_id": "AON-PROP-001",
-    "kind": "numeric_judgment",
-    "schema_ids": ["document_extraction.proposal_review.v1"],
-    "field_path": "$.reviews[].index",
-    "producer": "proposal-review agent",
-    "consumers": ["proposal review mapping", "proposal priority"],
-    "current_influence": "The numeric locator chooses which draft receives the agent-authored review categories.",
-    "quarantined": false,
-    "quarantine_rule": "Not quarantined; missing indexes fall back, but duplicate or permuted valid indexes can misassociate reviews.",
-    "owner_pr": "PR 4 proposal-review contract migration",
-    "removal_gate": "Use opaque draft references and require exact one-to-one validated coverage before applying reviews."
-  },
-  {
     "debt_id": "AON-GCON-001",
     "kind": "numeric_judgment",
     "schema_ids": ["graph_connection.agent.v1"],
@@ -206,31 +193,5 @@
     "quarantine_rule": "Not quarantined from linking.",
     "owner_pr": "PR 8A typed source-measurement migration",
     "removal_gate": "Numeric target anchors use typed provenance and validated identifier semantics."
-  },
-  {
-    "debt_id": "AOC-SHADOW-001",
-    "kind": "categorical_ordinal",
-    "schema_ids": ["full_ai.shadow_planner.v1"],
-    "field_path": "$.expected_value_band",
-    "producer": "full-AI shadow-planner agent",
-    "consumers": ["shadow decision artifact", "guarded planner policy"],
-    "current_influence": "The model authors a composite low/medium/high expected-value judgment.",
-    "quarantined": false,
-    "quarantine_rule": "Not quarantined from decision artifacts.",
-    "owner_pr": "PR 4 shadow-study contract migration",
-    "removal_gate": "Replace the band with atomic observable findings and derive value posture deterministically."
-  },
-  {
-    "debt_id": "AOC-SHADOW-002",
-    "kind": "categorical_ordinal",
-    "schema_ids": ["full_ai.shadow_planner.v1"],
-    "field_path": "$.risk_level",
-    "producer": "full-AI shadow-planner agent",
-    "consumers": ["shadow decision artifact", "guarded planner policy"],
-    "current_influence": "The model authors a composite low/medium/high risk judgment.",
-    "quarantined": false,
-    "quarantine_rule": "Not quarantined from decision artifacts.",
-    "owner_pr": "PR 4 shadow-study contract migration",
-    "removal_gate": "Replace the band with atomic risk findings and deterministic veto policy."
   }
 ]

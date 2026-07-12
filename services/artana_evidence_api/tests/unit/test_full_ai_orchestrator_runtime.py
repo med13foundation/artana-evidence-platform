@@ -581,6 +581,42 @@ def test_guarded_readiness_profile_authority_for_low_risk_any_intervention() -> 
     assert readiness["profile_authority_exercised"] is True
 
 
+def test_guarded_action_rejects_non_control_decision_requiring_approval() -> None:
+    decision = ResearchOrchestratorDecision(
+        decision_id="planner-before-brief",
+        round_number=1,
+        action_type=ResearchOrchestratorActionType.GENERATE_BRIEF,
+        action_input={"checkpoint_key": "before_brief_generation"},
+        source_key=None,
+        evidence_basis="The workspace is ready for synthesis.",
+        stop_reason=None,
+        step_key="full-ai-orchestrator.v1.shadow.before_brief_generation",
+        status="recommended",
+        expected_value_band="high",
+        qualitative_rationale="Generate a brief after human review.",
+        risk_level="medium",
+        requires_approval=True,
+    )
+    recommendation_payload: JSONObject = {
+        "decision": decision.model_dump(mode="json"),
+        "planner_status": "completed",
+        "used_fallback": False,
+        "validation_error": None,
+    }
+
+    guarded_action = full_ai_orchestrator_runtime._accepted_guarded_generate_brief_action(
+        recommendation_payload=recommendation_payload,
+        comparison={
+            "checkpoint_key": "before_brief_generation",
+            "comparison_status": "diverged",
+            "target_action_type": "RUN_CHASE_ROUND",
+            "target_source_key": None,
+        },
+    )
+
+    assert guarded_action is None
+
+
 def test_accepted_guarded_control_flow_action_accepts_matched_synthetic_stop_target() -> (
     None
 ):

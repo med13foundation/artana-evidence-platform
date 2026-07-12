@@ -197,7 +197,7 @@ def test_prompt_schema_builders_validate_structured_outputs() -> None:
         {
             "reviews": [
                 {
-                    "index": 0,
+                    "draft_ref": "draft_111111111111111111111111",
                     "factual_support": "strong",
                     "goal_relevance": "direct",
                     "priority": "prioritize",

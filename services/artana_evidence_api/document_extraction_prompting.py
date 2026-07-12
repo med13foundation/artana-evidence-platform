@@ -225,9 +225,14 @@ def build_proposal_review_output_schema() -> type[BaseModel]:
     """Build the structured output schema for proposal review."""
 
     class ProposalReviewItem(BaseModel):
-        model_config = ConfigDict(strict=True)
+        model_config = ConfigDict(strict=True, str_strip_whitespace=True)
 
-        index: int = Field(..., ge=0)
+        draft_ref: str = Field(
+            ...,
+            pattern=r"^draft_[0-9a-f]{24}$",
+            min_length=30,
+            max_length=30,
+        )
         factual_support: FactualSupportScale
         goal_relevance: GoalRelevanceScale
         priority: PriorityScale
@@ -353,6 +358,8 @@ Assess each claim on three categorical scales only. Never invent numbers.
 - ignore: do not prioritize for this space
 
 Important rules:
+- copy each supplied draft_ref exactly; never invent, alter, or omit a reference
+- return exactly one review for every supplied draft_ref
 - factual_support and goal_relevance are independent; a strong fact can still be peripheral or off_target
 - if there is no meaningful research-goal context, use goal_relevance=unscoped
 - do not use outside world knowledge; judge only from the provided claim excerpt and research-space context

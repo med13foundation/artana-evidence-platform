@@ -468,6 +468,7 @@ def test_build_guarded_evaluation_reports_replay_only_candidate() -> None:
                             "qualitative_rationale": "The drug-mechanism objective points to DrugBank first.",
                             "expected_value_band": "medium",
                             "risk_level": "low",
+                            "requires_approval": False,
                         },
                     },
                     "comparison": {
@@ -570,6 +571,7 @@ def test_build_guarded_evaluation_reports_replay_only_chase_candidate() -> None:
                             "qualitative_rationale": "The bootstrap leads point to the same two follow-up genes.",
                             "expected_value_band": "medium",
                             "risk_level": "low",
+                            "requires_approval": False,
                             "action_input": {
                                 "selected_entity_ids": [
                                     "entity-gata4",
