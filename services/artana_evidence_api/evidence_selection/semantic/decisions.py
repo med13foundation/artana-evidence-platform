@@ -8,6 +8,9 @@ from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticCandidateAssessment,
 )
+from artana_evidence_api.evidence_selection.semantic.evidence import (
+    SemanticEvidenceOption,
+)
 from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionCandidateDecision,
     EvidenceSelectionCandidateSearch,
@@ -35,7 +38,7 @@ def decision_from_semantic_assessment(
     record: JSONObject,
     assessment: EvidenceSelectionSemanticCandidateAssessment,
     agent_run_id: str,
-    evidence_spans: tuple[str, ...],
+    evidence_options: tuple[SemanticEvidenceOption, ...],
 ) -> EvidenceSelectionCandidateDecision:
     """Map categories to lifecycle state and deterministic ranking weight."""
 
@@ -83,7 +86,7 @@ def decision_from_semantic_assessment(
         score=score,
         caveats=_assessment_caveats(
             assessment=assessment,
-            evidence_spans=evidence_spans,
+            evidence_options=evidence_options,
         ),
         candidate_context=candidate_context(source_key=source_key, record=record),
         deferral_reason=deferral_reason,
@@ -227,7 +230,7 @@ def record_title(*, source_key: str, record: JSONObject, index: int) -> str:
 def _assessment_caveats(
     *,
     assessment: EvidenceSelectionSemanticCandidateAssessment,
-    evidence_spans: tuple[str, ...],
+    evidence_options: tuple[SemanticEvidenceOption, ...],
 ) -> tuple[str, ...]:
     findings = {
         "entity_variant": assessment.entity_variant_match,
@@ -240,8 +243,11 @@ def _assessment_caveats(
     }
     return (
         *(f"semantic_{name}={value}" for name, value in findings.items()),
-        *(f'evidence_reference="{ref}"' for ref in assessment.evidence_references),
-        *(f'evidence_span="{span}"' for span in evidence_spans),
+        *(
+            f'evidence_reference="{option.reference}" '
+            f'source_path="{option.source_path}" span="{option.text}"'
+            for option in evidence_options
+        ),
     )
 
 

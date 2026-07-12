@@ -9,6 +9,7 @@ from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticCandidateAssessment,
 )
 from artana_evidence_api.evidence_selection.semantic.evidence import (
+    SemanticEvidenceOption,
     resolve_semantic_evidence_references,
 )
 from artana_evidence_api.evidence_selection.semantic.model import (
@@ -28,7 +29,7 @@ class ValidatedSemanticAssessmentBatch:
     contract: EvidenceSelectionSemanticBatchContract
     agent_run_id: str
     assessments: dict[int, EvidenceSelectionSemanticCandidateAssessment]
-    evidence_spans: dict[int, tuple[str, ...]]
+    evidence_options: dict[int, tuple[SemanticEvidenceOption, ...]]
     attempt_count: int
 
 
@@ -52,7 +53,7 @@ async def assess_validated_semantic_batch(
             records_by_index = dict(
                 zip(context.record_indices, context.records, strict=True),
             )
-            evidence_spans = {
+            evidence_options = {
                 index: resolve_semantic_evidence_references(
                     record_index=index,
                     record=records_by_index[index],
@@ -69,7 +70,7 @@ async def assess_validated_semantic_batch(
             contract=contract,
             agent_run_id=agent_run_id,
             assessments=assessments,
-            evidence_spans=evidence_spans,
+            evidence_options=evidence_options,
             attempt_count=attempt_count,
         )
     if last_error is None:

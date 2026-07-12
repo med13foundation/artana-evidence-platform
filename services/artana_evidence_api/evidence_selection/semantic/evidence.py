@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from artana_evidence_api.types.common import JSONObject, JSONValue
@@ -31,8 +32,8 @@ def semantic_evidence_options(
 
     options: list[SemanticEvidenceOption] = []
     seen_text: set[str] = set()
-    for source_path, value in _source_evidence_values(record):
-        for span in _bounded_source_spans(value):
+    for source_path, value in _iter_source_evidence_values(record):
+        for span in _iter_bounded_source_spans(value):
             if not span or span in seen_text:
                 continue
             seen_text.add(span)
@@ -53,11 +54,11 @@ def resolve_semantic_evidence_references(
     record_index: int,
     record: JSONObject,
     references: tuple[str, ...],
-) -> tuple[str, ...]:
+) -> tuple[SemanticEvidenceOption, ...]:
     """Resolve only references owned by this exact record."""
 
     options = {
-        option.reference: option.text
+        option.reference: option
         for option in semantic_evidence_options(
             record_index=record_index,
             record=record,
@@ -73,45 +74,34 @@ def resolve_semantic_evidence_references(
     return tuple(options[reference] for reference in references)
 
 
-def _bounded_source_spans(value: str) -> tuple[str, ...]:
+def _iter_bounded_source_spans(value: str) -> Iterator[str]:
     normalized = value.strip()
     if not normalized:
-        return ()
-    sentences = tuple(
-        sentence.strip()
-        for sentence in _SENTENCE_BOUNDARY.split(normalized)
-        if sentence.strip()
-    )
-    spans: list[str] = []
-    for sentence in sentences:
-        spans.extend(
-            sentence[offset : offset + _MAX_EVIDENCE_OPTION_CHARACTERS]
-            for offset in range(0, len(sentence), _MAX_EVIDENCE_OPTION_CHARACTERS)
-        )
-    return tuple(spans)
+        return
+    for raw_sentence in _SENTENCE_BOUNDARY.split(normalized):
+        sentence = raw_sentence.strip()
+        if not sentence:
+            continue
+        for offset in range(0, len(sentence), _MAX_EVIDENCE_OPTION_CHARACTERS):
+            yield sentence[offset : offset + _MAX_EVIDENCE_OPTION_CHARACTERS]
 
 
-def _source_evidence_values(
+def _iter_source_evidence_values(
     value: JSONValue,
     *,
     path: str = "$",
-) -> tuple[tuple[str, str], ...]:
+) -> Iterator[tuple[str, str]]:
     scalar_text = _scalar_evidence_text(value)
     if scalar_text is not None:
-        return ((path, scalar_text),)
+        yield path, scalar_text
+        return
     if isinstance(value, dict):
-        return tuple(
-            item
-            for key, nested in value.items()
-            for item in _source_evidence_values(nested, path=f"{path}.{key}")
-        )
+        for key, nested in value.items():
+            yield from _iter_source_evidence_values(nested, path=f"{path}.{key}")
+        return
     if isinstance(value, list | tuple):
-        return tuple(
-            item
-            for index, nested in enumerate(value)
-            for item in _source_evidence_values(nested, path=f"{path}[{index}]")
-        )
-    return ()
+        for index, nested in enumerate(value):
+            yield from _iter_source_evidence_values(nested, path=f"{path}[{index}]")
 
 
 def _scalar_evidence_text(value: JSONValue) -> str | None:

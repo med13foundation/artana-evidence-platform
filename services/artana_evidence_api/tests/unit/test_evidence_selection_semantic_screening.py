@@ -24,6 +24,9 @@ from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticCandidateAssessment,
 )
 from artana_evidence_api.evidence_selection.semantic.decisions import record_title
+from artana_evidence_api.evidence_selection.semantic.evidence import (
+    semantic_evidence_options,
+)
 from artana_evidence_api.evidence_selection.semantic.model import (
     EvidenceSelectionSemanticContext,
     _build_semantic_selection_prompt,
@@ -216,9 +219,9 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
     assert result.selected_records[0].reason.startswith("Categorical semantic")
     assert result.selected_records[0].semantic_agent_run_id == "test-agent-run"
     assert "semantic_entity_variant=match" in result.selected_records[0].caveats
-    assert (
-        'evidence_span="EGFR T790M response in treated patients"'
-        in result.selected_records[0].caveats
+    assert any(
+        'source_path="$.title" span="EGFR T790M response in treated patients"' in caveat
+        for caveat in result.selected_records[0].caveats
     )
     assert len(result.skipped_records) == 1
     assert result.skipped_records[0].score == 0.0
@@ -449,6 +452,25 @@ def test_semantic_prompt_marks_source_text_as_untrusted_data() -> None:
     assert '"text": "true"' in prompt
     assert oversized_payload not in prompt
     assert len(prompt) < 50_000
+
+
+def test_semantic_evidence_traversal_stops_when_option_budget_is_full() -> None:
+    class _TraversalSentinel(dict[str, object]):
+        def items(self):
+            for index in range(1_000):
+                if index == 100:
+                    raise AssertionError(
+                        "evidence traversal exceeded its option budget"
+                    )
+                yield f"field_{index}", f"unique evidence value {index}"
+
+    options = semantic_evidence_options(
+        record_index=0,
+        record={"provider_payload": _TraversalSentinel()},
+    )
+
+    assert len(options) == 64
+    assert options[-1].source_path == "$.provider_payload.field_63"
 
 
 @pytest.mark.parametrize(

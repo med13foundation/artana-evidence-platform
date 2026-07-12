@@ -20,6 +20,9 @@ from artana_evidence_api.evidence_selection.semantic.decisions import (
     missing_search_decision,
     semantic_rank_key,
 )
+from artana_evidence_api.evidence_selection.semantic.evidence import (
+    SemanticEvidenceOption,
+)
 from artana_evidence_api.evidence_selection.semantic.model import (
     ArtanaEvidenceSelectionSemanticModelRunner,
     EvidenceSelectionSemanticContext,
@@ -145,7 +148,9 @@ class AgentEvidenceSelectionCandidateScreener:
 
             records = tuple(source_search.records)
             assessments: dict[int, EvidenceSelectionSemanticCandidateAssessment] = {}
-            evidence_spans_by_index: dict[int, tuple[str, ...]] = {}
+            evidence_options_by_index: dict[
+                int, tuple[SemanticEvidenceOption, ...]
+            ] = {}
             agent_run_ids: dict[int, str] = {}
             failed_decisions: list[EvidenceSelectionCandidateDecision] = []
             for record_indices, batch_records in semantic_record_batches(records):
@@ -188,7 +193,7 @@ class AgentEvidenceSelectionCandidateScreener:
                     )
                     continue
                 assessments.update(validated_batch.assessments)
-                evidence_spans_by_index.update(validated_batch.evidence_spans)
+                evidence_options_by_index.update(validated_batch.evidence_options)
                 agent_run_ids.update(
                     dict.fromkeys(
                         record_indices,
@@ -206,7 +211,7 @@ class AgentEvidenceSelectionCandidateScreener:
                             record=record,
                             assessment=assessments[index],
                             agent_run_id=agent_run_ids[index],
-                            evidence_spans=evidence_spans_by_index[index],
+                            evidence_options=evidence_options_by_index[index],
                         )
                         for index, record in enumerate(records)
                         if index in assessments
