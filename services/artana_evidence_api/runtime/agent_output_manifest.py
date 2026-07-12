@@ -163,6 +163,8 @@ _POLICIES = (
         schema_id="evidence_selection.semantic.v1",
         schema_names=("EvidenceSelectionSemanticBatchContract",),
         shape_hash="9e5a7d2909d1cc98d129c0bbd51e470660d45aec89c0c300fc9eb40e5b85d33e",
+        producer_paths=("evidence_selection/semantic/model.py",),
+        prompt_identifiers=("evidence_selection.semantic_selector.v1",),
         numeric_fields=(
             NumericFieldPolicy(
                 path="$.assessments[].record_index",
@@ -241,40 +243,47 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="evidence_selection.source_plan.v1",
         schema_names=("ModelEvidenceSelectionSourcePlanContract",),
-        shape_hash="231f5fe113d25ee0544447ecedf445747c22939bf440a9eda1e3c90f05161d74",
-        numeric_fields=(
-            NumericFieldPolicy(
-                path="$.planned_searches[].max_records",
-                debt_id="AON-PLAN-001",
-            ),
-            NumericFieldPolicy(
-                path="$.planned_searches[].taxon_id",
-                debt_id="AON-PLAN-002",
-            ),
-            NumericFieldPolicy(
-                path="$.planned_searches[].timeout_seconds",
-                debt_id="AON-PLAN-003",
-            ),
-        ),
+        shape_hash="4b0643668ca687eafd5796f669b25d728ca7cbac352dadb7c6a7f1800a4a7780",
+        producer_paths=("evidence_selection_model_planner.py",),
+        prompt_identifiers=("evidence_selection.source_planner.v1",),
     ),
     AgentOutputSchemaPolicy(
         schema_id="graph_connection.agent.v1",
         schema_names=("_GraphConnectionExecutionContract",),
-        shape_hash="67e9edc4e85b747cd93c6f0cc8b864d01d0fb21c75cdb97ae7416d0b561a58c5",
+        shape_hash="c02dac58f0bf8f3b703a6f45a2398f4590c1142c8c50fa876813c496ab800a2b",
+        producer_paths=("graph_connection_runtime.py",),
+        prompt_identifiers=("graph_connection.system_and_request.v1",),
         numeric_fields=(
             NumericFieldPolicy(path="$.confidence_score", debt_id="AON-GCON-001"),
-            NumericFieldPolicy(path="$.evidence[].relevance", debt_id="AON-SHARED-002"),
-            NumericFieldPolicy(path="$.proposed_relations[].confidence", debt_id="AON-GCON-002"),
+            NumericFieldPolicy(
+                path="$.proposed_relations[].confidence", debt_id="AON-GCON-002"
+            ),
             NumericFieldPolicy(
                 path="$.proposed_relations[].supporting_document_count",
                 debt_id="AON-GCON-003",
             ),
-            NumericFieldPolicy(path="$.rejected_candidates[].confidence", debt_id="AON-GCON-004"),
+            NumericFieldPolicy(
+                path="$.rejected_candidates[].confidence", debt_id="AON-GCON-004"
+            ),
         ),
         categorical_fields=(
-            _category("$.decision", _RUN_DECISION, evidence_requirement="The executed path and run ID are required."),
-            _category("$.evidence[].source_type", _SOURCE_TYPE, evidence_requirement="Every item requires a stable locator."),
-            _category("$.proposed_relations[].evidence_tier", {"COMPUTATIONAL": "the relation is model-generated and not trusted evidence."}, evidence_requirement="The agent run ID is required."),
+            _category(
+                "$.decision",
+                _RUN_DECISION,
+                evidence_requirement="The executed path and run ID are required.",
+            ),
+            _category(
+                "$.evidence[].source_type",
+                _SOURCE_TYPE,
+                evidence_requirement="Every item requires a stable locator.",
+            ),
+            _category(
+                "$.proposed_relations[].evidence_tier",
+                {
+                    "COMPUTATIONAL": "the relation is model-generated and not trusted evidence."
+                },
+                evidence_requirement="The agent run ID is required.",
+            ),
             *_fact_categories("$.proposed_relations[].assessment"),
             *_fact_categories("$.rejected_candidates[].assessment"),
         ),
@@ -282,18 +291,38 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="graph_search.agent.v1",
         schema_names=("_GraphSearchExecutionContract",),
-        shape_hash="044bf94a38499e6f0dafd6d4e7b1ccd05d2010d612d832a26e70c4713724bf6f",
+        shape_hash="754c069d4379463f2e5f01e91c4a4e863f39762bfed230bc7276b345dcd989c1",
+        producer_paths=("graph_search_runtime.py",),
+        prompt_identifiers=("graph_search.system_and_request.v1",),
         numeric_fields=(
             NumericFieldPolicy(path="$.confidence_score", debt_id="AON-GSEA-001"),
-            NumericFieldPolicy(path="$.evidence[].relevance", debt_id="AON-SHARED-002"),
-            NumericFieldPolicy(path="$.results[].evidence_chain[].confidence", debt_id="AON-GSEA-002"),
-            NumericFieldPolicy(path="$.results[].relevance_score", debt_id="AON-GSEA-003"),
-            NumericFieldPolicy(path="$.total_results", debt_id="AON-GSEA-004"),
+            NumericFieldPolicy(
+                path="$.results[].evidence_chain[].confidence", debt_id="AON-GSEA-002"
+            ),
+            NumericFieldPolicy(
+                path="$.results[].relevance_score", debt_id="AON-GSEA-003"
+            ),
         ),
         categorical_fields=(
-            _category("$.decision", _RUN_DECISION, evidence_requirement="The executed path and run ID are required."),
-            _category("$.evidence[].source_type", _SOURCE_TYPE, evidence_requirement="Every item requires a stable locator."),
-            _category("$.executed_path", {"deterministic": "the result used only deterministic execution.", "agent": "the model agent produced the result.", "agent_fallback": "the agent failed and an explicit fallback produced the result."}, evidence_requirement="Runtime provenance must establish the path."),
+            _category(
+                "$.decision",
+                _RUN_DECISION,
+                evidence_requirement="The executed path and run ID are required.",
+            ),
+            _category(
+                "$.evidence[].source_type",
+                _SOURCE_TYPE,
+                evidence_requirement="Every item requires a stable locator.",
+            ),
+            _category(
+                "$.executed_path",
+                {
+                    "deterministic": "the result used only deterministic execution.",
+                    "agent": "the model agent produced the result.",
+                    "agent_fallback": "the agent failed and an explicit fallback produced the result.",
+                },
+                evidence_requirement="Runtime provenance must establish the path.",
+            ),
             *_graph_categories("$.assessment"),
             *_graph_categories("$.results[].assessment"),
             *_graph_categories("$.results[].evidence_chain[].assessment"),
@@ -301,91 +330,197 @@ _POLICIES = (
     ),
     AgentOutputSchemaPolicy(
         schema_id="research_onboarding.agent.v1",
-        schema_names=("OnboardingAssistantContract",),
-        shape_hash="d7f808ea5d835f87372df00b0f3543470fc697e3e6d69037823b82115fe52a6b",
-        numeric_fields=(
-            NumericFieldPolicy(path="$.confidence_score", debt_id="AON-SHARED-001"),
-            NumericFieldPolicy(path="$.evidence[].relevance", debt_id="AON-SHARED-002"),
-            NumericFieldPolicy(path="$.state_patch.pending_question_count", debt_id="AON-ONBD-001"),
-        ),
+        schema_names=("OnboardingAssistantModelOutput",),
+        shape_hash="0fed46693511f4f2807d37e872c2f96677f80991a3cded883d5a7fbb319a6849",
+        producer_paths=("research_onboarding_agent_runtime.py",),
+        prompt_identifiers=("research_onboarding.system_and_turn.v1",),
         categorical_fields=(
-            _category("$.evidence[].source_type", _SOURCE_TYPE, evidence_requirement="Every item requires a stable locator."),
-            _category("$.message_type", {"clarification_request": "a required research input is still missing.", "plan_ready": "all required onboarding inputs are present."}, evidence_requirement="The state patch and rationale must identify the condition."),
-            _category("$.state_patch.onboarding_status", {"awaiting_researcher_reply": "the workflow requires a researcher response.", "plan_ready": "the workflow has enough input to build the plan."}, evidence_requirement="The pending questions must establish the status."),
-            _category("$.state_patch.thread_status", {"your_turn": "the researcher must answer a question.", "review_needed": "the researcher must review a completed plan."}, evidence_requirement="The suggested action must establish the status."),
-            _category("$.suggested_actions[].action_type", {"reply": "the next action is a researcher response.", "review": "the next action is review of generated work."}, evidence_requirement="The corresponding action payload is required."),
+            _category(
+                "$.evidence[].source_type",
+                _SOURCE_TYPE,
+                evidence_requirement="Every item requires a stable locator.",
+            ),
+            _category(
+                "$.message_type",
+                {
+                    "clarification_request": "a required research input is still missing.",
+                    "plan_ready": "all required onboarding inputs are present.",
+                },
+                evidence_requirement="The state patch and rationale must identify the condition.",
+            ),
+            _category(
+                "$.state_patch.onboarding_status",
+                {
+                    "awaiting_researcher_reply": "the workflow requires a researcher response.",
+                    "plan_ready": "the workflow has enough input to build the plan.",
+                },
+                evidence_requirement="The pending questions must establish the status.",
+            ),
+            _category(
+                "$.state_patch.thread_status",
+                {
+                    "your_turn": "the researcher must answer a question.",
+                    "review_needed": "the researcher must review a completed plan.",
+                },
+                evidence_requirement="The suggested action must establish the status.",
+            ),
+            _category(
+                "$.suggested_actions[].action_type",
+                {
+                    "reply": "the next action is a researcher response.",
+                    "review": "the next action is review of generated work.",
+                },
+                evidence_requirement="The corresponding action payload is required.",
+            ),
         ),
     ),
     AgentOutputSchemaPolicy(
         schema_id="pubmed.relevance.v1",
-        schema_names=("PubMedRelevanceContract",),
-        shape_hash="f93a152862754dc9ef0f25da8d58cd7dfb04a1965eaa25a975cd3ba83aed8654",
-        numeric_fields=(
-            NumericFieldPolicy(path="$.confidence_score", debt_id="AON-SHARED-001"),
-            NumericFieldPolicy(path="$.evidence[].relevance", debt_id="AON-SHARED-002"),
-        ),
+        schema_names=("PubMedRelevanceModelOutput",),
+        shape_hash="edeba4193516a67036849983c26be40ce62ac17794e317d2fbc654e50c634e66",
+        producer_paths=("pubmed_relevance.py",),
+        prompt_identifiers=("pubmed.relevance.title_abstract.v1",),
         categorical_fields=(
-            _category("$.evidence[].source_type", _SOURCE_TYPE, evidence_requirement="Every item requires a stable locator."),
-            _category("$.relevance", {"relevant": "the title or abstract directly addresses the supplied research context.", "non_relevant": "the title and abstract do not address the supplied research context."}, evidence_requirement="A literal title or abstract span is required."),
+            _category(
+                "$.evidence[].source_type",
+                _SOURCE_TYPE,
+                evidence_requirement="Every item requires a stable locator.",
+            ),
+            _category(
+                "$.relevance",
+                {
+                    "relevant": "the title or abstract directly addresses the supplied research context.",
+                    "non_relevant": "the title and abstract do not address the supplied research context.",
+                },
+                evidence_requirement="A literal title or abstract span is required.",
+            ),
         ),
     ),
     AgentOutputSchemaPolicy(
         schema_id="relation_type_resolution.agent.v1",
         schema_names=("RelationTypeDecision",),
         shape_hash="4ae532517c388aa19610e41bbfa6ae129e11a3251a6b53a00ba671b1ba6b8f78",
+        producer_paths=("relation_type_resolver.py",),
+        prompt_identifiers=("relation_type_resolution.system_and_request.v1",),
         categorical_fields=(
-            _category("$.action", {"map_to_existing": "one existing canonical relation has the same semantics.", "register_new": "no canonical relation covers the supported semantics.", "requires_review": "the available context cannot resolve the mapping safely.", "typo_correction": "the input differs from one canonical relation only by a demonstrable typo."}, evidence_requirement="The rationale must cite the candidate taxonomy entries."),
+            _category(
+                "$.action",
+                {
+                    "map_to_existing": "one existing canonical relation has the same semantics.",
+                    "register_new": "no canonical relation covers the supported semantics.",
+                    "requires_review": "the available context cannot resolve the mapping safely.",
+                    "typo_correction": "the input differs from one canonical relation only by a demonstrable typo.",
+                },
+                evidence_requirement="The rationale must cite the candidate taxonomy entries.",
+            ),
         ),
     ),
     AgentOutputSchemaPolicy(
         schema_id="entity_resolution.agent.v1",
         schema_names=("EntityDecision",),
         shape_hash="1f930649a4bbc34b39bd204d05073fd27db6d8b5de88c9cda5050c7ac0d3835c",
+        producer_paths=("relation_type_resolver.py",),
+        prompt_identifiers=("entity_resolution.system_and_request.v1",),
         categorical_fields=(
-            _category("$.action", {"match_existing": "one existing entity uniquely matches the supplied label and anchors.", "create_new": "no existing entity matches the supplied label and anchors."}, evidence_requirement="The rationale must cite candidate entities and supplied anchors."),
+            _category(
+                "$.action",
+                {
+                    "match_existing": "one existing entity uniquely matches the supplied label and anchors.",
+                    "create_new": "no existing entity matches the supplied label and anchors.",
+                },
+                evidence_requirement="The rationale must cite candidate entities and supplied anchors.",
+            ),
         ),
     ),
     AgentOutputSchemaPolicy(
         schema_id="marrvel.gene_inference.v1",
         schema_names=("_MarrvelGeneInferenceResult",),
         shape_hash="e36df65cd58006ebeef2350b47cc09662baa1ae957e17d1001fe64a0204a7d5e",
+        producer_paths=("marrvel_enrichment.py",),
+        prompt_identifiers=("marrvel.gene_inference.v1",),
     ),
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.relation.v2",
         schema_names=("LLMExtractionResult",),
         shape_hash="53bd185c9ca1906c8bad89ff584e2dd623b7ce49b3a1b2485c42f2fe1e8abc11",
+        producer_paths=("document_extraction_support/llm_fulltext_extraction.py",),
+        prompt_identifiers=("document_extraction.relation.v2",),
         categorical_fields=(
-            _category("$.relations[].review_status", {"candidate": "the cited sentence directly supports a canonical relation candidate.", "review_only": "the cited sentence is weak, hedged, or requires human interpretation."}, evidence_requirement="The literal source sentence is required."),
+            _category(
+                "$.relations[].review_status",
+                {
+                    "candidate": "the cited sentence directly supports a canonical relation candidate.",
+                    "review_only": "the cited sentence is weak, hedged, or requires human interpretation.",
+                },
+                evidence_requirement="The literal source sentence is required.",
+            ),
         ),
     ),
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.proposal_review.v1",
         schema_names=("ProposalReviewResult",),
         shape_hash="2e7f22a9f032f64fb1e9dc0135fa812478246ca08a4ede16f211cc36c8e66d13",
+        producer_paths=("document_extraction.py",),
+        prompt_identifiers=("document_extraction.proposal_review.v1",),
         numeric_fields=(
             NumericFieldPolicy(path="$.reviews[].index", debt_id="AON-PROP-001"),
         ),
         categorical_fields=(
-            _category("$.reviews[].factual_support", {"strong": "multiple direct source spans support the proposal.", "moderate": "one direct source span supports the proposal.", "tentative": "the source is hedged or indirect.", "unsupported": "no cited source span supports the proposal."}, evidence_requirement="A factual rationale tied to source text is required."),
-            _category("$.reviews[].goal_relevance", {"direct": "the proposal directly answers the research goal.", "supporting": "the proposal supports an answer to the goal.", "peripheral": "the proposal is related background only.", "off_target": "the proposal addresses a different goal.", "unscoped": "the supplied goal is insufficient to classify relevance."}, evidence_requirement="A relevance rationale tied to the goal is required."),
-            _category("$.reviews[].priority", {"prioritize": "direct supported evidence requires immediate review.", "review": "supported evidence should enter normal review.", "background": "the proposal is context only.", "ignore": "the proposal is unsupported or off target."}, evidence_requirement="The factual-support and goal-relevance categories must deterministically permit this value."),
+            _category(
+                "$.reviews[].factual_support",
+                {
+                    "strong": "multiple direct source spans support the proposal.",
+                    "moderate": "one direct source span supports the proposal.",
+                    "tentative": "the source is hedged or indirect.",
+                    "unsupported": "no cited source span supports the proposal.",
+                },
+                evidence_requirement="A factual rationale tied to source text is required.",
+            ),
+            _category(
+                "$.reviews[].goal_relevance",
+                {
+                    "direct": "the proposal directly answers the research goal.",
+                    "supporting": "the proposal supports an answer to the goal.",
+                    "peripheral": "the proposal is related background only.",
+                    "off_target": "the proposal addresses a different goal.",
+                    "unscoped": "the supplied goal is insufficient to classify relevance.",
+                },
+                evidence_requirement="A relevance rationale tied to the goal is required.",
+            ),
+            _category(
+                "$.reviews[].priority",
+                {
+                    "prioritize": "direct supported evidence requires immediate review.",
+                    "review": "supported evidence should enter normal review.",
+                    "background": "the proposal is context only.",
+                    "ignore": "the proposal is unsupported or off target.",
+                },
+                evidence_requirement="The factual-support and goal-relevance categories must deterministically permit this value.",
+            ),
         ),
     ),
     AgentOutputSchemaPolicy(
         schema_id="model_health.probe.v1",
         schema_names=("_ProbeOutput",),
         shape_hash="53ceee97278087ef366f8a0a8399cfab1b60ca83917bf20b3e1063310fe9fce4",
+        producer_paths=("runtime/model_health.py", "runtime_support.py"),
+        prompt_identifiers=("model_health.probe.v1",),
         categorical_fields=(
-            _category("$.status", {"ok": "the provider returned the exact structured health response."}, evidence_requirement="This is a fixed transport-health protocol marker."),
+            _category(
+                "$.status",
+                {"ok": "the provider returned the exact structured health response."},
+                evidence_requirement="This is a fixed transport-health protocol marker.",
+            ),
         ),
     ),
     AgentOutputSchemaPolicy(
         schema_id="variant_extraction.agent.v1",
         schema_names=("LLMExtractionContract",),
-        shape_hash="20a4d0de30915f883b49eda5bea51d1734a566b6bfd09a8c6e0a60ceb4b0d8c3",
+        shape_hash="390b7cd1001fcf49d7ac9bedfd9fa411a7f01e42ea3c3a3558759810ed781909",
+        producer_paths=("variant_extraction_bridges.py",),
+        prompt_identifiers=("variant_extraction.context.v1",),
         numeric_fields=(
             NumericFieldPolicy(path="$.confidence_score", debt_id="AON-VEXT-001"),
-            NumericFieldPolicy(path="$.evidence[].relevance", debt_id="AON-SHARED-002"),
             *(
                 NumericFieldPolicy(path=path, debt_id=debt_id)
                 for path, debt_id in (
@@ -399,10 +534,34 @@ _POLICIES = (
             ),
         ),
         categorical_fields=(
-            _category("$.decision", _RUN_DECISION, evidence_requirement="The executed path and run ID are required."),
-            _category("$.evidence[].source_type", _SOURCE_TYPE, evidence_requirement="Every item requires a stable locator."),
-            _category("$.rejected_facts[].fact_type", {"observation": "the rejected candidate is an observation.", "relation": "the rejected candidate is a relation."}, evidence_requirement="The rejected payload and reason are required."),
-            _category("$.relations[].polarity", {"SUPPORT": "the cited source supports the relation.", "REFUTE": "the cited source contradicts the relation.", "UNCERTAIN": "the cited source is ambiguous or hedged.", "HYPOTHESIS": "the cited source presents the relation as hypothetical."}, evidence_requirement="A literal evidence span and locator are required."),
+            _category(
+                "$.decision",
+                _RUN_DECISION,
+                evidence_requirement="The executed path and run ID are required.",
+            ),
+            _category(
+                "$.evidence[].source_type",
+                _SOURCE_TYPE,
+                evidence_requirement="Every item requires a stable locator.",
+            ),
+            _category(
+                "$.rejected_facts[].fact_type",
+                {
+                    "observation": "the rejected candidate is an observation.",
+                    "relation": "the rejected candidate is a relation.",
+                },
+                evidence_requirement="The rejected payload and reason are required.",
+            ),
+            _category(
+                "$.relations[].polarity",
+                {
+                    "SUPPORT": "the cited source supports the relation.",
+                    "REFUTE": "the cited source contradicts the relation.",
+                    "UNCERTAIN": "the cited source is ambiguous or hedged.",
+                    "HYPOTHESIS": "the cited source presents the relation as hypothetical.",
+                },
+                evidence_requirement="A literal evidence span and locator are required.",
+            ),
             *(
                 category
                 for prefix in (
@@ -421,7 +580,9 @@ _POLICIES = (
             "ShadowPlannerLiveRecommendationOutput",
             "ShadowPlannerRecommendationOutput",
         ),
-        shape_hash="6aa85f6fb20a2697c75c0d99f33d6b14bb553023a8066b177d72cb2306e5039d",
+        shape_hash="b913b878f814cc44765d65daaf58c33132ddd463fe8f28b0d4f87a291d216ffc",
+        producer_paths=("full_ai_orchestrator/shadow_planner/runtime.py",),
+        prompt_identifiers=("full_ai.shadow_planner.prompt.v1",),
         categorical_fields=(
             _category(
                 "$.action_type",
@@ -457,6 +618,8 @@ _POLICIES = (
         schema_id="research.brief.v1",
         schema_names=("LLMBriefOutput",),
         shape_hash="9c7621ed9f2066c3bc01806be1f8946caff0dcb1c6445db460431d91a8e5c019",
+        producer_paths=("research_init_brief.py",),
+        prompt_identifiers=("research.llm_brief_synthesis.v1",),
     ),
 )
 

@@ -5,7 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Literal
 
-from artana_evidence_api.agent_contracts import BaseAgentContract
+from artana_evidence_api.agent_contracts import (
+    BaseAgentContract,
+    ModelEvidenceCitation,
+)
 from artana_evidence_api.runtime_support import (
     GovernanceConfig,
     ModelCapability,
@@ -37,10 +40,9 @@ Decision policy:
 - relevant: the paper meaningfully contributes evidence, mechanism, association,
   or context directly aligned with the query/topic.
 - non_relevant: the paper is tangential, off-topic, or too weakly related.
-- If uncertain, choose non_relevant with lower confidence.
+- If uncertain, choose non_relevant and explain the ambiguity in the rationale.
 
 Output quality:
-- confidence_score must reflect decision certainty (0.0-1.0).
 - rationale must be concise and specific.
 - evidence should reference title and/or abstract spans.
 """.strip()
@@ -70,6 +72,33 @@ class PubMedRelevanceContract(BaseAgentContract):
     agent_run_id: str | None = Field(default=None, max_length=128)
 
     model_config = ConfigDict(use_enum_values=True)
+
+
+class PubMedRelevanceModelOutput(BaseModel):
+    """Strict model boundary for PubMed relevance classification."""
+
+    rationale: str
+    evidence: list[ModelEvidenceCitation] = Field(default_factory=list)
+    relevance: Literal["relevant", "non_relevant"] = Field(
+        ...,
+        description="Semantic relevance label for the research topic/query.",
+    )
+    source_type: str = Field(default="pubmed", min_length=1, max_length=64)
+    query: str = Field(..., min_length=1, max_length=4000)
+
+    model_config = ConfigDict(use_enum_values=True, extra="forbid")
+
+    def to_public_contract(self, *, agent_run_id: str) -> PubMedRelevanceContract:
+        """Adapt to the public result with an explicitly unscored confidence value."""
+        return PubMedRelevanceContract(
+            confidence_score=0.0,
+            rationale=self.rationale,
+            evidence=[citation.to_legacy_evidence_item() for citation in self.evidence],
+            relevance=self.relevance,
+            source_type=self.source_type,
+            query=self.query,
+            agent_run_id=agent_run_id,
+        )
 
 
 def _build_deterministic_run_id(
@@ -138,20 +167,18 @@ class ArtanaPubMedRelevanceAdapter:
                 tenant=tenant,
                 model=execution_model_id,
                 prompt=self._build_prompt(context),
-                output_schema=PubMedRelevanceContract,
+                output_schema=PubMedRelevanceModelOutput,
                 schema_id="pubmed.relevance.v1",
                 step_key="pubmed.relevance.title_abstract.v1",
                 replay_policy=self._runtime_policy.replay_policy,
             )
             output = step_result.output
-            contract = (
+            model_output = (
                 output
-                if isinstance(output, PubMedRelevanceContract)
-                else PubMedRelevanceContract.model_validate(output)
+                if isinstance(output, PubMedRelevanceModelOutput)
+                else PubMedRelevanceModelOutput.model_validate(output)
             )
-            if contract.agent_run_id is None:
-                return contract.model_copy(update={"agent_run_id": run_id})
-            return contract
+            return model_output.to_public_contract(agent_run_id=run_id)
         finally:
             try:
                 await kernel.close()
@@ -217,4 +244,5 @@ __all__ = [
     "ArtanaPubMedRelevanceAdapter",
     "PubMedRelevanceContext",
     "PubMedRelevanceContract",
+    "PubMedRelevanceModelOutput",
 ]

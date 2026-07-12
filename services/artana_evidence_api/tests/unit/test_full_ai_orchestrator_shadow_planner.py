@@ -497,6 +497,19 @@ def test_workspace_summary_defers_objective_source_hints_until_after_pubmed_inge
     )
 
 
+def test_shadow_planner_output_rejects_numeric_budget_metadata() -> None:
+    with pytest.raises(ValueError, match="budget_estimate"):
+        ShadowPlannerRecommendationOutput.model_validate(
+            {
+                "action_type": "QUERY_PUBMED",
+                "source_key": "pubmed",
+                "evidence_basis": "Start with literature.",
+                "qualitative_rationale": "PubMed is the next evidence source.",
+                "budget_estimate": {"semantic_confidence": 0.99},
+            },
+        )
+
+
 def test_validate_shadow_planner_output_rejects_non_live_or_invalid_outputs() -> None:
     reserved_output = ShadowPlannerRecommendationOutput(
         action_type=ResearchOrchestratorActionType.RUN_GRAPH_CONNECTION,

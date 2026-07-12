@@ -1,44 +1,5 @@
 [
   {
-    "debt_id": "AON-PLAN-001",
-    "kind": "numeric_judgment",
-    "schema_ids": ["evidence_selection.source_plan.v1"],
-    "field_path": "$.planned_searches[].max_records",
-    "producer": "source-planning agent",
-    "consumers": ["model source-plan adapter", "source acquisition budget"],
-    "current_influence": "The model-selected value is clamped but still changes candidate acquisition volume.",
-    "quarantined": false,
-    "quarantine_rule": "Not quarantined; the adapter currently consumes the model-authored value.",
-    "owner_pr": "PR 3 source-plan numeric migration",
-    "removal_gate": "Derive the limit deterministically from caller policy and remove the field from model output."
-  },
-  {
-    "debt_id": "AON-PLAN-002",
-    "kind": "numeric_judgment",
-    "schema_ids": ["evidence_selection.source_plan.v1"],
-    "field_path": "$.planned_searches[].taxon_id",
-    "producer": "source-planning agent",
-    "consumers": ["source query adapter"],
-    "current_influence": "The model-authored taxonomy identifier changes source query semantics.",
-    "quarantined": false,
-    "quarantine_rule": "Not quarantined; the query adapter consumes the value.",
-    "owner_pr": "PR 3 source-plan numeric migration",
-    "removal_gate": "Resolve taxonomy identifiers from categorical organism mentions through a deterministic resolver."
-  },
-  {
-    "debt_id": "AON-PLAN-003",
-    "kind": "numeric_judgment",
-    "schema_ids": ["evidence_selection.source_plan.v1"],
-    "field_path": "$.planned_searches[].timeout_seconds",
-    "producer": "source-planning agent",
-    "consumers": ["source request runtime"],
-    "current_influence": "The model-authored timeout changes runtime behavior after clamping.",
-    "quarantined": false,
-    "quarantine_rule": "Not quarantined; the request runtime consumes the value.",
-    "owner_pr": "PR 3 source-plan numeric migration",
-    "removal_gate": "Use source policy defaults and remove timeout from model output."
-  },
-  {
     "debt_id": "AON-SEL-001",
     "kind": "numeric_judgment",
     "schema_ids": ["evidence_selection.semantic.v1"],
@@ -63,32 +24,6 @@
     "quarantine_rule": "Not quarantined; missing indexes fall back, but duplicate or permuted valid indexes can misassociate reviews.",
     "owner_pr": "PR 4 proposal-review contract migration",
     "removal_gate": "Use opaque draft references and require exact one-to-one validated coverage before applying reviews."
-  },
-  {
-    "debt_id": "AON-SHARED-001",
-    "kind": "numeric_judgment",
-    "schema_ids": ["pubmed.relevance.v1", "research_onboarding.agent.v1"],
-    "field_path": "BaseAgentContract.confidence_score",
-    "producer": "agents inheriting BaseAgentContract",
-    "consumers": ["compatibility serializers", "workflow routing"],
-    "current_influence": "Consumers can still read agent self-confidence as an operational signal.",
-    "quarantined": false,
-    "quarantine_rule": "Not globally quarantined; owning workflows require categorical migrations.",
-    "owner_pr": "PR 3 shared-contract quarantine, removal in owning workflow PRs",
-    "removal_gate": "No production consumer reads the field and model execution schemas omit it."
-  },
-  {
-    "debt_id": "AON-SHARED-002",
-    "kind": "numeric_judgment",
-    "schema_ids": ["graph_connection.agent.v1", "graph_search.agent.v1", "pubmed.relevance.v1", "research_onboarding.agent.v1", "variant_extraction.agent.v1"],
-    "field_path": "EvidenceItem.relevance",
-    "producer": "agents emitting EvidenceItem",
-    "consumers": ["evidence serializers", "workflow presentation and ranking"],
-    "current_influence": "The shared evidence score remains available to downstream consumers.",
-    "quarantined": false,
-    "quarantine_rule": "Not globally quarantined; evidence must migrate to categorical entailment and source locators.",
-    "owner_pr": "PR 3 shared-contract quarantine, removal in PR 4, PR 8A, and PR 8B",
-    "removal_gate": "Execution schemas omit relevance and all consumers use categorical evidence findings."
   },
   {
     "debt_id": "AON-GCON-001",
@@ -180,32 +115,6 @@
     "quarantine_rule": "Not quarantined from ranking or category conversion.",
     "owner_pr": "PR 8B categorical graph-search migration",
     "removal_gate": "Rank from deterministic policy over categorical findings and remove model relevance."
-  },
-  {
-    "debt_id": "AON-GSEA-004",
-    "kind": "numeric_judgment",
-    "schema_ids": ["graph_search.agent.v1"],
-    "field_path": "$.total_results",
-    "producer": "graph-search agent",
-    "consumers": ["graph search result summary"],
-    "current_influence": "The model authors a count that runtime later overwrites in the main path.",
-    "quarantined": true,
-    "quarantine_rule": "Runtime replaces the value with len(results) before returning the contract.",
-    "owner_pr": "PR 3 graph-search schema cleanup",
-    "removal_gate": "Execution schema omits total_results and runtime remains the sole producer."
-  },
-  {
-    "debt_id": "AON-ONBD-001",
-    "kind": "numeric_judgment",
-    "schema_ids": ["research_onboarding.agent.v1"],
-    "field_path": "$.state_patch.pending_question_count",
-    "producer": "research-onboarding agent",
-    "consumers": ["onboarding state transition"],
-    "current_influence": "The model-authored count participates in workflow state.",
-    "quarantined": false,
-    "quarantine_rule": "Not quarantined; state should derive the count from validated questions.",
-    "owner_pr": "PR 3 onboarding numeric migration",
-    "removal_gate": "Compute the count from the validated pending-question collection."
   },
   {
     "debt_id": "AON-VEXT-001",

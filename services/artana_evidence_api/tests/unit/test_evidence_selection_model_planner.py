@@ -49,8 +49,6 @@ async def test_model_source_planner_turns_goal_into_executable_source_search() -
                 gene_symbol="MED13",
                 evidence_role="variant clinical significance",
                 reason="ClinVar can surface variant-level clinical assertions.",
-                max_records=50,
-                timeout_seconds=30.0,
             ),
         ],
     )
@@ -81,7 +79,7 @@ async def test_model_source_planner_turns_goal_into_executable_source_search() -
     assert result.source_searches[0].source_key == "clinvar"
     assert result.source_searches[0].query_payload == {"gene_symbol": "MED13"}
     assert result.source_searches[0].max_records == 3
-    assert result.source_searches[0].timeout_seconds == 30.0
+    assert result.source_searches[0].timeout_seconds is None
     assert result.source_plan["planner"]["kind"] == "model"
     assert result.source_plan["planner"]["model_id"] == "openai:gpt-test"
     assert result.source_plan["planner"]["agent_run_id"] == "planner-run-123"
@@ -182,7 +180,9 @@ async def test_artana_kernel_model_runner_forces_internal_agent_run_id(
     monkeypatch.setitem(__import__("sys").modules, "artana.kernel", kernel_module)
     monkeypatch.setitem(__import__("sys").modules, "artana.models", models_module)
     monkeypatch.setitem(__import__("sys").modules, "artana.ports", ports_module)
-    monkeypatch.setitem(__import__("sys").modules, "artana.ports.model", model_port_module)
+    monkeypatch.setitem(
+        __import__("sys").modules, "artana.ports.model", model_port_module
+    )
     monkeypatch.setattr(
         model_planner_module,
         "has_configured_openai_api_key",
@@ -230,6 +230,31 @@ async def test_artana_kernel_model_runner_forces_internal_agent_run_id(
     assert captured_run_ids
     assert result.agent_run_id == captured_run_ids[0]
     assert result.agent_run_id != "model-forged-run-id"
+
+
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [
+        ("max_records", 100),
+        ("taxon_id", 7955),
+        ("timeout_seconds", 120.0),
+    ],
+)
+def test_model_source_plan_rejects_agent_authored_operational_numbers(
+    field_name: str,
+    value: float,
+) -> None:
+    intent_payload: dict[str, object] = {
+        "source_key": "marrvel",
+        "gene_symbol": "MED13",
+        "organism": "zebrafish",
+        "evidence_role": "variant database",
+        "reason": "Search MARRVEL.",
+        field_name: value,
+    }
+
+    with pytest.raises(ValueError, match=field_name):
+        PlannedSourceIntent.model_validate(intent_payload)
 
 
 def test_model_source_planning_rejects_unknown_source() -> None:

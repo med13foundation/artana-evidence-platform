@@ -57,6 +57,20 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 _DEFAULT_PLANNING_PANELS = ("omim", "clinvar", "gnomad", "geno2mp", "expression")
 _SUPPORTED_PANEL_SET = frozenset(SUPPORTED_MARRVEL_PANELS)
+_MARRVEL_TAXON_BY_ORGANISM = {
+    "c. elegans": 6239,
+    "caenorhabditis elegans": 6239,
+    "danio rerio": 7955,
+    "drosophila": 7227,
+    "drosophila melanogaster": 7227,
+    "human": 9606,
+    "homo sapiens": 9606,
+    "mouse": 10090,
+    "mus musculus": 10090,
+    "rat": 10116,
+    "rattus norvegicus": 10116,
+    "zebrafish": 7955,
+}
 
 _SOURCE_DEFINITION = SourceDefinition(
     source_key="marrvel",
@@ -91,8 +105,29 @@ _REVIEW_POLICY = SourceReviewPolicy(
         "MARRVEL aggregates panels and should be traced back to panel sources.",
         "Aggregated panel evidence still needs source-level curator review.",
     ),
-    normalized_fields=("gene_symbol", "panel", "title", "phenotype", "variant", "source"),
+    normalized_fields=(
+        "gene_symbol",
+        "panel",
+        "title",
+        "phenotype",
+        "variant",
+        "source",
+    ),
 )
+
+
+def _marrvel_taxon_id(organism: str | None) -> int:
+    """Resolve an agent-authored organism name through a fixed taxonomy map."""
+
+    if organism is None:
+        return 9606
+    normalized = " ".join(organism.casefold().split())
+    taxon_id = _MARRVEL_TAXON_BY_ORGANISM.get(normalized)
+    if taxon_id is not None:
+        return taxon_id
+    msg = f"Unsupported MARRVEL organism '{organism}'."
+    raise SourcePluginPlanningError(msg)
+
 
 class _MarrvelQueryPayload(BaseModel):
     """Validated MARRVEL direct-search payload."""
@@ -143,10 +178,13 @@ class _MarrvelQueryPayload(BaseModel):
 class MarrvelSourcePlugin:
     """Source-owned behavior for MARRVEL."""
 
-    discovery_service_factory: Callable[
-        [],
-        MarrvelDiscoveryServiceProtocol | None,
-    ] | None = None
+    discovery_service_factory: (
+        Callable[
+            [],
+            MarrvelDiscoveryServiceProtocol | None,
+        ]
+        | None
+    ) = None
 
     @property
     def source_key(self) -> str:
@@ -222,11 +260,15 @@ class MarrvelSourcePlugin:
                 "protein_variant for MARRVEL."
             )
             raise SourcePluginPlanningError(msg)
-        payload["taxon_id"] = intent.taxon_id if intent.taxon_id is not None else 9606
+        payload["taxon_id"] = _marrvel_taxon_id(intent.organism)
         payload["panels"] = (
             intent.panels
             if intent.panels is not None
-            else [panel for panel in _DEFAULT_PLANNING_PANELS if panel in _SUPPORTED_PANEL_SET]
+            else [
+                panel
+                for panel in _DEFAULT_PLANNING_PANELS
+                if panel in _SUPPORTED_PANEL_SET
+            ]
         )
         try:
             return planning_payload(_MarrvelQueryPayload.model_validate(payload))
@@ -424,6 +466,7 @@ def _direct_source_record(
         source_capture=SourceResultCapture.model_validate(source_capture),
     )
 
+
 MARRVEL_PLUGIN = MarrvelSourcePlugin()
 
 
@@ -438,7 +481,10 @@ def build_marrvel_execution_plugin(
     del pubmed_discovery_service_factory
     if marrvel_discovery_service_factory is None:
         return MARRVEL_PLUGIN
-    return MarrvelSourcePlugin(discovery_service_factory=marrvel_discovery_service_factory)
+    return MarrvelSourcePlugin(
+        discovery_service_factory=marrvel_discovery_service_factory
+    )
+
 
 __all__ = [
     "MARRVEL_PLUGIN",

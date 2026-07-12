@@ -8,6 +8,9 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from artana_evidence_api.runtime.agent_output_manifest import (
+    AGENT_OUTPUT_SCHEMA_REGISTRY,
+)
 from artana_evidence_api.runtime.agent_output_report import (
     build_agent_output_registry_report,
 )
@@ -21,9 +24,15 @@ _REGISTERED_CALLS = frozenset(
         "run_registered_harness_agent",
         "run_single_step_with_policy",
         "step_runner",
+        "_run_kernel_agent",
     },
 )
 _DIRECT_MODEL_METHODS = frozenset({"run", "run_agent", "step"})
+_DYNAMIC_REGISTERED_WRAPPER_IMPLEMENTATIONS = frozenset(
+    {
+        (SERVICE_ROOT / "relation_type_resolver.py", "run_registered_agent"),
+    },
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,13 +50,15 @@ class AgentOutputBoundaryViolation:
         return f"{relative_path}:{self.line}: {self.message}"
 
 
-def find_agent_output_boundary_violations(
+def find_agent_output_boundary_violations(  # noqa: PLR0912 - AST boundary cases
     paths: tuple[Path, ...] | None = None,
 ) -> tuple[AgentOutputBoundaryViolation, ...]:
     """Return every production model call that bypasses the registered wrappers."""
 
     source_paths = paths or tuple(sorted(SERVICE_ROOT.rglob("*.py")))
     violations: list[AgentOutputBoundaryViolation] = []
+    discovered_schema_ids: set[str] = set()
+    discovered_producers: dict[str, set[str]] = {}
     for path in source_paths:
         if "tests" in path.parts:
             continue
@@ -56,11 +67,15 @@ def find_agent_output_boundary_violations(
             if not isinstance(node, ast.Call):
                 continue
             keywords = {keyword.arg for keyword in node.keywords if keyword.arg}
-            if "output_schema" not in keywords:
-                continue
             call_name = _call_name(node.func)
             leaf_name = call_name.rsplit(".", maxsplit=1)[-1]
-            if leaf_name in _DIRECT_MODEL_METHODS and path != GUARDED_RUNTIME_FILE:
+            if (
+                leaf_name in {"run_agent", "step"} and path != GUARDED_RUNTIME_FILE
+            ) or (
+                leaf_name == "run"
+                and "output_schema" in keywords
+                and path != GUARDED_RUNTIME_FILE
+            ):
                 violations.append(
                     AgentOutputBoundaryViolation(
                         path=path,
@@ -72,7 +87,17 @@ def find_agent_output_boundary_violations(
                     ),
                 )
                 continue
-            if leaf_name in _REGISTERED_CALLS and "schema_id" not in keywords:
+            if leaf_name not in _REGISTERED_CALLS:
+                continue
+            if "output_schema" not in keywords:
+                violations.append(
+                    AgentOutputBoundaryViolation(
+                        path=path,
+                        line=node.lineno,
+                        message=f"{call_name}(...) is missing required output_schema",
+                    ),
+                )
+            if "schema_id" not in keywords:
                 violations.append(
                     AgentOutputBoundaryViolation(
                         path=path,
@@ -80,6 +105,68 @@ def find_agent_output_boundary_violations(
                         message=f"{call_name}(...) is missing required schema_id",
                     ),
                 )
+                continue
+            schema_id_node = next(
+                keyword.value for keyword in node.keywords if keyword.arg == "schema_id"
+            )
+            if not (
+                isinstance(schema_id_node, ast.Constant)
+                and isinstance(schema_id_node.value, str)
+            ):
+                if (path, leaf_name) not in _DYNAMIC_REGISTERED_WRAPPER_IMPLEMENTATIONS:
+                    violations.append(
+                        AgentOutputBoundaryViolation(
+                            path=path,
+                            line=node.lineno,
+                            message=f"{call_name}(...) must use a literal schema_id",
+                        ),
+                    )
+                continue
+            schema_id = schema_id_node.value
+            discovered_schema_ids.add(schema_id)
+            if path.is_relative_to(SERVICE_ROOT):
+                discovered_producers.setdefault(schema_id, set()).add(
+                    path.relative_to(SERVICE_ROOT).as_posix(),
+                )
+            if schema_id not in AGENT_OUTPUT_SCHEMA_REGISTRY.schema_ids():
+                violations.append(
+                    AgentOutputBoundaryViolation(
+                        path=path,
+                        line=node.lineno,
+                        message=f"{call_name}(...) uses unknown schema_id {schema_id!r}",
+                    ),
+                )
+    if paths is None:
+        missing_boundaries = sorted(
+            set(AGENT_OUTPUT_SCHEMA_REGISTRY.schema_ids()) - discovered_schema_ids,
+        )
+        if missing_boundaries:
+            violations.append(
+                AgentOutputBoundaryViolation(
+                    path=SERVICE_ROOT / "runtime" / "agent_output_manifest.py",
+                    line=1,
+                    message=(
+                        "registered schema IDs have no literal production boundary: "
+                        f"{missing_boundaries!r}"
+                    ),
+                ),
+            )
+        for policy in AGENT_OUTPUT_SCHEMA_REGISTRY.policies():
+            actual_producers = discovered_producers.get(policy.schema_id, set())
+            expected_producers = set(policy.producer_paths)
+            if actual_producers == expected_producers:
+                continue
+            violations.append(
+                AgentOutputBoundaryViolation(
+                    path=SERVICE_ROOT / "runtime" / "agent_output_manifest.py",
+                    line=1,
+                    message=(
+                        f"schema {policy.schema_id!r} producer registry drift; "
+                        f"expected={sorted(expected_producers)!r}, "
+                        f"found={sorted(actual_producers)!r}"
+                    ),
+                ),
+            )
     return tuple(violations)
 
 
@@ -102,11 +189,14 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _render_report() -> str:
-    return json.dumps(
-        build_agent_output_registry_report(),
-        indent=2,
-        sort_keys=True,
-    ) + "\n"
+    return (
+        json.dumps(
+            build_agent_output_registry_report(),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
 
 
 def main() -> None:
@@ -121,7 +211,9 @@ def main() -> None:
         args.write_report.write_text(report, encoding="utf-8")
     if args.check_report is not None:
         if not args.check_report.exists():
-            raise SystemExit(f"Agent output registry report is missing: {args.check_report}")
+            raise SystemExit(
+                f"Agent output registry report is missing: {args.check_report}"
+            )
         if args.check_report.read_text(encoding="utf-8") != report:
             raise SystemExit(
                 f"Agent output registry report is stale: {args.check_report}",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import cast
 
 from artana_evidence_api.full_ai_orchestrator.shadow_planner.models import (
     ShadowPlannerRecommendationOutput,
@@ -69,7 +70,7 @@ def _build_shadow_decision(
         qualitative_rationale=output.qualitative_rationale,
         risk_level=output.risk_level,
         requires_approval=output.requires_approval,
-        budget_estimate=output.budget_estimate,
+        budget_estimate=cast("JSONObject | None", output.budget_estimate),
         fallback_reason=output.fallback_reason,
         metadata={
             "checkpoint_key": checkpoint_key,

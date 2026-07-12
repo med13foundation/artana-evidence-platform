@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING
 from artana.kernel import ArtanaKernel
 from artana.models import TenantContext
 from artana.ports.model import LiteLLMAdapter
-from artana_evidence_api.agent_contracts import OnboardingAssistantContract
+from artana_evidence_api.agent_contracts import (
+    OnboardingAssistantContract,
+    OnboardingAssistantModelOutput,
+)
 from artana_evidence_api.composition import build_graph_harness_kernel_middleware
 from artana_evidence_api.harness_registry import get_harness_template
 from artana_evidence_api.onboarding_prompt import (
@@ -221,7 +224,7 @@ class HarnessResearchOnboardingRunner:
         )
         try:
             execution_model_id = normalize_litellm_model_id(model_id)
-            contract = await run_registered_agent(
+            model_output = await run_registered_agent(
                 agent,
                 schema_id="research_onboarding.agent.v1",
                 run_id=run_id,
@@ -229,7 +232,7 @@ class HarnessResearchOnboardingRunner:
                 model=execution_model_id,
                 system_prompt=self._system_prompt(),
                 prompt=prompt,
-                output_schema=OnboardingAssistantContract,
+                output_schema=OnboardingAssistantModelOutput,
                 max_iterations=_MAX_RESEARCH_ONBOARDING_ITERATIONS,
             )
             active_skill_names = await agent.emit_active_skill_summary(
@@ -253,9 +256,7 @@ class HarnessResearchOnboardingRunner:
                         "Research onboarding Artana store close failed",
                         exc_info=True,
                     )
-        normalized_contract = contract.model_copy(
-            update={"agent_run_id": contract.agent_run_id or run_id},
-        )
+        normalized_contract = model_output.to_assistant_contract(agent_run_id=run_id)
         return HarnessResearchOnboardingResult(
             contract=normalized_contract,
             agent_run_id=normalized_contract.agent_run_id or run_id,

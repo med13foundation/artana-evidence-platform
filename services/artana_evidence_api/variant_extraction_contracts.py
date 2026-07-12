@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from typing import Literal, cast
 
-from artana_evidence_api.agent_contracts import EvidenceBackedAgentContract
+from artana_evidence_api.agent_contracts import (
+    EvidenceBackedAgentContract,
+    ModelEvidenceCitation,
+)
 from artana_evidence_api.types.common import JSONObject, JSONValue
 from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     assessment_confidence_weight,
 )
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 LLMScalarValue = str | int | float | bool | None
 
@@ -284,15 +287,17 @@ class ExtractionContract(EvidenceBackedAgentContract):
         return self
 
 
-class LLMExtractionContract(EvidenceBackedAgentContract):
+class LLMExtractionContract(BaseModel):
     """OpenAI structured-output-safe contract for live variant extraction."""
 
+    rationale: str
     confidence_score: float = Field(
         default=0.0,
         ge=0.0,
         le=1.0,
         description="Derived backend run-level confidence for routing decisions.",
     )
+    evidence: list[ModelEvidenceCitation] = Field(default_factory=list)
     decision: Literal["generated", "fallback", "escalate"] = Field(
         ...,
         description="Outcome of the extraction run.",
@@ -306,11 +311,13 @@ class LLMExtractionContract(EvidenceBackedAgentContract):
     shadow_mode: bool = Field(default=True)
     agent_run_id: str | None = Field(default=None)
 
+    model_config = ConfigDict(use_enum_values=True, extra="forbid")
+
     def to_extraction_contract(self) -> ExtractionContract:
         """Convert the LLM-safe schema into the internal service contract."""
         return ExtractionContract(
             rationale=self.rationale,
-            evidence=self.evidence,
+            evidence=[citation.to_legacy_evidence_item() for citation in self.evidence],
             confidence_score=self.confidence_score,
             decision=self.decision,
             source_type=self.source_type,

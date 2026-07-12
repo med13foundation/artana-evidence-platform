@@ -1,58 +1,6 @@
 {
-  "active_debt_count": 25,
+  "active_debt_count": 18,
   "debt_manifest": [
-    {
-      "consumers": [
-        "model source-plan adapter",
-        "source acquisition budget"
-      ],
-      "current_influence": "The model-selected value is clamped but still changes candidate acquisition volume.",
-      "debt_id": "AON-PLAN-001",
-      "field_path": "$.planned_searches[].max_records",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 source-plan numeric migration",
-      "producer": "source-planning agent",
-      "quarantine_rule": "Not quarantined; the adapter currently consumes the model-authored value.",
-      "quarantined": false,
-      "removal_gate": "Derive the limit deterministically from caller policy and remove the field from model output.",
-      "schema_ids": [
-        "evidence_selection.source_plan.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "source query adapter"
-      ],
-      "current_influence": "The model-authored taxonomy identifier changes source query semantics.",
-      "debt_id": "AON-PLAN-002",
-      "field_path": "$.planned_searches[].taxon_id",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 source-plan numeric migration",
-      "producer": "source-planning agent",
-      "quarantine_rule": "Not quarantined; the query adapter consumes the value.",
-      "quarantined": false,
-      "removal_gate": "Resolve taxonomy identifiers from categorical organism mentions through a deterministic resolver.",
-      "schema_ids": [
-        "evidence_selection.source_plan.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "source request runtime"
-      ],
-      "current_influence": "The model-authored timeout changes runtime behavior after clamping.",
-      "debt_id": "AON-PLAN-003",
-      "field_path": "$.planned_searches[].timeout_seconds",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 source-plan numeric migration",
-      "producer": "source-planning agent",
-      "quarantine_rule": "Not quarantined; the request runtime consumes the value.",
-      "quarantined": false,
-      "removal_gate": "Use source policy defaults and remove timeout from model output.",
-      "schema_ids": [
-        "evidence_selection.source_plan.v1"
-      ]
-    },
     {
       "consumers": [
         "semantic assessment record mapping"
@@ -86,47 +34,6 @@
       "removal_gate": "Use opaque draft references and require exact one-to-one validated coverage before applying reviews.",
       "schema_ids": [
         "document_extraction.proposal_review.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "compatibility serializers",
-        "workflow routing"
-      ],
-      "current_influence": "Consumers can still read agent self-confidence as an operational signal.",
-      "debt_id": "AON-SHARED-001",
-      "field_path": "BaseAgentContract.confidence_score",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 shared-contract quarantine, removal in owning workflow PRs",
-      "producer": "agents inheriting BaseAgentContract",
-      "quarantine_rule": "Not globally quarantined; owning workflows require categorical migrations.",
-      "quarantined": false,
-      "removal_gate": "No production consumer reads the field and model execution schemas omit it.",
-      "schema_ids": [
-        "pubmed.relevance.v1",
-        "research_onboarding.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "evidence serializers",
-        "workflow presentation and ranking"
-      ],
-      "current_influence": "The shared evidence score remains available to downstream consumers.",
-      "debt_id": "AON-SHARED-002",
-      "field_path": "EvidenceItem.relevance",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 shared-contract quarantine, removal in PR 4, PR 8A, and PR 8B",
-      "producer": "agents emitting EvidenceItem",
-      "quarantine_rule": "Not globally quarantined; evidence must migrate to categorical entailment and source locators.",
-      "quarantined": false,
-      "removal_gate": "Execution schemas omit relevance and all consumers use categorical evidence findings.",
-      "schema_ids": [
-        "graph_connection.agent.v1",
-        "graph_search.agent.v1",
-        "pubmed.relevance.v1",
-        "research_onboarding.agent.v1",
-        "variant_extraction.agent.v1"
       ]
     },
     {
@@ -248,40 +155,6 @@
       "removal_gate": "Rank from deterministic policy over categorical findings and remove model relevance.",
       "schema_ids": [
         "graph_search.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "graph search result summary"
-      ],
-      "current_influence": "The model authors a count that runtime later overwrites in the main path.",
-      "debt_id": "AON-GSEA-004",
-      "field_path": "$.total_results",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 graph-search schema cleanup",
-      "producer": "graph-search agent",
-      "quarantine_rule": "Runtime replaces the value with len(results) before returning the contract.",
-      "quarantined": true,
-      "removal_gate": "Execution schema omits total_results and runtime remains the sole producer.",
-      "schema_ids": [
-        "graph_search.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "onboarding state transition"
-      ],
-      "current_influence": "The model-authored count participates in workflow state.",
-      "debt_id": "AON-ONBD-001",
-      "field_path": "$.state_patch.pending_question_count",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 onboarding numeric migration",
-      "producer": "research-onboarding agent",
-      "quarantine_rule": "Not quarantined; state should derive the count from validated questions.",
-      "quarantined": false,
-      "removal_gate": "Compute the count from the validated pending-question collection.",
-      "schema_ids": [
-        "research_onboarding.agent.v1"
       ]
     },
     {
@@ -440,10 +313,10 @@
       ]
     }
   ],
-  "debt_numeric_field_count": 28,
+  "debt_numeric_field_count": 16,
   "origin_governed_numeric_field_count": 0,
   "registered_category_field_count": 67,
-  "registered_numeric_field_count": 28,
+  "registered_numeric_field_count": 16,
   "registered_schema_count": 15,
   "registered_schemas": [
     {
@@ -490,6 +363,12 @@
           "path": "$.reviews[].index"
         }
       ],
+      "producer_paths": [
+        "document_extraction.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.proposal_review.v1"
+      ],
       "schema_id": "document_extraction.proposal_review.v1",
       "schema_names": [
         "ProposalReviewResult"
@@ -509,6 +388,12 @@
         }
       ],
       "numeric_fields": [],
+      "producer_paths": [
+        "document_extraction_support/llm_fulltext_extraction.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.relation.v2"
+      ],
       "schema_id": "document_extraction.relation.v2",
       "schema_names": [
         "LLMExtractionResult"
@@ -528,6 +413,12 @@
         }
       ],
       "numeric_fields": [],
+      "producer_paths": [
+        "relation_type_resolver.py"
+      ],
+      "prompt_identifiers": [
+        "entity_resolution.system_and_request.v1"
+      ],
       "schema_id": "entity_resolution.agent.v1",
       "schema_names": [
         "EntityDecision"
@@ -649,6 +540,12 @@
           "path": "$.assessments[].record_index"
         }
       ],
+      "producer_paths": [
+        "evidence_selection/semantic/model.py"
+      ],
+      "prompt_identifiers": [
+        "evidence_selection.semantic_selector.v1"
+      ],
       "schema_id": "evidence_selection.semantic.v1",
       "schema_names": [
         "EvidenceSelectionSemanticBatchContract"
@@ -657,28 +554,18 @@
     },
     {
       "categorical_fields": [],
-      "numeric_fields": [
-        {
-          "debt_id": "AON-PLAN-001",
-          "origin": null,
-          "path": "$.planned_searches[].max_records"
-        },
-        {
-          "debt_id": "AON-PLAN-002",
-          "origin": null,
-          "path": "$.planned_searches[].taxon_id"
-        },
-        {
-          "debt_id": "AON-PLAN-003",
-          "origin": null,
-          "path": "$.planned_searches[].timeout_seconds"
-        }
+      "numeric_fields": [],
+      "producer_paths": [
+        "evidence_selection_model_planner.py"
+      ],
+      "prompt_identifiers": [
+        "evidence_selection.source_planner.v1"
       ],
       "schema_id": "evidence_selection.source_plan.v1",
       "schema_names": [
         "ModelEvidenceSelectionSourcePlanContract"
       ],
-      "shape_hash": "231f5fe113d25ee0544447ecedf445747c22939bf440a9eda1e3c90f05161d74"
+      "shape_hash": "4b0643668ca687eafd5796f669b25d728ca7cbac352dadb7c6a7f1800a4a7780"
     },
     {
       "categorical_fields": [
@@ -730,12 +617,18 @@
         }
       ],
       "numeric_fields": [],
+      "producer_paths": [
+        "full_ai_orchestrator/shadow_planner/runtime.py"
+      ],
+      "prompt_identifiers": [
+        "full_ai.shadow_planner.prompt.v1"
+      ],
       "schema_id": "full_ai.shadow_planner.v1",
       "schema_names": [
         "ShadowPlannerLiveRecommendationOutput",
         "ShadowPlannerRecommendationOutput"
       ],
-      "shape_hash": "6aa85f6fb20a2697c75c0d99f33d6b14bb553023a8066b177d72cb2306e5039d"
+      "shape_hash": "b913b878f814cc44765d65daaf58c33132ddd463fe8f28b0d4f87a291d216ffc"
     },
     {
       "categorical_fields": [
@@ -866,11 +759,6 @@
           "path": "$.confidence_score"
         },
         {
-          "debt_id": "AON-SHARED-002",
-          "origin": null,
-          "path": "$.evidence[].relevance"
-        },
-        {
           "debt_id": "AON-GCON-002",
           "origin": null,
           "path": "$.proposed_relations[].confidence"
@@ -886,11 +774,17 @@
           "path": "$.rejected_candidates[].confidence"
         }
       ],
+      "producer_paths": [
+        "graph_connection_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "graph_connection.system_and_request.v1"
+      ],
       "schema_id": "graph_connection.agent.v1",
       "schema_names": [
         "_GraphConnectionExecutionContract"
       ],
-      "shape_hash": "67e9edc4e85b747cd93c6f0cc8b864d01d0fb21c75cdb97ae7416d0b561a58c5"
+      "shape_hash": "c02dac58f0bf8f3b703a6f45a2398f4590c1142c8c50fa876813c496ab800a2b"
     },
     {
       "categorical_fields": [
@@ -1004,11 +898,6 @@
           "path": "$.confidence_score"
         },
         {
-          "debt_id": "AON-SHARED-002",
-          "origin": null,
-          "path": "$.evidence[].relevance"
-        },
-        {
           "debt_id": "AON-GSEA-002",
           "origin": null,
           "path": "$.results[].evidence_chain[].confidence"
@@ -1017,22 +906,29 @@
           "debt_id": "AON-GSEA-003",
           "origin": null,
           "path": "$.results[].relevance_score"
-        },
-        {
-          "debt_id": "AON-GSEA-004",
-          "origin": null,
-          "path": "$.total_results"
         }
+      ],
+      "producer_paths": [
+        "graph_search_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "graph_search.system_and_request.v1"
       ],
       "schema_id": "graph_search.agent.v1",
       "schema_names": [
         "_GraphSearchExecutionContract"
       ],
-      "shape_hash": "044bf94a38499e6f0dafd6d4e7b1ccd05d2010d612d832a26e70c4713724bf6f"
+      "shape_hash": "754c069d4379463f2e5f01e91c4a4e863f39762bfed230bc7276b345dcd989c1"
     },
     {
       "categorical_fields": [],
       "numeric_fields": [],
+      "producer_paths": [
+        "marrvel_enrichment.py"
+      ],
+      "prompt_identifiers": [
+        "marrvel.gene_inference.v1"
+      ],
       "schema_id": "marrvel.gene_inference.v1",
       "schema_names": [
         "_MarrvelGeneInferenceResult"
@@ -1051,6 +947,13 @@
         }
       ],
       "numeric_fields": [],
+      "producer_paths": [
+        "runtime/model_health.py",
+        "runtime_support.py"
+      ],
+      "prompt_identifiers": [
+        "model_health.probe.v1"
+      ],
       "schema_id": "model_health.probe.v1",
       "schema_names": [
         "_ProbeOutput"
@@ -1082,23 +985,18 @@
           ]
         }
       ],
-      "numeric_fields": [
-        {
-          "debt_id": "AON-SHARED-001",
-          "origin": null,
-          "path": "$.confidence_score"
-        },
-        {
-          "debt_id": "AON-SHARED-002",
-          "origin": null,
-          "path": "$.evidence[].relevance"
-        }
+      "numeric_fields": [],
+      "producer_paths": [
+        "pubmed_relevance.py"
+      ],
+      "prompt_identifiers": [
+        "pubmed.relevance.title_abstract.v1"
       ],
       "schema_id": "pubmed.relevance.v1",
       "schema_names": [
-        "PubMedRelevanceContract"
+        "PubMedRelevanceModelOutput"
       ],
-      "shape_hash": "f93a152862754dc9ef0f25da8d58cd7dfb04a1965eaa25a975cd3ba83aed8654"
+      "shape_hash": "edeba4193516a67036849983c26be40ce62ac17794e317d2fbc654e50c634e66"
     },
     {
       "categorical_fields": [
@@ -1115,6 +1013,12 @@
         }
       ],
       "numeric_fields": [],
+      "producer_paths": [
+        "relation_type_resolver.py"
+      ],
+      "prompt_identifiers": [
+        "relation_type_resolution.system_and_request.v1"
+      ],
       "schema_id": "relation_type_resolution.agent.v1",
       "schema_names": [
         "RelationTypeDecision"
@@ -1124,6 +1028,12 @@
     {
       "categorical_fields": [],
       "numeric_fields": [],
+      "producer_paths": [
+        "research_init_brief.py"
+      ],
+      "prompt_identifiers": [
+        "research.llm_brief_synthesis.v1"
+      ],
       "schema_id": "research.brief.v1",
       "schema_names": [
         "LLMBriefOutput"
@@ -1182,28 +1092,18 @@
           ]
         }
       ],
-      "numeric_fields": [
-        {
-          "debt_id": "AON-SHARED-001",
-          "origin": null,
-          "path": "$.confidence_score"
-        },
-        {
-          "debt_id": "AON-SHARED-002",
-          "origin": null,
-          "path": "$.evidence[].relevance"
-        },
-        {
-          "debt_id": "AON-ONBD-001",
-          "origin": null,
-          "path": "$.state_patch.pending_question_count"
-        }
+      "numeric_fields": [],
+      "producer_paths": [
+        "research_onboarding_agent_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "research_onboarding.system_and_turn.v1"
       ],
       "schema_id": "research_onboarding.agent.v1",
       "schema_names": [
-        "OnboardingAssistantContract"
+        "OnboardingAssistantModelOutput"
       ],
-      "shape_hash": "d7f808ea5d835f87372df00b0f3543470fc697e3e6d69037823b82115fe52a6b"
+      "shape_hash": "0fed46693511f4f2807d37e872c2f96677f80991a3cded883d5a7fbb319a6849"
     },
     {
       "categorical_fields": [
@@ -1434,11 +1334,6 @@
           "path": "$.confidence_score"
         },
         {
-          "debt_id": "AON-SHARED-002",
-          "origin": null,
-          "path": "$.evidence[].relevance"
-        },
-        {
           "debt_id": "AON-VEXT-002",
           "origin": null,
           "path": "$.entities[].anchors[].value"
@@ -1469,15 +1364,21 @@
           "path": "$.relations[].target_anchors[].value"
         }
       ],
+      "producer_paths": [
+        "variant_extraction_bridges.py"
+      ],
+      "prompt_identifiers": [
+        "variant_extraction.context.v1"
+      ],
       "schema_id": "variant_extraction.agent.v1",
       "schema_names": [
         "LLMExtractionContract"
       ],
-      "shape_hash": "20a4d0de30915f883b49eda5bea51d1734a566b6bfd09a8c6e0a60ceb4b0d8c3"
+      "shape_hash": "390b7cd1001fcf49d7ac9bedfd9fa411a7f01e42ea3c3a3558759810ed781909"
     }
   ],
   "schema_version": "agent_output_registry_report.v1",
-  "unquarantined_debt_count": 23,
+  "unquarantined_debt_count": 17,
   "unquarantined_debt_ids": [
     "AOC-SHADOW-001",
     "AOC-SHADOW-002",
@@ -1488,13 +1389,7 @@
     "AON-GSEA-001",
     "AON-GSEA-002",
     "AON-GSEA-003",
-    "AON-ONBD-001",
-    "AON-PLAN-001",
-    "AON-PLAN-002",
-    "AON-PLAN-003",
     "AON-PROP-001",
-    "AON-SHARED-001",
-    "AON-SHARED-002",
     "AON-VEXT-001",
     "AON-VEXT-002",
     "AON-VEXT-003",

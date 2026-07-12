@@ -191,12 +191,12 @@ def test_source_query_playbooks_reject_missing_required_fields(
         )
 
 
-def test_marrvel_playbook_accepts_explicit_panels_and_taxon() -> None:
+def test_marrvel_playbook_resolves_organism_to_taxon_deterministically() -> None:
     adapter = require_source_adapter("marrvel")
     intent = PlannedSourceIntent(
         source_key="marrvel",
         gene_symbol="med13",
-        taxon_id=7955,
+        organism="zebrafish",
         panels=["clinvar", "omim"],
         evidence_role="model organism",
         reason="Search a non-human MARRVEL slice.",

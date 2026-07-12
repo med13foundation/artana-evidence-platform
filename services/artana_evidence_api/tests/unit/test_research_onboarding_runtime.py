@@ -201,8 +201,7 @@ def test_onboarding_contract_coerces_plan_ready_with_questions() -> None:
         "Which evidence types should the system prioritize first?",
     ]
     assert (
-        "Normalized plan_ready output with open questions into "
-        "clarification_request."
+        "Normalized plan_ready output with open questions into clarification_request."
     ) in contract.warnings
 
 
@@ -235,7 +234,7 @@ def test_onboarding_contract_derives_clarification_pending_question_count() -> N
             "state_patch": {
                 "thread_status": "review_needed",
                 "onboarding_status": "plan_ready",
-                "pending_question_count": 0,
+                "pending_question_count": 1_000_000,
                 "objective": "Identify evidence-backed resistance biomarkers for review.",
                 "explored_questions": [],
                 "pending_questions": [
@@ -290,7 +289,7 @@ def test_onboarding_contract_derives_plan_ready_pending_question_count() -> None
             "state_patch": {
                 "thread_status": "review_needed",
                 "onboarding_status": "plan_ready",
-                "pending_question_count": 1,
+                "pending_question_count": 1_000_000,
                 "objective": "Identify evidence-backed resistance biomarkers for review.",
                 "explored_questions": [
                     "Which evidence types should the system prioritize first?",
@@ -369,7 +368,9 @@ def test_onboarding_contract_rejects_non_string_pending_question_items() -> None
         )
 
 
-def test_onboarding_contract_rejects_review_needed_with_real_pending_questions() -> None:
+def test_onboarding_contract_rejects_review_needed_with_real_pending_questions() -> (
+    None
+):
     with pytest.raises(ValidationError, match="review_needed state"):
         OnboardingAssistantContract.model_validate(
             {

@@ -52,6 +52,8 @@ def build_agent_output_registry_report() -> dict[str, object]:
                 "schema_id": policy.schema_id,
                 "schema_names": list(policy.schema_names),
                 "shape_hash": policy.shape_hash,
+                "producer_paths": list(policy.producer_paths),
+                "prompt_identifiers": list(policy.prompt_identifiers),
                 "numeric_fields": numeric_fields,
                 "categorical_fields": categorical_fields,
             },

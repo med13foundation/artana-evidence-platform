@@ -55,8 +55,14 @@ def test_marrvel_plugin_matches_legacy_query_playbook_defaults() -> None:
 
     assert legacy_playbook is not None
     assert plugin.build_query_payload(intent) == legacy_playbook.build_payload(intent)
-    assert plugin.supported_objective_intents == legacy_playbook.supported_objective_intents
-    assert plugin.result_interpretation_hints == legacy_playbook.result_interpretation_hints
+    assert (
+        plugin.supported_objective_intents
+        == legacy_playbook.supported_objective_intents
+    )
+    assert (
+        plugin.result_interpretation_hints
+        == legacy_playbook.result_interpretation_hints
+    )
     assert plugin.non_goals == legacy_playbook.non_goals
     assert plugin.handoff_eligible is legacy_playbook.handoff_eligible
 
@@ -67,7 +73,7 @@ def test_marrvel_plugin_preserves_request_looseness_and_panel_normalization() ->
         source_key="marrvel",
         gene_symbol="MED13",
         variant_hgvs=" NC_000017.11:g.6012345A>G ",
-        taxon_id=9606,
+        organism="Homo sapiens",
         panels=["ClinVar", "clinvar", "GNOMAD_VARIANT"],
         evidence_role="variant panel evidence",
         reason="Search variant panels.",
@@ -90,7 +96,23 @@ def test_marrvel_plugin_rejects_conflicting_variant_inputs() -> None:
         reason="Bad request.",
     )
 
-    with pytest.raises(SourcePluginPlanningError, match="either variant_hgvs or protein_variant"):
+    with pytest.raises(
+        SourcePluginPlanningError, match="either variant_hgvs or protein_variant"
+    ):
+        plugin.build_query_payload(intent)
+
+
+def test_marrvel_plugin_rejects_unregistered_organism_alias() -> None:
+    plugin = MarrvelSourcePlugin()
+    intent = PlannedSourceIntent(
+        source_key="marrvel",
+        gene_symbol="MED13",
+        organism="invented organism",
+        evidence_role="variant panel evidence",
+        reason="Search MARRVEL.",
+    )
+
+    with pytest.raises(SourcePluginPlanningError, match="Unsupported MARRVEL organism"):
         plugin.build_query_payload(intent)
 
 
@@ -116,8 +138,12 @@ def test_marrvel_plugin_matches_legacy_record_policy() -> None:
     assert legacy_policy is not None
     assert plugin.handoff_target_kind == legacy_policy.handoff_target_kind
     assert plugin.direct_search_supported is legacy_policy.direct_search_supported
-    assert plugin.provider_external_id(record) == legacy_policy.provider_external_id(record)
-    assert plugin.recommends_variant_aware(record) is legacy_policy.recommends_variant_aware(record)
+    assert plugin.provider_external_id(record) == legacy_policy.provider_external_id(
+        record
+    )
+    assert plugin.recommends_variant_aware(
+        record
+    ) is legacy_policy.recommends_variant_aware(record)
     assert plugin.normalize_record(record) == legacy_policy.normalize_record(record)
 
 
@@ -170,7 +196,9 @@ def test_marrvel_plugin_builds_variant_aware_candidate_context() -> None:
 def test_marrvel_plugin_validates_live_search_source_key() -> None:
     plugin = MarrvelSourcePlugin()
 
-    with pytest.raises(EvidenceSelectionSourceSearchError, match="canonical source_key"):
+    with pytest.raises(
+        EvidenceSelectionSourceSearchError, match="canonical source_key"
+    ):
         plugin.validate_live_search(
             _LiveSearch(
                 source_key="MARRVEL",

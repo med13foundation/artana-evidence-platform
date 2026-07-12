@@ -210,7 +210,6 @@ class SourceQueryIntent(Protocol):
     disease: str | None
     phenotype: str | None
     organism: str | None
-    taxon_id: int | None
     panels: list[str] | None
 
 
@@ -396,7 +395,9 @@ class DocumentIngestionSourcePlugin(SourceMetadataPlugin, Protocol):
 
     def validate_document_input(self, document: SourceDocumentInput) -> None: ...
 
-    def normalize_document_metadata(self, document: SourceDocumentInput) -> JSONObject: ...
+    def normalize_document_metadata(
+        self, document: SourceDocumentInput
+    ) -> JSONObject: ...
 
     def build_extraction_context(
         self,

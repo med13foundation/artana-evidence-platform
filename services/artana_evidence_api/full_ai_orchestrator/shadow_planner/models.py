@@ -141,7 +141,7 @@ _COST_PAYLOAD_KEYS: tuple[str, ...] = (
 class ShadowPlannerRecommendationOutput(BaseModel):
     """Structured planner recommendation used only in shadow mode."""
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     action_type: ResearchOrchestratorActionType
     source_key: str | None = Field(default=None, min_length=1, max_length=64)
@@ -150,7 +150,7 @@ class ShadowPlannerRecommendationOutput(BaseModel):
     expected_value_band: Literal["low", "medium", "high"] | None = None
     risk_level: Literal["low", "medium", "high"] | None = None
     requires_approval: bool = False
-    budget_estimate: JSONObject | None = None
+    budget_estimate: dict[str, str] | None = None
     stop_reason: str | None = Field(default=None, min_length=1, max_length=512)
     fallback_reason: str | None = Field(default=None, min_length=1, max_length=512)
     selected_entity_ids: list[str] = Field(default_factory=list, max_length=10)

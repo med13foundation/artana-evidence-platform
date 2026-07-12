@@ -8,9 +8,9 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
-from typing import cast
+from typing import Literal, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AgentOutputSchemaRegistrationError(ValueError):
@@ -26,6 +26,117 @@ class NumericOrigin(str, Enum):
     CALIBRATION_MODEL = "calibration_model"
     COMPUTED_METRIC = "computed_metric"
     RUNTIME_OBSERVATION = "runtime_observation"
+
+
+class SourceMeasurementNumber(BaseModel):
+    """A number copied from a source with complete extraction provenance."""
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        json_schema_extra={"x-artana-numeric-origin": "source_measurement"},
+    )
+
+    origin: Literal["source_measurement"] = "source_measurement"
+    value: float
+    source_locator: str = Field(..., min_length=1)
+    literal_span: str = Field(..., min_length=1)
+    field_name: str = Field(..., min_length=1)
+    unit: str = Field(..., min_length=1)
+    extraction_method: str = Field(..., min_length=1)
+    source_hash: str = Field(..., min_length=1)
+
+
+class RetrievalAlgorithmNumber(BaseModel):
+    """A retrieval score with the exact algorithm and acquisition context."""
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        json_schema_extra={"x-artana-numeric-origin": "retrieval_algorithm"},
+    )
+
+    origin: Literal["retrieval_algorithm"] = "retrieval_algorithm"
+    value: float
+    provider_algorithm_id: str = Field(..., min_length=1)
+    algorithm_version: str = Field(..., min_length=1)
+    query_input_hash: str = Field(..., min_length=1)
+    affected_candidate_acquisition: bool
+
+
+class DeterministicPolicyNumber(BaseModel):
+    """A deterministic mapping from complete categorical policy inputs."""
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        json_schema_extra={"x-artana-numeric-origin": "deterministic_policy"},
+    )
+
+    origin: Literal["deterministic_policy"] = "deterministic_policy"
+    value: float
+    categorical_inputs: dict[str, str]
+    policy_id: str = Field(..., min_length=1)
+    policy_version: str = Field(..., min_length=1)
+    mapping_version: str = Field(..., min_length=1)
+    caps: list[str]
+    vetoes: list[str]
+    blocking_categories: list[str]
+
+
+class CalibrationModelNumber(BaseModel):
+    """A calibrated value tied to one fitted policy and held-out protocol."""
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        json_schema_extra={"x-artana-numeric-origin": "calibration_model"},
+    )
+
+    origin: Literal["calibration_model"] = "calibration_model"
+    value: float
+    input_policy_id: str = Field(..., min_length=1)
+    input_policy_version: str = Field(..., min_length=1)
+    calibration_algorithm: str = Field(..., min_length=1)
+    calibration_version: str = Field(..., min_length=1)
+    training_set_hash: str = Field(..., min_length=1)
+    held_out_protocol: str = Field(..., min_length=1)
+    calibration_status: Literal["unavailable", "diagnostic", "validated"]
+
+
+class ComputedMetricNumber(BaseModel):
+    """A reproducible metric over immutable input artifacts."""
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        json_schema_extra={"x-artana-numeric-origin": "computed_metric"},
+    )
+
+    origin: Literal["computed_metric"] = "computed_metric"
+    value: float
+    metric_specification: str = Field(..., min_length=1)
+    metric_version: str = Field(..., min_length=1)
+    input_artifact_hashes: list[str] = Field(..., min_length=1)
+    denominator: int = Field(..., ge=0)
+    aggregation_scope: str = Field(..., min_length=1)
+
+
+class RuntimeObservationNumber(BaseModel):
+    """A runtime measurement collected from one identified execution."""
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        json_schema_extra={"x-artana-numeric-origin": "runtime_observation"},
+    )
+
+    origin: Literal["runtime_observation"] = "runtime_observation"
+    value: float
+    runtime_provider_source: str = Field(..., min_length=1)
+    unit: str = Field(..., min_length=1)
+    collection_method: str = Field(..., min_length=1)
+    execution_id: str = Field(..., min_length=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +177,9 @@ class CategoryValuePolicy:
             "positive_example": self.positive_example,
             "counterexample": self.counterexample,
         }
-        missing = sorted(name for name, value in required.items() if value.strip() == "")
+        missing = sorted(
+            name for name, value in required.items() if value.strip() == ""
+        )
         if missing:
             msg = f"Category value policy is missing: {', '.join(missing)}."
             raise AgentOutputSchemaRegistrationError(msg)
@@ -96,7 +209,9 @@ class CategoryFieldPolicy:
             msg = f"Category field {self.path!r} has an empty debt ID."
             raise AgentOutputSchemaRegistrationError(msg)
         registered_values = [policy.value for policy in self.values]
-        if not registered_values or len(set(registered_values)) != len(registered_values):
+        if not registered_values or len(set(registered_values)) != len(
+            registered_values
+        ):
             msg = f"Category field {self.path!r} has missing or duplicate values."
             raise AgentOutputSchemaRegistrationError(msg)
 
@@ -108,14 +223,28 @@ class AgentOutputSchemaPolicy:
     schema_id: str
     schema_names: tuple[str, ...]
     shape_hash: str
+    producer_paths: tuple[str, ...]
+    prompt_identifiers: tuple[str, ...]
     numeric_fields: tuple[NumericFieldPolicy, ...] = ()
     categorical_fields: tuple[CategoryFieldPolicy, ...] = ()
 
     def __post_init__(self) -> None:
         if self.schema_id.strip() == "":
             raise AgentOutputSchemaRegistrationError("Schema ID cannot be empty.")
-        if not self.schema_names or any(name.strip() == "" for name in self.schema_names):
+        if not self.schema_names or any(
+            name.strip() == "" for name in self.schema_names
+        ):
             msg = f"Schema {self.schema_id!r} must declare at least one schema name."
+            raise AgentOutputSchemaRegistrationError(msg)
+        if not self.producer_paths or any(
+            path.strip() == "" for path in self.producer_paths
+        ):
+            msg = f"Schema {self.schema_id!r} must declare production callers."
+            raise AgentOutputSchemaRegistrationError(msg)
+        if not self.prompt_identifiers or any(
+            prompt.strip() == "" for prompt in self.prompt_identifiers
+        ):
+            msg = f"Schema {self.schema_id!r} must declare prompt identities."
             raise AgentOutputSchemaRegistrationError(msg)
         if re.fullmatch(r"[0-9a-f]{64}", self.shape_hash) is None:
             msg = f"Schema {self.schema_id!r} must declare a SHA-256 shape hash."
@@ -157,7 +286,9 @@ class AgentOutputSchemaRegistry:
             raise AgentOutputSchemaRegistrationError(
                 f"Unregistered agent output schema ID: {schema_id}.",
             )
-        if not isinstance(output_schema, type) or not issubclass(output_schema, BaseModel):
+        if not isinstance(output_schema, type) or not issubclass(
+            output_schema, BaseModel
+        ):
             msg = f"Schema {schema_id!r} must be a Pydantic BaseModel type."
             raise AgentOutputSchemaRegistrationError(msg)
         if output_schema.__name__ not in policy.schema_names:
@@ -181,7 +312,7 @@ class AgentOutputSchemaRegistry:
         _assert_complete_coverage(
             schema_id=schema_id,
             kind="numeric",
-            actual=actual_numeric,
+            actual=set(actual_numeric),
             expected=expected_numeric,
         )
         _assert_complete_coverage(
@@ -191,6 +322,24 @@ class AgentOutputSchemaRegistry:
             expected=expected_categories,
         )
         category_policies = {field.path: field for field in policy.categorical_fields}
+        for numeric_policy in policy.numeric_fields:
+            schema_origin = actual_numeric[numeric_policy.path]
+            if (
+                numeric_policy.origin is not None
+                and schema_origin != numeric_policy.origin
+            ):
+                msg = (
+                    f"Schema {schema_id!r} numeric field {numeric_policy.path!r} "
+                    f"declares {numeric_policy.origin.value!r} but is not wrapped in "
+                    "the matching typed provenance envelope."
+                )
+                raise AgentOutputSchemaRegistrationError(msg)
+            if numeric_policy.debt_id is not None and schema_origin is not None:
+                msg = (
+                    f"Schema {schema_id!r} numeric field {numeric_policy.path!r} "
+                    "uses an origin envelope and cannot also be legacy debt."
+                )
+                raise AgentOutputSchemaRegistrationError(msg)
         for path, actual_values in actual_categories.items():
             expected_values = {value.value for value in category_policies[path].values}
             values_match = (
@@ -241,7 +390,9 @@ def _assert_unique_paths(
             duplicates.add(path)
         seen.add(path)
     if duplicates:
-        msg = f"Schema {schema_id!r} has duplicate {kind} paths: {sorted(duplicates)!r}."
+        msg = (
+            f"Schema {schema_id!r} has duplicate {kind} paths: {sorted(duplicates)!r}."
+        )
         raise AgentOutputSchemaRegistrationError(msg)
 
 
@@ -264,8 +415,8 @@ def _assert_complete_coverage(
 
 def _collect_governed_fields(
     schema: Mapping[str, object],
-) -> tuple[set[str], dict[str, set[str]]]:
-    numeric_paths: set[str] = set()
+) -> tuple[dict[str, NumericOrigin | None], dict[str, set[str]]]:
+    numeric_paths: dict[str, NumericOrigin | None] = {}
     category_paths: dict[str, set[str]] = {}
     _walk_schema(
         node=schema,
@@ -375,7 +526,7 @@ def _walk_schema(  # noqa: PLR0912, PLR0913 - recursive JSON Schema node variant
     root: Mapping[str, object],
     path: str,
     resolving: frozenset[str],
-    numeric_paths: set[str],
+    numeric_paths: dict[str, NumericOrigin | None],
     category_paths: dict[str, set[str]],
 ) -> None:
     if isinstance(node, list):
@@ -409,12 +560,24 @@ def _walk_schema(  # noqa: PLR0912, PLR0913 - recursive JSON Schema node variant
             )
         return
 
+    raw_numeric_origin = mapping.get("x-artana-numeric-origin")
+    if isinstance(raw_numeric_origin, str):
+        try:
+            numeric_origin = NumericOrigin(raw_numeric_origin)
+        except ValueError as exc:
+            msg = f"Unknown numeric-origin schema marker {raw_numeric_origin!r}."
+            raise AgentOutputSchemaRegistrationError(msg) from exc
+        numeric_paths[f"{path}.value"] = numeric_origin
+        return
+
     field_type = mapping.get("type")
     if field_type in {"number", "integer"}:
-        numeric_paths.add(path)
+        numeric_paths[path] = None
     raw_values = mapping.get("enum")
-    if isinstance(raw_values, list) and raw_values and all(
-        isinstance(value, str) for value in raw_values
+    if (
+        isinstance(raw_values, list)
+        and raw_values
+        and all(isinstance(value, str) for value in raw_values)
     ):
         category_paths.setdefault(path, set()).update(cast("list[str]", raw_values))
     constant = mapping.get("const")
@@ -453,6 +616,18 @@ def _walk_schema(  # noqa: PLR0912, PLR0913 - recursive JSON Schema node variant
             numeric_paths=numeric_paths,
             category_paths=category_paths,
         )
+    additional_properties = mapping.get("additionalProperties")
+    if additional_properties is True:
+        numeric_paths[f"{path}.*"] = None
+    if isinstance(additional_properties, Mapping):
+        _walk_schema(
+            node=additional_properties,
+            root=root,
+            path=f"{path}.*",
+            resolving=resolving,
+            numeric_paths=numeric_paths,
+            category_paths=category_paths,
+        )
 
 
 __all__ = [
@@ -461,7 +636,13 @@ __all__ = [
     "AgentOutputSchemaRegistry",
     "CategoryFieldPolicy",
     "CategoryValuePolicy",
+    "CalibrationModelNumber",
+    "ComputedMetricNumber",
+    "DeterministicPolicyNumber",
     "NumericFieldPolicy",
     "NumericOrigin",
+    "RetrievalAlgorithmNumber",
+    "RuntimeObservationNumber",
+    "SourceMeasurementNumber",
     "agent_output_schema_shape_hash",
 ]
