@@ -140,7 +140,7 @@ def _paths_alias(left: Path, right: Path) -> bool:
 
 
 def _parse_generated_at(value: str) -> datetime:
-    generated_at = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    generated_at = datetime.fromisoformat(value)
     if generated_at.tzinfo is None:
         raise ValueError("--generated-at must include a timezone")
     return generated_at
