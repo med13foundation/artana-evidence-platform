@@ -13,6 +13,11 @@ from artana_evidence_api.evidence_selection.provenance import (
     build_evidence_selection_provenance_summary,
     source_manifest_blocking_reasons,
 )
+from artana_evidence_api.evidence_selection.review.assessment import (
+    EvidenceSelectionReviewInput,
+    EvidenceSelectionReviewReport,
+    compare_evidence_selection_review,
+)
 from artana_evidence_api.ranking import (
     ReviewRankingCalibrationObservation,
     ReviewRankingCalibrationSummary,
@@ -28,11 +33,16 @@ ReviewRankingCalibrationSchemaVersion = Literal[
     "evidence_selection_review_ranking_calibration.v1"
 ]
 EvidenceSelectionExpertStudySchemaVersion = Literal[
-    "evidence_selection_expert_study.v1"
+    "evidence_selection_expert_study.v2"
 ]
 EvidenceSelectionExpertStudyEvidenceKind = Literal[
     "real_shadow_review",
+    "ai_reviewer_simulation",
     "synthetic_fixture",
+]
+EvidenceSelectionExpertStudyType = Literal[
+    "selection_relevance",
+    "selection_and_review_ranking",
 ]
 
 _SOURCE_KINDS: tuple[ReviewRankingSourceKind, ...] = ("proposal", "review_item")
@@ -45,114 +55,6 @@ def _normalize_non_blank_study_id(value: str) -> str:
         msg = "study_id must not be blank"
         raise ValueError(msg)
     return normalized
-
-
-class EvidenceSelectionReviewInput(BaseModel):
-    """Reviewer-labeled comparison input for one evidence-selection run."""
-
-    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
-
-    run_id: UUID
-    goal: str
-    reviewer_id: str | None = None
-    harness_selected_record_ids: tuple[str, ...]
-    human_selected_record_ids: tuple[str, ...]
-    harness_skipped_record_ids: tuple[str, ...] = ()
-    duplicate_suggestion_ids: tuple[str, ...] = ()
-    explanation_quality_score: int | None = Field(default=None, ge=1, le=5)
-    high_severity_overclaim_count: int | None = Field(default=None, ge=0)
-    reviewer_notes: str | None = None
-    false_positive_notes: dict[str, str] | None = None
-    false_negative_notes: dict[str, str] | None = None
-
-    @field_validator("run_id", mode="before")
-    @classmethod
-    def _accept_json_run_id(cls, value: object) -> object:
-        if isinstance(value, str):
-            return UUID(value)
-        return value
-
-    @field_validator(
-        "harness_selected_record_ids",
-        "human_selected_record_ids",
-        "harness_skipped_record_ids",
-        "duplicate_suggestion_ids",
-        mode="before",
-    )
-    @classmethod
-    def _accept_json_record_id_array(cls, value: object) -> object:
-        if isinstance(value, list):
-            return tuple(value)
-        return value
-
-    @field_validator(
-        "harness_selected_record_ids",
-        "human_selected_record_ids",
-        "harness_skipped_record_ids",
-        "duplicate_suggestion_ids",
-    )
-    @classmethod
-    def _normalize_record_ids(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        normalized = tuple(record_id.strip() for record_id in value)
-        if any(record_id == "" for record_id in normalized):
-            msg = "record IDs must not be blank"
-            raise ValueError(msg)
-        return normalized
-
-    @field_validator("false_positive_notes", "false_negative_notes")
-    @classmethod
-    def _normalize_finding_notes(
-        cls,
-        value: dict[str, str] | None,
-    ) -> dict[str, str] | None:
-        if value is None:
-            return None
-        normalized = {
-            record_id.strip(): note.strip() for record_id, note in value.items()
-        }
-        if any(record_id == "" for record_id in normalized):
-            msg = "finding-note record IDs must not be blank"
-            raise ValueError(msg)
-        if any(note == "" for note in normalized.values()):
-            msg = "finding notes must not be blank"
-            raise ValueError(msg)
-        return normalized
-
-    @model_validator(mode="after")
-    def _selected_and_skipped_must_not_overlap(
-        self,
-    ) -> EvidenceSelectionReviewInput:
-        overlap = set(self.harness_selected_record_ids).intersection(
-            self.harness_skipped_record_ids,
-        )
-        if overlap:
-            msg = "harness_selected_record_ids and harness_skipped_record_ids overlap"
-            raise ValueError(msg)
-        return self
-
-
-class EvidenceSelectionReviewReport(BaseModel):
-    """Computed review metrics for one evidence-selection run."""
-
-    model_config = ConfigDict(strict=True, frozen=True)
-
-    run_id: UUID
-    goal: str
-    true_positive_ids: tuple[str, ...]
-    false_positive_ids: tuple[str, ...]
-    false_negative_ids: tuple[str, ...]
-    confirmed_skip_ids: tuple[str, ...]
-    duplicate_suggestion_ids: tuple[str, ...]
-    precision: float | None
-    recall: float | None
-    duplicate_suggestion_count: int
-    explanation_quality_score: int | None
-    high_severity_overclaim_count: int | None
-    overclaim_gate_passed: bool
-    reviewer_id: str | None
-    reviewer_notes: str | None
-    false_positive_notes: dict[str, str] | None
-    false_negative_notes: dict[str, str] | None
 
 
 class ReviewRankingCalibrationDecision(BaseModel):
@@ -231,10 +133,10 @@ class EvidenceSelectionExpertStudyGateThresholds(BaseModel):
     min_selection_reviewer_count: int = Field(default=1, ge=1)
     min_mean_precision: float = Field(default=0.8, ge=0.0, le=1.0)
     min_mean_recall: float = Field(default=0.8, ge=0.0, le=1.0)
-    min_mean_explanation_quality: float = Field(default=3.0, ge=1.0, le=5.0)
+    min_explanation_adequacy_rate: float = Field(default=0.8, ge=0.0, le=1.0)
     require_zero_high_severity_overclaims: bool = True
     require_source_manifest: bool = True
-    min_source_artifact_count: int = Field(default=2, ge=1)
+    min_source_artifact_count: int = Field(default=1, ge=1)
 
 
 class EvidenceSelectionExpertStudyInput(BaseModel):
@@ -244,9 +146,10 @@ class EvidenceSelectionExpertStudyInput(BaseModel):
 
     schema_version: EvidenceSelectionExpertStudySchemaVersion
     study_id: str
+    study_type: EvidenceSelectionExpertStudyType
     study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
     selection_reviews: tuple[EvidenceSelectionReviewInput, ...]
-    review_ranking: ReviewRankingCalibrationStudyInput
+    review_ranking: ReviewRankingCalibrationStudyInput | None = None
     source_manifest: EvidenceSelectionExpertStudySourceManifest | None = None
     description: str | None = Field(default=None, min_length=1)
 
@@ -266,7 +169,19 @@ class EvidenceSelectionExpertStudyInput(BaseModel):
     def _ranking_study_must_match_outer_study(
         self,
     ) -> EvidenceSelectionExpertStudyInput:
-        if self.study_id != self.review_ranking.study_id:
+        if self.study_type == "selection_relevance" and self.review_ranking is not None:
+            msg = "selection_relevance studies must not include review_ranking"
+            raise ValueError(msg)
+        if (
+            self.study_type == "selection_and_review_ranking"
+            and self.review_ranking is None
+        ):
+            msg = "selection_and_review_ranking studies require review_ranking"
+            raise ValueError(msg)
+        if (
+            self.review_ranking is not None
+            and self.study_id != self.review_ranking.study_id
+        ):
             msg = "review_ranking study_id must match the expert study_id"
             raise ValueError(msg)
         return self
@@ -349,11 +264,12 @@ class EvidenceSelectionExpertStudyGateReport:
 
     passed: bool
     status: ReviewRankingGateStatus
+    study_type: EvidenceSelectionExpertStudyType
     thresholds: EvidenceSelectionExpertStudyGateThresholds
     selection_summary: JSONObject
     provenance_summary: JSONObject
     selection_reports: tuple[EvidenceSelectionReviewReport, ...]
-    review_ranking_gate: ReviewRankingCalibrationGateReport
+    review_ranking_gate: ReviewRankingCalibrationGateReport | None
     blocking_reasons: tuple[str, ...]
 
     def to_json(self) -> JSONObject:
@@ -361,6 +277,7 @@ class EvidenceSelectionExpertStudyGateReport:
         return {
             "passed": self.passed,
             "status": self.status,
+            "study_type": self.study_type,
             "thresholds": {
                 "min_selection_review_count": (
                     self.thresholds.min_selection_review_count
@@ -373,15 +290,13 @@ class EvidenceSelectionExpertStudyGateReport:
                 ),
                 "min_mean_precision": self.thresholds.min_mean_precision,
                 "min_mean_recall": self.thresholds.min_mean_recall,
-                "min_mean_explanation_quality": (
-                    self.thresholds.min_mean_explanation_quality
+                "min_explanation_adequacy_rate": (
+                    self.thresholds.min_explanation_adequacy_rate
                 ),
                 "require_zero_high_severity_overclaims": (
                     self.thresholds.require_zero_high_severity_overclaims
                 ),
-                "require_source_manifest": (
-                    self.thresholds.require_source_manifest
-                ),
+                "require_source_manifest": (self.thresholds.require_source_manifest),
                 "min_source_artifact_count": (
                     self.thresholds.min_source_artifact_count
                 ),
@@ -389,59 +304,15 @@ class EvidenceSelectionExpertStudyGateReport:
             "selection_summary": dict(self.selection_summary),
             "provenance_summary": dict(self.provenance_summary),
             "selection_reports": [
-                _selection_report_to_json(report)
-                for report in self.selection_reports
+                _selection_report_to_json(report) for report in self.selection_reports
             ],
-            "review_ranking_gate": self.review_ranking_gate.to_json(),
+            "review_ranking_gate": (
+                self.review_ranking_gate.to_json()
+                if self.review_ranking_gate is not None
+                else None
+            ),
             "blocking_reasons": list(self.blocking_reasons),
         }
-
-
-def compare_evidence_selection_review(
-    review: EvidenceSelectionReviewInput,
-) -> EvidenceSelectionReviewReport:
-    """Compare harness-selected records with reviewer-selected records."""
-
-    harness_selected = tuple(dict.fromkeys(review.harness_selected_record_ids))
-    human_selected = tuple(dict.fromkeys(review.human_selected_record_ids))
-    harness_skipped = tuple(dict.fromkeys(review.harness_skipped_record_ids))
-    duplicate_suggestions = tuple(dict.fromkeys(review.duplicate_suggestion_ids))
-    harness_selected_set = set(harness_selected)
-    human_selected_set = set(human_selected)
-    true_positive_ids = tuple(
-        record_id for record_id in harness_selected if record_id in human_selected_set
-    )
-    false_positive_ids = tuple(
-        record_id for record_id in harness_selected if record_id not in human_selected_set
-    )
-    false_negative_ids = tuple(
-        record_id for record_id in human_selected if record_id not in harness_selected_set
-    )
-    confirmed_skip_ids = tuple(
-        record_id for record_id in harness_skipped if record_id not in human_selected_set
-    )
-    return EvidenceSelectionReviewReport(
-        run_id=review.run_id,
-        goal=review.goal,
-        true_positive_ids=true_positive_ids,
-        false_positive_ids=false_positive_ids,
-        false_negative_ids=false_negative_ids,
-        confirmed_skip_ids=confirmed_skip_ids,
-        duplicate_suggestion_ids=duplicate_suggestions,
-        precision=_safe_ratio(len(true_positive_ids), len(harness_selected)),
-        recall=_safe_ratio(len(true_positive_ids), len(human_selected)),
-        duplicate_suggestion_count=len(duplicate_suggestions),
-        explanation_quality_score=review.explanation_quality_score,
-        high_severity_overclaim_count=review.high_severity_overclaim_count,
-        overclaim_gate_passed=(
-            review.high_severity_overclaim_count is not None
-            and review.high_severity_overclaim_count == 0
-        ),
-        reviewer_id=review.reviewer_id,
-        reviewer_notes=review.reviewer_notes,
-        false_positive_notes=review.false_positive_notes,
-        false_negative_notes=review.false_negative_notes,
-    )
 
 
 def evaluate_review_ranking_calibration_gate(
@@ -517,40 +388,53 @@ def evaluate_evidence_selection_expert_study_gate(
 
     active_thresholds = thresholds or EvidenceSelectionExpertStudyGateThresholds()
     selection_reports = tuple(
-        compare_evidence_selection_review(review)
-        for review in study.selection_reviews
+        compare_evidence_selection_review(review) for review in study.selection_reviews
     )
     selection_summary = _selection_study_summary(
         reports=selection_reports,
+        study_type=study.study_type,
         study_evidence_kind=study.study_evidence_kind,
+    )
+    review_ranking = study.review_ranking
+    review_ranking_decision_keys = (
+        tuple(
+            _review_ranking_decision_key(decision)
+            for decision in review_ranking.decisions
+        )
+        if review_ranking is not None
+        else ()
     )
     provenance_summary = build_evidence_selection_provenance_summary(
         source_manifest=study.source_manifest,
         selection_run_ids=tuple(report.run_id for report in selection_reports),
-        review_ranking_decision_keys=tuple(
-            _review_ranking_decision_key(decision)
-            for decision in study.review_ranking.decisions
-        ),
+        review_ranking_decision_keys=review_ranking_decision_keys,
         reviewer_ids=_expert_study_reviewer_ids(
             study=study,
             reports=selection_reports,
         ),
+        require_review_ranking=review_ranking is not None,
     )
-    review_ranking_gate = evaluate_review_ranking_calibration_gate(
-        decisions=study.review_ranking.decisions,
-        adjudication_note=study.review_ranking.adjudication_note,
-        thresholds=review_ranking_thresholds,
+    review_ranking_gate = (
+        evaluate_review_ranking_calibration_gate(
+            decisions=review_ranking.decisions,
+            adjudication_note=review_ranking.adjudication_note,
+            thresholds=review_ranking_thresholds,
+        )
+        if review_ranking is not None
+        else None
     )
     blocking_reasons = _expert_study_blocking_reasons(
         selection_summary=selection_summary,
         provenance_summary=provenance_summary,
         thresholds=active_thresholds,
+        require_review_ranking=review_ranking is not None,
         review_ranking_gate=review_ranking_gate,
     )
     passed = not blocking_reasons
     return EvidenceSelectionExpertStudyGateReport(
         passed=passed,
         status="passed" if passed else "failed",
+        study_type=study.study_type,
         thresholds=active_thresholds,
         selection_summary=selection_summary,
         provenance_summary=provenance_summary,
@@ -631,10 +515,14 @@ def _mean_outcome_score(
 
 def _roc_auc(decisions: tuple[ReviewRankingCalibrationDecision, ...]) -> float:
     positive_scores = tuple(
-        decision.ranking_score for decision in decisions if decision.outcome == "positive"
+        decision.ranking_score
+        for decision in decisions
+        if decision.outcome == "positive"
     )
     negative_scores = tuple(
-        decision.ranking_score for decision in decisions if decision.outcome == "negative"
+        decision.ranking_score
+        for decision in decisions
+        if decision.outcome == "negative"
     )
     pair_count = len(positive_scores) * len(negative_scores)
     if pair_count == 0:
@@ -871,6 +759,7 @@ def _normalized_study_label(value: str | None) -> str:
 def _selection_study_summary(
     *,
     reports: tuple[EvidenceSelectionReviewReport, ...],
+    study_type: EvidenceSelectionExpertStudyType,
     study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind,
 ) -> JSONObject:
     precision_values = tuple(
@@ -879,10 +768,17 @@ def _selection_study_summary(
     recall_values = tuple(
         report.recall for report in reports if report.recall is not None
     )
-    explanation_values = tuple(
-        report.explanation_quality_score
-        for report in reports
-        if report.explanation_quality_score is not None
+    explanation_adequacy_counts = {
+        category: sum(
+            1 for report in reports if report.explanation_adequacy == category
+        )
+        for category in ("adequate", "inadequate", "unclear")
+    }
+    assessed_explanation_count = sum(explanation_adequacy_counts.values())
+    adequate_explanation_count = explanation_adequacy_counts["adequate"]
+    explanation_adequacy_rate = _safe_ratio(
+        adequate_explanation_count,
+        len(reports),
     )
     reviewer_ids = {
         reviewer_id.strip()
@@ -896,6 +792,7 @@ def _selection_study_summary(
     }
     duplicate_run_ids = _duplicate_selection_run_ids(reports)
     return {
+        "study_type": study_type,
         "study_evidence_kind": study_evidence_kind,
         "review_count": len(reports),
         "distinct_goal_count": len(goals),
@@ -914,19 +811,20 @@ def _selection_study_summary(
         "unmeasurable_recall_count": sum(
             1 for report in reports if report.recall is None
         ),
-        "missing_explanation_quality_count": sum(
-            1 for report in reports if report.explanation_quality_score is None
+        "missing_explanation_assessment_count": (
+            len(reports) - assessed_explanation_count
         ),
-        "missing_high_severity_overclaim_count": sum(
-            1
-            for report in reports
-            if report.high_severity_overclaim_count is None
+        "missing_high_severity_overclaim_findings_count": sum(
+            1 for report in reports if report.high_severity_overclaim_count is None
         ),
         "duplicate_run_id_count": len(duplicate_run_ids),
         "duplicate_run_ids": list(duplicate_run_ids),
         "mean_precision": _round_gate_metric(_mean(precision_values)),
         "mean_recall": _round_gate_metric(_mean(recall_values)),
-        "mean_explanation_quality": _round_gate_metric(_mean(explanation_values)),
+        "explanation_adequacy_counts": explanation_adequacy_counts,
+        "explanation_adequacy_rate": _round_gate_metric(
+            explanation_adequacy_rate or 0.0,
+        ),
         "high_severity_overclaim_count": sum(
             report.high_severity_overclaim_count
             for report in reports
@@ -951,7 +849,20 @@ def _selection_report_to_json(report: EvidenceSelectionReviewReport) -> JSONObje
         "precision": report.precision,
         "recall": report.recall,
         "duplicate_suggestion_count": report.duplicate_suggestion_count,
-        "explanation_quality_score": report.explanation_quality_score,
+        "explanation_assessment": (
+            report.explanation_assessment.model_dump(mode="json")
+            if report.explanation_assessment is not None
+            else None
+        ),
+        "explanation_adequacy": report.explanation_adequacy,
+        "high_severity_overclaim_findings": (
+            [
+                finding.model_dump(mode="json")
+                for finding in report.high_severity_overclaim_findings
+            ]
+            if report.high_severity_overclaim_findings is not None
+            else None
+        ),
         "high_severity_overclaim_count": report.high_severity_overclaim_count,
         "overclaim_gate_passed": report.overclaim_gate_passed,
         "reviewer_notes": report.reviewer_notes,
@@ -987,11 +898,15 @@ def _expert_study_reviewer_ids(
         for report in reports
         if (reviewer_id := report.reviewer_id) and reviewer_id.strip()
     }
-    ranking_reviewer_ids = {
-        reviewer_id.strip()
-        for decision in study.review_ranking.decisions
-        if (reviewer_id := decision.reviewer_id) and reviewer_id.strip()
-    }
+    ranking_reviewer_ids = (
+        {
+            reviewer_id.strip()
+            for decision in study.review_ranking.decisions
+            if (reviewer_id := decision.reviewer_id) and reviewer_id.strip()
+        }
+        if study.review_ranking is not None
+        else set()
+    )
     return selection_reviewer_ids | ranking_reviewer_ids
 
 
@@ -1006,7 +921,8 @@ def _expert_study_blocking_reasons(
     selection_summary: JSONObject,
     provenance_summary: JSONObject,
     thresholds: EvidenceSelectionExpertStudyGateThresholds,
-    review_ranking_gate: ReviewRankingCalibrationGateReport,
+    require_review_ranking: bool,
+    review_ranking_gate: ReviewRankingCalibrationGateReport | None,
 ) -> tuple[str, ...]:
     return (
         *_expert_study_provenance_blocking_reasons(selection_summary),
@@ -1023,7 +939,10 @@ def _expert_study_blocking_reasons(
             selection_summary=selection_summary,
             thresholds=thresholds,
         ),
-        *_expert_study_ranking_blocking_reasons(review_ranking_gate),
+        *_expert_study_ranking_blocking_reasons(
+            require_review_ranking=require_review_ranking,
+            review_ranking_gate=review_ranking_gate,
+        ),
     )
 
 
@@ -1081,9 +1000,9 @@ def _expert_study_coverage_blocking_reasons(
         reasons.append("Every selection review must have measurable precision.")
     if _int_from_json(selection_summary, "unmeasurable_recall_count") > 0:
         reasons.append("Every selection review must have measurable recall.")
-    if _int_from_json(selection_summary, "missing_explanation_quality_count") > 0:
+    if _int_from_json(selection_summary, "missing_explanation_assessment_count") > 0:
         reasons.append(
-            "Every selection review must include an explanation-quality score.",
+            "Every selection review must include a categorical explanation assessment.",
         )
     return tuple(reasons)
 
@@ -1094,7 +1013,10 @@ def _expert_study_quality_blocking_reasons(
     thresholds: EvidenceSelectionExpertStudyGateThresholds,
 ) -> tuple[str, ...]:
     reasons: list[str] = []
-    if _float_from_json(selection_summary, "mean_precision") < thresholds.min_mean_precision:
+    if (
+        _float_from_json(selection_summary, "mean_precision")
+        < thresholds.min_mean_precision
+    ):
         reasons.append(
             "Expert/shadow mean selection precision is below target: "
             f"{_float_from_json(selection_summary, 'mean_precision'):.6f} < "
@@ -1107,24 +1029,24 @@ def _expert_study_quality_blocking_reasons(
             f"{thresholds.min_mean_recall:.6f}.",
         )
     if (
-        _float_from_json(selection_summary, "mean_explanation_quality")
-        < thresholds.min_mean_explanation_quality
+        _float_from_json(selection_summary, "explanation_adequacy_rate")
+        < thresholds.min_explanation_adequacy_rate
     ):
         reasons.append(
-            "Expert/shadow mean explanation quality is below target: "
-            f"{_float_from_json(selection_summary, 'mean_explanation_quality'):.6f} < "
-            f"{thresholds.min_mean_explanation_quality:.6f}.",
+            "Expert/shadow explanation adequacy rate is below target: "
+            f"{_float_from_json(selection_summary, 'explanation_adequacy_rate'):.6f} < "
+            f"{thresholds.min_explanation_adequacy_rate:.6f}.",
         )
     if (
         thresholds.require_zero_high_severity_overclaims
         and _int_from_json(
             selection_summary,
-            "missing_high_severity_overclaim_count",
+            "missing_high_severity_overclaim_findings_count",
         )
         > 0
     ):
         reasons.append(
-            "Every selection review must include a high-severity overclaim count.",
+            "Every selection review must include explicit high-severity overclaim findings.",
         )
     if (
         thresholds.require_zero_high_severity_overclaims
@@ -1135,8 +1057,14 @@ def _expert_study_quality_blocking_reasons(
 
 
 def _expert_study_ranking_blocking_reasons(
-    review_ranking_gate: ReviewRankingCalibrationGateReport,
+    *,
+    require_review_ranking: bool,
+    review_ranking_gate: ReviewRankingCalibrationGateReport | None,
 ) -> tuple[str, ...]:
+    if not require_review_ranking:
+        return ()
+    if review_ranking_gate is None:
+        return ("A review-ranking gate is required for the combined study type.",)
     if review_ranking_gate.passed:
         return ()
     return (

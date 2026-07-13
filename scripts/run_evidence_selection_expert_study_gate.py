@@ -39,8 +39,8 @@ class EvidenceSelectionExpertStudyRunnerThresholds:
     min_selection_reviewer_count: int = 1
     min_mean_precision: float = 0.8
     min_mean_recall: float = 0.8
-    min_mean_explanation_quality: float = 3.0
-    min_source_artifact_count: int = 2
+    min_explanation_adequacy_rate: float = 0.8
+    min_source_artifact_count: int = 1
     min_review_ranking_sample_count: int = 10
     max_expected_calibration_error: float = 0.05
     min_distinct_ranking_goals: int = 3
@@ -64,7 +64,9 @@ def build_evidence_selection_expert_study_gate_report(
         min_selection_reviewer_count=active_thresholds.min_selection_reviewer_count,
         min_mean_precision=active_thresholds.min_mean_precision,
         min_mean_recall=active_thresholds.min_mean_recall,
-        min_mean_explanation_quality=active_thresholds.min_mean_explanation_quality,
+        min_explanation_adequacy_rate=(
+            active_thresholds.min_explanation_adequacy_rate
+        ),
         min_source_artifact_count=active_thresholds.min_source_artifact_count,
     )
     ranking_thresholds = ReviewRankingCalibrationGateThresholds(
@@ -121,12 +123,14 @@ def render_evidence_selection_expert_study_gate_markdown(report: JSONObject) -> 
         f"{selection_summary.get('unmeasurable_precision_count')}",
         "- unmeasurable_recall_count: "
         f"{selection_summary.get('unmeasurable_recall_count')}",
-        "- missing_explanation_quality_count: "
-        f"{selection_summary.get('missing_explanation_quality_count')}",
+        "- missing_explanation_assessment_count: "
+        f"{selection_summary.get('missing_explanation_assessment_count')}",
         f"- mean_precision: {selection_summary.get('mean_precision')}",
         f"- mean_recall: {selection_summary.get('mean_recall')}",
-        "- mean_explanation_quality: "
-        f"{selection_summary.get('mean_explanation_quality')}",
+        "- explanation_adequacy_counts: "
+        f"{selection_summary.get('explanation_adequacy_counts')}",
+        "- explanation_adequacy_rate: "
+        f"{selection_summary.get('explanation_adequacy_rate')}",
         "- high_severity_overclaim_count: "
         f"{selection_summary.get('high_severity_overclaim_count')}",
         "- duplicate_suggestion_count: "
@@ -154,20 +158,24 @@ def render_evidence_selection_expert_study_gate_markdown(report: JSONObject) -> 
         f"{provenance_summary.get('reviewer_roster_count')}",
         "- unknown_reviewer_id_count: "
         f"{provenance_summary.get('unknown_reviewer_id_count')}",
-        "",
-        "## Review-Ranking Calibration",
-        "",
-        f"- status: {ranking_gate.get('status')}",
-        f"- sample_count: {ranking_calibration.get('sample_count')}",
-        "- expected_calibration_error: "
-        f"{ranking_calibration.get('expected_calibration_error')}",
-        f"- distinct_goal_count: {ranking_design.get('distinct_goal_count')}",
-        "- distinct_evidence_shape_count: "
-        f"{ranking_design.get('distinct_evidence_shape_count')}",
-        "",
-        "## Blocking Reasons",
-        "",
     ]
+    lines.extend(["", "## Review-Ranking Calibration", ""])
+    if gate.get("review_ranking_gate") is None:
+        lines.append("- not applicable for selection_relevance studies")
+    else:
+        lines.extend(
+            [
+                f"- status: {ranking_gate.get('status')}",
+                f"- sample_count: {ranking_calibration.get('sample_count')}",
+                "- expected_calibration_error: "
+                f"{ranking_calibration.get('expected_calibration_error')}",
+                "- distinct_goal_count: "
+                f"{ranking_design.get('distinct_goal_count')}",
+                "- distinct_evidence_shape_count: "
+                f"{ranking_design.get('distinct_evidence_shape_count')}",
+            ],
+        )
+    lines.extend(["", "## Blocking Reasons", ""])
     if blocking_reasons:
         lines.extend(f"- {reason}" for reason in blocking_reasons)
     else:
@@ -241,15 +249,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Minimum mean selection recall required for the study gate.",
     )
     parser.add_argument(
-        "--min-mean-explanation-quality",
+        "--min-explanation-adequacy-rate",
         type=float,
-        default=3.0,
-        help="Minimum mean explanation-quality score required for the study gate.",
+        default=0.8,
+        help="Minimum deterministically derived explanation-adequacy rate.",
     )
     parser.add_argument(
         "--min-source-artifact-count",
         type=int,
-        default=2,
+        default=1,
         help="Minimum source artifacts required for the study provenance gate.",
     )
     parser.add_argument(
@@ -298,7 +306,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         min_selection_reviewer_count=args.min_selection_reviewer_count,
         min_mean_precision=args.min_mean_precision,
         min_mean_recall=args.min_mean_recall,
-        min_mean_explanation_quality=args.min_mean_explanation_quality,
+        min_explanation_adequacy_rate=args.min_explanation_adequacy_rate,
         min_source_artifact_count=args.min_source_artifact_count,
         min_review_ranking_sample_count=args.min_review_ranking_sample_count,
         max_expected_calibration_error=args.max_expected_calibration_error,

@@ -12,6 +12,9 @@ from artana_evidence_api.evidence_selection.shadow_review_completion import (
     machine_packet_sidecar_path,
 )
 
+from services.artana_evidence_api.tests.unit.evidence_selection_review_fixtures import (
+    inadequate_explanation_assessment,
+)
 from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_review_study_pipeline import (  # noqa: E501
     _completed_packet,
     _machine_packet_for_completed_packet,
@@ -54,10 +57,7 @@ def test_shadow_review_study_batch_cli_writes_reports_and_fails_on_failed_entry(
     assert batch_report["failed_entry_count"] == 1
     assert (output_dir / "shadow-review-study-batch.md").exists()
     assert (
-        output_dir
-        / "good-study"
-        / "gate"
-        / "evidence_selection_expert_study_gate.json"
+        output_dir / "good-study" / "gate" / "evidence_selection_expert_study_gate.json"
     ).exists()
     weak_gate_report = json.loads(
         (
@@ -70,10 +70,7 @@ def test_shadow_review_study_batch_cli_writes_reports_and_fails_on_failed_entry(
     assert weak_gate_report["gate"]["passed"] is False
     assert weak_gate_report["gate"]["blocking_reasons"]
     assert (
-        output_dir
-        / "weak-study"
-        / "gate"
-        / "evidence_selection_expert_study_gate.md"
+        output_dir / "weak-study" / "gate" / "evidence_selection_expert_study_gate.md"
     ).exists()
 
 
@@ -114,7 +111,10 @@ def test_shadow_review_study_batch_cli_allows_failed_gate_when_requested(
 
 @pytest.mark.parametrize(
     "failing_writer",
-    ["_write_entry_gate_reports", "write_evidence_selection_shadow_review_study_batch_report"],
+    [
+        "_write_entry_gate_reports",
+        "write_evidence_selection_shadow_review_study_batch_report",
+    ],
 )
 def test_shadow_review_study_batch_cli_rolls_back_report_phase_failures(
     tmp_path: Path,
@@ -253,7 +253,10 @@ def test_shadow_review_study_batch_cli_relaxed_entry_thresholds_still_need_suite
         (output_dir / "shadow-review-study-batch.json").read_text(),
     )
     assert batch_report["passed"] is False
-    assert batch_report["suite_gate"]["summary"]["total_review_ranking_decision_count"] == 6
+    assert (
+        batch_report["suite_gate"]["summary"]["total_review_ranking_decision_count"]
+        == 6
+    )
     assert any(
         "review-ranking decisions" in reason
         for reason in batch_report["suite_gate"]["blocking_reasons"]
@@ -274,7 +277,9 @@ def test_shadow_review_study_batch_cli_help_mentions_suite_gate_override(
     assert "entry or suite gate fails" in normalized_help
 
 
-def test_shadow_review_study_batch_markdown_marks_missing_production_floor_unknown() -> None:
+def test_shadow_review_study_batch_markdown_marks_missing_production_floor_unknown() -> (
+    None
+):
     cli = _cli_module()
 
     markdown = cli.render_evidence_selection_shadow_review_study_batch_markdown(
@@ -325,8 +330,8 @@ def test_shadow_review_study_batch_cli_relaxed_quality_thresholds_still_need_sui
             "0",
             "--min-mean-recall",
             "0",
-            "--min-mean-explanation-quality",
-            "1",
+            "--min-explanation-adequacy-rate",
+            "0",
         ),
     )
 
@@ -338,7 +343,23 @@ def test_shadow_review_study_batch_cli_relaxed_quality_thresholds_still_need_sui
     summary = batch_report["suite_gate"]["summary"]
     assert summary["suite_mean_precision"] == 0.0
     assert summary["suite_mean_recall"] == 0.0
-    assert summary["suite_mean_explanation_quality"] == 1.0
+    assert summary["suite_explanation_adequacy_rate"] == 0.0
+    assert summary["all_entry_observed_quality"] == {
+        "suite_mean_precision": 0.0,
+        "suite_mean_recall": 0.0,
+        "suite_explanation_adequacy_rate": 0.0,
+        "max_review_ranking_expected_calibration_error": 0.0,
+    }
+    assert summary["passed_entry_production_quality"] == {
+        "suite_mean_precision": 0.0,
+        "suite_mean_recall": 0.0,
+        "suite_explanation_adequacy_rate": 0.0,
+        "max_review_ranking_expected_calibration_error": 0.0,
+    }
+    markdown_report = (output_dir / "shadow-review-study-batch.md").read_text()
+    assert "Passed-entry production mean precision" in markdown_report
+    assert "All-entry observed mean precision" in markdown_report
+    assert "All-entry observed explanation adequacy rate" in markdown_report
     assert any(
         "suite mean precision" in reason
         for reason in batch_report["suite_gate"]["blocking_reasons"]
@@ -663,6 +684,7 @@ def _manifest_entry(
         "exported_at": "2026-07-07T14:00:00Z",
         "exporter_id": "review-ops-a",
         "redaction_statement": "No PHI or raw patient text included.",
+        "study_evidence_kind": "real_shadow_review",
         "description": f"{entry_id} completed shadow-review packet.",
     }
 
@@ -673,7 +695,9 @@ def _low_quality_packet() -> dict[str, object]:
     assert isinstance(selection_forms, list)
     first_form = selection_forms[0]
     assert isinstance(first_form, dict)
-    first_form["explanation_quality_score"] = 2
+    first_form["explanation_assessment"] = (
+        inadequate_explanation_assessment().model_dump(mode="json")
+    )
     return packet
 
 
@@ -699,7 +723,9 @@ def _completed_packet_for_cli_batch(
         form["goal"] = goal
         if bad_quality:
             form["human_selected_record_ids"] = ["pubmed:search-1:1"]
-            form["explanation_quality_score"] = 1
+            form["explanation_assessment"] = (
+                inadequate_explanation_assessment().model_dump(mode="json")
+            )
     ranking_forms = packet["review_ranking_forms"]
     assert isinstance(ranking_forms, list)
     shapes = (first_shape, second_shape)

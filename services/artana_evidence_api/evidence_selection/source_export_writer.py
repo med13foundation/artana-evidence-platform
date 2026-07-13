@@ -55,6 +55,27 @@ class EvidenceSelectionSourceExportWriteResult:
 
 
 @dataclass(frozen=True, slots=True)
+class EvidenceSelectionReviewExportWriteRequest:
+    """Selection-only labels, output path, and source identity."""
+
+    selection_reviews_path: Path
+    selection_export_path: Path
+    source_system: str
+    export_id: str
+    exported_at: datetime | str
+    exporter_id: str
+    redaction_statement: str
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceSelectionReviewExportWriteResult:
+    """Count and output path produced by the selection-only writer."""
+
+    selection_export_path: Path
+    selection_review_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class _PreparedOutput:
     """Rollback information for one final output path."""
 
@@ -91,7 +112,7 @@ def write_evidence_selection_source_exports(
     review_ranking = _load_review_ranking(request.review_ranking_path)
     identity = _source_identity(request)
     selection_export = EvidenceSelectionReviewExport(
-        schema_version="evidence_selection_review_export.v1",
+        schema_version="evidence_selection_review_export.v2",
         source_system=identity.source_system,
         export_id=identity.export_id,
         exported_at=identity.exported_at,
@@ -119,6 +140,46 @@ def write_evidence_selection_source_exports(
         review_ranking_export_path=request.review_ranking_export_path,
         selection_review_count=len(selection_reviews),
         review_ranking_decision_count=len(review_ranking.decisions),
+    )
+
+
+def write_evidence_selection_review_export(
+    request: EvidenceSelectionReviewExportWriteRequest,
+) -> EvidenceSelectionReviewExportWriteResult:
+    """Write one self-describing selection-review export atomically."""
+
+    if paths_alias(request.selection_export_path, request.selection_reviews_path):
+        msg = (
+            "Selection-review export output must not overwrite source input: "
+            f"{request.selection_export_path} matches {request.selection_reviews_path}."
+        )
+        raise EvidenceSelectionSourceExportWriterError(msg)
+    selection_reviews = _load_selection_reviews(request.selection_reviews_path)
+    identity = EvidenceSelectionSourceExportIdentity.model_validate(
+        {
+            "source_system": request.source_system,
+            "export_id": request.export_id,
+            "exported_at": request.exported_at,
+            "exporter_id": request.exporter_id,
+            "redaction_statement": request.redaction_statement,
+        },
+    )
+    selection_export = EvidenceSelectionReviewExport(
+        schema_version="evidence_selection_review_export.v2",
+        source_system=identity.source_system,
+        export_id=identity.export_id,
+        exported_at=identity.exported_at,
+        exporter_id=identity.exporter_id,
+        redaction_statement=identity.redaction_statement,
+        selection_reviews=selection_reviews,
+    )
+    _write_single_json_model(
+        output_path=request.selection_export_path,
+        model=selection_export,
+    )
+    return EvidenceSelectionReviewExportWriteResult(
+        selection_export_path=request.selection_export_path,
+        selection_review_count=len(selection_reviews),
     )
 
 
@@ -233,6 +294,24 @@ def _write_paired_json_models(
         raise EvidenceSelectionSourceExportWriterError(msg) from exc
 
 
+def _write_single_json_model(*, output_path: Path, model: BaseModel) -> None:
+    payload = _json_model_text(model)
+    temp_path: Path | None = None
+    prepared_outputs: list[_PreparedOutput] = []
+    try:
+        _preflight_output_file(output_path)
+        temp_path = _write_temp_sibling(final_path=output_path, payload=payload)
+        prepared_outputs.append(_prepare_output_for_replace(output_path))
+        temp_path.replace(output_path)
+        temp_path = None
+        _discard_prepared_output_backups(prepared_outputs)
+    except (OSError, EvidenceSelectionSourceExportWriterError) as exc:
+        _remove_temp_file(temp_path)
+        _rollback_prepared_outputs(prepared_outputs)
+        msg = f"Unable to write selection-review source export: {exc}"
+        raise EvidenceSelectionSourceExportWriterError(msg) from exc
+
+
 def _json_model_text(model: BaseModel) -> str:
     return json.dumps(model.model_dump(mode="json"), indent=2) + "\n"
 
@@ -288,9 +367,12 @@ def _remove_temp_file(path: Path | None) -> None:
 
 
 __all__ = [
+    "EvidenceSelectionReviewExportWriteRequest",
+    "EvidenceSelectionReviewExportWriteResult",
     "EvidenceSelectionSourceExportWriteRequest",
     "EvidenceSelectionSourceExportWriteResult",
     "EvidenceSelectionSourceExportWriterError",
     "validate_evidence_selection_source_export_output_paths",
+    "write_evidence_selection_review_export",
     "write_evidence_selection_source_exports",
 ]

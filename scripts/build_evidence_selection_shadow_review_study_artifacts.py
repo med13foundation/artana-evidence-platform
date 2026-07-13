@@ -66,7 +66,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         required=True,
         help="Directory for raw inputs, source exports, bundle, and gate report.",
     )
-    parser.add_argument("--adjudication-note", required=True)
+    parser.add_argument(
+        "--adjudication-note",
+        default=None,
+        help="Required only for selection_and_review_ranking studies.",
+    )
     parser.add_argument("--source-system", required=True)
     parser.add_argument("--export-id", required=True)
     parser.add_argument(
@@ -76,6 +80,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--exporter-id", required=True)
     parser.add_argument("--redaction-statement", required=True)
+    parser.add_argument(
+        "--study-evidence-kind",
+        choices=(
+            "real_shadow_review",
+            "ai_reviewer_simulation",
+            "synthetic_fixture",
+        ),
+        required=True,
+        help="Explicit origin of the completed review labels.",
+    )
     parser.add_argument("--description", default=None)
     parser.add_argument(
         "--allow-failed-gate",
@@ -106,6 +120,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 exported_at=args.exported_at,
                 exporter_id=args.exporter_id,
                 redaction_statement=args.redaction_statement,
+                study_evidence_kind=args.study_evidence_kind,
                 machine_packet_path=machine_packet_path,
                 packet_path=args.packet,
                 description=args.description,
@@ -137,9 +152,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"blocking_reasons={len(blocking_reasons)}",
     )
     print(f"Wrote selection-review labels: {result.selection_reviews_path}")
-    print(f"Wrote review-ranking study: {result.review_ranking_path}")
+    if result.review_ranking_path is not None:
+        print(f"Wrote review-ranking study: {result.review_ranking_path}")
     print(f"Wrote selection-review export: {result.selection_export_path}")
-    print(f"Wrote review-ranking export: {result.review_ranking_export_path}")
+    if result.review_ranking_export_path is not None:
+        print(f"Wrote review-ranking export: {result.review_ranking_export_path}")
     print(f"Wrote expert-study bundle: {result.bundle_path}")
     print(f"Wrote gate JSON report: {gate_manifest['json_path']}")
     print(f"Wrote gate Markdown report: {gate_manifest['markdown_path']}")
@@ -154,8 +171,8 @@ def _add_gate_threshold_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--min-selection-reviewer-count", type=int, default=1)
     parser.add_argument("--min-mean-precision", type=float, default=0.8)
     parser.add_argument("--min-mean-recall", type=float, default=0.8)
-    parser.add_argument("--min-mean-explanation-quality", type=float, default=3.0)
-    parser.add_argument("--min-source-artifact-count", type=int, default=2)
+    parser.add_argument("--min-explanation-adequacy-rate", type=float, default=0.8)
+    parser.add_argument("--min-source-artifact-count", type=int, default=1)
     parser.add_argument("--min-review-ranking-sample-count", type=int, default=10)
     parser.add_argument("--max-expected-calibration-error", type=float, default=0.05)
     parser.add_argument("--min-distinct-ranking-goals", type=int, default=3)
@@ -171,7 +188,7 @@ def _thresholds_from_args(
         min_selection_reviewer_count=args.min_selection_reviewer_count,
         min_mean_precision=args.min_mean_precision,
         min_mean_recall=args.min_mean_recall,
-        min_mean_explanation_quality=args.min_mean_explanation_quality,
+        min_explanation_adequacy_rate=args.min_explanation_adequacy_rate,
         min_source_artifact_count=args.min_source_artifact_count,
         min_review_ranking_sample_count=args.min_review_ranking_sample_count,
         max_expected_calibration_error=args.max_expected_calibration_error,

@@ -13,6 +13,9 @@ from artana_evidence_api.evidence_selection.shadow_review_completion import (
     machine_packet_sidecar_path,
 )
 
+from services.artana_evidence_api.tests.unit.evidence_selection_review_fixtures import (
+    inadequate_explanation_assessment,
+)
 from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_review_study_pipeline import (  # noqa: E501
     _completed_packet,
     _machine_packet_for_completed_packet,
@@ -80,7 +83,10 @@ def test_shadow_review_study_batch_aggregates_passed_and_failed_gates(
         output_dir / "weak-study" / "evidence-selection-expert-study.json"
     )
     report = result.to_json()
-    assert report["schema_version"] == "evidence_selection_shadow_review_study_batch_report.v1"
+    assert (
+        report["schema_version"]
+        == "evidence_selection_shadow_review_study_batch_report.v1"
+    )
     assert report["passed"] is False
     assert report["passed_entry_count"] == 1
     assert report["failed_entry_count"] == 1
@@ -381,13 +387,11 @@ def test_shadow_review_study_batch_requires_per_source_ranking_outcomes(
         "review_item": ["negative"],
     }
     assert any(
-        "negative reviewer outcome is required for source kind proposal"
-        in reason
+        "negative reviewer outcome is required for source kind proposal" in reason
         for reason in result.suite_gate["blocking_reasons"]
     )
     assert any(
-        "positive reviewer outcome is required for source kind review_item"
-        in reason
+        "positive reviewer outcome is required for source kind review_item" in reason
         for reason in result.suite_gate["blocking_reasons"]
     )
 
@@ -808,7 +812,7 @@ def test_shadow_review_study_batch_quality_gate_uses_unrounded_metrics() -> None
     metrics = batch._BatchQualityMetrics(  # noqa: SLF001
         suite_mean_precision=0.79996,
         suite_mean_recall=0.79996,
-        suite_mean_explanation_quality=2.99996,
+        suite_explanation_adequacy_rate=0.79996,
         max_review_ranking_expected_calibration_error=0.05,
     )
 
@@ -819,7 +823,7 @@ def test_shadow_review_study_batch_quality_gate_uses_unrounded_metrics() -> None
 
     assert any("suite mean precision" in reason for reason in reasons)
     assert any("suite mean recall" in reason for reason in reasons)
-    assert any("suite mean explanation quality" in reason for reason in reasons)
+    assert any("explanation adequacy rate" in reason for reason in reasons)
 
 
 def test_shadow_review_study_batch_rolls_back_published_entries_after_later_failure(
@@ -869,7 +873,9 @@ def test_shadow_review_study_batch_rolls_back_published_entries_after_later_fail
             min_distinct_evidence_shapes=2,
         ),
     )
-    original_gate_report = batch.build_evidence_selection_shadow_review_study_gate_report
+    original_gate_report = (
+        batch.build_evidence_selection_shadow_review_study_gate_report
+    )
     call_count = 0
 
     def _fail_second_gate_report(*args: object, **kwargs: object) -> object:
@@ -933,7 +939,9 @@ def test_shadow_review_study_batch_rejects_duplicate_output_subdirs(
     tmp_path: Path,
 ) -> None:
     batch = _batch_module()
-    first_packet_path = _write_packet(tmp_path, "first-packet.json", _completed_packet())
+    first_packet_path = _write_packet(
+        tmp_path, "first-packet.json", _completed_packet()
+    )
     second_packet_path = _write_packet(
         tmp_path,
         "second-packet.json",
@@ -995,11 +1003,13 @@ def test_shadow_review_study_batch_rejects_nested_output_subdirs() -> None:
         "min_passed_entry_rate",
         "min_suite_mean_precision",
         "min_suite_mean_recall",
-        "min_suite_mean_explanation_quality",
+        "min_suite_explanation_adequacy_rate",
         "max_suite_expected_calibration_error",
     ],
 )
-@pytest.mark.parametrize("non_finite_value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize(
+    "non_finite_value", [float("nan"), float("inf"), float("-inf")]
+)
 def test_shadow_review_study_batch_rejects_non_finite_suite_thresholds(
     threshold_name: str,
     non_finite_value: float,
@@ -1021,7 +1031,9 @@ def test_shadow_review_study_batch_rejects_duplicate_export_ids(
     tmp_path: Path,
 ) -> None:
     batch = _batch_module()
-    first_packet_path = _write_packet(tmp_path, "first-packet.json", _completed_packet())
+    first_packet_path = _write_packet(
+        tmp_path, "first-packet.json", _completed_packet()
+    )
     second_packet_path = _write_packet(
         tmp_path,
         "second-packet.json",
@@ -1127,7 +1139,9 @@ def test_shadow_review_study_batch_rejects_cross_entry_packet_artifact_collision
     colliding_packet_path.parent.mkdir(parents=True)
     colliding_packet_path.write_text(json.dumps(_completed_packet()))
     original_packet_text = colliding_packet_path.read_text()
-    second_packet_path = _write_packet(tmp_path, "second-packet.json", _completed_packet())
+    second_packet_path = _write_packet(
+        tmp_path, "second-packet.json", _completed_packet()
+    )
 
     manifest = batch.EvidenceSelectionShadowReviewStudyBatchManifest.model_validate(
         {
@@ -1169,6 +1183,167 @@ def test_shadow_review_study_batch_rejects_cross_entry_packet_artifact_collision
     assert not (output_dir / "first" / "selection-review-labels.json").exists()
 
 
+def test_shadow_review_study_batch_passes_all_selection_suite_without_ranking(
+    tmp_path: Path,
+) -> None:
+    batch = _batch_module()
+    packet_specs = (
+        (
+            "one",
+            "11111111-1111-4111-8111-111111111111",
+            "Assess BRAF targeted therapy evidence.",
+        ),
+        (
+            "two",
+            "22222222-2222-4222-8222-222222222222",
+            "Assess EGFR resistance evidence.",
+        ),
+        (
+            "three",
+            "33333333-3333-4333-8333-333333333333",
+            "Assess BRCA1 pathogenicity evidence.",
+        ),
+    )
+    packet_paths = tuple(
+        _write_packet(
+            tmp_path,
+            f"selection-{label}.json",
+            _selection_only_packet_for_batch(
+                study_id=f"selection-study-{label}",
+                source_run_id=source_run_id,
+                goal=goal,
+            ),
+        )
+        for label, source_run_id, goal in packet_specs
+    )
+    output_dir = tmp_path / "selection-batch-output"
+
+    result = batch.build_evidence_selection_shadow_review_study_batch(
+        batch.EvidenceSelectionShadowReviewStudyBatchRequest(
+            manifest=batch.EvidenceSelectionShadowReviewStudyBatchManifest.model_validate(
+                {
+                    "schema_version": (
+                        "evidence_selection_shadow_review_study_batch.v1"
+                    ),
+                    "batch_id": "selection-only-batch-2026-07-13",
+                    "entries": [
+                        _manifest_entry(
+                            entry_id=f"selection-{index}",
+                            packet_path=packet_path,
+                            output_subdir=f"selection-{index}",
+                            export_id=f"selection-export-{index}",
+                        )
+                        for index, packet_path in enumerate(packet_paths, start=1)
+                    ],
+                },
+            ),
+            output_dir=output_dir,
+            thresholds=batch.EvidenceSelectionShadowReviewStudyBatchThresholds(
+                min_selection_review_count=1,
+                min_distinct_selection_goals=1,
+            ),
+        ),
+    )
+
+    assert result.passed is True
+    assert result.suite_gate["summary"]["combined_study_count"] == 0
+    assert result.suite_gate["summary"]["total_review_ranking_decision_count"] == 0
+    assert all(entry.artifact_result.review_ranking_path is None for entry in result.entries)
+    assert all(
+        entry.artifact_result.review_ranking_export_path is None
+        for entry in result.entries
+    )
+
+
+def test_shadow_review_study_batch_applies_ranking_gates_only_to_combined_studies(
+    tmp_path: Path,
+) -> None:
+    batch = _batch_module()
+    selection_packets = (
+        _selection_only_packet_for_batch(
+            study_id="selection-study-one",
+            source_run_id="11111111-1111-4111-8111-111111111111",
+            goal="Assess BRAF targeted therapy evidence.",
+        ),
+        _selection_only_packet_for_batch(
+            study_id="selection-study-two",
+            source_run_id="22222222-2222-4222-8222-222222222222",
+            goal="Assess EGFR resistance evidence.",
+        ),
+    )
+    combined_packet = _completed_packet_for_batch(
+        study_id="combined-study-three",
+        source_run_id="33333333-3333-4333-8333-333333333333",
+        goal="Assess BRCA1 pathogenicity evidence.",
+        first_shape="gene_disease_association",
+        second_shape="variant_pathogenicity",
+        review_ranking_decision_count=10,
+    )
+    ranking_forms = combined_packet["review_ranking_forms"]
+    assert isinstance(ranking_forms, list)
+    ranking_goals = (
+        "Assess BRCA1 pathogenicity evidence.",
+        "Assess BRCA1 treatment evidence.",
+        "Assess BRCA1 mechanism evidence.",
+    )
+    evidence_shapes = (
+        "gene_disease_association",
+        "variant_pathogenicity",
+        "treatment_response",
+    )
+    for index, form in enumerate(ranking_forms):
+        assert isinstance(form, dict)
+        source_kind = "proposal" if index % 2 == 0 else "review_item"
+        positive = index % 4 in (0, 3)
+        form["source_kind"] = source_kind
+        form["outcome"] = "positive" if positive else "negative"
+        form["ranking_score"] = 1.0 if positive else 0.0
+        form["goal"] = ranking_goals[index % len(ranking_goals)]
+        form["evidence_shape"] = evidence_shapes[index % len(evidence_shapes)]
+    packets = (*selection_packets, combined_packet)
+    packet_paths = tuple(
+        _write_packet(tmp_path, f"mixed-{index}.json", packet)
+        for index, packet in enumerate(packets, start=1)
+    )
+
+    result = batch.build_evidence_selection_shadow_review_study_batch(
+        batch.EvidenceSelectionShadowReviewStudyBatchRequest(
+            manifest=batch.EvidenceSelectionShadowReviewStudyBatchManifest.model_validate(
+                {
+                    "schema_version": (
+                        "evidence_selection_shadow_review_study_batch.v1"
+                    ),
+                    "batch_id": "mixed-study-batch-2026-07-13",
+                    "entries": [
+                        _manifest_entry(
+                            entry_id=f"mixed-{index}",
+                            packet_path=packet_path,
+                            output_subdir=f"mixed-{index}",
+                            export_id=f"mixed-export-{index}",
+                        )
+                        for index, packet_path in enumerate(packet_paths, start=1)
+                    ],
+                },
+            ),
+            output_dir=tmp_path / "mixed-batch-output",
+            thresholds=batch.EvidenceSelectionShadowReviewStudyBatchThresholds(
+                min_selection_review_count=1,
+                min_distinct_selection_goals=1,
+                min_review_ranking_sample_count=4,
+                min_distinct_ranking_goals=1,
+                min_distinct_evidence_shapes=2,
+            ),
+        ),
+    )
+
+    assert result.passed is True
+    assert result.suite_gate["summary"]["combined_study_count"] == 1
+    assert result.suite_gate["summary"]["total_review_ranking_decision_count"] == 10
+    assert result.entries[0].artifact_result.review_ranking_path is None
+    assert result.entries[1].artifact_result.review_ranking_path is None
+    assert result.entries[2].artifact_result.review_ranking_path is not None
+
+
 def _batch_module() -> object:
     try:
         return importlib.import_module(
@@ -1195,6 +1370,7 @@ def _manifest_entry(
         "exported_at": "2026-07-07T14:00:00Z",
         "exporter_id": "review-ops-a",
         "redaction_statement": "No PHI or raw patient text included.",
+        "study_evidence_kind": "real_shadow_review",
         "description": f"{entry_id} completed shadow-review packet.",
     }
 
@@ -1215,7 +1391,9 @@ def _low_quality_packet() -> dict[str, object]:
     assert isinstance(selection_forms, list)
     first_form = selection_forms[0]
     assert isinstance(first_form, dict)
-    first_form["explanation_quality_score"] = 2
+    first_form["explanation_assessment"] = (
+        inadequate_explanation_assessment().model_dump(mode="json")
+    )
     return packet
 
 
@@ -1238,7 +1416,30 @@ def _low_quality_packet_for_batch(
     assert isinstance(selection_forms, list)
     first_form = selection_forms[0]
     assert isinstance(first_form, dict)
-    first_form["explanation_quality_score"] = 2
+    first_form["explanation_assessment"] = (
+        inadequate_explanation_assessment().model_dump(mode="json")
+    )
+    return packet
+
+
+def _selection_only_packet_for_batch(
+    *,
+    study_id: str,
+    source_run_id: str,
+    goal: str,
+) -> dict[str, object]:
+    packet = _completed_packet_for_batch(
+        study_id=study_id,
+        source_run_id=source_run_id,
+        goal=goal,
+        first_shape="unused_selection_shape",
+        second_shape="unused_selection_context",
+    )
+    packet["study_type"] = "selection_relevance"
+    completion_required_fields = packet["completion_required_fields"]
+    assert isinstance(completion_required_fields, list)
+    packet["completion_required_fields"] = completion_required_fields[:4]
+    packet["review_ranking_forms"] = []
     return packet
 
 

@@ -19,6 +19,8 @@ from artana_evidence_api.evidence_selection.shadow_review_packet import (
     machine_packet_digest,
 )
 
+from .evidence_selection_review_fixtures import adequate_explanation_assessment
+
 
 def test_shadow_review_completion_cli_writes_source_input_files(
     tmp_path: Path,
@@ -56,6 +58,33 @@ def test_shadow_review_completion_cli_writes_source_input_files(
     )
     assert ranking_payload["adjudication_note"] == "Reviewer A completed all labels."
     assert ranking_payload["decisions"][0]["outcome"] == "positive"
+
+
+def test_shadow_review_completion_cli_writes_selection_only_input(
+    tmp_path: Path,
+) -> None:
+    cli = _cli_module()
+    packet_path = tmp_path / "completed-selection-packet.json"
+    selection_output = tmp_path / "selection-review-labels.json"
+    packet = _completed_packet()
+    packet["study_type"] = "selection_relevance"
+    packet["completion_required_fields"] = packet["completion_required_fields"][:4]
+    packet["review_ranking_forms"] = []
+    _write_completed_packet(packet_path, packet)
+
+    exit_code = cli.main(
+        (
+            "--packet",
+            str(packet_path),
+            "--selection-reviews-output",
+            str(selection_output),
+        ),
+    )
+
+    assert exit_code == 0
+    payload = json.loads(selection_output.read_text())
+    assert payload["selection_reviews"][0]["reviewer_id"] == "reviewer-a"
+    assert not (tmp_path / "review-ranking-study.json").exists()
 
 
 def test_shadow_review_completion_cli_rejects_incomplete_packet_without_traceback(
@@ -321,8 +350,8 @@ def _machine_packet_for_completed_packet(
     selection_form["reviewer_id"] = None
     selection_form["human_selected_record_ids"] = []
     selection_form["duplicate_suggestion_ids"] = []
-    selection_form["explanation_quality_score"] = None
-    selection_form["high_severity_overclaim_count"] = None
+    selection_form["explanation_assessment"] = None
+    selection_form["high_severity_overclaim_findings"] = None
     selection_form["reviewer_notes"] = None
     for ranking_form in machine_packet["review_ranking_forms"]:
         ranking_form["outcome"] = None
@@ -340,17 +369,21 @@ def _write_completed_packet(
     path: Path,
     packet: dict[str, object],
 ) -> Path:
+    machine_packet = _machine_packet_for_completed_packet(packet)
+    packet["machine_packet_sha256"] = machine_packet["machine_packet_sha256"]
+    packet["machine_packet_signature"] = machine_packet["machine_packet_signature"]
     path.write_text(json.dumps(packet))
     machine_packet_sidecar_path(path).write_text(
-        json.dumps(_machine_packet_for_completed_packet(packet)),
+        json.dumps(machine_packet),
     )
     return path
 
 
 def _completed_packet_payload() -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_shadow_review_packet.v1",
+        "schema_version": "evidence_selection_shadow_review_packet.v2",
         "study_id": "shadow-study-2026-07-07",
+        "study_type": "selection_and_review_ranking",
         "source_run_id": "00000000-0000-0000-0000-000000000048",
         "goal": "Review BRAF V600E treatment-response evidence.",
         "production_readiness_claim": False,
@@ -358,8 +391,8 @@ def _completed_packet_payload() -> dict[str, object]:
         "completion_required_fields": [
             "selection_review_forms[].reviewer_id",
             "selection_review_forms[].human_selected_record_ids",
-            "selection_review_forms[].explanation_quality_score",
-            "selection_review_forms[].high_severity_overclaim_count",
+            "selection_review_forms[].explanation_assessment",
+            "selection_review_forms[].high_severity_overclaim_findings",
             "review_ranking_forms[].reviewer_id",
             "review_ranking_forms[].outcome",
         ],
@@ -377,8 +410,10 @@ def _completed_packet_payload() -> dict[str, object]:
                 "harness_deferred_record_ids": [],
                 "human_selected_record_ids": ["pubmed:search-1:0"],
                 "duplicate_suggestion_ids": [],
-                "explanation_quality_score": 4,
-                "high_severity_overclaim_count": 0,
+                "explanation_assessment": (
+                    adequate_explanation_assessment().model_dump(mode="json")
+                ),
+                "high_severity_overclaim_findings": [],
                 "reviewer_notes": "Looks specific.",
             },
         ],

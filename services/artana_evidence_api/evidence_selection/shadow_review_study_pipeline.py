@@ -15,7 +15,9 @@ from artana_evidence_api.evidence_selection.shadow_review_completion import (
     build_evidence_selection_shadow_review_source_inputs,
 )
 from artana_evidence_api.evidence_selection.source_export_writer import (
+    EvidenceSelectionReviewExportWriteRequest,
     EvidenceSelectionSourceExportWriteRequest,
+    write_evidence_selection_review_export,
     write_evidence_selection_source_exports,
 )
 from artana_evidence_api.evidence_selection.study_bundle import (
@@ -43,16 +45,16 @@ class EvidenceSelectionShadowReviewStudyArtifactRequest:
     machine_packet: JSONObject
     packet: JSONObject
     output_dir: Path
-    adjudication_note: str
+    adjudication_note: str | None
     source_system: str
     export_id: str
     exported_at: datetime | str
     exporter_id: str
     redaction_statement: str
+    study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
     machine_packet_path: Path | None = None
     packet_path: Path | None = None
     protected_source_paths: tuple[Path, ...] = ()
-    study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind = "real_shadow_review"
     description: str | None = None
 
 
@@ -61,9 +63,9 @@ class EvidenceSelectionShadowReviewStudyArtifactResult:
     """Paths and counts produced by the completed-packet artifact pipeline."""
 
     selection_reviews_path: Path
-    review_ranking_path: Path
+    review_ranking_path: Path | None
     selection_export_path: Path
-    review_ranking_export_path: Path
+    review_ranking_export_path: Path | None
     bundle_path: Path
     selection_review_count: int
     review_ranking_decision_count: int
@@ -101,35 +103,66 @@ def build_evidence_selection_shadow_review_study_artifacts(
             paths.selection_reviews_path,
             source_inputs.selection_reviews_payload(),
         )
-        _write_json_payload(
-            paths.review_ranking_path,
-            source_inputs.review_ranking_payload(),
-        )
-        source_export_result = write_evidence_selection_source_exports(
-            EvidenceSelectionSourceExportWriteRequest(
-                selection_reviews_path=paths.selection_reviews_path,
-                review_ranking_path=paths.review_ranking_path,
-                selection_export_path=paths.selection_export_path,
-                review_ranking_export_path=paths.review_ranking_export_path,
-                source_system=request.source_system,
-                export_id=request.export_id,
-                exported_at=request.exported_at,
-                exporter_id=request.exporter_id,
-                redaction_statement=request.redaction_statement,
-            ),
-        )
+        if source_inputs.review_ranking is None:
+            selection_export_result = write_evidence_selection_review_export(
+                EvidenceSelectionReviewExportWriteRequest(
+                    selection_reviews_path=paths.selection_reviews_path,
+                    selection_export_path=paths.selection_export_path,
+                    source_system=request.source_system,
+                    export_id=request.export_id,
+                    exported_at=request.exported_at,
+                    exporter_id=request.exporter_id,
+                    redaction_statement=request.redaction_statement,
+                ),
+            )
+            selection_review_count = selection_export_result.selection_review_count
+            review_ranking_decision_count = 0
+        else:
+            _write_json_payload(
+                paths.review_ranking_path,
+                source_inputs.review_ranking_payload(),
+            )
+            source_export_result = write_evidence_selection_source_exports(
+                EvidenceSelectionSourceExportWriteRequest(
+                    selection_reviews_path=paths.selection_reviews_path,
+                    review_ranking_path=paths.review_ranking_path,
+                    selection_export_path=paths.selection_export_path,
+                    review_ranking_export_path=paths.review_ranking_export_path,
+                    source_system=request.source_system,
+                    export_id=request.export_id,
+                    exported_at=request.exported_at,
+                    exporter_id=request.exporter_id,
+                    redaction_statement=request.redaction_statement,
+                ),
+            )
+            selection_review_count = source_export_result.selection_review_count
+            review_ranking_decision_count = (
+                source_export_result.review_ranking_decision_count
+            )
+        bundle_source_paths = [paths.selection_export_path]
+        if source_inputs.review_ranking is not None:
+            bundle_source_paths.append(paths.review_ranking_export_path)
         validate_evidence_selection_expert_study_bundle_output_path(
             output_path=paths.bundle_path,
-            source_paths=(paths.selection_export_path, paths.review_ranking_export_path),
+            source_paths=tuple(bundle_source_paths),
         )
         bundle = build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
-                study_id=source_inputs.review_ranking.study_id,
+                study_id=source_inputs.study_id,
+                study_type=source_inputs.study_type,
                 study_evidence_kind=request.study_evidence_kind,
                 selection_reviews_path=paths.selection_export_path,
-                review_ranking_path=paths.review_ranking_export_path,
+                review_ranking_path=(
+                    paths.review_ranking_export_path
+                    if source_inputs.review_ranking is not None
+                    else None
+                ),
                 selection_reviews_uri=str(final_paths.selection_export_path),
-                review_ranking_uri=str(final_paths.review_ranking_export_path),
+                review_ranking_uri=(
+                    str(final_paths.review_ranking_export_path)
+                    if source_inputs.review_ranking is not None
+                    else None
+                ),
                 description=request.description,
             ),
         )
@@ -142,16 +175,26 @@ def build_evidence_selection_shadow_review_study_artifacts(
         _remove_staging_dir(staging_dir)
         raise
     source_artifact_count = (
-        0 if bundle.source_manifest is None else len(bundle.source_manifest.source_artifacts)
+        0
+        if bundle.source_manifest is None
+        else len(bundle.source_manifest.source_artifacts)
     )
     return EvidenceSelectionShadowReviewStudyArtifactResult(
         selection_reviews_path=final_paths.selection_reviews_path,
-        review_ranking_path=final_paths.review_ranking_path,
+        review_ranking_path=(
+            final_paths.review_ranking_path
+            if source_inputs.review_ranking is not None
+            else None
+        ),
         selection_export_path=final_paths.selection_export_path,
-        review_ranking_export_path=final_paths.review_ranking_export_path,
+        review_ranking_export_path=(
+            final_paths.review_ranking_export_path
+            if source_inputs.review_ranking is not None
+            else None
+        ),
         bundle_path=final_paths.bundle_path,
-        selection_review_count=source_export_result.selection_review_count,
-        review_ranking_decision_count=source_export_result.review_ranking_decision_count,
+        selection_review_count=selection_review_count,
+        review_ranking_decision_count=review_ranking_decision_count,
         source_artifact_count=source_artifact_count,
     )
 

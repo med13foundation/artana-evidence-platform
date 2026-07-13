@@ -81,6 +81,7 @@ def test_evidence_selection_expert_study_gate_accepts_documented_note_objects(
     first_review["false_negative_notes"] = {
         "record-missed": "Reviewer expected this record."
     }
+    first_review["candidate_record_ids"].append("record-missed")
     input_path = tmp_path / "documented-notes-study.json"
     input_path.write_text(json.dumps(payload) + "\n")
 
@@ -100,10 +101,15 @@ def test_evidence_selection_expert_study_gate_runner_fails_closed(
     payload["selection_reviews"] = payload["selection_reviews"][:1]
     first_review = payload["selection_reviews"][0]
     first_review["reviewer_id"] = ""
+    first_review["candidate_record_ids"] = [
+        "record-fp",
+        "record-tp",
+        "record-0-c",
+    ]
     first_review["harness_selected_record_ids"] = ["record-fp"]
     first_review["human_selected_record_ids"] = ["record-tp"]
-    first_review["explanation_quality_score"] = 2
-    first_review["high_severity_overclaim_count"] = 1
+    first_review["explanation_assessment"] = _inadequate_explanation_assessment()
+    first_review["high_severity_overclaim_findings"] = [_overclaim_finding()]
     payload["review_ranking"]["decisions"] = payload["review_ranking"]["decisions"][:2]
     payload["review_ranking"].pop("adjudication_note")
     input_path = tmp_path / "weak-study.json"
@@ -202,8 +208,9 @@ def _balanced_study_payload() -> dict[str, object]:
         "Find NTRK fusion treatment evidence.",
     ]
     return {
-        "schema_version": "evidence_selection_expert_study.v1",
+        "schema_version": "evidence_selection_expert_study.v2",
         "study_id": "balanced-shadow-study",
+        "study_type": "selection_and_review_ranking",
         "study_evidence_kind": "real_shadow_review",
         "description": "Multi-goal expert shadow-review study fixture.",
         "selection_reviews": [
@@ -211,6 +218,11 @@ def _balanced_study_payload() -> dict[str, object]:
                 "run_id": f"00000000-0000-0000-0000-00000000000{index}",
                 "goal": goal,
                 "reviewer_id": "reviewer-a",
+                "candidate_record_ids": [
+                    f"record-{index}-a",
+                    f"record-{index}-b",
+                    f"record-{index}-c",
+                ],
                 "harness_selected_record_ids": [
                     f"record-{index}-a",
                     f"record-{index}-b",
@@ -220,8 +232,10 @@ def _balanced_study_payload() -> dict[str, object]:
                     f"record-{index}-b",
                 ],
                 "harness_skipped_record_ids": [f"record-{index}-c"],
-                "explanation_quality_score": 4,
-                "high_severity_overclaim_count": 0,
+                "explanation_assessment": _adequate_explanation_assessment(
+                    f"record-{index}-a",
+                ),
+                "high_severity_overclaim_findings": [],
             }
             for index, goal in enumerate(goals)
         ],
@@ -268,6 +282,38 @@ def _ranking_decisions(goals: list[str]) -> list[dict[str, object]]:
         for index in range(5)
     ]
     return positive_decisions + negative_decisions
+
+
+def _adequate_explanation_assessment(record_id: str) -> dict[str, object]:
+    return {
+        "literal_citation_present": "yes",
+        "citation_entails_claim": "yes",
+        "all_required_criteria_addressed": "yes",
+        "unsupported_material_claim_present": "no",
+        "cited_evidence": [
+            {
+                "record_id": record_id,
+                "source_locator": f"candidate:{record_id}:abstract",
+                "quoted_text": "Literal evidence supporting the decision.",
+            },
+        ],
+        "reviewer_explanation": "The source addresses every required criterion.",
+    }
+
+
+def _inadequate_explanation_assessment() -> dict[str, object]:
+    assessment = _adequate_explanation_assessment("record-fp")
+    assessment["unsupported_material_claim_present"] = "yes"
+    return assessment
+
+
+def _overclaim_finding() -> dict[str, object]:
+    return {
+        "record_id": "record-fp",
+        "material_claim": "The intervention is universally safe.",
+        "reviewer_explanation": "The source does not support universal safety.",
+        "cited_evidence": [],
+    }
 
 
 def _source_manifest(goals: list[str]) -> dict[str, object]:

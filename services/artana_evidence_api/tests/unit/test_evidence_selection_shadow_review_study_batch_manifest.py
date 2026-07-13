@@ -17,6 +17,7 @@ from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_revi
 )
 from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_review_study_pipeline import (  # noqa: E501
     _machine_packet_for_completed_packet,
+    _selection_only_completed_packet,
 )
 
 
@@ -50,21 +51,20 @@ def test_shadow_review_study_batch_manifest_builder_derives_strict_entries(
         ),
     )
 
-    manifest = (
-        manifest_builder.build_evidence_selection_shadow_review_study_batch_manifest(
-            manifest_builder.EvidenceSelectionShadowReviewStudyBatchManifestBuildRequest(
-                batch_id="real-shadow-review-batch-2026-07-07",
-                packet_paths=(first_packet_path, second_packet_path),
-                manifest_path=manifest_path,
-                adjudication_note="Reviewer adjudicated every packet.",
-                source_system="artana-shadow-review",
-                export_id_prefix="real-shadow-2026-07-07",
-                exported_at="2026-07-07T14:00:00Z",
-                exporter_id="review-ops-a",
-                redaction_statement="No PHI or raw patient text included.",
-                description="Completed real shadow-review packet.",
-            ),
-        )
+    manifest = manifest_builder.build_evidence_selection_shadow_review_study_batch_manifest(
+        manifest_builder.EvidenceSelectionShadowReviewStudyBatchManifestBuildRequest(
+            batch_id="real-shadow-review-batch-2026-07-07",
+            packet_paths=(first_packet_path, second_packet_path),
+            manifest_path=manifest_path,
+            adjudication_note="Reviewer adjudicated every packet.",
+            source_system="artana-shadow-review",
+            export_id_prefix="real-shadow-2026-07-07",
+            exported_at="2026-07-07T14:00:00Z",
+            exporter_id="review-ops-a",
+            redaction_statement="No PHI or raw patient text included.",
+            study_evidence_kind="real_shadow_review",
+            description="Completed real shadow-review packet.",
+        ),
     )
 
     assert manifest.schema_version == "evidence_selection_shadow_review_study_batch.v1"
@@ -130,8 +130,36 @@ def test_shadow_review_study_batch_manifest_builder_rejects_incomplete_packet(
                 exported_at="2026-07-07T14:00:00Z",
                 exporter_id="review-ops-a",
                 redaction_statement="No PHI or raw patient text included.",
+                study_evidence_kind="real_shadow_review",
             ),
         )
+
+
+def test_shadow_review_study_batch_manifest_builder_accepts_selection_only_without_note(
+    tmp_path: Path,
+) -> None:
+    manifest_builder = _manifest_builder_module()
+    packet_path = _write_packet(
+        tmp_path,
+        "selection-only.json",
+        _selection_only_completed_packet(),
+    )
+
+    manifest = manifest_builder.build_evidence_selection_shadow_review_study_batch_manifest(
+        manifest_builder.EvidenceSelectionShadowReviewStudyBatchManifestBuildRequest(
+            batch_id="selection-only-batch-2026-07-13",
+            packet_paths=(packet_path,),
+            manifest_path=tmp_path / "batch-manifest.json",
+            source_system="artana-shadow-review",
+            export_id_prefix="selection-only-2026-07-13",
+            exported_at="2026-07-13T14:00:00Z",
+            exporter_id="review-ops-a",
+            redaction_statement="No PHI or raw patient text included.",
+            study_evidence_kind="real_shadow_review",
+        ),
+    )
+
+    assert manifest.entries[0].adjudication_note is None
 
 
 def _manifest_builder_module() -> object:

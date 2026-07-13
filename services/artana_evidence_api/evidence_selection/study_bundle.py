@@ -25,6 +25,7 @@ from artana_evidence_api.evidence_selection.source_exports import (
 from artana_evidence_api.evidence_selection_validation import (
     EvidenceSelectionExpertStudyEvidenceKind,
     EvidenceSelectionExpertStudyInput,
+    EvidenceSelectionExpertStudyType,
     EvidenceSelectionReviewInput,
     ReviewRankingCalibrationStudyInput,
 )
@@ -39,9 +40,10 @@ class EvidenceSelectionExpertStudyBundleRequest:
     """Source files and metadata required to build an expert-study bundle."""
 
     study_id: str
+    study_type: EvidenceSelectionExpertStudyType
     study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
     selection_reviews_path: Path
-    review_ranking_path: Path
+    review_ranking_path: Path | None = None
     description: str | None = None
     selection_reviews_uri: str | None = None
     review_ranking_uri: str | None = None
@@ -73,9 +75,13 @@ def build_evidence_selection_expert_study_bundle(
         path=request.selection_reviews_path,
         uri=request.selection_reviews_uri,
     )
-    ranking_source = _read_source_artifact(
-        path=request.review_ranking_path,
-        uri=request.review_ranking_uri,
+    ranking_source = (
+        _read_source_artifact(
+            path=request.review_ranking_path,
+            uri=request.review_ranking_uri,
+        )
+        if request.review_ranking_path is not None
+        else None
     )
     adjudication_source = (
         _read_source_artifact(
@@ -86,7 +92,12 @@ def build_evidence_selection_expert_study_bundle(
         else None
     )
     selection_export = _load_selection_export(selection_source)
-    ranking_export = _load_review_ranking_export(ranking_source)
+    ranking_export = (
+        _load_review_ranking_export(ranking_source)
+        if ranking_source is not None
+        else None
+    )
+    _validate_study_sources(request=request, ranking_export=ranking_export)
     source_identity = _source_identity(
         request=request,
         selection_export=selection_export,
@@ -98,14 +109,19 @@ def build_evidence_selection_expert_study_bundle(
         ranking_source=ranking_source,
         adjudication_source=adjudication_source,
         selection_reviews=selection_export.selection_reviews,
-        review_ranking=ranking_export.review_ranking,
+        review_ranking=(
+            ranking_export.review_ranking if ranking_export is not None else None
+        ),
     )
     return EvidenceSelectionExpertStudyInput(
-        schema_version="evidence_selection_expert_study.v1",
+        schema_version="evidence_selection_expert_study.v2",
         study_id=request.study_id,
+        study_type=request.study_type,
         study_evidence_kind=request.study_evidence_kind,
         selection_reviews=selection_export.selection_reviews,
-        review_ranking=ranking_export.review_ranking,
+        review_ranking=(
+            ranking_export.review_ranking if ranking_export is not None else None
+        ),
         source_manifest=source_manifest,
         description=request.description,
     )
@@ -167,15 +183,28 @@ def _source_identity(
     *,
     request: EvidenceSelectionExpertStudyBundleRequest,
     selection_export: EvidenceSelectionReviewExport,
-    ranking_export: ReviewRankingCalibrationExport,
+    ranking_export: ReviewRankingCalibrationExport | None,
 ) -> EvidenceSelectionSourceExportIdentity:
-    try:
-        source_identity = ensure_matching_source_export_identity(
-            selection_export=selection_export,
-            ranking_export=ranking_export,
+    if ranking_export is None:
+        source_identity = EvidenceSelectionSourceExportIdentity.model_validate(
+            selection_export.model_dump(
+                include={
+                    "source_system",
+                    "export_id",
+                    "exported_at",
+                    "exporter_id",
+                    "redaction_statement",
+                },
+            ),
         )
-    except ValueError as exc:
-        raise EvidenceSelectionExpertStudyBundleError(str(exc)) from exc
+    else:
+        try:
+            source_identity = ensure_matching_source_export_identity(
+                selection_export=selection_export,
+                ranking_export=ranking_export,
+            )
+        except ValueError as exc:
+            raise EvidenceSelectionExpertStudyBundleError(str(exc)) from exc
     requested_identity = _requested_source_identity(request)
     if requested_identity is not None and requested_identity != source_identity:
         msg = (
@@ -231,10 +260,10 @@ def _build_source_manifest(
     *,
     source_identity: EvidenceSelectionSourceExportIdentity,
     selection_source: _LoadedSourceArtifact,
-    ranking_source: _LoadedSourceArtifact,
+    ranking_source: _LoadedSourceArtifact | None,
     adjudication_source: _LoadedSourceArtifact | None,
     selection_reviews: tuple[EvidenceSelectionReviewInput, ...],
-    review_ranking: ReviewRankingCalibrationStudyInput,
+    review_ranking: ReviewRankingCalibrationStudyInput | None,
 ) -> EvidenceSelectionExpertStudySourceManifest:
     return EvidenceSelectionExpertStudySourceManifest(
         source_system=source_identity.source_system,
@@ -248,9 +277,13 @@ def _build_source_manifest(
             adjudication_source=adjudication_source,
         ),
         selection_review_run_ids=tuple(review.run_id for review in selection_reviews),
-        review_ranking_decision_keys=tuple(
-            f"{decision.source_kind}:{decision.item_id}"
-            for decision in review_ranking.decisions
+        review_ranking_decision_keys=(
+            tuple(
+                f"{decision.source_kind}:{decision.item_id}"
+                for decision in review_ranking.decisions
+            )
+            if review_ranking is not None
+            else ()
         ),
         reviewer_roster=_reviewer_roster(
             selection_reviews=selection_reviews,
@@ -262,7 +295,7 @@ def _build_source_manifest(
 def _source_artifacts(
     *,
     selection_source: _LoadedSourceArtifact,
-    ranking_source: _LoadedSourceArtifact,
+    ranking_source: _LoadedSourceArtifact | None,
     adjudication_source: _LoadedSourceArtifact | None,
 ) -> tuple[EvidenceSelectionExpertStudySourceArtifact, ...]:
     artifacts = [
@@ -271,12 +304,15 @@ def _source_artifacts(
             artifact_kind="selection_review_export",
             source=selection_source,
         ),
-        _source_artifact(
-            artifact_id="review-ranking-export",
-            artifact_kind="review_ranking_export",
-            source=ranking_source,
-        ),
     ]
+    if ranking_source is not None:
+        artifacts.append(
+            _source_artifact(
+                artifact_id="review-ranking-export",
+                artifact_kind="review_ranking_export",
+                source=ranking_source,
+            ),
+        )
     if adjudication_source is not None:
         artifacts.append(
             _source_artifact(
@@ -305,19 +341,36 @@ def _source_artifact(
 def _reviewer_roster(
     *,
     selection_reviews: tuple[EvidenceSelectionReviewInput, ...],
-    review_ranking: ReviewRankingCalibrationStudyInput,
+    review_ranking: ReviewRankingCalibrationStudyInput | None,
 ) -> tuple[str, ...]:
     reviewer_ids = {
         reviewer_id.strip()
         for review in selection_reviews
         if (reviewer_id := review.reviewer_id) and reviewer_id.strip()
     }
-    reviewer_ids.update(
-        reviewer_id.strip()
-        for decision in review_ranking.decisions
-        if (reviewer_id := decision.reviewer_id) and reviewer_id.strip()
-    )
+    if review_ranking is not None:
+        reviewer_ids.update(
+            reviewer_id.strip()
+            for decision in review_ranking.decisions
+            if (reviewer_id := decision.reviewer_id) and reviewer_id.strip()
+        )
     return tuple(sorted(reviewer_ids))
+
+
+def _validate_study_sources(
+    *,
+    request: EvidenceSelectionExpertStudyBundleRequest,
+    ranking_export: ReviewRankingCalibrationExport | None,
+) -> None:
+    if request.study_type == "selection_relevance" and ranking_export is not None:
+        msg = "selection_relevance bundles must not include review-ranking input."
+        raise EvidenceSelectionExpertStudyBundleError(msg)
+    if (
+        request.study_type == "selection_and_review_ranking"
+        and ranking_export is None
+    ):
+        msg = "selection_and_review_ranking bundles require review-ranking input."
+        raise EvidenceSelectionExpertStudyBundleError(msg)
 
 
 def _read_source_artifact(*, path: Path, uri: str | None) -> _LoadedSourceArtifact:

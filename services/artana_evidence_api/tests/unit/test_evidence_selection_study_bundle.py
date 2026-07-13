@@ -22,6 +22,8 @@ from artana_evidence_api.evidence_selection_validation import (
 )
 from pydantic import ValidationError
 
+from .evidence_selection_review_fixtures import adequate_explanation_assessment
+
 
 def test_build_derives_source_manifest_identity_from_source_exports(
     tmp_path: Path,
@@ -34,6 +36,7 @@ def test_build_derives_source_manifest_identity_from_source_exports(
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
             study_id="shadow-study-2026-07-07",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="synthetic_fixture",
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
@@ -48,6 +51,58 @@ def test_build_derives_source_manifest_identity_from_source_exports(
     assert source_manifest.exported_at == datetime(2026, 7, 7, 7, 0, tzinfo=UTC)
     assert source_manifest.exporter_id == "review-ops-a"
     assert source_manifest.redaction_statement == "No PHI or raw patient text included."
+
+
+def test_build_rejects_legacy_numeric_selection_export_version(tmp_path: Path) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_export = _selection_review_export()
+    selection_export["schema_version"] = "evidence_selection_review_export.v1"
+    selection_path.write_text(json.dumps(selection_export))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+
+    with pytest.raises(ValidationError, match="schema_version"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="legacy-selection-export",
+                study_type="selection_and_review_ranking",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
+def test_build_rejects_direct_review_citation_outside_candidate_universe(
+    tmp_path: Path,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_export = _selection_review_export()
+    selection_reviews = selection_export["selection_reviews"]
+    assert isinstance(selection_reviews, list)
+    first_review = selection_reviews[0]
+    assert isinstance(first_review, dict)
+    explanation_assessment = first_review["explanation_assessment"]
+    assert isinstance(explanation_assessment, dict)
+    cited_evidence = explanation_assessment["cited_evidence"]
+    assert isinstance(cited_evidence, list)
+    first_citation = cited_evidence[0]
+    assert isinstance(first_citation, dict)
+    first_citation["record_id"] = "unknown-record"
+    selection_path.write_text(json.dumps(selection_export))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+
+    with pytest.raises(ValidationError, match="unknown candidate record IDs"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="unbound-direct-review-citation",
+                study_type="selection_and_review_ranking",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
 
 
 def test_bundle_output_rejects_hard_link_to_source_artifact(tmp_path: Path) -> None:
@@ -77,6 +132,7 @@ def test_build_rejects_mismatched_source_export_identity(
         build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id="mismatched-shadow-study",
+                study_type="selection_and_review_ranking",
                 study_evidence_kind="synthetic_fixture",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
@@ -104,6 +160,7 @@ def test_build_rejects_source_export_without_timezone(
         build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id="naive-timestamp-shadow-study",
+                study_type="selection_and_review_ranking",
                 study_evidence_kind="synthetic_fixture",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
@@ -125,6 +182,7 @@ def test_build_rejects_noncanonical_source_export_timestamp_offset(
         build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id="offset-timestamp-shadow-study",
+                study_type="selection_and_review_ranking",
                 study_evidence_kind="synthetic_fixture",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
@@ -156,6 +214,7 @@ def test_build_rejects_alternate_utc_source_export_timestamp_spellings(
         build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id="alternate-timestamp-shadow-study",
+                study_type="selection_and_review_ranking",
                 study_evidence_kind="synthetic_fixture",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
@@ -182,6 +241,7 @@ def test_build_rejects_source_export_identity_field_with_outer_whitespace(
         build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id="whitespace-identity-shadow-study",
+                study_type="selection_and_review_ranking",
                 study_evidence_kind="synthetic_fixture",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
@@ -192,13 +252,13 @@ def test_build_rejects_source_export_identity_field_with_outer_whitespace(
 @pytest.mark.parametrize(
     ("override_field", "override_value"),
     [
-            ("source_system", "other-system"),
-            ("export_id", "other-export"),
-            ("exported_at", "2026-07-07T08:00:00Z"),
-            ("exporter_id", "other-exporter"),
-            ("redaction_statement", "Different redaction statement."),
-        ],
-    )
+        ("source_system", "other-system"),
+        ("export_id", "other-export"),
+        ("exported_at", "2026-07-07T08:00:00Z"),
+        ("exporter_id", "other-exporter"),
+        ("redaction_statement", "Different redaction statement."),
+    ],
+)
 def test_build_rejects_source_identity_override_mismatch(
     tmp_path: Path,
     override_field: str,
@@ -210,6 +270,7 @@ def test_build_rejects_source_identity_override_mismatch(
     ranking_path.write_text(json.dumps(_review_ranking_export()))
     request_kwargs: dict[str, object] = {
         "study_id": "override-mismatch-shadow-study",
+        "study_type": "selection_and_review_ranking",
         "study_evidence_kind": "synthetic_fixture",
         "selection_reviews_path": selection_path,
         "review_ranking_path": ranking_path,
@@ -235,6 +296,7 @@ def test_build_rejects_noncanonical_source_identity_override_timestamp(
         build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id="override-noncanonical-shadow-study",
+                study_type="selection_and_review_ranking",
                 study_evidence_kind="synthetic_fixture",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
@@ -260,6 +322,7 @@ def test_builds_expert_study_bundle_with_computed_source_manifest(
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
             study_id="shadow-study-2026-07-07",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="synthetic_fixture",
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
@@ -270,7 +333,7 @@ def test_builds_expert_study_bundle_with_computed_source_manifest(
 
     source_manifest = bundle.source_manifest
     assert source_manifest is not None
-    assert bundle.schema_version == "evidence_selection_expert_study.v1"
+    assert bundle.schema_version == "evidence_selection_expert_study.v2"
     assert bundle.study_id == "shadow-study-2026-07-07"
     assert tuple(source_manifest.selection_review_run_ids) == tuple(
         UUID(review["run_id"]) for review in _selection_reviews()
@@ -329,6 +392,7 @@ def test_build_preserves_duplicate_selection_run_ids_for_gate_detection(
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
             study_id="duplicate-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
@@ -375,6 +439,7 @@ def test_build_preserves_duplicate_review_ranking_keys_for_gate_detection(
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
             study_id="duplicate-ranking-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
@@ -432,6 +497,7 @@ def test_build_hashes_same_bytes_used_to_parse_source_exports(
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
             study_id="read-once-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="synthetic_fixture",
             selection_reviews_path=selection_path,
             review_ranking_path=ranking_path,
@@ -458,6 +524,7 @@ def test_build_rejects_selection_export_without_reviews(tmp_path: Path) -> None:
         build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id="bad-shadow-study",
+                study_type="selection_and_review_ranking",
                 study_evidence_kind="real_shadow_review",
                 selection_reviews_path=selection_path,
                 review_ranking_path=ranking_path,
@@ -476,6 +543,11 @@ def _selection_reviews() -> list[dict[str, object]]:
             "run_id": f"00000000-0000-0000-0000-00000000000{index + 1}",
             "goal": goal,
             "reviewer_id": "reviewer-a",
+            "candidate_record_ids": [
+                f"record-{index}-a",
+                f"record-{index}-b",
+                f"record-{index}-c",
+            ],
             "harness_selected_record_ids": [
                 f"record-{index}-a",
                 f"record-{index}-b",
@@ -485,8 +557,12 @@ def _selection_reviews() -> list[dict[str, object]]:
                 f"record-{index}-b",
             ],
             "harness_skipped_record_ids": [f"record-{index}-c"],
-            "explanation_quality_score": 4,
-            "high_severity_overclaim_count": 0,
+            "explanation_assessment": (
+                adequate_explanation_assessment(f"record-{index}-a").model_dump(
+                    mode="json",
+                )
+            ),
+            "high_severity_overclaim_findings": [],
         }
         for index, goal in enumerate(goals)
     ]
@@ -507,7 +583,7 @@ def _selection_review_export(
     selection_reviews: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_review_export.v1",
+        "schema_version": "evidence_selection_review_export.v2",
         **_source_export_identity(),
         "selection_reviews": selection_reviews or _selection_reviews(),
     }

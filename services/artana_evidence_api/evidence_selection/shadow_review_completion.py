@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Literal, cast
 from uuid import UUID
 
+from artana_evidence_api.evidence_selection.review.assessment import (
+    EvidenceSelectionExplanationAssessment,
+    EvidenceSelectionOverclaimFinding,
+)
 from artana_evidence_api.evidence_selection.shadow_review_integrity import (
     verify_machine_packet_signature,
 )
@@ -18,6 +22,7 @@ from artana_evidence_api.evidence_selection.shadow_review_packet import (
     machine_packet_digest,
 )
 from artana_evidence_api.evidence_selection_validation import (
+    EvidenceSelectionExpertStudyType,
     EvidenceSelectionReviewInput,
     ReviewRankingCalibrationDecision,
     ReviewRankingCalibrationStudyInput,
@@ -27,11 +32,13 @@ from artana_evidence_api.evidence_selection_validation import (
 from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-_COMPLETION_REQUIRED_FIELDS = (
+_SELECTION_COMPLETION_REQUIRED_FIELDS = (
     "selection_review_forms[].reviewer_id",
     "selection_review_forms[].human_selected_record_ids",
-    "selection_review_forms[].explanation_quality_score",
-    "selection_review_forms[].high_severity_overclaim_count",
+    "selection_review_forms[].explanation_assessment",
+    "selection_review_forms[].high_severity_overclaim_findings",
+)
+_RANKING_COMPLETION_REQUIRED_FIELDS = (
     "review_ranking_forms[].reviewer_id",
     "review_ranking_forms[].outcome",
 )
@@ -43,7 +50,7 @@ class EvidenceSelectionShadowReviewSourceInputRequest:
 
     machine_packet: JSONObject
     packet: JSONObject
-    adjudication_note: str
+    adjudication_note: str | None = None
     description: str | None = None
 
 
@@ -51,8 +58,10 @@ class EvidenceSelectionShadowReviewSourceInputRequest:
 class EvidenceSelectionShadowReviewSourceInputs:
     """Selection-review labels and review-ranking study input."""
 
+    study_id: str
+    study_type: EvidenceSelectionExpertStudyType
     selection_reviews: tuple[EvidenceSelectionReviewInput, ...]
-    review_ranking: ReviewRankingCalibrationStudyInput
+    review_ranking: ReviewRankingCalibrationStudyInput | None
 
     def selection_reviews_payload(self) -> JSONObject:
         """Return the JSON input expected by the source-export writer."""
@@ -67,6 +76,9 @@ class EvidenceSelectionShadowReviewSourceInputs:
     def review_ranking_payload(self) -> JSONObject:
         """Return the JSON input expected by the source-export writer."""
 
+        if self.review_ranking is None:
+            msg = "Selection-only source inputs do not contain review-ranking data."
+            raise ValueError(msg)
         return cast("JSONObject", self.review_ranking.model_dump(mode="json"))
 
 
@@ -83,8 +95,8 @@ class _CompletedSelectionReviewForm(BaseModel):
     harness_deferred_record_ids: tuple[str, ...] = ()
     human_selected_record_ids: tuple[str, ...]
     duplicate_suggestion_ids: tuple[str, ...] = ()
-    explanation_quality_score: int = Field(ge=1, le=5)
-    high_severity_overclaim_count: int = Field(ge=0)
+    explanation_assessment: EvidenceSelectionExplanationAssessment
+    high_severity_overclaim_findings: tuple[EvidenceSelectionOverclaimFinding, ...]
     reviewer_notes: str | None = Field(default=None, min_length=1)
 
     @field_validator("run_id", mode="before")
@@ -105,6 +117,7 @@ class _CompletedSelectionReviewForm(BaseModel):
         "harness_deferred_record_ids",
         "human_selected_record_ids",
         "duplicate_suggestion_ids",
+        "high_severity_overclaim_findings",
         mode="before",
     )
     @classmethod
@@ -138,8 +151,9 @@ class _CompletedShadowReviewPacket(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_shadow_review_packet.v1"]
+    schema_version: Literal["evidence_selection_shadow_review_packet.v2"]
     study_id: str = Field(min_length=1)
+    study_type: EvidenceSelectionExpertStudyType
     source_run_id: UUID
     goal: str = Field(min_length=1)
     production_readiness_claim: Literal[False]
@@ -173,19 +187,22 @@ class _CompletedShadowReviewPacket(BaseModel):
             return tuple(value)
         return value
 
-    @field_validator("completion_required_fields")
-    @classmethod
-    def _required_fields_must_match_packet_contract(
-        cls,
-        value: tuple[str, ...],
-    ) -> tuple[str, ...]:
-        if tuple(value) != _COMPLETION_REQUIRED_FIELDS:
-            msg = "completion_required_fields must match the shadow packet contract."
-            raise ValueError(msg)
-        return value
-
     @model_validator(mode="after")
     def _forms_must_match_packet_candidates(self) -> _CompletedShadowReviewPacket:
+        if self.completion_required_fields != _completion_required_fields(
+            self.study_type,
+        ):
+            msg = "completion_required_fields must match the shadow packet contract."
+            raise ValueError(msg)
+        if self.study_type == "selection_relevance" and self.review_ranking_forms:
+            msg = "selection_relevance packets must not include ranking forms."
+            raise ValueError(msg)
+        if (
+            self.study_type == "selection_and_review_ranking"
+            and not self.review_ranking_forms
+        ):
+            msg = "selection_and_review_ranking packets require ranking forms."
+            raise ValueError(msg)
         candidate_ids = {record.record_id for record in self.candidate_records}
         for form in self.selection_review_forms:
             if form.run_id != self.source_run_id:
@@ -202,6 +219,19 @@ class _CompletedShadowReviewPacket(BaseModel):
                     *form.harness_deferred_record_ids,
                     *form.human_selected_record_ids,
                     *form.duplicate_suggestion_ids,
+                    *(
+                        citation.record_id
+                        for citation in form.explanation_assessment.cited_evidence
+                    ),
+                    *(
+                        finding.record_id
+                        for finding in form.high_severity_overclaim_findings
+                    ),
+                    *(
+                        citation.record_id
+                        for finding in form.high_severity_overclaim_findings
+                        for citation in finding.cited_evidence
+                    ),
                 ),
             )
         return self
@@ -220,10 +250,17 @@ def build_evidence_selection_shadow_review_source_inputs(
         machine_packet=machine_packet,
         completed_packet=packet,
     )
-    adjudication_note = _required_text(
-        request.adjudication_note,
-        field_name="adjudication_note",
+    adjudication_note = (
+        _required_text(request.adjudication_note, field_name="adjudication_note")
+        if request.adjudication_note is not None
+        else None
     )
+    if (
+        packet.study_type == "selection_and_review_ranking"
+        and adjudication_note is None
+    ):
+        msg = "adjudication_note is required for review-ranking studies."
+        raise ValueError(msg)
     description = (
         _required_text(request.description, field_name="description")
         if request.description is not None
@@ -234,13 +271,16 @@ def build_evidence_selection_shadow_review_source_inputs(
             run_id=machine_form.run_id,
             goal=machine_form.goal,
             reviewer_id=completed_form.reviewer_id,
+            candidate_record_ids=tuple(
+                record.record_id for record in machine_packet.candidate_records
+            ),
             harness_selected_record_ids=machine_form.harness_selected_record_ids,
             human_selected_record_ids=completed_form.human_selected_record_ids,
             harness_skipped_record_ids=machine_form.harness_skipped_record_ids,
             duplicate_suggestion_ids=completed_form.duplicate_suggestion_ids,
-            explanation_quality_score=completed_form.explanation_quality_score,
-            high_severity_overclaim_count=(
-                completed_form.high_severity_overclaim_count
+            explanation_assessment=completed_form.explanation_assessment,
+            high_severity_overclaim_findings=(
+                completed_form.high_severity_overclaim_findings
             ),
             reviewer_notes=completed_form.reviewer_notes,
         )
@@ -250,29 +290,35 @@ def build_evidence_selection_shadow_review_source_inputs(
             strict=True,
         )
     )
-    review_ranking = ReviewRankingCalibrationStudyInput(
-        schema_version="evidence_selection_review_ranking_calibration.v1",
-        study_id=machine_packet.study_id,
-        decisions=tuple(
-            ReviewRankingCalibrationDecision(
-                source_kind=machine_form.source_kind,
-                item_id=machine_form.item_id,
-                ranking_score=machine_form.ranking_score,
-                outcome=completed_form.outcome,
-                reviewer_id=completed_form.reviewer_id,
-                goal=machine_form.goal,
-                evidence_shape=machine_form.evidence_shape,
-            )
-            for machine_form, completed_form in zip(
-                machine_packet.review_ranking_forms,
-                packet.review_ranking_forms,
-                strict=True,
-            )
-        ),
-        adjudication_note=adjudication_note,
-        description=description,
+    review_ranking = (
+        ReviewRankingCalibrationStudyInput(
+            schema_version="evidence_selection_review_ranking_calibration.v1",
+            study_id=machine_packet.study_id,
+            decisions=tuple(
+                ReviewRankingCalibrationDecision(
+                    source_kind=machine_form.source_kind,
+                    item_id=machine_form.item_id,
+                    ranking_score=machine_form.ranking_score,
+                    outcome=completed_form.outcome,
+                    reviewer_id=completed_form.reviewer_id,
+                    goal=machine_form.goal,
+                    evidence_shape=machine_form.evidence_shape,
+                )
+                for machine_form, completed_form in zip(
+                    machine_packet.review_ranking_forms,
+                    packet.review_ranking_forms,
+                    strict=True,
+                )
+            ),
+            adjudication_note=adjudication_note,
+            description=description,
+        )
+        if packet.study_type == "selection_and_review_ranking"
+        else None
     )
     return EvidenceSelectionShadowReviewSourceInputs(
+        study_id=machine_packet.study_id,
+        study_type=packet.study_type,
         selection_reviews=selection_reviews,
         review_ranking=review_ranking,
     )
@@ -285,7 +331,9 @@ def _validate_completed_packet_integrity(
 ) -> None:
     expected_digest = machine_packet_digest(machine_packet)
     if machine_packet.machine_packet_sha256 != expected_digest:
-        msg = "Immutable machine packet digest is missing or does not match its contents."
+        msg = (
+            "Immutable machine packet digest is missing or does not match its contents."
+        )
         raise ValueError(msg)
     if machine_packet.machine_packet_signature is None:
         msg = "Immutable machine packet is missing its producer signature."
@@ -297,7 +345,10 @@ def _validate_completed_packet_integrity(
     if completed_packet.machine_packet_sha256 != expected_digest:
         msg = "Completed packet is not bound to the immutable machine packet digest."
         raise ValueError(msg)
-    if completed_packet.machine_packet_signature != machine_packet.machine_packet_signature:
+    if (
+        completed_packet.machine_packet_signature
+        != machine_packet.machine_packet_signature
+    ):
         msg = "Completed packet is not bound to the immutable machine packet signature."
         raise ValueError(msg)
     if not _top_level_machine_fields_match(
@@ -352,6 +403,7 @@ def _top_level_machine_fields_match(
     return (
         machine_packet.schema_version == completed_packet.schema_version
         and machine_packet.study_id == completed_packet.study_id
+        and machine_packet.study_type == completed_packet.study_type
         and machine_packet.source_run_id == completed_packet.source_run_id
         and machine_packet.goal == completed_packet.goal
         and machine_packet.production_readiness_claim
@@ -363,6 +415,17 @@ def _top_level_machine_fields_match(
         == completed_packet.completion_required_fields
         and machine_packet.candidate_records == completed_packet.candidate_records
     )
+
+
+def _completion_required_fields(
+    study_type: EvidenceSelectionExpertStudyType,
+) -> tuple[str, ...]:
+    if study_type == "selection_and_review_ranking":
+        return (
+            *_SELECTION_COMPLETION_REQUIRED_FIELDS,
+            *_RANKING_COMPLETION_REQUIRED_FIELDS,
+        )
+    return _SELECTION_COMPLETION_REQUIRED_FIELDS
 
 
 def _selection_machine_fields_match(

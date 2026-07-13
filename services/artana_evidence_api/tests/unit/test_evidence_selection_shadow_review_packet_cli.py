@@ -38,7 +38,7 @@ def test_shadow_review_packet_cli_writes_collection_packet(tmp_path: Path) -> No
 
     assert exit_code == 0
     packet = json.loads(output_path.read_text())
-    assert packet["schema_version"] == "evidence_selection_shadow_review_packet.v1"
+    assert packet["schema_version"] == "evidence_selection_shadow_review_packet.v2"
     assert packet["source_run_id"] == _RUN_ID
     assert packet["production_readiness_claim"] is False
     assert packet["machine_packet_sha256"]
@@ -189,7 +189,7 @@ def test_shadow_review_packet_cli_derives_ranking_forms_from_shadow_candidates(
     ]
 
 
-def test_shadow_review_packet_cli_rejects_result_without_rankable_items(
+def test_shadow_review_packet_cli_writes_selection_only_packet_without_ranking_items(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -197,8 +197,6 @@ def test_shadow_review_packet_cli_rejects_result_without_rankable_items(
     run_result_path = tmp_path / "evidence-selection-result.json"
     output_path = tmp_path / "shadow-review-packet.json"
     payload = _run_result_payload()
-    payload["selected_records"] = []
-    payload["skipped_records"] = []
     payload["deferred_records"] = []
     payload.pop("review_ranking_items")
     run_result_path.write_text(json.dumps(payload))
@@ -215,10 +213,13 @@ def test_shadow_review_packet_cli_rejects_result_without_rankable_items(
     )
 
     captured = capsys.readouterr()
-    assert exit_code == 1
-    assert "no rankable items" in captured.err
-    assert not output_path.exists()
-    assert not machine_packet_sidecar_path(output_path).exists()
+    assert exit_code == 0
+    assert captured.err == ""
+    packet = json.loads(output_path.read_text())
+    assert packet["study_type"] == "selection_relevance"
+    assert packet["review_ranking_forms"] == []
+    assert packet["candidate_records"]
+    assert machine_packet_sidecar_path(output_path).exists()
 
 
 def test_shadow_review_packet_cli_rejects_invalid_run_result_without_traceback(
