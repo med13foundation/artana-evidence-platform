@@ -496,6 +496,9 @@ def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
         ("5 mg", "5", "mg", "Dose was 5 mg / kg."),
         ("5 mg/kg", "5", "mg/kg", "Dose was 5 mg/kg to 10 mg/kg."),
         ("10 mg/kg", "10", "mg/kg", "Dose was 5 mg/kg to 10 mg/kg."),
+        ("5", "5", "unitless", "The p-value was 5×10^-8."),
+        ("5", "5", "unitless", "The p-value was 5*10^-8."),
+        ("5", "5", "unitless", "The p-value was 5 x 10^-8."),
     ],
 )
 def test_llm_extraction_rejects_unit_stripping_bounds_and_ranges(

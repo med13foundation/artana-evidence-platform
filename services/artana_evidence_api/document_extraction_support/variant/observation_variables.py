@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from types import MappingProxyType
 
@@ -69,6 +70,7 @@ VARIANT_SOURCE_MEASUREMENT_ALLOWED_UNITS: Mapping[str, frozenset[str]] = (
         },
     )
 )
+_WORDED_PER_SEPARATOR = re.compile(r"\s+per\s+", re.IGNORECASE)
 
 
 def resolve_variant_observation_variable_id(
@@ -88,7 +90,11 @@ def variant_source_measurement_unit_is_allowed(
 ) -> bool:
     """Return whether a scalar field accepts the source-reported unit."""
     normalized_field = field_name.strip().casefold()
-    normalized_unit = "".join(unit.strip().casefold().split())
+    normalized_unit = _WORDED_PER_SEPARATOR.sub(
+        "/",
+        unit.strip().casefold(),
+    )
+    normalized_unit = "".join(normalized_unit.split())
     allowed_units = VARIANT_SOURCE_MEASUREMENT_ALLOWED_UNITS.get(normalized_field)
     return allowed_units is not None and normalized_unit in allowed_units
 

@@ -74,6 +74,10 @@ _BETWEEN_RANGE_AFTER_ENDPOINT = re.compile(
     re.IGNORECASE,
 )
 _COMPOUND_UNIT_CONTINUATION = re.compile(r"^(?:per\b|/\s*\S)", re.IGNORECASE)
+_MULTIPLICATION_CONTINUATION = re.compile(
+    r"^(?:[×*·]|[xX](?=\s*10(?:\s*\^)?\s*[+\-−]?\d))",
+)
+_EXPONENT_CONTINUATION = re.compile(r"^(?:\^|[⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹])")
 _REJECTED_FACT_LABEL_KEYS = frozenset(
     {
         "entity_label",
@@ -197,12 +201,13 @@ def _literal_span_is_exact_measurement(*, text: str, value: str, unit: str) -> b
     return False
 
 
-def _source_contains_exact_literal_span(
+def source_contains_exact_measurement_literal(
     *,
     source_text: str,
     literal_span: str,
     unit: str,
 ) -> bool:
+    """Return whether a copied literal is an isolated scalar in source text."""
     start = 0
     while True:
         index = source_text.find(literal_span, start)
@@ -217,7 +222,7 @@ def _source_contains_exact_literal_span(
         suffix = source_text[end:].lstrip()
         invalid_before = (
             before.isalnum()
-            or before in {"_", ".", "/", ":", "−"}
+            or before in {"_", ".", "/", ":", "−", "×", "*", "·"}
             or (before == "," and before_previous.isdigit())
         )
         invalid_after = (
@@ -235,6 +240,11 @@ def _source_contains_exact_literal_span(
             suffix=suffix,
         )
         compound_unit_continuation = bool(_COMPOUND_UNIT_CONTINUATION.search(suffix))
+        numeric_token_continuation = (
+            bool(_MULTIPLICATION_CONTINUATION.search(suffix))
+            or bool(_EXPONENT_CONTINUATION.search(suffix))
+            or prefix.endswith(("×", "*", "·"))
+        )
         dimensionless_unit_context = False
         if unit.strip().casefold() in _DIMENSIONLESS_UNITS:
             dimensionless_unit_context = prefix.endswith(("$", "€", "£", "¥")) or (
@@ -247,6 +257,7 @@ def _source_contains_exact_literal_span(
             or symbolic_bound_or_range_context
             or worded_bound_or_range_context
             or compound_unit_continuation
+            or numeric_token_continuation
             or dimensionless_unit_context
         ):
             return True
@@ -455,7 +466,7 @@ class LLMExtractedObservation(BaseModel):
             if not isinstance(source_value, str):
                 msg = "Numeric observation source_locator must contain source text."
                 raise TypeError(msg)
-            if not _source_contains_exact_literal_span(
+            if not source_contains_exact_measurement_literal(
                 source_text=source_value,
                 literal_span=measurement.literal_span,
                 unit=measurement.unit,

@@ -168,6 +168,7 @@ def _measurement_is_bound_to_candidate(
     return measurement_is_uniquely_bound_to_subject(
         source_text=source_text,
         literal_span=measurement.literal_span,
+        unit=measurement.unit,
         selected_evidence_excerpt=candidate.evidence_excerpt,
         selected_anchors=candidate.anchors,
         competing_anchors=competing_anchors,

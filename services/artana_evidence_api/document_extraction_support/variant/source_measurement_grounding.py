@@ -5,11 +5,16 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 
+from artana_evidence_api.variant_extraction_contracts import (
+    source_contains_exact_measurement_literal,
+)
+
 
 def measurement_is_uniquely_bound_to_subject(
     *,
     source_text: str,
     literal_span: str,
+    unit: str,
     selected_evidence_excerpt: str,
     selected_anchors: Mapping[str, object],
     competing_anchors: Sequence[Mapping[str, object]],
@@ -18,6 +23,12 @@ def measurement_is_uniquely_bound_to_subject(
     if len(_literal_spans(source_text, selected_evidence_excerpt)) != 1:
         return False
     if len(_literal_spans(selected_evidence_excerpt, literal_span)) != 1:
+        return False
+    if not source_contains_exact_measurement_literal(
+        source_text=selected_evidence_excerpt,
+        literal_span=literal_span,
+        unit=unit,
+    ):
         return False
     if not _contains_identity_anchors(selected_evidence_excerpt, selected_anchors):
         return False

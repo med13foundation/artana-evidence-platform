@@ -13,6 +13,8 @@ from artana_evidence_api.document_extraction_support.variant.observation_variabl
         ("allele_frequency", "%"),
         ("dose", "mg/kg"),
         ("dose", "mg / kg"),
+        ("dose", "mg per kg"),
+        ("dose", "MG PER KG"),
         ("p_value", "unitless"),
         ("read_depth", "x"),
     ],
