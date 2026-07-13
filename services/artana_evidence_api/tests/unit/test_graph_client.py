@@ -1223,6 +1223,8 @@ def test_preflight_entity_resolution_keeps_exact_alias_resolution() -> None:
     assert resolved == {
         "id": str(egfr_id),
         "display_label": "EGFR",
+        "entity_type": "GENE",
+        "metadata": {},
     }
 
 

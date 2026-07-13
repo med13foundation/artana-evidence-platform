@@ -683,7 +683,7 @@ def test_llm_entity_rejects_all_numeric_metadata(
 
 @pytest.mark.parametrize(
     ("key", "value"),
-    [("target_label", "stage 2"), ("source_span_start", "10")],
+    [("source_span_start", "10"), ("untyped_value", "stage 2")],
 )
 def test_llm_rejected_fact_rejects_numeric_payload(key: str, value: str) -> None:
     with pytest.raises(ValueError, match="Numeric rejected-fact payload"):
@@ -693,6 +693,28 @@ def test_llm_rejected_fact_rejects_numeric_payload(key: str, value: str) -> None
             payload=[LLMLiteralField(key=key, value=value)],
             assessment=_assessment(),
         )
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("source_label", "BRCA1"),
+        ("target_label", "MED13"),
+        ("hgvs_notation", "c.977C>A"),
+    ],
+)
+def test_llm_rejected_fact_preserves_identifier_payload(
+    key: str,
+    value: str,
+) -> None:
+    rejected = LLMRejectedFact(
+        fact_type="relation",
+        reason="Candidate requires review.",
+        payload=[LLMLiteralField(key=key, value=value)],
+        assessment=_assessment(),
+    )
+
+    assert rejected.to_rejected_fact().payload[key] == value
 
 
 @pytest.mark.parametrize("value", ["0.125", ".125", "stage 2"])

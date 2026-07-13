@@ -35,11 +35,13 @@ class _ResolvingGraphApiGateway:
         label: str,
         entity_type: str = "GENE",
         aliases: list[str] | None = None,
+        metadata: dict[str, object] | None = None,
     ) -> None:
         self._entity_id = entity_id
         self._label = label
         self._entity_type = entity_type
         self._aliases = aliases or []
+        self._metadata = metadata or {}
 
     def list_entities(
         self,
@@ -60,7 +62,7 @@ class _ResolvingGraphApiGateway:
                     entity_type=self._entity_type,
                     display_label=self._label,
                     aliases=self._aliases if q is None else [*self._aliases, q],
-                    metadata={},
+                    metadata=self._metadata,
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC),
                 ),
@@ -446,6 +448,12 @@ def test_build_graph_observation_request_resolves_subject_from_candidate_payload
         label="NM_015335.6:c.977C>A (p.Thr326Lys)",
         entity_type="VARIANT",
         aliases=["c.977C>A"],
+        metadata={
+            "source_anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.977C>A",
+            },
+        },
     )
 
     request = build_graph_observation_request(
@@ -538,6 +546,12 @@ def test_build_graph_observation_request_preserves_source_measurement_provenance
         entity_id=subject_id,
         label="c.977C>A",
         entity_type="VARIANT",
+        metadata={
+            "source_anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.977C>A",
+            },
+        },
     )
 
     request = build_graph_observation_request(
@@ -560,6 +574,42 @@ def test_build_graph_observation_request_preserves_source_measurement_provenance
     )
 
 
+@pytest.mark.parametrize(
+    ("entity_type", "source_anchors"),
+    [
+        (
+            "GENE",
+            {"gene_symbol": "MED13", "hgvs_notation": "c.977C>A"},
+        ),
+        (
+            "VARIANT",
+            {"gene_symbol": "MED13", "hgvs_notation": "c.123G>T"},
+        ),
+    ],
+)
+def test_build_graph_observation_request_rejects_wrong_subject_identity(
+    entity_type: str,
+    source_anchors: dict[str, str],
+) -> None:
+    proposal = _source_measurement_observation_proposal_for_test()
+    gateway = _ResolvingGraphApiGateway(
+        entity_id=uuid4(),
+        label="MED13",
+        entity_type=entity_type,
+        metadata={"source_anchors": source_anchors},
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        build_graph_observation_request(
+            space_id=uuid4(),
+            proposal=proposal,
+            graph_api_gateway=gateway,
+        )
+
+    assert exc_info.value.status_code == 409
+    assert "requires an existing subject entity" in str(exc_info.value.detail)
+
+
 def test_build_graph_observation_request_rejects_malformed_measurement_provenance() -> (
     None
 ):
@@ -572,6 +622,12 @@ def test_build_graph_observation_request_rejects_malformed_measurement_provenanc
         entity_id=uuid4(),
         label="c.977C>A",
         entity_type="VARIANT",
+        metadata={
+            "source_anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.977C>A",
+            },
+        },
     )
 
     with pytest.raises(HTTPException) as exc_info:

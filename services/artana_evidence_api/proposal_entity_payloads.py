@@ -330,9 +330,43 @@ def resolve_existing_entity_from_candidate_payload(
             label=label,
             graph_api_gateway=graph_api_gateway,
         )
-        if resolved is not None:
+        if resolved is not None and _resolved_entity_matches_candidate(
+            resolved=resolved,
+            candidate_payload=candidate_payload,
+        ):
             return resolved
     return None
+
+
+def _resolved_entity_matches_candidate(
+    *,
+    resolved: JSONObject,
+    candidate_payload: JSONObject,
+) -> bool:
+    expected_type = optional_json_string(candidate_payload.get("entity_type"))
+    resolved_type = optional_json_string(resolved.get("entity_type"))
+    if (
+        expected_type is None
+        or resolved_type is None
+        or expected_type.casefold() != resolved_type.casefold()
+    ):
+        return False
+    if expected_type.casefold() != "variant":
+        return True
+    expected_identifiers = payload_entity_identifiers(candidate_payload)
+    metadata = resolved.get("metadata")
+    if not isinstance(metadata, dict):
+        return False
+    source_anchors = metadata.get("source_anchors")
+    if not isinstance(source_anchors, dict):
+        return False
+    return all(
+        isinstance(expected_identifiers.get(key), str)
+        and isinstance(source_anchors.get(key), str)
+        and str(expected_identifiers[key]).strip().casefold()
+        == str(source_anchors[key]).strip().casefold()
+        for key in ("gene_symbol", "hgvs_notation")
+    )
 
 
 def field_name_from_label_field(label_field_name: str) -> str:

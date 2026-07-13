@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 
 
@@ -34,12 +35,21 @@ def _contains_identity_anchors(
     hgvs_notation = anchors.get("hgvs_notation")
     if not isinstance(gene_symbol, str) or not isinstance(hgvs_notation, str):
         return False
-    normalized_excerpt = evidence_excerpt.casefold()
     return (
         gene_symbol.strip() != ""
         and hgvs_notation.strip() != ""
-        and gene_symbol.strip().casefold() in normalized_excerpt
-        and hgvs_notation.strip().casefold() in normalized_excerpt
+        and _contains_exact_identifier(evidence_excerpt, gene_symbol.strip())
+        and _contains_exact_identifier(evidence_excerpt, hgvs_notation.strip())
+    )
+
+
+def _contains_exact_identifier(text: str, identifier: str) -> bool:
+    return bool(
+        re.search(
+            rf"(?<!\w){re.escape(identifier)}(?!\w)",
+            text,
+            re.IGNORECASE,
+        ),
     )
 
 

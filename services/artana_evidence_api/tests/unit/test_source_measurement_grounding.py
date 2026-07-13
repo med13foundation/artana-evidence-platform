@@ -48,3 +48,27 @@ def test_measurement_rejects_excerpt_without_copied_literal() -> None:
         selected_anchors={"gene_symbol": "MED13", "hgvs_notation": "c.977C>A"},
         competing_anchors=[],
     )
+
+
+def test_measurement_rejects_gene_symbol_prefix() -> None:
+    source_text = "PTENP1 c.123del had frequency 0.125."
+
+    assert not measurement_is_uniquely_bound_to_subject(
+        source_text=source_text,
+        literal_span="0.125",
+        selected_evidence_excerpt=source_text,
+        selected_anchors={"gene_symbol": "PTEN", "hgvs_notation": "c.123del"},
+        competing_anchors=[],
+    )
+
+
+def test_measurement_rejects_hgvs_prefix() -> None:
+    source_text = "PTEN c.123delinsA had frequency 0.125."
+
+    assert not measurement_is_uniquely_bound_to_subject(
+        source_text=source_text,
+        literal_span="0.125",
+        selected_evidence_excerpt=source_text,
+        selected_anchors={"gene_symbol": "PTEN", "hgvs_notation": "c.123del"},
+        competing_anchors=[],
+    )

@@ -485,7 +485,7 @@ _POLICIES = (
         schema_names=("LLMExtractionContract",),
         shape_hash="6fa90f3c8d685e7829ad3ec44a89f5e435f525e1e77938fead762ed1a3ca65e4",
         producer_paths=("variant_extraction_bridges.py",),
-        prompt_identifiers=("variant_extraction.context.v7",),
+        prompt_identifiers=("variant_extraction.context.v8",),
         numeric_fields=(
             NumericFieldPolicy(
                 path="$.observations[].value.value",

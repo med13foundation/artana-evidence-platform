@@ -69,6 +69,33 @@ _BETWEEN_RANGE_AFTER_ENDPOINT = re.compile(
     re.IGNORECASE,
 )
 _COMPOUND_UNIT_CONTINUATION = re.compile(r"^(?:per\b|/\s*\S)", re.IGNORECASE)
+_REJECTED_FACT_IDENTIFIER_KEYS = frozenset(
+    {
+        "accession",
+        "clinvar_id",
+        "dbsnp_id",
+        "entity_label",
+        "gene_symbol",
+        "hgvs_notation",
+        "hpo_term",
+        "object_curie",
+        "object_identifier",
+        "object_label",
+        "source_curie",
+        "source_identifier",
+        "source_label",
+        "source_record_id",
+        "subject_curie",
+        "subject_identifier",
+        "subject_label",
+        "target_curie",
+        "target_identifier",
+        "target_label",
+        "transcript",
+        "variant_label",
+        "variation_id",
+    },
+)
 
 
 def _has_worded_bound_or_range_context(*, prefix: str, suffix: str) -> bool:
@@ -552,10 +579,12 @@ class LLMRejectedFact(BaseModel):
     def reject_numeric_payload(self) -> LLMRejectedFact:
         """Keep numeric strings out of rejected facts that can become proposals."""
         for field in self.payload:
-            if isinstance(
-                field.value,
-                str,
-            ) and observation_text_requires_source_measurement(field.value):
+            normalized_key = field.key.strip().casefold()
+            if (
+                normalized_key not in _REJECTED_FACT_IDENTIFIER_KEYS
+                and isinstance(field.value, str)
+                and observation_text_requires_source_measurement(field.value)
+            ):
                 msg = (
                     f"Numeric rejected-fact payload {field.key!r} is not allowed."
                 )
