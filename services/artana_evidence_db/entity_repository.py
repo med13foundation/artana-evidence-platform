@@ -451,6 +451,25 @@ class SqlAlchemyKernelEntityRepository:
         model = self._session.scalars(lookup).one()
         return self._to_domain_identifier(model)
 
+    def list_non_phi_identifiers(
+        self,
+        *,
+        entity_id: str,
+    ) -> list[KernelEntityIdentifier]:
+        """Return identifiers that do not carry PHI sensitivity."""
+        rows = self._session.scalars(
+            select(EntityIdentifierModel)
+            .where(
+                EntityIdentifierModel.entity_id == _as_uuid(entity_id),
+                EntityIdentifierModel.sensitivity != "PHI",
+            )
+            .order_by(
+                EntityIdentifierModel.namespace.asc(),
+                EntityIdentifierModel.id.asc(),
+            ),
+        ).all()
+        return [self._to_domain_identifier(row) for row in rows]
+
     def find_by_identifier(
         self,
         *,

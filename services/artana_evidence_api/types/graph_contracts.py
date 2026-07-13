@@ -97,6 +97,7 @@ class KernelEntityResponse(BaseModel):
     entity_type: str
     display_label: str | None = None
     aliases: list[str] = Field(default_factory=list)
+    identifiers: dict[str, str] = Field(default_factory=dict)
     metadata: JSONObject
     created_at: datetime
     updated_at: datetime
@@ -113,6 +114,20 @@ class KernelEntityListResponse(BaseModel):
     limit: int
 
 
+class KernelProvenanceCreateRequest(BaseModel):
+    """Inline provenance persisted atomically with one graph fact."""
+
+    model_config = ConfigDict(strict=False, extra="forbid")
+
+    source_type: str = Field(..., min_length=1, max_length=64)
+    source_ref: str | None = Field(default=None, max_length=1024)
+    extraction_run_id: str | None = Field(default=None, max_length=255)
+    mapping_method: str | None = Field(default=None, max_length=64)
+    mapping_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    agent_model: str | None = Field(default=None, max_length=128)
+    raw_input: JSONObject | None = None
+
+
 class KernelObservationCreateRequest(BaseModel):
     """Request model for recording one graph observation."""
 
@@ -124,8 +139,27 @@ class KernelObservationCreateRequest(BaseModel):
     unit: str | None = Field(default=None, max_length=64)
     observed_at: datetime | None = None
     provenance_id: UUID | None = None
+    provenance: KernelProvenanceCreateRequest | None = None
     observation_origin: Literal["MANUAL", "IMPORTED", "AI_AUTHORED"] = "MANUAL"
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def validate_provenance_inputs(self) -> KernelObservationCreateRequest:
+        """Require unambiguous provenance for non-manual observations."""
+        if self.provenance_id is not None and self.provenance is not None:
+            msg = "Provide provenance_id or inline provenance, not both."
+            raise ValueError(msg)
+        if self.provenance is not None and self.observation_origin == "MANUAL":
+            msg = "Inline provenance requires IMPORTED or AI_AUTHORED origin."
+            raise ValueError(msg)
+        if (
+            self.observation_origin == "AI_AUTHORED"
+            and self.provenance_id is None
+            and self.provenance is None
+        ):
+            msg = "AI_AUTHORED observations require provenance."
+            raise ValueError(msg)
+        return self
 
 
 class KernelObservationResponse(BaseModel):

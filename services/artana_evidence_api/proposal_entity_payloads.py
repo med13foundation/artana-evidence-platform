@@ -315,10 +315,6 @@ def candidate_resolution_labels(candidate_payload: JSONObject) -> list[str]:
         _add(alias)
     for identifier_value in payload_entity_identifiers(candidate_payload).values():
         _add(identifier_value)
-    anchors = candidate_payload.get("anchors")
-    if isinstance(anchors, dict):
-        for value in anchors.values():
-            _add(value)
     return labels
 
 
@@ -334,9 +330,60 @@ def resolve_existing_entity_from_candidate_payload(
             label=label,
             graph_api_gateway=graph_api_gateway,
         )
-        if resolved is not None:
+        if resolved is not None and _resolved_entity_matches_candidate(
+            resolved=resolved,
+            candidate_payload=candidate_payload,
+        ):
             return resolved
     return None
+
+
+def _resolved_entity_matches_candidate(
+    *,
+    resolved: JSONObject,
+    candidate_payload: JSONObject,
+) -> bool:
+    expected_type = optional_json_string(candidate_payload.get("entity_type"))
+    resolved_type = optional_json_string(resolved.get("entity_type"))
+    if (
+        expected_type is None
+        or resolved_type is None
+        or expected_type.casefold() != resolved_type.casefold()
+    ):
+        return False
+    if expected_type.casefold() != "variant":
+        return True
+    expected_identifiers = payload_entity_identifiers(candidate_payload)
+    resolved_identifiers = resolved.get("identifiers")
+    if isinstance(resolved_identifiers, dict) and _variant_identifiers_match(
+        expected_identifiers=expected_identifiers,
+        resolved_identifiers=resolved_identifiers,
+    ):
+        return True
+    metadata = resolved.get("metadata")
+    if not isinstance(metadata, dict):
+        return False
+    source_anchors = metadata.get("source_anchors")
+    if not isinstance(source_anchors, dict):
+        return False
+    return _variant_identifiers_match(
+        expected_identifiers=expected_identifiers,
+        resolved_identifiers=source_anchors,
+    )
+
+
+def _variant_identifiers_match(
+    *,
+    expected_identifiers: dict[str, str],
+    resolved_identifiers: dict[object, object],
+) -> bool:
+    return all(
+        isinstance(expected_identifiers.get(key), str)
+        and isinstance(resolved_identifiers.get(key), str)
+        and str(expected_identifiers[key]).strip().casefold()
+        == str(resolved_identifiers[key]).strip().casefold()
+        for key in ("gene_symbol", "hgvs_notation")
+    )
 
 
 def field_name_from_label_field(label_field_name: str) -> str:

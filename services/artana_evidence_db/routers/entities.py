@@ -144,7 +144,13 @@ def list_entities(
         total = entity_service.count_by_type(str(space_id), entity_type)
 
     return KernelEntityListResponse(
-        entities=[KernelEntityResponse.from_model(entity) for entity in entities],
+        entities=[
+            KernelEntityResponse.from_model(
+                entity,
+                identifiers=entity_service.get_non_phi_identifiers(str(entity.id)),
+            )
+            for entity in entities
+        ],
         total=total,
         offset=offset,
         limit=limit,
@@ -217,7 +223,10 @@ def create_entity(
         ) from exc
 
     return KernelEntityUpsertResponse(
-        entity=KernelEntityResponse.from_model(entity),
+        entity=KernelEntityResponse.from_model(
+            entity,
+            identifiers=entity_service.get_non_phi_identifiers(str(entity.id)),
+        ),
         created=created,
     )
 
@@ -304,7 +313,10 @@ def create_entities_batch(
 
     upsert_responses = [
         KernelEntityUpsertResponse(
-            entity=KernelEntityResponse.from_model(entity),
+            entity=KernelEntityResponse.from_model(
+                entity,
+                identifiers=entity_service.get_non_phi_identifiers(str(entity.id)),
+            ),
             created=created,
         )
         for entity, created in results
@@ -345,7 +357,10 @@ def get_entity(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Entity not found",
         )
-    return KernelEntityResponse.from_model(entity)
+    return KernelEntityResponse.from_model(
+        entity,
+        identifiers=entity_service.get_non_phi_identifiers(str(entity.id)),
+    )
 
 
 @router.get(
@@ -515,7 +530,12 @@ def update_entity(
                 updated_entity = refreshed_entity
 
         session.commit()
-        return KernelEntityResponse.from_model(updated_entity)
+        return KernelEntityResponse.from_model(
+            updated_entity,
+            identifiers=entity_service.get_non_phi_identifiers(
+                str(updated_entity.id),
+            ),
+        )
     except HTTPException:
         session.rollback()
         raise

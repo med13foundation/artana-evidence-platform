@@ -1,5 +1,5 @@
 {
-  "active_debt_count": 8,
+  "active_debt_count": 1,
   "debt_manifest": [
     {
       "consumers": [
@@ -17,131 +17,12 @@
       "schema_ids": [
         "evidence_selection.semantic.v1"
       ]
-    },
-    {
-      "consumers": [
-        "extraction routing compatibility"
-      ],
-      "current_influence": "The model-authored run confidence remains in the execution contract.",
-      "debt_id": "AON-VEXT-001",
-      "field_path": "$.confidence_score",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8A categorical extraction migration",
-      "producer": "variant-extraction agent",
-      "quarantine_rule": "Not quarantined at the model boundary.",
-      "quarantined": false,
-      "removal_gate": "Execution output omits confidence and uses categorical assessments only.",
-      "schema_ids": [
-        "variant_extraction.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "entity anchor persistence"
-      ],
-      "current_influence": "Untyped numeric anchor values lack an origin-specific provenance envelope.",
-      "debt_id": "AON-VEXT-002",
-      "field_path": "$.entities[].anchors[].value",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8A typed source-measurement migration",
-      "producer": "variant-extraction agent",
-      "quarantine_rule": "Not quarantined from persistence.",
-      "quarantined": false,
-      "removal_gate": "Numeric anchors use a typed source-measurement envelope with span and source hash.",
-      "schema_ids": [
-        "variant_extraction.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "entity metadata persistence"
-      ],
-      "current_influence": "Untyped numeric metadata can enter staged entity data.",
-      "debt_id": "AON-VEXT-003",
-      "field_path": "$.entities[].metadata[].value",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8A typed source-measurement migration",
-      "producer": "variant-extraction agent",
-      "quarantine_rule": "Not quarantined from persistence.",
-      "quarantined": false,
-      "removal_gate": "Remove arbitrary numeric metadata or require a typed origin envelope.",
-      "schema_ids": [
-        "variant_extraction.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "observation staging"
-      ],
-      "current_influence": "Scientific numbers can be staged without complete source-measurement provenance.",
-      "debt_id": "AON-VEXT-004",
-      "field_path": "$.observations[].value",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8A typed source-measurement migration",
-      "producer": "variant-extraction agent",
-      "quarantine_rule": "Not quarantined from staging.",
-      "quarantined": false,
-      "removal_gate": "Every numeric observation includes source locator, literal span, unit, method, and source hash.",
-      "schema_ids": [
-        "variant_extraction.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "rejected-fact diagnostics"
-      ],
-      "current_influence": "Untyped numbers remain in rejected-fact payloads.",
-      "debt_id": "AON-VEXT-005",
-      "field_path": "$.rejected_facts[].payload[].value",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8A typed source-measurement migration",
-      "producer": "variant-extraction agent",
-      "quarantine_rule": "Not proven isolated from retry or review behavior.",
-      "quarantined": false,
-      "removal_gate": "Rejected numeric values use typed provenance or remain literal text only.",
-      "schema_ids": [
-        "variant_extraction.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "relation source endpoint staging"
-      ],
-      "current_influence": "Untyped numeric source anchors can affect entity linking.",
-      "debt_id": "AON-VEXT-006",
-      "field_path": "$.relations[].source_anchors[].value",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8A typed source-measurement migration",
-      "producer": "variant-extraction agent",
-      "quarantine_rule": "Not quarantined from linking.",
-      "quarantined": false,
-      "removal_gate": "Numeric source anchors use typed provenance and validated identifier semantics.",
-      "schema_ids": [
-        "variant_extraction.agent.v1"
-      ]
-    },
-    {
-      "consumers": [
-        "relation target endpoint staging"
-      ],
-      "current_influence": "Untyped numeric target anchors can affect entity linking.",
-      "debt_id": "AON-VEXT-007",
-      "field_path": "$.relations[].target_anchors[].value",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 8A typed source-measurement migration",
-      "producer": "variant-extraction agent",
-      "quarantine_rule": "Not quarantined from linking.",
-      "quarantined": false,
-      "removal_gate": "Numeric target anchors use typed provenance and validated identifier semantics.",
-      "schema_ids": [
-        "variant_extraction.agent.v1"
-      ]
     }
   ],
-  "debt_numeric_field_count": 8,
-  "origin_governed_numeric_field_count": 0,
+  "debt_numeric_field_count": 1,
+  "origin_governed_numeric_field_count": 1,
   "registered_category_field_count": 66,
-  "registered_numeric_field_count": 8,
+  "registered_numeric_field_count": 2,
   "registered_schema_count": 15,
   "registered_schemas": [
     {
@@ -1107,63 +988,25 @@
       ],
       "numeric_fields": [
         {
-          "debt_id": "AON-VEXT-001",
-          "origin": null,
-          "path": "$.confidence_score"
-        },
-        {
-          "debt_id": "AON-VEXT-002",
-          "origin": null,
-          "path": "$.entities[].anchors[].value"
-        },
-        {
-          "debt_id": "AON-VEXT-003",
-          "origin": null,
-          "path": "$.entities[].metadata[].value"
-        },
-        {
-          "debt_id": "AON-VEXT-004",
-          "origin": null,
-          "path": "$.observations[].value"
-        },
-        {
-          "debt_id": "AON-VEXT-005",
-          "origin": null,
-          "path": "$.rejected_facts[].payload[].value"
-        },
-        {
-          "debt_id": "AON-VEXT-006",
-          "origin": null,
-          "path": "$.relations[].source_anchors[].value"
-        },
-        {
-          "debt_id": "AON-VEXT-007",
-          "origin": null,
-          "path": "$.relations[].target_anchors[].value"
+          "debt_id": null,
+          "origin": "source_measurement",
+          "path": "$.observations[].value.value"
         }
       ],
       "producer_paths": [
         "variant_extraction_bridges.py"
       ],
       "prompt_identifiers": [
-        "variant_extraction.context.v1"
+        "variant_extraction.context.v9"
       ],
       "schema_id": "variant_extraction.agent.v1",
       "schema_names": [
         "LLMExtractionContract"
       ],
-      "shape_hash": "390b7cd1001fcf49d7ac9bedfd9fa411a7f01e42ea3c3a3558759810ed781909"
+      "shape_hash": "6fa90f3c8d685e7829ad3ec44a89f5e435f525e1e77938fead762ed1a3ca65e4"
     }
   ],
   "schema_version": "agent_output_registry_report.v1",
-  "unquarantined_debt_count": 7,
-  "unquarantined_debt_ids": [
-    "AON-VEXT-001",
-    "AON-VEXT-002",
-    "AON-VEXT-003",
-    "AON-VEXT-004",
-    "AON-VEXT-005",
-    "AON-VEXT-006",
-    "AON-VEXT-007"
-  ]
+  "unquarantined_debt_count": 0,
+  "unquarantined_debt_ids": []
 }

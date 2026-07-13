@@ -2112,6 +2112,45 @@ def test_graph_service_create_observation_requires_provenance_for_imported_origi
     assert payload["persistability"] == "NON_PERSISTABLE"
 
 
+def test_graph_service_validate_observation_accepts_inline_provenance(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    subject_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    _create_variable(
+        graph_client,
+        headers=admin_headers,
+        variable_id="VAR_TEST_NOTE",
+    )
+
+    response = graph_client.post(
+        f"/v1/spaces/{space_id}/validate/observation",
+        headers=admin_headers,
+        json={
+            "subject_id": subject_id,
+            "variable_id": "VAR_TEST_NOTE",
+            "value": "source-backed value",
+            "observation_origin": "AI_AUTHORED",
+            "provenance": {
+                "source_type": "document_extraction",
+                "mapping_method": "agent_source_measurement",
+                "raw_input": {"source_measurement": {"literal_span": "0.125"}},
+            },
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["valid"] is True
+    assert payload["persistability"] == "PERSISTABLE"
+
+
 def test_graph_service_create_observation_rejects_cross_space_provenance(
     graph_client: TestClient,
 ) -> None:

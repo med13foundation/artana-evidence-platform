@@ -344,6 +344,9 @@ class GraphAIPreflightService:
                 exact_resolved: JSONObject = {
                     "id": str(entity.id),
                     "display_label": display_label or str(entity.id),
+                    "entity_type": entity.entity_type,
+                    "identifiers": entity.identifiers,
+                    "metadata": entity.metadata,
                 }
                 self._resolution_cache.set_entity(
                     space_id=space_id,

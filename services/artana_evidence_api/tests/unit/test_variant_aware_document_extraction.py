@@ -9,7 +9,11 @@ from uuid import uuid4
 
 import pytest
 from artana_evidence_api import variant_extraction_bridges
+from artana_evidence_api.document_extraction_support.variant.source_measurement_drafts import (
+    build_source_measurement_observation_drafts,
+)
 from artana_evidence_api.document_store import HarnessDocumentRecord
+from artana_evidence_api.runtime.agent_output_schema import SourceMeasurementNumber
 from artana_evidence_api.types.graph_contracts import (
     KernelEntityListResponse,
 )
@@ -26,11 +30,15 @@ from artana_evidence_api.variant_aware_document_extraction import (
 )
 from artana_evidence_api.variant_extraction_contracts import (
     ExtractedEntityCandidate,
+    ExtractedObservation,
     ExtractedRelation,
     ExtractionContract,
     LLMExtractedEntityCandidate,
+    LLMExtractedObservation,
     LLMExtractionContract,
-    LLMKeyValueField,
+    LLMIdentifierField,
+    LLMLiteralField,
+    LLMRejectedFact,
     RejectedFact,
 )
 
@@ -106,6 +114,39 @@ def _assessment(
     )
 
 
+def _llm_variant_subject_anchors() -> list[LLMIdentifierField]:
+    return [
+        LLMIdentifierField(key="gene_symbol", value="MED13"),
+        LLMIdentifierField(key="hgvs_notation", value="c.977C>A"),
+    ]
+
+
+def _llm_source_measurement_observation(
+    *,
+    value: str,
+    literal_span: str,
+    unit: str,
+    source_hash: str = "source-hash-adversarial",
+) -> LLMExtractedObservation:
+    return LLMExtractedObservation(
+        field_name="source_value",
+        variable_id="SOURCE_VALUE",
+        value=SourceMeasurementNumber(
+            value=value,
+            source_locator="raw_record.text",
+            literal_span=literal_span,
+            field_name="source_value",
+            unit=unit,
+            extraction_method="literal_copy",
+            source_hash=source_hash,
+        ),
+        unit=unit,
+        subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+        subject_anchors=_llm_variant_subject_anchors(),
+        assessment=_assessment(),
+    )
+
+
 def _document(*, text: str, source_type: str = "text") -> HarnessDocumentRecord:
     now = datetime.now(UTC)
     return HarnessDocumentRecord(
@@ -173,7 +214,6 @@ def _single_variant_contract(*, document_id: str) -> ExtractionContract:
 def _single_variant_llm_contract(*, document_id: str) -> LLMExtractionContract:
     return LLMExtractionContract(
         decision="generated",
-        confidence_score=0.0,
         rationale="Recovered one anchored variant from the source record.",
         evidence=[],
         source_type="pubmed",
@@ -183,14 +223,14 @@ def _single_variant_llm_contract(*, document_id: str) -> LLMExtractionContract:
                 entity_type="VARIANT",
                 label="NM_015335.6:c.977C>A (p.Thr326Lys)",
                 anchors=[
-                    LLMKeyValueField(key="gene_symbol", value="MED13"),
-                    LLMKeyValueField(key="hgvs_notation", value="c.977C>A"),
+                    LLMIdentifierField(key="gene_symbol", value="MED13"),
+                    LLMIdentifierField(key="hgvs_notation", value="c.977C>A"),
                 ],
                 metadata=[
-                    LLMKeyValueField(key="transcript", value="NM_015335.6"),
-                    LLMKeyValueField(key="hgvs_cdna", value="c.977C>A"),
-                    LLMKeyValueField(key="hgvs_protein", value="p.Thr326Lys"),
-                    LLMKeyValueField(key="classification", value="Likely Pathogenic"),
+                    LLMLiteralField(key="transcript", value="NM_015335.6"),
+                    LLMLiteralField(key="hgvs_cdna", value="c.977C>A"),
+                    LLMLiteralField(key="hgvs_protein", value="p.Thr326Lys"),
+                    LLMLiteralField(key="classification", value="Likely Pathogenic"),
                 ],
                 evidence_excerpt="MED13 NM_015335.6:c.977C>A (p.Thr326Lys)",
                 evidence_locator="text_span:10-34",
@@ -203,6 +243,699 @@ def _single_variant_llm_contract(*, document_id: str) -> LLMExtractionContract:
         shadow_mode=True,
         agent_run_id="variant-aware-source-test",
     )
+
+
+def test_llm_extraction_converts_verified_source_measurement() -> None:
+    source_hash = "source-hash-1"
+    contract = LLMExtractionContract(
+        rationale="Copied one source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type="pubmed",
+        document_id="document-1",
+        observations=[
+            LLMExtractedObservation(
+                field_name="allele_frequency",
+                variable_id="VAR_ALLELE_FREQUENCY",
+                value=SourceMeasurementNumber(
+                    value="0.125",
+                    source_locator="raw_record.text",
+                    literal_span="0.125",
+                    field_name="allele_frequency",
+                    unit="ratio",
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit="ratio",
+                subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                subject_anchors=_llm_variant_subject_anchors(),
+                assessment=_assessment(),
+            ),
+        ],
+    )
+    contract = LLMExtractionContract.model_validate(contract.model_dump(mode="json"))
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash=source_hash,
+        source_values_by_locator={
+            "raw_record.text": "Allele frequency was 0.125.",
+        },
+    )
+
+    assert extracted.confidence_score == 0.9
+    assert extracted.observations[0].value == 0.125
+    assert extracted.observations[0].source_measurement is not None
+    assert extracted.observations[0].source_measurement.literal_span == "0.125"
+
+
+def test_llm_extraction_accepts_leading_dot_source_measurement() -> None:
+    source_hash = "source-hash-leading-dot"
+    contract = LLMExtractionContract(
+        rationale="Copied a leading-dot source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-leading-dot",
+        observations=[
+            LLMExtractedObservation(
+                field_name="p_value",
+                variable_id="STUDY_P_VALUE",
+                value=SourceMeasurementNumber(
+                    value=".03",
+                    source_locator="raw_record.text",
+                    literal_span=".03",
+                    field_name="p_value",
+                    unit="unitless",
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit="unitless",
+                subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                subject_anchors=_llm_variant_subject_anchors(),
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash=source_hash,
+        source_values_by_locator={"raw_record.text": "The result was p=.03."},
+    )
+
+    assert extracted.observations[0].value == 0.03
+
+
+@pytest.mark.parametrize(
+    ("literal_span", "value", "expected_value", "unit"),
+    [
+        ("5mg", "5", 5, "mg"),
+        ("12kb", "12", 12, "kb"),
+        ("3x", "3", 3, "x"),
+        ("25%", "25", 25, "percent"),
+        ("$5", "5", 5, "usd"),
+    ],
+)
+def test_llm_extraction_accepts_literal_unit_adjacent_measurement(
+    literal_span: str,
+    value: str,
+    expected_value: int,
+    unit: str,
+) -> None:
+    source_hash = "source-hash-unit-adjacent"
+    contract = LLMExtractionContract(
+        rationale="Copied a measurement with its literal unit.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-unit-adjacent",
+        observations=[
+            LLMExtractedObservation(
+                field_name="source_value",
+                variable_id="SOURCE_VALUE",
+                value=SourceMeasurementNumber(
+                    value=value,
+                    source_locator="raw_record.text",
+                    literal_span=literal_span,
+                    field_name="source_value",
+                    unit=unit,
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit=unit,
+                subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                subject_anchors=_llm_variant_subject_anchors(),
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash=source_hash,
+        source_values_by_locator={
+            "raw_record.text": f"The reported measurement was {literal_span}."
+        },
+    )
+
+    assert extracted.observations[0].value == expected_value
+    assert extracted.observations[0].unit == unit
+
+
+def test_llm_extraction_rejects_nearby_large_source_number() -> None:
+    source_hash = "source-hash-large-number"
+    contract = LLMExtractionContract(
+        rationale="Returned a nearby large number.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-large-number",
+        observations=[
+            LLMExtractedObservation(
+                field_name="coordinate",
+                variable_id="GENOMIC_COORDINATE",
+                value=SourceMeasurementNumber(
+                    value="1000000000001",
+                    source_locator="raw_record.text",
+                    literal_span="1000000000000",
+                    field_name="coordinate",
+                    unit="unitless",
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit="unitless",
+                subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                subject_anchors=_llm_variant_subject_anchors(),
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="Numeric observation"):
+        contract.to_extraction_contract(
+            expected_source_hash=source_hash,
+            source_values_by_locator={
+                "raw_record.text": "Coordinate 1000000000000 was reported."
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    ("literal_span", "source_text", "measurement_unit", "outer_unit", "match"),
+    [
+        ("5", "Dose was 5.", "mg", "mg", "value and unit"),
+        ("5kg", "Dose was 5kg.", "mg", "mg", "value and unit"),
+        ("somemg 5", "Dose was somemg 5.", "mg", "mg", "value and unit"),
+        ("5mg", "Dose was 5mg.", "mg", None, "does not match"),
+    ],
+)
+def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
+    literal_span: str,
+    source_text: str,
+    measurement_unit: str,
+    outer_unit: str | None,
+    match: str,
+) -> None:
+    source_hash = "source-hash-unit-validation"
+    contract = LLMExtractionContract(
+        rationale="Returned a measurement with unsupported unit provenance.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-unit-validation",
+        observations=[
+            LLMExtractedObservation(
+                field_name="dose",
+                variable_id="DOSE",
+                value=SourceMeasurementNumber(
+                    value="5",
+                    source_locator="raw_record.text",
+                    literal_span=literal_span,
+                    field_name="dose",
+                    unit=measurement_unit,
+                    extraction_method="literal_copy",
+                    source_hash=source_hash,
+                ),
+                unit=outer_unit,
+                subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                subject_anchors=_llm_variant_subject_anchors(),
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match=match):
+        contract.to_extraction_contract(
+            expected_source_hash=source_hash,
+            source_values_by_locator={"raw_record.text": source_text},
+        )
+
+
+@pytest.mark.parametrize(
+    ("literal_span", "value", "unit", "source_text"),
+    [
+        ("5mg", "5", "unitless", "Reported 5mg."),
+        ("5", "5", "unitless", "Reported 5 mg."),
+        ("5 mg", "5", "ratio", "Reported 5 mg."),
+        ("<=5 mg", "5", "mg", "Reported <=5 mg."),
+        ("5 mg", "5", "mg", "Reported <=5 mg."),
+        ("5-10 mg", "10", "mg", "Reported 5-10 mg."),
+        ("10 mg", "10", "mg", "Reported 5-10 mg."),
+        ("5 mg", "5", "mg", "Reported less than 5 mg."),
+        ("10 mg", "10", "mg", "Reported 5 to 10 mg."),
+        ("5 mg", "5", "mg", "Reported between 5 mg and 10 mg."),
+        ("MG5", "5", "mg", "Marker MG5 was measured."),
+        ("1", "1", "unitless", "Read depth was 1,234."),
+        ("234", "234", "unitless", "Read depth was 1,234."),
+        ("10 mg", "10", "mg", "Ratio was 5/10 mg."),
+        ("5 mg", "5", "mg", "Change was −5 mg."),
+        ("5 mg", "5", "mg", "Reported 5 mg or less."),
+        ("5 mg", "5", "mg", "Reported 5 mg or more."),
+        ("12345", "12345", "unitless", "Position chr1:12345 was reported."),
+        ("30", "30", "unitless", "Ratio was 10:30."),
+        ("10", "10", "unitless", "Ratio was 10:30."),
+        ("5 mg", "5", "mg", "Dose was 5 mg per kg."),
+        ("5 mg", "5", "mg", "Dose was 5 mg / kg."),
+        ("5 mg/kg", "5", "mg/kg", "Dose was 5 mg/kg to 10 mg/kg."),
+        ("10 mg/kg", "10", "mg/kg", "Dose was 5 mg/kg to 10 mg/kg."),
+        ("5", "5", "unitless", "The p-value was 5×10^-8."),
+        ("5", "5", "unitless", "The p-value was 5*10^-8."),
+        ("5", "5", "unitless", "The p-value was 5 x 10^-8."),
+    ],
+)
+def test_llm_extraction_rejects_unit_stripping_bounds_and_ranges(
+    literal_span: str,
+    value: str,
+    unit: str,
+    source_text: str,
+) -> None:
+    contract = LLMExtractionContract(
+        rationale="Attempted a non-scalar literal copy.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-adversarial-measurement",
+        observations=[
+            _llm_source_measurement_observation(
+                value=value,
+                literal_span=literal_span,
+                unit=unit,
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="Numeric observation"):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-adversarial",
+            source_values_by_locator={"raw_record.text": source_text},
+        )
+
+
+@pytest.mark.parametrize(
+    "source_text",
+    ["Dose increased to 5 mg.", "Dose was set to 5 mg."],
+)
+def test_llm_extraction_accepts_exact_measurement_after_non_range_to(
+    source_text: str,
+) -> None:
+    contract = LLMExtractionContract(
+        rationale="Copied an exact scalar measurement after a preposition.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-exact-measurement",
+        observations=[
+            _llm_source_measurement_observation(
+                value="5",
+                literal_span="5 mg",
+                unit="mg",
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash="source-hash-adversarial",
+        source_values_by_locator={"raw_record.text": source_text},
+    )
+
+    assert extracted.observations[0].value == 5
+
+
+def test_source_measurement_rejects_json_number_before_float_rounding() -> None:
+    with pytest.raises(ValueError, match="value"):
+        SourceMeasurementNumber.model_validate(
+            {
+                "value": 100000000000000000001.0,
+                "source_locator": "raw_record.text",
+                "literal_span": "100000000000000000001",
+                "field_name": "source_value",
+                "unit": "unitless",
+                "extraction_method": "literal_copy",
+                "source_hash": "source-hash-adversarial",
+            },
+        )
+
+
+def test_llm_extraction_preserves_exact_integer_lexeme() -> None:
+    value = "9007199254740991"
+    contract = LLMExtractionContract(
+        rationale="Copied an exact large integer.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-large-integer",
+        observations=[
+            _llm_source_measurement_observation(
+                value=value,
+                literal_span=value,
+                unit="unitless",
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash="source-hash-adversarial",
+        source_values_by_locator={"raw_record.text": f"Coordinate {value}."},
+    )
+
+    assert extracted.observations[0].value == 9007199254740991
+    assert extracted.observations[0].source_measurement is not None
+    assert extracted.observations[0].source_measurement.value == value
+
+
+def test_llm_extraction_rejects_nonzero_float_underflow() -> None:
+    contract = LLMExtractionContract(
+        rationale="Copied a scalar too small for the graph numeric range.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-underflow",
+        observations=[
+            _llm_source_measurement_observation(
+                value="1e-400",
+                literal_span="1e-400",
+                unit="unitless",
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="underflows"):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-adversarial",
+            source_values_by_locator={"raw_record.text": "Value was 1e-400."},
+        )
+
+
+@pytest.mark.parametrize(
+    ("value", "match"),
+    [
+        ("1e400", "exceeds"),
+        ("100000000000000000001", "loses precision"),
+        ("9007199254740991.5", "loses precision"),
+    ],
+)
+def test_llm_extraction_rejects_unsupported_numeric_measurement(
+    value: str,
+    match: str,
+) -> None:
+    contract = LLMExtractionContract(
+        rationale="Copied a number unsupported by the graph numeric path.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-unsupported-integer",
+        observations=[
+            _llm_source_measurement_observation(
+                value=value,
+                literal_span=value,
+                unit="unitless",
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match=match):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-adversarial",
+            source_values_by_locator={"raw_record.text": f"Value was {value}."},
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [
+        ("genomic_position", "12345"),
+        ("exon_or_intron", "exon 2"),
+        ("read_depth", "30x"),
+        ("source_span_start", "10"),
+    ],
+)
+def test_llm_entity_rejects_all_numeric_metadata(
+    field_name: str,
+    value: str,
+) -> None:
+    with pytest.raises(ValueError, match="source_measurement observation"):
+        LLMExtractedEntityCandidate(
+            entity_type="VARIANT",
+            label="MED13 c.977C>A",
+            anchors=[
+                LLMIdentifierField(key="gene_symbol", value="MED13"),
+                LLMIdentifierField(key="hgvs_notation", value="c.977C>A"),
+            ],
+            metadata=[LLMLiteralField(key=field_name, value=value)],
+            evidence_excerpt="Variant evidence includes exon 2 at position 12345.",
+            evidence_locator="raw_record.text",
+            assessment=_assessment(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("source_span_start", "10"),
+        ("target_label", "stage 2"),
+        ("untyped_value", "stage 2"),
+    ],
+)
+def test_llm_rejected_fact_rejects_numeric_payload(key: str, value: str) -> None:
+    with pytest.raises(ValueError, match="Numeric rejected-fact payload"):
+        LLMRejectedFact(
+            fact_type="relation",
+            reason="Candidate requires review.",
+            payload=[LLMLiteralField(key=key, value=value)],
+            assessment=_assessment(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("source_label", "BRCA1"),
+        ("target_label", "MED13"),
+        ("hgvs_notation", "c.977C>A"),
+    ],
+)
+def test_llm_rejected_fact_preserves_identifier_payload(
+    key: str,
+    value: str,
+) -> None:
+    rejected = LLMRejectedFact(
+        fact_type="relation",
+        reason="Candidate requires review.",
+        payload=[LLMLiteralField(key=key, value=value)],
+        assessment=_assessment(),
+    )
+
+    assert rejected.to_rejected_fact().payload[key] == value
+
+
+@pytest.mark.parametrize("value", ["0.125", ".125", "stage 2"])
+def test_llm_extraction_rejects_numeric_observation_text(value: str) -> None:
+    contract = LLMExtractionContract(
+        rationale="Returned numeric-looking observation text.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-numeric-text",
+        observations=[
+            LLMExtractedObservation(
+                field_name="source_value",
+                variable_id="SOURCE_VALUE",
+                value=value,
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="source_measurement envelope"):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-1",
+            source_values_by_locator={"raw_record.text": value},
+        )
+
+
+def test_llm_extraction_keeps_categorical_observation_text() -> None:
+    contract = LLMExtractionContract(
+        rationale="Returned a categorical observation.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-category",
+        observations=[
+            LLMExtractedObservation(
+                field_name="classification",
+                variable_id="VAR_CLINVAR_CLASS",
+                value="Likely Pathogenic",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    extracted = contract.to_extraction_contract(
+        expected_source_hash="source-hash-1",
+        source_values_by_locator={},
+    )
+
+    assert extracted.observations[0].value == "Likely Pathogenic"
+
+
+@pytest.mark.parametrize(
+    (
+        "source_hash",
+        "literal_span",
+        "value",
+        "source_locator",
+        "extraction_method",
+        "match",
+    ),
+    [
+        (
+            "wrong-source",
+            "0.125",
+            "0.125",
+            "raw_record.text",
+            "literal_copy",
+            "source_hash",
+        ),
+        (
+            "source-hash-1",
+            "invented-value",
+            "0.125",
+            "raw_record.text",
+            "literal_copy",
+            "literal_span",
+        ),
+        (
+            "source-hash-1",
+            "0.125",
+            "999",
+            "raw_record.text",
+            "literal_copy",
+            "value",
+        ),
+        (
+            "source-hash-1",
+            "0.125",
+            "0.125",
+            "invented.path",
+            "literal_copy",
+            "source_locator",
+        ),
+        (
+            "source-hash-1",
+            "0.1",
+            "0.1",
+            "raw_record.text",
+            "literal_copy",
+            "source locator",
+        ),
+        (
+            "source-hash-1",
+            "0.125",
+            "0.125",
+            "raw_record.text",
+            "model_inference",
+            "extraction_method",
+        ),
+    ],
+)
+def test_llm_extraction_rejects_unverified_source_measurement(
+    source_hash: str,
+    literal_span: str,
+    value: str,
+    source_locator: str,
+    extraction_method: str,
+    match: str,
+) -> None:
+    contract = LLMExtractionContract(
+        rationale="Attempted one source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type="pubmed",
+        document_id="document-1",
+        observations=[
+            LLMExtractedObservation(
+                field_name="allele_frequency",
+                variable_id="VAR_ALLELE_FREQUENCY",
+                value=SourceMeasurementNumber(
+                    value=value,
+                    source_locator=source_locator,
+                    literal_span=literal_span,
+                    field_name="allele_frequency",
+                    unit="ratio",
+                    extraction_method=extraction_method,
+                    source_hash=source_hash,
+                ),
+                unit="ratio",
+                subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                subject_anchors=_llm_variant_subject_anchors(),
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match=match):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-1",
+            source_values_by_locator={
+                "raw_record.text": "Allele frequency was 0.125.",
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_type", "value"),
+    [
+        (LLMIdentifierField, 12345),
+        (LLMLiteralField, 0.99),
+        (LLMLiteralField, 1),
+    ],
+)
+def test_llm_dynamic_fields_reject_untyped_numbers(
+    field_type: type[LLMIdentifierField | LLMLiteralField],
+    value: object,
+) -> None:
+    with pytest.raises(ValueError, match="value"):
+        field_type.model_validate({"key": "source_field", "value": value})
+
+
+@pytest.mark.parametrize("key", ["clinvar_id", "source_span_start"])
+def test_llm_identifier_field_rejects_numeric_only_anchor(key: str) -> None:
+    with pytest.raises(ValueError, match="Numeric-only anchor"):
+        LLMIdentifierField(key=key, value="12345")
+
+
+def test_llm_identifier_field_accepts_namespaced_numeric_identifier() -> None:
+    field = LLMIdentifierField(key="dbsnp_id", value="rs12345")
+
+    assert field.value == "rs12345"
+
+
+def test_llm_extraction_rejects_duplicate_dynamic_identifiers() -> None:
+    contract = LLMExtractionContract(
+        rationale="Returned conflicting identifiers.",
+        evidence=[],
+        decision="generated",
+        source_type="pubmed",
+        document_id="document-1",
+        entities=[
+            LLMExtractedEntityCandidate(
+                entity_type="VARIANT",
+                label="MED13 c.977C>A",
+                anchors=[
+                    LLMIdentifierField(key="gene_symbol", value="MED13"),
+                    LLMIdentifierField(key="gene_symbol", value="OTHER"),
+                ],
+                metadata=[],
+                evidence_excerpt="MED13 c.977C>A",
+                evidence_locator="raw_record.text",
+                assessment=_assessment(),
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="Duplicate dynamic field key"):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-1",
+            source_values_by_locator={"raw_record.text": "MED13 c.977C>A"},
+        )
 
 
 def _variant_context(*, document_id: str = "doc-variant-1") -> (
@@ -343,6 +1076,80 @@ def test_artana_extraction_adapter_fails_closed_on_invalid_llm_output(
     assert result.agent_run_id is not None
     assert result.agent_run_id.startswith("variant_extraction:pubmed:")
     assert "failed closed" in result.rationale
+
+
+def test_artana_extraction_adapter_fails_closed_on_forged_measurement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = _variant_context()
+    contract = LLMExtractionContract(
+        rationale="Returned a forged source measurement.",
+        evidence=[],
+        decision="generated",
+        source_type=context.source_type,
+        document_id=context.document_id,
+        observations=[
+            LLMExtractedObservation(
+                field_name="allele_frequency",
+                variable_id="VAR_ALLELE_FREQUENCY",
+                value=SourceMeasurementNumber(
+                    value="999",
+                    source_locator="raw_record.text",
+                    literal_span="MED13",
+                    field_name="allele_frequency",
+                    unit="ratio",
+                    extraction_method="literal_copy",
+                    source_hash="forged-source-hash",
+                ),
+                unit="ratio",
+                subject_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
+                subject_anchors=_llm_variant_subject_anchors(),
+                assessment=_assessment(),
+            ),
+        ],
+    )
+    _patch_variant_adapter_runtime(
+        monkeypatch,
+        step_output=contract.model_dump(mode="json"),
+    )
+
+    result = asyncio.run(variant_extraction_bridges.ArtanaExtractionAdapter().extract(context))
+
+    assert result.decision == "fallback"
+    assert result.agent_run_id is not None
+    assert "source_hash" in result.rationale
+
+
+def test_variant_prompt_exposes_hash_and_valid_scalar_locators() -> None:
+    context = _variant_context()
+    context.raw_record.update(
+        {
+            "selected_record_index": 0,
+            "retrieval_score": 0.98,
+            "source_span": {"start": 10, "end": 20},
+        },
+    )
+    payload = variant_extraction_bridges._prompt_payload_from_context(
+        context,
+    )
+
+    assert isinstance(payload["source_hash"], str)
+    assert len(payload["source_hash"]) == 64
+    locators = payload["allowed_source_locators"]
+    assert isinstance(locators, list)
+    assert "raw_record.text" in locators
+    assert all(locator.startswith("raw_record.") for locator in locators)
+    assert "raw_record.selected_record_index" not in locators
+    assert "raw_record.retrieval_score" not in locators
+    assert "raw_record.source_span.start" not in locators
+    assert "genomics_signals.variant_aware_recommended" not in locators
+    assert not any("source_span" in locator for locator in locators)
+    assert "genomic_position, genome_build" not in (
+        variant_extraction_bridges._VARIANT_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert "Do not flatten structured identifiers" in (
+        variant_extraction_bridges._VARIANT_EXTRACTION_SYSTEM_PROMPT
+    )
 
 
 def test_document_supports_variant_aware_extraction_detects_genomics_signals() -> None:
@@ -558,6 +1365,428 @@ def test_extract_variant_aware_document_collapses_duplicate_variant_mentions(
         "hgvs_notation": "c.977C>A",
     }
     assert result.candidate_discovery["entity_candidate_count"] == 1
+
+
+def test_extract_variant_aware_document_stages_source_measurement_observation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = _document(
+        text=(
+            "MED13 NM_015335.6:c.977C>A (p.Thr326Lys) had an allele frequency "
+            "of 0.125."
+        ),
+    )
+    base_contract = _single_variant_contract(document_id=document.id)
+    grounded_candidate = base_contract.entities[0].model_copy(
+        update={
+            "evidence_excerpt": document.text_content,
+            "evidence_locator": "raw_record.text",
+        },
+    )
+    contract = base_contract.model_copy(
+        update={
+            "entities": [grounded_candidate],
+            "observations": [
+                ExtractedObservation(
+                    field_name="allele_frequency",
+                    variable_id="VAR_ALLELE_FREQUENCY",
+                    value=0.125,
+                    unit="ratio",
+                    subject_label="MED13 c.977C>A",
+                    subject_anchors={
+                        "gene_symbol": "MED13",
+                        "hgvs_notation": "c.977C>A",
+                    },
+                    source_measurement=SourceMeasurementNumber(
+                        value="0.125",
+                        source_locator="raw_record.text",
+                        literal_span="0.125",
+                        field_name="allele_frequency",
+                        unit="ratio",
+                        extraction_method="literal_copy",
+                        source_hash="source-hash-staging",
+                    ),
+                    assessment=_assessment(),
+                ),
+            ],
+        },
+    )
+
+    async def _fake_extract(self, context):  # noqa: ANN001
+        del self, context
+        return contract
+
+    async def _fake_close(self) -> None:  # noqa: ANN001
+        del self
+
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.extract",
+        _fake_extract,
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.variant_aware_document_extraction.ArtanaExtractionAdapter.close",
+        _fake_close,
+    )
+
+    result = asyncio.run(
+        extract_variant_aware_document(
+            space_id=uuid4(),
+            document=document,
+            graph_api_gateway=_EmptyGraphGateway(),
+        ),
+    )
+
+    drafts = [
+        draft
+        for draft in result.proposal_drafts
+        if draft.proposal_type == "observation_candidate"
+        and draft.payload["variable_id"] == "VAR_ALLELE_FREQUENCY"
+    ]
+    assert len(drafts) == 1
+    assert drafts[0].payload["value"] == 0.125
+    assert drafts[0].payload["source_measurement"] == {
+        "origin": "source_measurement",
+        "value": "0.125",
+        "source_locator": "raw_record.text",
+        "literal_span": "0.125",
+        "field_name": "allele_frequency",
+        "unit": "ratio",
+        "extraction_method": "literal_copy",
+        "source_hash": "source-hash-staging",
+    }
+    assert drafts[0].payload["subject_entity_candidate"]["identifiers"] == {
+        "gene_symbol": "MED13",
+        "hgvs_notation": "c.977C>A",
+    }
+
+
+def test_source_measurement_fingerprint_includes_unit() -> None:
+    document = _document(
+        text="MED13 c.977C>A dose measurements were 5mg and 5g.",
+    )
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"evidence_excerpt": document.text_content},
+    )
+    observations = [
+        ExtractedObservation(
+            field_name="dose",
+            variable_id="DOSE",
+            value=5,
+            unit=unit,
+            subject_label="MED13 c.977C>A",
+            subject_anchors={
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.977C>A",
+            },
+            source_measurement=SourceMeasurementNumber(
+                value="5",
+                source_locator="raw_record.text",
+                literal_span=f"5{unit}",
+                field_name="dose",
+                unit=unit,
+                extraction_method="literal_copy",
+                source_hash="source-hash-fingerprint",
+            ),
+            assessment=_assessment(),
+        )
+        for unit in ("mg", "g")
+    ]
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=observations,
+        variant_entities=(candidate,),
+    )
+
+    assert skipped_items == []
+    assert len(drafts) == 2
+    assert len({draft.claim_fingerprint for draft in drafts}) == 2
+
+
+def test_source_measurement_skips_non_persistable_subject() -> None:
+    document = _document(text="MED13 had a measurement of 5mg.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"anchors": {"gene_symbol": "MED13"}},
+    )
+    observation = ExtractedObservation(
+        field_name="dose",
+        variable_id="DOSE",
+        value=5,
+        unit="mg",
+        subject_label=candidate.label,
+        subject_anchors={"gene_symbol": "MED13"},
+        source_measurement=SourceMeasurementNumber(
+            value="5",
+            source_locator="raw_record.text",
+            literal_span="5mg",
+            field_name="dose",
+            unit="mg",
+            extraction_method="literal_copy",
+            source_hash="source-hash-incomplete-subject",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "did not match" in str(skipped_items[0]["reason"])
+
+
+def test_source_measurement_requires_complete_variant_identity_anchors() -> None:
+    document = _document(text="Two MED13 variants had different measurements.")
+    first_candidate = _single_variant_contract(document_id=document.id).entities[0]
+    second_candidate = first_candidate.model_copy(
+        update={
+            "label": "MED13 c.123G>T",
+            "anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.123G>T",
+            },
+        },
+    )
+    observation = ExtractedObservation(
+        field_name="dose",
+        variable_id="DOSE",
+        value=5,
+        unit="mg",
+        subject_label=second_candidate.label,
+        subject_anchors={"gene_symbol": "MED13"},
+        source_measurement=SourceMeasurementNumber(
+            value="5",
+            source_locator="raw_record.text",
+            literal_span="5mg",
+            field_name="dose",
+            unit="mg",
+            extraction_method="literal_copy",
+            source_hash="source-hash-partial-anchors",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(first_candidate, second_candidate),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "did not match" in str(skipped_items[0]["reason"])
+
+
+def test_source_measurement_maps_known_field_to_canonical_variable_id() -> None:
+    document = _document(text="MED13 c.977C>A had an allele frequency of 0.5.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"evidence_excerpt": document.text_content},
+    )
+    observation = ExtractedObservation(
+        field_name="allele_frequency",
+        variable_id="allele_frequency",
+        value=0.5,
+        unit="ratio",
+        subject_label=candidate.label,
+        subject_anchors={
+            "gene_symbol": "MED13",
+            "hgvs_notation": "c.977C>A",
+        },
+        source_measurement=SourceMeasurementNumber(
+            value="0.5",
+            source_locator="raw_record.text",
+            literal_span="0.5",
+            field_name="allele_frequency",
+            unit="ratio",
+            extraction_method="literal_copy",
+            source_hash="source-hash-unknown-variable",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert skipped_items == []
+    assert len(drafts) == 1
+    assert drafts[0].payload["variable_id"] == "VAR_ALLELE_FREQUENCY"
+
+
+def test_source_measurement_rejects_unit_incompatible_with_variable() -> None:
+    document = _document(text="MED13 c.977C>A had an allele frequency of 5mg.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    observation = ExtractedObservation(
+        field_name="allele_frequency",
+        variable_id="VAR_ALLELE_FREQUENCY",
+        value=5,
+        unit="mg",
+        subject_label=candidate.label,
+        subject_anchors=candidate.anchors,
+        source_measurement=SourceMeasurementNumber(
+            value="5",
+            source_locator="raw_record.text",
+            literal_span="5mg",
+            field_name="allele_frequency",
+            unit="mg",
+            extraction_method="literal_copy",
+            source_hash="source-hash-incompatible-unit",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "unit did not match" in str(skipped_items[0]["reason"])
+
+
+def test_source_measurement_matches_normalized_variant_identity_anchors() -> None:
+    document = _document(text="MED13 c.977C>A had an allele frequency of 0.125.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"evidence_excerpt": document.text_content},
+    )
+    observation = ExtractedObservation(
+        field_name="allele_frequency",
+        variable_id="VAR_ALLELE_FREQUENCY",
+        value=0.125,
+        unit="ratio",
+        subject_label=candidate.label,
+        subject_anchors={
+            "gene_symbol": "  med13 ",
+            "hgvs_notation": " C.977C>A ",
+        },
+        source_measurement=SourceMeasurementNumber(
+            value="0.125",
+            source_locator="raw_record.text",
+            literal_span="0.125",
+            field_name="allele_frequency",
+            unit="ratio",
+            extraction_method="literal_copy",
+            source_hash="source-hash-normalized-anchors",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert skipped_items == []
+    assert len(drafts) == 1
+
+
+def test_source_measurement_rejects_value_nearest_another_variant() -> None:
+    document = _document(
+        text=(
+            "MED13 c.977C>A had an allele frequency of 0.125. "
+            "MED13 c.123G>T had an allele frequency of 0.75."
+        ),
+    )
+    first_candidate = _single_variant_contract(
+        document_id=document.id,
+    ).entities[0].model_copy(
+        update={
+            "evidence_excerpt": "MED13 c.977C>A had an allele frequency of 0.125.",
+        },
+    )
+    second_candidate = first_candidate.model_copy(
+        update={
+            "label": "MED13 c.123G>T",
+            "anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.123G>T",
+            },
+            "evidence_excerpt": "MED13 c.123G>T had an allele frequency of 0.75.",
+        },
+    )
+    observation = ExtractedObservation(
+        field_name="allele_frequency",
+        variable_id="VAR_ALLELE_FREQUENCY",
+        value=0.75,
+        unit="ratio",
+        subject_label=first_candidate.label,
+        subject_anchors=first_candidate.anchors,
+        source_measurement=SourceMeasurementNumber(
+            value="0.75",
+            source_locator="raw_record.text",
+            literal_span="0.75",
+            field_name="allele_frequency",
+            unit="ratio",
+            extraction_method="literal_copy",
+            source_hash="source-hash-wrong-subject",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(first_candidate, second_candidate),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "did not match" in str(skipped_items[0]["reason"])
+
+
+@pytest.mark.parametrize(
+    ("field_name", "variable_id"),
+    [
+        ("invented_numeric_field", "VAR_INVENTED"),
+        ("genomic_position", "VAR_GENOMIC_POSITION"),
+        ("exon_or_intron", "VAR_EXON_INTRON"),
+    ],
+)
+def test_source_measurement_rejects_non_scalar_variable_field(
+    field_name: str,
+    variable_id: str,
+) -> None:
+    document = _document(text="MED13 c.977C>A had a value of 5mg.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    observation = ExtractedObservation(
+        field_name=field_name,
+        variable_id=variable_id,
+        value=5,
+        unit="mg",
+        subject_label=candidate.label,
+        subject_anchors={
+            "gene_symbol": "MED13",
+            "hgvs_notation": "c.977C>A",
+        },
+        source_measurement=SourceMeasurementNumber(
+            value="5",
+            source_locator="raw_record.text",
+            literal_span="5mg",
+            field_name=field_name,
+            unit="mg",
+            extraction_method="literal_copy",
+            source_hash="source-hash-unknown-variable",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "governed variant variable allowlist" in str(skipped_items[0]["reason"])
 
 
 def test_extract_variant_aware_document_falls_back_to_deterministic_signals(

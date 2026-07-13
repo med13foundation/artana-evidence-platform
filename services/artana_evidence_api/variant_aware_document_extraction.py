@@ -10,6 +10,12 @@ from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     canonicalize_extraction_relation_type,
 )
+from artana_evidence_api.document_extraction_support.variant.observation_variables import (
+    VARIANT_METADATA_VARIABLE_IDS,
+)
+from artana_evidence_api.document_extraction_support.variant.source_measurement_drafts import (
+    build_source_measurement_observation_drafts,
+)
 from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
     with_variant_aware_trust_metadata,
 )
@@ -62,25 +68,8 @@ if TYPE_CHECKING:
     from artana_evidence_api.graph_client import GraphTransportBundle
 
 _SUPPORTED_VARIANT_AWARE_SOURCE_TYPES = frozenset(
-    {
-        "pubmed",
-        "text",
-        "pdf",
-        "clinvar",
-        "marrvel",
-    },
+    {"pubmed", "text", "pdf", "clinvar", "marrvel"},
 )
-_GENOMICS_VARIABLE_IDS: dict[str, str] = {
-    "transcript": "VAR_TRANSCRIPT_ID",
-    "genomic_position": "VAR_GENOMIC_POSITION",
-    "hgvs_cdna": "VAR_HGVS_CDNA",
-    "hgvs_protein": "VAR_HGVS_PROTEIN",
-    "hgvs_genomic": "VAR_HGVS_GENOMIC",
-    "zygosity": "VAR_ZYGOSITY",
-    "inheritance": "VAR_INHERITANCE_MODE",
-    "exon_or_intron": "VAR_EXON_INTRON",
-    "classification": "VAR_CLINVAR_CLASS",
-}
 _REQUIRED_VARIANT_ANCHORS = ("gene_symbol", "hgvs_notation")
 _REVIEW_ITEM_SOURCE_FAMILY = "document_extraction"
 _REVIEWABLE_REJECTED_SUPPORT_BANDS = frozenset(
@@ -608,6 +597,16 @@ def _build_variant_aware_proposal_drafts(  # noqa: PLR0914
         review_item_drafts.extend(observation_review_items)
         skipped_items.extend(observation_skips)
 
+    measurement_drafts, measurement_skips = (
+        build_source_measurement_observation_drafts(
+            document=document,
+            observations=contract.observations,
+            variant_entities=variant_entities,
+        )
+    )
+    drafts.extend(measurement_drafts)
+    skipped_items.extend(measurement_skips)
+
     for index, raw_relation in enumerate(contract.relations):
         canonical_relation_type = canonicalize_extraction_relation_type(
             raw_relation.relation_type,
@@ -717,7 +716,7 @@ def _build_variant_observation_drafts(
     subject_payload = _entity_candidate_payload(candidate)
     confidence = fact_evidence_weight(candidate)
     evidence_grade = evidence_grade_for_document(document)
-    for field_name, variable_id in _GENOMICS_VARIABLE_IDS.items():
+    for field_name, variable_id in VARIANT_METADATA_VARIABLE_IDS.items():
         raw_value = candidate.metadata.get(field_name)
         normalized_value = _normalized_metadata_value(raw_value)
         if normalized_value is None:

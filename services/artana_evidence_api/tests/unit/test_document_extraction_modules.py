@@ -97,6 +97,9 @@ class _GraphGateway:
                     id=payload["id"],
                     display_label=payload["display_label"],
                     aliases=aliases,
+                    entity_type=payload.get("entity_type", "GENE"),
+                    identifiers=payload.get("identifiers", {}),
+                    metadata=payload.get("metadata", {}),
                 ),
             )
         return SimpleNamespace(entities=entities)

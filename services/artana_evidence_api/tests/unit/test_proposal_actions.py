@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -34,11 +35,15 @@ class _ResolvingGraphApiGateway:
         label: str,
         entity_type: str = "GENE",
         aliases: list[str] | None = None,
+        identifiers: dict[str, str] | None = None,
+        metadata: dict[str, object] | None = None,
     ) -> None:
         self._entity_id = entity_id
         self._label = label
         self._entity_type = entity_type
         self._aliases = aliases or []
+        self._identifiers = identifiers or {}
+        self._metadata = metadata or {}
 
     def list_entities(
         self,
@@ -59,7 +64,8 @@ class _ResolvingGraphApiGateway:
                     entity_type=self._entity_type,
                     display_label=self._label,
                     aliases=self._aliases if q is None else [*self._aliases, q],
-                    metadata={},
+                    identifiers=self._identifiers,
+                    metadata=self._metadata,
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC),
                 ),
@@ -445,6 +451,12 @@ def test_build_graph_observation_request_resolves_subject_from_candidate_payload
         label="NM_015335.6:c.977C>A (p.Thr326Lys)",
         entity_type="VARIANT",
         aliases=["c.977C>A"],
+        metadata={
+            "source_anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.977C>A",
+            },
+        },
     )
 
     request = build_graph_observation_request(
@@ -456,6 +468,178 @@ def test_build_graph_observation_request_resolves_subject_from_candidate_payload
     assert request.variable_id == "VAR_CLINVAR_CLASS"
     assert request.value == "Likely Pathogenic"
     assert request.subject_id == subject_id
+    assert request.observation_origin == "MANUAL"
+    assert request.provenance is None
+
+
+def _source_measurement_observation_proposal_for_test() -> HarnessProposalRecord:
+    now = datetime.now(UTC)
+    document_id = str(uuid4())
+    run_id = str(uuid4())
+    return HarnessProposalRecord(
+        id=str(uuid4()),
+        space_id=str(uuid4()),
+        run_id=run_id,
+        proposal_type="observation_candidate",
+        source_kind="document_extraction",
+        source_key="doc:source-measurement:0",
+        document_id=document_id,
+        title="Extracted observation: allele frequency for c.977C>A",
+        summary="0.125",
+        status="pending_review",
+        confidence=0.9,
+        ranking_score=0.9,
+        reasoning_path={
+            "assessment": {
+                "support_band": "STRONG",
+                "grounding_level": "SPAN",
+                "mapping_status": "RESOLVED",
+                "speculation_level": "DIRECT",
+                "confidence_rationale": "Exact source measurement.",
+            },
+        },
+        evidence_bundle=[],
+        payload={
+            "subject_entity_candidate": {
+                "entity_type": "VARIANT",
+                "display_label": "c.977C>A",
+                "aliases": [],
+                "metadata": {},
+                "identifiers": {
+                    "gene_symbol": "MED13",
+                    "hgvs_notation": "c.977C>A",
+                },
+            },
+            "variable_id": "VAR_ALLELE_FREQUENCY",
+            "field_name": "allele_frequency",
+            "value": 0.125,
+            "unit": "ratio",
+            "source_measurement": {
+                "origin": "source_measurement",
+                "value": "0.125",
+                "source_locator": "raw_record.text",
+                "literal_span": "0.125",
+                "field_name": "allele_frequency",
+                "unit": "ratio",
+                "extraction_method": "literal_copy",
+                "source_hash": "source-hash-promotion",
+            },
+        },
+        metadata={
+            "document_id": document_id,
+            "document_source_type": "pubmed",
+            "agent_model": "openai:gpt-5-mini",
+        },
+        decision_reason=None,
+        decided_at=None,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+def test_build_graph_observation_request_preserves_source_measurement_provenance() -> (
+    None
+):
+    proposal = _source_measurement_observation_proposal_for_test()
+    document_id = proposal.document_id
+    assert document_id is not None
+    run_id = proposal.run_id
+    subject_id = uuid4()
+    gateway = _ResolvingGraphApiGateway(
+        entity_id=subject_id,
+        label="c.977C>A",
+        entity_type="VARIANT",
+        identifiers={
+            "gene_symbol": "MED13",
+            "hgvs_notation": "c.977C>A",
+        },
+    )
+
+    request = build_graph_observation_request(
+        space_id=uuid4(),
+        proposal=proposal,
+        graph_api_gateway=gateway,
+    )
+
+    assert request.observation_origin == "AI_AUTHORED"
+    assert request.provenance_id is None
+    assert request.provenance is not None
+    assert request.provenance.source_ref == (
+        f"document:{document_id}#raw_record.text"
+    )
+    assert request.provenance.extraction_run_id == run_id
+    assert request.provenance.mapping_method == "agent_source_measurement"
+    assert request.provenance.raw_input is not None
+    assert request.provenance.raw_input["source_measurement"] == (
+        proposal.payload["source_measurement"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("entity_type", "source_anchors"),
+    [
+        (
+            "GENE",
+            {"gene_symbol": "MED13", "hgvs_notation": "c.977C>A"},
+        ),
+        (
+            "VARIANT",
+            {"gene_symbol": "MED13", "hgvs_notation": "c.123G>T"},
+        ),
+    ],
+)
+def test_build_graph_observation_request_rejects_wrong_subject_identity(
+    entity_type: str,
+    source_anchors: dict[str, str],
+) -> None:
+    proposal = _source_measurement_observation_proposal_for_test()
+    gateway = _ResolvingGraphApiGateway(
+        entity_id=uuid4(),
+        label="MED13",
+        entity_type=entity_type,
+        metadata={"source_anchors": source_anchors},
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        build_graph_observation_request(
+            space_id=uuid4(),
+            proposal=proposal,
+            graph_api_gateway=gateway,
+        )
+
+    assert exc_info.value.status_code == 409
+    assert "requires an existing subject entity" in str(exc_info.value.detail)
+
+
+def test_build_graph_observation_request_rejects_malformed_measurement_provenance() -> (
+    None
+):
+    proposal = _source_measurement_observation_proposal_for_test()
+    proposal = replace(
+        proposal,
+        payload={**proposal.payload, "source_measurement": "0.125"},
+    )
+    gateway = _ResolvingGraphApiGateway(
+        entity_id=uuid4(),
+        label="c.977C>A",
+        entity_type="VARIANT",
+        metadata={
+            "source_anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.977C>A",
+            },
+        },
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        build_graph_observation_request(
+            space_id=uuid4(),
+            proposal=proposal,
+            graph_api_gateway=gateway,
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "valid provenance envelope" in str(exc_info.value.detail)
 
 
 def test_build_graph_observation_request_requires_existing_subject_entity() -> None:

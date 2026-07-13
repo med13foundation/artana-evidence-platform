@@ -217,7 +217,7 @@ def test_source_measurement_envelope_requires_complete_provenance() -> None:
     with pytest.raises(ValueError, match="literal_span"):
         SourceMeasurementNumber.model_validate(
             {
-                "value": 1.25,
+                "value": "1.25",
                 "source_locator": "paper:doi:10.1/example",
                 "field_name": "effect_size",
                 "unit": "ratio",
@@ -389,23 +389,16 @@ def test_debt_manifest_exactly_covers_registered_legacy_fields() -> None:
     debt_ids = [item.debt_id for item in manifest]
     assert set(debt_ids) == {
         "AON-SEL-001",
-        "AON-VEXT-001",
-        "AON-VEXT-002",
-        "AON-VEXT-003",
-        "AON-VEXT-004",
-        "AON-VEXT-005",
-        "AON-VEXT-006",
-        "AON-VEXT-007",
     }
-    assert any(not item.quarantined for item in manifest)
+    assert all(item.quarantined for item in manifest)
 
 
 def test_registry_report_exposes_merge_gate_counts() -> None:
     report = build_agent_output_registry_report()
 
     assert report["registered_schema_count"] == 15
-    assert report["registered_numeric_field_count"] == 8
-    assert report["origin_governed_numeric_field_count"] == 0
-    assert report["debt_numeric_field_count"] == 8
-    assert report["active_debt_count"] == 8
-    assert report["unquarantined_debt_count"] == 7
+    assert report["registered_numeric_field_count"] == 2
+    assert report["origin_governed_numeric_field_count"] == 1
+    assert report["debt_numeric_field_count"] == 1
+    assert report["active_debt_count"] == 1
+    assert report["unquarantined_debt_count"] == 0

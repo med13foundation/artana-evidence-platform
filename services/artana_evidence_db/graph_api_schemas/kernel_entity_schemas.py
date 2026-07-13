@@ -62,12 +62,18 @@ class KernelEntityResponse(BaseModel):
     entity_type: str
     display_label: str | None
     aliases: list[str] = Field(default_factory=list)
+    identifiers: dict[str, str] = Field(default_factory=dict)
     metadata: JSONObject
     created_at: datetime
     updated_at: datetime
 
     @classmethod
-    def from_model(cls, model: KernelEntity) -> KernelEntityResponse:
+    def from_model(
+        cls,
+        model: KernelEntity,
+        *,
+        identifiers: dict[str, str] | None = None,
+    ) -> KernelEntityResponse:
         entity_id = _to_uuid(model.id)
         space_id = _to_uuid(model.research_space_id)
         metadata_payload = model.metadata or {}
@@ -81,6 +87,7 @@ class KernelEntityResponse(BaseModel):
                 for alias in model.aliases
                 if isinstance(alias, str) and alias.strip()
             ],
+            identifiers=identifiers or {},
             metadata=dict(metadata_payload),
             created_at=_to_required_utc_datetime(
                 model.created_at,

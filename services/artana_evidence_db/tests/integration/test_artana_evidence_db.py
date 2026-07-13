@@ -41,6 +41,10 @@ from artana_evidence_db.kernel_repositories import (
     SqlAlchemyKernelRelationRepository,
 )
 from artana_evidence_db.orm_base import Base
+from artana_evidence_db.phi_encryption_support import (
+    PHIEncryptionService,
+    PHIKeyMaterial,
+)
 from artana_evidence_db.product_contract import GRAPH_SERVICE_VERSION
 from artana_evidence_db.provenance_model import ProvenanceModel
 from artana_evidence_db.read_model_support import NullGraphReadModelUpdateDispatcher
@@ -2027,6 +2031,22 @@ def test_graph_service_entity_and_observation_crud(graph_client: TestClient) -> 
             "unit": None,
             "observed_at": None,
             "provenance_id": None,
+            "observation_origin": "AI_AUTHORED",
+            "provenance": {
+                "source_type": "document_extraction",
+                "source_ref": "document:test#raw_record.text",
+                "extraction_run_id": "agent-run-test",
+                "mapping_method": "agent_source_measurement",
+                "mapping_confidence": 0.9,
+                "agent_model": "openai:gpt-5-mini",
+                "raw_input": {
+                    "source_measurement": {
+                        "source_hash": "source-hash-test",
+                        "source_locator": "raw_record.text",
+                        "literal_span": "hello graph service",
+                    },
+                },
+            },
             "confidence": 1.0,
         },
     )
@@ -2034,6 +2054,42 @@ def test_graph_service_entity_and_observation_crud(graph_client: TestClient) -> 
     observation_payload = observation_create.json()
     observation_id = observation_payload["id"]
     assert observation_payload["value_text"] == "hello graph service"
+    provenance_id = observation_payload["provenance_id"]
+    assert provenance_id is not None
+
+    provenance_get = graph_client.get(
+        f"/v1/spaces/{space_id}/provenance/{provenance_id}",
+        headers=headers,
+    )
+    assert provenance_get.status_code == 200, provenance_get.text
+    assert provenance_get.json()["raw_input"]["source_measurement"] == {
+        "source_hash": "source-hash-test",
+        "source_locator": "raw_record.text",
+        "literal_span": "hello graph service",
+    }
+
+    failed_observation = graph_client.post(
+        f"/v1/spaces/{space_id}/observations",
+        headers=headers,
+        json={
+            "subject_id": str(source_id),
+            "variable_id": "VAR_UNKNOWN_INLINE_PROVENANCE",
+            "value": "must roll back",
+            "observation_origin": "AI_AUTHORED",
+            "provenance": {
+                "source_type": "failed_inline_provenance",
+                "raw_input": {"must": "roll back"},
+            },
+        },
+    )
+    assert failed_observation.status_code == 400, failed_observation.text
+    failed_provenance_list = graph_client.get(
+        f"/v1/spaces/{space_id}/provenance",
+        headers=headers,
+        params={"source_type": "failed_inline_provenance"},
+    )
+    assert failed_provenance_list.status_code == 200
+    assert failed_provenance_list.json()["total"] == 0
 
     observation_list = graph_client.get(
         f"/v1/spaces/{space_id}/observations",
@@ -2088,6 +2144,53 @@ def test_entity_repository_rejects_phi_identifier_without_encryption(
                 identifier_value="MRN-123",
                 sensitivity="PHI",
             )
+
+
+def test_entity_repository_non_phi_identifier_view_excludes_phi(
+    graph_client: TestClient,
+) -> None:
+    _ = graph_client
+
+    class _TestKeyProvider:
+        def get_key_material(self) -> PHIKeyMaterial:
+            return PHIKeyMaterial(
+                encryption_key=b"e" * 32,
+                blind_index_key=b"b" * 32,
+                key_version="test-v1",
+                blind_index_version="test-v1",
+            )
+
+    with graph_database.SessionLocal() as session:
+        seed_entity_resolution_policies(session)
+        repository = SqlAlchemyKernelEntityRepository(
+            session,
+            phi_encryption_service=PHIEncryptionService(_TestKeyProvider()),
+            enable_phi_encryption=True,
+        )
+        entity = repository.create(
+            research_space_id=str(uuid4()),
+            entity_type="PATIENT",
+            display_label="Patient B",
+            metadata={},
+        )
+        repository.add_identifier(
+            entity_id=str(entity.id),
+            namespace="external_id",
+            identifier_value="SAFE-123",
+            sensitivity="INTERNAL",
+        )
+        repository.add_identifier(
+            entity_id=str(entity.id),
+            namespace="mrn",
+            identifier_value="MRN-SECRET",
+            sensitivity="PHI",
+        )
+
+        identifiers = repository.list_non_phi_identifiers(entity_id=str(entity.id))
+
+    assert {(item.namespace, item.identifier_value) for item in identifiers} == {
+        ("external_id", "SAFE-123"),
+    }
 
 
 def test_graph_service_normalizes_entity_type_case_for_entity_routes(
