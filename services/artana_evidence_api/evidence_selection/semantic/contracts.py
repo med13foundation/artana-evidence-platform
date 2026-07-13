@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -23,6 +24,8 @@ SemanticObjectiveAssessment = Literal[
 SemanticInclusionAssessment = Literal["met", "not_met", "uncertain"]
 SemanticExclusionAssessment = Literal["not_triggered", "triggered", "uncertain"]
 _MIN_EVIDENCE_REFERENCE_LENGTH = 4
+_OPAQUE_RECORD_REFERENCE_PATTERN = r"^sr_[a-f0-9]{32}$"
+_OPAQUE_EVIDENCE_REFERENCE_PATTERN = r"^se_[a-f0-9]{32}$"
 
 
 class EvidenceSelectionSemanticCandidateAssessment(BaseModel):
@@ -30,7 +33,7 @@ class EvidenceSelectionSemanticCandidateAssessment(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    record_index: int = Field(ge=0)
+    record_ref: str = Field(pattern=_OPAQUE_RECORD_REFERENCE_PATTERN)
     decision: SemanticCandidateDecision
     objective_match: SemanticObjectiveAssessment
     entity_variant_match: SemanticCriterionAssessment
@@ -61,6 +64,12 @@ class EvidenceSelectionSemanticCandidateAssessment(BaseModel):
             len(reference) < _MIN_EVIDENCE_REFERENCE_LENGTH for reference in normalized
         ):
             msg = "evidence_references must contain at least four literal characters"
+            raise ValueError(msg)
+        if any(
+            re.fullmatch(_OPAQUE_EVIDENCE_REFERENCE_PATTERN, reference) is None
+            for reference in normalized
+        ):
+            msg = "evidence_references must contain opaque service-owned references"
             raise ValueError(msg)
         if len(set(normalized)) != len(normalized):
             msg = "evidence_references must be unique within one assessment"
@@ -120,7 +129,7 @@ class EvidenceSelectionSemanticBatchContract(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_agent.v1"]
+    schema_version: Literal["evidence_selection_semantic_agent.v2"]
     agent_run_id: str | None = Field(default=None, min_length=1, max_length=255)
     reasoning_summary: str = Field(min_length=1, max_length=3000)
     assessments: tuple[EvidenceSelectionSemanticCandidateAssessment, ...] = Field(
@@ -143,10 +152,12 @@ class EvidenceSelectionSemanticBatchContract(BaseModel):
         return _literal_nonblank(value) if value is not None else None
 
     @model_validator(mode="after")
-    def _record_indices_must_be_unique(self) -> EvidenceSelectionSemanticBatchContract:
-        indices = [assessment.record_index for assessment in self.assessments]
-        if len(set(indices)) != len(indices):
-            msg = "semantic agent returned duplicate record_index values"
+    def _record_references_must_be_unique(
+        self,
+    ) -> EvidenceSelectionSemanticBatchContract:
+        references = [assessment.record_ref for assessment in self.assessments]
+        if len(set(references)) != len(references):
+            msg = "semantic agent returned duplicate record_ref values"
             raise ValueError(msg)
         return self
 

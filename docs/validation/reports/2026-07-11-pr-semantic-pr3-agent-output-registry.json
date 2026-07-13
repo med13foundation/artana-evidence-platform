@@ -1,28 +1,10 @@
 {
-  "active_debt_count": 1,
-  "debt_manifest": [
-    {
-      "consumers": [
-        "semantic assessment record mapping"
-      ],
-      "current_influence": "The numeric locator selects which retrieved record receives an assessment.",
-      "debt_id": "AON-SEL-001",
-      "field_path": "$.assessments[].record_index",
-      "kind": "numeric_judgment",
-      "owner_pr": "PR 3 semantic locator migration",
-      "producer": "semantic selection agent",
-      "quarantine_rule": "Validation requires exact input-index coverage, rejects duplicates, and resolves cited evidence against the claimed source record before any decision is accepted.",
-      "quarantined": true,
-      "removal_gate": "Use an opaque deterministic record reference with explicit locator provenance instead of an agent-authored number.",
-      "schema_ids": [
-        "evidence_selection.semantic.v1"
-      ]
-    }
-  ],
-  "debt_numeric_field_count": 1,
+  "active_debt_count": 0,
+  "debt_manifest": [],
+  "debt_numeric_field_count": 0,
   "origin_governed_numeric_field_count": 1,
   "registered_category_field_count": 66,
-  "registered_numeric_field_count": 2,
+  "registered_numeric_field_count": 1,
   "registered_schema_count": 15,
   "registered_schemas": [
     {
@@ -132,7 +114,7 @@
           "debt_id": null,
           "path": "$.schema_version",
           "values": [
-            "evidence_selection_semantic_agent.v1"
+            "evidence_selection_semantic_agent.v2"
           ]
         },
         {
@@ -233,24 +215,18 @@
           ]
         }
       ],
-      "numeric_fields": [
-        {
-          "debt_id": "AON-SEL-001",
-          "origin": null,
-          "path": "$.assessments[].record_index"
-        }
-      ],
+      "numeric_fields": [],
       "producer_paths": [
         "evidence_selection/semantic/model.py"
       ],
       "prompt_identifiers": [
-        "evidence_selection.semantic_selector.v1"
+        "evidence_selection.semantic_selector.v2"
       ],
-      "schema_id": "evidence_selection.semantic.v1",
+      "schema_id": "evidence_selection.semantic.v2",
       "schema_names": [
         "EvidenceSelectionSemanticBatchContract"
       ],
-      "shape_hash": "9e5a7d2909d1cc98d129c0bbd51e470660d45aec89c0c300fc9eb40e5b85d33e"
+      "shape_hash": "b1428a8b75b9e6eb14bf2faddd7db7c8689bb2097c5282a7b9dfebd67744bdab"
     },
     {
       "categorical_fields": [],
