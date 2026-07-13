@@ -50,7 +50,12 @@ _WORDED_BOUND_SUFFIX = re.compile(
     r"^(?:or\s+(?:fewer|greater|less|more)|and\s+(?:above|below))\b",
     re.IGNORECASE,
 )
-_RANGE_ENDPOINT_TEXT = rf"{_SOURCE_NUMBER_TEXT}(?:\s*[A-Za-z%]+)?"
+_SOURCE_UNIT_COMPONENT = r"[A-Za-z0-9%µμ²]+"
+_SOURCE_COMPOUND_UNIT_TEXT = (
+    rf"{_SOURCE_UNIT_COMPONENT}"
+    rf"(?:\s*(?:/|per)\s*{_SOURCE_UNIT_COMPONENT})*"
+)
+_RANGE_ENDPOINT_TEXT = rf"{_SOURCE_NUMBER_TEXT}(?:\s*{_SOURCE_COMPOUND_UNIT_TEXT})?"
 _WORDED_RANGE_AFTER_ENDPOINT = re.compile(
     rf"^(?:through|to)\s+{_RANGE_ENDPOINT_TEXT}\b",
     re.IGNORECASE,
@@ -69,30 +74,34 @@ _BETWEEN_RANGE_AFTER_ENDPOINT = re.compile(
     re.IGNORECASE,
 )
 _COMPOUND_UNIT_CONTINUATION = re.compile(r"^(?:per\b|/\s*\S)", re.IGNORECASE)
+_REJECTED_FACT_LABEL_KEYS = frozenset(
+    {
+        "entity_label",
+        "object_label",
+        "source_label",
+        "subject_label",
+        "target_label",
+        "variant_label",
+    },
+)
 _REJECTED_FACT_IDENTIFIER_KEYS = frozenset(
     {
         "accession",
         "clinvar_id",
         "dbsnp_id",
-        "entity_label",
         "gene_symbol",
         "hgvs_notation",
         "hpo_term",
         "object_curie",
         "object_identifier",
-        "object_label",
         "source_curie",
         "source_identifier",
-        "source_label",
         "source_record_id",
         "subject_curie",
         "subject_identifier",
-        "subject_label",
         "target_curie",
         "target_identifier",
-        "target_label",
         "transcript",
-        "variant_label",
         "variation_id",
     },
 )
@@ -278,6 +287,22 @@ def _source_measurement_json_value(value: str) -> int | float:
 def observation_text_requires_source_measurement(value: str) -> bool:
     """Return whether an observation-like string contains a numeric literal."""
     return _SOURCE_NUMBER_PATTERN.search(value) is not None
+
+
+def _rejected_fact_field_allows_numeric_identifier(
+    *,
+    key: str,
+    value: str,
+) -> bool:
+    if key in _REJECTED_FACT_IDENTIFIER_KEYS:
+        return True
+    if key not in _REJECTED_FACT_LABEL_KEYS or any(
+        character.isspace() for character in value
+    ):
+        return False
+    return any(character.isalpha() for character in value) and any(
+        character.isdigit() for character in value
+    )
 
 
 class ExtractedObservation(BaseModel):
@@ -581,9 +606,12 @@ class LLMRejectedFact(BaseModel):
         for field in self.payload:
             normalized_key = field.key.strip().casefold()
             if (
-                normalized_key not in _REJECTED_FACT_IDENTIFIER_KEYS
-                and isinstance(field.value, str)
+                isinstance(field.value, str)
                 and observation_text_requires_source_measurement(field.value)
+                and not _rejected_fact_field_allows_numeric_identifier(
+                    key=normalized_key,
+                    value=field.value.strip(),
+                )
             ):
                 msg = (
                     f"Numeric rejected-fact payload {field.key!r} is not allowed."

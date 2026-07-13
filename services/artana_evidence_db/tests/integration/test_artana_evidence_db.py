@@ -41,6 +41,10 @@ from artana_evidence_db.kernel_repositories import (
     SqlAlchemyKernelRelationRepository,
 )
 from artana_evidence_db.orm_base import Base
+from artana_evidence_db.phi_encryption_support import (
+    PHIEncryptionService,
+    PHIKeyMaterial,
+)
 from artana_evidence_db.product_contract import GRAPH_SERVICE_VERSION
 from artana_evidence_db.provenance_model import ProvenanceModel
 from artana_evidence_db.read_model_support import NullGraphReadModelUpdateDispatcher
@@ -2140,6 +2144,53 @@ def test_entity_repository_rejects_phi_identifier_without_encryption(
                 identifier_value="MRN-123",
                 sensitivity="PHI",
             )
+
+
+def test_entity_repository_non_phi_identifier_view_excludes_phi(
+    graph_client: TestClient,
+) -> None:
+    _ = graph_client
+
+    class _TestKeyProvider:
+        def get_key_material(self) -> PHIKeyMaterial:
+            return PHIKeyMaterial(
+                encryption_key=b"e" * 32,
+                blind_index_key=b"b" * 32,
+                key_version="test-v1",
+                blind_index_version="test-v1",
+            )
+
+    with graph_database.SessionLocal() as session:
+        seed_entity_resolution_policies(session)
+        repository = SqlAlchemyKernelEntityRepository(
+            session,
+            phi_encryption_service=PHIEncryptionService(_TestKeyProvider()),
+            enable_phi_encryption=True,
+        )
+        entity = repository.create(
+            research_space_id=str(uuid4()),
+            entity_type="PATIENT",
+            display_label="Patient B",
+            metadata={},
+        )
+        repository.add_identifier(
+            entity_id=str(entity.id),
+            namespace="external_id",
+            identifier_value="SAFE-123",
+            sensitivity="INTERNAL",
+        )
+        repository.add_identifier(
+            entity_id=str(entity.id),
+            namespace="mrn",
+            identifier_value="MRN-SECRET",
+            sensitivity="PHI",
+        )
+
+        identifiers = repository.list_non_phi_identifiers(entity_id=str(entity.id))
+
+    assert {(item.namespace, item.identifier_value) for item in identifiers} == {
+        ("external_id", "SAFE-123"),
+    }
 
 
 def test_graph_service_normalizes_entity_type_case_for_entity_routes(

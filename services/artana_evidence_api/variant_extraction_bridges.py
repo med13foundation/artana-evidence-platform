@@ -146,7 +146,7 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v10"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v11"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
 _MEASUREMENT_SOURCE_FIELDS = frozenset(
     {"abstract", "content", "full_text", "text", "title"},
@@ -183,8 +183,9 @@ Useful output conventions:
 - Metadata and rejected payload values must be strings, booleans, or null. Keep
   numeric scalar values out of those fields, but preserve digits inside explicit
   entity label and identifier fields such as source_label, target_label,
-  gene_symbol, and hgvs_notation. Return numeric observations only through the
-  source_measurement envelope.
+  gene_symbol, and hgvs_notation only when the value is a compact identifier,
+  not a generic numeric phrase such as "stage 2". Return numeric observations
+  only through the source_measurement envelope.
 - A numeric observation value must use the source_measurement envelope. Copy
   value as the exact numeric token string from the source, without converting it
   to a JSON number. Copy source_hash from the request context. literal_span must

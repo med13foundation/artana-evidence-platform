@@ -35,12 +35,14 @@ class _ResolvingGraphApiGateway:
         label: str,
         entity_type: str = "GENE",
         aliases: list[str] | None = None,
+        identifiers: dict[str, str] | None = None,
         metadata: dict[str, object] | None = None,
     ) -> None:
         self._entity_id = entity_id
         self._label = label
         self._entity_type = entity_type
         self._aliases = aliases or []
+        self._identifiers = identifiers or {}
         self._metadata = metadata or {}
 
     def list_entities(
@@ -62,6 +64,7 @@ class _ResolvingGraphApiGateway:
                     entity_type=self._entity_type,
                     display_label=self._label,
                     aliases=self._aliases if q is None else [*self._aliases, q],
+                    identifiers=self._identifiers,
                     metadata=self._metadata,
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC),
@@ -546,11 +549,9 @@ def test_build_graph_observation_request_preserves_source_measurement_provenance
         entity_id=subject_id,
         label="c.977C>A",
         entity_type="VARIANT",
-        metadata={
-            "source_anchors": {
-                "gene_symbol": "MED13",
-                "hgvs_notation": "c.977C>A",
-            },
+        identifiers={
+            "gene_symbol": "MED13",
+            "hgvs_notation": "c.977C>A",
         },
     )
 

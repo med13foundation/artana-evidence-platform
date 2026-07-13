@@ -7951,6 +7951,13 @@
             "title": "Id",
             "type": "string"
           },
+          "identifiers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Identifiers",
+            "type": "object"
+          },
           "metadata": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JSONValue-Output"

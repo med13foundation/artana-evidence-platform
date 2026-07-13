@@ -494,6 +494,8 @@ def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
         ("10", "10", "unitless", "Ratio was 10:30."),
         ("5 mg", "5", "mg", "Dose was 5 mg per kg."),
         ("5 mg", "5", "mg", "Dose was 5 mg / kg."),
+        ("5 mg/kg", "5", "mg/kg", "Dose was 5 mg/kg to 10 mg/kg."),
+        ("10 mg/kg", "10", "mg/kg", "Dose was 5 mg/kg to 10 mg/kg."),
     ],
 )
 def test_llm_extraction_rejects_unit_stripping_bounds_and_ranges(
@@ -683,7 +685,11 @@ def test_llm_entity_rejects_all_numeric_metadata(
 
 @pytest.mark.parametrize(
     ("key", "value"),
-    [("source_span_start", "10"), ("untyped_value", "stage 2")],
+    [
+        ("source_span_start", "10"),
+        ("target_label", "stage 2"),
+        ("untyped_value", "stage 2"),
+    ],
 )
 def test_llm_rejected_fact_rejects_numeric_payload(key: str, value: str) -> None:
     with pytest.raises(ValueError, match="Numeric rejected-fact payload"):

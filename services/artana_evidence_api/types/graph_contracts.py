@@ -97,6 +97,7 @@ class KernelEntityResponse(BaseModel):
     entity_type: str
     display_label: str | None = None
     aliases: list[str] = Field(default_factory=list)
+    identifiers: dict[str, str] = Field(default_factory=dict)
     metadata: JSONObject
     created_at: datetime
     updated_at: datetime
