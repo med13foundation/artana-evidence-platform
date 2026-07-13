@@ -16,6 +16,8 @@ from artana_evidence_api.evidence_selection.shadow_review_packet import (
     machine_packet_digest,
 )
 
+from .evidence_selection_review_fixtures import adequate_explanation_assessment
+
 _RUN_ID = "00000000-0000-0000-0000-000000000049"
 _GOAL = "Review BRAF V600E treatment-response evidence."
 
@@ -37,6 +39,7 @@ def test_shadow_review_study_pipeline_builds_bundle_ready_artifacts(
             exported_at="2026-07-07T14:00:00Z",
             exporter_id="review-ops-a",
             redaction_statement="No PHI or raw patient text included.",
+            study_evidence_kind="real_shadow_review",
             description="Completed shadow-review packet pipeline fixture.",
         ),
     )
@@ -47,7 +50,9 @@ def test_shadow_review_study_pipeline_builds_bundle_ready_artifacts(
     assert result.selection_reviews_path == output_dir / "selection-review-labels.json"
     assert result.review_ranking_path == output_dir / "review-ranking-study.json"
     assert result.selection_export_path == output_dir / "selection-review-export.json"
-    assert result.review_ranking_export_path == output_dir / "review-ranking-export.json"
+    assert (
+        result.review_ranking_export_path == output_dir / "review-ranking-export.json"
+    )
     assert result.bundle_path == output_dir / "evidence-selection-expert-study.json"
 
     selection_input = json.loads(result.selection_reviews_path.read_text())
@@ -62,7 +67,8 @@ def test_shadow_review_study_pipeline_builds_bundle_ready_artifacts(
     assert ranking_export["schema_version"] == (
         "evidence_selection_review_ranking_export.v1"
     )
-    assert bundle["schema_version"] == "evidence_selection_expert_study.v1"
+    assert bundle["schema_version"] == "evidence_selection_expert_study.v2"
+    assert bundle["study_type"] == "selection_and_review_ranking"
     assert bundle["study_evidence_kind"] == "real_shadow_review"
     assert bundle["source_manifest"]["export_id"] == "shadow-export-2026-07-07"
     source_artifact_uris = {
@@ -74,6 +80,48 @@ def test_shadow_review_study_pipeline_builds_bundle_ready_artifacts(
         "review-ranking-export": str(result.review_ranking_export_path),
     }
     assert all(Path(uri).exists() for uri in source_artifact_uris.values())
+
+
+def test_selection_only_pipeline_does_not_fabricate_ranking_artifacts(
+    tmp_path: Path,
+) -> None:
+    pipeline = _pipeline_module()
+    completed_packet = _selection_only_completed_packet()
+    machine_packet = _machine_packet_for_completed_packet(completed_packet)
+    completed_packet["machine_packet_sha256"] = machine_packet["machine_packet_sha256"]
+    completed_packet["machine_packet_signature"] = machine_packet[
+        "machine_packet_signature"
+    ]
+    output_dir = tmp_path / "selection-only-study"
+
+    result = pipeline.build_evidence_selection_shadow_review_study_artifacts(
+        pipeline.EvidenceSelectionShadowReviewStudyArtifactRequest(
+            machine_packet=machine_packet,
+            packet=completed_packet,
+            output_dir=output_dir,
+            adjudication_note=None,
+            source_system="artana-shadow-review",
+            export_id="selection-only-export-2026-07-07",
+            exported_at="2026-07-07T14:00:00Z",
+            exporter_id="review-ops-a",
+            redaction_statement="No PHI or raw patient text included.",
+            study_evidence_kind="real_shadow_review",
+        ),
+    )
+
+    bundle = json.loads(result.bundle_path.read_text())
+    assert result.review_ranking_path is None
+    assert result.review_ranking_export_path is None
+    assert result.review_ranking_decision_count == 0
+    assert result.source_artifact_count == 1
+    assert not (output_dir / "review-ranking-study.json").exists()
+    assert not (output_dir / "review-ranking-export.json").exists()
+    assert bundle["study_type"] == "selection_relevance"
+    assert "review_ranking" not in bundle
+    assert [
+        artifact["artifact_kind"]
+        for artifact in bundle["source_manifest"]["source_artifacts"]
+    ] == ["selection_review_export"]
 
 
 def test_shadow_review_study_pipeline_rejects_file_output_dir(
@@ -95,6 +143,7 @@ def test_shadow_review_study_pipeline_rejects_file_output_dir(
                 exported_at="2026-07-07T14:00:00Z",
                 exporter_id="review-ops-a",
                 redaction_statement="No PHI or raw patient text included.",
+                study_evidence_kind="real_shadow_review",
             ),
         )
 
@@ -124,6 +173,7 @@ def test_shadow_review_study_pipeline_rejects_packet_output_collision(
                 exported_at="2026-07-07T14:00:00Z",
                 exporter_id="review-ops-a",
                 redaction_statement="No PHI or raw patient text included.",
+                study_evidence_kind="real_shadow_review",
             ),
         )
 
@@ -158,6 +208,7 @@ def test_shadow_review_study_pipeline_removes_staged_artifacts_after_failure(
                 exported_at="2026-07-07T14:00:00Z",
                 exporter_id="review-ops-a",
                 redaction_statement="No PHI or raw patient text included.",
+                study_evidence_kind="real_shadow_review",
             ),
         )
 
@@ -186,6 +237,14 @@ def _machine_packet() -> dict[str, object]:
     return _machine_packet_for_completed_packet(_completed_packet_payload())
 
 
+def _selection_only_completed_packet() -> dict[str, object]:
+    packet = _completed_packet_payload()
+    packet["study_type"] = "selection_relevance"
+    packet["completion_required_fields"] = packet["completion_required_fields"][:4]
+    packet["review_ranking_forms"] = []
+    return packet
+
+
 def _machine_packet_for_completed_packet(
     completed_packet: dict[str, object],
 ) -> dict[str, object]:
@@ -194,8 +253,8 @@ def _machine_packet_for_completed_packet(
     selection_form["reviewer_id"] = None
     selection_form["human_selected_record_ids"] = []
     selection_form["duplicate_suggestion_ids"] = []
-    selection_form["explanation_quality_score"] = None
-    selection_form["high_severity_overclaim_count"] = None
+    selection_form["explanation_assessment"] = None
+    selection_form["high_severity_overclaim_findings"] = None
     selection_form["reviewer_notes"] = None
     for ranking_form in packet["review_ranking_forms"]:
         ranking_form["outcome"] = None
@@ -211,8 +270,9 @@ def _machine_packet_for_completed_packet(
 
 def _completed_packet_payload() -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_shadow_review_packet.v1",
+        "schema_version": "evidence_selection_shadow_review_packet.v2",
         "study_id": "shadow-study-2026-07-07",
+        "study_type": "selection_and_review_ranking",
         "source_run_id": _RUN_ID,
         "goal": _GOAL,
         "production_readiness_claim": False,
@@ -220,8 +280,8 @@ def _completed_packet_payload() -> dict[str, object]:
         "completion_required_fields": [
             "selection_review_forms[].reviewer_id",
             "selection_review_forms[].human_selected_record_ids",
-            "selection_review_forms[].explanation_quality_score",
-            "selection_review_forms[].high_severity_overclaim_count",
+            "selection_review_forms[].explanation_assessment",
+            "selection_review_forms[].high_severity_overclaim_findings",
             "review_ranking_forms[].reviewer_id",
             "review_ranking_forms[].outcome",
         ],
@@ -239,8 +299,10 @@ def _completed_packet_payload() -> dict[str, object]:
                 "harness_deferred_record_ids": [],
                 "human_selected_record_ids": ["pubmed:search-1:0"],
                 "duplicate_suggestion_ids": [],
-                "explanation_quality_score": 5,
-                "high_severity_overclaim_count": 0,
+                "explanation_assessment": (
+                    adequate_explanation_assessment().model_dump(mode="json")
+                ),
+                "high_severity_overclaim_findings": [],
                 "reviewer_notes": "Specific relation with direct support.",
             },
         ],

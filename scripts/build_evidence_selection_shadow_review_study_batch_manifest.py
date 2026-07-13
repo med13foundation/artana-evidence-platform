@@ -65,14 +65,24 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--adjudication-note",
-        required=True,
-        help="Human adjudication note applied to each batch entry.",
+        default=None,
+        help="Required when any packet is selection_and_review_ranking.",
     )
     parser.add_argument("--source-system", required=True)
     parser.add_argument("--export-id-prefix", required=True)
     parser.add_argument("--exported-at", required=True)
     parser.add_argument("--exporter-id", required=True)
     parser.add_argument("--redaction-statement", required=True)
+    parser.add_argument(
+        "--study-evidence-kind",
+        choices=(
+            "real_shadow_review",
+            "ai_reviewer_simulation",
+            "synthetic_fixture",
+        ),
+        required=True,
+        help="Explicit origin of the review labels in every packet.",
+    )
     parser.add_argument("--description", default=None)
     return parser.parse_args(argv)
 
@@ -110,6 +120,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 exported_at=args.exported_at,
                 exporter_id=args.exporter_id,
                 redaction_statement=args.redaction_statement,
+                study_evidence_kind=args.study_evidence_kind,
                 description=args.description,
             ),
         )
@@ -132,7 +143,9 @@ def _validate_output_path(*, output_path: Path, packet_paths: tuple[Path, ...]) 
             msg = "Batch manifest output must not overwrite source packet."
             raise ValueError(msg)
     if output_path.exists() and output_path.is_dir():
-        msg = f"Batch manifest output must be a file path, not a directory: {output_path}"
+        msg = (
+            f"Batch manifest output must be a file path, not a directory: {output_path}"
+        )
         raise ValueError(msg)
     output_parent = output_path.parent
     if output_parent.exists() and not output_parent.is_dir():

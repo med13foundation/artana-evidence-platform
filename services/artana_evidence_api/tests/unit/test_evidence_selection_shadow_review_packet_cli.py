@@ -38,7 +38,7 @@ def test_shadow_review_packet_cli_writes_collection_packet(tmp_path: Path) -> No
 
     assert exit_code == 0
     packet = json.loads(output_path.read_text())
-    assert packet["schema_version"] == "evidence_selection_shadow_review_packet.v1"
+    assert packet["schema_version"] == "evidence_selection_shadow_review_packet.v2"
     assert packet["source_run_id"] == _RUN_ID
     assert packet["production_readiness_claim"] is False
     assert packet["machine_packet_sha256"]

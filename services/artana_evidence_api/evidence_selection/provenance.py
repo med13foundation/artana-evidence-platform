@@ -26,13 +26,6 @@ _SOURCE_ARTIFACT_KINDS: tuple[EvidenceSelectionExpertStudySourceArtifactKind, ..
     "review_ranking_export",
     "adjudication_log",
 )
-_REQUIRED_SOURCE_ARTIFACT_KINDS: tuple[
-    EvidenceSelectionExpertStudySourceArtifactKind,
-    ...,
-] = (
-    "selection_review_export",
-    "review_ranking_export",
-)
 
 
 def validate_source_identity_text(value: str) -> str:
@@ -66,16 +59,15 @@ def parse_canonical_source_exported_at(
         isinstance(value, str)
         and _CANONICAL_SOURCE_EXPORTED_AT_RE.fullmatch(value) is None
     ):
-        msg = (
-            f"{field_name} must use canonical UTC format "
-            f"{SOURCE_EXPORTED_AT_FORMAT}."
-        )
+        msg = f"{field_name} must use canonical UTC format {SOURCE_EXPORTED_AT_FORMAT}."
         raise ValueError(msg)
     return parsed.astimezone(UTC)
 
 
 def _parse_source_exported_at_string(*, value: str, field_name: str) -> datetime:
-    normalized_value = value.removesuffix("Z") + "+00:00" if value.endswith("Z") else value
+    normalized_value = (
+        value.removesuffix("Z") + "+00:00" if value.endswith("Z") else value
+    )
     try:
         return datetime.fromisoformat(normalized_value)
     except ValueError as exc:
@@ -158,7 +150,9 @@ class EvidenceSelectionExpertStudySourceManifest(BaseModel):
     @classmethod
     def _accept_json_run_id_array(cls, value: object) -> object:
         if isinstance(value, list):
-            return tuple(UUID(item) if isinstance(item, str) else item for item in value)
+            return tuple(
+                UUID(item) if isinstance(item, str) else item for item in value
+            )
         return value
 
     @field_validator("reviewer_roster")
@@ -182,6 +176,7 @@ def build_evidence_selection_provenance_summary(
     selection_run_ids: tuple[UUID, ...],
     review_ranking_decision_keys: tuple[str, ...],
     reviewer_ids: set[str],
+    require_review_ranking: bool = True,
 ) -> JSONObject:
     """Return stable provenance metrics for a study source manifest."""
 
@@ -200,16 +195,16 @@ def build_evidence_selection_provenance_summary(
                 duplicate_review_ranking_decision_keys
             ),
             expected_reviewer_ids=reviewer_ids,
+            require_review_ranking=require_review_ranking,
         )
     return _present_source_manifest_summary(
         source_manifest=source_manifest,
         expected_selection_run_id_set=expected_selection_run_id_set,
         duplicate_selection_run_ids=duplicate_selection_run_ids,
         expected_decision_key_set=expected_decision_key_set,
-        duplicate_review_ranking_decision_keys=(
-            duplicate_review_ranking_decision_keys
-        ),
+        duplicate_review_ranking_decision_keys=(duplicate_review_ranking_decision_keys),
         expected_reviewer_ids=reviewer_ids,
+        require_review_ranking=require_review_ranking,
     )
 
 
@@ -218,6 +213,7 @@ def source_manifest_blocking_reasons(
     provenance_summary: JSONObject,
     require_source_manifest: bool,
     min_source_artifact_count: int,
+    require_review_ranking: bool = True,
 ) -> tuple[str, ...]:
     """Return fail-closed reasons for source-manifest provenance gaps."""
 
@@ -243,7 +239,8 @@ def source_manifest_blocking_reasons(
         ),
     )
     reasons.extend(_source_selection_blocking_reasons(provenance_summary))
-    reasons.extend(_source_ranking_blocking_reasons(provenance_summary))
+    if require_review_ranking:
+        reasons.extend(_source_ranking_blocking_reasons(provenance_summary))
     if _int_from_json(provenance_summary, "unknown_reviewer_id_count") > 0:
         reasons.append(
             "Every study reviewer ID must be present in the source manifest "
@@ -259,6 +256,7 @@ def _missing_source_manifest_summary(
     expected_decision_keys: set[str],
     duplicate_review_ranking_decision_keys: tuple[str, ...],
     expected_reviewer_ids: set[str],
+    require_review_ranking: bool,
 ) -> JSONObject:
     return {
         "source_manifest_present": False,
@@ -269,7 +267,9 @@ def _missing_source_manifest_summary(
         "artifact_count": 0,
         "source_artifact_kind_counts": _empty_source_artifact_kind_counts(),
         "missing_required_source_artifact_kinds": list(
-            _REQUIRED_SOURCE_ARTIFACT_KINDS,
+            _required_source_artifact_kinds(
+                require_review_ranking=require_review_ranking,
+            ),
         ),
         "duplicate_source_artifact_id_count": 0,
         "duplicate_source_artifact_uri_count": 0,
@@ -311,6 +311,7 @@ def _present_source_manifest_summary(
     expected_decision_key_set: set[str],
     duplicate_review_ranking_decision_keys: tuple[str, ...],
     expected_reviewer_ids: set[str],
+    require_review_ranking: bool,
 ) -> JSONObject:
     manifest_selection_run_ids = set(source_manifest.selection_review_run_ids)
     manifest_decision_keys = set(source_manifest.review_ranking_decision_keys)
@@ -341,7 +342,9 @@ def _present_source_manifest_summary(
         "source_artifact_kind_counts": dict(artifact_kind_counts),
         "missing_required_source_artifact_kinds": [
             artifact_kind
-            for artifact_kind in _REQUIRED_SOURCE_ARTIFACT_KINDS
+            for artifact_kind in _required_source_artifact_kinds(
+                require_review_ranking=require_review_ranking,
+            )
             if artifact_kind_counts[artifact_kind] == 0
         ],
         "duplicate_source_artifact_id_count": len(_duplicate_strings(artifact_ids)),
@@ -411,7 +414,9 @@ def _present_source_manifest_summary(
         "reviewer_roster_count": len(manifest_reviewer_ids),
         "unknown_reviewer_id_count": len(expected_reviewer_ids - manifest_reviewer_ids),
         "unknown_reviewer_ids": sorted(expected_reviewer_ids - manifest_reviewer_ids),
-        "redaction_statement_present": bool(source_manifest.redaction_statement.strip()),
+        "redaction_statement_present": bool(
+            source_manifest.redaction_statement.strip()
+        ),
     }
 
 
@@ -443,6 +448,15 @@ def _source_artifact_blocking_reasons(
     if _int_from_json(provenance_summary, "duplicate_source_artifact_sha256_count") > 0:
         reasons.append("Source artifact SHA-256 hashes must be unique.")
     return tuple(reasons)
+
+
+def _required_source_artifact_kinds(
+    *,
+    require_review_ranking: bool,
+) -> tuple[EvidenceSelectionExpertStudySourceArtifactKind, ...]:
+    if require_review_ranking:
+        return ("selection_review_export", "review_ranking_export")
+    return ("selection_review_export",)
 
 
 def _source_selection_blocking_reasons(

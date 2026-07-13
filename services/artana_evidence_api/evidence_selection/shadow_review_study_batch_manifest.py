@@ -17,6 +17,9 @@ from artana_evidence_api.evidence_selection.shadow_review_completion import (
 from artana_evidence_api.evidence_selection.shadow_review_study_batch import (
     EvidenceSelectionShadowReviewStudyBatchManifest,
 )
+from artana_evidence_api.evidence_selection_validation import (
+    EvidenceSelectionExpertStudyEvidenceKind,
+)
 from artana_evidence_api.types.common import JSONObject, json_object
 from pydantic import ValidationError
 
@@ -30,12 +33,13 @@ class EvidenceSelectionShadowReviewStudyBatchManifestBuildRequest:
 
     batch_id: str
     packet_paths: tuple[Path, ...]
-    adjudication_note: str
     source_system: str
     export_id_prefix: str
     exported_at: str
     exporter_id: str
     redaction_statement: str
+    study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
+    adjudication_note: str | None = None
     manifest_path: Path | None = None
     description: str | None = None
     machine_packet_paths: tuple[Path, ...] | None = None
@@ -50,8 +54,7 @@ def build_evidence_selection_shadow_review_study_batch_manifest(
         msg = "At least one completed shadow-review packet is required."
         raise ValueError(msg)
     machine_packet_paths = request.machine_packet_paths or tuple(
-        machine_packet_sidecar_path(packet_path)
-        for packet_path in request.packet_paths
+        machine_packet_sidecar_path(packet_path) for packet_path in request.packet_paths
     )
     if len(machine_packet_paths) != len(request.packet_paths):
         msg = "Every completed shadow-review packet requires one machine packet path."
@@ -94,6 +97,7 @@ def build_evidence_selection_shadow_review_study_batch_manifest(
                 "exported_at": request.exported_at,
                 "exporter_id": request.exporter_id,
                 "redaction_statement": request.redaction_statement,
+                "study_evidence_kind": request.study_evidence_kind,
                 "description": request.description,
             },
         )
@@ -120,7 +124,7 @@ def _load_completed_packet(
     *,
     machine_packet_path: Path,
     packet_path: Path,
-    adjudication_note: str,
+    adjudication_note: str | None,
     description: str | None,
 ) -> JSONObject:
     machine_packet = _load_json_object(machine_packet_path)

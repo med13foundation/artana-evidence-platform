@@ -80,8 +80,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--allow-failed-gate",
         action="store_true",
         help=(
-            "Return success after writing reports even if an entry or suite gate "
-            "fails."
+            "Return success after writing reports even if an entry or suite gate fails."
         ),
     )
     _add_gate_threshold_args(parser)
@@ -331,8 +330,8 @@ def _add_gate_threshold_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--min-selection-reviewer-count", type=int, default=1)
     parser.add_argument("--min-mean-precision", type=float, default=0.8)
     parser.add_argument("--min-mean-recall", type=float, default=0.8)
-    parser.add_argument("--min-mean-explanation-quality", type=float, default=3.0)
-    parser.add_argument("--min-source-artifact-count", type=int, default=2)
+    parser.add_argument("--min-explanation-adequacy-rate", type=float, default=0.8)
+    parser.add_argument("--min-source-artifact-count", type=int, default=1)
     parser.add_argument("--min-review-ranking-sample-count", type=int, default=2)
     parser.add_argument("--max-expected-calibration-error", type=float, default=0.05)
     parser.add_argument("--min-distinct-ranking-goals", type=int, default=1)
@@ -344,9 +343,9 @@ def _add_gate_threshold_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--min-batch-mean-precision", type=float, default=0.8)
     parser.add_argument("--min-batch-mean-recall", type=float, default=0.8)
     parser.add_argument(
-        "--min-batch-mean-explanation-quality",
+        "--min-batch-explanation-adequacy-rate",
         type=float,
-        default=3.0,
+        default=0.8,
     )
     parser.add_argument(
         "--max-batch-expected-calibration-error",
@@ -379,7 +378,7 @@ def _thresholds_from_args(
         min_selection_reviewer_count=args.min_selection_reviewer_count,
         min_mean_precision=args.min_mean_precision,
         min_mean_recall=args.min_mean_recall,
-        min_mean_explanation_quality=args.min_mean_explanation_quality,
+        min_explanation_adequacy_rate=args.min_explanation_adequacy_rate,
         min_source_artifact_count=args.min_source_artifact_count,
         min_review_ranking_sample_count=args.min_review_ranking_sample_count,
         max_expected_calibration_error=args.max_expected_calibration_error,
@@ -398,13 +397,11 @@ def _suite_thresholds_from_args(
         min_passed_entry_rate=args.min_batch_passed_entry_rate,
         min_suite_mean_precision=args.min_batch_mean_precision,
         min_suite_mean_recall=args.min_batch_mean_recall,
-        min_suite_mean_explanation_quality=args.min_batch_mean_explanation_quality,
+        min_suite_explanation_adequacy_rate=(args.min_batch_explanation_adequacy_rate),
         max_suite_expected_calibration_error=(
             args.max_batch_expected_calibration_error
         ),
-        min_total_selection_review_count=(
-            args.min_batch_total_selection_review_count
-        ),
+        min_total_selection_review_count=(args.min_batch_total_selection_review_count),
         min_total_review_ranking_decision_count=(
             args.min_batch_total_review_ranking_decision_count
         ),
@@ -457,12 +454,15 @@ def _suite_gate_summary_rows(report: JSONObject) -> list[str]:
         ("passed_entry_count", "Passed entries"),
         ("failed_entry_count", "Failed entries"),
         ("passed_entry_rate", "Passed-entry rate"),
-        ("suite_mean_precision", "Suite mean precision"),
-        ("suite_mean_recall", "Suite mean recall"),
-        ("suite_mean_explanation_quality", "Suite explanation quality"),
+        ("suite_mean_precision", "Passed-entry production mean precision"),
+        ("suite_mean_recall", "Passed-entry production mean recall"),
+        (
+            "suite_explanation_adequacy_rate",
+            "Passed-entry production explanation adequacy rate",
+        ),
         (
             "max_review_ranking_expected_calibration_error",
-            "Max ranking ECE",
+            "Passed-entry production max ranking ECE",
         ),
         ("total_selection_review_count", "Total selection reviews"),
         (
@@ -475,10 +475,41 @@ def _suite_gate_summary_rows(report: JSONObject) -> list[str]:
         ("distinct_review_ranking_goal_count", "Distinct ranking goals"),
         ("distinct_evidence_shape_count", "Distinct evidence shapes"),
     )
-    return [
+    rows = [
         f"| {_table_text(label)} | {_table_text(summary.get(key))} |"
         for key, label in labels
         if key in summary
+    ]
+    rows.extend(
+        _quality_view_rows(
+            summary=summary,
+            key="all_entry_observed_quality",
+            label_prefix="All-entry observed",
+        ),
+    )
+    return rows
+
+
+def _quality_view_rows(
+    *,
+    summary: Mapping[str, object],
+    key: str,
+    label_prefix: str,
+) -> list[str]:
+    quality = summary.get(key)
+    if not isinstance(quality, dict):
+        return []
+    labels = (
+        ("suite_mean_precision", "mean precision"),
+        ("suite_mean_recall", "mean recall"),
+        ("suite_explanation_adequacy_rate", "explanation adequacy rate"),
+        ("max_review_ranking_expected_calibration_error", "max ranking ECE"),
+    )
+    return [
+        f"| {_table_text(f'{label_prefix} {label}')} | "
+        f"{_table_text(quality.get(metric))} |"
+        for metric, label in labels
+        if metric in quality
     ]
 
 
@@ -517,10 +548,9 @@ def _table_text(value: object) -> str:
 
 
 def _source_path_label(*, source_path: Path, manifest_path: Path | None) -> str:
-    if (
-        manifest_path is not None
-        and source_path.resolve(strict=False) == manifest_path.resolve(strict=False)
-    ):
+    if manifest_path is not None and source_path.resolve(
+        strict=False
+    ) == manifest_path.resolve(strict=False):
         return "manifest"
     return "source packet"
 

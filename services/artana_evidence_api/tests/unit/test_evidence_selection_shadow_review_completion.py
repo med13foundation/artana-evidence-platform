@@ -19,6 +19,8 @@ from artana_evidence_api.evidence_selection_validation import (
 )
 from pydantic import ValidationError
 
+from .evidence_selection_review_fixtures import adequate_explanation_assessment
+
 _RUN_ID = "00000000-0000-0000-0000-000000000048"
 _GOAL = "Review BRAF V600E treatment-response evidence."
 
@@ -49,8 +51,10 @@ def test_completed_packet_builds_source_export_inputs() -> None:
                 ],
                 "harness_skipped_record_ids": ["pubmed:search-1:1"],
                 "duplicate_suggestion_ids": ["pubmed:search-1:1"],
-                "explanation_quality_score": 4,
-                "high_severity_overclaim_count": 0,
+                "explanation_assessment": (
+                    adequate_explanation_assessment().model_dump(mode="json")
+                ),
+                "high_severity_overclaim_findings": [],
                 "reviewer_notes": "Selected the deferred ClinVar record as useful.",
                 "false_positive_notes": None,
                 "false_negative_notes": None,
@@ -100,6 +104,51 @@ def test_completed_packet_rejects_unknown_human_selected_record_id() -> None:
     packet["selection_review_forms"][0]["human_selected_record_ids"] = [
         "pubmed:search-1:0",
         "unknown:record",
+    ]
+
+    with pytest.raises(ValueError, match="unknown record id"):
+        completion.build_evidence_selection_shadow_review_source_inputs(
+            completion.EvidenceSelectionShadowReviewSourceInputRequest(
+                machine_packet=_machine_packet(),
+                packet=packet,
+                adjudication_note="Reviewer A completed labels.",
+            ),
+        )
+
+
+def test_completed_packet_rejects_explanation_citation_for_unknown_record() -> None:
+    completion = _completion_module()
+    packet = _completed_packet()
+    packet["selection_review_forms"][0]["explanation_assessment"] = (
+        adequate_explanation_assessment("unknown:record").model_dump(mode="json")
+    )
+
+    with pytest.raises(ValueError, match="unknown record id"):
+        completion.build_evidence_selection_shadow_review_source_inputs(
+            completion.EvidenceSelectionShadowReviewSourceInputRequest(
+                machine_packet=_machine_packet(),
+                packet=packet,
+                adjudication_note="Reviewer A completed labels.",
+            ),
+        )
+
+
+def test_completed_packet_rejects_overclaim_citation_for_unknown_record() -> None:
+    completion = _completion_module()
+    packet = _completed_packet()
+    packet["selection_review_forms"][0]["high_severity_overclaim_findings"] = [
+        {
+            "record_id": "pubmed:search-1:0",
+            "material_claim": "The intervention is universally safe.",
+            "reviewer_explanation": "The packet does not establish this claim.",
+            "cited_evidence": [
+                {
+                    "record_id": "unknown:record",
+                    "source_locator": "candidate:unknown:record:abstract",
+                    "quoted_text": "No matching source exists in this packet.",
+                },
+            ],
+        },
     ]
 
     with pytest.raises(ValueError, match="unknown record id"):
@@ -237,8 +286,10 @@ def _completed_packet() -> dict[str, object]:
         "clinvar:search-1:2",
     ]
     selection_form["duplicate_suggestion_ids"] = ["pubmed:search-1:1"]
-    selection_form["explanation_quality_score"] = 4
-    selection_form["high_severity_overclaim_count"] = 0
+    selection_form["explanation_assessment"] = (
+        adequate_explanation_assessment().model_dump(mode="json")
+    )
+    selection_form["high_severity_overclaim_findings"] = []
     selection_form["reviewer_notes"] = "Selected the deferred ClinVar record as useful."
     for index, ranking_form in enumerate(packet["review_ranking_forms"]):
         ranking_form["outcome"] = "positive" if index == 0 else "negative"
@@ -252,8 +303,8 @@ def _machine_packet() -> dict[str, object]:
     selection_form["reviewer_id"] = None
     selection_form["human_selected_record_ids"] = []
     selection_form["duplicate_suggestion_ids"] = []
-    selection_form["explanation_quality_score"] = None
-    selection_form["high_severity_overclaim_count"] = None
+    selection_form["explanation_assessment"] = None
+    selection_form["high_severity_overclaim_findings"] = None
     selection_form["reviewer_notes"] = None
     for ranking_form in packet["review_ranking_forms"]:
         ranking_form["outcome"] = None
@@ -267,8 +318,9 @@ def _machine_packet() -> dict[str, object]:
 
 def _packet_payload() -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_shadow_review_packet.v1",
+        "schema_version": "evidence_selection_shadow_review_packet.v2",
         "study_id": "shadow-study-2026-07-07",
+        "study_type": "selection_and_review_ranking",
         "source_run_id": _RUN_ID,
         "goal": _GOAL,
         "production_readiness_claim": False,
@@ -276,8 +328,8 @@ def _packet_payload() -> dict[str, object]:
         "completion_required_fields": [
             "selection_review_forms[].reviewer_id",
             "selection_review_forms[].human_selected_record_ids",
-            "selection_review_forms[].explanation_quality_score",
-            "selection_review_forms[].high_severity_overclaim_count",
+            "selection_review_forms[].explanation_assessment",
+            "selection_review_forms[].high_severity_overclaim_findings",
             "review_ranking_forms[].reviewer_id",
             "review_ranking_forms[].outcome",
         ],
@@ -299,8 +351,10 @@ def _packet_payload() -> dict[str, object]:
                     "clinvar:search-1:2",
                 ],
                 "duplicate_suggestion_ids": ["pubmed:search-1:1"],
-                "explanation_quality_score": 4,
-                "high_severity_overclaim_count": 0,
+                "explanation_assessment": (
+                    adequate_explanation_assessment().model_dump(mode="json")
+                ),
+                "high_severity_overclaim_findings": [],
                 "reviewer_notes": "Selected the deferred ClinVar record as useful.",
             },
         ],

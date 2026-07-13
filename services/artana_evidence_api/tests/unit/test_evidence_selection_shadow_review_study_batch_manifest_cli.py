@@ -16,6 +16,7 @@ from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_revi
 )
 from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_review_study_pipeline import (  # noqa: E501
     _machine_packet_for_completed_packet,
+    _selection_only_completed_packet,
 )
 
 
@@ -70,6 +71,8 @@ def test_shadow_review_study_batch_manifest_cli_writes_strict_manifest(
             "review-ops-a",
             "--redaction-statement",
             "No PHI or raw patient text included.",
+            "--study-evidence-kind",
+            "real_shadow_review",
             "--description",
             "Completed real shadow-review packet.",
         ),
@@ -77,7 +80,9 @@ def test_shadow_review_study_batch_manifest_cli_writes_strict_manifest(
 
     assert exit_code == 0
     manifest = json.loads(output_path.read_text(encoding="utf-8"))
-    assert manifest["schema_version"] == "evidence_selection_shadow_review_study_batch.v1"
+    assert (
+        manifest["schema_version"] == "evidence_selection_shadow_review_study_batch.v1"
+    )
     assert manifest["batch_id"] == "real-shadow-review-batch-2026-07-07"
     assert [entry["entry_id"] for entry in manifest["entries"]] == [
         "01-shadow-study-one",
@@ -127,6 +132,8 @@ def test_shadow_review_study_batch_manifest_cli_rejects_source_overwrite(
             "review-ops-a",
             "--redaction-statement",
             "No PHI or raw patient text included.",
+            "--study-evidence-kind",
+            "real_shadow_review",
         ),
     )
 
@@ -134,6 +141,45 @@ def test_shadow_review_study_batch_manifest_cli_rejects_source_overwrite(
     assert exit_code == 1
     assert "must not overwrite source packet" in captured.err
     assert packet_path.read_text(encoding="utf-8") == original_packet
+
+
+def test_shadow_review_study_batch_manifest_cli_accepts_selection_only_without_note(
+    tmp_path: Path,
+) -> None:
+    cli = _cli_module()
+    packet_path = _write_packet(
+        tmp_path,
+        "selection-only.json",
+        _selection_only_completed_packet(),
+    )
+    output_path = tmp_path / "selection-only-manifest.json"
+
+    exit_code = cli.main(
+        (
+            "--batch-id",
+            "selection-only-batch-2026-07-13",
+            "--packet",
+            str(packet_path),
+            "--output",
+            str(output_path),
+            "--source-system",
+            "artana-shadow-review",
+            "--export-id-prefix",
+            "selection-only-2026-07-13",
+            "--exported-at",
+            "2026-07-13T14:00:00Z",
+            "--exporter-id",
+            "review-ops-a",
+            "--redaction-statement",
+            "No PHI or raw patient text included.",
+            "--study-evidence-kind",
+            "real_shadow_review",
+        ),
+    )
+
+    assert exit_code == 0
+    manifest = json.loads(output_path.read_text(encoding="utf-8"))
+    assert manifest["entries"][0]["adjudication_note"] is None
 
 
 def _cli_module() -> object:

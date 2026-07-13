@@ -3140,6 +3140,35 @@ Reviewer/adversarial notes:
 The live report still flags `entailment_not_checked`,
 `relation_arguments_missing_from_sentence`, and `generic_relation_rate_high`.
 
+### 2026-07-13 - Categorical Shadow-Study Contracts
+
+Branch: `alvaro/evidence-shadow-study-categorical-contract`
+
+Evidence report:
+`docs/validation/reports/2026-07-13-pr-semantic-shadow-study-categorical-contract.md`
+
+Progress:
+
+- Review agents now return categorical findings, candidate-bound citations,
+  and explanations; deterministic code derives numeric quality metrics.
+- Selection-only studies no longer fabricate review-ranking evidence.
+- Production evidence origin is explicit, and AI/synthetic review cannot pass
+  the readiness gate.
+- Batch reports separate all observed entries from passed production entries.
+- Adversarial regressions cover contradictory overclaim declarations,
+  candidate binding, and all-selection and mixed-study suites.
+
+Remaining proof boundary:
+
+- `real_shadow_review` is still declared, not cryptographically attested.
+- Citation text and locators are not yet checked against immutable canonical
+  source bytes.
+- Source-manifest digests are not yet reverified by resolving artifacts at gate
+  time.
+- This contract work improves measurement integrity but does not change the
+  latest live trusted-graph precision, linking, specificity, or entailment
+  results.
+
 ## PR Update Template
 
 Copy this block when a PR is opened or merged.

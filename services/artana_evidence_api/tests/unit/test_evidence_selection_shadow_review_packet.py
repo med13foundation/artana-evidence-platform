@@ -71,7 +71,8 @@ def test_shadow_review_packet_creates_incomplete_human_label_forms() -> None:
     )
 
     payload = packet.model_dump(mode="json")
-    assert payload["schema_version"] == "evidence_selection_shadow_review_packet.v1"
+    assert payload["schema_version"] == "evidence_selection_shadow_review_packet.v2"
+    assert payload["study_type"] == "selection_and_review_ranking"
     assert payload["production_readiness_claim"] is False
     assert payload["completion_status"] == "requires_human_labels"
     assert "selection_reviews" not in payload
@@ -88,8 +89,8 @@ def test_shadow_review_packet_creates_incomplete_human_label_forms() -> None:
         f"clinvar:{_SEARCH_ID}:2",
     ]
     assert selection_form["human_selected_record_ids"] == []
-    assert selection_form["explanation_quality_score"] is None
-    assert selection_form["high_severity_overclaim_count"] is None
+    assert selection_form["explanation_assessment"] is None
+    assert selection_form["high_severity_overclaim_findings"] is None
     assert "selection_review_forms[].human_selected_record_ids" in payload[
         "completion_required_fields"
     ]
@@ -138,6 +139,29 @@ def test_shadow_review_packet_forms_do_not_validate_as_completed_expert_labels()
         )
 
 
+def test_shadow_packet_without_ranking_items_is_explicitly_selection_only() -> None:
+    packet_module = _packet_module()
+
+    packet = packet_module.build_evidence_selection_shadow_review_packet(
+        packet_module.EvidenceSelectionShadowReviewPacketRequest(
+            study_id="selection-only-study",
+            run_id=_RUN_ID,
+            goal=_GOAL,
+            selected_records=(
+                _decision(source_key="pubmed", decision="selected", record_index=0),
+            ),
+        ),
+    )
+    payload = packet.model_dump(mode="json")
+
+    assert payload["study_type"] == "selection_relevance"
+    assert payload["review_ranking_forms"] == []
+    assert all(
+        not field.startswith("review_ranking_forms")
+        for field in payload["completion_required_fields"]
+    )
+
+
 def test_shadow_review_packet_counts_shadow_mode_recommendations_as_harness_selected() -> None:
     packet_module = _packet_module()
 
@@ -183,8 +207,9 @@ def test_shadow_review_packet_schema_enforces_incomplete_collection_invariants()
     with pytest.raises(ValidationError):
         EvidenceSelectionShadowReviewPacket.model_validate(
             {
-                "schema_version": "evidence_selection_shadow_review_packet.v1",
+                "schema_version": "evidence_selection_shadow_review_packet.v2",
                 "study_id": "shadow-study-2026-07-07",
+                "study_type": "selection_relevance",
                 "source_run_id": _RUN_ID,
                 "goal": _GOAL,
                 "production_readiness_claim": True,

@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from .evidence_selection_review_fixtures import adequate_explanation_assessment
+
 
 def test_source_export_writer_cli_writes_both_exports(tmp_path: Path) -> None:
     cli = _cli_module()
@@ -17,6 +19,8 @@ def test_source_export_writer_cli_writes_both_exports(tmp_path: Path) -> None:
 
     exit_code = cli.main(
         (
+            "--study-type",
+            "selection_and_review_ranking",
             "--selection-reviews",
             str(selection_input_path),
             "--review-ranking",
@@ -43,6 +47,37 @@ def test_source_export_writer_cli_writes_both_exports(tmp_path: Path) -> None:
     assert json.loads(ranking_export_path.read_text())["review_ranking"]["decisions"]
 
 
+def test_source_export_writer_cli_writes_selection_only_export(tmp_path: Path) -> None:
+    cli = _cli_module()
+    selection_input_path, _ = _write_inputs(tmp_path)
+    selection_export_path = tmp_path / "selection-review-export.json"
+
+    exit_code = cli.main(
+        (
+            "--study-type",
+            "selection_relevance",
+            "--selection-reviews",
+            str(selection_input_path),
+            "--selection-export-output",
+            str(selection_export_path),
+            "--source-system",
+            "artana-shadow-review",
+            "--export-id",
+            "selection-export-2026-07-13",
+            "--exported-at",
+            "2026-07-13T07:00:00Z",
+            "--exporter-id",
+            "review-ops-a",
+            "--redaction-statement",
+            "No PHI or raw patient text included.",
+        ),
+    )
+
+    assert exit_code == 0
+    assert json.loads(selection_export_path.read_text())["selection_reviews"]
+    assert not (tmp_path / "review-ranking-export.json").exists()
+
+
 def test_source_export_writer_cli_rejects_invalid_identity_without_traceback(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -52,6 +87,8 @@ def test_source_export_writer_cli_rejects_invalid_identity_without_traceback(
 
     exit_code = cli.main(
         (
+            "--study-type",
+            "selection_and_review_ranking",
             "--selection-reviews",
             str(selection_input_path),
             "--review-ranking",
@@ -81,7 +118,9 @@ def test_source_export_writer_cli_rejects_invalid_identity_without_traceback(
 
 def _cli_module() -> object:
     try:
-        return importlib.import_module("scripts.build_evidence_selection_source_exports")
+        return importlib.import_module(
+            "scripts.build_evidence_selection_source_exports"
+        )
     except ModuleNotFoundError as exc:
         pytest.fail(f"source export writer CLI is missing: {exc}")
 
@@ -89,7 +128,9 @@ def _cli_module() -> object:
 def _write_inputs(tmp_path: Path) -> tuple[Path, Path]:
     selection_input_path = tmp_path / "selection-review-labels.json"
     ranking_input_path = tmp_path / "review-ranking-study.json"
-    selection_input_path.write_text(json.dumps({"selection_reviews": _selection_reviews()}))
+    selection_input_path.write_text(
+        json.dumps({"selection_reviews": _selection_reviews()})
+    )
     ranking_input_path.write_text(json.dumps(_review_ranking()))
     return selection_input_path, ranking_input_path
 
@@ -103,8 +144,10 @@ def _selection_reviews() -> list[dict[str, object]]:
             "harness_selected_record_ids": [f"record-{index}-a"],
             "human_selected_record_ids": [f"record-{index}-a"],
             "harness_skipped_record_ids": [f"record-{index}-b"],
-            "explanation_quality_score": 4,
-            "high_severity_overclaim_count": 0,
+            "explanation_assessment": (
+                adequate_explanation_assessment().model_dump(mode="json")
+            ),
+            "high_severity_overclaim_findings": [],
         }
         for index in range(3)
     ]

@@ -19,8 +19,21 @@ real shadow-mode human review before making any production-readiness claim.
   "duplicate_suggestion_ids": [],
   "false_positive_notes": {},
   "false_negative_notes": {},
-  "explanation_quality_score": 1,
-  "high_severity_overclaim_count": 0,
+  "explanation_assessment": {
+    "literal_citation_present": "yes",
+    "citation_entails_claim": "yes",
+    "all_required_criteria_addressed": "yes",
+    "unsupported_material_claim_present": "no",
+    "cited_evidence": [
+      {
+        "record_id": "",
+        "source_locator": "",
+        "quoted_text": ""
+      }
+    ],
+    "reviewer_explanation": ""
+  },
+  "high_severity_overclaim_findings": [],
   "reviewer_notes": ""
 }
 ```
@@ -34,10 +47,16 @@ Interpretation:
 - `false_positive_notes` and `false_negative_notes`: JSON objects keyed by the
   affected record ID, with a non-blank reviewer explanation as each value. Use
   an empty object when there are no findings of that kind.
-- `explanation_quality_score`: 1 is poor, 5 is excellent.
-- `high_severity_overclaim_count`: any clinical, regulatory, causal, or
-  graph-truth claim that goes beyond the source evidence. This must be zero as
-  a reviewer/process gate before production rollout.
+- `explanation_assessment`: atomic categorical findings, literal source text,
+  and the reviewer's reasoning. Do not author a numeric quality score. The
+  service derives `adequate`, `inadequate`, or `unclear` deterministically.
+- `citation_entails_claim`: use `unclear` when the cited text does not support a
+  confident yes/no judgment. `unclear` never counts as adequate.
+- `high_severity_overclaim_findings`: one structured item per clinical,
+  regulatory, causal, or graph-truth claim that goes beyond the source
+  evidence. The service derives the count; an empty list is required to pass.
+- Every cited `record_id`, including citations inside overclaim findings, must
+  exist in the producer-signed candidate packet.
 
 The service helper
 `artana_evidence_api.evidence_selection_validation.compare_evidence_selection_review`
@@ -101,17 +120,33 @@ uv run python scripts/build_evidence_selection_shadow_review_packet.py \
 ```
 
 The packet uses
-`schema_version: "evidence_selection_shadow_review_packet.v1"` and sets
+`schema_version: "evidence_selection_shadow_review_packet.v2"` and sets
 `production_readiness_claim: false`. It is a collection aid, not completed
 expert evidence. The command also writes
 `completed-shadow-review-packet.machine.json`, containing the producer-signed
 machine facts. Keep that sidecar under producer control and let reviewers edit
 only `completed-shadow-review-packet.json`. Reviewers must fill the required
-human selection labels, reviewer IDs, explanation-quality scores, overclaim
-counts, and positive/negative review-ranking outcomes before the data can be
-converted into the source-export inputs below.
+human selection labels, reviewer IDs, categorical explanation assessments,
+explicit overclaim findings, and, for combined studies, positive/negative
+review-ranking outcomes before conversion.
 
-Convert a completed packet into raw source-export writer inputs with:
+Packets are explicit about study scope:
+
+- `selection_relevance` measures source selection and requires no ranking data.
+- `selection_and_review_ranking` measures selection plus downstream ranking and
+  requires proposal/review-item outcomes and an adjudication note.
+
+Convert a completed selection-only packet into its raw writer input with:
+
+```bash
+uv run python scripts/build_evidence_selection_shadow_review_source_inputs.py \
+  --machine-packet path/to/completed-shadow-review-packet.machine.json \
+  --packet path/to/completed-shadow-review-packet.json \
+  --selection-reviews-output path/to/selection-review-labels.json
+```
+
+For a combined selection-and-ranking packet, add the ranking output and
+adjudication note:
 
 ```bash
 uv run python scripts/build_evidence_selection_shadow_review_source_inputs.py \
@@ -126,9 +161,9 @@ This conversion step is still not a readiness claim. It only creates the strict
 selection-review label file and review-ranking study file that the source-export
 writer consumes next.
 
-For a complete expert/shadow study, store selection reviews and review-ranking
-decisions as self-describing source exports. The selection-review export shape
-is:
+For a complete expert/shadow study, store selection reviews and any required
+review-ranking decisions as self-describing source exports. The
+selection-review export shape is:
 
 ```json
 {
@@ -161,16 +196,31 @@ The review-ranking export shape is:
 }
 ```
 
-The two source exports must have matching `source_system`, `export_id`,
+For combined studies, the two source exports must have matching `source_system`, `export_id`,
 `exported_at`, `exporter_id`, and `redaction_statement` values. The
 `exported_at` value must be canonical UTC ISO-8601 with a trailing `Z`, such as
 `2026-07-07T00:00:00Z`; timezone-naive values and offset spellings such as
 `+00:00` or `+01:00` are rejected. Identity text fields are compared literally
 and must not contain leading or trailing whitespace. Build the source exports
-from collected review JSON with:
+from collected review JSON. For a selection-only study:
 
 ```bash
 uv run python scripts/build_evidence_selection_source_exports.py \
+  --study-type selection_relevance \
+  --selection-reviews path/to/selection-review-labels.json \
+  --selection-export-output path/to/selection-review-export.json \
+  --source-system artana-shadow-review \
+  --export-id <export-id> \
+  --exported-at 2026-07-07T00:00:00Z \
+  --exporter-id <exporter-id> \
+  --redaction-statement "No PHI or raw patient text included."
+```
+
+For a combined study:
+
+```bash
+uv run python scripts/build_evidence_selection_source_exports.py \
+  --study-type selection_and_review_ranking \
   --selection-reviews path/to/selection-review-labels.json \
   --review-ranking path/to/review-ranking-study.json \
   --selection-export-output path/to/selection-review-export.json \
@@ -182,16 +232,20 @@ uv run python scripts/build_evidence_selection_source_exports.py \
   --redaction-statement "No PHI or raw patient text included."
 ```
 
-Then build the final study bundle with:
+Then build the final combined-study bundle with:
 
 ```bash
 uv run python scripts/build_evidence_selection_expert_study_bundle.py \
   --study-id <study-id> \
+  --study-type selection_and_review_ranking \
   --study-evidence-kind real_shadow_review \
   --selection-reviews path/to/selection-review-export.json \
   --review-ranking path/to/review-ranking-export.json \
   --output path/to/evidence-selection-expert-study.json
 ```
+
+For a selection-only bundle, use `--study-type selection_relevance` and omit
+both `--review-ranking` and `--review-ranking-uri`.
 
 `--source-system`, `--export-id`, `--exported-at`, `--exporter-id`, and
 `--redaction-statement` are optional compatibility checks only. When supplied,
@@ -201,7 +255,10 @@ in both source exports.
 Run `scripts/run_evidence_selection_expert_study_gate.py` on the bundle before
 using the study to support a production-readiness claim. Use
 `study_evidence_kind: "synthetic_fixture"` for mechanics fixtures; those bundles
-must fail the production-style study gate.
+must fail the production-style study gate. Every artifact and batch command
+requires the evidence kind explicitly; none defaults to `real_shadow_review`.
+The declaration prevents accidental promotion but does not replace signed
+reviewer attestation.
 
 The generated `source_manifest` must describe the real export used to create
 the bundle. The builder computes lowercase 64-character SHA-256 hashes for each
@@ -220,14 +277,17 @@ uv run python scripts/build_evidence_selection_shadow_review_study_batch_manifes
   --packet path/to/completed-shadow-review-packet-1.json \
   --packet path/to/completed-shadow-review-packet-2.json \
   --packet path/to/completed-shadow-review-packet-3.json \
+  --study-evidence-kind real_shadow_review \
   --output path/to/shadow-review-study-batch-manifest.json \
-  --adjudication-note "Reviewer adjudicated every packet." \
   --source-system artana-shadow-review \
   --export-id-prefix <export-id-prefix> \
   --exported-at 2026-07-07T00:00:00Z \
   --exporter-id <exporter-id> \
   --redaction-statement "No PHI or raw patient text included."
 ```
+
+Add `--adjudication-note` when the batch contains any
+`selection_and_review_ranking` packet. Selection-only batches do not require it.
 
 Then run:
 

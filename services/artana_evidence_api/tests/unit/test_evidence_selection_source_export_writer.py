@@ -13,6 +13,8 @@ from artana_evidence_api.evidence_selection.study_bundle import (
     build_evidence_selection_expert_study_bundle,
 )
 
+from .evidence_selection_review_fixtures import adequate_explanation_assessment
+
 
 def test_source_export_writer_creates_builder_ready_exports(tmp_path: Path) -> None:
     writer = _writer_module()
@@ -51,6 +53,7 @@ def test_source_export_writer_creates_builder_ready_exports(tmp_path: Path) -> N
     bundle = build_evidence_selection_expert_study_bundle(
         EvidenceSelectionExpertStudyBundleRequest(
             study_id="shadow-study-2026-07-07",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="synthetic_fixture",
             selection_reviews_path=selection_export_path,
             review_ranking_path=ranking_export_path,
@@ -334,8 +337,10 @@ def _selection_reviews() -> list[dict[str, object]]:
                 f"record-{index}-b",
             ],
             "harness_skipped_record_ids": [f"record-{index}-c"],
-            "explanation_quality_score": 4,
-            "high_severity_overclaim_count": 0,
+            "explanation_assessment": (
+                adequate_explanation_assessment().model_dump(mode="json")
+            ),
+            "high_severity_overclaim_findings": [],
         }
         for index, goal in enumerate(goals)
     ]

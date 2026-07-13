@@ -22,6 +22,9 @@ from artana_evidence_api.evidence_selection.shadow_review_study_batch_validation
     EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
 )
 from artana_evidence_api.evidence_selection.shadow_review_study_batch_validation import (
+    shadow_review_study_batch_suite_thresholds_to_json as _suite_thresholds_to_json,
+)
+from artana_evidence_api.evidence_selection.shadow_review_study_batch_validation import (
     validate_shadow_review_study_batch_suite_thresholds as _validate_suite_thresholds,
 )
 from artana_evidence_api.evidence_selection.shadow_review_study_pipeline import (
@@ -30,6 +33,7 @@ from artana_evidence_api.evidence_selection.shadow_review_study_pipeline import 
     build_evidence_selection_shadow_review_study_artifacts,
 )
 from artana_evidence_api.evidence_selection_validation import (
+    EvidenceSelectionExpertStudyEvidenceKind,
     EvidenceSelectionExpertStudyGateThresholds,
     EvidenceSelectionExpertStudyInput,
     ReviewRankingCalibrationGateThresholds,
@@ -60,12 +64,13 @@ class EvidenceSelectionShadowReviewStudyBatchEntry(BaseModel):
     machine_packet_path: Path | None = None
     packet_path: Path
     output_subdir: str
-    adjudication_note: str
+    adjudication_note: str | None = None
     source_system: str
     export_id: str
     exported_at: str
     exporter_id: str
     redaction_statement: str
+    study_evidence_kind: EvidenceSelectionExpertStudyEvidenceKind
     description: str | None = None
 
     @field_validator("machine_packet_path", "packet_path", mode="before")
@@ -82,7 +87,6 @@ class EvidenceSelectionShadowReviewStudyBatchEntry(BaseModel):
 
     @field_validator(
         "entry_id",
-        "adjudication_note",
         "source_system",
         "export_id",
         "exported_at",
@@ -95,7 +99,25 @@ class EvidenceSelectionShadowReviewStudyBatchEntry(BaseModel):
             msg = "Batch manifest text fields must not be blank."
             raise ValueError(msg)
         if value != value.strip():
-            msg = "Batch manifest text fields must not have leading/trailing whitespace."
+            msg = (
+                "Batch manifest text fields must not have leading/trailing whitespace."
+            )
+            raise ValueError(msg)
+        return value
+
+    @field_validator("adjudication_note")
+    @classmethod
+    def _reject_blank_or_padded_adjudication_note(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+        if not value.strip():
+            msg = "adjudication_note must not be blank when provided."
+            raise ValueError(msg)
+        if value != value.strip():
+            msg = "adjudication_note must not have leading/trailing whitespace."
             raise ValueError(msg)
         return value
 
@@ -193,8 +215,8 @@ class EvidenceSelectionShadowReviewStudyBatchThresholds:
     min_selection_reviewer_count: int = 1
     min_mean_precision: float = 0.8
     min_mean_recall: float = 0.8
-    min_mean_explanation_quality: float = 3.0
-    min_source_artifact_count: int = 2
+    min_explanation_adequacy_rate: float = 0.8
+    min_source_artifact_count: int = 1
     min_review_ranking_sample_count: int = 2
     max_expected_calibration_error: float = 0.05
     min_distinct_ranking_goals: int = 1
@@ -210,15 +232,15 @@ _PRODUCTION_SUITE_THRESHOLD_FLOORS = (
 class _BatchQualityMetrics:
     suite_mean_precision: float
     suite_mean_recall: float
-    suite_mean_explanation_quality: float
+    suite_explanation_adequacy_rate: float
     max_review_ranking_expected_calibration_error: float
 
     def to_json(self) -> JSONObject:
         return {
             "suite_mean_precision": round(self.suite_mean_precision, 4),
             "suite_mean_recall": round(self.suite_mean_recall, 4),
-            "suite_mean_explanation_quality": round(
-                self.suite_mean_explanation_quality,
+            "suite_explanation_adequacy_rate": round(
+                self.suite_explanation_adequacy_rate,
                 4,
             ),
             "max_review_ranking_expected_calibration_error": round(
@@ -285,10 +307,16 @@ class EvidenceSelectionShadowReviewStudyBatchEntryResult:
             "source_artifact_count": self.artifact_result.source_artifact_count,
             "paths": {
                 "selection_reviews": str(self.artifact_result.selection_reviews_path),
-                "review_ranking": str(self.artifact_result.review_ranking_path),
+                "review_ranking": (
+                    str(self.artifact_result.review_ranking_path)
+                    if self.artifact_result.review_ranking_path is not None
+                    else None
+                ),
                 "selection_export": str(self.artifact_result.selection_export_path),
-                "review_ranking_export": str(
-                    self.artifact_result.review_ranking_export_path,
+                "review_ranking_export": (
+                    str(self.artifact_result.review_ranking_export_path)
+                    if self.artifact_result.review_ranking_export_path is not None
+                    else None
                 ),
                 "bundle": str(self.artifact_result.bundle_path),
             },
@@ -428,6 +456,7 @@ def build_evidence_selection_shadow_review_study_batch(
                     exported_at=entry.exported_at,
                     exporter_id=entry.exporter_id,
                     redaction_statement=entry.redaction_statement,
+                    study_evidence_kind=entry.study_evidence_kind,
                     description=entry.description,
                 ),
             )
@@ -489,22 +518,26 @@ def build_evidence_selection_shadow_review_study_batch_suite_gate(
         entry.artifact_result.selection_review_count for entry in passed_entries
     )
     total_review_ranking_decision_count = sum(
-        entry.artifact_result.review_ranking_decision_count
-        for entry in passed_entries
+        entry.artifact_result.review_ranking_decision_count for entry in passed_entries
     )
-    quality_metrics = _batch_quality_metrics(passed_entries)
+    all_entry_quality_metrics = _batch_quality_metrics(entries)
+    production_quality_metrics = _batch_quality_metrics(passed_entries)
     selection_goals = _batch_selection_goals(passed_entries)
     review_ranking_goals, evidence_shapes = _batch_review_ranking_labels(passed_entries)
     source_outcomes = _batch_review_ranking_source_outcomes(passed_entries)
     source_run_ids, study_ids = _batch_study_identity_labels(passed_entries)
+    combined_study_count = _combined_study_count(passed_entries)
     summary: JSONObject = {
         "entry_count": len(entries),
         "passed_entry_count": passed_entry_count,
         "failed_entry_count": failed_entry_count,
         "passed_entry_rate": round(passed_entry_rate, 4),
-        **quality_metrics.to_json(),
+        **production_quality_metrics.to_json(),
+        "all_entry_observed_quality": all_entry_quality_metrics.to_json(),
+        "passed_entry_production_quality": production_quality_metrics.to_json(),
         "total_selection_review_count": total_selection_review_count,
         "total_review_ranking_decision_count": total_review_ranking_decision_count,
+        "combined_study_count": combined_study_count,
         "distinct_source_run_id_count": len(source_run_ids),
         "distinct_study_id_count": len(study_ids),
         "distinct_selection_goal_count": len(selection_goals),
@@ -518,7 +551,7 @@ def build_evidence_selection_shadow_review_study_batch_suite_gate(
     blocking_reasons = _batch_suite_blocking_reasons(
         summary=summary,
         raw_passed_entry_rate=passed_entry_rate,
-        raw_quality_metrics=quality_metrics,
+        production_quality_metrics=production_quality_metrics,
         source_outcomes=source_outcomes,
         thresholds=effective_thresholds,
     )
@@ -553,7 +586,7 @@ def build_evidence_selection_shadow_review_study_gate_report(
             min_selection_reviewer_count=thresholds.min_selection_reviewer_count,
             min_mean_precision=thresholds.min_mean_precision,
             min_mean_recall=thresholds.min_mean_recall,
-            min_mean_explanation_quality=thresholds.min_mean_explanation_quality,
+            min_explanation_adequacy_rate=(thresholds.min_explanation_adequacy_rate),
             min_source_artifact_count=thresholds.min_source_artifact_count,
         ),
         review_ranking_thresholds=ReviewRankingCalibrationGateThresholds(
@@ -614,9 +647,9 @@ def _production_suite_thresholds(
             thresholds.min_suite_mean_recall,
             floors.min_suite_mean_recall,
         ),
-        min_suite_mean_explanation_quality=max(
-            thresholds.min_suite_mean_explanation_quality,
-            floors.min_suite_mean_explanation_quality,
+        min_suite_explanation_adequacy_rate=max(
+            thresholds.min_suite_explanation_adequacy_rate,
+            floors.min_suite_explanation_adequacy_rate,
         ),
         max_suite_expected_calibration_error=min(
             thresholds.max_suite_expected_calibration_error,
@@ -651,36 +684,6 @@ def _production_suite_thresholds(
             floors.min_distinct_evidence_shapes,
         ),
     )
-
-
-def _suite_thresholds_to_json(
-    thresholds: EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
-) -> JSONObject:
-    return {
-        "min_entry_count": thresholds.min_entry_count,
-        "min_passed_entry_count": thresholds.min_passed_entry_count,
-        "max_failed_entry_count": thresholds.max_failed_entry_count,
-        "min_passed_entry_rate": thresholds.min_passed_entry_rate,
-        "min_suite_mean_precision": thresholds.min_suite_mean_precision,
-        "min_suite_mean_recall": thresholds.min_suite_mean_recall,
-        "min_suite_mean_explanation_quality": (
-            thresholds.min_suite_mean_explanation_quality
-        ),
-        "max_suite_expected_calibration_error": (
-            thresholds.max_suite_expected_calibration_error
-        ),
-        "min_total_selection_review_count": thresholds.min_total_selection_review_count,
-        "min_total_review_ranking_decision_count": (
-            thresholds.min_total_review_ranking_decision_count
-        ),
-        "min_distinct_source_run_ids": thresholds.min_distinct_source_run_ids,
-        "min_distinct_study_ids": thresholds.min_distinct_study_ids,
-        "min_distinct_selection_goals": thresholds.min_distinct_selection_goals,
-        "min_distinct_review_ranking_goals": (
-            thresholds.min_distinct_review_ranking_goals
-        ),
-        "min_distinct_evidence_shapes": thresholds.min_distinct_evidence_shapes,
-    }
 
 
 def _protected_manifest_paths(manifest_path: Path | None) -> tuple[Path, ...]:
@@ -730,10 +733,7 @@ def _validate_batch_artifact_source_collisions(
 
 
 def _source_path_label(*, source_path: Path, manifest_path: Path | None) -> str:
-    if (
-        manifest_path is not None
-        and paths_alias(source_path, manifest_path)
-    ):
+    if manifest_path is not None and paths_alias(source_path, manifest_path):
         return "manifest"
     return "source packet"
 
@@ -787,6 +787,8 @@ def _batch_review_ranking_labels(
         study_input = EvidenceSelectionExpertStudyInput.model_validate(
             _load_json_object(entry.artifact_result.bundle_path),
         )
+        if study_input.review_ranking is None:
+            continue
         for decision in study_input.review_ranking.decisions:
             if goal := _normalized_label(decision.goal):
                 goals.add(goal)
@@ -805,6 +807,8 @@ def _batch_review_ranking_source_outcomes(
         study_input = EvidenceSelectionExpertStudyInput.model_validate(
             _load_json_object(entry.artifact_result.bundle_path),
         )
+        if study_input.review_ranking is None:
+            continue
         for decision in study_input.review_ranking.decisions:
             source_outcomes[decision.source_kind].add(decision.outcome)
     return source_outcomes
@@ -816,7 +820,7 @@ def _batch_quality_metrics(
     total_review_count = 0
     weighted_precision = 0.0
     weighted_recall = 0.0
-    weighted_explanation_quality = 0.0
+    weighted_explanation_adequacy = 0.0
     max_expected_calibration_error = 0.0
     for entry in entries:
         gate = _object_value(entry.gate_report, "gate")
@@ -830,8 +834,8 @@ def _batch_quality_metrics(
             weighted_recall += (
                 _float_value(selection_summary.get("mean_recall")) * review_count
             )
-            weighted_explanation_quality += (
-                _float_value(selection_summary.get("mean_explanation_quality"))
+            weighted_explanation_adequacy += (
+                _float_value(selection_summary.get("explanation_adequacy_rate"))
                 * review_count
             )
         review_ranking_gate = _object_value(gate, "review_ranking_gate")
@@ -849,8 +853,8 @@ def _batch_quality_metrics(
             numerator=weighted_recall,
             denominator=total_review_count,
         ),
-        suite_mean_explanation_quality=_ratio(
-            numerator=weighted_explanation_quality,
+        suite_explanation_adequacy_rate=_ratio(
+            numerator=weighted_explanation_adequacy,
             denominator=total_review_count,
         ),
         max_review_ranking_expected_calibration_error=max_expected_calibration_error,
@@ -874,11 +878,24 @@ def _batch_study_identity_labels(
     return source_run_ids, study_ids
 
 
+def _combined_study_count(
+    entries: tuple[EvidenceSelectionShadowReviewStudyBatchEntryResult, ...],
+) -> int:
+    return sum(
+        1
+        for entry in entries
+        if EvidenceSelectionExpertStudyInput.model_validate(
+            _load_json_object(entry.artifact_result.bundle_path),
+        ).study_type
+        == "selection_and_review_ranking"
+    )
+
+
 def _batch_suite_blocking_reasons(
     *,
     summary: JSONObject,
     raw_passed_entry_rate: float,
-    raw_quality_metrics: _BatchQualityMetrics,
+    production_quality_metrics: _BatchQualityMetrics,
     source_outcomes: Mapping[str, set[str]],
     thresholds: EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
 ) -> tuple[str, ...]:
@@ -889,7 +906,7 @@ def _batch_suite_blocking_reasons(
             thresholds=thresholds,
         ),
         *_batch_suite_quality_blocking_reasons(
-            raw_quality_metrics=raw_quality_metrics,
+            raw_quality_metrics=production_quality_metrics,
             thresholds=thresholds,
         ),
         *_batch_suite_sample_blocking_reasons(
@@ -905,6 +922,7 @@ def _batch_suite_blocking_reasons(
             thresholds=thresholds,
         ),
         *_batch_suite_source_outcome_blocking_reasons(
+            summary=summary,
             source_outcomes=source_outcomes,
         ),
     )
@@ -923,13 +941,19 @@ def _batch_suite_entry_blocking_reasons(
             f"{thresholds.min_entry_count} batch entries are required for "
             "production study evidence.",
         )
-    if _int_value(summary.get("passed_entry_count")) < thresholds.min_passed_entry_count:
+    if (
+        _int_value(summary.get("passed_entry_count"))
+        < thresholds.min_passed_entry_count
+    ):
         reasons.append(
             "At least "
             f"{thresholds.min_passed_entry_count} batch entries must pass their "
             "expert-study gates.",
         )
-    if _int_value(summary.get("failed_entry_count")) > thresholds.max_failed_entry_count:
+    if (
+        _int_value(summary.get("failed_entry_count"))
+        > thresholds.max_failed_entry_count
+    ):
         reasons.append(
             "No more than "
             f"{thresholds.max_failed_entry_count} batch entries may fail their "
@@ -962,13 +986,13 @@ def _batch_suite_quality_blocking_reasons(
             f"{thresholds.min_suite_mean_recall:.6f}.",
         )
     if (
-        raw_quality_metrics.suite_mean_explanation_quality
-        < thresholds.min_suite_mean_explanation_quality
+        raw_quality_metrics.suite_explanation_adequacy_rate
+        < thresholds.min_suite_explanation_adequacy_rate
     ):
         reasons.append(
-            "Batch suite mean explanation quality is below target: "
-            f"{raw_quality_metrics.suite_mean_explanation_quality:.6f} < "
-            f"{thresholds.min_suite_mean_explanation_quality:.6f}.",
+            "Batch suite explanation adequacy rate is below target: "
+            f"{raw_quality_metrics.suite_explanation_adequacy_rate:.6f} < "
+            f"{thresholds.min_suite_explanation_adequacy_rate:.6f}.",
         )
     if (
         raw_quality_metrics.max_review_ranking_expected_calibration_error
@@ -999,7 +1023,8 @@ def _batch_suite_sample_blocking_reasons(
             "are required across passed batch entries.",
         )
     if (
-        _int_value(summary.get("total_review_ranking_decision_count"))
+        _int_value(summary.get("combined_study_count")) > 0
+        and _int_value(summary.get("total_review_ranking_decision_count"))
         < thresholds.min_total_review_ranking_decision_count
     ):
         reasons.append(
@@ -1053,7 +1078,8 @@ def _batch_suite_diversity_blocking_reasons(
             "are required across the batch.",
         )
     if (
-        _int_value(summary.get("distinct_review_ranking_goal_count"))
+        _int_value(summary.get("combined_study_count")) > 0
+        and _int_value(summary.get("distinct_review_ranking_goal_count"))
         < thresholds.min_distinct_review_ranking_goals
     ):
         reasons.append(
@@ -1062,7 +1088,8 @@ def _batch_suite_diversity_blocking_reasons(
             "goals are required across the batch.",
         )
     if (
-        _int_value(summary.get("distinct_evidence_shape_count"))
+        _int_value(summary.get("combined_study_count")) > 0
+        and _int_value(summary.get("distinct_evidence_shape_count"))
         < thresholds.min_distinct_evidence_shapes
     ):
         reasons.append(
@@ -1075,8 +1102,11 @@ def _batch_suite_diversity_blocking_reasons(
 
 def _batch_suite_source_outcome_blocking_reasons(
     *,
+    summary: JSONObject,
     source_outcomes: Mapping[str, set[str]],
 ) -> tuple[str, ...]:
+    if _int_value(summary.get("combined_study_count")) == 0:
+        return ()
     return tuple(
         f"At least one {outcome} reviewer outcome is required for source kind "
         f"{source_kind} across passed batch entries."

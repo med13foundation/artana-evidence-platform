@@ -21,8 +21,10 @@ from artana_evidence_api.evidence_selection.cli_errors import (
     cli_error_message,  # noqa: E402
 )
 from artana_evidence_api.evidence_selection.source_export_writer import (  # noqa: E402
+    EvidenceSelectionReviewExportWriteRequest,
     EvidenceSelectionSourceExportWriteRequest,
     EvidenceSelectionSourceExportWriterError,
+    write_evidence_selection_review_export,
     write_evidence_selection_source_exports,
 )
 
@@ -32,9 +34,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Build self-describing selection-review and review-ranking source "
-            "exports for an evidence-selection expert/shadow study."
+            "Build self-describing source exports for a selection-only or "
+            "selection-and-review-ranking expert/shadow study."
         ),
+    )
+    parser.add_argument(
+        "--study-type",
+        choices=("selection_relevance", "selection_and_review_ranking"),
+        required=True,
     )
     parser.add_argument(
         "--selection-reviews",
@@ -45,8 +52,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--review-ranking",
         type=Path,
-        required=True,
-        help="JSON review-ranking calibration study input.",
+        default=None,
+        help="Required only for selection_and_review_ranking studies.",
     )
     parser.add_argument(
         "--selection-export-output",
@@ -57,8 +64,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--review-ranking-export-output",
         type=Path,
-        required=True,
-        help="Output path for the self-describing review-ranking export.",
+        default=None,
+        help="Required only for selection_and_review_ranking studies.",
     )
     parser.add_argument("--source-system", required=True)
     parser.add_argument("--export-id", required=True)
@@ -77,12 +84,33 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     args = parse_args(argv)
     try:
-        result = write_evidence_selection_source_exports(
-            EvidenceSelectionSourceExportWriteRequest(
+        selection_review_count, review_ranking_decision_count = _write_exports(args)
+    except (EvidenceSelectionSourceExportWriterError, ValidationError) as exc:
+        print(f"error: {cli_error_message(exc)}", file=sys.stderr)
+        return 1
+    print(
+        "evidence_selection_source_exports "
+        f"selection_reviews={selection_review_count} "
+        f"review_ranking_decisions={review_ranking_decision_count}",
+    )
+    print(f"Wrote selection-review export: {args.selection_export_output}")
+    if args.review_ranking_export_output is not None:
+        print(f"Wrote review-ranking export: {args.review_ranking_export_output}")
+    return 0
+
+
+def _write_exports(args: argparse.Namespace) -> tuple[int, int]:
+    if args.study_type == "selection_relevance":
+        if (
+            args.review_ranking is not None
+            or args.review_ranking_export_output is not None
+        ):
+            msg = "selection_relevance studies must not set review-ranking paths."
+            raise EvidenceSelectionSourceExportWriterError(msg)
+        selection_result = write_evidence_selection_review_export(
+            EvidenceSelectionReviewExportWriteRequest(
                 selection_reviews_path=args.selection_reviews,
-                review_ranking_path=args.review_ranking,
                 selection_export_path=args.selection_export_output,
-                review_ranking_export_path=args.review_ranking_export_output,
                 source_system=args.source_system,
                 export_id=args.export_id,
                 exported_at=args.exported_at,
@@ -90,17 +118,30 @@ def main(argv: Sequence[str] | None = None) -> int:
                 redaction_statement=args.redaction_statement,
             ),
         )
-    except (EvidenceSelectionSourceExportWriterError, ValidationError) as exc:
-        print(f"error: {cli_error_message(exc)}", file=sys.stderr)
-        return 1
-    print(
-        "evidence_selection_source_exports "
-        f"selection_reviews={result.selection_review_count} "
-        f"review_ranking_decisions={result.review_ranking_decision_count}",
+        return selection_result.selection_review_count, 0
+    if args.review_ranking is None or args.review_ranking_export_output is None:
+        msg = (
+            "selection_and_review_ranking studies require --review-ranking and "
+            "--review-ranking-export-output."
+        )
+        raise EvidenceSelectionSourceExportWriterError(msg)
+    combined_result = write_evidence_selection_source_exports(
+        EvidenceSelectionSourceExportWriteRequest(
+            selection_reviews_path=args.selection_reviews,
+            review_ranking_path=args.review_ranking,
+            selection_export_path=args.selection_export_output,
+            review_ranking_export_path=args.review_ranking_export_output,
+            source_system=args.source_system,
+            export_id=args.export_id,
+            exported_at=args.exported_at,
+            exporter_id=args.exporter_id,
+            redaction_statement=args.redaction_statement,
+        ),
     )
-    print(f"Wrote selection-review export: {result.selection_export_path}")
-    print(f"Wrote review-ranking export: {result.review_ranking_export_path}")
-    return 0
+    return (
+        combined_result.selection_review_count,
+        combined_result.review_ranking_decision_count,
+    )
 
 
 if __name__ == "__main__":

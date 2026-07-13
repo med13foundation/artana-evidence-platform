@@ -14,6 +14,8 @@ from scripts.run_evidence_selection_expert_study_gate import (
     build_evidence_selection_expert_study_gate_report,
 )
 
+from .evidence_selection_review_fixtures import adequate_explanation_assessment
+
 
 def test_expert_study_bundle_builder_cli_writes_gate_compatible_bundle(
     tmp_path: Path,
@@ -31,7 +33,7 @@ def test_expert_study_bundle_builder_cli_writes_gate_compatible_bundle(
 
     assert exit_code == 0
     payload = json.loads(output_path.read_text())
-    assert payload["schema_version"] == "evidence_selection_expert_study.v1"
+    assert payload["schema_version"] == "evidence_selection_expert_study.v2"
     assert payload["study_evidence_kind"] == "synthetic_fixture"
     assert payload["source_manifest"]["source_artifacts"] == [
         {
@@ -416,6 +418,8 @@ def _base_args(
     args = [
         "--study-id",
         "shadow-study-2026-07-07",
+        "--study-type",
+        "selection_and_review_ranking",
         "--study-evidence-kind",
         "synthetic_fixture",
         "--selection-reviews",
@@ -450,6 +454,8 @@ def _base_args_without_source_identity(
     args = [
         "--study-id",
         "shadow-study-2026-07-07",
+        "--study-type",
+        "selection_and_review_ranking",
         "--study-evidence-kind",
         "synthetic_fixture",
         "--selection-reviews",
@@ -474,7 +480,9 @@ def _write_source_exports(
     selection_path = tmp_path / "selection-reviews.json"
     ranking_path = tmp_path / "review-ranking.json"
     adjudication_path = tmp_path / "adjudication-log.txt"
-    selection_path.write_text(json.dumps(selection_export or _selection_review_export()))
+    selection_path.write_text(
+        json.dumps(selection_export or _selection_review_export())
+    )
     ranking_path.write_text(json.dumps(ranking_export or _review_ranking_export()))
     if include_adjudication:
         adjudication_path.write_text("reviewer-a accepted all calibration labels\n")
@@ -527,8 +535,10 @@ def _selection_reviews() -> list[dict[str, object]]:
                 f"record-{index}-b",
             ],
             "harness_skipped_record_ids": [f"record-{index}-c"],
-            "explanation_quality_score": 4,
-            "high_severity_overclaim_count": 0,
+            "explanation_assessment": (
+                adequate_explanation_assessment().model_dump(mode="json")
+            ),
+            "high_severity_overclaim_findings": [],
         }
         for index, goal in enumerate(goals)
     ]

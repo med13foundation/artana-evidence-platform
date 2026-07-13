@@ -35,7 +35,7 @@ Useful metrics:
 - provenance completeness;
 - reviewer agreement;
 - high-severity overclaim count;
-- quality of selection and skip reasons.
+- categorical explanation adequacy derived from cited findings.
 
 High-severity overclaiming must be zero before calling the harness
 production-ready. This is a reviewer/process gate, not just an automated metric:
@@ -56,15 +56,23 @@ For each run, compare:
 - false positives;
 - false negatives;
 - duplicate suggestions;
-- explanation quality.
+- literal citations, entailment, criteria coverage, and unsupported claims.
 
 Use `docs/validation/evidence-selection-review-template.md` to capture reviewer
 labels. The service helper
 `artana_evidence_api.evidence_selection_validation.compare_evidence_selection_review`
 turns those labels into true positives, false positives, false negatives,
-confirmed skips, duplicate counts, precision, recall, explanation quality, and
-the zero high-severity-overclaim gate. The helper aggregates reviewer-supplied
-labels and counts; it does not replace reviewer judgment.
+confirmed skips, duplicate counts, precision, recall, categorical explanation
+adequacy, and the zero high-severity-overclaim gate. Reviewers provide atomic
+categories, literal citations, and written reasoning. Deterministic code derives
+all numeric metrics and gates; it does not replace reviewer judgment.
+
+Use `study_type: "selection_relevance"` when the source run does not produce
+proposal/review-item ranking decisions. Use
+`study_type: "selection_and_review_ranking"` only when both selection and
+ranking data exist. A selection-only study must never fabricate ranking rows to
+satisfy a schema. `ai_reviewer_simulation` is useful for mechanics and
+adversarial tests but cannot pass the production-readiness gate.
 
 Review-ranking calibration is gated separately from per-run precision/recall.
 Use
@@ -160,10 +168,11 @@ uv run python scripts/build_evidence_selection_shadow_review_source_inputs.py \
 
 The converter defaults to the same `.machine.json` sidecar when
 `--machine-packet` is omitted. It fails closed on invalid signatures, changed
-machine-owned fields, blank reviewer IDs, blank ranking outcomes, missing
-explanation scores, missing overclaim counts, unknown record IDs, or output
-paths that overwrite either packet. It writes paired outputs so a failed second
-write does not leave a half-converted review set.
+machine-owned fields, blank reviewer IDs, blank required ranking outcomes,
+missing categorical assessments, missing overclaim findings, citations to
+unknown record IDs, or output paths that overwrite either packet. Selection-only
+conversion writes one atomic selection file; combined conversion writes paired
+outputs so a failed second write does not leave a half-converted review set.
 
 When at least three completed packets are ready, build a strict batch manifest
 instead of hand-authoring entry metadata:
@@ -174,14 +183,24 @@ uv run python scripts/build_evidence_selection_shadow_review_study_batch_manifes
   --packet path/to/completed-shadow-review-packet-1.json \
   --packet path/to/completed-shadow-review-packet-2.json \
   --packet path/to/completed-shadow-review-packet-3.json \
+  --study-evidence-kind real_shadow_review \
   --output path/to/shadow-review-study-batch-manifest.json \
-  --adjudication-note "Reviewer adjudicated every packet." \
   --source-system artana-shadow-review \
   --export-id-prefix <export-id-prefix> \
   --exported-at 2026-07-07T00:00:00Z \
   --exporter-id <exporter-id> \
   --redaction-statement "No PHI or raw patient text included."
 ```
+
+Add `--adjudication-note` when any packet has
+`study_type: "selection_and_review_ranking"`. It is not required for a
+selection-only batch.
+
+`--study-evidence-kind` is mandatory. There is no default to
+`real_shadow_review`, so an AI simulation or synthetic fixture cannot be
+accidentally relabeled as human review by omission. This field records the
+declared origin; signed reviewer attestation remains a separate requirement
+before the declaration can be independently proven.
 
 The manifest builder validates each source packet with the same completed-packet
 contract as the source-input converter, derives entry IDs and output
@@ -191,8 +210,13 @@ to overwrite a source packet.
 
 Full expert/shadow study gate:
 
+For a selection-only study, pass `--study-type selection_relevance` to the
+source-export and bundle builders and omit all review-ranking paths. The
+combined example below uses `selection_and_review_ranking`:
+
 ```bash
 uv run python scripts/build_evidence_selection_source_exports.py \
+  --study-type selection_and_review_ranking \
   --selection-reviews path/to/selection-review-labels.json \
   --review-ranking path/to/review-ranking-study.json \
   --selection-export-output path/to/selection-review-export.json \
@@ -207,6 +231,7 @@ uv run python scripts/build_evidence_selection_source_exports.py \
 ```bash
 uv run python scripts/build_evidence_selection_expert_study_bundle.py \
   --study-id <study-id> \
+  --study-type selection_and_review_ranking \
   --study-evidence-kind real_shadow_review \
   --selection-reviews path/to/selection-review-export.json \
   --review-ranking path/to/review-ranking-export.json \
@@ -232,17 +257,19 @@ uv run python scripts/run_evidence_selection_expert_study_gate.py \
 ```
 
 This runner combines selection-review precision/recall, reviewer coverage,
-explanation quality, high-severity overclaim checks, and the review-ranking
-calibration gate above. It also requires a source manifest with hashed export
-artifacts, exact selection-review run IDs, exact review-ranking decision keys,
+deterministically derived explanation adequacy, high-severity overclaim checks,
+and, for combined studies, the review-ranking calibration gate above. It also
+requires a source manifest with hashed export artifacts, exact selection-review
+run IDs, exact required review-ranking decision keys,
 and a reviewer roster covering every reviewer ID in the bundle. It fails closed
-if either the selection-review study, source manifest, or review-ranking
-calibration study is undercovered or below threshold. The study bundle must
+if a required selection-review, source-manifest, or review-ranking gate is
+undercovered or below threshold. The study bundle must
 declare `study_evidence_kind: "real_shadow_review"` before it can pass.
 Synthetic fixtures remain valid for mechanics testing, but they must not
 produce a passing production-style study gate. Every selection review must
 include a reviewer ID, a nonblank goal, measurable precision, measurable recall,
-and an explanation-quality score.
+and a complete categorical explanation assessment with candidate-bound source
+citations.
 
 Batch production-readiness gate:
 
@@ -257,8 +284,11 @@ pipeline for every manifest entry, preserves per-entry gate reports, and writes
 aggregate JSON and Markdown reports. It fails closed unless the suite proves
 minimum entry count, successful entry rate, zero failed entries, total sample
 size, independent source/study identity, cross-batch goal/evidence-shape
-diversity, aggregate precision/recall/explanation quality, and review-ranking
-calibration together. `--allow-failed-gate` is diagnostic only; it lets reports
+diversity, aggregate precision/recall/explanation adequacy, and any required
+review-ranking calibration together. Reports expose both
+`all_entry_observed_quality` for diagnosis and
+`passed_entry_production_quality` for readiness; failed studies are not erased
+from the diagnostic view. `--allow-failed-gate` is diagnostic only; it lets reports
 be written with exit success but does not make a failed suite production-ready.
 
 ## Expert-Review Study
@@ -267,8 +297,8 @@ Use a small expert-review study before production rollout.
 
 1. Give the same goal and same source result set to the harness and to one or
    more human reviewers.
-2. Ask reviewers to score relevance, completeness, novelty, provenance,
-   uncertainty handling, and overclaiming.
+2. Ask reviewers to classify relevance, completeness, novelty, provenance,
+   uncertainty handling, and overclaiming with cited evidence and explanations.
 3. Record whether the harness saved review time without lowering evidence
    quality.
 4. Update benchmark fixtures and selection rules from the reviewer feedback.

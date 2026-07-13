@@ -44,8 +44,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--study-id", required=True)
     parser.add_argument(
+        "--study-type",
+        choices=("selection_relevance", "selection_and_review_ranking"),
+        required=True,
+    )
+    parser.add_argument(
         "--study-evidence-kind",
-        choices=("real_shadow_review", "synthetic_fixture"),
+        choices=(
+            "real_shadow_review",
+            "ai_reviewer_simulation",
+            "synthetic_fixture",
+        ),
         required=True,
     )
     parser.add_argument(
@@ -57,7 +66,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--review-ranking",
         type=Path,
-        required=True,
+        default=None,
         help="JSON review-ranking calibration export.",
     )
     parser.add_argument(
@@ -119,6 +128,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         bundle = build_evidence_selection_expert_study_bundle(
             EvidenceSelectionExpertStudyBundleRequest(
                 study_id=args.study_id,
+                study_type=args.study_type,
                 study_evidence_kind=args.study_evidence_kind,
                 selection_reviews_path=args.selection_reviews,
                 review_ranking_path=args.review_ranking,
@@ -152,7 +162,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         "evidence_selection_expert_study_bundle "
         f"selection_reviews={len(bundle.selection_reviews)} "
-        f"review_ranking_decisions={len(bundle.review_ranking.decisions)} "
+        "review_ranking_decisions="
+        f"{len(bundle.review_ranking.decisions) if bundle.review_ranking else 0} "
         f"source_artifacts={artifact_count}",
     )
     print(f"Wrote bundle: {args.output}")
@@ -170,7 +181,9 @@ def _parse_exported_at(value: str) -> datetime:
 
 
 def _source_paths_from_args(args: argparse.Namespace) -> tuple[Path, ...]:
-    paths = [args.selection_reviews, args.review_ranking]
+    paths = [args.selection_reviews]
+    if args.review_ranking is not None:
+        paths.append(args.review_ranking)
     if args.adjudication_log is not None:
         paths.append(args.adjudication_log)
     return tuple(paths)

@@ -5,8 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import isfinite
 
-_MIN_EXPLANATION_QUALITY = 1.0
-_MAX_EXPLANATION_QUALITY = 5.0
+from artana_evidence_api.types.common import JSONObject
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,7 +18,7 @@ class EvidenceSelectionShadowReviewStudyBatchSuiteThresholds:
     min_passed_entry_rate: float = 1.0
     min_suite_mean_precision: float = 0.8
     min_suite_mean_recall: float = 0.8
-    min_suite_mean_explanation_quality: float = 3.0
+    min_suite_explanation_adequacy_rate: float = 0.8
     max_suite_expected_calibration_error: float = 0.05
     min_total_selection_review_count: int = 3
     min_total_review_ranking_decision_count: int = 10
@@ -39,8 +38,8 @@ def validate_shadow_review_study_batch_suite_thresholds(
         "min_passed_entry_rate": thresholds.min_passed_entry_rate,
         "min_suite_mean_precision": thresholds.min_suite_mean_precision,
         "min_suite_mean_recall": thresholds.min_suite_mean_recall,
-        "min_suite_mean_explanation_quality": (
-            thresholds.min_suite_mean_explanation_quality
+        "min_suite_explanation_adequacy_rate": (
+            thresholds.min_suite_explanation_adequacy_rate
         ),
         "max_suite_expected_calibration_error": (
             thresholds.max_suite_expected_calibration_error
@@ -78,6 +77,9 @@ def validate_shadow_review_study_batch_suite_thresholds(
     bounded_float_thresholds = {
         "min_suite_mean_precision": thresholds.min_suite_mean_precision,
         "min_suite_mean_recall": thresholds.min_suite_mean_recall,
+        "min_suite_explanation_adequacy_rate": (
+            thresholds.min_suite_explanation_adequacy_rate
+        ),
         "max_suite_expected_calibration_error": (
             thresholds.max_suite_expected_calibration_error
         ),
@@ -86,15 +88,44 @@ def validate_shadow_review_study_batch_suite_thresholds(
         if float_value < 0 or float_value > 1:
             msg = f"{float_name} must be between 0 and 1."
             raise ValueError(msg)
-    if (
-        thresholds.min_suite_mean_explanation_quality < _MIN_EXPLANATION_QUALITY
-        or thresholds.min_suite_mean_explanation_quality > _MAX_EXPLANATION_QUALITY
-    ):
-        msg = "min_suite_mean_explanation_quality must be between 1 and 5."
-        raise ValueError(msg)
+
+
+def shadow_review_study_batch_suite_thresholds_to_json(
+    thresholds: EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
+) -> JSONObject:
+    """Serialize suite policy thresholds for immutable gate reports."""
+
+    return {
+        "min_entry_count": thresholds.min_entry_count,
+        "min_passed_entry_count": thresholds.min_passed_entry_count,
+        "max_failed_entry_count": thresholds.max_failed_entry_count,
+        "min_passed_entry_rate": thresholds.min_passed_entry_rate,
+        "min_suite_mean_precision": thresholds.min_suite_mean_precision,
+        "min_suite_mean_recall": thresholds.min_suite_mean_recall,
+        "min_suite_explanation_adequacy_rate": (
+            thresholds.min_suite_explanation_adequacy_rate
+        ),
+        "max_suite_expected_calibration_error": (
+            thresholds.max_suite_expected_calibration_error
+        ),
+        "min_total_selection_review_count": (
+            thresholds.min_total_selection_review_count
+        ),
+        "min_total_review_ranking_decision_count": (
+            thresholds.min_total_review_ranking_decision_count
+        ),
+        "min_distinct_source_run_ids": thresholds.min_distinct_source_run_ids,
+        "min_distinct_study_ids": thresholds.min_distinct_study_ids,
+        "min_distinct_selection_goals": thresholds.min_distinct_selection_goals,
+        "min_distinct_review_ranking_goals": (
+            thresholds.min_distinct_review_ranking_goals
+        ),
+        "min_distinct_evidence_shapes": thresholds.min_distinct_evidence_shapes,
+    }
 
 
 __all__ = [
     "EvidenceSelectionShadowReviewStudyBatchSuiteThresholds",
+    "shadow_review_study_batch_suite_thresholds_to_json",
     "validate_shadow_review_study_batch_suite_thresholds",
 ]

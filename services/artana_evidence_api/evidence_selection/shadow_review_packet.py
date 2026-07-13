@@ -18,20 +18,25 @@ from artana_evidence_api.evidence_selection_candidates import (
     required_decision_string,
     score_from_decision,
 )
-from artana_evidence_api.evidence_selection_validation import ReviewRankingSourceKind
+from artana_evidence_api.evidence_selection_validation import (
+    EvidenceSelectionExpertStudyType,
+    ReviewRankingSourceKind,
+)
 from artana_evidence_api.types.common import JSONObject, JSONValue
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 EvidenceSelectionShadowReviewPacketSchemaVersion = Literal[
-    "evidence_selection_shadow_review_packet.v1"
+    "evidence_selection_shadow_review_packet.v2"
 ]
 EvidenceSelectionShadowReviewCompletionStatus = Literal["requires_human_labels"]
 
-_COMPLETION_REQUIRED_FIELDS = (
+_SELECTION_COMPLETION_REQUIRED_FIELDS = (
     "selection_review_forms[].reviewer_id",
     "selection_review_forms[].human_selected_record_ids",
-    "selection_review_forms[].explanation_quality_score",
-    "selection_review_forms[].high_severity_overclaim_count",
+    "selection_review_forms[].explanation_assessment",
+    "selection_review_forms[].high_severity_overclaim_findings",
+)
+_RANKING_COMPLETION_REQUIRED_FIELDS = (
     "review_ranking_forms[].reviewer_id",
     "review_ranking_forms[].outcome",
 )
@@ -91,8 +96,8 @@ class EvidenceSelectionShadowSelectionReviewForm(BaseModel):
     harness_deferred_record_ids: tuple[str, ...] = ()
     human_selected_record_ids: tuple[str, ...] = ()
     duplicate_suggestion_ids: tuple[str, ...] = ()
-    explanation_quality_score: None = None
-    high_severity_overclaim_count: None = None
+    explanation_assessment: None = None
+    high_severity_overclaim_findings: None = None
     reviewer_notes: None = None
 
     @field_validator("run_id", mode="before")
@@ -150,6 +155,7 @@ class EvidenceSelectionShadowReviewPacket(BaseModel):
 
     schema_version: EvidenceSelectionShadowReviewPacketSchemaVersion
     study_id: str = Field(min_length=1)
+    study_type: EvidenceSelectionExpertStudyType
     source_run_id: UUID
     goal: str = Field(min_length=1)
     production_readiness_claim: Literal[False] = False
@@ -164,7 +170,7 @@ class EvidenceSelectionShadowReviewPacket(BaseModel):
         default=None,
         pattern=r"^[a-f0-9]{64}$",
     )
-    completion_required_fields: tuple[str, ...] = _COMPLETION_REQUIRED_FIELDS
+    completion_required_fields: tuple[str, ...]
     candidate_records: tuple[EvidenceSelectionShadowCandidateRecord, ...]
     selection_review_forms: tuple[EvidenceSelectionShadowSelectionReviewForm, ...]
     review_ranking_forms: tuple[EvidenceSelectionShadowReviewRankingForm, ...] = ()
@@ -189,21 +195,23 @@ class EvidenceSelectionShadowReviewPacket(BaseModel):
             return tuple(value)
         return value
 
-    @field_validator("completion_required_fields")
-    @classmethod
-    def _completion_fields_must_match_packet_contract(
-        cls,
-        value: tuple[str, ...],
-    ) -> tuple[str, ...]:
-        if tuple(value) != _COMPLETION_REQUIRED_FIELDS:
-            msg = "completion_required_fields must match the shadow packet contract."
-            raise ValueError(msg)
-        return value
-
     @model_validator(mode="after")
-    def _machine_digest_must_match_machine_owned_fields(
+    def _validate_packet_contract(
         self,
     ) -> EvidenceSelectionShadowReviewPacket:
+        expected_fields = _completion_required_fields(self.study_type)
+        if self.completion_required_fields != expected_fields:
+            msg = "completion_required_fields must match the shadow packet contract."
+            raise ValueError(msg)
+        if self.study_type == "selection_relevance" and self.review_ranking_forms:
+            msg = "selection_relevance packets must not include ranking forms."
+            raise ValueError(msg)
+        if (
+            self.study_type == "selection_and_review_ranking"
+            and not self.review_ranking_forms
+        ):
+            msg = "selection_and_review_ranking packets require ranking forms."
+            raise ValueError(msg)
         if (
             self.machine_packet_sha256 is not None
             and self.machine_packet_sha256 != machine_packet_digest(self)
@@ -239,11 +247,18 @@ def build_evidence_selection_shadow_review_packet(
     review_selected = (*selected, *shadow_selected)
     candidate_records = (*selected, *skipped, *deferred)
     _reject_duplicate_candidate_ids(candidate_records)
+    study_type: EvidenceSelectionExpertStudyType = (
+        "selection_and_review_ranking"
+        if request.review_ranking_items
+        else "selection_relevance"
+    )
     packet = EvidenceSelectionShadowReviewPacket(
-        schema_version="evidence_selection_shadow_review_packet.v1",
+        schema_version="evidence_selection_shadow_review_packet.v2",
         study_id=study_id,
+        study_type=study_type,
         source_run_id=run_id,
         goal=goal,
+        completion_required_fields=_completion_required_fields(study_type),
         candidate_records=candidate_records,
         selection_review_forms=(
             EvidenceSelectionShadowSelectionReviewForm(
@@ -286,6 +301,7 @@ def machine_packet_digest(packet: EvidenceSelectionShadowReviewPacket) -> str:
     payload = {
         "schema_version": packet.schema_version,
         "study_id": packet.study_id,
+        "study_type": packet.study_type,
         "source_run_id": str(packet.source_run_id),
         "goal": packet.goal,
         "production_readiness_claim": packet.production_readiness_claim,
@@ -322,6 +338,17 @@ def machine_packet_digest(packet: EvidenceSelectionShadowReviewPacket) -> str:
         sort_keys=True,
     ).encode("utf-8")
     return hashlib.sha256(canonical_payload).hexdigest()
+
+
+def _completion_required_fields(
+    study_type: EvidenceSelectionExpertStudyType,
+) -> tuple[str, ...]:
+    if study_type == "selection_and_review_ranking":
+        return (
+            *_SELECTION_COMPLETION_REQUIRED_FIELDS,
+            *_RANKING_COMPLETION_REQUIRED_FIELDS,
+        )
+    return _SELECTION_COMPLETION_REQUIRED_FIELDS
 
 
 def _is_shadow_selected_decision(decision: JSONObject) -> bool:

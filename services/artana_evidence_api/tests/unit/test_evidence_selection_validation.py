@@ -19,6 +19,12 @@ from artana_evidence_api.evidence_selection_validation import (
 )
 from pydantic import ValidationError
 
+from .evidence_selection_review_fixtures import (
+    adequate_explanation_assessment,
+    high_severity_overclaim_finding,
+    inadequate_explanation_assessment,
+)
+
 
 def test_compare_evidence_selection_review_records_shadow_review_metrics() -> None:
     run_id = uuid4()
@@ -32,8 +38,8 @@ def test_compare_evidence_selection_review_records_shadow_review_metrics() -> No
             harness_skipped_record_ids=("clinvar:VCV3",),
             duplicate_suggestion_ids=("clinvar:VCV2", "clinvar:VCV2"),
             reviewer_id="reviewer-a",
-            explanation_quality_score=4,
-            high_severity_overclaim_count=0,
+            explanation_assessment=adequate_explanation_assessment(),
+            high_severity_overclaim_findings=(),
             reviewer_notes="One useful record missed.",
         ),
     )
@@ -48,7 +54,7 @@ def test_compare_evidence_selection_review_records_shadow_review_metrics() -> No
     assert report.duplicate_suggestion_ids == ("clinvar:VCV2",)
     assert report.precision == 0.5
     assert report.recall == 0.5
-    assert report.explanation_quality_score == 4
+    assert report.explanation_adequacy == "adequate"
     assert report.overclaim_gate_passed is True
 
 
@@ -59,7 +65,7 @@ def test_compare_evidence_selection_review_flags_overclaim_gate_failure() -> Non
             goal="Find MED13 treatment evidence.",
             harness_selected_record_ids=("pubmed:PMID1",),
             human_selected_record_ids=("pubmed:PMID1",),
-            high_severity_overclaim_count=1,
+            high_severity_overclaim_findings=(high_severity_overclaim_finding(),),
         ),
     )
 
@@ -67,14 +73,14 @@ def test_compare_evidence_selection_review_flags_overclaim_gate_failure() -> Non
     assert report.high_severity_overclaim_count == 1
 
 
-def test_evidence_selection_review_input_rejects_invalid_scores() -> None:
+def test_evidence_selection_review_input_rejects_numeric_explanation_scores() -> None:
     with pytest.raises(ValidationError):
         EvidenceSelectionReviewInput(
             run_id=uuid4(),
             goal="Find MED13 evidence.",
             harness_selected_record_ids=(),
             human_selected_record_ids=(),
-            explanation_quality_score=6,
+            explanation_assessment=6,
         )
 
 
@@ -110,9 +116,7 @@ def test_evidence_selection_review_input_accepts_documented_audit_notes() -> Non
     )
 
     assert review.false_positive_notes == {}
-    assert review.false_negative_notes == {
-        "record-b": "Relevant record was omitted."
-    }
+    assert review.false_negative_notes == {"record-b": "Relevant record was omitted."}
 
 
 @pytest.mark.parametrize(
@@ -141,8 +145,9 @@ def test_evidence_selection_review_input_rejects_invalid_audit_notes(
 
 def test_expert_study_ids_are_normalized_before_binding() -> None:
     study = EvidenceSelectionExpertStudyInput(
-        schema_version="evidence_selection_expert_study.v1",
+        schema_version="evidence_selection_expert_study.v2",
         study_id="  balanced-shadow-study  ",
+        study_type="selection_and_review_ranking",
         study_evidence_kind="real_shadow_review",
         selection_reviews=_selection_reviews(),
         review_ranking=_review_ranking_study("balanced-shadow-study"),
@@ -161,8 +166,9 @@ def test_review_ranking_study_rejects_blank_study_ids(study_id: str) -> None:
 def test_expert_study_rejects_blank_outer_study_id() -> None:
     with pytest.raises(ValidationError, match="study_id must not be blank"):
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="  ",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=_selection_reviews(),
             review_ranking=_review_ranking_study("balanced-shadow-study"),
@@ -174,8 +180,9 @@ def test_evidence_selection_expert_study_gate_passes_balanced_study() -> None:
     review_ranking = _review_ranking_study("balanced-shadow-study")
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="balanced-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=selection_reviews,
             review_ranking=review_ranking,
@@ -188,7 +195,7 @@ def test_evidence_selection_expert_study_gate_passes_balanced_study() -> None:
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
         ),
     )
 
@@ -213,8 +220,9 @@ def test_evidence_selection_expert_study_gate_passes_balanced_study() -> None:
 def test_evidence_selection_expert_study_gate_blocks_missing_source_manifest() -> None:
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="missing-source-manifest",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=_selection_reviews(),
             review_ranking=_review_ranking_study("missing-source-manifest"),
@@ -225,42 +233,41 @@ def test_evidence_selection_expert_study_gate_blocks_missing_source_manifest() -
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
         ),
     )
 
     assert report.passed is False
     assert report.provenance_summary["source_manifest_present"] is False
-    assert any(
-        "source manifest" in reason for reason in report.blocking_reasons
-    )
+    assert any("source manifest" in reason for reason in report.blocking_reasons)
 
 
-def test_evidence_selection_expert_study_gate_blocks_incomplete_source_manifest() -> None:
+def test_evidence_selection_expert_study_gate_blocks_incomplete_source_manifest() -> (
+    None
+):
     selection_reviews = _selection_reviews()
     review_ranking = _review_ranking_study("incomplete-source-manifest")
     manifest = _source_manifest_payload(selection_reviews=selection_reviews)
     manifest["source_artifacts"] = manifest["source_artifacts"][:1]
     manifest["selection_review_run_ids"] = manifest["selection_review_run_ids"][:2]
-    manifest["review_ranking_decision_keys"] = (
-        manifest["review_ranking_decision_keys"][:9]
-        + ["review_item:unexpected-ranking-item"]
-    )
+    manifest["review_ranking_decision_keys"] = manifest["review_ranking_decision_keys"][
+        :9
+    ] + ["review_item:unexpected-ranking-item"]
     manifest["reviewer_roster"] = ["other-reviewer"]
 
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput.model_validate(
             {
-                "schema_version": "evidence_selection_expert_study.v1",
-                    "study_id": "incomplete-source-manifest",
-                    "study_evidence_kind": "real_shadow_review",
-                    "selection_reviews": [
-                        review.model_dump(mode="json")
-                        for review in selection_reviews
-                    ],
-                    "review_ranking": review_ranking.model_dump(mode="json"),
-                    "source_manifest": manifest,
-                },
+                "schema_version": "evidence_selection_expert_study.v2",
+                "study_id": "incomplete-source-manifest",
+                "study_type": "selection_and_review_ranking",
+                "study_evidence_kind": "real_shadow_review",
+                "selection_reviews": [
+                    review.model_dump(mode="json") for review in selection_reviews
+                ],
+                "review_ranking": review_ranking.model_dump(mode="json"),
+                "source_manifest": manifest,
+            },
         ),
         thresholds=EvidenceSelectionExpertStudyGateThresholds(
             min_selection_review_count=3,
@@ -268,7 +275,7 @@ def test_evidence_selection_expert_study_gate_blocks_incomplete_source_manifest(
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
             min_source_artifact_count=3,
         ),
     )
@@ -279,12 +286,18 @@ def test_evidence_selection_expert_study_gate_blocks_incomplete_source_manifest(
     assert report.provenance_summary["extra_review_ranking_decision_key_count"] == 1
     assert report.provenance_summary["unknown_reviewer_id_count"] == 1
     assert any("source artifacts" in reason for reason in report.blocking_reasons)
-    assert any("selection review run IDs" in reason for reason in report.blocking_reasons)
-    assert any("review-ranking decision keys" in reason for reason in report.blocking_reasons)
+    assert any(
+        "selection review run IDs" in reason for reason in report.blocking_reasons
+    )
+    assert any(
+        "review-ranking decision keys" in reason for reason in report.blocking_reasons
+    )
     assert any("reviewer roster" in reason for reason in report.blocking_reasons)
 
 
-def test_evidence_selection_expert_study_gate_blocks_duplicate_selection_run_ids() -> None:
+def test_evidence_selection_expert_study_gate_blocks_duplicate_selection_run_ids() -> (
+    None
+):
     shared_run_id = uuid4()
     reviews = tuple(
         EvidenceSelectionReviewInput(
@@ -293,8 +306,8 @@ def test_evidence_selection_expert_study_gate_blocks_duplicate_selection_run_ids
             reviewer_id="reviewer-a",
             harness_selected_record_ids=(f"record-{index}",),
             human_selected_record_ids=(f"record-{index}",),
-            explanation_quality_score=4,
-            high_severity_overclaim_count=0,
+            explanation_assessment=adequate_explanation_assessment(),
+            high_severity_overclaim_findings=(),
         )
         for index, goal in enumerate(
             (
@@ -307,8 +320,9 @@ def test_evidence_selection_expert_study_gate_blocks_duplicate_selection_run_ids
 
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="duplicate-selection-run-ids",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=reviews,
             review_ranking=_review_ranking_study("duplicate-selection-run-ids"),
@@ -320,16 +334,21 @@ def test_evidence_selection_expert_study_gate_blocks_duplicate_selection_run_ids
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
         ),
     )
 
     assert report.passed is False
     assert report.provenance_summary["duplicate_selection_run_id_count"] == 1
-    assert any("Selection review run IDs must be unique" in reason for reason in report.blocking_reasons)
+    assert any(
+        "Selection review run IDs must be unique" in reason
+        for reason in report.blocking_reasons
+    )
 
 
-def test_evidence_selection_expert_study_gate_requires_source_export_artifacts() -> None:
+def test_evidence_selection_expert_study_gate_requires_source_export_artifacts() -> (
+    None
+):
     selection_reviews = _selection_reviews()
     manifest = _source_manifest_payload(selection_reviews=selection_reviews)
     manifest["source_artifacts"] = [
@@ -345,12 +364,12 @@ def test_evidence_selection_expert_study_gate_requires_source_export_artifacts()
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput.model_validate(
             {
-                "schema_version": "evidence_selection_expert_study.v1",
+                "schema_version": "evidence_selection_expert_study.v2",
                 "study_id": "missing-source-export-artifacts",
+                "study_type": "selection_and_review_ranking",
                 "study_evidence_kind": "real_shadow_review",
                 "selection_reviews": [
-                    review.model_dump(mode="json")
-                    for review in selection_reviews
+                    review.model_dump(mode="json") for review in selection_reviews
                 ],
                 "review_ranking": _review_ranking_study(
                     "missing-source-export-artifacts",
@@ -364,7 +383,7 @@ def test_evidence_selection_expert_study_gate_requires_source_export_artifacts()
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
             min_source_artifact_count=3,
         ),
     )
@@ -375,7 +394,9 @@ def test_evidence_selection_expert_study_gate_requires_source_export_artifacts()
         "review_ranking_export": 0,
         "selection_review_export": 0,
     }
-    assert any("selection_review_export" in reason for reason in report.blocking_reasons)
+    assert any(
+        "selection_review_export" in reason for reason in report.blocking_reasons
+    )
     assert any("review_ranking_export" in reason for reason in report.blocking_reasons)
 
 
@@ -386,12 +407,12 @@ def test_evidence_selection_expert_study_input_rejects_blank_source_identity() -
     manifest["exporter_id"] = " "
     manifest["redaction_statement"] = " "
     payload = {
-        "schema_version": "evidence_selection_expert_study.v1",
+        "schema_version": "evidence_selection_expert_study.v2",
         "study_id": "blank-source-identity",
+        "study_type": "selection_and_review_ranking",
         "study_evidence_kind": "real_shadow_review",
         "selection_reviews": [
-            review.model_dump(mode="json")
-            for review in _selection_reviews()
+            review.model_dump(mode="json") for review in _selection_reviews()
         ],
         "review_ranking": _review_ranking_study(
             "blank-source-identity",
@@ -420,12 +441,12 @@ def test_evidence_selection_expert_study_input_rejects_invalid_source_hash() -> 
     manifest["source_artifacts"][0]["sha256"] = "not-a-sha"
 
     payload = {
-        "schema_version": "evidence_selection_expert_study.v1",
+        "schema_version": "evidence_selection_expert_study.v2",
         "study_id": "invalid-source-hash",
+        "study_type": "selection_and_review_ranking",
         "study_evidence_kind": "real_shadow_review",
         "selection_reviews": [
-            review.model_dump(mode="json")
-            for review in _selection_reviews()
+            review.model_dump(mode="json") for review in _selection_reviews()
         ],
         "review_ranking": _review_ranking_study(
             "invalid-source-hash",
@@ -480,8 +501,9 @@ def test_source_manifest_rejects_noncanonical_export_timestamps(
 def test_evidence_selection_expert_study_gate_blocks_synthetic_studies() -> None:
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="synthetic-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="synthetic_fixture",
             selection_reviews=_selection_reviews(),
             review_ranking=_review_ranking_study("synthetic-shadow-study"),
@@ -494,15 +516,89 @@ def test_evidence_selection_expert_study_gate_blocks_synthetic_studies() -> None
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
         ),
     )
 
     assert report.passed is False
-    assert any("real shadow-review evidence" in reason for reason in report.blocking_reasons)
+    assert any(
+        "real shadow-review evidence" in reason for reason in report.blocking_reasons
+    )
 
 
-def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews() -> None:
+def test_selection_relevance_study_passes_without_ranking_artifacts() -> None:
+    selection_reviews = _selection_reviews()
+    manifest = _source_manifest_payload(selection_reviews=selection_reviews)
+    manifest["source_artifacts"] = [manifest["source_artifacts"][0]]
+    manifest["review_ranking_decision_keys"] = []
+
+    report = evaluate_evidence_selection_expert_study_gate(
+        EvidenceSelectionExpertStudyInput(
+            schema_version="evidence_selection_expert_study.v2",
+            study_id="selection-only-shadow-study",
+            study_type="selection_relevance",
+            study_evidence_kind="real_shadow_review",
+            selection_reviews=selection_reviews,
+            source_manifest=manifest,
+        ),
+    )
+
+    assert report.passed is True
+    assert report.study_type == "selection_relevance"
+    assert report.review_ranking_gate is None
+    assert report.provenance_summary["artifact_count"] == 1
+    assert report.provenance_summary["missing_required_source_artifact_kinds"] == []
+
+
+def test_ai_reviewer_simulation_cannot_support_production_readiness() -> None:
+    selection_reviews = _selection_reviews()
+    manifest = _source_manifest_payload(selection_reviews=selection_reviews)
+    manifest["source_artifacts"] = [manifest["source_artifacts"][0]]
+    manifest["review_ranking_decision_keys"] = []
+
+    report = evaluate_evidence_selection_expert_study_gate(
+        EvidenceSelectionExpertStudyInput(
+            schema_version="evidence_selection_expert_study.v2",
+            study_id="ai-selection-simulation",
+            study_type="selection_relevance",
+            study_evidence_kind="ai_reviewer_simulation",
+            selection_reviews=selection_reviews,
+            source_manifest=manifest,
+        ),
+    )
+
+    assert report.passed is False
+    assert any(
+        "real shadow-review evidence" in reason for reason in report.blocking_reasons
+    )
+
+
+def test_selection_relevance_study_rejects_ranking_input() -> None:
+    with pytest.raises(ValidationError, match="must not include review_ranking"):
+        EvidenceSelectionExpertStudyInput(
+            schema_version="evidence_selection_expert_study.v2",
+            study_id="selection-only-shadow-study",
+            study_type="selection_relevance",
+            study_evidence_kind="real_shadow_review",
+            selection_reviews=_selection_reviews(),
+            review_ranking=_review_ranking_study("selection-only-shadow-study"),
+        )
+
+
+def test_combined_study_requires_ranking_input() -> None:
+    with pytest.raises(ValidationError, match="require review_ranking"):
+        EvidenceSelectionExpertStudyInput(
+            schema_version="evidence_selection_expert_study.v2",
+            study_id="combined-shadow-study",
+            study_type="selection_and_review_ranking",
+            study_evidence_kind="real_shadow_review",
+            selection_reviews=_selection_reviews(),
+        )
+
+
+def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews() -> (
+    None
+):
     reviews = list(_selection_reviews())
     first_review = reviews[0]
     reviews[0] = EvidenceSelectionReviewInput(
@@ -512,8 +608,8 @@ def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews
         harness_selected_record_ids=first_review.harness_selected_record_ids,
         human_selected_record_ids=first_review.human_selected_record_ids,
         harness_skipped_record_ids=first_review.harness_skipped_record_ids,
-        explanation_quality_score=first_review.explanation_quality_score,
-        high_severity_overclaim_count=first_review.high_severity_overclaim_count,
+        explanation_assessment=first_review.explanation_assessment,
+        high_severity_overclaim_findings=first_review.high_severity_overclaim_findings,
     )
     second_review = reviews[1]
     reviews[1] = EvidenceSelectionReviewInput(
@@ -523,14 +619,15 @@ def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews
         harness_selected_record_ids=second_review.harness_selected_record_ids,
         human_selected_record_ids=second_review.human_selected_record_ids,
         harness_skipped_record_ids=second_review.harness_skipped_record_ids,
-        explanation_quality_score=second_review.explanation_quality_score,
-        high_severity_overclaim_count=second_review.high_severity_overclaim_count,
+        explanation_assessment=second_review.explanation_assessment,
+        high_severity_overclaim_findings=second_review.high_severity_overclaim_findings,
     )
 
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="partially-unlabeled-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=tuple(reviews),
             review_ranking=_review_ranking_study("partially-unlabeled-shadow-study"),
@@ -542,18 +639,26 @@ def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
         ),
     )
 
     assert report.passed is False
     assert report.selection_summary["missing_reviewer_id_count"] == 1
     assert report.selection_summary["missing_goal_count"] == 1
-    assert any("Every selection review must include a reviewer ID" in reason for reason in report.blocking_reasons)
-    assert any("Every selection review must include a research goal" in reason for reason in report.blocking_reasons)
+    assert any(
+        "Every selection review must include a reviewer ID" in reason
+        for reason in report.blocking_reasons
+    )
+    assert any(
+        "Every selection review must include a research goal" in reason
+        for reason in report.blocking_reasons
+    )
 
 
-def test_evidence_selection_expert_study_gate_blocks_unmeasurable_selection_metrics() -> None:
+def test_evidence_selection_expert_study_gate_blocks_unmeasurable_selection_metrics() -> (
+    None
+):
     reviews = list(_selection_reviews())
     for index in (0, 1):
         review = reviews[index]
@@ -564,14 +669,15 @@ def test_evidence_selection_expert_study_gate_blocks_unmeasurable_selection_metr
             harness_selected_record_ids=(),
             human_selected_record_ids=(),
             harness_skipped_record_ids=review.harness_skipped_record_ids,
-            explanation_quality_score=None,
-            high_severity_overclaim_count=0,
+            explanation_assessment=None,
+            high_severity_overclaim_findings=(),
         )
 
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="unmeasurable-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=tuple(reviews),
             review_ranking=_review_ranking_study("unmeasurable-shadow-study"),
@@ -583,17 +689,20 @@ def test_evidence_selection_expert_study_gate_blocks_unmeasurable_selection_metr
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
         ),
     )
 
     assert report.passed is False
     assert report.selection_summary["unmeasurable_precision_count"] == 2
     assert report.selection_summary["unmeasurable_recall_count"] == 2
-    assert report.selection_summary["missing_explanation_quality_count"] == 2
+    assert report.selection_summary["missing_explanation_assessment_count"] == 2
     assert any("measurable precision" in reason for reason in report.blocking_reasons)
     assert any("measurable recall" in reason for reason in report.blocking_reasons)
-    assert any("explanation-quality score" in reason for reason in report.blocking_reasons)
+    assert any(
+        "categorical explanation assessment" in reason
+        for reason in report.blocking_reasons
+    )
 
 
 def test_evidence_selection_expert_study_gate_blocks_missing_overclaim_labels() -> None:
@@ -606,13 +715,14 @@ def test_evidence_selection_expert_study_gate_blocks_missing_overclaim_labels() 
         harness_selected_record_ids=first_review.harness_selected_record_ids,
         human_selected_record_ids=first_review.human_selected_record_ids,
         harness_skipped_record_ids=first_review.harness_skipped_record_ids,
-        explanation_quality_score=first_review.explanation_quality_score,
+        explanation_assessment=first_review.explanation_assessment,
     )
 
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="missing-overclaim-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=tuple(reviews),
             review_ranking=_review_ranking_study("missing-overclaim-study"),
@@ -620,8 +730,10 @@ def test_evidence_selection_expert_study_gate_blocks_missing_overclaim_labels() 
     )
 
     assert report.passed is False
-    assert report.selection_summary["missing_high_severity_overclaim_count"] == 1
-    assert any("overclaim count" in reason for reason in report.blocking_reasons)
+    assert (
+        report.selection_summary["missing_high_severity_overclaim_findings_count"] == 1
+    )
+    assert any("overclaim findings" in reason for reason in report.blocking_reasons)
 
 
 def test_evidence_selection_expert_study_gate_blocks_duplicate_run_ids() -> None:
@@ -630,8 +742,9 @@ def test_evidence_selection_expert_study_gate_blocks_duplicate_run_ids() -> None
 
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="duplicate-runs-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=tuple(reviews),
             review_ranking=_review_ranking_study("duplicate-runs-study"),
@@ -643,7 +756,9 @@ def test_evidence_selection_expert_study_gate_blocks_duplicate_run_ids() -> None
     assert any("run IDs must be unique" in reason for reason in report.blocking_reasons)
 
 
-def test_evidence_selection_expert_study_gate_blocks_weak_or_underreviewed_study() -> None:
+def test_evidence_selection_expert_study_gate_blocks_weak_or_underreviewed_study() -> (
+    None
+):
     weak_reviews = (
         EvidenceSelectionReviewInput(
             run_id=uuid4(),
@@ -651,15 +766,18 @@ def test_evidence_selection_expert_study_gate_blocks_weak_or_underreviewed_study
             reviewer_id=None,
             harness_selected_record_ids=("record-fp",),
             human_selected_record_ids=("record-tp",),
-            explanation_quality_score=2,
-            high_severity_overclaim_count=1,
+            explanation_assessment=inadequate_explanation_assessment().model_copy(
+                update={"unsupported_material_claim_present": "yes"},
+            ),
+            high_severity_overclaim_findings=(high_severity_overclaim_finding(),),
         ),
     )
 
     report = evaluate_evidence_selection_expert_study_gate(
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="weak-shadow-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=weak_reviews,
             review_ranking=ReviewRankingCalibrationStudyInput(
@@ -679,28 +797,35 @@ def test_evidence_selection_expert_study_gate_blocks_weak_or_underreviewed_study
             min_selection_reviewer_count=1,
             min_mean_precision=0.8,
             min_mean_recall=0.8,
-            min_mean_explanation_quality=3.0,
+            min_explanation_adequacy_rate=0.8,
         ),
     )
 
     assert report.passed is False
     assert report.status == "failed"
     assert any("selection review runs" in reason for reason in report.blocking_reasons)
-    assert any("distinct selection goals" in reason for reason in report.blocking_reasons)
+    assert any(
+        "distinct selection goals" in reason for reason in report.blocking_reasons
+    )
     assert any("selection reviewer" in reason for reason in report.blocking_reasons)
-    assert any("mean selection precision" in reason for reason in report.blocking_reasons)
+    assert any(
+        "mean selection precision" in reason for reason in report.blocking_reasons
+    )
     assert any("mean selection recall" in reason for reason in report.blocking_reasons)
-    assert any("explanation quality" in reason for reason in report.blocking_reasons)
+    assert any("explanation adequacy" in reason for reason in report.blocking_reasons)
     assert any("overclaim" in reason for reason in report.blocking_reasons)
-    assert any("Review-ranking gate failed" in reason for reason in report.blocking_reasons)
+    assert any(
+        "Review-ranking gate failed" in reason for reason in report.blocking_reasons
+    )
 
 
 def test_evidence_selection_expert_study_input_rejects_extra_fields() -> None:
     with pytest.raises(ValidationError):
         EvidenceSelectionExpertStudyInput.model_validate(
             {
-                "schema_version": "evidence_selection_expert_study.v1",
+                "schema_version": "evidence_selection_expert_study.v2",
                 "study_id": "extra-field",
+                "study_type": "selection_and_review_ranking",
                 "study_evidence_kind": "real_shadow_review",
                 "selection_reviews": [],
                 "review_ranking": {
@@ -718,8 +843,9 @@ def test_evidence_selection_expert_study_input_rejects_extra_fields() -> None:
 def test_evidence_selection_expert_study_input_binds_ranking_study_id() -> None:
     with pytest.raises(ValidationError, match="review_ranking study_id must match"):
         EvidenceSelectionExpertStudyInput(
-            schema_version="evidence_selection_expert_study.v1",
+            schema_version="evidence_selection_expert_study.v2",
             study_id="selection-study",
+            study_type="selection_and_review_ranking",
             study_evidence_kind="real_shadow_review",
             selection_reviews=_selection_reviews(),
             review_ranking=_review_ranking_study("different-ranking-study"),
@@ -728,8 +854,9 @@ def test_evidence_selection_expert_study_input_binds_ranking_study_id() -> None:
 
 def test_evidence_selection_expert_study_input_rejects_extra_selection_fields() -> None:
     payload = {
-        "schema_version": "evidence_selection_expert_study.v1",
+        "schema_version": "evidence_selection_expert_study.v2",
         "study_id": "extra-selection-field",
+        "study_type": "selection_and_review_ranking",
         "study_evidence_kind": "real_shadow_review",
         "selection_reviews": [
             {
@@ -766,8 +893,8 @@ def _selection_reviews() -> tuple[EvidenceSelectionReviewInput, ...]:
             harness_selected_record_ids=(f"record-{index}-a", f"record-{index}-b"),
             human_selected_record_ids=(f"record-{index}-a", f"record-{index}-b"),
             harness_skipped_record_ids=(f"record-{index}-c",),
-            explanation_quality_score=4,
-            high_severity_overclaim_count=0,
+            explanation_assessment=adequate_explanation_assessment(),
+            high_severity_overclaim_findings=(),
         )
         for index, goal in enumerate(goals)
     )
@@ -785,7 +912,8 @@ def _review_ranking_study(study_id: str) -> ReviewRankingCalibrationStudyInput:
 def _source_manifest(
     *,
     selection_reviews: tuple[EvidenceSelectionReviewInput, ...] | None = None,
-    review_ranking_decisions: tuple[ReviewRankingCalibrationDecision, ...] | None = None,
+    review_ranking_decisions: tuple[ReviewRankingCalibrationDecision, ...]
+    | None = None,
 ) -> object:
     return _source_manifest_payload(
         selection_reviews=selection_reviews,
@@ -796,7 +924,8 @@ def _source_manifest(
 def _source_manifest_payload(
     *,
     selection_reviews: tuple[EvidenceSelectionReviewInput, ...] | None = None,
-    review_ranking_decisions: tuple[ReviewRankingCalibrationDecision, ...] | None = None,
+    review_ranking_decisions: tuple[ReviewRankingCalibrationDecision, ...]
+    | None = None,
 ) -> dict[str, object]:
     active_selection_reviews = selection_reviews or _selection_reviews()
     active_ranking_decisions = review_ranking_decisions or _review_ranking_decisions()

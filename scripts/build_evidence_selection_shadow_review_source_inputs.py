@@ -30,6 +30,7 @@ from artana_evidence_api.evidence_selection.output_paths import (
 )
 from artana_evidence_api.evidence_selection.shadow_review_completion import (  # noqa: E402
     EvidenceSelectionShadowReviewSourceInputRequest,
+    EvidenceSelectionShadowReviewSourceInputs,
     build_evidence_selection_shadow_review_source_inputs,
     machine_packet_sidecar_path,
 )
@@ -50,8 +51,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Convert a human-completed shadow-review packet, bound to its "
-            "immutable machine packet, into "
-            "selection-review labels and review-ranking study inputs."
+            "immutable machine packet, into selection-review labels and, for "
+            "combined studies, review-ranking study inputs."
         ),
     )
     parser.add_argument(
@@ -75,13 +76,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--review-ranking-output",
         type=Path,
-        required=True,
-        help="Output JSON path for the review-ranking calibration source input.",
+        default=None,
+        help="Required output path only for selection_and_review_ranking studies.",
     )
     parser.add_argument(
         "--adjudication-note",
-        required=True,
-        help="Human adjudication note for the completed review-ranking study.",
+        default=None,
+        help="Required human adjudication note only for review-ranking studies.",
     )
     parser.add_argument("--description", default=None)
     return parser.parse_args(argv)
@@ -109,11 +110,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 description=args.description,
             ),
         )
-        _write_paired_json(
+        _write_source_input_payloads(
+            result=result,
             selection_output_path=args.selection_reviews_output,
-            selection_payload=result.selection_reviews_payload(),
             review_ranking_output_path=args.review_ranking_output,
-            review_ranking_payload=result.review_ranking_payload(),
         )
     except (OSError, ValueError, ValidationError) as exc:
         print(f"error: {cli_error_message(exc)}", file=sys.stderr)
@@ -121,11 +121,39 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         "evidence_selection_shadow_review_source_inputs "
         f"selection_reviews={len(result.selection_reviews)} "
-        f"review_ranking_decisions={len(result.review_ranking.decisions)}",
+        "review_ranking_decisions="
+        f"{len(result.review_ranking.decisions) if result.review_ranking else 0}",
     )
     print(f"Wrote selection-review labels: {args.selection_reviews_output}")
-    print(f"Wrote review-ranking study: {args.review_ranking_output}")
+    if args.review_ranking_output is not None:
+        print(f"Wrote review-ranking study: {args.review_ranking_output}")
     return 0
+
+
+def _write_source_input_payloads(
+    *,
+    result: EvidenceSelectionShadowReviewSourceInputs,
+    selection_output_path: Path,
+    review_ranking_output_path: Path | None,
+) -> None:
+    if result.review_ranking is None:
+        if review_ranking_output_path is not None:
+            msg = "selection_relevance studies must not set --review-ranking-output."
+            raise ValueError(msg)
+        _write_single_json(
+            output_path=selection_output_path,
+            payload=result.selection_reviews_payload(),
+        )
+        return
+    if review_ranking_output_path is None:
+        msg = "selection_and_review_ranking studies require --review-ranking-output."
+        raise ValueError(msg)
+    _write_paired_json(
+        selection_output_path=selection_output_path,
+        selection_payload=result.selection_reviews_payload(),
+        review_ranking_output_path=review_ranking_output_path,
+        review_ranking_payload=result.review_ranking_payload(),
+    )
 
 
 def _validate_output_paths(
@@ -133,13 +161,19 @@ def _validate_output_paths(
     machine_packet_path: Path,
     packet_path: Path,
     selection_output_path: Path,
-    review_ranking_output_path: Path,
+    review_ranking_output_path: Path | None,
 ) -> None:
     source_packets = (machine_packet_path, packet_path)
-    if paths_alias(selection_output_path, review_ranking_output_path):
+    if review_ranking_output_path is not None and paths_alias(
+        selection_output_path,
+        review_ranking_output_path,
+    ):
         msg = "Selection-review and review-ranking outputs must be different files."
         raise ValueError(msg)
-    if paths_nested(selection_output_path, review_ranking_output_path):
+    if review_ranking_output_path is not None and paths_nested(
+        selection_output_path,
+        review_ranking_output_path,
+    ):
         msg = (
             "Selection-review and review-ranking outputs must not use nested "
             "parent/child paths."
@@ -149,17 +183,21 @@ def _validate_output_paths(
         if paths_alias(selection_output_path, source_packet):
             msg = "Selection-review output must not overwrite source packet."
             raise ValueError(msg)
-        if paths_alias(review_ranking_output_path, source_packet):
+        if review_ranking_output_path is not None and paths_alias(
+            review_ranking_output_path,
+            source_packet,
+        ):
             msg = "Review-ranking output must not overwrite source packet."
             raise ValueError(msg)
     _validate_output_file_path(
         output_path=selection_output_path,
         label="Selection-review output",
     )
-    _validate_output_file_path(
-        output_path=review_ranking_output_path,
-        label="Review-ranking output",
-    )
+    if review_ranking_output_path is not None:
+        _validate_output_file_path(
+            output_path=review_ranking_output_path,
+            label="Review-ranking output",
+        )
 
 
 def _validate_output_file_path(*, output_path: Path, label: str) -> None:
@@ -225,6 +263,28 @@ def _write_paired_json(
         _cleanup_temp_path(review_ranking_temp_path)
         _restore_prepared_outputs(prepared_outputs)
         msg = f"Unable to write paired shadow-review source inputs: {exc}"
+        raise OSError(msg) from exc
+
+
+def _write_single_json(*, output_path: Path, payload: JSONObject) -> None:
+    """Atomically replace one selection-only source input."""
+
+    _validate_output_file_path(
+        output_path=output_path,
+        label="Selection-review output",
+    )
+    temp_path: Path | None = None
+    prepared_outputs: list[_PreparedOutput] = []
+    try:
+        temp_path = _write_temp_sibling(final_path=output_path, payload=payload)
+        prepared_outputs.append(_prepare_output_for_replace(output_path))
+        temp_path.replace(output_path)
+        temp_path = None
+        _discard_prepared_backups(prepared_outputs)
+    except OSError as exc:
+        _cleanup_temp_path(temp_path)
+        _restore_prepared_outputs(prepared_outputs)
+        msg = f"Unable to write selection-only shadow-review source input: {exc}"
         raise OSError(msg) from exc
 
 
