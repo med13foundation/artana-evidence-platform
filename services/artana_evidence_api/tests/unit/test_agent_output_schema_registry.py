@@ -362,7 +362,7 @@ def test_production_manifest_covers_current_model_output_schemas() -> None:
             build_llm_guarded_extraction_output_schema(max_relations=3)
         ),
         "entity_resolution.agent.v1": EntityDecision,
-        "evidence_selection.semantic.v1": EvidenceSelectionSemanticBatchContract,
+        "evidence_selection.semantic.v2": EvidenceSelectionSemanticBatchContract,
         "evidence_selection.source_plan.v1": ModelEvidenceSelectionSourcePlanContract,
         "full_ai.shadow_planner.v1": ShadowPlannerRecommendationOutput,
         "graph_connection.agent.v1": _GraphConnectionExecutionContract,
@@ -387,9 +387,7 @@ def test_debt_manifest_exactly_covers_registered_legacy_fields() -> None:
     manifest = validate_agent_output_debt_coverage()
 
     debt_ids = [item.debt_id for item in manifest]
-    assert set(debt_ids) == {
-        "AON-SEL-001",
-    }
+    assert debt_ids == []
     assert all(item.quarantined for item in manifest)
 
 
@@ -397,8 +395,8 @@ def test_registry_report_exposes_merge_gate_counts() -> None:
     report = build_agent_output_registry_report()
 
     assert report["registered_schema_count"] == 15
-    assert report["registered_numeric_field_count"] == 2
+    assert report["registered_numeric_field_count"] == 1
     assert report["origin_governed_numeric_field_count"] == 1
-    assert report["debt_numeric_field_count"] == 1
-    assert report["active_debt_count"] == 1
+    assert report["debt_numeric_field_count"] == 0
+    assert report["active_debt_count"] == 0
     assert report["unquarantined_debt_count"] == 0

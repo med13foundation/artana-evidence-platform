@@ -161,23 +161,17 @@ def _graph_categories(prefix: str) -> tuple[CategoryFieldPolicy, ...]:
 
 _POLICIES = (
     AgentOutputSchemaPolicy(
-        schema_id="evidence_selection.semantic.v1",
+        schema_id="evidence_selection.semantic.v2",
         schema_names=("EvidenceSelectionSemanticBatchContract",),
-        shape_hash="9e5a7d2909d1cc98d129c0bbd51e470660d45aec89c0c300fc9eb40e5b85d33e",
+        shape_hash="b1428a8b75b9e6eb14bf2faddd7db7c8689bb2097c5282a7b9dfebd67744bdab",
         producer_paths=("evidence_selection/semantic/model.py",),
-        prompt_identifiers=("evidence_selection.semantic_selector.v1",),
-        numeric_fields=(
-            NumericFieldPolicy(
-                path="$.assessments[].record_index",
-                debt_id="AON-SEL-001",
-            ),
-        ),
+        prompt_identifiers=("evidence_selection.semantic_selector.v2",),
         categorical_fields=(
             _category(
                 "$.schema_version",
                 {
-                    "evidence_selection_semantic_agent.v1": (
-                        "the payload follows semantic selector schema version 1."
+                    "evidence_selection_semantic_agent.v2": (
+                        "the payload follows semantic selector schema version 2."
                     ),
                 },
                 evidence_requirement="This is a fixed protocol marker.",

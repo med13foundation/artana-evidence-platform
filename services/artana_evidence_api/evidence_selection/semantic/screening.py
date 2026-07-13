@@ -208,6 +208,7 @@ class AgentEvidenceSelectionCandidateScreener:
                         decision_from_semantic_assessment(
                             source_key=source_search.source_key,
                             search_id=str(source_search.id),
+                            record_index=index,
                             record=record,
                             assessment=assessments[index],
                             agent_run_id=agent_run_ids[index],

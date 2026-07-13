@@ -1,15 +1,1 @@
-[
-  {
-    "debt_id": "AON-SEL-001",
-    "kind": "numeric_judgment",
-    "schema_ids": ["evidence_selection.semantic.v1"],
-    "field_path": "$.assessments[].record_index",
-    "producer": "semantic selection agent",
-    "consumers": ["semantic assessment record mapping"],
-    "current_influence": "The numeric locator selects which retrieved record receives an assessment.",
-    "quarantined": true,
-    "quarantine_rule": "Validation requires exact input-index coverage, rejects duplicates, and resolves cited evidence against the claimed source record before any decision is accepted.",
-    "owner_pr": "PR 3 semantic locator migration",
-    "removal_gate": "Use an opaque deterministic record reference with explicit locator provenance instead of an agent-authored number."
-  }
-]
+[]

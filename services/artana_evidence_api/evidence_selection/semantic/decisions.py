@@ -35,6 +35,7 @@ def decision_from_semantic_assessment(
     *,
     source_key: str,
     search_id: str,
+    record_index: int,
     record: JSONObject,
     assessment: EvidenceSelectionSemanticCandidateAssessment,
     agent_run_id: str,
@@ -76,12 +77,12 @@ def decision_from_semantic_assessment(
         decision=decision,
         relevance_label=relevance,
         reason=assessment.explanation,
-        record_index=assessment.record_index,
+        record_index=record_index,
         record_hash=record_hash(record),
         title=record_title(
             source_key=source_key,
             record=record,
-            index=assessment.record_index,
+            index=record_index,
         ),
         score=score,
         caveats=_assessment_caveats(
