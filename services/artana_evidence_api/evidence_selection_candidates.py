@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from enum import StrEnum
 from uuid import UUID
 
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+)
+from artana_evidence_api.runtime.agent_output_schema import RetrievalAlgorithmNumber
 from artana_evidence_api.types.common import JSONObject, JSONValue
 
 HIGH_PRIORITY_SCORE_THRESHOLD = 5.0
@@ -66,7 +70,8 @@ class EvidenceSelectionCandidateDecision:
     record_index: int | None = None
     record_hash: str | None = None
     title: str | None = None
-    score: float = 0.0
+    operational_ranking: DeterministicRankingWeight | None = None
+    retrieval_ranking: RetrievalAlgorithmNumber | None = None
     matched_terms: tuple[str, ...] = ()
     excluded_terms: tuple[str, ...] = ()
     caveats: tuple[str, ...] = ()
@@ -76,6 +81,21 @@ class EvidenceSelectionCandidateDecision:
     shadow_decision: EvidenceSelectionDecisionState | None = None
     would_have_been_selected: bool = False
     semantic_agent_run_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.operational_ranking is not None and self.retrieval_ranking is not None:
+            msg = "candidate decisions cannot mix operational and retrieval ranking"
+            raise ValueError(msg)
+
+    @property
+    def ordering_value(self) -> float:
+        """Return an acquisition-order value from the available typed origin."""
+
+        if self.operational_ranking is not None:
+            return self.operational_ranking.value
+        if self.retrieval_ranking is not None:
+            return self.retrieval_ranking.value
+        return 0.0
 
     def with_decision(
         self,
@@ -108,7 +128,8 @@ class EvidenceSelectionCandidateDecision:
             record_index=self.record_index,
             record_hash=self.record_hash,
             title=self.title,
-            score=self.score,
+            operational_ranking=self.operational_ranking,
+            retrieval_ranking=self.retrieval_ranking,
             matched_terms=self.matched_terms,
             excluded_terms=self.excluded_terms,
             caveats=self.caveats,
@@ -130,11 +151,18 @@ class EvidenceSelectionCandidateDecision:
             "decision": self.decision.value,
             "relevance_label": self.relevance_label.value,
             "reason": self.reason,
-            "score": self.score,
             "matched_terms": list(self.matched_terms),
             "excluded_terms": list(self.excluded_terms),
             "caveats": list(self.caveats),
         }
+        if self.operational_ranking is not None:
+            payload["operational_ranking"] = self.operational_ranking.model_dump(
+                mode="json",
+            )
+        if self.retrieval_ranking is not None:
+            payload["retrieval_ranking"] = self.retrieval_ranking.model_dump(
+                mode="json",
+            )
         if self.record_index is not None:
             payload["record_index"] = self.record_index
         if self.record_hash is not None:
@@ -177,17 +205,38 @@ def record_dedup_key(
     return f"{source_key}:{search_id}:{record_index}"
 
 
-def score_from_decision(
+def candidate_ordering_value(
     decision: JSONObject | EvidenceSelectionCandidateDecision,
 ) -> float:
-    """Return a numeric selection score from one serialized decision."""
+    """Return an acquisition-order value, which may be retrieval-derived."""
 
     if isinstance(decision, EvidenceSelectionCandidateDecision):
-        return decision.score
-    score = decision.get("score")
-    if isinstance(score, int | float) and not isinstance(score, bool):
-        return float(score)
+        return decision.ordering_value
+    operational = decision.get("operational_ranking")
+    if isinstance(operational, dict):
+        return DeterministicRankingWeight.model_validate(operational).value
+    retrieval = decision.get("retrieval_ranking")
+    if isinstance(retrieval, dict):
+        return RetrievalAlgorithmNumber.model_validate(retrieval).value
+    if "score" in decision:
+        msg = "bare evidence-selection score fields are not accepted"
+        raise ValueError(msg)
     return 0.0
+
+
+def require_operational_ranking(
+    decision: EvidenceSelectionCandidateDecision,
+) -> DeterministicRankingWeight:
+    """Return governed post-judgment ranking or reject retrieval-only ranking."""
+
+    ranking = decision.operational_ranking
+    if ranking is None:
+        msg = (
+            "selected candidate lacks deterministic operational ranking; retrieval "
+            "scores cannot influence post-judgment staging"
+        )
+        raise ValueError(msg)
+    return ranking
 
 
 def record_hash(record: JSONObject) -> str:
@@ -247,5 +296,6 @@ __all__ = [
     "relevance_label_for_selected_score",
     "required_decision_int",
     "required_decision_string",
-    "score_from_decision",
+    "candidate_ordering_value",
+    "require_operational_ranking",
 ]

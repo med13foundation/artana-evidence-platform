@@ -74,32 +74,19 @@ def test_completed_packet_builds_source_export_inputs() -> None:
     assert review_report.confirmed_skip_ids == ("pubmed:search-1:1",)
 
     ranking_payload = result.review_ranking_payload()
-    assert ranking_payload == {
-        "schema_version": "evidence_selection_review_ranking_calibration.v1",
-        "study_id": "shadow-study-2026-07-07",
-        "adjudication_note": "Reviewer A completed selection and ranking labels.",
-        "description": "Shadow review completion fixture.",
-        "decisions": [
-            {
-                "source_kind": "proposal",
-                "item_id": "proposal-1",
-                "ranking_score": 0.91,
-                "outcome": "positive",
-                "reviewer_id": "reviewer-a",
-                "goal": _GOAL,
-                "evidence_shape": "variant_drug_response",
-            },
-            {
-                "source_kind": "review_item",
-                "item_id": "review-item-1",
-                "ranking_score": 0.22,
-                "outcome": "negative",
-                "reviewer_id": "reviewer-a",
-                "goal": _GOAL,
-                "evidence_shape": "background_context",
-            },
-        ],
-    }
+    assert ranking_payload["schema_version"] == (
+        "evidence_selection_review_ranking_calibration.v2"
+    )
+    assert ranking_payload["calibration_protocol"] is None
+    decisions = ranking_payload["decisions"]
+    assert [decision["outcome"] for decision in decisions] == [
+        "positive",
+        "negative",
+    ]
+    assert [decision["operational_ranking"]["value"] for decision in decisions] == [
+        0.91,
+        0.22,
+    ]
     ReviewRankingCalibrationStudyInput.model_validate(ranking_payload)
 
 
@@ -323,7 +310,7 @@ def _machine_packet() -> dict[str, object]:
 
 def _packet_payload() -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_shadow_review_packet.v2",
+        "schema_version": "evidence_selection_shadow_review_packet.v3",
         "study_id": "shadow-study-2026-07-07",
         "study_type": "selection_and_review_ranking",
         "source_run_id": _RUN_ID,
@@ -367,7 +354,9 @@ def _packet_payload() -> dict[str, object]:
             {
                 "source_kind": "proposal",
                 "item_id": "proposal-1",
-                "ranking_score": 0.91,
+                "research_question_id": "question-braf",
+                "operational_ranking": _operational_ranking(0.91),
+                "calibrated_probability": None,
                 "outcome": "positive",
                 "reviewer_id": "reviewer-a",
                 "goal": _GOAL,
@@ -376,7 +365,9 @@ def _packet_payload() -> dict[str, object]:
             {
                 "source_kind": "review_item",
                 "item_id": "review-item-1",
-                "ranking_score": 0.22,
+                "research_question_id": "question-braf",
+                "operational_ranking": _operational_ranking(0.22),
+                "calibrated_probability": None,
                 "outcome": "negative",
                 "reviewer_id": "reviewer-a",
                 "goal": _GOAL,
@@ -399,8 +390,24 @@ def _candidate_record(record_id: str) -> dict[str, object]:
         "record_index": int(record_index_text),
         "record_hash": f"hash-{record_index_text}",
         "title": f"Candidate {record_index_text}",
-        "score": 0.8,
+        "operational_ranking": _operational_ranking(0.8),
         "matched_terms": ["BRAF"],
         "excluded_terms": [],
         "caveats": [],
+    }
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_review_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "evidence_state", "value": "supported"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
     }

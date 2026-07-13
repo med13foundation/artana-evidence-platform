@@ -595,7 +595,7 @@ def _review_ranking_export(
     study_id: str = "shadow-study-2026-07-07",
 ) -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_review_ranking_export.v1",
+        "schema_version": "evidence_selection_review_ranking_export.v2",
         **_source_export_identity(),
         "review_ranking": review_ranking or _review_ranking(study_id=study_id),
     }
@@ -619,7 +619,8 @@ def _review_ranking(
         {
             "source_kind": "proposal" if index % 2 == 0 else "review_item",
             "item_id": f"positive-{index}",
-            "ranking_score": 1.0,
+            "research_question_id": f"question-{index % 3}",
+            "operational_ranking": _operational_ranking(1.0),
             "outcome": "positive",
             "reviewer_id": "reviewer-a",
             "goal": goals[index % len(goals)],
@@ -631,7 +632,8 @@ def _review_ranking(
         {
             "source_kind": "proposal" if index % 2 == 0 else "review_item",
             "item_id": f"negative-{index}",
-            "ranking_score": 0.0,
+            "research_question_id": f"question-{index % 3}",
+            "operational_ranking": _operational_ranking(0.0),
             "outcome": "negative",
             "reviewer_id": "reviewer-a",
             "goal": goals[index % len(goals)],
@@ -640,10 +642,26 @@ def _review_ranking(
         for index in range(5)
     )
     return {
-        "schema_version": "evidence_selection_review_ranking_calibration.v1",
+        "schema_version": "evidence_selection_review_ranking_calibration.v2",
         "study_id": study_id,
         "adjudication_note": "No reviewer disagreements in this sample.",
         "decisions": decisions,
+    }
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_review_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "evidence_state", "value": "supported"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
     }
 
 

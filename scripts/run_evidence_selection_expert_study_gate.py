@@ -166,6 +166,7 @@ def render_evidence_selection_expert_study_gate_markdown(report: JSONObject) -> 
         lines.extend(
             [
                 f"- status: {ranking_gate.get('status')}",
+                f"- availability: {ranking_calibration.get('availability')}",
                 f"- sample_count: {ranking_calibration.get('sample_count')}",
                 "- expected_calibration_error: "
                 f"{ranking_calibration.get('expected_calibration_error')}",

@@ -13,25 +13,30 @@ from artana_evidence_api.evidence_selection.provenance import (
     build_evidence_selection_provenance_summary,
     source_manifest_blocking_reasons,
 )
+from artana_evidence_api.evidence_selection.ranking.calibration import (
+    RankingProbabilityCalibrationSummary,
+    build_ranking_probability_calibration_summary,
+)
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    ReviewRankingCalibrationDecision,
+    ReviewRankingCalibrationGateThresholds,
+    ReviewRankingCalibrationProtocol,
+    ReviewRankingCalibrationStudyInput,
+    ReviewRankingOutcome,
+    ReviewRankingSourceKind,
+)
+from artana_evidence_api.evidence_selection.ranking.gate_protocol import (
+    calibration_protocol_blocking_reasons,
+)
 from artana_evidence_api.evidence_selection.review.assessment import (
     EvidenceSelectionReviewInput,
     EvidenceSelectionReviewReport,
     compare_evidence_selection_review,
 )
-from artana_evidence_api.ranking import (
-    ReviewRankingCalibrationObservation,
-    ReviewRankingCalibrationSummary,
-    build_review_ranking_calibration_summary,
-)
 from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-ReviewRankingSourceKind = Literal["proposal", "review_item"]
-ReviewRankingOutcome = Literal["positive", "negative"]
 ReviewRankingGateStatus = Literal["passed", "failed"]
-ReviewRankingCalibrationSchemaVersion = Literal[
-    "evidence_selection_review_ranking_calibration.v1"
-]
 EvidenceSelectionExpertStudySchemaVersion = Literal[
     "evidence_selection_expert_study.v2"
 ]
@@ -46,7 +51,11 @@ EvidenceSelectionExpertStudyType = Literal[
 ]
 
 _SOURCE_KINDS: tuple[ReviewRankingSourceKind, ...] = ("proposal", "review_item")
-_OUTCOMES: tuple[ReviewRankingOutcome, ...] = ("negative", "positive")
+_DECIDED_OUTCOMES: tuple[ReviewRankingOutcome, ...] = ("negative", "positive")
+_OUTCOMES: tuple[ReviewRankingOutcome, ...] = (
+    "abstained",
+    *_DECIDED_OUTCOMES,
+)
 
 
 def _normalize_non_blank_study_id(value: str) -> str:
@@ -55,72 +64,6 @@ def _normalize_non_blank_study_id(value: str) -> str:
         msg = "study_id must not be blank"
         raise ValueError(msg)
     return normalized
-
-
-class ReviewRankingCalibrationDecision(BaseModel):
-    """One expert/shadow decision for a scored review queue item."""
-
-    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
-
-    source_kind: ReviewRankingSourceKind
-    item_id: str = Field(min_length=1)
-    ranking_score: float = Field(ge=0.0, le=1.0)
-    outcome: ReviewRankingOutcome
-    reviewer_id: str | None = None
-    goal: str | None = None
-    evidence_shape: str | None = None
-
-    @field_validator("item_id")
-    @classmethod
-    def _normalize_item_id(cls, value: str) -> str:
-        normalized = value.strip()
-        if normalized == "":
-            msg = "item_id must not be blank"
-            raise ValueError(msg)
-        return normalized
-
-
-class ReviewRankingCalibrationGateThresholds(BaseModel):
-    """Fail-closed thresholds for expert/shadow review-ranking calibration."""
-
-    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
-
-    min_sample_count: int = Field(default=10, ge=1)
-    max_expected_calibration_error: float = Field(default=0.05, ge=0.0, le=1.0)
-    min_roc_auc: float = Field(default=0.7, ge=0.0, le=1.0)
-    min_mean_score_separation: float = Field(default=0.1, ge=0.0, le=1.0)
-    min_distinct_goals: int = Field(default=3, ge=0)
-    min_distinct_evidence_shapes: int = Field(default=3, ge=0)
-    require_reviewer_ids: bool = True
-    require_adjudication_note: bool = True
-    require_positive_and_negative_outcomes: bool = True
-    require_proposal_and_review_item_sources: bool = True
-    require_positive_and_negative_per_source: bool = True
-    bin_count: int = Field(default=10, ge=1)
-
-
-class ReviewRankingCalibrationStudyInput(BaseModel):
-    """Strict JSON envelope for expert/shadow review-ranking calibration."""
-
-    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
-
-    schema_version: ReviewRankingCalibrationSchemaVersion
-    study_id: str
-    decisions: tuple[ReviewRankingCalibrationDecision, ...]
-    adjudication_note: str | None = None
-    description: str | None = Field(default=None, min_length=1)
-
-    @field_validator("decisions", mode="before")
-    @classmethod
-    def _accept_json_decision_array(cls, value: object) -> object:
-        if isinstance(value, list):
-            return tuple(value)
-        return value
-
-    @field_validator("study_id")
-    @classmethod
-    def _normalize_study_id(cls, value: str) -> str:
-        return _normalize_non_blank_study_id(value)
 
 
 class EvidenceSelectionExpertStudyGateThresholds(BaseModel):
@@ -193,14 +136,14 @@ class ReviewRankingCalibrationGateReport:
 
     passed: bool
     status: ReviewRankingGateStatus
-    calibration: ReviewRankingCalibrationSummary
+    calibration: RankingProbabilityCalibrationSummary
     thresholds: ReviewRankingCalibrationGateThresholds
     source_counts: dict[str, int]
     outcome_counts: dict[str, int]
     source_outcome_counts: dict[str, dict[str, int]]
-    mean_positive_score: float
-    mean_negative_score: float
-    mean_score_separation: float
+    mean_positive_operational_weight: float
+    mean_negative_operational_weight: float
+    mean_operational_weight_separation: float
     roc_auc: float
     study_design: JSONObject
     duplicate_decision_keys: tuple[str, ...]
@@ -218,12 +161,30 @@ class ReviewRankingCalibrationGateReport:
                     self.thresholds.max_expected_calibration_error
                 ),
                 "min_roc_auc": self.thresholds.min_roc_auc,
-                "min_mean_score_separation": (
-                    self.thresholds.min_mean_score_separation
+                "min_mean_operational_weight_separation": (
+                    self.thresholds.min_mean_operational_weight_separation
                 ),
                 "min_distinct_goals": self.thresholds.min_distinct_goals,
                 "min_distinct_evidence_shapes": (
                     self.thresholds.min_distinct_evidence_shapes
+                ),
+                "min_training_research_questions": (
+                    self.thresholds.min_training_research_questions
+                ),
+                "min_held_out_research_questions": (
+                    self.thresholds.min_held_out_research_questions
+                ),
+                "min_observed_held_out_research_questions": (
+                    self.thresholds.min_observed_held_out_research_questions
+                ),
+                "require_calibrated_probabilities": (
+                    self.thresholds.require_calibrated_probabilities
+                ),
+                "require_authenticated_protocol": (
+                    self.thresholds.require_authenticated_protocol
+                ),
+                "require_independent_expert_labels": (
+                    self.thresholds.require_independent_expert_labels
                 ),
                 "require_reviewer_ids": self.thresholds.require_reviewer_ids,
                 "require_adjudication_note": (
@@ -247,9 +208,9 @@ class ReviewRankingCalibrationGateReport:
                 for source_kind, counts in self.source_outcome_counts.items()
             },
             "discrimination": {
-                "mean_positive_score": self.mean_positive_score,
-                "mean_negative_score": self.mean_negative_score,
-                "mean_score_separation": self.mean_score_separation,
+                "mean_positive_operational_weight": self.mean_positive_operational_weight,
+                "mean_negative_operational_weight": self.mean_negative_operational_weight,
+                "mean_operational_weight_separation": self.mean_operational_weight_separation,
                 "roc_auc": self.roc_auc,
             },
             "study_design": dict(self.study_design),
@@ -318,29 +279,24 @@ class EvidenceSelectionExpertStudyGateReport:
 def evaluate_review_ranking_calibration_gate(
     *,
     decisions: tuple[ReviewRankingCalibrationDecision, ...],
+    calibration_protocol: ReviewRankingCalibrationProtocol | None = None,
     adjudication_note: str | None = None,
     thresholds: ReviewRankingCalibrationGateThresholds | None = None,
 ) -> ReviewRankingCalibrationGateReport:
     """Evaluate whether expert/shadow review-ranking calibration is mergeable."""
 
     active_thresholds = thresholds or ReviewRankingCalibrationGateThresholds()
-    calibration = build_review_ranking_calibration_summary(
-        tuple(
-            ReviewRankingCalibrationObservation(
-                ranking_score=decision.ranking_score,
-                outcome_positive=decision.outcome == "positive",
-            )
-            for decision in decisions
-        ),
+    calibration = build_ranking_probability_calibration_summary(
+        decisions,
         bin_count=active_thresholds.bin_count,
     )
     source_counts = _source_counts(decisions)
     outcome_counts = _outcome_counts(decisions)
     source_outcome_counts = _source_outcome_counts(decisions)
-    mean_positive_score = _mean_outcome_score(decisions=decisions, outcome="positive")
-    mean_negative_score = _mean_outcome_score(decisions=decisions, outcome="negative")
-    mean_score_separation = _round_gate_metric(
-        mean_positive_score - mean_negative_score,
+    mean_positive_operational_weight = _mean_outcome_operational_weight(decisions=decisions, outcome="positive")
+    mean_negative_operational_weight = _mean_outcome_operational_weight(decisions=decisions, outcome="negative")
+    mean_operational_weight_separation = _round_gate_metric(
+        mean_positive_operational_weight - mean_negative_operational_weight,
     )
     roc_auc = _roc_auc(decisions)
     study_design = _study_design(
@@ -354,10 +310,12 @@ def evaluate_review_ranking_calibration_gate(
         source_counts=source_counts,
         outcome_counts=outcome_counts,
         source_outcome_counts=source_outcome_counts,
-        mean_score_separation=mean_score_separation,
+        mean_operational_weight_separation=mean_operational_weight_separation,
         roc_auc=roc_auc,
         study_design=study_design,
         duplicate_decision_keys=duplicate_decision_keys,
+        decisions=decisions,
+        calibration_protocol=calibration_protocol,
     )
     passed = not blocking_reasons
     return ReviewRankingCalibrationGateReport(
@@ -368,9 +326,9 @@ def evaluate_review_ranking_calibration_gate(
         source_counts=source_counts,
         outcome_counts=outcome_counts,
         source_outcome_counts=source_outcome_counts,
-        mean_positive_score=mean_positive_score,
-        mean_negative_score=mean_negative_score,
-        mean_score_separation=mean_score_separation,
+        mean_positive_operational_weight=mean_positive_operational_weight,
+        mean_negative_operational_weight=mean_negative_operational_weight,
+        mean_operational_weight_separation=mean_operational_weight_separation,
         roc_auc=roc_auc,
         study_design=study_design,
         duplicate_decision_keys=duplicate_decision_keys,
@@ -417,6 +375,7 @@ def evaluate_evidence_selection_expert_study_gate(
     review_ranking_gate = (
         evaluate_review_ranking_calibration_gate(
             decisions=review_ranking.decisions,
+            calibration_protocol=review_ranking.calibration_protocol,
             adjudication_note=review_ranking.adjudication_note,
             thresholds=review_ranking_thresholds,
         )
@@ -500,13 +459,15 @@ def _duplicate_decision_keys(
     return tuple(dict.fromkeys(duplicates))
 
 
-def _mean_outcome_score(
+def _mean_outcome_operational_weight(
     *,
     decisions: tuple[ReviewRankingCalibrationDecision, ...],
     outcome: ReviewRankingOutcome,
 ) -> float:
     scores = tuple(
-        decision.ranking_score for decision in decisions if decision.outcome == outcome
+        decision.operational_ranking.value
+        for decision in decisions
+        if decision.outcome == outcome
     )
     if not scores:
         return 0.0
@@ -515,12 +476,12 @@ def _mean_outcome_score(
 
 def _roc_auc(decisions: tuple[ReviewRankingCalibrationDecision, ...]) -> float:
     positive_scores = tuple(
-        decision.ranking_score
+        decision.operational_ranking.value
         for decision in decisions
         if decision.outcome == "positive"
     )
     negative_scores = tuple(
-        decision.ranking_score
+        decision.operational_ranking.value
         for decision in decisions
         if decision.outcome == "negative"
     )
@@ -561,6 +522,9 @@ def _study_design(
         "distinct_goal_count": len(goals),
         "distinct_evidence_shape_count": len(evidence_shapes),
         "reviewer_count": len(reviewer_ids),
+        "distinct_research_question_count": len(
+            {decision.research_question_id for decision in decisions},
+        ),
         "missing_goal_count": sum(
             1 for decision in decisions if not _normalized_study_label(decision.goal)
         ),
@@ -582,15 +546,17 @@ def _study_design(
 
 def _blocking_reasons(
     *,
-    calibration: ReviewRankingCalibrationSummary,
+    calibration: RankingProbabilityCalibrationSummary,
     thresholds: ReviewRankingCalibrationGateThresholds,
     source_counts: dict[str, int],
     outcome_counts: dict[str, int],
     source_outcome_counts: dict[str, dict[str, int]],
-    mean_score_separation: float,
+    mean_operational_weight_separation: float,
     roc_auc: float,
     study_design: JSONObject,
     duplicate_decision_keys: tuple[str, ...],
+    decisions: tuple[ReviewRankingCalibrationDecision, ...],
+    calibration_protocol: ReviewRankingCalibrationProtocol | None,
 ) -> tuple[str, ...]:
     reasons = [
         *_coverage_blocking_reasons(
@@ -604,10 +570,15 @@ def _blocking_reasons(
             study_design=study_design,
             thresholds=thresholds,
         ),
+        *calibration_protocol_blocking_reasons(
+            decisions=decisions,
+            protocol=calibration_protocol,
+            thresholds=thresholds,
+        ),
         *_ranking_quality_blocking_reasons(
             calibration=calibration,
             thresholds=thresholds,
-            mean_score_separation=mean_score_separation,
+            mean_operational_weight_separation=mean_operational_weight_separation,
             roc_auc=roc_auc,
             duplicate_decision_keys=duplicate_decision_keys,
         ),
@@ -617,18 +588,20 @@ def _blocking_reasons(
 
 def _coverage_blocking_reasons(
     *,
-    calibration: ReviewRankingCalibrationSummary,
+    calibration: RankingProbabilityCalibrationSummary,
     thresholds: ReviewRankingCalibrationGateThresholds,
     source_counts: dict[str, int],
     outcome_counts: dict[str, int],
     source_outcome_counts: dict[str, dict[str, int]],
 ) -> tuple[str, ...]:
     reasons: list[str] = []
-    if calibration.sample_count < thresholds.min_sample_count:
+    decided_sample_count = outcome_counts["positive"] + outcome_counts["negative"]
+    if decided_sample_count < thresholds.min_sample_count:
         reasons.append(
             "At least "
             f"{thresholds.min_sample_count} expert/shadow review-ranking "
-            f"decisions are required; got {calibration.sample_count}.",
+            f"decisions are required; got {decided_sample_count} decided and "
+            f"{calibration.abstention_count} abstained.",
         )
     if thresholds.require_positive_and_negative_outcomes:
         if outcome_counts["positive"] == 0:
@@ -646,7 +619,7 @@ def _coverage_blocking_reasons(
             f"source kind {source_kind}."
             for source_kind in _SOURCE_KINDS
             if source_counts[source_kind] > 0
-            for outcome in _OUTCOMES
+            for outcome in _DECIDED_OUTCOMES
             if source_outcome_counts[source_kind][outcome] == 0
         )
     return tuple(reasons)
@@ -701,9 +674,9 @@ def _study_design_blocking_reasons(
 
 def _ranking_quality_blocking_reasons(
     *,
-    calibration: ReviewRankingCalibrationSummary,
+    calibration: RankingProbabilityCalibrationSummary,
     thresholds: ReviewRankingCalibrationGateThresholds,
-    mean_score_separation: float,
+    mean_operational_weight_separation: float,
     roc_auc: float,
     duplicate_decision_keys: tuple[str, ...],
 ) -> tuple[str, ...]:
@@ -718,20 +691,38 @@ def _ranking_quality_blocking_reasons(
             "Review-ranking ROC AUC is below target: "
             f"{roc_auc:.6f} < {thresholds.min_roc_auc:.6f}.",
         )
-    if mean_score_separation < thresholds.min_mean_score_separation:
+    if mean_operational_weight_separation < thresholds.min_mean_operational_weight_separation:
         reasons.append(
-            "Review-ranking positive-vs-negative mean score separation is "
+            "Review-ranking positive-vs-negative mean operational-weight "
+            "separation is "
             "below target: "
-            f"{mean_score_separation:.6f} < "
-            f"{thresholds.min_mean_score_separation:.6f}.",
+            f"{mean_operational_weight_separation:.6f} < "
+            f"{thresholds.min_mean_operational_weight_separation:.6f}.",
         )
     if (
-        calibration.expected_calibration_error
-        > thresholds.max_expected_calibration_error
+        thresholds.require_calibrated_probabilities
+        and calibration.availability != "diagnostic"
+    ):
+        reasons.append(
+            "Complete candidate calibrated probabilities are required before the "
+            "held-out gate can validate a production ranking claim; calibration "
+            "availability is "
+            f"{calibration.availability}.",
+        )
+    expected_calibration_error = calibration.expected_calibration_error
+    if (
+        thresholds.require_calibrated_probabilities
+        and expected_calibration_error is None
+    ):
+        reasons.append(
+            "Calibration ECE is unavailable for the production ranking claim.",
+        )
+    elif expected_calibration_error is not None and (
+        expected_calibration_error > thresholds.max_expected_calibration_error
     ):
         reasons.append(
             "Review-ranking calibration ECE is above target: "
-            f"{calibration.expected_calibration_error:.6f} > "
+            f"{expected_calibration_error:.6f} > "
             f"{thresholds.max_expected_calibration_error:.6f}.",
         )
     return tuple(reasons)

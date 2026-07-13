@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from artana_evidence_api.ranking import (
-    ReviewRankingCalibrationObservation,
-    build_review_ranking_calibration_summary,
     rank_chat_graph_write_candidate,
     rank_mechanism_candidate,
     rank_reviewed_candidate_claim,
@@ -82,34 +80,3 @@ def test_rank_reviewed_candidate_claim_rewards_grounded_entailed_specific_eviden
     assert strong.score > weak.score
     assert strong.metadata["evidence_quality_component"] == 1.0
     assert weak.metadata["evidence_quality_component"] == 0.0
-
-
-def test_review_ranking_calibration_summary_uses_decided_review_outcomes() -> None:
-    summary = build_review_ranking_calibration_summary(
-        (
-            ReviewRankingCalibrationObservation(
-                ranking_score=0.9,
-                outcome_positive=True,
-            ),
-            ReviewRankingCalibrationObservation(
-                ranking_score=0.8,
-                outcome_positive=False,
-            ),
-            ReviewRankingCalibrationObservation(
-                ranking_score=1.4,
-                outcome_positive=True,
-            ),
-        ),
-        bin_count=10,
-    )
-
-    assert summary.sample_count == 3
-    assert summary.mean_score == 0.9
-    assert summary.observed_positive_rate == 0.666667
-    assert summary.expected_calibration_error == 0.3
-    assert summary.to_json() == {
-        "sample_count": 3,
-        "mean_score": 0.9,
-        "observed_positive_rate": 0.666667,
-        "expected_calibration_error": 0.3,
-    }

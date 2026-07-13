@@ -8,6 +8,12 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    ReviewRankingCalibrationProtocol,
+)
+from artana_evidence_api.evidence_selection.ranking.protocol_integrity import (
+    authenticate_calibration_protocol,
+)
 from artana_evidence_api.evidence_selection.shadow_review_integrity import (
     sign_machine_packet_digest,
 )
@@ -65,7 +71,7 @@ def test_shadow_review_study_pipeline_builds_bundle_ready_artifacts(
     assert ranking_input["study_id"] == "shadow-study-2026-07-07"
     assert selection_export["schema_version"] == "evidence_selection_review_export.v2"
     assert ranking_export["schema_version"] == (
-        "evidence_selection_review_ranking_export.v1"
+        "evidence_selection_review_ranking_export.v2"
     )
     assert bundle["schema_version"] == "evidence_selection_expert_study.v2"
     assert bundle["study_type"] == "selection_and_review_ranking"
@@ -242,6 +248,7 @@ def _selection_only_completed_packet() -> dict[str, object]:
     packet["study_type"] = "selection_relevance"
     packet["completion_required_fields"] = packet["completion_required_fields"][:4]
     packet["review_ranking_forms"] = []
+    packet.pop("calibration_protocol")
     return packet
 
 
@@ -270,7 +277,7 @@ def _machine_packet_for_completed_packet(
 
 def _completed_packet_payload() -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_shadow_review_packet.v2",
+        "schema_version": "evidence_selection_shadow_review_packet.v3",
         "study_id": "shadow-study-2026-07-07",
         "study_type": "selection_and_review_ranking",
         "source_run_id": _RUN_ID,
@@ -285,6 +292,7 @@ def _completed_packet_payload() -> dict[str, object]:
             "review_ranking_forms[].reviewer_id",
             "review_ranking_forms[].outcome",
         ],
+        "calibration_protocol": _calibration_protocol(),
         "candidate_records": [
             _candidate_record("pubmed:search-1:0"),
             _candidate_record("pubmed:search-1:1"),
@@ -310,7 +318,9 @@ def _completed_packet_payload() -> dict[str, object]:
             {
                 "source_kind": "proposal",
                 "item_id": "proposal-1",
-                "ranking_score": 1.0,
+                "research_question_id": "heldout-rq-01",
+                "operational_ranking": _operational_ranking(1.0),
+                "calibrated_probability": _calibrated_probability(1.0),
                 "outcome": "positive",
                 "reviewer_id": "reviewer-a",
                 "goal": _GOAL,
@@ -319,7 +329,9 @@ def _completed_packet_payload() -> dict[str, object]:
             {
                 "source_kind": "review_item",
                 "item_id": "review-item-1",
-                "ranking_score": 0.0,
+                "research_question_id": "heldout-rq-02",
+                "operational_ranking": _operational_ranking(0.0),
+                "calibrated_probability": _calibrated_probability(0.0),
                 "outcome": "negative",
                 "reviewer_id": "reviewer-a",
                 "goal": _GOAL,
@@ -342,8 +354,70 @@ def _candidate_record(record_id: str) -> dict[str, object]:
         "record_index": int(record_index_text),
         "record_hash": f"hash-{record_index_text}",
         "title": f"Candidate {record_index_text}",
-        "score": 0.8,
+        "operational_ranking": _operational_ranking(0.8),
         "matched_terms": ["BRAF"],
         "excluded_terms": [],
         "caveats": [],
     }
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_agent_semantic_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "objective_match", "value": "direct"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
+    }
+
+
+def _calibration_identity() -> dict[str, object]:
+    return {
+        "input_policy_id": "test_agent_semantic_ranking",
+        "input_policy_version": "v1",
+        "input_mapping_version": "v1",
+        "categorical_schema_version": "v1",
+        "selector_model_id": "test-selector-model",
+        "selector_prompt_version": "v1",
+        "objective_schema_version": "v1",
+        "corpus_version": "v1",
+        "calibration_algorithm": "isotonic",
+        "calibration_version": "v1",
+    }
+
+
+def _calibrated_probability(value: float) -> dict[str, object]:
+    return {
+        "origin": "calibration_model",
+        "value": value,
+        "calibration_status": "diagnostic",
+        "identity": _calibration_identity(),
+        "training_set_sha256": "1" * 64,
+        "partition_manifest_sha256": "2" * 64,
+        "held_out_protocol": "frozen_question_partition_v1",
+    }
+
+
+def _calibration_protocol() -> dict[str, object]:
+    payload = {
+        "identity": _calibration_identity(),
+        "partition_manifest_sha256": "2" * 64,
+        "training_set_sha256": "1" * 64,
+        "held_out_set_sha256": "3" * 64,
+        "training_research_question_ids": [
+            f"training-rq-{index:02d}" for index in range(1, 13)
+        ],
+        "held_out_research_question_ids": [
+            f"heldout-rq-{index:02d}" for index in range(1, 9)
+        ],
+        "independent_expert_labels": True,
+        "held_out_protocol": "frozen_question_partition_v1",
+    }
+    protocol = ReviewRankingCalibrationProtocol.model_validate(payload)
+    return authenticate_calibration_protocol(protocol).model_dump(mode="json")

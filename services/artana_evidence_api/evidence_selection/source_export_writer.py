@@ -121,7 +121,7 @@ def write_evidence_selection_source_exports(
         selection_reviews=selection_reviews,
     )
     review_ranking_export = ReviewRankingCalibrationExport(
-        schema_version="evidence_selection_review_ranking_export.v1",
+        schema_version="evidence_selection_review_ranking_export.v2",
         source_system=identity.source_system,
         export_id=identity.export_id,
         exported_at=identity.exported_at,

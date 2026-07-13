@@ -5,11 +5,14 @@ from __future__ import annotations
 from uuid import UUID
 
 from artana_evidence_api.direct_source_search import DirectSourceSearchStore
+from artana_evidence_api.evidence_selection.ranking.confidence import (
+    deterministic_review_confidence,
+)
 from artana_evidence_api.evidence_selection_candidates import (
     HIGH_PRIORITY_SCORE_THRESHOLD,
     EvidenceSelectionCandidateDecision,
     record_dedup_key,
-    score_from_decision,
+    require_operational_ranking,
 )
 from artana_evidence_api.proposal_store import (
     HarnessProposalDraft,
@@ -46,6 +49,12 @@ def stage_selected_records_for_review(
     review_item_drafts: list[HarnessReviewItemDraft] = []
     errors: list[str] = []
     for decision in selected_records:
+        if decision.operational_ranking is None:
+            errors.append(
+                "Cannot stage selected evidence without deterministic operational "
+                "ranking provenance; retrieval-only ranking is not authoritative.",
+            )
+            continue
         if decision.record_index is None:
             errors.append(
                 "Cannot stage review output for selected record without record_index.",
@@ -130,8 +139,14 @@ def _proposal_draft_for_decision(
     source_key = decision.source_key
     adapter = require_source_adapter(source_key)
     title = decision.title or f"{source_key} record"
-    score = score_from_decision(decision)
-    metadata = _review_metadata(decision=decision, record=record, adapter=adapter)
+    score = require_operational_ranking(decision).value
+    confidence = deterministic_review_confidence(decision.relevance_label.value)
+    metadata = _review_metadata(
+        decision=decision,
+        record=record,
+        adapter=adapter,
+        confidence=confidence.model_dump(mode="json"),
+    )
     payload = decision.to_artifact_payload()
     return HarnessProposalDraft(
         proposal_type=adapter.proposal_type,
@@ -140,7 +155,7 @@ def _proposal_draft_for_decision(
         document_id=document_id,
         title=f"Review candidate: {title}",
         summary=adapter.proposal_summary(decision.reason),
-        confidence=min(max(score / 10.0, 0.1), 0.95),
+        confidence=confidence.value,
         ranking_score=score,
         reasoning_path={
             "selection_reason": decision.reason,
@@ -170,8 +185,14 @@ def _review_item_draft_for_decision(
     source_family = decision.source_family
     adapter = require_source_adapter(source_key)
     title = decision.title or f"{source_key} record"
-    score = score_from_decision(decision)
-    metadata = _review_metadata(decision=decision, record=record, adapter=adapter)
+    score = require_operational_ranking(decision).value
+    confidence = deterministic_review_confidence(decision.relevance_label.value)
+    metadata = _review_metadata(
+        decision=decision,
+        record=record,
+        adapter=adapter,
+        confidence=confidence.model_dump(mode="json"),
+    )
     payload = decision.to_artifact_payload()
     return HarnessReviewItemDraft(
         review_type=adapter.review_type,
@@ -182,7 +203,7 @@ def _review_item_draft_for_decision(
         title=f"Review selected source record: {title}",
         summary=adapter.review_item_summary(decision.reason),
         priority="high" if score >= HIGH_PRIORITY_SCORE_THRESHOLD else "medium",
-        confidence=min(max(score / 10.0, 0.1), 0.95),
+        confidence=confidence.value,
         ranking_score=score,
         evidence_bundle=[metadata],
         payload={
@@ -201,6 +222,7 @@ def _review_metadata(
     decision: EvidenceSelectionCandidateDecision,
     record: JSONObject,
     adapter: EvidenceSourceAdapter,
+    confidence: JSONObject,
 ) -> JSONObject:
     source_capture = record.get("source_capture")
     return {
@@ -211,7 +233,10 @@ def _review_metadata(
         "selected_record_hash": decision.record_hash,
         "selection_reason": decision.reason,
         "relevance_label": decision.relevance_label.value,
-        "selection_score": decision.score,
+        "operational_ranking": require_operational_ranking(decision).model_dump(
+            mode="json",
+        ),
+        "selection_confidence_projection": confidence,
         "matched_terms": list(decision.matched_terms),
         "excluded_terms": list(decision.excluded_terms),
         "caveats": list(decision.caveats),

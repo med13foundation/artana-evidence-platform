@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import pytest
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+    RankingCategoricalInput,
+)
 from artana_evidence_api.evidence_selection_validation import (
     ReviewRankingCalibrationDecision,
     ReviewRankingCalibrationGateThresholds,
@@ -55,6 +59,8 @@ def test_review_ranking_calibration_gate_passes_balanced_shadow_set() -> None:
         thresholds=ReviewRankingCalibrationGateThresholds(
             min_sample_count=4,
             max_expected_calibration_error=0.08,
+            require_calibrated_probabilities=False,
+            require_authenticated_protocol=False,
         ),
     )
 
@@ -62,13 +68,18 @@ def test_review_ranking_calibration_gate_passes_balanced_shadow_set() -> None:
     assert report.status == "passed"
     assert report.blocking_reasons == ()
     assert report.calibration.sample_count == 4
-    assert report.calibration.mean_score == 0.5
-    assert report.calibration.observed_positive_rate == 0.5
-    assert report.calibration.expected_calibration_error == 0.075
+    assert report.calibration.availability == "unavailable"
+    assert report.calibration.mean_probability is None
+    assert report.calibration.observed_positive_rate is None
+    assert report.calibration.expected_calibration_error is None
     assert report.roc_auc == 1.0
-    assert report.mean_score_separation == 0.85
+    assert report.mean_operational_weight_separation == 0.85
     assert report.source_counts == {"proposal": 2, "review_item": 2}
-    assert report.outcome_counts == {"negative": 2, "positive": 2}
+    assert report.outcome_counts == {
+        "abstained": 0,
+        "negative": 2,
+        "positive": 2,
+    }
 
 
 def test_review_ranking_calibration_gate_defaults_block_metadata_bypass() -> None:
@@ -77,7 +88,7 @@ def test_review_ranking_calibration_gate_defaults_block_metadata_bypass() -> Non
     )
 
     assert report.passed is False
-    assert report.calibration.expected_calibration_error == 0.0
+    assert report.calibration.expected_calibration_error is None
     assert report.roc_auc == 1.0
     assert any("distinct research goals" in reason for reason in report.blocking_reasons)
     assert any("distinct evidence shapes" in reason for reason in report.blocking_reasons)
@@ -104,7 +115,10 @@ def test_review_ranking_calibration_gate_fails_closed_for_weak_review_sets() -> 
     assert any("negative reviewer outcome" in reason for reason in report.blocking_reasons)
     assert any("review_item source" in reason for reason in report.blocking_reasons)
     assert any("Duplicate" in reason for reason in report.blocking_reasons)
-    assert any("ECE is above target" in reason for reason in report.blocking_reasons)
+    assert any(
+        "calibration availability is unavailable" in reason
+        for reason in report.blocking_reasons
+    )
 
 
 def test_review_ranking_calibration_gate_blocks_missing_reviewer_ids() -> None:
@@ -113,7 +127,7 @@ def test_review_ranking_calibration_gate_blocks_missing_reviewer_ids() -> None:
     decisions[0] = _decision(
         first_decision.source_kind,
         first_decision.item_id,
-        first_decision.ranking_score,
+        first_decision.operational_ranking.value,
         first_decision.outcome,
         goal=first_decision.goal,
         reviewer_id=None,
@@ -146,7 +160,7 @@ def test_review_ranking_calibration_gate_requires_outcomes_per_source_kind() -> 
         _decision(
             "proposal" if decision.outcome == "positive" else "review_item",
             decision.item_id,
-            decision.ranking_score,
+            decision.operational_ranking.value,
             decision.outcome,
             goal=decision.goal,
             reviewer_id=decision.reviewer_id,
@@ -177,7 +191,7 @@ def test_review_ranking_calibration_gate_normalizes_duplicate_item_ids() -> None
     decisions[1] = _decision(
         first.source_kind,
         f" {first.item_id} ",
-        decisions[1].ranking_score,
+        decisions[1].operational_ranking.value,
         decisions[1].outcome,
         goal=decisions[1].goal,
         reviewer_id=decisions[1].reviewer_id,
@@ -198,7 +212,7 @@ def test_review_ranking_calibration_gate_counts_normalized_study_labels() -> Non
         _decision(
             decision.source_kind,
             decision.item_id,
-            decision.ranking_score,
+            decision.operational_ranking.value,
             decision.outcome,
             goal=goal,
             reviewer_id=decision.reviewer_id,
@@ -263,11 +277,14 @@ def test_review_ranking_calibration_gate_blocks_constant_base_rate_scores() -> N
     )
 
     assert report.passed is False
-    assert report.calibration.expected_calibration_error == 0.0
+    assert report.calibration.expected_calibration_error is None
     assert report.roc_auc == 0.5
-    assert report.mean_score_separation == 0.0
+    assert report.mean_operational_weight_separation == 0.0
     assert any("ROC AUC" in reason for reason in report.blocking_reasons)
-    assert any("score separation" in reason for reason in report.blocking_reasons)
+    assert any(
+        "operational-weight separation" in reason
+        for reason in report.blocking_reasons
+    )
 
 
 def test_review_ranking_calibration_gate_blocks_undercovered_study_design() -> None:
@@ -330,12 +347,14 @@ def test_review_ranking_calibration_gate_blocks_undercovered_study_design() -> N
 
 
 def test_review_ranking_calibration_decision_rejects_invalid_labels() -> None:
+    valid_operational_ranking = _operational_ranking(0.5).model_dump(mode="json")
     with pytest.raises(ValidationError):
         ReviewRankingCalibrationDecision.model_validate(
             {
                 "source_kind": "document",
                 "item_id": "item-1",
-                "ranking_score": 0.5,
+                "research_question_id": "question-1",
+                "operational_ranking": valid_operational_ranking,
                 "outcome": "positive",
             },
         )
@@ -345,6 +364,7 @@ def test_review_ranking_calibration_decision_rejects_invalid_labels() -> None:
             {
                 "source_kind": "proposal",
                 "item_id": "item-1",
+                "research_question_id": "question-1",
                 "ranking_score": 1.2,
                 "outcome": "positive",
             },
@@ -355,7 +375,8 @@ def test_review_ranking_calibration_decision_rejects_invalid_labels() -> None:
             {
                 "source_kind": "proposal",
                 "item_id": "item-1",
-                "ranking_score": 0.5,
+                "research_question_id": "question-1",
+                "operational_ranking": valid_operational_ranking,
                 "outcome": "maybe",
             },
         )
@@ -365,7 +386,8 @@ def test_review_ranking_calibration_decision_rejects_invalid_labels() -> None:
             {
                 "source_kind": "proposal",
                 "item_id": "item-1",
-                "ranking_score": 0.5,
+                "research_question_id": "question-1",
+                "operational_ranking": valid_operational_ranking,
                 "outcome": "positive",
                 "unexpected": "ignored would be unsafe",
             },
@@ -386,12 +408,27 @@ def _decision(
         {
             "source_kind": source_kind,
             "item_id": item_id,
-            "ranking_score": ranking_score,
+            "research_question_id": f"question-{item_id}",
+            "operational_ranking": _operational_ranking(ranking_score).model_dump(
+                mode="json",
+            ),
             "outcome": outcome,
             "goal": goal,
             "reviewer_id": reviewer_id,
             "evidence_shape": evidence_shape,
         },
+    )
+
+
+def _operational_ranking(value: float) -> DeterministicRankingWeight:
+    return DeterministicRankingWeight(
+        value=value,
+        policy_id="test_review_ranking",
+        policy_version="v1",
+        mapping_version="v1",
+        categorical_inputs=(
+            RankingCategoricalInput(field="evidence_state", value="supported"),
+        ),
     )
 
 

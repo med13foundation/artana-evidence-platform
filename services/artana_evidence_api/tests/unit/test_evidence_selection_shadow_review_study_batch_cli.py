@@ -16,8 +16,10 @@ from services.artana_evidence_api.tests.unit.evidence_selection_review_fixtures 
     inadequate_explanation_assessment,
 )
 from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_review_study_pipeline import (  # noqa: E501
+    _calibrated_probability,
     _completed_packet,
     _machine_packet_for_completed_packet,
+    _operational_ranking,
 )
 
 
@@ -349,12 +351,14 @@ def test_shadow_review_study_batch_cli_relaxed_quality_thresholds_still_need_sui
         "suite_mean_recall": 0.0,
         "suite_explanation_adequacy_rate": 0.0,
         "max_review_ranking_expected_calibration_error": 0.0,
+        "unavailable_review_ranking_calibration_count": 0,
     }
     assert summary["passed_entry_production_quality"] == {
         "suite_mean_precision": 0.0,
         "suite_mean_recall": 0.0,
         "suite_explanation_adequacy_rate": 0.0,
         "max_review_ranking_expected_calibration_error": 0.0,
+        "unavailable_review_ranking_calibration_count": 0,
     }
     markdown_report = (output_dir / "shadow-review-study-batch.md").read_text()
     assert "Passed-entry production mean precision" in markdown_report
@@ -729,6 +733,7 @@ def _completed_packet_for_cli_batch(
     ranking_forms = packet["review_ranking_forms"]
     assert isinstance(ranking_forms, list)
     shapes = (first_shape, second_shape)
+    question_offset = ((int(source_run_id[0], 16) - 1) * 3) % 8
     while len(ranking_forms) < review_ranking_decision_count:
         index = len(ranking_forms)
         positive = index % 2 == 0
@@ -736,7 +741,15 @@ def _completed_packet_for_cli_batch(
             {
                 "source_kind": "proposal" if positive else "review_item",
                 "item_id": f"ranking-{study_id}-{index}",
-                "ranking_score": 1.0 if positive else 0.0,
+                "research_question_id": (
+                    f"heldout-rq-{((question_offset + index) % 8) + 1:02d}"
+                ),
+                "operational_ranking": _operational_ranking(
+                    1.0 if positive else 0.0,
+                ),
+                "calibrated_probability": _calibrated_probability(
+                    1.0 if positive else 0.0,
+                ),
                 "outcome": "positive" if positive else "negative",
                 "reviewer_id": "reviewer-a",
                 "goal": goal,
@@ -745,6 +758,9 @@ def _completed_packet_for_cli_batch(
         )
     for index, form in enumerate(ranking_forms):
         assert isinstance(form, dict)
+        form["research_question_id"] = (
+            f"heldout-rq-{((question_offset + index) % 8) + 1:02d}"
+        )
         form["goal"] = goal
         form["evidence_shape"] = shapes[index % len(shapes)]
     return packet

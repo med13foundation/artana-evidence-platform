@@ -9,6 +9,14 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    CalibratedRankingProbability,
+    DeterministicRankingWeight,
+    ReviewRankingCalibrationProtocol,
+)
+from artana_evidence_api.evidence_selection.ranking.protocol_integrity import (
+    authenticate_calibration_protocol,
+)
 from artana_evidence_api.evidence_selection.shadow_review_integrity import (
     sign_machine_packet_digest,
 )
@@ -16,17 +24,17 @@ from artana_evidence_api.evidence_selection_candidates import (
     record_dedup_key,
     required_decision_int,
     required_decision_string,
-    score_from_decision,
 )
 from artana_evidence_api.evidence_selection_validation import (
     EvidenceSelectionExpertStudyType,
     ReviewRankingSourceKind,
 )
+from artana_evidence_api.runtime.agent_output_schema import RetrievalAlgorithmNumber
 from artana_evidence_api.types.common import JSONObject, JSONValue
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 EvidenceSelectionShadowReviewPacketSchemaVersion = Literal[
-    "evidence_selection_shadow_review_packet.v2"
+    "evidence_selection_shadow_review_packet.v3"
 ]
 EvidenceSelectionShadowReviewCompletionStatus = Literal["requires_human_labels"]
 
@@ -53,6 +61,7 @@ class EvidenceSelectionShadowReviewPacketRequest:
     skipped_records: tuple[JSONObject, ...] = ()
     deferred_records: tuple[JSONObject, ...] = ()
     review_ranking_items: tuple[EvidenceSelectionShadowReviewRankingItem, ...] = ()
+    calibration_protocol: ReviewRankingCalibrationProtocol | None = None
 
 
 class EvidenceSelectionShadowCandidateRecord(BaseModel):
@@ -70,7 +79,8 @@ class EvidenceSelectionShadowCandidateRecord(BaseModel):
     record_index: int = Field(ge=0)
     record_hash: str | None = Field(default=None, min_length=1)
     title: str | None = Field(default=None, min_length=1)
-    score: float = Field(ge=0.0)
+    operational_ranking: DeterministicRankingWeight | None = None
+    retrieval_ranking: RetrievalAlgorithmNumber | None = None
     matched_terms: tuple[str, ...] = ()
     excluded_terms: tuple[str, ...] = ()
     caveats: tuple[str, ...] = ()
@@ -81,6 +91,15 @@ class EvidenceSelectionShadowCandidateRecord(BaseModel):
         if isinstance(value, list):
             return tuple(value)
         return value
+
+    @model_validator(mode="after")
+    def _ranking_origin_must_be_unambiguous(
+        self,
+    ) -> EvidenceSelectionShadowCandidateRecord:
+        if self.operational_ranking is not None and self.retrieval_ranking is not None:
+            msg = "candidate records cannot mix operational and retrieval ranking"
+            raise ValueError(msg)
+        return self
 
 
 class EvidenceSelectionShadowSelectionReviewForm(BaseModel):
@@ -129,7 +148,9 @@ class EvidenceSelectionShadowReviewRankingItem(BaseModel):
 
     source_kind: ReviewRankingSourceKind
     item_id: str = Field(min_length=1)
-    ranking_score: float = Field(ge=0.0, le=1.0)
+    research_question_id: str = Field(min_length=1)
+    operational_ranking: DeterministicRankingWeight
+    calibrated_probability: CalibratedRankingProbability | None = None
     goal: str | None = Field(default=None, min_length=1)
     evidence_shape: str | None = Field(default=None, min_length=1)
 
@@ -141,7 +162,9 @@ class EvidenceSelectionShadowReviewRankingForm(BaseModel):
 
     source_kind: ReviewRankingSourceKind
     item_id: str = Field(min_length=1)
-    ranking_score: float = Field(ge=0.0, le=1.0)
+    research_question_id: str = Field(min_length=1)
+    operational_ranking: DeterministicRankingWeight
+    calibrated_probability: CalibratedRankingProbability | None = None
     outcome: None = None
     reviewer_id: None = None
     goal: str | None = Field(default=None, min_length=1)
@@ -171,6 +194,7 @@ class EvidenceSelectionShadowReviewPacket(BaseModel):
         pattern=r"^[a-f0-9]{64}$",
     )
     completion_required_fields: tuple[str, ...]
+    calibration_protocol: ReviewRankingCalibrationProtocol | None = None
     candidate_records: tuple[EvidenceSelectionShadowCandidateRecord, ...]
     selection_review_forms: tuple[EvidenceSelectionShadowSelectionReviewForm, ...]
     review_ranking_forms: tuple[EvidenceSelectionShadowReviewRankingForm, ...] = ()
@@ -206,11 +230,31 @@ class EvidenceSelectionShadowReviewPacket(BaseModel):
         if self.study_type == "selection_relevance" and self.review_ranking_forms:
             msg = "selection_relevance packets must not include ranking forms."
             raise ValueError(msg)
+        if self.study_type == "selection_relevance" and self.calibration_protocol:
+            msg = "selection_relevance packets must not include calibration protocol."
+            raise ValueError(msg)
         if (
             self.study_type == "selection_and_review_ranking"
             and not self.review_ranking_forms
         ):
             msg = "selection_and_review_ranking packets require ranking forms."
+            raise ValueError(msg)
+        probabilities = tuple(
+            form.calibrated_probability
+            for form in self.review_ranking_forms
+            if form.calibrated_probability is not None
+        )
+        if probabilities and self.calibration_protocol is None:
+            msg = "calibrated probabilities require an immutable calibration protocol."
+            raise ValueError(msg)
+        if self.calibration_protocol is not None and any(
+            not _probability_matches_protocol(
+                probability=probability,
+                protocol=self.calibration_protocol,
+            )
+            for probability in probabilities
+        ):
+            msg = "calibrated probability provenance must match the packet protocol."
             raise ValueError(msg)
         if (
             self.machine_packet_sha256 is not None
@@ -252,13 +296,19 @@ def build_evidence_selection_shadow_review_packet(
         if request.review_ranking_items
         else "selection_relevance"
     )
+    calibration_protocol = (
+        authenticate_calibration_protocol(request.calibration_protocol)
+        if request.calibration_protocol is not None
+        else None
+    )
     packet = EvidenceSelectionShadowReviewPacket(
-        schema_version="evidence_selection_shadow_review_packet.v2",
+        schema_version="evidence_selection_shadow_review_packet.v3",
         study_id=study_id,
         study_type=study_type,
         source_run_id=run_id,
         goal=goal,
         completion_required_fields=_completion_required_fields(study_type),
+        calibration_protocol=calibration_protocol,
         candidate_records=candidate_records,
         selection_review_forms=(
             EvidenceSelectionShadowSelectionReviewForm(
@@ -279,7 +329,9 @@ def build_evidence_selection_shadow_review_packet(
             EvidenceSelectionShadowReviewRankingForm(
                 source_kind=item.source_kind,
                 item_id=item.item_id,
-                ranking_score=item.ranking_score,
+                research_question_id=item.research_question_id,
+                operational_ranking=item.operational_ranking,
+                calibrated_probability=item.calibrated_probability,
                 goal=item.goal,
                 evidence_shape=item.evidence_shape,
             )
@@ -307,6 +359,11 @@ def machine_packet_digest(packet: EvidenceSelectionShadowReviewPacket) -> str:
         "production_readiness_claim": packet.production_readiness_claim,
         "completion_status": packet.completion_status,
         "completion_required_fields": list(packet.completion_required_fields),
+        "calibration_protocol": (
+            packet.calibration_protocol.model_dump(mode="json")
+            if packet.calibration_protocol is not None
+            else None
+        ),
         "candidate_records": [
             record.model_dump(mode="json") for record in packet.candidate_records
         ],
@@ -324,7 +381,15 @@ def machine_packet_digest(packet: EvidenceSelectionShadowReviewPacket) -> str:
             {
                 "source_kind": form.source_kind,
                 "item_id": form.item_id,
-                "ranking_score": form.ranking_score,
+                "research_question_id": form.research_question_id,
+                "operational_ranking": form.operational_ranking.model_dump(
+                    mode="json",
+                ),
+                "calibrated_probability": (
+                    form.calibrated_probability.model_dump(mode="json")
+                    if form.calibrated_probability is not None
+                    else None
+                ),
                 "goal": form.goal,
                 "evidence_shape": form.evidence_shape,
             }
@@ -349,6 +414,20 @@ def _completion_required_fields(
             *_RANKING_COMPLETION_REQUIRED_FIELDS,
         )
     return _SELECTION_COMPLETION_REQUIRED_FIELDS
+
+
+def _probability_matches_protocol(
+    *,
+    probability: CalibratedRankingProbability,
+    protocol: ReviewRankingCalibrationProtocol,
+) -> bool:
+    return (
+        probability.identity == protocol.identity
+        and probability.training_set_sha256 == protocol.training_set_sha256
+        and probability.partition_manifest_sha256
+        == protocol.partition_manifest_sha256
+        and probability.held_out_protocol == protocol.held_out_protocol
+    )
 
 
 def _is_shadow_selected_decision(decision: JSONObject) -> bool:
@@ -395,11 +474,30 @@ def _candidate_record(decision: JSONObject) -> EvidenceSelectionShadowCandidateR
         record_index=record_index,
         record_hash=_optional_string(decision, "record_hash"),
         title=_optional_string(decision, "title"),
-        score=score_from_decision(decision),
+        operational_ranking=_optional_operational_ranking(decision),
+        retrieval_ranking=_optional_retrieval_ranking(decision),
         matched_terms=_string_tuple(decision.get("matched_terms")),
         excluded_terms=_string_tuple(decision.get("excluded_terms")),
         caveats=_string_tuple(decision.get("caveats")),
     )
+
+
+def _optional_operational_ranking(
+    decision: JSONObject,
+) -> DeterministicRankingWeight | None:
+    value = decision.get("operational_ranking")
+    if value is None:
+        return None
+    return DeterministicRankingWeight.model_validate(value)
+
+
+def _optional_retrieval_ranking(
+    decision: JSONObject,
+) -> RetrievalAlgorithmNumber | None:
+    value = decision.get("retrieval_ranking")
+    if value is None:
+        return None
+    return RetrievalAlgorithmNumber.model_validate(value)
 
 
 def _optional_string(decision: JSONObject, key: str) -> str | None:

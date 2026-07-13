@@ -10,6 +10,10 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+    RankingCategoricalInput,
+)
 from artana_evidence_api.evidence_selection_candidate_screening import (
     apply_handoff_budget,
     defer_selected_for_shadow_mode,
@@ -407,7 +411,15 @@ def _selected_decision(
         reason="Selected.",
         record_index=record_index,
         record_hash=record_hash,
-        score=6.0,
+        operational_ranking=DeterministicRankingWeight(
+            value=6.0,
+            policy_id="test_selection_ranking",
+            policy_version="v1",
+            mapping_version="v1",
+            categorical_inputs=(
+                RankingCategoricalInput(field="objective_match", value="direct"),
+            ),
+        ),
     )
 
 

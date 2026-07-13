@@ -1,0 +1,101 @@
+{
+  "schema_version": "evidence_selection_review_ranking_calibration.v2",
+  "study_id": "review_ranking_shadow_seed_v2",
+  "description": "Diagnostic-only mechanics fixture. Operational weights are not calibrated probabilities and this fixture cannot pass the production gate.",
+  "adjudication_note": "Synthetic seed outcomes exercise the report contract only; no production calibration claim is permitted.",
+  "decisions": [
+    {
+      "source_kind": "proposal",
+      "item_id": "proposal-med13-positive",
+      "research_question_id": "seed-question-med13",
+      "operational_ranking": {
+        "origin": "deterministic_policy",
+        "value": 6.0,
+        "policy_id": "evidence_selection_semantic_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+          {"field": "objective_match", "value": "direct"}
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": []
+      },
+      "calibrated_probability": null,
+      "outcome": "positive",
+      "reviewer_id": "seed-reviewer-a",
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
+    },
+    {
+      "source_kind": "review_item",
+      "item_id": "review-med13-positive",
+      "research_question_id": "seed-question-med13",
+      "operational_ranking": {
+        "origin": "deterministic_policy",
+        "value": 6.0,
+        "policy_id": "evidence_selection_semantic_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+          {"field": "objective_match", "value": "direct"}
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": []
+      },
+      "calibrated_probability": null,
+      "outcome": "positive",
+      "reviewer_id": "seed-reviewer-a",
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
+    },
+    {
+      "source_kind": "proposal",
+      "item_id": "proposal-med13-negative",
+      "research_question_id": "seed-question-med13",
+      "operational_ranking": {
+        "origin": "deterministic_policy",
+        "value": 0.0,
+        "policy_id": "evidence_selection_semantic_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+          {"field": "objective_match", "value": "off_objective"}
+        ],
+        "caps": [],
+        "vetoes": ["off_objective"],
+        "blocking_categories": ["objective_match"]
+      },
+      "calibrated_probability": null,
+      "outcome": "negative",
+      "reviewer_id": "seed-reviewer-a",
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
+    },
+    {
+      "source_kind": "review_item",
+      "item_id": "review-med13-negative",
+      "research_question_id": "seed-question-med13",
+      "operational_ranking": {
+        "origin": "deterministic_policy",
+        "value": 0.0,
+        "policy_id": "evidence_selection_semantic_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+          {"field": "objective_match", "value": "off_objective"}
+        ],
+        "caps": [],
+        "vetoes": ["off_objective"],
+        "blocking_categories": ["objective_match"]
+      },
+      "calibrated_probability": null,
+      "outcome": "negative",
+      "reviewer_id": "seed-reviewer-a",
+      "goal": "Find MED13 congenital heart disease evidence.",
+      "evidence_shape": "variant_disease_relation"
+    }
+  ],
+  "calibration_protocol": null
+}

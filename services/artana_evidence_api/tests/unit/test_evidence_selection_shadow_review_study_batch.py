@@ -17,8 +17,10 @@ from services.artana_evidence_api.tests.unit.evidence_selection_review_fixtures 
     inadequate_explanation_assessment,
 )
 from services.artana_evidence_api.tests.unit.test_evidence_selection_shadow_review_study_pipeline import (  # noqa: E501
+    _calibrated_probability,
     _completed_packet,
     _machine_packet_for_completed_packet,
+    _operational_ranking,
 )
 
 
@@ -814,6 +816,7 @@ def test_shadow_review_study_batch_quality_gate_uses_unrounded_metrics() -> None
         suite_mean_recall=0.79996,
         suite_explanation_adequacy_rate=0.79996,
         max_review_ranking_expected_calibration_error=0.05,
+        unavailable_review_ranking_calibration_count=0,
     )
 
     reasons = batch._batch_suite_quality_blocking_reasons(  # noqa: SLF001
@@ -824,6 +827,27 @@ def test_shadow_review_study_batch_quality_gate_uses_unrounded_metrics() -> None
     assert any("suite mean precision" in reason for reason in reasons)
     assert any("suite mean recall" in reason for reason in reasons)
     assert any("explanation adequacy rate" in reason for reason in reasons)
+
+
+def test_shadow_review_study_batch_never_treats_missing_calibration_as_zero() -> None:
+    batch = _batch_module()
+    metrics = batch._BatchQualityMetrics(  # noqa: SLF001
+        suite_mean_precision=1.0,
+        suite_mean_recall=1.0,
+        suite_explanation_adequacy_rate=1.0,
+        max_review_ranking_expected_calibration_error=None,
+        unavailable_review_ranking_calibration_count=1,
+    )
+
+    reasons = batch._batch_suite_quality_blocking_reasons(  # noqa: SLF001
+        raw_quality_metrics=metrics,
+        thresholds=batch.EvidenceSelectionShadowReviewStudyBatchSuiteThresholds(),
+    )
+
+    assert metrics.to_json()["max_review_ranking_expected_calibration_error"] is None
+    assert reasons == (
+        "Batch review-ranking calibration is unavailable for 1 entries.",
+    )
 
 
 def test_shadow_review_study_batch_rolls_back_published_entries_after_later_failure(
@@ -1297,7 +1321,13 @@ def test_shadow_review_study_batch_applies_ranking_gates_only_to_combined_studie
         positive = index % 4 in (0, 3)
         form["source_kind"] = source_kind
         form["outcome"] = "positive" if positive else "negative"
-        form["ranking_score"] = 1.0 if positive else 0.0
+        form["operational_ranking"] = _operational_ranking(
+            1.0 if positive else 0.0,
+        )
+        form["calibrated_probability"] = _calibrated_probability(
+            1.0 if positive else 0.0,
+        )
+        form["research_question_id"] = f"heldout-rq-{(index % 8) + 1:02d}"
         form["goal"] = ranking_goals[index % len(ranking_goals)]
         form["evidence_shape"] = evidence_shapes[index % len(evidence_shapes)]
     packets = (*selection_packets, combined_packet)
@@ -1440,6 +1470,7 @@ def _selection_only_packet_for_batch(
     assert isinstance(completion_required_fields, list)
     packet["completion_required_fields"] = completion_required_fields[:4]
     packet["review_ranking_forms"] = []
+    packet.pop("calibration_protocol")
     return packet
 
 
@@ -1468,6 +1499,7 @@ def _completed_packet_for_batch(
     ranking_forms = packet["review_ranking_forms"]
     assert isinstance(ranking_forms, list)
     shapes = (first_shape, second_shape)
+    question_offset = _heldout_question_offset(source_run_id)
     while len(ranking_forms) < review_ranking_decision_count:
         index = len(ranking_forms)
         positive = index % 2 == 0
@@ -1475,7 +1507,15 @@ def _completed_packet_for_batch(
             {
                 "source_kind": "proposal" if positive else "review_item",
                 "item_id": f"ranking-{study_id}-{index}",
-                "ranking_score": 1.0 if positive else 0.0,
+                "research_question_id": (
+                    f"heldout-rq-{((question_offset + index) % 8) + 1:02d}"
+                ),
+                "operational_ranking": _operational_ranking(
+                    1.0 if positive else 0.0,
+                ),
+                "calibrated_probability": _calibrated_probability(
+                    1.0 if positive else 0.0,
+                ),
                 "outcome": "positive" if positive else "negative",
                 "reviewer_id": "reviewer-a",
                 "goal": goal,
@@ -1484,12 +1524,26 @@ def _completed_packet_for_batch(
         )
     for index, form in enumerate(ranking_forms):
         assert isinstance(form, dict)
+        form["research_question_id"] = (
+            f"heldout-rq-{((question_offset + index) % 8) + 1:02d}"
+        )
         form["goal"] = goal
         form["evidence_shape"] = shapes[index % len(shapes)]
         if reverse_source_outcomes:
             source_kind = "proposal" if index % 2 == 0 else "review_item"
             positive = source_kind == "review_item"
             form["source_kind"] = source_kind
-            form["ranking_score"] = 1.0 if positive else 0.0
+            form["operational_ranking"] = _operational_ranking(
+                1.0 if positive else 0.0,
+            )
+            form["calibrated_probability"] = _calibrated_probability(
+                1.0 if positive else 0.0,
+            )
             form["outcome"] = "positive" if positive else "negative"
     return packet
+
+
+def _heldout_question_offset(source_run_id: str | None) -> int:
+    if source_run_id is None:
+        return 0
+    return ((int(source_run_id[0], 16) - 1) * 3) % 8

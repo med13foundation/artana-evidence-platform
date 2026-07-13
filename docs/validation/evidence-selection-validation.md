@@ -81,13 +81,15 @@ Review-ranking calibration is gated separately from per-run precision/recall.
 Use
 `artana_evidence_api.evidence_selection_validation.evaluate_review_ranking_calibration_gate`
 or the runner below to compare prior `ranking_score` values with expert or
-shadow-mode outcomes. The gate fails closed unless the review set has enough
+shadow-mode outcomes. New studies use the full deterministic
+`operational_ranking` envelope; the persisted `ranking_score` column is only a
+legacy projection. The gate fails closed unless the review set has enough
 decisions, both positive and negative outcomes, both proposal and review-item
 sources, no duplicate decision keys, expected calibration error under the
-configured threshold, and evidence that scores discriminate positive outcomes
-from negative outcomes. Calibration alone is not enough: a constant score can be
-well calibrated to the base positive rate while still being useless for review
-queue prioritization.
+configured threshold, and evidence that deterministic operational weights
+discriminate positive outcomes from negative outcomes. Calibration alone is not
+enough: a constant probability can be well calibrated to the base positive rate
+while still being useless for review queue prioritization.
 
 Production calibration studies must also prove study-design coverage. The core
 helper and runner default to at least three distinct research goals, at least
@@ -103,26 +105,27 @@ is a single-goal mechanics fixture, not production-ready calibration evidence:
 
 ```bash
 uv run python scripts/run_evidence_selection_review_calibration_gate.py \
-  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json \
+  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v2.json \
   --max-expected-calibration-error 0.15 \
   --output-dir reports/evidence_selection_review_calibration/2026-07-07-pr40-seed-production-default
 ```
 
-The seed fixture proves the JSON format and threshold mechanics only. It is not
-production-representative evidence and must not be used to claim production
-readiness by itself. Production use should keep the runner's default `0.05`
+The seed fixture proves the v2 operational-ranking format and discrimination
+mechanics only. It intentionally has no calibrated probabilities or frozen
+partition protocol, so calibration is reported as unavailable and the gate
+cannot pass even when diversity thresholds are relaxed. Production use should
+keep the runner's default `0.05`
 expected-calibration-error threshold, `0.70` ROC-AUC threshold, `0.10`
-positive-vs-negative mean-score separation threshold, three-goal minimum, and
+positive-vs-negative mean-operational-weight separation threshold, three-goal minimum, and
 three-evidence-shape minimum unless a reviewed calibration plan sets stricter
 thresholds.
 
-Mechanics-only smoke command. This explicitly relaxes study diversity so the
-fixture can prove report rendering and threshold math without claiming
-production readiness:
+Diagnostic smoke command. This relaxes study diversity but still fails because
+unavailable calibration cannot support a production claim:
 
 ```bash
 uv run python scripts/run_evidence_selection_review_calibration_gate.py \
-  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json \
+  --input scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v2.json \
   --max-expected-calibration-error 0.15 \
   --min-distinct-goals 1 \
   --min-distinct-evidence-shapes 1 \
@@ -130,9 +133,28 @@ uv run python scripts/run_evidence_selection_review_calibration_gate.py \
 ```
 
 Production-readiness requires real shadow-mode runs reviewed by human experts
-on real research questions. Start with at least three distinct research
-questions across different evidence shapes, at least one domain reviewer per
-run, and an adjudication note for disagreements or borderline calls. Offline
+on real research questions. Freeze disjoint partitions before fitting: at least
+12 training questions and 8 held-out questions, with all 8 held-out questions
+actually represented in the evaluation. Record independent expert labels, at
+least three goals and evidence shapes, and an adjudication note for disagreements
+or borderline calls. The monotonic fitter must consume exactly the frozen
+training-question partition and match its training-set digest; it rejects any
+held-out question presented as training data.
+
+Candidate probabilities always carry `calibration_status: "diagnostic"`.
+Artifacts cannot declare themselves validated. Validation is the outcome of
+the held-out gate after it verifies ECE, discrimination, coverage, policy
+identity, and the producer-authenticated frozen protocol. The packet producer
+signs that protocol with
+`ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY`; altered or hand-authored
+unsigned protocols cannot support a production claim.
+
+Operational rank and queue confidence are separate deterministic policies.
+The rank orders agent-categorized evidence candidates. The legacy numeric
+queue-confidence field is projected from the categorical relevance label by a
+versioned policy and is explicitly marked
+`deterministic_weight_not_probability`; it is never computed by dividing the
+rank or treated as calibration evidence. Offline
 fixtures and helper metrics are necessary foundation checks, but they are not
 evidence that the harness is production ready.
 
@@ -155,7 +177,8 @@ incomplete: it records the harness-selected, skipped, and deferred candidate
 IDs but keeps human labels and ranking outcomes blank. A reviewer may edit only
 the first file. Keep the signed machine sidecar under producer control; the
 converter rejects a completed packet unless its machine-owned fields and
-signature match that sidecar.
+signature match that sidecar. For combined ranking studies the signed
+machine-owned fields include the producer-authenticated calibration protocol.
 
 After reviewers fill the packet, convert it into the raw source-export writer
 inputs:
@@ -244,7 +267,7 @@ uv run python scripts/build_evidence_selection_expert_study_bundle.py \
 The selection-review source export must use
 `schema_version: "evidence_selection_review_export.v2"`. The review-ranking
 source export must use
-`schema_version: "evidence_selection_review_ranking_export.v1"`. Both exports
+`schema_version: "evidence_selection_review_ranking_export.v2"`. Both exports
 must carry matching `source_system`, `export_id`, `exported_at`, `exporter_id`,
 and `redaction_statement` values. The builder derives the source manifest from
 those export fields and rejects identity drift before writing the final bundle.

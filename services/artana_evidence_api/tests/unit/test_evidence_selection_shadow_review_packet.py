@@ -6,6 +6,10 @@ import importlib
 from uuid import UUID
 
 import pytest
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+    RankingCategoricalInput,
+)
 from artana_evidence_api.evidence_selection.shadow_review_packet import (
     EvidenceSelectionShadowReviewPacket,
 )
@@ -62,7 +66,8 @@ def test_shadow_review_packet_creates_incomplete_human_label_forms() -> None:
                 packet_module.EvidenceSelectionShadowReviewRankingItem(
                     source_kind="proposal",
                     item_id="proposal-1",
-                    ranking_score=0.91,
+                    research_question_id="question-braf",
+                    operational_ranking=_operational_ranking(0.91),
                     goal=_GOAL,
                     evidence_shape="variant_drug_response",
                 ),
@@ -71,7 +76,7 @@ def test_shadow_review_packet_creates_incomplete_human_label_forms() -> None:
     )
 
     payload = packet.model_dump(mode="json")
-    assert payload["schema_version"] == "evidence_selection_shadow_review_packet.v2"
+    assert payload["schema_version"] == "evidence_selection_shadow_review_packet.v3"
     assert payload["study_type"] == "selection_and_review_ranking"
     assert payload["production_readiness_claim"] is False
     assert payload["completion_status"] == "requires_human_labels"
@@ -105,7 +110,8 @@ def test_shadow_review_packet_creates_incomplete_human_label_forms() -> None:
     ranking_form = payload["review_ranking_forms"][0]
     assert ranking_form["source_kind"] == "proposal"
     assert ranking_form["item_id"] == "proposal-1"
-    assert ranking_form["ranking_score"] == 0.91
+    assert ranking_form["operational_ranking"]["value"] == 0.91
+    assert ranking_form["calibrated_probability"] is None
     assert ranking_form["outcome"] is None
     assert "review_ranking_forms[].outcome" in payload["completion_required_fields"]
 
@@ -124,7 +130,8 @@ def test_shadow_review_packet_forms_do_not_validate_as_completed_expert_labels()
                 packet_module.EvidenceSelectionShadowReviewRankingItem(
                     source_kind="review_item",
                     item_id="review-item-1",
-                    ranking_score=0.72,
+                    research_question_id="question-braf",
+                    operational_ranking=_operational_ranking(0.72),
                 ),
             ),
         ),
@@ -207,7 +214,7 @@ def test_shadow_review_packet_schema_enforces_incomplete_collection_invariants()
     with pytest.raises(ValidationError):
         EvidenceSelectionShadowReviewPacket.model_validate(
             {
-                "schema_version": "evidence_selection_shadow_review_packet.v2",
+                "schema_version": "evidence_selection_shadow_review_packet.v3",
                 "study_id": "shadow-study-2026-07-07",
                 "study_type": "selection_relevance",
                 "source_run_id": _RUN_ID,
@@ -292,8 +299,20 @@ def _decision(
         "record_index": record_index,
         "record_hash": f"{source_key}-hash-{record_index}",
         "title": title,
-        "score": score,
+        "operational_ranking": _operational_ranking(score).model_dump(mode="json"),
         "matched_terms": ["BRAF", "vemurafenib"],
         "excluded_terms": [],
         "caveats": [],
     }
+
+
+def _operational_ranking(value: float) -> DeterministicRankingWeight:
+    return DeterministicRankingWeight(
+        value=value,
+        policy_id="test_review_ranking",
+        policy_version="v1",
+        mapping_version="v1",
+        categorical_inputs=(
+            RankingCategoricalInput(field="evidence_state", value="supported"),
+        ),
+    )

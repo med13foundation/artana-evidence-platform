@@ -6,6 +6,12 @@ import json
 from pathlib import Path
 
 import pytest
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    ReviewRankingCalibrationProtocol,
+)
+from artana_evidence_api.evidence_selection.ranking.protocol_integrity import (
+    authenticate_calibration_protocol,
+)
 
 from scripts.run_evidence_selection_review_calibration_gate import (
     build_review_ranking_calibration_gate_report,
@@ -14,11 +20,21 @@ from scripts.run_evidence_selection_review_calibration_gate import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _calibration_protocol_signing_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY",
+        "review-calibration-runner-test-key-at-least-32-bytes",
+    )
+
+
 def test_review_ranking_calibration_gate_runner_blocks_seed_as_production_proof() -> None:
     report = build_review_ranking_calibration_gate_report(
         input_path=Path(
             "scripts/validation/evidence_selection/fixtures/"
-            "review_ranking_shadow_seed_v1.json",
+            "review_ranking_shadow_seed_v2.json",
         ),
         min_sample_count=10,
         max_expected_calibration_error=0.15,
@@ -27,8 +43,9 @@ def test_review_ranking_calibration_gate_runner_blocks_seed_as_production_proof(
 
     assert report["gate"]["passed"] is False
     assert report["gate"]["status"] == "failed"
-    assert report["gate"]["calibration"]["sample_count"] == 10
-    assert report["gate"]["calibration"]["expected_calibration_error"] <= 0.15
+    assert report["gate"]["calibration"]["sample_count"] == 4
+    assert report["gate"]["calibration"]["availability"] == "unavailable"
+    assert report["gate"]["calibration"]["expected_calibration_error"] is None
     assert report["gate"]["study_design"]["distinct_goal_count"] == 1
     assert report["gate"]["study_design"]["distinct_evidence_shape_count"] == 1
     assert report["gate"]["study_design"]["missing_reviewer_id_count"] == 0
@@ -43,42 +60,64 @@ def test_review_ranking_calibration_gate_runner_blocks_seed_as_production_proof(
         if isinstance(reason, str)
     )
     assert "Review-ranking calibration gate: **FAILED**" in markdown
-    assert "review_ranking_shadow_seed_v1" in markdown
+    assert "review_ranking_shadow_seed_v2" in markdown
 
 
-def test_review_ranking_calibration_gate_runner_can_render_seed_mechanics() -> None:
+def test_review_ranking_calibration_gate_seed_cannot_pass_relaxed_quality() -> None:
     report = build_review_ranking_calibration_gate_report(
         input_path=Path(
             "scripts/validation/evidence_selection/fixtures/"
-            "review_ranking_shadow_seed_v1.json",
+            "review_ranking_shadow_seed_v2.json",
         ),
-        min_sample_count=10,
+        min_sample_count=4,
         max_expected_calibration_error=0.15,
         min_distinct_goals=1,
         min_distinct_evidence_shapes=1,
     )
     markdown = render_review_ranking_calibration_gate_markdown(report)
 
-    assert report["gate"]["passed"] is True
-    assert report["gate"]["status"] == "passed"
-    assert report["gate"]["blocking_reasons"] == []
-    assert "Review-ranking calibration gate: **PASSED**" in markdown
+    assert report["gate"]["passed"] is False
+    assert report["gate"]["calibration"]["availability"] == "unavailable"
+    assert any(
+        "Complete candidate calibrated probabilities are required" in reason
+        for reason in report["gate"]["blocking_reasons"]
+        if isinstance(reason, str)
+    )
+    assert "Review-ranking calibration gate: **FAILED**" in markdown
 
 
 def test_review_ranking_calibration_gate_runner_uses_strict_production_default() -> None:
     report = build_review_ranking_calibration_gate_report(
         input_path=Path(
             "scripts/validation/evidence_selection/fixtures/"
-            "review_ranking_shadow_seed_v1.json",
+            "review_ranking_shadow_seed_v2.json",
         ),
     )
 
     assert report["gate"]["passed"] is False
     assert any(
-        "ECE is above target" in reason
+        "Complete candidate calibrated probabilities are required" in reason
         for reason in report["gate"]["blocking_reasons"]
         if isinstance(reason, str)
     )
+
+
+def test_review_ranking_calibration_gate_accepts_validated_held_out_study(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "validated-held-out-study.json"
+    input_path.write_text(json.dumps(_validated_study_payload()) + "\n")
+
+    report = build_review_ranking_calibration_gate_report(
+        input_path=input_path,
+        min_sample_count=8,
+        max_expected_calibration_error=0.05,
+    )
+
+    assert report["gate"]["passed"] is True
+    assert report["gate"]["calibration"]["availability"] == "diagnostic"
+    assert report["gate"]["calibration"]["expected_calibration_error"] == 0.0
+    assert report["gate"]["blocking_reasons"] == []
 
 
 def test_review_ranking_calibration_gate_runner_fails_closed_for_small_studies(
@@ -88,14 +127,16 @@ def test_review_ranking_calibration_gate_runner_fails_closed_for_small_studies(
     input_path.write_text(
         json.dumps(
             {
-                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "schema_version": "evidence_selection_review_ranking_calibration.v2",
                 "study_id": "small-study",
                 "adjudication_note": "No disagreements in this seed study.",
                 "decisions": [
                     {
                         "source_kind": "proposal",
                         "item_id": "proposal-1",
-                        "ranking_score": 0.9,
+                        "research_question_id": "small-study-question",
+                        "operational_ranking": _operational_ranking(6.0),
+                        "calibrated_probability": None,
                         "outcome": "positive",
                         "goal": "Find MED13 evidence.",
                         "reviewer_id": "reviewer-a",
@@ -123,17 +164,17 @@ def test_review_ranking_calibration_gate_runner_fails_closed_for_small_studies(
     assert "Review-ranking calibration gate: **FAILED**" in markdown
 
 
-def test_review_ranking_calibration_gate_runner_accepts_integer_json_scores(
+def test_review_ranking_calibration_gate_integer_weights_are_not_probabilities(
     tmp_path: Path,
 ) -> None:
     decisions = _passing_diverse_decisions()
     for index, decision in enumerate(decisions):
-        decision["ranking_score"] = 1 if index < 2 else 0
+        decision["operational_ranking"]["value"] = 1 if index < 2 else 0
     input_path = tmp_path / "integer-scores.json"
     input_path.write_text(
         json.dumps(
             {
-                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "schema_version": "evidence_selection_review_ranking_calibration.v2",
                 "study_id": "integer-scores",
                 "adjudication_note": "No disagreements in this study.",
                 "decisions": decisions,
@@ -148,8 +189,9 @@ def test_review_ranking_calibration_gate_runner_accepts_integer_json_scores(
         max_expected_calibration_error=0.15,
     )
 
-    assert report["gate"]["passed"] is True
-    assert report["gate"]["calibration"]["mean_score"] == 0.5
+    assert report["gate"]["passed"] is False
+    assert report["gate"]["calibration"]["availability"] == "unavailable"
+    assert report["gate"]["calibration"]["mean_probability"] is None
 
 
 def test_review_ranking_calibration_gate_cli_returns_nonzero_by_default_when_failed(
@@ -159,14 +201,16 @@ def test_review_ranking_calibration_gate_cli_returns_nonzero_by_default_when_fai
     input_path.write_text(
         json.dumps(
             {
-                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "schema_version": "evidence_selection_review_ranking_calibration.v2",
                 "study_id": "small-study",
                 "adjudication_note": "No disagreements in this seed study.",
                 "decisions": [
                     {
                         "source_kind": "proposal",
                         "item_id": "proposal-1",
-                        "ranking_score": 0.9,
+                        "research_question_id": "small-study-question",
+                        "operational_ranking": _operational_ranking(6.0),
+                        "calibrated_probability": None,
                         "outcome": "positive",
                         "goal": "Find MED13 evidence.",
                         "reviewer_id": "reviewer-a",
@@ -240,7 +284,7 @@ def test_review_ranking_calibration_gate_runner_rejects_extra_study_fields(
     input_path.write_text(
         json.dumps(
             {
-                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "schema_version": "evidence_selection_review_ranking_calibration.v2",
                 "study_id": "extra-field",
                 "unexpected": "ignored would be unsafe",
                 "decisions": _passing_decisions(),
@@ -263,7 +307,7 @@ def test_review_ranking_calibration_gate_runner_blocks_undercovered_study_design
     input_path.write_text(
         json.dumps(
             {
-                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "schema_version": "evidence_selection_review_ranking_calibration.v2",
                 "study_id": "undercovered-study",
                 "adjudication_note": "No disagreements in this seed study.",
                 "decisions": [
@@ -309,7 +353,7 @@ def test_review_ranking_calibration_gate_runner_blocks_missing_adjudication_note
     input_path.write_text(
         json.dumps(
             {
-                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "schema_version": "evidence_selection_review_ranking_calibration.v2",
                 "study_id": "missing-adjudication",
                 "decisions": _passing_diverse_decisions(),
             },
@@ -343,7 +387,7 @@ def test_review_ranking_calibration_gate_runner_blocks_blank_adjudication_note(
     input_path.write_text(
         json.dumps(
             {
-                "schema_version": "evidence_selection_review_ranking_calibration.v1",
+                "schema_version": "evidence_selection_review_ranking_calibration.v2",
                 "study_id": "blank-adjudication",
                 "adjudication_note": "",
                 "decisions": decisions,
@@ -375,25 +419,33 @@ def _passing_decisions() -> list[dict[str, object]]:
         {
             "source_kind": "proposal",
             "item_id": "proposal-1",
-            "ranking_score": 0.95,
+            "research_question_id": "heldout-rq-01",
+            "operational_ranking": _operational_ranking(6.0),
+            "calibrated_probability": None,
             "outcome": "positive",
         },
         {
             "source_kind": "review_item",
             "item_id": "review-item-1",
-            "ranking_score": 0.9,
+            "research_question_id": "heldout-rq-02",
+            "operational_ranking": _operational_ranking(6.0),
+            "calibrated_probability": None,
             "outcome": "positive",
         },
         {
             "source_kind": "proposal",
             "item_id": "proposal-2",
-            "ranking_score": 0.05,
+            "research_question_id": "heldout-rq-03",
+            "operational_ranking": _operational_ranking(0.0),
+            "calibrated_probability": None,
             "outcome": "negative",
         },
         {
             "source_kind": "review_item",
             "item_id": "review-item-2",
-            "ranking_score": 0.1,
+            "research_question_id": "heldout-rq-04",
+            "operational_ranking": _operational_ranking(0.0),
+            "calibrated_probability": None,
             "outcome": "negative",
         },
     ]
@@ -422,3 +474,100 @@ def _passing_diverse_decisions() -> list[dict[str, object]]:
         }
         for index, decision in enumerate(base_decisions)
     ]
+
+
+def _validated_study_payload() -> dict[str, object]:
+    goals = (
+        "Find MED13 congenital heart disease evidence.",
+        "Find EGFR inhibitor response evidence.",
+        "Find NTRK fusion treatment evidence.",
+    )
+    shapes = ("variant_relation", "drug_response", "fusion_treatment")
+    decisions: list[dict[str, object]] = []
+    for index in range(8):
+        positive = index % 4 in (0, 3)
+        value = 6.0 if positive else 0.0
+        decisions.append(
+            {
+                "source_kind": "proposal" if index % 2 == 0 else "review_item",
+                "item_id": f"validated-{index}",
+                "research_question_id": f"heldout-rq-{index + 1:02d}",
+                "operational_ranking": _operational_ranking(value),
+                "calibrated_probability": _calibrated_probability(
+                    1.0 if positive else 0.0,
+                ),
+                "outcome": "positive" if positive else "negative",
+                "reviewer_id": "expert-reviewer-a",
+                "goal": goals[index % len(goals)],
+                "evidence_shape": shapes[index % len(shapes)],
+            },
+        )
+    return {
+        "schema_version": "evidence_selection_review_ranking_calibration.v2",
+        "study_id": "validated-held-out-study",
+        "adjudication_note": "Independent expert labels were adjudicated.",
+        "decisions": decisions,
+        "calibration_protocol": _calibration_protocol(),
+    }
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_agent_semantic_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "objective_match", "value": "direct"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
+    }
+
+
+def _calibration_identity() -> dict[str, object]:
+    return {
+        "input_policy_id": "test_agent_semantic_ranking",
+        "input_policy_version": "v1",
+        "input_mapping_version": "v1",
+        "categorical_schema_version": "v1",
+        "selector_model_id": "test-selector-model",
+        "selector_prompt_version": "v1",
+        "objective_schema_version": "v1",
+        "corpus_version": "v1",
+        "calibration_algorithm": "isotonic",
+        "calibration_version": "v1",
+    }
+
+
+def _calibrated_probability(value: float) -> dict[str, object]:
+    return {
+        "origin": "calibration_model",
+        "value": value,
+        "calibration_status": "diagnostic",
+        "identity": _calibration_identity(),
+        "training_set_sha256": "1" * 64,
+        "partition_manifest_sha256": "2" * 64,
+        "held_out_protocol": "frozen_question_partition_v1",
+    }
+
+
+def _calibration_protocol() -> dict[str, object]:
+    payload = {
+        "identity": _calibration_identity(),
+        "partition_manifest_sha256": "2" * 64,
+        "training_set_sha256": "1" * 64,
+        "held_out_set_sha256": "3" * 64,
+        "training_research_question_ids": [
+            f"training-rq-{index:02d}" for index in range(1, 13)
+        ],
+        "held_out_research_question_ids": [
+            f"heldout-rq-{index:02d}" for index in range(1, 9)
+        ],
+        "independent_expert_labels": True,
+        "held_out_protocol": "frozen_question_partition_v1",
+    }
+    protocol = ReviewRankingCalibrationProtocol.model_validate(payload)
+    return authenticate_calibration_protocol(protocol).model_dump(mode="json")

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from uuid import UUID
 
@@ -20,11 +21,12 @@ from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionDecisionRelevance,
     EvidenceSelectionDecisionState,
     EvidenceSelectionScreeningResult,
+    candidate_ordering_value,
     record_dedup_key,
     record_hash,
     relevance_label_for_selected_score,
-    score_from_decision,
 )
+from artana_evidence_api.runtime.agent_output_schema import RetrievalAlgorithmNumber
 from artana_evidence_api.source_adapters import source_adapter
 from artana_evidence_api.source_document_selection_identity import (
     source_document_dedup_key,
@@ -137,7 +139,7 @@ def screen_candidate_searches(  # noqa: PLR0913
                 for index, record in enumerate(source_search.records)
             ),
             key=lambda decision: (
-                -score_from_decision(decision),
+                -candidate_ordering_value(decision),
                 (
                     decision.record_index if decision.record_index is not None else 0
                 ),
@@ -234,7 +236,7 @@ def _candidate_decision_sort_key(
     decision: EvidenceSelectionCandidateDecision,
 ) -> tuple[float, str, str, tuple[bool, int], str]:
     return (
-        -score_from_decision(decision),
+        -candidate_ordering_value(decision),
         decision.source_key,
         decision.search_id,
         (decision.record_index is None, decision.record_index or 0),
@@ -455,7 +457,15 @@ def _candidate_decision(
         record_index=record_index,
         record_hash=source_record_hash,
         title=title,
-        score=score,
+        retrieval_ranking=RetrievalAlgorithmNumber(
+            value=score,
+            provider_algorithm_id="legacy_token_overlap_screening",
+            algorithm_version="v1",
+            query_input_hash=hashlib.sha256(
+                f"{source_search.source_key}:{source_search.id}".encode(),
+            ).hexdigest(),
+            affected_candidate_acquisition=True,
+        ),
         matched_terms=tuple(matched_terms),
         excluded_terms=tuple(excluded_terms),
         caveats=tuple(caveats),

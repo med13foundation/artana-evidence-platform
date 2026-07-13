@@ -438,13 +438,14 @@ def test_workspace_snapshot_captures_prior_state_and_dedup_keys() -> None:
     assert snapshot["approval_status_counts"] == {"approved": 1}
     assert snapshot["graph_state_summary"]["approved_evidence_count"] == 1
     assert snapshot["review_ranking_calibration"] == {
+        "availability": "unavailable",
         "sample_count": 4,
-        "mean_score": 0.675,
-        "observed_positive_rate": 0.5,
-        "expected_calibration_error": 0.475,
+        "probability_count": 0,
+        "expected_calibration_error": None,
         "basis": (
-            "Promoted proposals and resolved, non-converted review items are positive outcomes; "
-            "rejected proposals and dismissed review items are negative outcomes."
+            "Persisted queue ranking_score values do not carry calibration_model "
+            "provenance. They are excluded from ECE until an authenticated candidate "
+            "calibrator and held-out validation report are attached."
         ),
     }
     assert snapshot["deduplication"]["proposal_fingerprints"] == [
@@ -533,5 +534,5 @@ def test_workspace_snapshot_calibration_uses_decided_items_beyond_display_cap() 
 
     assert len(snapshot["proposals"]) == 20
     assert snapshot["review_ranking_calibration"]["sample_count"] == 1
-    assert snapshot["review_ranking_calibration"]["mean_score"] == 0.2
-    assert snapshot["review_ranking_calibration"]["observed_positive_rate"] == 1.0
+    assert snapshot["review_ranking_calibration"]["probability_count"] == 0
+    assert snapshot["review_ranking_calibration"]["expected_calibration_error"] is None

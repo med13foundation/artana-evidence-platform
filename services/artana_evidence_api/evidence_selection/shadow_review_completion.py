@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Literal, cast
 from uuid import UUID
 
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    CalibratedRankingProbability,
+    DeterministicRankingWeight,
+    ReviewRankingCalibrationProtocol,
+)
 from artana_evidence_api.evidence_selection.review.assessment import (
     EvidenceSelectionExplanationAssessment,
     EvidenceSelectionOverclaimFinding,
@@ -134,7 +139,9 @@ class _CompletedReviewRankingForm(BaseModel):
 
     source_kind: ReviewRankingSourceKind
     item_id: str = Field(min_length=1)
-    ranking_score: float = Field(ge=0.0, le=1.0)
+    research_question_id: str = Field(min_length=1)
+    operational_ranking: DeterministicRankingWeight
+    calibrated_probability: CalibratedRankingProbability | None = None
     outcome: ReviewRankingOutcome
     reviewer_id: str = Field(min_length=1)
     goal: str | None = Field(default=None, min_length=1)
@@ -151,7 +158,7 @@ class _CompletedShadowReviewPacket(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_shadow_review_packet.v2"]
+    schema_version: Literal["evidence_selection_shadow_review_packet.v3"]
     study_id: str = Field(min_length=1)
     study_type: EvidenceSelectionExpertStudyType
     source_run_id: UUID
@@ -161,6 +168,7 @@ class _CompletedShadowReviewPacket(BaseModel):
     machine_packet_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     machine_packet_signature: str = Field(pattern=r"^[a-f0-9]{64}$")
     completion_required_fields: tuple[str, ...]
+    calibration_protocol: ReviewRankingCalibrationProtocol | None = None
     candidate_records: tuple[EvidenceSelectionShadowCandidateRecord, ...]
     selection_review_forms: tuple[_CompletedSelectionReviewForm, ...] = Field(
         min_length=1,
@@ -292,13 +300,15 @@ def build_evidence_selection_shadow_review_source_inputs(
     )
     review_ranking = (
         ReviewRankingCalibrationStudyInput(
-            schema_version="evidence_selection_review_ranking_calibration.v1",
+            schema_version="evidence_selection_review_ranking_calibration.v2",
             study_id=machine_packet.study_id,
             decisions=tuple(
                 ReviewRankingCalibrationDecision(
                     source_kind=machine_form.source_kind,
                     item_id=machine_form.item_id,
-                    ranking_score=machine_form.ranking_score,
+                    research_question_id=machine_form.research_question_id,
+                    operational_ranking=machine_form.operational_ranking,
+                    calibrated_probability=machine_form.calibrated_probability,
                     outcome=completed_form.outcome,
                     reviewer_id=completed_form.reviewer_id,
                     goal=machine_form.goal,
@@ -310,6 +320,7 @@ def build_evidence_selection_shadow_review_source_inputs(
                     strict=True,
                 )
             ),
+            calibration_protocol=machine_packet.calibration_protocol,
             adjudication_note=adjudication_note,
             description=description,
         )
@@ -413,6 +424,8 @@ def _top_level_machine_fields_match(
         == completed_packet.machine_packet_signature
         and machine_packet.completion_required_fields
         == completed_packet.completion_required_fields
+        and machine_packet.calibration_protocol
+        == completed_packet.calibration_protocol
         and machine_packet.candidate_records == completed_packet.candidate_records
     )
 
@@ -453,7 +466,9 @@ def _ranking_machine_fields_match(
     return (
         machine_form.source_kind == completed_form.source_kind
         and machine_form.item_id == completed_form.item_id
-        and machine_form.ranking_score == completed_form.ranking_score
+        and machine_form.research_question_id == completed_form.research_question_id
+        and machine_form.operational_ranking == completed_form.operational_ranking
+        and machine_form.calibrated_probability == completed_form.calibrated_probability
         and machine_form.goal == completed_form.goal
         and machine_form.evidence_shape == completed_form.evidence_shape
     )

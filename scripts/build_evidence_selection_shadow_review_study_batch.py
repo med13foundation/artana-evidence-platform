@@ -366,6 +366,11 @@ def _add_gate_threshold_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=3,
     )
+    parser.add_argument(
+        "--min-batch-distinct-review-ranking-research-questions",
+        type=int,
+        default=8,
+    )
     parser.add_argument("--min-batch-distinct-evidence-shapes", type=int, default=3)
 
 
@@ -410,6 +415,9 @@ def _suite_thresholds_from_args(
         min_distinct_selection_goals=args.min_batch_distinct_selection_goals,
         min_distinct_review_ranking_goals=(
             args.min_batch_distinct_review_ranking_goals
+        ),
+        min_distinct_review_ranking_research_questions=(
+            args.min_batch_distinct_review_ranking_research_questions
         ),
         min_distinct_evidence_shapes=args.min_batch_distinct_evidence_shapes,
     )
@@ -473,6 +481,10 @@ def _suite_gate_summary_rows(report: JSONObject) -> list[str]:
         ("distinct_study_id_count", "Distinct study IDs"),
         ("distinct_selection_goal_count", "Distinct selection goals"),
         ("distinct_review_ranking_goal_count", "Distinct ranking goals"),
+        (
+            "distinct_review_ranking_research_question_count",
+            "Distinct held-out ranking research questions",
+        ),
         ("distinct_evidence_shape_count", "Distinct evidence shapes"),
     )
     rows = [
@@ -504,6 +516,10 @@ def _quality_view_rows(
         ("suite_mean_recall", "mean recall"),
         ("suite_explanation_adequacy_rate", "explanation adequacy rate"),
         ("max_review_ranking_expected_calibration_error", "max ranking ECE"),
+        (
+            "unavailable_review_ranking_calibration_count",
+            "unavailable ranking calibration count",
+        ),
     )
     return [
         f"| {_table_text(f'{label_prefix} {label}')} | "

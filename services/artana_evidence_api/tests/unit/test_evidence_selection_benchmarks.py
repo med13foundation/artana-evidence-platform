@@ -14,9 +14,6 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
-from artana_evidence_api.evidence_selection.semantic.screening import (
-    DeterministicEvidenceSelectionCandidateScreener,
-)
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     execute_evidence_selection_run,
@@ -31,6 +28,8 @@ from artana_evidence_api.source_result_capture import (
 )
 from artana_evidence_api.source_search_handoff import InMemorySourceSearchHandoffStore
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
+
+from .evidence_selection_ranking_test_support import OperationalRankingTestScreener
 
 _FIXTURE_ROOT = (
     Path(__file__).resolve().parents[1]
@@ -114,7 +113,7 @@ async def test_med13_congenital_heart_disease_fixture_selection() -> None:
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal=str(source_results["goal"]),

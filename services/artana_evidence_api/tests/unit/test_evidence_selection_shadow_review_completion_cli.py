@@ -54,7 +54,7 @@ def test_shadow_review_completion_cli_writes_source_input_files(
         "pubmed:search-1:0",
     ]
     assert ranking_payload["schema_version"] == (
-        "evidence_selection_review_ranking_calibration.v1"
+        "evidence_selection_review_ranking_calibration.v2"
     )
     assert ranking_payload["adjudication_note"] == "Reviewer A completed all labels."
     assert ranking_payload["decisions"][0]["outcome"] == "positive"
@@ -381,7 +381,7 @@ def _write_completed_packet(
 
 def _completed_packet_payload() -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_shadow_review_packet.v2",
+        "schema_version": "evidence_selection_shadow_review_packet.v3",
         "study_id": "shadow-study-2026-07-07",
         "study_type": "selection_and_review_ranking",
         "source_run_id": "00000000-0000-0000-0000-000000000048",
@@ -421,7 +421,9 @@ def _completed_packet_payload() -> dict[str, object]:
             {
                 "source_kind": "proposal",
                 "item_id": "proposal-1",
-                "ranking_score": 0.91,
+                "research_question_id": "question-braf",
+                "operational_ranking": _operational_ranking(0.91),
+                "calibrated_probability": None,
                 "outcome": "positive",
                 "reviewer_id": "reviewer-a",
                 "goal": "Review BRAF V600E treatment-response evidence.",
@@ -444,8 +446,24 @@ def _candidate_record(record_id: str) -> dict[str, object]:
         "record_index": int(record_index_text),
         "record_hash": f"hash-{record_index_text}",
         "title": f"Candidate {record_index_text}",
-        "score": 0.8,
+        "operational_ranking": _operational_ranking(0.8),
         "matched_terms": ["BRAF"],
         "excluded_terms": [],
         "caveats": [],
+    }
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_review_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "evidence_state", "value": "supported"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
     }
