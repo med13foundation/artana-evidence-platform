@@ -487,6 +487,11 @@ def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
         ("234", "234", "unitless", "Read depth was 1,234."),
         ("10 mg", "10", "mg", "Ratio was 5/10 mg."),
         ("5 mg", "5", "mg", "Change was −5 mg."),
+        ("5 mg", "5", "mg", "Reported 5 mg or less."),
+        ("5 mg", "5", "mg", "Reported 5 mg or more."),
+        ("12345", "12345", "unitless", "Position chr1:12345 was reported."),
+        ("30", "30", "unitless", "Ratio was 10:30."),
+        ("10", "10", "unitless", "Ratio was 10:30."),
     ],
 )
 def test_llm_extraction_rejects_unit_stripping_bounds_and_ranges(
@@ -562,8 +567,8 @@ def test_source_measurement_rejects_json_number_before_float_rounding() -> None:
         )
 
 
-def test_llm_extraction_preserves_large_integer_lexeme() -> None:
-    value = "100000000000000000001"
+def test_llm_extraction_preserves_exact_integer_lexeme() -> None:
+    value = "9007199254740991"
     contract = LLMExtractionContract(
         rationale="Copied an exact large integer.",
         evidence=[],
@@ -584,7 +589,7 @@ def test_llm_extraction_preserves_large_integer_lexeme() -> None:
         source_values_by_locator={"raw_record.text": f"Coordinate {value}."},
     )
 
-    assert extracted.observations[0].value == 100000000000000000001
+    assert extracted.observations[0].value == 9007199254740991
     assert extracted.observations[0].source_measurement is not None
     assert extracted.observations[0].source_measurement.value == value
 
@@ -609,6 +614,39 @@ def test_llm_extraction_rejects_nonzero_float_underflow() -> None:
         contract.to_extraction_contract(
             expected_source_hash="source-hash-adversarial",
             source_values_by_locator={"raw_record.text": "Value was 1e-400."},
+        )
+
+
+@pytest.mark.parametrize(
+    ("value", "match"),
+    [
+        ("1e400", "exceeds"),
+        ("100000000000000000001", "loses precision"),
+    ],
+)
+def test_llm_extraction_rejects_unsupported_integral_measurement(
+    value: str,
+    match: str,
+) -> None:
+    contract = LLMExtractionContract(
+        rationale="Copied an integer unsupported by the graph numeric path.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-unsupported-integer",
+        observations=[
+            _llm_source_measurement_observation(
+                value=value,
+                literal_span=value,
+                unit="unitless",
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match=match):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-adversarial",
+            source_values_by_locator={"raw_record.text": f"Value was {value}."},
         )
 
 

@@ -46,6 +46,10 @@ _WORDED_BOUND_PREFIX = re.compile(
     r"\b(?:at\s+(?:least|most)|less\s+than|greater\s+than|no\s+(?:less|more)\s+than|up\s+to))\s*$",
     re.IGNORECASE,
 )
+_WORDED_BOUND_SUFFIX = re.compile(
+    r"^(?:or\s+(?:fewer|greater|less|more)|and\s+(?:above|below))\b",
+    re.IGNORECASE,
+)
 _RANGE_ENDPOINT_TEXT = rf"{_SOURCE_NUMBER_TEXT}(?:\s*[A-Za-z%]+)?"
 _WORDED_RANGE_AFTER_ENDPOINT = re.compile(
     rf"^(?:through|to)\s+{_RANGE_ENDPOINT_TEXT}\b",
@@ -68,6 +72,8 @@ _BETWEEN_RANGE_AFTER_ENDPOINT = re.compile(
 
 def _has_worded_bound_or_range_context(*, prefix: str, suffix: str) -> bool:
     if _WORDED_BOUND_PREFIX.search(prefix):
+        return True
+    if _WORDED_BOUND_SUFFIX.search(suffix):
         return True
     if _WORDED_RANGE_BEFORE_ENDPOINT.search(prefix):
         return True
@@ -163,12 +169,12 @@ def _source_contains_exact_literal_span(
         suffix = source_text[end:].lstrip()
         invalid_before = (
             before.isalnum()
-            or before in {"_", ".", "/", "−"}
+            or before in {"_", ".", "/", ":", "−"}
             or (before == "," and before_previous.isdigit())
         )
         invalid_after = (
             after.isalnum()
-            or after in {"_", "/"}
+            or after in {"_", "/", ":"}
             or (after in {".", ","} and after_next.isdigit())
         )
         symbolic_bound_or_range_context = prefix.endswith(
@@ -207,6 +213,13 @@ def _source_measurement_json_value(value: str) -> int | float:
         msg = "Numeric observation value must be finite."
         raise ValueError(msg)
     if parsed == parsed.to_integral_value():
+        rendered = float(parsed)
+        if not isfinite(rendered):
+            msg = "Numeric observation value exceeds the supported JSON range."
+            raise ValueError(msg)
+        if Decimal.from_float(rendered) != parsed:
+            msg = "Numeric observation integer loses precision in the graph numeric path."
+            raise ValueError(msg)
         return int(parsed)
     rendered = float(parsed)
     if not isfinite(rendered):
