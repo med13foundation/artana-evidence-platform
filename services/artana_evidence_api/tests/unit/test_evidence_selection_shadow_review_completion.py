@@ -44,6 +44,11 @@ def test_completed_packet_builds_source_export_inputs() -> None:
                 "run_id": _RUN_ID,
                 "goal": _GOAL,
                 "reviewer_id": "reviewer-a",
+                "candidate_record_ids": [
+                    "pubmed:search-1:0",
+                    "pubmed:search-1:1",
+                    "clinvar:search-1:2",
+                ],
                 "harness_selected_record_ids": ["pubmed:search-1:0"],
                 "human_selected_record_ids": [
                     "pubmed:search-1:0",

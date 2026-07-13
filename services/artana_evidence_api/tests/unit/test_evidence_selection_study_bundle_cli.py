@@ -501,7 +501,7 @@ def _source_export_identity() -> dict[str, object]:
 
 def _selection_review_export() -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_review_export.v1",
+        "schema_version": "evidence_selection_review_export.v2",
         **_source_export_identity(),
         "selection_reviews": _selection_reviews(),
     }
@@ -526,6 +526,11 @@ def _selection_reviews() -> list[dict[str, object]]:
             "run_id": f"00000000-0000-0000-0000-00000000000{index + 1}",
             "goal": goal,
             "reviewer_id": "reviewer-a",
+            "candidate_record_ids": [
+                f"record-{index}-a",
+                f"record-{index}-b",
+                f"record-{index}-c",
+            ],
             "harness_selected_record_ids": [
                 f"record-{index}-a",
                 f"record-{index}-b",
@@ -536,7 +541,9 @@ def _selection_reviews() -> list[dict[str, object]]:
             ],
             "harness_skipped_record_ids": [f"record-{index}-c"],
             "explanation_assessment": (
-                adequate_explanation_assessment().model_dump(mode="json")
+                adequate_explanation_assessment(f"record-{index}-a").model_dump(
+                    mode="json",
+                )
             ),
             "high_severity_overclaim_findings": [],
         }

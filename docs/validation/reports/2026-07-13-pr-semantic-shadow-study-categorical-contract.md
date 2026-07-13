@@ -49,6 +49,15 @@ Fixed in this PR:
 - Rejected `unsupported_material_claim_present: yes` unless at least one
   candidate-bound high-severity overclaim finding is present.
 - Added all-selection and mixed-study batch matrix tests.
+- Removed the packet CLI's stale ranking requirement so real selection-only
+  result artifacts produce `selection_relevance` packets end to end.
+- Applied ranking-provenance consistency checks even when ranking evidence is
+  not required, rejecting stray or duplicate ranking keys.
+- Versioned categorical selection-review exports as v2 and rejected legacy v1
+  numeric envelopes instead of reinterpreting them.
+- Added an explicit candidate-record universe to each categorical review and
+  bound decisions, note keys, citations, overclaim targets, and overclaim
+  citations to that universe for packet-derived and direct-import studies.
 
 Required follow-up work:
 

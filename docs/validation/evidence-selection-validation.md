@@ -66,6 +66,9 @@ confirmed skips, duplicate counts, precision, recall, categorical explanation
 adequacy, and the zero high-severity-overclaim gate. Reviewers provide atomic
 categories, literal citations, and written reasoning. Deterministic code derives
 all numeric metrics and gates; it does not replace reviewer judgment.
+Each review also declares its complete `candidate_record_ids` universe. All
+harness and human decisions, audit-note keys, citations, and overclaim findings
+must bind to that universe before the study can be evaluated.
 
 Use `study_type: "selection_relevance"` when the source run does not produce
 proposal/review-item ranking decisions. Use
@@ -239,7 +242,7 @@ uv run python scripts/build_evidence_selection_expert_study_bundle.py \
 ```
 
 The selection-review source export must use
-`schema_version: "evidence_selection_review_export.v1"`. The review-ranking
+`schema_version: "evidence_selection_review_export.v2"`. The review-ranking
 source export must use
 `schema_version: "evidence_selection_review_ranking_export.v1"`. Both exports
 must carry matching `source_system`, `export_id`, `exported_at`, `exporter_id`,
@@ -249,6 +252,8 @@ those export fields and rejects identity drift before writing the final bundle.
 values and offset spellings such as `+00:00` or `+01:00` are rejected so source
 identity remains literal and reproducible. Identity text fields are not
 trimmed; leading or trailing whitespace is rejected instead of normalized.
+Selection-review v1 represented the former numeric explanation contract and is
+rejected rather than interpreted as categorical v2 evidence.
 
 ```bash
 uv run python scripts/run_evidence_selection_expert_study_gate.py \

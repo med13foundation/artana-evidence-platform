@@ -213,7 +213,6 @@ def source_manifest_blocking_reasons(
     provenance_summary: JSONObject,
     require_source_manifest: bool,
     min_source_artifact_count: int,
-    require_review_ranking: bool = True,
 ) -> tuple[str, ...]:
     """Return fail-closed reasons for source-manifest provenance gaps."""
 
@@ -239,8 +238,7 @@ def source_manifest_blocking_reasons(
         ),
     )
     reasons.extend(_source_selection_blocking_reasons(provenance_summary))
-    if require_review_ranking:
-        reasons.extend(_source_ranking_blocking_reasons(provenance_summary))
+    reasons.extend(_source_ranking_blocking_reasons(provenance_summary))
     if _int_from_json(provenance_summary, "unknown_reviewer_id_count") > 0:
         reasons.append(
             "Every study reviewer ID must be present in the source manifest "

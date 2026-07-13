@@ -43,7 +43,9 @@ def test_source_export_writer_cli_writes_both_exports(tmp_path: Path) -> None:
     )
 
     assert exit_code == 0
-    assert json.loads(selection_export_path.read_text())["selection_reviews"]
+    selection_export = json.loads(selection_export_path.read_text())
+    assert selection_export["schema_version"] == "evidence_selection_review_export.v2"
+    assert selection_export["selection_reviews"]
     assert json.loads(ranking_export_path.read_text())["review_ranking"]["decisions"]
 
 
@@ -74,7 +76,9 @@ def test_source_export_writer_cli_writes_selection_only_export(tmp_path: Path) -
     )
 
     assert exit_code == 0
-    assert json.loads(selection_export_path.read_text())["selection_reviews"]
+    selection_export = json.loads(selection_export_path.read_text())
+    assert selection_export["schema_version"] == "evidence_selection_review_export.v2"
+    assert selection_export["selection_reviews"]
     assert not (tmp_path / "review-ranking-export.json").exists()
 
 
@@ -141,11 +145,14 @@ def _selection_reviews() -> list[dict[str, object]]:
             "run_id": f"00000000-0000-0000-0000-00000000000{index + 1}",
             "goal": f"review goal {index}",
             "reviewer_id": "reviewer-a",
+            "candidate_record_ids": [f"record-{index}-a", f"record-{index}-b"],
             "harness_selected_record_ids": [f"record-{index}-a"],
             "human_selected_record_ids": [f"record-{index}-a"],
             "harness_skipped_record_ids": [f"record-{index}-b"],
             "explanation_assessment": (
-                adequate_explanation_assessment().model_dump(mode="json")
+                adequate_explanation_assessment(f"record-{index}-a").model_dump(
+                    mode="json",
+                )
             ),
             "high_severity_overclaim_findings": [],
         }

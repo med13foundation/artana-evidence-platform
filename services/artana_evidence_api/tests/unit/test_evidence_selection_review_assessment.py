@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from artana_evidence_api.evidence_selection.review.assessment import (
     EvidenceSelectionExplanationAssessment,
+    EvidenceSelectionOverclaimFinding,
     EvidenceSelectionReviewCitation,
     EvidenceSelectionReviewInput,
     derive_explanation_adequacy,
@@ -95,6 +96,7 @@ def test_unsupported_material_claim_requires_explicit_overclaim_finding() -> Non
             run_id="00000000-0000-0000-0000-000000000001",
             goal="Assess source relevance.",
             reviewer_id="reviewer-a",
+            candidate_record_ids=("pubmed:search-1:0",),
             harness_selected_record_ids=("pubmed:search-1:0",),
             human_selected_record_ids=("pubmed:search-1:0",),
             explanation_assessment=assessment,
@@ -108,10 +110,71 @@ def test_overclaim_finding_cannot_contradict_no_unsupported_claim() -> None:
             run_id="00000000-0000-0000-0000-000000000001",
             goal="Assess source relevance.",
             reviewer_id="reviewer-a",
+            candidate_record_ids=("pubmed:search-1:0",),
             harness_selected_record_ids=("pubmed:search-1:0",),
             human_selected_record_ids=("pubmed:search-1:0",),
             explanation_assessment=adequate_explanation_assessment(),
             high_severity_overclaim_findings=(
                 high_severity_overclaim_finding("pubmed:search-1:0"),
             ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("assessment", "overclaim_findings"),
+    [
+        pytest.param(
+            adequate_explanation_assessment("unknown-record"),
+            (),
+            id="explanation-citation",
+        ),
+        pytest.param(
+            adequate_explanation_assessment("record-1").model_copy(
+                update={"unsupported_material_claim_present": "yes"},
+            ),
+            (
+                high_severity_overclaim_finding("unknown-record").model_copy(
+                    update={"cited_evidence": ()},
+                ),
+            ),
+            id="overclaim-record",
+        ),
+        pytest.param(
+            adequate_explanation_assessment("record-1").model_copy(
+                update={"unsupported_material_claim_present": "yes"},
+            ),
+            (
+                high_severity_overclaim_finding("record-1").model_copy(
+                    update={
+                        "cited_evidence": (
+                            EvidenceSelectionReviewCitation(
+                                record_id="unknown-record",
+                                source_locator="candidate:unknown-record:limitations",
+                                quoted_text="Unbound source text.",
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            id="overclaim-citation",
+        ),
+    ],
+)
+def test_direct_review_rejects_unknown_evidence_record_ids(
+    assessment: EvidenceSelectionExplanationAssessment,
+    overclaim_findings: tuple[EvidenceSelectionOverclaimFinding, ...],
+) -> None:
+    with pytest.raises(
+        ValidationError,
+        match="unknown candidate record IDs: unknown-record",
+    ):
+        EvidenceSelectionReviewInput(
+            run_id="00000000-0000-0000-0000-000000000001",
+            goal="Assess source relevance.",
+            reviewer_id="reviewer-a",
+            candidate_record_ids=("record-1",),
+            harness_selected_record_ids=("record-1",),
+            human_selected_record_ids=("record-1",),
+            explanation_assessment=assessment,
+            high_severity_overclaim_findings=overclaim_findings,
         )

@@ -16,7 +16,7 @@ from artana_evidence_api.evidence_selection_validation import (
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 EvidenceSelectionReviewExportSchemaVersion = Literal[
-    "evidence_selection_review_export.v1"
+    "evidence_selection_review_export.v2"
 ]
 ReviewRankingCalibrationExportSchemaVersion = Literal[
     "evidence_selection_review_ranking_export.v1"

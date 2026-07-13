@@ -53,6 +53,58 @@ def test_build_derives_source_manifest_identity_from_source_exports(
     assert source_manifest.redaction_statement == "No PHI or raw patient text included."
 
 
+def test_build_rejects_legacy_numeric_selection_export_version(tmp_path: Path) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_export = _selection_review_export()
+    selection_export["schema_version"] = "evidence_selection_review_export.v1"
+    selection_path.write_text(json.dumps(selection_export))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+
+    with pytest.raises(ValidationError, match="schema_version"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="legacy-selection-export",
+                study_type="selection_and_review_ranking",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
+def test_build_rejects_direct_review_citation_outside_candidate_universe(
+    tmp_path: Path,
+) -> None:
+    selection_path = tmp_path / "selection-reviews.json"
+    ranking_path = tmp_path / "review-ranking.json"
+    selection_export = _selection_review_export()
+    selection_reviews = selection_export["selection_reviews"]
+    assert isinstance(selection_reviews, list)
+    first_review = selection_reviews[0]
+    assert isinstance(first_review, dict)
+    explanation_assessment = first_review["explanation_assessment"]
+    assert isinstance(explanation_assessment, dict)
+    cited_evidence = explanation_assessment["cited_evidence"]
+    assert isinstance(cited_evidence, list)
+    first_citation = cited_evidence[0]
+    assert isinstance(first_citation, dict)
+    first_citation["record_id"] = "unknown-record"
+    selection_path.write_text(json.dumps(selection_export))
+    ranking_path.write_text(json.dumps(_review_ranking_export()))
+
+    with pytest.raises(ValidationError, match="unknown candidate record IDs"):
+        build_evidence_selection_expert_study_bundle(
+            EvidenceSelectionExpertStudyBundleRequest(
+                study_id="unbound-direct-review-citation",
+                study_type="selection_and_review_ranking",
+                study_evidence_kind="synthetic_fixture",
+                selection_reviews_path=selection_path,
+                review_ranking_path=ranking_path,
+            ),
+        )
+
+
 def test_bundle_output_rejects_hard_link_to_source_artifact(tmp_path: Path) -> None:
     source_path = tmp_path / "selection-review-export.json"
     output_path = tmp_path / "expert-study.json"
@@ -491,6 +543,11 @@ def _selection_reviews() -> list[dict[str, object]]:
             "run_id": f"00000000-0000-0000-0000-00000000000{index + 1}",
             "goal": goal,
             "reviewer_id": "reviewer-a",
+            "candidate_record_ids": [
+                f"record-{index}-a",
+                f"record-{index}-b",
+                f"record-{index}-c",
+            ],
             "harness_selected_record_ids": [
                 f"record-{index}-a",
                 f"record-{index}-b",
@@ -501,7 +558,9 @@ def _selection_reviews() -> list[dict[str, object]]:
             ],
             "harness_skipped_record_ids": [f"record-{index}-c"],
             "explanation_assessment": (
-                adequate_explanation_assessment().model_dump(mode="json")
+                adequate_explanation_assessment(f"record-{index}-a").model_dump(
+                    mode="json",
+                )
             ),
             "high_severity_overclaim_findings": [],
         }
@@ -524,7 +583,7 @@ def _selection_review_export(
     selection_reviews: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     return {
-        "schema_version": "evidence_selection_review_export.v1",
+        "schema_version": "evidence_selection_review_export.v2",
         **_source_export_identity(),
         "selection_reviews": selection_reviews or _selection_reviews(),
     }

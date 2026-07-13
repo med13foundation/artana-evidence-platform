@@ -81,6 +81,7 @@ def test_evidence_selection_expert_study_gate_accepts_documented_note_objects(
     first_review["false_negative_notes"] = {
         "record-missed": "Reviewer expected this record."
     }
+    first_review["candidate_record_ids"].append("record-missed")
     input_path = tmp_path / "documented-notes-study.json"
     input_path.write_text(json.dumps(payload) + "\n")
 
@@ -100,6 +101,11 @@ def test_evidence_selection_expert_study_gate_runner_fails_closed(
     payload["selection_reviews"] = payload["selection_reviews"][:1]
     first_review = payload["selection_reviews"][0]
     first_review["reviewer_id"] = ""
+    first_review["candidate_record_ids"] = [
+        "record-fp",
+        "record-tp",
+        "record-0-c",
+    ]
     first_review["harness_selected_record_ids"] = ["record-fp"]
     first_review["human_selected_record_ids"] = ["record-tp"]
     first_review["explanation_assessment"] = _inadequate_explanation_assessment()
@@ -212,6 +218,11 @@ def _balanced_study_payload() -> dict[str, object]:
                 "run_id": f"00000000-0000-0000-0000-00000000000{index}",
                 "goal": goal,
                 "reviewer_id": "reviewer-a",
+                "candidate_record_ids": [
+                    f"record-{index}-a",
+                    f"record-{index}-b",
+                    f"record-{index}-c",
+                ],
                 "harness_selected_record_ids": [
                     f"record-{index}-a",
                     f"record-{index}-b",

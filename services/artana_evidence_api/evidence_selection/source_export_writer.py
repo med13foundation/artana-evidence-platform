@@ -112,7 +112,7 @@ def write_evidence_selection_source_exports(
     review_ranking = _load_review_ranking(request.review_ranking_path)
     identity = _source_identity(request)
     selection_export = EvidenceSelectionReviewExport(
-        schema_version="evidence_selection_review_export.v1",
+        schema_version="evidence_selection_review_export.v2",
         source_system=identity.source_system,
         export_id=identity.export_id,
         exported_at=identity.exported_at,
@@ -165,7 +165,7 @@ def write_evidence_selection_review_export(
         },
     )
     selection_export = EvidenceSelectionReviewExport(
-        schema_version="evidence_selection_review_export.v1",
+        schema_version="evidence_selection_review_export.v2",
         source_system=identity.source_system,
         export_id=identity.export_id,
         exported_at=identity.exported_at,

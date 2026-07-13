@@ -930,7 +930,6 @@ def _expert_study_blocking_reasons(
             provenance_summary=provenance_summary,
             require_source_manifest=thresholds.require_source_manifest,
             min_source_artifact_count=thresholds.min_source_artifact_count,
-            require_review_ranking=require_review_ranking,
         ),
         *_expert_study_coverage_blocking_reasons(
             selection_summary=selection_summary,

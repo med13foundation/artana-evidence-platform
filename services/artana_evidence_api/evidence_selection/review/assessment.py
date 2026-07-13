@@ -125,6 +125,7 @@ class EvidenceSelectionReviewInput(BaseModel):
     run_id: UUID
     goal: str
     reviewer_id: str | None = None
+    candidate_record_ids: tuple[str, ...]
     harness_selected_record_ids: tuple[str, ...]
     human_selected_record_ids: tuple[str, ...]
     harness_skipped_record_ids: tuple[str, ...] = ()
@@ -145,6 +146,7 @@ class EvidenceSelectionReviewInput(BaseModel):
         return value
 
     @field_validator(
+        "candidate_record_ids",
         "harness_selected_record_ids",
         "human_selected_record_ids",
         "harness_skipped_record_ids",
@@ -159,6 +161,7 @@ class EvidenceSelectionReviewInput(BaseModel):
         return value
 
     @field_validator(
+        "candidate_record_ids",
         "harness_selected_record_ids",
         "human_selected_record_ids",
         "harness_skipped_record_ids",
@@ -193,6 +196,9 @@ class EvidenceSelectionReviewInput(BaseModel):
 
     @model_validator(mode="after")
     def _selected_and_skipped_must_not_overlap(self) -> EvidenceSelectionReviewInput:
+        if len(set(self.candidate_record_ids)) != len(self.candidate_record_ids):
+            msg = "candidate_record_ids must be unique."
+            raise ValueError(msg)
         overlap = set(self.harness_selected_record_ids).intersection(
             self.harness_skipped_record_ids,
         )
@@ -217,6 +223,26 @@ class EvidenceSelectionReviewInput(BaseModel):
             msg = (
                 "High-severity overclaim findings require "
                 "unsupported_material_claim_present to be yes."
+            )
+            raise ValueError(msg)
+        referenced_record_ids = {
+            *self.harness_selected_record_ids,
+            *self.harness_skipped_record_ids,
+        }
+        referenced_record_ids.update(self.human_selected_record_ids)
+        referenced_record_ids.update(self.duplicate_suggestion_ids)
+        referenced_record_ids.update(_review_evidence_record_ids(self))
+        if self.false_positive_notes is not None:
+            referenced_record_ids.update(self.false_positive_notes)
+        if self.false_negative_notes is not None:
+            referenced_record_ids.update(self.false_negative_notes)
+        unknown_record_ids = referenced_record_ids.difference(
+            self.candidate_record_ids,
+        )
+        if unknown_record_ids:
+            msg = (
+                "Review references unknown candidate record IDs: "
+                f"{', '.join(sorted(unknown_record_ids))}."
             )
             raise ValueError(msg)
         return self
@@ -317,6 +343,26 @@ def _safe_ratio(numerator: int, denominator: int) -> float | None:
     if denominator == 0:
         return None
     return numerator / denominator
+
+
+def _review_evidence_record_ids(review: EvidenceSelectionReviewInput) -> set[str]:
+    record_ids: set[str] = set()
+    if review.explanation_assessment is not None:
+        record_ids.update(
+            citation.record_id
+            for citation in review.explanation_assessment.cited_evidence
+        )
+    if review.high_severity_overclaim_findings is not None:
+        record_ids.update(
+            finding.record_id
+            for finding in review.high_severity_overclaim_findings
+        )
+        record_ids.update(
+            citation.record_id
+            for finding in review.high_severity_overclaim_findings
+            for citation in finding.cited_evidence
+        )
+    return record_ids
 
 
 __all__ = [

@@ -33,12 +33,18 @@ def test_compare_evidence_selection_review_records_shadow_review_metrics() -> No
         EvidenceSelectionReviewInput(
             run_id=run_id,
             goal="Find MED13 congenital heart disease evidence.",
+            candidate_record_ids=(
+                "clinvar:VCV1",
+                "clinvar:VCV2",
+                "clinvar:VCV3",
+                "pubmed:PMID1",
+            ),
             harness_selected_record_ids=("clinvar:VCV1", "clinvar:VCV2"),
             human_selected_record_ids=("clinvar:VCV1", "pubmed:PMID1"),
             harness_skipped_record_ids=("clinvar:VCV3",),
             duplicate_suggestion_ids=("clinvar:VCV2", "clinvar:VCV2"),
             reviewer_id="reviewer-a",
-            explanation_assessment=adequate_explanation_assessment(),
+            explanation_assessment=adequate_explanation_assessment("clinvar:VCV1"),
             high_severity_overclaim_findings=(),
             reviewer_notes="One useful record missed.",
         ),
@@ -63,9 +69,12 @@ def test_compare_evidence_selection_review_flags_overclaim_gate_failure() -> Non
         EvidenceSelectionReviewInput(
             run_id=uuid4(),
             goal="Find MED13 treatment evidence.",
+            candidate_record_ids=("pubmed:PMID1",),
             harness_selected_record_ids=("pubmed:PMID1",),
             human_selected_record_ids=("pubmed:PMID1",),
-            high_severity_overclaim_findings=(high_severity_overclaim_finding(),),
+            high_severity_overclaim_findings=(
+                high_severity_overclaim_finding("pubmed:PMID1"),
+            ),
         ),
     )
 
@@ -78,6 +87,7 @@ def test_evidence_selection_review_input_rejects_numeric_explanation_scores() ->
         EvidenceSelectionReviewInput(
             run_id=uuid4(),
             goal="Find MED13 evidence.",
+            candidate_record_ids=(),
             harness_selected_record_ids=(),
             human_selected_record_ids=(),
             explanation_assessment=6,
@@ -89,6 +99,7 @@ def test_evidence_selection_review_input_rejects_selected_skipped_overlap() -> N
         EvidenceSelectionReviewInput(
             run_id=uuid4(),
             goal="Find MED13 evidence.",
+            candidate_record_ids=("clinvar:VCV1",),
             harness_selected_record_ids=("clinvar:VCV1",),
             human_selected_record_ids=(),
             harness_skipped_record_ids=("clinvar:VCV1",),
@@ -100,6 +111,7 @@ def test_evidence_selection_review_input_rejects_blank_record_ids() -> None:
         EvidenceSelectionReviewInput(
             run_id=uuid4(),
             goal="Find MED13 evidence.",
+            candidate_record_ids=("record-a",),
             harness_selected_record_ids=("   ",),
             human_selected_record_ids=("record-a",),
         )
@@ -109,6 +121,7 @@ def test_evidence_selection_review_input_accepts_documented_audit_notes() -> Non
     review = EvidenceSelectionReviewInput(
         run_id=uuid4(),
         goal="Find MED13 evidence.",
+        candidate_record_ids=("record-a", "record-b"),
         harness_selected_record_ids=("record-a",),
         human_selected_record_ids=("record-a",),
         false_positive_notes={},
@@ -134,6 +147,7 @@ def test_evidence_selection_review_input_rejects_invalid_audit_notes(
     payload: dict[str, object] = {
         "run_id": uuid4(),
         "goal": "Find MED13 evidence.",
+        "candidate_record_ids": ("record-a",),
         "harness_selected_record_ids": (),
         "human_selected_record_ids": (),
         field_name: notes,
@@ -304,9 +318,12 @@ def test_evidence_selection_expert_study_gate_blocks_duplicate_selection_run_ids
             run_id=shared_run_id,
             goal=goal,
             reviewer_id="reviewer-a",
+            candidate_record_ids=(f"record-{index}",),
             harness_selected_record_ids=(f"record-{index}",),
             human_selected_record_ids=(f"record-{index}",),
-            explanation_assessment=adequate_explanation_assessment(),
+            explanation_assessment=adequate_explanation_assessment(
+                f"record-{index}",
+            ),
             high_severity_overclaim_findings=(),
         )
         for index, goal in enumerate(
@@ -550,6 +567,33 @@ def test_selection_relevance_study_passes_without_ranking_artifacts() -> None:
     assert report.provenance_summary["missing_required_source_artifact_kinds"] == []
 
 
+def test_selection_relevance_study_rejects_stray_ranking_provenance() -> None:
+    selection_reviews = _selection_reviews()
+    manifest = _source_manifest_payload(selection_reviews=selection_reviews)
+    manifest["source_artifacts"] = [manifest["source_artifacts"][0]]
+    manifest["review_ranking_decision_keys"] = ["proposal:unrelated-item"]
+
+    report = evaluate_evidence_selection_expert_study_gate(
+        EvidenceSelectionExpertStudyInput(
+            schema_version="evidence_selection_expert_study.v2",
+            study_id="selection-only-with-stray-ranking-provenance",
+            study_type="selection_relevance",
+            study_evidence_kind="real_shadow_review",
+            selection_reviews=selection_reviews,
+            source_manifest=manifest,
+        ),
+    )
+
+    assert report.passed is False
+    assert report.provenance_summary[
+        "extra_review_ranking_decision_key_count"
+    ] == 1
+    assert any(
+        "review-ranking decision keys" in reason
+        for reason in report.blocking_reasons
+    )
+
+
 def test_ai_reviewer_simulation_cannot_support_production_readiness() -> None:
     selection_reviews = _selection_reviews()
     manifest = _source_manifest_payload(selection_reviews=selection_reviews)
@@ -605,6 +649,7 @@ def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews
         run_id=first_review.run_id,
         goal=first_review.goal,
         reviewer_id=None,
+        candidate_record_ids=first_review.candidate_record_ids,
         harness_selected_record_ids=first_review.harness_selected_record_ids,
         human_selected_record_ids=first_review.human_selected_record_ids,
         harness_skipped_record_ids=first_review.harness_skipped_record_ids,
@@ -616,6 +661,7 @@ def test_evidence_selection_expert_study_gate_blocks_partially_unlabeled_reviews
         run_id=second_review.run_id,
         goal="   ",
         reviewer_id=second_review.reviewer_id,
+        candidate_record_ids=second_review.candidate_record_ids,
         harness_selected_record_ids=second_review.harness_selected_record_ids,
         human_selected_record_ids=second_review.human_selected_record_ids,
         harness_skipped_record_ids=second_review.harness_skipped_record_ids,
@@ -666,6 +712,7 @@ def test_evidence_selection_expert_study_gate_blocks_unmeasurable_selection_metr
             run_id=review.run_id,
             goal=review.goal,
             reviewer_id=review.reviewer_id,
+            candidate_record_ids=review.candidate_record_ids,
             harness_selected_record_ids=(),
             human_selected_record_ids=(),
             harness_skipped_record_ids=review.harness_skipped_record_ids,
@@ -712,6 +759,7 @@ def test_evidence_selection_expert_study_gate_blocks_missing_overclaim_labels() 
         run_id=first_review.run_id,
         goal=first_review.goal,
         reviewer_id=first_review.reviewer_id,
+        candidate_record_ids=first_review.candidate_record_ids,
         harness_selected_record_ids=first_review.harness_selected_record_ids,
         human_selected_record_ids=first_review.human_selected_record_ids,
         harness_skipped_record_ids=first_review.harness_skipped_record_ids,
@@ -764,12 +812,15 @@ def test_evidence_selection_expert_study_gate_blocks_weak_or_underreviewed_study
             run_id=uuid4(),
             goal="Find MED13 congenital heart disease evidence.",
             reviewer_id=None,
+            candidate_record_ids=("record-fp", "record-tp"),
             harness_selected_record_ids=("record-fp",),
             human_selected_record_ids=("record-tp",),
-            explanation_assessment=inadequate_explanation_assessment().model_copy(
-                update={"unsupported_material_claim_present": "yes"},
+            explanation_assessment=inadequate_explanation_assessment(
+                "record-fp",
+            ).model_copy(update={"unsupported_material_claim_present": "yes"}),
+            high_severity_overclaim_findings=(
+                high_severity_overclaim_finding("record-fp"),
             ),
-            high_severity_overclaim_findings=(high_severity_overclaim_finding(),),
         ),
     )
 
@@ -890,10 +941,17 @@ def _selection_reviews() -> tuple[EvidenceSelectionReviewInput, ...]:
             run_id=uuid4(),
             goal=goal,
             reviewer_id="reviewer-a",
+            candidate_record_ids=(
+                f"record-{index}-a",
+                f"record-{index}-b",
+                f"record-{index}-c",
+            ),
             harness_selected_record_ids=(f"record-{index}-a", f"record-{index}-b"),
             human_selected_record_ids=(f"record-{index}-a", f"record-{index}-b"),
             harness_skipped_record_ids=(f"record-{index}-c",),
-            explanation_assessment=adequate_explanation_assessment(),
+            explanation_assessment=adequate_explanation_assessment(
+                f"record-{index}-a",
+            ),
             high_severity_overclaim_findings=(),
         )
         for index, goal in enumerate(goals)

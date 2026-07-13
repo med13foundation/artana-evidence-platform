@@ -271,6 +271,9 @@ def build_evidence_selection_shadow_review_source_inputs(
             run_id=machine_form.run_id,
             goal=machine_form.goal,
             reviewer_id=completed_form.reviewer_id,
+            candidate_record_ids=tuple(
+                record.record_id for record in machine_packet.candidate_records
+            ),
             harness_selected_record_ids=machine_form.harness_selected_record_ids,
             human_selected_record_ids=completed_form.human_selected_record_ids,
             harness_skipped_record_ids=machine_form.harness_skipped_record_ids,

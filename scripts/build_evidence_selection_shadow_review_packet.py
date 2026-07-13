@@ -193,13 +193,7 @@ def _review_ranking_items_from_result(
     )
     if shadow_candidate_items:
         return shadow_candidate_items
-
-    msg = (
-        "Evidence-selection result has no rankable items. Provide "
-        "review_ranking_items, proposals, review_items, or deferred shadow "
-        "candidates."
-    )
-    raise ValueError(msg)
+    return ()
 
 
 def _direct_review_ranking_items(

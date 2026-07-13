@@ -63,7 +63,7 @@ def test_shadow_review_study_pipeline_builds_bundle_ready_artifacts(
 
     assert selection_input["selection_reviews"][0]["reviewer_id"] == "reviewer-a"
     assert ranking_input["study_id"] == "shadow-study-2026-07-07"
-    assert selection_export["schema_version"] == "evidence_selection_review_export.v1"
+    assert selection_export["schema_version"] == "evidence_selection_review_export.v2"
     assert ranking_export["schema_version"] == (
         "evidence_selection_review_ranking_export.v1"
     )

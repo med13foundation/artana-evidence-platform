@@ -13,6 +13,7 @@ real shadow-mode human review before making any production-readiness claim.
   "run_id": "00000000-0000-0000-0000-000000000000",
   "goal": "",
   "reviewer_id": "",
+  "candidate_record_ids": [],
   "harness_selected_record_ids": [],
   "human_selected_record_ids": [],
   "harness_skipped_record_ids": [],
@@ -42,6 +43,9 @@ Interpretation:
 
 - `false_positive`: the harness selected a record the reviewer would not select.
 - `false_negative`: the reviewer selected a record the harness missed.
+- `candidate_record_ids`: the complete immutable candidate universe for this
+  review. Every harness decision, human decision, note, citation, and overclaim
+  finding must reference an ID in this list.
 - `duplicate_suggestion`: the harness suggested the same scientific source
   record again without adding useful new context.
 - `false_positive_notes` and `false_negative_notes`: JSON objects keyed by the
@@ -56,7 +60,8 @@ Interpretation:
   regulatory, causal, or graph-truth claim that goes beyond the source
   evidence. The service derives the count; an empty list is required to pass.
 - Every cited `record_id`, including citations inside overclaim findings, must
-  exist in the producer-signed candidate packet.
+  exist in `candidate_record_ids`. Packet-derived reviews populate this list
+  from the producer-signed candidate packet.
 
 The service helper
 `artana_evidence_api.evidence_selection_validation.compare_evidence_selection_review`
@@ -167,7 +172,7 @@ selection-review export shape is:
 
 ```json
 {
-  "schema_version": "evidence_selection_review_export.v1",
+  "schema_version": "evidence_selection_review_export.v2",
   "source_system": "",
   "export_id": "",
   "exported_at": "2026-07-07T00:00:00Z",
@@ -195,6 +200,10 @@ The review-ranking export shape is:
   }
 }
 ```
+
+Selection-review export v2 is the categorical contract and requires each
+review's `candidate_record_ids`. Legacy v1 numeric envelopes are rejected; they
+must not be reinterpreted as categorical review evidence.
 
 For combined studies, the two source exports must have matching `source_system`, `export_id`,
 `exported_at`, `exporter_id`, and `redaction_statement` values. The
