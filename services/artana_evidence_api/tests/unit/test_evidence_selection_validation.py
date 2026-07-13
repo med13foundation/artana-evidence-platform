@@ -8,11 +8,16 @@ import pytest
 from artana_evidence_api.evidence_selection.provenance import (
     EvidenceSelectionExpertStudySourceManifest,
 )
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+    RankingCategoricalInput,
+)
 from artana_evidence_api.evidence_selection_validation import (
     EvidenceSelectionExpertStudyGateThresholds,
     EvidenceSelectionExpertStudyInput,
     EvidenceSelectionReviewInput,
     ReviewRankingCalibrationDecision,
+    ReviewRankingCalibrationGateThresholds,
     ReviewRankingCalibrationStudyInput,
     compare_evidence_selection_review,
     evaluate_evidence_selection_expert_study_gate,
@@ -189,7 +194,7 @@ def test_expert_study_rejects_blank_outer_study_id() -> None:
         )
 
 
-def test_evidence_selection_expert_study_gate_passes_balanced_study() -> None:
+def test_expert_study_gate_can_run_balanced_diagnostic_without_calibration() -> None:
     selection_reviews = _selection_reviews()
     review_ranking = _review_ranking_study("balanced-shadow-study")
     report = evaluate_evidence_selection_expert_study_gate(
@@ -210,6 +215,11 @@ def test_evidence_selection_expert_study_gate_passes_balanced_study() -> None:
             min_mean_precision=0.8,
             min_mean_recall=0.8,
             min_explanation_adequacy_rate=0.8,
+        ),
+        review_ranking_thresholds=ReviewRankingCalibrationGateThresholds(
+            require_calibrated_probabilities=False,
+            require_authenticated_protocol=False,
+            require_independent_expert_labels=False,
         ),
     )
 
@@ -832,7 +842,7 @@ def test_evidence_selection_expert_study_gate_blocks_weak_or_underreviewed_study
             study_evidence_kind="real_shadow_review",
             selection_reviews=weak_reviews,
             review_ranking=ReviewRankingCalibrationStudyInput(
-                schema_version="evidence_selection_review_ranking_calibration.v1",
+                schema_version="evidence_selection_review_ranking_calibration.v2",
                 study_id="weak-shadow-study",
                 decisions=_review_ranking_decisions()[:2],
                 adjudication_note=None,
@@ -881,7 +891,7 @@ def test_evidence_selection_expert_study_input_rejects_extra_fields() -> None:
                 "selection_reviews": [],
                 "review_ranking": {
                     "schema_version": (
-                        "evidence_selection_review_ranking_calibration.v1"
+                        "evidence_selection_review_ranking_calibration.v2"
                     ),
                     "study_id": "ranking",
                     "decisions": [],
@@ -920,7 +930,7 @@ def test_evidence_selection_expert_study_input_rejects_extra_selection_fields() 
             },
         ],
         "review_ranking": {
-            "schema_version": "evidence_selection_review_ranking_calibration.v1",
+            "schema_version": "evidence_selection_review_ranking_calibration.v2",
             "study_id": "ranking",
             "decisions": [],
         },
@@ -960,7 +970,7 @@ def _selection_reviews() -> tuple[EvidenceSelectionReviewInput, ...]:
 
 def _review_ranking_study(study_id: str) -> ReviewRankingCalibrationStudyInput:
     return ReviewRankingCalibrationStudyInput(
-        schema_version="evidence_selection_review_ranking_calibration.v1",
+        schema_version="evidence_selection_review_ranking_calibration.v2",
         study_id=study_id,
         decisions=_review_ranking_decisions(),
         adjudication_note="No reviewer disagreements in this calibration sample.",
@@ -1073,7 +1083,19 @@ def _review_ranking_decision(
         {
             "source_kind": source_kind,
             "item_id": item_id,
-            "ranking_score": ranking_score,
+            "research_question_id": f"question-{item_id}",
+            "operational_ranking": DeterministicRankingWeight(
+                value=ranking_score,
+                policy_id="test_review_ranking",
+                policy_version="v1",
+                mapping_version="v1",
+                categorical_inputs=(
+                    RankingCategoricalInput(
+                        field="evidence_state",
+                        value="supported",
+                    ),
+                ),
+            ).model_dump(mode="json"),
             "outcome": outcome,
             "goal": goal,
             "reviewer_id": "reviewer-a",

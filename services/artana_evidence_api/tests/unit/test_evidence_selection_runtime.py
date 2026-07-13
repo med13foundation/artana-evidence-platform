@@ -17,9 +17,6 @@ from artana_evidence_api.direct_source_search import (
     UniProtSourceSearchResponse,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
-from artana_evidence_api.evidence_selection.semantic.screening import (
-    DeterministicEvidenceSelectionCandidateScreener,
-)
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     EvidenceSelectionSourcePlanResult,
@@ -48,6 +45,8 @@ from artana_evidence_api.source_result_capture import (
 )
 from artana_evidence_api.source_search_handoff import InMemorySourceSearchHandoffStore
 from artana_evidence_api.types.common import JSONObject
+
+from .evidence_selection_ranking_test_support import OperationalRankingTestScreener
 
 
 def _clinvar_search(
@@ -526,7 +525,7 @@ async def test_evidence_selection_selects_relevant_records_and_creates_handoffs(
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -606,7 +605,7 @@ async def test_evidence_selection_asks_source_planner() -> None:
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -668,7 +667,7 @@ async def test_evidence_selection_executes_planner_added_live_searches() -> None
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -724,7 +723,7 @@ async def test_evidence_selection_guarded_mode_requires_review_item_store() -> N
 
     with pytest.raises(RuntimeError, match="requires a review item store"):
         await execute_evidence_selection_run(
-            candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+            candidate_screener=OperationalRankingTestScreener(),
             space_id=space_id,
             run=run,
             goal="Find MED13 evidence.",
@@ -769,7 +768,7 @@ async def test_evidence_selection_rejects_planner_source_outside_request() -> No
 
     with pytest.raises(ValueError, match="outside requested sources"):
         await execute_evidence_selection_run(
-            candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+            candidate_screener=OperationalRankingTestScreener(),
             space_id=space_id,
             run=run,
             goal="Find MED13 evidence.",
@@ -817,7 +816,7 @@ async def test_evidence_selection_rejects_planner_timeout_above_ceiling() -> Non
 
     with pytest.raises(ValueError, match="above the 120 second limit"):
         await execute_evidence_selection_run(
-            candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+            candidate_screener=OperationalRankingTestScreener(),
             space_id=space_id,
             run=run,
             goal="Find MED13 evidence.",
@@ -867,7 +866,7 @@ async def test_evidence_selection_rejects_planner_source_search_budget_overflow(
 
     with pytest.raises(ValueError, match="above the 50 search run budget"):
         await execute_evidence_selection_run(
-            candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+            candidate_screener=OperationalRankingTestScreener(),
             space_id=space_id,
             run=run,
             goal="Find MED13 evidence.",
@@ -928,7 +927,7 @@ async def test_evidence_selection_skips_duplicate_records_within_one_run() -> No
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1004,7 +1003,7 @@ async def test_evidence_selection_follow_up_skips_existing_source_document() -> 
     artifact_store.seed_for_run(run=parent)
 
     await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=parent,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1043,7 +1042,7 @@ async def test_evidence_selection_follow_up_skips_existing_source_document() -> 
     artifact_store.seed_for_run(run=follow_up)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=follow_up,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1112,7 +1111,7 @@ async def test_evidence_selection_replays_duplicate_handoff_from_stale_snapshot(
     )
     artifact_store.seed_for_run(run=first)
     first_result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=first,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1151,7 +1150,7 @@ async def test_evidence_selection_replays_duplicate_handoff_from_stale_snapshot(
     artifact_store.seed_for_run(run=second)
 
     second_result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=second,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1212,7 +1211,7 @@ async def test_evidence_selection_shadow_mode_recommends_without_handoff() -> No
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1275,7 +1274,7 @@ async def test_evidence_selection_finishes_with_error_status_for_missing_search(
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1334,7 +1333,7 @@ async def test_evidence_selection_rejects_unknown_runtime_mode() -> None:
 
     with pytest.raises(ValueError, match="Unsupported evidence-selection mode"):
         await execute_evidence_selection_run(
-            candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+            candidate_screener=OperationalRankingTestScreener(),
             space_id=space_id,
             run=run,
             goal="Find MED13 evidence.",
@@ -1387,7 +1386,7 @@ async def test_evidence_selection_global_budget_defers_selected_records() -> Non
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1474,7 +1473,7 @@ async def test_evidence_selection_keeps_biomedical_goal_terms() -> None:
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="variant evidence",
@@ -1533,7 +1532,7 @@ async def test_evidence_selection_runs_live_source_search_and_stages_review_outp
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1634,7 +1633,7 @@ async def test_evidence_selection_stages_source_specific_uniprot_proposal() -> N
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 protein evidence.",
@@ -1698,7 +1697,7 @@ async def test_evidence_selection_live_source_search_times_out() -> None:
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1800,7 +1799,7 @@ async def test_evidence_selection_runner_creates_live_pubmed_search() -> None:
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",
@@ -1906,7 +1905,7 @@ async def test_evidence_selection_runner_creates_live_marrvel_search() -> None:
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal="Find MED13 congenital heart disease evidence.",

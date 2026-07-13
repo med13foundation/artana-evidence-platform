@@ -165,7 +165,10 @@ def _review_ranking() -> dict[str, object]:
         {
             "source_kind": "proposal" if index < 5 else "review_item",
             "item_id": f"ranking-item-{index}",
-            "ranking_score": 0.9 if index % 2 == 0 else 0.1,
+            "research_question_id": f"question-{index % 3}",
+            "operational_ranking": _operational_ranking(
+                0.9 if index % 2 == 0 else 0.1,
+            ),
             "outcome": "positive" if index % 2 == 0 else "negative",
             "reviewer_id": "reviewer-a",
             "goal": f"review goal {index % 3}",
@@ -174,8 +177,24 @@ def _review_ranking() -> dict[str, object]:
         for index in range(10)
     ]
     return {
-        "schema_version": "evidence_selection_review_ranking_calibration.v1",
+        "schema_version": "evidence_selection_review_ranking_calibration.v2",
         "study_id": "shadow-study-2026-07-07",
         "adjudication_note": "Reviewer adjudicated all ranking labels.",
         "decisions": decisions,
+    }
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_review_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "evidence_state", "value": "supported"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
     }

@@ -5,6 +5,10 @@ from __future__ import annotations
 from uuid import UUID
 
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+    RankingCategoricalInput,
+)
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticCandidateAssessment,
 )
@@ -29,6 +33,9 @@ from artana_evidence_api.types.common import JSONObject
 
 _DIRECT_SELECTION_SCORE = 6.0
 _SUPPORTING_SELECTION_SCORE = 4.5
+_SEMANTIC_RANKING_POLICY_ID = "evidence_selection_semantic_ranking"
+_SEMANTIC_RANKING_POLICY_VERSION = "v1"
+_SEMANTIC_RANKING_MAPPING_VERSION = "v1"
 
 
 def decision_from_semantic_assessment(
@@ -50,7 +57,7 @@ def decision_from_semantic_assessment(
             if assessment.objective_match == "direct"
             else EvidenceSelectionDecisionRelevance.PLAUSIBLE_FIT
         )
-        score = (
+        operational_weight = (
             _DIRECT_SELECTION_SCORE
             if assessment.objective_match == "direct"
             else _SUPPORTING_SELECTION_SCORE
@@ -63,12 +70,12 @@ def decision_from_semantic_assessment(
             if assessment.objective_match == "context_only"
             else EvidenceSelectionDecisionRelevance.OFF_OBJECTIVE
         )
-        score = 0.0
+        operational_weight = 0.0
         deferral_reason = None
     else:
         decision = EvidenceSelectionDecisionState.DEFERRED
         relevance = EvidenceSelectionDecisionRelevance.NEEDS_HUMAN_REVIEW
-        score = 0.0
+        operational_weight = 0.0
         deferral_reason = EvidenceSelectionDecisionDeferralReason.SEMANTIC_REVIEW
     return EvidenceSelectionCandidateDecision(
         source_key=source_key,
@@ -84,7 +91,10 @@ def decision_from_semantic_assessment(
             record=record,
             index=record_index,
         ),
-        score=score,
+        operational_ranking=_semantic_operational_ranking(
+            assessment=assessment,
+            value=operational_weight,
+        ),
         caveats=_assessment_caveats(
             assessment=assessment,
             evidence_options=evidence_options,
@@ -194,7 +204,59 @@ def semantic_rank_key(
 ) -> tuple[float, int]:
     """Rank only from deterministic weights derived from categories."""
 
-    return (-decision.score, decision.record_index or 0)
+    operational_ranking = decision.operational_ranking
+    value = operational_ranking.value if operational_ranking is not None else 0.0
+    return (-value, decision.record_index or 0)
+
+
+def _semantic_operational_ranking(
+    *,
+    assessment: EvidenceSelectionSemanticCandidateAssessment,
+    value: float,
+) -> DeterministicRankingWeight:
+    categorical_values = {
+        "decision": assessment.decision,
+        "entity_variant_match": assessment.entity_variant_match,
+        "exclusion_assessment": assessment.exclusion_assessment,
+        "inclusion_assessment": assessment.inclusion_assessment,
+        "intervention_match": assessment.intervention_match,
+        "objective_match": assessment.objective_match,
+        "outcome_match": assessment.outcome_match,
+        "population_match": assessment.population_match,
+        "study_type_match": assessment.study_type_match,
+    }
+    blocking_categories = tuple(
+        f"{field}={category}"
+        for field, category in categorical_values.items()
+        if category
+        in {
+            "ambiguous",
+            "context_only",
+            "no_match",
+            "not_met",
+            "off_objective",
+            "triggered",
+            "uncertain",
+        }
+    )
+    vetoes = (
+        ("exclusion_triggered",)
+        if assessment.exclusion_assessment == "triggered"
+        else ()
+    )
+    return DeterministicRankingWeight(
+        value=value,
+        policy_id=_SEMANTIC_RANKING_POLICY_ID,
+        policy_version=_SEMANTIC_RANKING_POLICY_VERSION,
+        mapping_version=_SEMANTIC_RANKING_MAPPING_VERSION,
+        categorical_inputs=tuple(
+            RankingCategoricalInput(field=field, value=category)
+            for field, category in categorical_values.items()
+        ),
+        caps=(),
+        vetoes=vetoes,
+        blocking_categories=blocking_categories,
+    )
 
 
 def source_family(source_key: str) -> str:

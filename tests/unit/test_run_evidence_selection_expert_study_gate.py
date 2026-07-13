@@ -5,12 +5,30 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    ReviewRankingCalibrationProtocol,
+)
+from artana_evidence_api.evidence_selection.ranking.protocol_integrity import (
+    authenticate_calibration_protocol,
+)
+
 from scripts.run_evidence_selection_expert_study_gate import (
     EvidenceSelectionExpertStudyRunnerThresholds,
     build_evidence_selection_expert_study_gate_report,
     main,
     render_evidence_selection_expert_study_gate_markdown,
 )
+
+
+@pytest.fixture(autouse=True)
+def _calibration_protocol_signing_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY",
+        "expert-study-runner-test-key-at-least-32-bytes",
+    )
 
 
 def test_evidence_selection_expert_study_gate_runner_passes_balanced_study(
@@ -54,13 +72,15 @@ def test_evidence_selection_expert_study_gate_runner_passes_balanced_study(
     assert "## Review-Ranking Calibration" in markdown
 
 
-def test_evidence_selection_expert_study_gate_accepts_integer_json_scores(
+def test_evidence_selection_expert_study_gate_accepts_integer_policy_values(
     tmp_path: Path,
 ) -> None:
     payload = _balanced_study_payload()
     decisions = payload["review_ranking"]["decisions"]
     for decision in decisions:
-        decision["ranking_score"] = 1 if decision["outcome"] == "positive" else 0
+        value = 1 if decision["outcome"] == "positive" else 0
+        decision["operational_ranking"]["value"] = value
+        decision["calibrated_probability"]["value"] = value
     input_path = tmp_path / "integer-score-study.json"
     input_path.write_text(json.dumps(payload) + "\n")
 
@@ -69,7 +89,9 @@ def test_evidence_selection_expert_study_gate_accepts_integer_json_scores(
     )
 
     assert report["gate"]["passed"] is True
-    assert report["gate"]["review_ranking_gate"]["calibration"]["mean_score"] == 0.5
+    calibration = report["gate"]["review_ranking_gate"]["calibration"]
+    assert calibration["availability"] == "diagnostic"
+    assert calibration["mean_probability"] == 0.5
 
 
 def test_evidence_selection_expert_study_gate_accepts_documented_note_objects(
@@ -240,12 +262,13 @@ def _balanced_study_payload() -> dict[str, object]:
             for index, goal in enumerate(goals)
         ],
         "review_ranking": {
-            "schema_version": "evidence_selection_review_ranking_calibration.v1",
+            "schema_version": "evidence_selection_review_ranking_calibration.v2",
             "study_id": "balanced-shadow-study",
             "adjudication_note": (
                 "No reviewer disagreements in this calibration sample."
             ),
             "decisions": _ranking_decisions(goals),
+            "calibration_protocol": _calibration_protocol(),
         },
         "source_manifest": _source_manifest(goals),
     }
@@ -261,7 +284,9 @@ def _ranking_decisions(goals: list[str]) -> list[dict[str, object]]:
         {
             "source_kind": "proposal" if index % 2 == 0 else "review_item",
             "item_id": f"positive-{index}",
-            "ranking_score": 1.0,
+            "research_question_id": f"heldout-rq-{(index % 8) + 1:02d}",
+            "operational_ranking": _operational_ranking(1.0),
+            "calibrated_probability": _calibrated_probability(1.0),
             "outcome": "positive",
             "reviewer_id": "reviewer-a",
             "goal": goals[index % len(goals)],
@@ -273,7 +298,9 @@ def _ranking_decisions(goals: list[str]) -> list[dict[str, object]]:
         {
             "source_kind": "proposal" if index % 2 == 0 else "review_item",
             "item_id": f"negative-{index}",
-            "ranking_score": 0.0,
+            "research_question_id": f"heldout-rq-{((index + 5) % 8) + 1:02d}",
+            "operational_ranking": _operational_ranking(0.0),
+            "calibrated_probability": _calibrated_probability(0.0),
             "outcome": "negative",
             "reviewer_id": "reviewer-a",
             "goal": goals[index % len(goals)],
@@ -282,6 +309,68 @@ def _ranking_decisions(goals: list[str]) -> list[dict[str, object]]:
         for index in range(5)
     ]
     return positive_decisions + negative_decisions
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_agent_semantic_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "objective_match", "value": "direct"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
+    }
+
+
+def _calibration_identity() -> dict[str, object]:
+    return {
+        "input_policy_id": "test_agent_semantic_ranking",
+        "input_policy_version": "v1",
+        "input_mapping_version": "v1",
+        "categorical_schema_version": "v1",
+        "selector_model_id": "test-selector-model",
+        "selector_prompt_version": "v1",
+        "objective_schema_version": "v1",
+        "corpus_version": "v1",
+        "calibration_algorithm": "isotonic",
+        "calibration_version": "v1",
+    }
+
+
+def _calibrated_probability(value: float) -> dict[str, object]:
+    return {
+        "origin": "calibration_model",
+        "value": value,
+        "calibration_status": "diagnostic",
+        "identity": _calibration_identity(),
+        "training_set_sha256": "1" * 64,
+        "partition_manifest_sha256": "2" * 64,
+        "held_out_protocol": "frozen_question_partition_v1",
+    }
+
+
+def _calibration_protocol() -> dict[str, object]:
+    payload = {
+        "identity": _calibration_identity(),
+        "partition_manifest_sha256": "2" * 64,
+        "training_set_sha256": "1" * 64,
+        "held_out_set_sha256": "3" * 64,
+        "training_research_question_ids": [
+            f"training-rq-{index:02d}" for index in range(1, 13)
+        ],
+        "held_out_research_question_ids": [
+            f"heldout-rq-{index:02d}" for index in range(1, 9)
+        ],
+        "independent_expert_labels": True,
+        "held_out_protocol": "frozen_question_partition_v1",
+    }
+    protocol = ReviewRankingCalibrationProtocol.model_validate(payload)
+    return authenticate_calibration_protocol(protocol).model_dump(mode="json")
 
 
 def _adequate_explanation_assessment(record_id: str) -> dict[str, object]:

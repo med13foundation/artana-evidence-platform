@@ -125,7 +125,7 @@ uv run python scripts/build_evidence_selection_shadow_review_packet.py \
 ```
 
 The packet uses
-`schema_version: "evidence_selection_shadow_review_packet.v2"` and sets
+`schema_version: "evidence_selection_shadow_review_packet.v3"` and sets
 `production_readiness_claim: false`. It is a collection aid, not completed
 expert evidence. The command also writes
 `completed-shadow-review-packet.machine.json`, containing the producer-signed
@@ -134,6 +134,14 @@ only `completed-shadow-review-packet.json`. Reviewers must fill the required
 human selection labels, reviewer IDs, categorical explanation assessments,
 explicit overclaim findings, and, for combined studies, positive/negative
 review-ranking outcomes before conversion.
+
+Operational ranking and probability are separate contracts. Agents emit
+categorical findings and explanations; versioned deterministic policy maps
+those categories to `operational_ranking`. Only a versioned calibration model
+may emit `calibrated_probability`. If a run result includes calibrated
+probabilities, pass the frozen protocol with
+`--calibration-protocol path/to/calibration-protocol.json`; the packet builder
+rejects probabilities without matching immutable protocol provenance.
 
 Packets are explicit about study scope:
 
@@ -186,17 +194,18 @@ The review-ranking export shape is:
 
 ```json
 {
-  "schema_version": "evidence_selection_review_ranking_export.v1",
+  "schema_version": "evidence_selection_review_ranking_export.v2",
   "source_system": "",
   "export_id": "",
   "exported_at": "2026-07-07T00:00:00Z",
   "exporter_id": "",
   "redaction_statement": "",
   "review_ranking": {
-    "schema_version": "evidence_selection_review_ranking_calibration.v1",
+    "schema_version": "evidence_selection_review_ranking_calibration.v2",
     "study_id": "",
     "adjudication_note": "",
-    "decisions": []
+    "decisions": [],
+    "calibration_protocol": null
   }
 }
 ```
@@ -204,6 +213,19 @@ The review-ranking export shape is:
 Selection-review export v2 is the categorical contract and requires each
 review's `candidate_record_ids`. Legacy v1 numeric envelopes are rejected; they
 must not be reinterpreted as categorical review evidence.
+
+Review-ranking calibration v2 rejects bare `ranking_score` fields. Every
+decision carries a deterministic operational weight with policy identity and a
+research-question ID. ECE is computed only from explicit calibrated
+probabilities. Missing calibration is reported as unavailable, never as zero
+error. Candidate probabilities are diagnostic inputs; `validated` is a gate
+outcome and is rejected as a self-authored probability status. A production
+claim requires a producer-signed frozen disjoint protocol, at least 12
+training questions, at least 8 held-out questions, observations from at least 8
+held-out questions, independent expert labels, and matching policy/model/prompt/
+objective/corpus/calibrator identity. The fitter must match the complete frozen
+training partition and rejects held-out training leakage. Retrieval algorithm
+numbers may order candidate acquisition but cannot authorize review staging.
 
 For combined studies, the two source exports must have matching `source_system`, `export_id`,
 `exported_at`, `exporter_id`, and `redaction_statement` values. The

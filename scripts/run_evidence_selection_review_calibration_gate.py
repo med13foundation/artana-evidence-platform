@@ -51,6 +51,7 @@ def build_review_ranking_calibration_gate_report(
     )
     gate_report = evaluate_review_ranking_calibration_gate(
         decisions=study_input.decisions,
+        calibration_protocol=study_input.calibration_protocol,
         adjudication_note=study_input.adjudication_note,
         thresholds=thresholds,
     )
@@ -83,17 +84,22 @@ def render_review_ranking_calibration_gate_markdown(report: JSONObject) -> str:
         "",
         "## Calibration",
         "",
+        f"- availability: {calibration.get('availability')}",
         f"- sample_count: {calibration.get('sample_count')}",
-        f"- mean_score: {calibration.get('mean_score')}",
+        f"- probability_count: {calibration.get('probability_count')}",
+        f"- mean_probability: {calibration.get('mean_probability')}",
         f"- observed_positive_rate: {calibration.get('observed_positive_rate')}",
         f"- expected_calibration_error: {calibration.get('expected_calibration_error')}",
         "",
         "## Discrimination",
         "",
         f"- roc_auc: {discrimination.get('roc_auc')}",
-        f"- mean_positive_score: {discrimination.get('mean_positive_score')}",
-        f"- mean_negative_score: {discrimination.get('mean_negative_score')}",
-        f"- mean_score_separation: {discrimination.get('mean_score_separation')}",
+        "- mean_positive_operational_weight: "
+        f"{discrimination.get('mean_positive_operational_weight')}",
+        "- mean_negative_operational_weight: "
+        f"{discrimination.get('mean_negative_operational_weight')}",
+        "- mean_operational_weight_separation: "
+        f"{discrimination.get('mean_operational_weight_separation')}",
         "",
         "## Study Design",
         "",
@@ -115,11 +121,17 @@ def render_review_ranking_calibration_gate_markdown(report: JSONObject) -> str:
         "- max_expected_calibration_error: "
         f"{thresholds.get('max_expected_calibration_error')}",
         f"- min_roc_auc: {thresholds.get('min_roc_auc')}",
-        "- min_mean_score_separation: "
-        f"{thresholds.get('min_mean_score_separation')}",
+        "- min_mean_operational_weight_separation: "
+        f"{thresholds.get('min_mean_operational_weight_separation')}",
         f"- min_distinct_goals: {thresholds.get('min_distinct_goals')}",
         "- min_distinct_evidence_shapes: "
         f"{thresholds.get('min_distinct_evidence_shapes')}",
+        "- min_training_research_questions: "
+        f"{thresholds.get('min_training_research_questions')}",
+        "- min_held_out_research_questions: "
+        f"{thresholds.get('min_held_out_research_questions')}",
+        "- min_observed_held_out_research_questions: "
+        f"{thresholds.get('min_observed_held_out_research_questions')}",
         "",
         "## Blocking Reasons",
         "",
@@ -228,6 +240,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         "evidence_selection_review_calibration "
         f"status={gate.get('status')} "
+        f"calibration={calibration.get('availability')} "
         f"samples={calibration.get('sample_count')} "
         f"ece={calibration.get('expected_calibration_error')} "
         f"blocking_reasons={len(_string_list(gate.get('blocking_reasons')))}",

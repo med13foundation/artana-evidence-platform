@@ -112,7 +112,7 @@ class CalibrationModelNumber(BaseModel):
     calibration_version: str = Field(..., min_length=1)
     training_set_hash: str = Field(..., min_length=1)
     held_out_protocol: str = Field(..., min_length=1)
-    calibration_status: Literal["unavailable", "diagnostic", "validated"]
+    calibration_status: Literal["diagnostic"]
 
 
 class ComputedMetricNumber(BaseModel):

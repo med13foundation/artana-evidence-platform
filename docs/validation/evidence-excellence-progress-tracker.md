@@ -3169,6 +3169,35 @@ Remaining proof boundary:
   latest live trusted-graph precision, linking, specificity, or entailment
   results.
 
+### 2026-07-13 - Ranking Calibration And Authority Boundaries
+
+Branch: `alvaro/evidence-semantic-pr5-ranking-calibration`
+
+Evidence report:
+`docs/validation/reports/2026-07-13-pr-semantic-pr5-ranking-calibration.md`
+
+Progress:
+
+- Operational rank, calibrated probability, retrieval ordering, and legacy
+  queue confidence now have separate typed origins and responsibilities.
+- Probability artifacts cannot self-assert `validated`; validation is derived
+  by the held-out gate.
+- Frozen calibration protocols are producer-signed and tamper-checked.
+- The fitter rejects held-out leakage and training-set digest drift.
+- Retrieval-only ranking cannot authorize proposal or review-item staging.
+- Missing ECE remains unavailable and blocks production ranking claims.
+- Independent adversarial findings were reproduced, fixed, and covered by
+  regression tests.
+
+Remaining proof boundary:
+
+- No real 12-question training plus 8-question held-out expert corpus has been
+  collected yet.
+- This PR improves measurement truth, not live relation precision, specificity,
+  entity linking, or entailment.
+- Trusted-graph readiness remains blocked until the signed real-human study and
+  the existing live relation-quality gates both pass.
+
 ## PR Update Template
 
 Copy this block when a PR is opened or merged.

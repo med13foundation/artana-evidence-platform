@@ -10,6 +10,10 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+    RankingCategoricalInput,
+)
 from artana_evidence_api.evidence_selection_candidate_screening import (
     apply_handoff_budget,
     defer_selected_for_shadow_mode,
@@ -315,6 +319,73 @@ def test_candidate_screening_skips_explicit_exclusion_matches() -> None:
     assert result.skipped_records[0].excluded_terms == ("pathogenic",)
 
 
+def test_candidate_screening_hashes_every_effective_query_input() -> None:
+    space_id = uuid4()
+    user_id = uuid4()
+    search_id = uuid4()
+    search_store = InMemoryDirectSourceSearchStore()
+    search_store.save(
+        _clinvar_search(space_id=space_id, search_id=search_id),
+        created_by=user_id,
+    )
+
+    baseline_score, baseline_hash = _screening_score_and_hash(
+        space_id=space_id,
+        search_id=search_id,
+        search_store=search_store,
+        goal="Find MED13 congenital heart disease evidence",
+    )
+    repeated_score, repeated_hash = _screening_score_and_hash(
+        space_id=space_id,
+        search_id=search_id,
+        search_store=search_store,
+        goal="Find MED13 congenital heart disease evidence",
+    )
+    changed_goal_score, changed_goal_hash = _screening_score_and_hash(
+        space_id=space_id,
+        search_id=search_id,
+        search_store=search_store,
+        goal="Find BRCA1 breast cancer evidence",
+    )
+    _, changed_instructions_hash = _screening_score_and_hash(
+        space_id=space_id,
+        search_id=search_id,
+        search_store=search_store,
+        goal="Find MED13 congenital heart disease evidence",
+        instructions="Prioritize pathogenic variants",
+    )
+    _, changed_inclusion_hash = _screening_score_and_hash(
+        space_id=space_id,
+        search_id=search_id,
+        search_store=search_store,
+        goal="Find MED13 congenital heart disease evidence",
+        inclusion_criteria=("Pathogenic classifications",),
+    )
+    _, changed_exclusion_hash = _screening_score_and_hash(
+        space_id=space_id,
+        search_id=search_id,
+        search_store=search_store,
+        goal="Find MED13 congenital heart disease evidence",
+        exclusion_criteria=("Pathogenic classifications",),
+    )
+
+    assert repeated_score == baseline_score
+    assert repeated_hash == baseline_hash
+    assert changed_goal_score != baseline_score
+    assert (
+        len(
+            {
+                baseline_hash,
+                changed_goal_hash,
+                changed_instructions_hash,
+                changed_inclusion_hash,
+                changed_exclusion_hash,
+            },
+        )
+        == 5
+    )
+
+
 def test_candidate_screening_budget_and_shadow_helpers_are_typed() -> None:
     space_id = uuid4()
     user_id = uuid4()
@@ -407,8 +478,49 @@ def _selected_decision(
         reason="Selected.",
         record_index=record_index,
         record_hash=record_hash,
-        score=6.0,
+        operational_ranking=DeterministicRankingWeight(
+            value=6.0,
+            policy_id="test_selection_ranking",
+            policy_version="v1",
+            mapping_version="v1",
+            categorical_inputs=(
+                RankingCategoricalInput(field="objective_match", value="direct"),
+            ),
+        ),
     )
+
+
+def _screening_score_and_hash(
+    *,
+    space_id: UUID,
+    search_id: UUID,
+    search_store: InMemoryDirectSourceSearchStore,
+    goal: str,
+    instructions: str | None = None,
+    inclusion_criteria: tuple[str, ...] = (),
+    exclusion_criteria: tuple[str, ...] = (),
+) -> tuple[float, str]:
+    result = screen_candidate_searches(
+        space_id=space_id,
+        goal=goal,
+        instructions=instructions,
+        inclusion_criteria=inclusion_criteria,
+        exclusion_criteria=exclusion_criteria,
+        candidate_searches=(
+            EvidenceSelectionCandidateSearch(source_key="clinvar", search_id=search_id),
+        ),
+        max_records_per_search=3,
+        direct_source_search_store=search_store,
+        document_store=HarnessDocumentStore(),
+    )
+    decisions = (
+        *result.selected_records,
+        *result.skipped_records,
+        *result.deferred_records,
+    )
+    decision = next(item for item in decisions if item.record_index == 0)
+    assert decision.retrieval_ranking is not None
+    return decision.retrieval_ranking.value, decision.retrieval_ranking.query_input_hash
 
 
 def _clinvar_search_with_records(

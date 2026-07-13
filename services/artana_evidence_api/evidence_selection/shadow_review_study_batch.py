@@ -11,6 +11,15 @@ from pathlib import Path, PurePosixPath
 from typing import Literal, Self
 
 from artana_evidence_api.evidence_selection.output_paths import paths_alias
+from artana_evidence_api.evidence_selection.ranking.batch_quality import (
+    BatchQualityMetrics as _BatchQualityMetrics,
+)
+from artana_evidence_api.evidence_selection.ranking.batch_quality import (
+    batch_quality_blocking_reasons as _batch_suite_quality_blocking_reasons,
+)
+from artana_evidence_api.evidence_selection.ranking.batch_quality import (
+    build_batch_quality_metrics as _batch_quality_metrics,
+)
 from artana_evidence_api.evidence_selection.shadow_review_completion import (
     machine_packet_sidecar_path,
 )
@@ -226,28 +235,6 @@ class EvidenceSelectionShadowReviewStudyBatchThresholds:
 _PRODUCTION_SUITE_THRESHOLD_FLOORS = (
     EvidenceSelectionShadowReviewStudyBatchSuiteThresholds()
 )
-
-
-@dataclass(frozen=True, slots=True)
-class _BatchQualityMetrics:
-    suite_mean_precision: float
-    suite_mean_recall: float
-    suite_explanation_adequacy_rate: float
-    max_review_ranking_expected_calibration_error: float
-
-    def to_json(self) -> JSONObject:
-        return {
-            "suite_mean_precision": round(self.suite_mean_precision, 4),
-            "suite_mean_recall": round(self.suite_mean_recall, 4),
-            "suite_explanation_adequacy_rate": round(
-                self.suite_explanation_adequacy_rate,
-                4,
-            ),
-            "max_review_ranking_expected_calibration_error": round(
-                self.max_review_ranking_expected_calibration_error,
-                6,
-            ),
-        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -523,7 +510,11 @@ def build_evidence_selection_shadow_review_study_batch_suite_gate(
     all_entry_quality_metrics = _batch_quality_metrics(entries)
     production_quality_metrics = _batch_quality_metrics(passed_entries)
     selection_goals = _batch_selection_goals(passed_entries)
-    review_ranking_goals, evidence_shapes = _batch_review_ranking_labels(passed_entries)
+    (
+        review_ranking_goals,
+        ranking_research_question_ids,
+        evidence_shapes,
+    ) = _batch_review_ranking_labels(passed_entries)
     source_outcomes = _batch_review_ranking_source_outcomes(passed_entries)
     source_run_ids, study_ids = _batch_study_identity_labels(passed_entries)
     combined_study_count = _combined_study_count(passed_entries)
@@ -542,6 +533,9 @@ def build_evidence_selection_shadow_review_study_batch_suite_gate(
         "distinct_study_id_count": len(study_ids),
         "distinct_selection_goal_count": len(selection_goals),
         "distinct_review_ranking_goal_count": len(review_ranking_goals),
+        "distinct_review_ranking_research_question_count": len(
+            ranking_research_question_ids,
+        ),
         "distinct_evidence_shape_count": len(evidence_shapes),
         "review_ranking_source_outcomes": {
             source_kind: sorted(source_outcomes[source_kind])
@@ -594,6 +588,7 @@ def build_evidence_selection_shadow_review_study_gate_report(
             max_expected_calibration_error=thresholds.max_expected_calibration_error,
             min_distinct_goals=thresholds.min_distinct_ranking_goals,
             min_distinct_evidence_shapes=thresholds.min_distinct_evidence_shapes,
+            min_observed_held_out_research_questions=1,
             require_reviewer_ids=True,
             require_adjudication_note=True,
             require_positive_and_negative_per_source=False,
@@ -678,6 +673,10 @@ def _production_suite_thresholds(
         min_distinct_review_ranking_goals=max(
             thresholds.min_distinct_review_ranking_goals,
             floors.min_distinct_review_ranking_goals,
+        ),
+        min_distinct_review_ranking_research_questions=max(
+            thresholds.min_distinct_review_ranking_research_questions,
+            floors.min_distinct_review_ranking_research_questions,
         ),
         min_distinct_evidence_shapes=max(
             thresholds.min_distinct_evidence_shapes,
@@ -780,8 +779,9 @@ def _batch_selection_goals(
 
 def _batch_review_ranking_labels(
     entries: tuple[EvidenceSelectionShadowReviewStudyBatchEntryResult, ...],
-) -> tuple[set[str], set[str]]:
+) -> tuple[set[str], set[str], set[str]]:
     goals: set[str] = set()
+    research_question_ids: set[str] = set()
     evidence_shapes: set[str] = set()
     for entry in entries:
         study_input = EvidenceSelectionExpertStudyInput.model_validate(
@@ -790,11 +790,12 @@ def _batch_review_ranking_labels(
         if study_input.review_ranking is None:
             continue
         for decision in study_input.review_ranking.decisions:
+            research_question_ids.add(decision.research_question_id)
             if goal := _normalized_label(decision.goal):
                 goals.add(goal)
             if evidence_shape := _normalized_label(decision.evidence_shape):
                 evidence_shapes.add(evidence_shape)
-    return goals, evidence_shapes
+    return goals, research_question_ids, evidence_shapes
 
 
 def _batch_review_ranking_source_outcomes(
@@ -812,53 +813,6 @@ def _batch_review_ranking_source_outcomes(
         for decision in study_input.review_ranking.decisions:
             source_outcomes[decision.source_kind].add(decision.outcome)
     return source_outcomes
-
-
-def _batch_quality_metrics(
-    entries: tuple[EvidenceSelectionShadowReviewStudyBatchEntryResult, ...],
-) -> _BatchQualityMetrics:
-    total_review_count = 0
-    weighted_precision = 0.0
-    weighted_recall = 0.0
-    weighted_explanation_adequacy = 0.0
-    max_expected_calibration_error = 0.0
-    for entry in entries:
-        gate = _object_value(entry.gate_report, "gate")
-        selection_summary = _object_value(gate, "selection_summary")
-        review_count = _int_value(selection_summary.get("review_count"))
-        if review_count > 0:
-            total_review_count += review_count
-            weighted_precision += (
-                _float_value(selection_summary.get("mean_precision")) * review_count
-            )
-            weighted_recall += (
-                _float_value(selection_summary.get("mean_recall")) * review_count
-            )
-            weighted_explanation_adequacy += (
-                _float_value(selection_summary.get("explanation_adequacy_rate"))
-                * review_count
-            )
-        review_ranking_gate = _object_value(gate, "review_ranking_gate")
-        calibration = _object_value(review_ranking_gate, "calibration")
-        max_expected_calibration_error = max(
-            max_expected_calibration_error,
-            _float_value(calibration.get("expected_calibration_error")),
-        )
-    return _BatchQualityMetrics(
-        suite_mean_precision=_ratio(
-            numerator=weighted_precision,
-            denominator=total_review_count,
-        ),
-        suite_mean_recall=_ratio(
-            numerator=weighted_recall,
-            denominator=total_review_count,
-        ),
-        suite_explanation_adequacy_rate=_ratio(
-            numerator=weighted_explanation_adequacy,
-            denominator=total_review_count,
-        ),
-        max_review_ranking_expected_calibration_error=max_expected_calibration_error,
-    )
 
 
 def _batch_study_identity_labels(
@@ -967,46 +921,6 @@ def _batch_suite_entry_blocking_reasons(
     return tuple(reasons)
 
 
-def _batch_suite_quality_blocking_reasons(
-    *,
-    raw_quality_metrics: _BatchQualityMetrics,
-    thresholds: EvidenceSelectionShadowReviewStudyBatchSuiteThresholds,
-) -> tuple[str, ...]:
-    reasons: list[str] = []
-    if raw_quality_metrics.suite_mean_precision < thresholds.min_suite_mean_precision:
-        reasons.append(
-            "Batch suite mean precision is below target: "
-            f"{raw_quality_metrics.suite_mean_precision:.6f} < "
-            f"{thresholds.min_suite_mean_precision:.6f}.",
-        )
-    if raw_quality_metrics.suite_mean_recall < thresholds.min_suite_mean_recall:
-        reasons.append(
-            "Batch suite mean recall is below target: "
-            f"{raw_quality_metrics.suite_mean_recall:.6f} < "
-            f"{thresholds.min_suite_mean_recall:.6f}.",
-        )
-    if (
-        raw_quality_metrics.suite_explanation_adequacy_rate
-        < thresholds.min_suite_explanation_adequacy_rate
-    ):
-        reasons.append(
-            "Batch suite explanation adequacy rate is below target: "
-            f"{raw_quality_metrics.suite_explanation_adequacy_rate:.6f} < "
-            f"{thresholds.min_suite_explanation_adequacy_rate:.6f}.",
-        )
-    if (
-        raw_quality_metrics.max_review_ranking_expected_calibration_error
-        > thresholds.max_suite_expected_calibration_error
-    ):
-        observed = raw_quality_metrics.max_review_ranking_expected_calibration_error
-        reasons.append(
-            "Batch review-ranking calibration ECE is above target: "
-            f"{observed:.6f} > "
-            f"{thresholds.max_suite_expected_calibration_error:.6f}.",
-        )
-    return tuple(reasons)
-
-
 def _batch_suite_sample_blocking_reasons(
     *,
     summary: JSONObject,
@@ -1089,6 +1003,18 @@ def _batch_suite_diversity_blocking_reasons(
         )
     if (
         _int_value(summary.get("combined_study_count")) > 0
+        and _int_value(
+            summary.get("distinct_review_ranking_research_question_count"),
+        )
+        < thresholds.min_distinct_review_ranking_research_questions
+    ):
+        reasons.append(
+            "At least "
+            f"{thresholds.min_distinct_review_ranking_research_questions} distinct "
+            "held-out review-ranking research questions are required across the batch.",
+        )
+    if (
+        _int_value(summary.get("combined_study_count")) > 0
         and _int_value(summary.get("distinct_evidence_shape_count"))
         < thresholds.min_distinct_evidence_shapes
     ):
@@ -1142,26 +1068,12 @@ def _identity_label(value: object) -> str | None:
     return text or None
 
 
-def _ratio(*, numerator: float, denominator: int) -> float:
-    if denominator <= 0:
-        return 0.0
-    return numerator / denominator
-
-
 def _int_value(value: object) -> int:
     if isinstance(value, bool):
         return 0
     if isinstance(value, int):
         return value
     return 0
-
-
-def _float_value(value: object) -> float:
-    if isinstance(value, bool):
-        return 0.0
-    if isinstance(value, int | float):
-        return float(value)
-    return 0.0
 
 
 __all__ = [

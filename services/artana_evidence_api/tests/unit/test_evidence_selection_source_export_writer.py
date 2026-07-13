@@ -45,7 +45,7 @@ def test_source_export_writer_creates_builder_ready_exports(tmp_path: Path) -> N
     ranking_export = json.loads(ranking_export_path.read_text())
     assert selection_export["schema_version"] == "evidence_selection_review_export.v2"
     assert ranking_export["schema_version"] == (
-        "evidence_selection_review_ranking_export.v1"
+        "evidence_selection_review_ranking_export.v2"
     )
     assert selection_export["source_system"] == "artana-shadow-review"
     assert ranking_export["exported_at"] == "2026-07-07T07:00:00Z"
@@ -365,14 +365,17 @@ def _review_ranking() -> dict[str, object]:
         "fusion_treatment_relation",
     ]
     return {
-        "schema_version": "evidence_selection_review_ranking_calibration.v1",
+        "schema_version": "evidence_selection_review_ranking_calibration.v2",
         "study_id": "shadow-study-2026-07-07",
         "adjudication_note": "Reviewer adjudicated all ranking labels.",
         "decisions": [
             {
                 "source_kind": "proposal" if index < 5 else "review_item",
                 "item_id": f"ranking-item-{index}",
-                "ranking_score": 0.9 if index % 2 == 0 else 0.1,
+                "research_question_id": f"question-{index % 3}",
+                "operational_ranking": _operational_ranking(
+                    0.9 if index % 2 == 0 else 0.1,
+                ),
                 "outcome": "positive" if index % 2 == 0 else "negative",
                 "reviewer_id": "reviewer-a",
                 "goal": goals[index % len(goals)],
@@ -380,4 +383,20 @@ def _review_ranking() -> dict[str, object]:
             }
             for index in range(10)
         ],
+    }
+
+
+def _operational_ranking(value: float) -> dict[str, object]:
+    return {
+        "origin": "deterministic_policy",
+        "value": value,
+        "policy_id": "test_review_ranking",
+        "policy_version": "v1",
+        "mapping_version": "v1",
+        "categorical_inputs": [
+            {"field": "evidence_state", "value": "supported"},
+        ],
+        "caps": [],
+        "vetoes": [],
+        "blocking_categories": [],
     }

@@ -17,10 +17,6 @@ from artana_evidence_api.proposal_store import (
     HarnessProposalRecord,
     HarnessProposalStore,
 )
-from artana_evidence_api.ranking import (
-    ReviewRankingCalibrationObservation,
-    build_review_ranking_calibration_summary,
-)
 from artana_evidence_api.review_item_store import (
     HarnessReviewItemRecord,
     HarnessReviewItemStore,
@@ -32,8 +28,9 @@ from artana_evidence_api.source_document_selection_identity import (
 from artana_evidence_api.types.common import JSONObject, json_object_or_empty
 
 _REVIEW_RANKING_CALIBRATION_BASIS = (
-    "Promoted proposals and resolved, non-converted review items are positive outcomes; "
-    "rejected proposals and dismissed review items are negative outcomes."
+    "Persisted queue ranking_score values do not carry calibration_model provenance. "
+    "They are excluded from ECE until an authenticated candidate calibrator and "
+    "held-out validation report are attached."
 )
 
 
@@ -261,61 +258,25 @@ def _review_ranking_calibration_snapshot(
     proposals: list[HarnessProposalRecord],
     review_items: list[HarnessReviewItemRecord],
 ) -> JSONObject:
-    observations = (
-        *_proposal_ranking_calibration_observations(proposals),
-        *_review_item_ranking_calibration_observations(review_items),
+    decided_proposal_count = sum(
+        1 for proposal in proposals if proposal.status in {"promoted", "rejected"}
     )
-    summary = build_review_ranking_calibration_summary(observations)
+    decided_review_item_count = sum(
+        1
+        for review_item in review_items
+        if review_item.status == "dismissed"
+        or (
+            review_item.status == "resolved"
+            and not _was_converted_to_proposal(review_item)
+        )
+    )
     return {
-        **summary.to_json(),
+        "availability": "unavailable",
+        "sample_count": decided_proposal_count + decided_review_item_count,
+        "probability_count": 0,
+        "expected_calibration_error": None,
         "basis": _REVIEW_RANKING_CALIBRATION_BASIS,
     }
-
-
-def _proposal_ranking_calibration_observations(
-    proposals: list[HarnessProposalRecord],
-) -> tuple[ReviewRankingCalibrationObservation, ...]:
-    observations: list[ReviewRankingCalibrationObservation] = []
-    for proposal in proposals:
-        if proposal.status == "promoted":
-            observations.append(
-                ReviewRankingCalibrationObservation(
-                    ranking_score=proposal.ranking_score,
-                    outcome_positive=True,
-                ),
-            )
-        if proposal.status == "rejected":
-            observations.append(
-                ReviewRankingCalibrationObservation(
-                    ranking_score=proposal.ranking_score,
-                    outcome_positive=False,
-                ),
-            )
-    return tuple(observations)
-
-
-def _review_item_ranking_calibration_observations(
-    review_items: list[HarnessReviewItemRecord],
-) -> tuple[ReviewRankingCalibrationObservation, ...]:
-    observations: list[ReviewRankingCalibrationObservation] = []
-    for review_item in review_items:
-        if review_item.status == "resolved" and not _was_converted_to_proposal(
-            review_item,
-        ):
-            observations.append(
-                ReviewRankingCalibrationObservation(
-                    ranking_score=review_item.ranking_score,
-                    outcome_positive=True,
-                ),
-            )
-        if review_item.status == "dismissed":
-            observations.append(
-                ReviewRankingCalibrationObservation(
-                    ranking_score=review_item.ranking_score,
-                    outcome_positive=False,
-                ),
-            )
-    return tuple(observations)
 
 
 def _was_converted_to_proposal(review_item: HarnessReviewItemRecord) -> bool:

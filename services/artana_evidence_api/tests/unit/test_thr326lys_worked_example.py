@@ -15,9 +15,6 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
-from artana_evidence_api.evidence_selection.semantic.screening import (
-    DeterministicEvidenceSelectionCandidateScreener,
-)
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     EvidenceSelectionSourcePlanResult,
@@ -37,6 +34,10 @@ from artana_evidence_api.source_result_capture import (
 )
 from artana_evidence_api.source_search_handoff import InMemorySourceSearchHandoffStore
 from artana_evidence_api.types.common import JSONObject
+
+from services.artana_evidence_api.tests.unit.evidence_selection_ranking_test_support import (
+    OperationalRankingTestScreener,
+)
 
 _FIXTURE_PATH = (
     Path(__file__).resolve().parents[1]
@@ -136,7 +137,7 @@ async def test_thr326lys_worked_example_stages_variant_review_candidates() -> No
     artifact_store.seed_for_run(run=run)
 
     result = await execute_evidence_selection_run(
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
         space_id=space_id,
         run=run,
         goal=_fixture_string(fixture, key="goal"),

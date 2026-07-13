@@ -32,9 +32,6 @@ from artana_evidence_api.direct_source_search import (
     InMemoryDirectSourceSearchStore,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
-from artana_evidence_api.evidence_selection.semantic.screening import (
-    DeterministicEvidenceSelectionCandidateScreener,
-)
 from artana_evidence_api.evidence_selection_runtime import (
     EvidenceSelectionCandidateSearch,
     queue_evidence_selection_run,
@@ -101,6 +98,10 @@ from artana_evidence_api.types.graph_fact_assessment import (
     build_fact_assessment_from_confidence,
 )
 from artana_evidence_api.worker import run_worker_tick
+
+from services.artana_evidence_api.tests.unit.evidence_selection_ranking_test_support import (
+    OperationalRankingTestScreener,
+)
 
 if TYPE_CHECKING:
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
@@ -1070,7 +1071,7 @@ def test_run_worker_tick_executes_queued_evidence_selection_runs() -> None:
         pubmed_discovery_service_factory=_fake_pubmed_discovery_context,
         direct_source_search_store=direct_search_store,
         source_search_handoff_store=handoff_store,
-        candidate_screener=DeterministicEvidenceSelectionCandidateScreener(),
+        candidate_screener=OperationalRankingTestScreener(),
     )
 
     result = asyncio.run(

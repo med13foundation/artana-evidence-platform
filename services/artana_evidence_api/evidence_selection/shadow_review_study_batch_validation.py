@@ -26,6 +26,7 @@ class EvidenceSelectionShadowReviewStudyBatchSuiteThresholds:
     min_distinct_study_ids: int = 3
     min_distinct_selection_goals: int = 3
     min_distinct_review_ranking_goals: int = 3
+    min_distinct_review_ranking_research_questions: int = 8
     min_distinct_evidence_shapes: int = 3
 
 
@@ -63,6 +64,9 @@ def validate_shadow_review_study_batch_suite_thresholds(
         "min_distinct_selection_goals": thresholds.min_distinct_selection_goals,
         "min_distinct_review_ranking_goals": (
             thresholds.min_distinct_review_ranking_goals
+        ),
+        "min_distinct_review_ranking_research_questions": (
+            thresholds.min_distinct_review_ranking_research_questions
         ),
         "min_distinct_evidence_shapes": thresholds.min_distinct_evidence_shapes,
     }
@@ -119,6 +123,9 @@ def shadow_review_study_batch_suite_thresholds_to_json(
         "min_distinct_selection_goals": thresholds.min_distinct_selection_goals,
         "min_distinct_review_ranking_goals": (
             thresholds.min_distinct_review_ranking_goals
+        ),
+        "min_distinct_review_ranking_research_questions": (
+            thresholds.min_distinct_review_ranking_research_questions
         ),
         "min_distinct_evidence_shapes": thresholds.min_distinct_evidence_shapes,
     }

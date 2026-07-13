@@ -139,7 +139,7 @@ def test_evidence_selection_semantic_agent_reports_run_evidence_api_gate(
 def test_evidence_selection_validation_fixtures_run_evidence_api_gate() -> None:
     plan = plan_checks(
         [
-            "scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v1.json"
+            "scripts/validation/evidence_selection/fixtures/review_ranking_shadow_seed_v2.json"
         ],
         event_name="pull_request",
         ref="refs/pull/14/merge",

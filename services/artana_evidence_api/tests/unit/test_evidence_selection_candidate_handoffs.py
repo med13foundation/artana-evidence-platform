@@ -19,6 +19,7 @@ from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionDecisionState,
 )
 from artana_evidence_api.run_registry import HarnessRunRegistry
+from artana_evidence_api.runtime.agent_output_schema import RetrievalAlgorithmNumber
 from artana_evidence_api.source_result_capture import (
     SourceCaptureStage,
     SourceResultCapture,
@@ -124,6 +125,12 @@ def _selected_decision(*, search_id: UUID) -> EvidenceSelectionCandidateDecision
         record_index=0,
         record_hash="record-hash",
         title="MED13 congenital heart disease variant",
-        score=9.0,
+        retrieval_ranking=RetrievalAlgorithmNumber(
+            value=9.0,
+            provider_algorithm_id="test_retrieval",
+            algorithm_version="v1",
+            query_input_hash="0" * 64,
+            affected_candidate_acquisition=True,
+        ),
         matched_terms=("med13",),
     )

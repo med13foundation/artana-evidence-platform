@@ -6,18 +6,24 @@ from uuid import uuid4
 
 import pytest
 from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.evidence_selection.ranking.contracts import (
+    DeterministicRankingWeight,
+    RankingCategoricalInput,
+)
 from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionCandidateDecision,
     EvidenceSelectionDecisionDeferralReason,
     EvidenceSelectionDecisionRelevance,
     EvidenceSelectionDecisionState,
+    candidate_ordering_value,
     record_dedup_key,
     record_hash,
     relevance_label_for_selected_score,
+    require_operational_ranking,
     required_decision_int,
     required_decision_string,
-    score_from_decision,
 )
+from artana_evidence_api.runtime.agent_output_schema import RetrievalAlgorithmNumber
 from artana_evidence_api.source_document_selection_identity import (
     source_document_record_hash,
 )
@@ -35,7 +41,7 @@ def test_candidate_decision_serializes_only_at_artifact_boundary() -> None:
         record_index=0,
         record_hash="record-hash",
         title="MED13 variant",
-        score=9.0,
+        operational_ranking=_operational_ranking(9.0),
         matched_terms=("med13",),
         excluded_terms=(),
         caveats=("Variant-level record needs review.",),
@@ -63,7 +69,7 @@ def test_candidate_decision_deferral_preserves_original_relevance() -> None:
         reason="Selected.",
         record_index=0,
         record_hash="record-hash",
-        score=9.0,
+        operational_ranking=_operational_ranking(9.0),
     )
 
     deferred = selected.with_decision(
@@ -83,16 +89,16 @@ def test_candidate_decision_deferral_preserves_original_relevance() -> None:
     assert payload["deferral_reason"] == "run_handoff_budget"
 
 
-def test_candidate_helpers_keep_existing_serialized_payload_contract() -> None:
+def test_candidate_helpers_require_governed_serialized_ranking() -> None:
     payload: JSONObject = {
         "source_key": "clinvar",
         "record_index": 3,
-        "score": 4.5,
+        "operational_ranking": _operational_ranking(4.5).model_dump(mode="json"),
     }
 
     assert required_decision_string(payload, "source_key") == "clinvar"
     assert required_decision_int(payload, "record_index") == 3
-    assert score_from_decision(payload) == 4.5
+    assert candidate_ordering_value(payload) == 4.5
     assert relevance_label_for_selected_score(5.0) == (
         EvidenceSelectionDecisionRelevance.STRONG_FIT
     )
@@ -101,6 +107,42 @@ def test_candidate_helpers_keep_existing_serialized_payload_contract() -> None:
     )
     with pytest.raises(ValueError, match="missing string field"):
         required_decision_string(payload, "missing")
+    with pytest.raises(ValueError, match="bare evidence-selection score"):
+        candidate_ordering_value({"score": 4.5})
+
+
+def test_retrieval_value_is_explicitly_acquisition_only() -> None:
+    decision = EvidenceSelectionCandidateDecision(
+        source_key="pubmed",
+        source_family="literature",
+        search_id=str(uuid4()),
+        decision=EvidenceSelectionDecisionState.SELECTED,
+        relevance_label=EvidenceSelectionDecisionRelevance.PLAUSIBLE_FIT,
+        reason="Retrieved for agent assessment.",
+        retrieval_ranking=RetrievalAlgorithmNumber(
+            value=7.5,
+            provider_algorithm_id="test_retrieval",
+            algorithm_version="v1",
+            query_input_hash="0" * 64,
+            affected_candidate_acquisition=True,
+        ),
+    )
+
+    assert candidate_ordering_value(decision) == 7.5
+    with pytest.raises(ValueError, match="cannot influence post-judgment staging"):
+        require_operational_ranking(decision)
+
+
+def _operational_ranking(value: float) -> DeterministicRankingWeight:
+    return DeterministicRankingWeight(
+        value=value,
+        policy_id="test_selection_ranking",
+        policy_version="v1",
+        mapping_version="v1",
+        categorical_inputs=(
+            RankingCategoricalInput(field="objective_match", value="direct"),
+        ),
+    )
 
 
 def test_source_document_record_hash_matches_candidate_record_hash_for_sources() -> None:

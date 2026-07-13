@@ -19,7 +19,7 @@ EvidenceSelectionReviewExportSchemaVersion = Literal[
     "evidence_selection_review_export.v2"
 ]
 ReviewRankingCalibrationExportSchemaVersion = Literal[
-    "evidence_selection_review_ranking_export.v1"
+    "evidence_selection_review_ranking_export.v2"
 ]
 class EvidenceSelectionSourceExportIdentity(BaseModel):
     """Shared source identity fields embedded in expert-study source exports."""

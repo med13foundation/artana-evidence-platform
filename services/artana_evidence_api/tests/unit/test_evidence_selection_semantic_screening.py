@@ -253,7 +253,9 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
     ).screen(context=context)
 
     assert len(result.selected_records) == 1
-    assert result.selected_records[0].score == 6.0
+    assert result.selected_records[0].operational_ranking is not None
+    assert result.selected_records[0].operational_ranking.value == 6.0
+    assert result.selected_records[0].operational_ranking is not None
     assert result.selected_records[0].reason.startswith("Categorical semantic")
     assert result.selected_records[0].semantic_agent_run_id == "test-agent-run"
     assert "semantic_entity_variant=match" in result.selected_records[0].caveats
@@ -262,7 +264,8 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
         for caveat in result.selected_records[0].caveats
     )
     assert len(result.skipped_records) == 1
-    assert result.skipped_records[0].score == 0.0
+    assert result.skipped_records[0].operational_ranking is not None
+    assert result.skipped_records[0].operational_ranking.value == 0.0
     assert len(result.deferred_records) == 1
     assert result.deferred_records[0].deferral_reason == "semantic_review"
     assert result.errors == ()
