@@ -22,9 +22,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 LLMLiteralValue = str | bool | None
 LLMObservationValue = LLMLiteralValue | SourceMeasurementNumber
+_SOURCE_NUMBER_TEXT = (
+    r"[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
+    r"(?:[eE][-+]?\d+)?"
+)
 _SOURCE_NUMBER_PATTERN = re.compile(
-    r"(?<![\w.])[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
-    r"(?:[eE][-+]?\d+)?(?!\d)",
+    rf"(?<![\w.]){_SOURCE_NUMBER_TEXT}(?!\d)",
 )
 _DIMENSIONLESS_UNITS = frozenset({"dimensionless", "ratio", "unitless"})
 _UNIT_ALIASES: Mapping[str, tuple[str, ...]] = {
@@ -43,8 +46,39 @@ _WORDED_BOUND_PREFIX = re.compile(
     r"\b(?:at\s+(?:least|most)|less\s+than|greater\s+than|no\s+(?:less|more)\s+than|up\s+to))\s*$",
     re.IGNORECASE,
 )
-_WORDED_RANGE_SUFFIX = re.compile(r"^(?:and|through|to)\b", re.IGNORECASE)
-_WORDED_RANGE_PREFIX = re.compile(r"\b(?:and|through|to)\s*$", re.IGNORECASE)
+_RANGE_ENDPOINT_TEXT = rf"{_SOURCE_NUMBER_TEXT}(?:\s*[A-Za-z%]+)?"
+_WORDED_RANGE_AFTER_ENDPOINT = re.compile(
+    rf"^(?:through|to)\s+{_RANGE_ENDPOINT_TEXT}\b",
+    re.IGNORECASE,
+)
+_WORDED_RANGE_BEFORE_ENDPOINT = re.compile(
+    rf"{_RANGE_ENDPOINT_TEXT}\s+(?:through|to)\s*$",
+    re.IGNORECASE,
+)
+_BETWEEN_RANGE_BEFORE_ENDPOINT = re.compile(
+    rf"\bbetween\s+{_RANGE_ENDPOINT_TEXT}\s+and\s*$",
+    re.IGNORECASE,
+)
+_BETWEEN_PREFIX = re.compile(r"\bbetween\b", re.IGNORECASE)
+_BETWEEN_RANGE_AFTER_ENDPOINT = re.compile(
+    rf"^and\s+{_RANGE_ENDPOINT_TEXT}\b",
+    re.IGNORECASE,
+)
+
+
+def _has_worded_bound_or_range_context(*, prefix: str, suffix: str) -> bool:
+    if _WORDED_BOUND_PREFIX.search(prefix):
+        return True
+    if _WORDED_RANGE_BEFORE_ENDPOINT.search(prefix):
+        return True
+    if _BETWEEN_RANGE_BEFORE_ENDPOINT.search(prefix):
+        return True
+    if _WORDED_RANGE_AFTER_ENDPOINT.search(suffix):
+        return True
+    return bool(
+        _BETWEEN_PREFIX.search(prefix)
+        and _BETWEEN_RANGE_AFTER_ENDPOINT.search(suffix)
+    )
 
 
 class LLMIdentifierField(BaseModel):
@@ -135,10 +169,9 @@ def _source_contains_exact_literal_span(
         symbolic_bound_or_range_context = prefix.endswith(
             ("<", ">", "<=", ">=", "≤", "≥", "~", "≈", "±", "-", "–", "—"),
         ) or suffix.startswith(("<", ">", "≤", "≥", "~", "≈", "±", "-", "–", "—"))
-        worded_bound_or_range_context = bool(
-            _WORDED_BOUND_PREFIX.search(prefix)
-            or _WORDED_RANGE_PREFIX.search(prefix)
-            or _WORDED_RANGE_SUFFIX.search(suffix),
+        worded_bound_or_range_context = _has_worded_bound_or_range_context(
+            prefix=prefix,
+            suffix=suffix,
         )
         dimensionless_unit_context = False
         if unit.strip().casefold() in _DIMENSIONLESS_UNITS:

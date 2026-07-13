@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
+from artana_evidence_api.document_extraction_support.variant.observation_variables import (
+    resolve_variant_observation_variable_id,
+)
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from artana_evidence_api.types.common import JSONObject
 from artana_evidence_api.types.evidence_grade import (
@@ -19,7 +22,6 @@ from artana_evidence_api.variant_extraction_contracts import (
     ExtractedObservation,
 )
 from artana_evidence_api.variant_relation_drafts import (
-    _entity_candidate_aliases,
     _entity_candidate_payload,
     _normalized_string,
     _variant_candidate_is_persistable,
@@ -27,6 +29,8 @@ from artana_evidence_api.variant_relation_drafts import (
 
 if TYPE_CHECKING:
     from artana_evidence_api.document_store import HarnessDocumentRecord
+
+_REQUIRED_VARIANT_IDENTITY_ANCHORS = ("gene_symbol", "hgvs_notation")
 
 
 def build_source_measurement_observation_drafts(
@@ -40,6 +44,23 @@ def build_source_measurement_observation_drafts(
     skipped_items: list[JSONObject] = []
     for index, observation in enumerate(observations):
         if observation.source_measurement is None:
+            continue
+        variable_id = resolve_variant_observation_variable_id(
+            field_name=observation.field_name,
+        )
+        if variable_id is None:
+            skipped_items.append(
+                {
+                    "kind": "observation_skipped",
+                    "field_name": observation.field_name,
+                    "variable_id": observation.variable_id,
+                    "subject_label": observation.subject_label,
+                    "reason": (
+                        "Source-measurement observation field did not match the "
+                        "governed variant variable allowlist."
+                    ),
+                },
+            )
             continue
         subject_candidate = _matching_observation_subject(
             observation=observation,
@@ -64,6 +85,7 @@ def build_source_measurement_observation_drafts(
                 document=document,
                 observation=observation,
                 subject_candidate=subject_candidate,
+                variable_id=variable_id,
                 index=index,
             ),
         )
@@ -77,7 +99,12 @@ def _matching_observation_subject(
 ) -> ExtractedEntityCandidate | None:
     if observation.subject_label is None or not observation.subject_anchors:
         return None
-    normalized_label = observation.subject_label.strip().casefold()
+    if not all(
+        isinstance(observation.subject_anchors.get(key), str)
+        and bool(str(observation.subject_anchors[key]).strip())
+        for key in _REQUIRED_VARIANT_IDENTITY_ANCHORS
+    ):
+        return None
     for candidate in variant_entities:
         if not _variant_candidate_is_persistable(candidate):
             continue
@@ -85,16 +112,6 @@ def _matching_observation_subject(
             candidate.anchors.get(key) == value
             for key, value in observation.subject_anchors.items()
         ):
-            return candidate
-        candidate_labels = {
-            candidate.label.strip().casefold(),
-            *(
-                alias.strip().casefold()
-                for alias in _entity_candidate_aliases(candidate)
-                if alias.strip()
-            ),
-        }
-        if normalized_label in candidate_labels and not observation.subject_anchors:
             return candidate
     return None
 
@@ -104,6 +121,7 @@ def _build_source_measurement_observation_draft(
     document: HarnessDocumentRecord,
     observation: ExtractedObservation,
     subject_candidate: ExtractedEntityCandidate,
+    variable_id: str,
     index: int,
 ) -> HarnessProposalDraft:
     measurement = observation.source_measurement
@@ -115,7 +133,7 @@ def _build_source_measurement_observation_draft(
     evidence_grade = evidence_grade_for_document(document)
     fingerprint = compute_claim_fingerprint(
         candidate_key,
-        observation.variable_id,
+        variable_id,
         (
             f"{observation.value!s}|unit:"
             f"{(observation.unit or '').strip().casefold()}"
@@ -124,9 +142,7 @@ def _build_source_measurement_observation_draft(
     return HarnessProposalDraft(
         proposal_type="observation_candidate",
         source_kind="document_extraction",
-        source_key=(
-            f"{document.id}:source-measurement:{index}:{observation.variable_id}"
-        ),
+        source_key=f"{document.id}:source-measurement:{index}:{variable_id}",
         document_id=document.id,
         title=(
             f"Extracted observation: {observation.field_name} for "
@@ -138,7 +154,7 @@ def _build_source_measurement_observation_draft(
         reasoning_path={
             "kind": "source_measurement_observation",
             "field_name": observation.field_name,
-            "variable_id": observation.variable_id,
+            "variable_id": variable_id,
             "candidate_key": candidate_key,
             "assessment": observation.assessment.model_dump(mode="json"),
         },
@@ -152,7 +168,7 @@ def _build_source_measurement_observation_draft(
         ],
         payload={
             "subject_entity_candidate": _entity_candidate_payload(subject_candidate),
-            "variable_id": observation.variable_id,
+            "variable_id": variable_id,
             "field_name": observation.field_name,
             "value": observation.value,
             "unit": observation.unit,
