@@ -53,6 +53,10 @@ from artana_evidence_api.types.common import (  # noqa: E402
     json_object,
 )
 
+_UNRANKED_FAILURE_DEFERRAL_REASONS = frozenset(
+    {"missing_source_search", "semantic_agent_failure"},
+)
+
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments."""
@@ -138,18 +142,29 @@ def _request_from_result_payload(
         msg = "Evidence-selection result mode must be 'shadow'."
         raise ValueError(msg)
     goal = _required_payload_string(payload, "goal")
+    deferred_records = _json_object_tuple(payload.get("deferred_records"))
     return EvidenceSelectionShadowReviewPacketRequest(
         study_id=study_id,
         run_id=_run_id_from_result_payload(payload),
         goal=goal,
         selected_records=_json_object_tuple(payload.get("selected_records")),
         skipped_records=_json_object_tuple(payload.get("skipped_records")),
-        deferred_records=_json_object_tuple(payload.get("deferred_records")),
+        deferred_records=_reviewable_deferred_records(deferred_records),
         review_ranking_items=_review_ranking_items_from_result(
             payload=payload,
             goal=goal,
         ),
         calibration_protocol=calibration_protocol,
+    )
+
+
+def _reviewable_deferred_records(
+    records: tuple[JSONObject, ...],
+) -> tuple[JSONObject, ...]:
+    return tuple(
+        record
+        for record in records
+        if record.get("deferral_reason") != "missing_source_search"
     )
 
 
@@ -284,6 +299,11 @@ def _ranking_items_from_shadow_candidates(
         if item is None:
             msg = f"Expected JSON object at deferred_records[{index}]."
             raise ValueError(msg)
+        if (
+            item.get("operational_ranking") is None
+            and item.get("deferral_reason") in _UNRANKED_FAILURE_DEFERRAL_REASONS
+        ):
+            continue
         source_key = required_decision_string(item, "source_key")
         search_id = required_decision_string(item, "search_id")
         record_index = required_decision_int(item, "record_index")

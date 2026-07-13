@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from uuid import UUID
 
@@ -76,15 +77,10 @@ def screen_candidate_searches(  # noqa: PLR0913
 ) -> EvidenceSelectionScreeningResult:
     """Screen saved source-search records into selected/skipped/deferred groups."""
 
-    goal_terms = _terms(
-        " ".join(
-            (
-                goal,
-                instructions or "",
-                " ".join(inclusion_criteria),
-            ),
-        ),
-    )
+    goal_input_terms = _terms(goal)
+    instruction_input_terms = _terms(instructions or "")
+    inclusion_input_terms = _terms(" ".join(inclusion_criteria))
+    goal_terms = goal_input_terms | instruction_input_terms | inclusion_input_terms
     exclusion_terms = _terms(" ".join(exclusion_criteria))
     selected: list[EvidenceSelectionCandidateDecision] = []
     skipped: list[EvidenceSelectionCandidateDecision] = []
@@ -125,6 +121,13 @@ def screen_candidate_searches(  # noqa: PLR0913
                 ),
             )
             continue
+        query_input_hash = _legacy_screening_query_input_hash(
+            source_search=source_search,
+            goal_terms=goal_input_terms,
+            instruction_terms=instruction_input_terms,
+            inclusion_terms=inclusion_input_terms,
+            exclusion_terms=exclusion_terms,
+        )
         ranked = sorted(
             (
                 _decision_for_record(
@@ -133,6 +136,7 @@ def screen_candidate_searches(  # noqa: PLR0913
                     record=record,
                     goal_terms=goal_terms,
                     exclusion_terms=exclusion_terms,
+                    query_input_hash=query_input_hash,
                     existing_document_keys=existing_document_keys,
                     existing_record_hashes=existing_record_hashes,
                 )
@@ -307,6 +311,7 @@ def _decision_for_record(
     record: JSONObject,
     goal_terms: frozenset[str],
     exclusion_terms: frozenset[str],
+    query_input_hash: str,
     existing_document_keys: set[str],
     existing_record_hashes: set[str],
 ) -> EvidenceSelectionCandidateDecision:
@@ -347,6 +352,7 @@ def _decision_for_record(
             score=score,
             matched_terms=matched_terms,
             excluded_terms=excluded_terms,
+            query_input_hash=query_input_hash,
             caveats=caveats,
             source_family=source_family,
             candidate_context=candidate_context,
@@ -371,6 +377,7 @@ def _decision_for_record(
             score=score,
             matched_terms=matched_terms,
             excluded_terms=excluded_terms,
+            query_input_hash=query_input_hash,
             caveats=caveats,
             source_family=source_family,
             candidate_context=candidate_context,
@@ -387,6 +394,7 @@ def _decision_for_record(
             score=score,
             matched_terms=matched_terms,
             excluded_terms=excluded_terms,
+            query_input_hash=query_input_hash,
             caveats=caveats,
             source_family=source_family,
             candidate_context=candidate_context,
@@ -403,6 +411,7 @@ def _decision_for_record(
             score=score,
             matched_terms=matched_terms,
             excluded_terms=excluded_terms,
+            query_input_hash=query_input_hash,
             caveats=caveats,
             source_family=source_family,
             candidate_context=candidate_context,
@@ -418,6 +427,7 @@ def _decision_for_record(
         score=score,
         matched_terms=matched_terms,
         excluded_terms=excluded_terms,
+        query_input_hash=query_input_hash,
         caveats=caveats,
         source_family=source_family,
         candidate_context=candidate_context,
@@ -439,6 +449,7 @@ def _candidate_decision(
     score: float,
     matched_terms: list[str],
     excluded_terms: list[str],
+    query_input_hash: str,
     caveats: list[str],
     source_family: str,
     candidate_context: JSONObject | None,
@@ -461,9 +472,7 @@ def _candidate_decision(
             value=score,
             provider_algorithm_id="legacy_token_overlap_screening",
             algorithm_version="v1",
-            query_input_hash=hashlib.sha256(
-                f"{source_search.source_key}:{source_search.id}".encode(),
-            ).hexdigest(),
+            query_input_hash=query_input_hash,
             affected_candidate_acquisition=True,
         ),
         matched_terms=tuple(matched_terms),
@@ -472,6 +481,33 @@ def _candidate_decision(
         candidate_context=candidate_context,
         original_relevance_label=original_relevance_label,
     )
+
+
+def _legacy_screening_query_input_hash(
+    *,
+    source_search: DirectSourceSearchRecord,
+    goal_terms: frozenset[str],
+    instruction_terms: frozenset[str],
+    inclusion_terms: frozenset[str],
+    exclusion_terms: frozenset[str],
+) -> str:
+    payload: JSONObject = {
+        "schema_version": "legacy_token_overlap_screening.query.v2",
+        "source_key": source_search.source_key,
+        "search_id": str(source_search.id),
+        "goal_terms": sorted(goal_terms),
+        "instruction_terms": sorted(instruction_terms),
+        "inclusion_terms": sorted(inclusion_terms),
+        "exclusion_terms": sorted(exclusion_terms),
+    }
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
 
 def _selection_reason(*, matched_terms: list[str], source_key: str) -> str:
     preview = ", ".join(matched_terms[:5])

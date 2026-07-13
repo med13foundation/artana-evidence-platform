@@ -61,6 +61,7 @@ def test_review_ranking_calibration_gate_passes_balanced_shadow_set() -> None:
             max_expected_calibration_error=0.08,
             require_calibrated_probabilities=False,
             require_authenticated_protocol=False,
+            require_independent_expert_labels=False,
         ),
     )
 
@@ -182,6 +183,36 @@ def test_review_ranking_calibration_gate_requires_outcomes_per_source_kind() -> 
     assert any(
         "positive reviewer outcome is required for source kind review_item" in reason
         for reason in report.blocking_reasons
+    )
+
+
+def test_review_ranking_source_coverage_ignores_abstained_only_sources() -> None:
+    report = evaluate_review_ranking_calibration_gate(
+        decisions=(
+            _decision("proposal", "proposal-decided", 1.0, "positive"),
+            _decision("review_item", "review-abstained", 0.5, "abstained"),
+        ),
+        thresholds=ReviewRankingCalibrationGateThresholds(
+            min_sample_count=1,
+            min_roc_auc=0.0,
+            min_mean_operational_weight_separation=0.0,
+            min_distinct_goals=0,
+            min_distinct_evidence_shapes=0,
+            require_calibrated_probabilities=False,
+            require_authenticated_protocol=False,
+            require_independent_expert_labels=False,
+            require_reviewer_ids=False,
+            require_adjudication_note=False,
+            require_positive_and_negative_outcomes=False,
+            require_positive_and_negative_per_source=False,
+        ),
+    )
+
+    assert report.passed is False
+    assert report.source_counts == {"proposal": 1, "review_item": 0}
+    assert report.source_outcome_counts["review_item"]["abstained"] == 1
+    assert any(
+        "review_item source decision" in reason for reason in report.blocking_reasons
     )
 
 

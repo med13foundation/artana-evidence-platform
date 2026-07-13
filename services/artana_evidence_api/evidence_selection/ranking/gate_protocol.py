@@ -24,6 +24,7 @@ def calibration_protocol_blocking_reasons(
         if (
             thresholds.require_calibrated_probabilities
             or thresholds.require_authenticated_protocol
+            or thresholds.require_independent_expert_labels
         ):
             return (
                 "Calibration validation is unavailable because the study has no "

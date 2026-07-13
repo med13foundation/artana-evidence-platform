@@ -23,6 +23,9 @@ from artana_evidence_api.evidence_selection.ranking.fitter import (
     fit_diagnostic_monotonic_calibrator,
     predict_diagnostic_probability,
 )
+from artana_evidence_api.evidence_selection.ranking.gate_protocol import (
+    calibration_protocol_blocking_reasons,
+)
 from artana_evidence_api.evidence_selection.ranking.protocol_integrity import (
     authenticate_calibration_protocol,
 )
@@ -131,6 +134,32 @@ def test_calibration_protocol_rejects_question_partition_overlap() -> None:
 def test_calibrated_probability_rejects_self_asserted_validated_status() -> None:
     with pytest.raises(ValidationError):
         _probability(identity=_identity(), value=0.9, status="validated")
+
+
+def test_review_ranking_gate_requires_protocol_for_independent_labels() -> None:
+    thresholds = ReviewRankingCalibrationGateThresholds(
+        require_calibrated_probabilities=False,
+        require_authenticated_protocol=False,
+    )
+
+    reasons = calibration_protocol_blocking_reasons(
+        decisions=(),
+        protocol=None,
+        thresholds=thresholds,
+    )
+
+    assert len(reasons) == 1
+    assert "no predeclared" in reasons[0]
+    assert (
+        calibration_protocol_blocking_reasons(
+            decisions=(),
+            protocol=None,
+            thresholds=thresholds.model_copy(
+                update={"require_independent_expert_labels": False},
+            ),
+        )
+        == ()
+    )
 
 
 def test_review_ranking_gate_derives_validation_from_authenticated_protocol(

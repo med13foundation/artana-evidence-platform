@@ -414,7 +414,10 @@ def _source_counts(
 ) -> dict[str, int]:
     return {
         source_kind: sum(
-            1 for decision in decisions if decision.source_kind == source_kind
+            1
+            for decision in decisions
+            if decision.source_kind == source_kind
+            and decision.outcome in _DECIDED_OUTCOMES
         )
         for source_kind in _SOURCE_KINDS
     }

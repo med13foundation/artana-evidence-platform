@@ -223,6 +223,53 @@ def test_shadow_review_packet_cli_derives_ranking_forms_from_shadow_candidates(
     ]
 
 
+def test_shadow_review_packet_cli_excludes_unranked_failure_deferrals(
+    tmp_path: Path,
+) -> None:
+    cli = _cli_module()
+    run_result_path = tmp_path / "evidence-selection-result.json"
+    output_path = tmp_path / "shadow-review-packet.json"
+    payload = _run_result_payload()
+    ranked_candidate = {
+        **_decision(source_key="pubmed", decision="deferred", record_index=1),
+        "deferral_reason": "shadow_mode",
+        "shadow_decision": "selected",
+        "would_have_been_selected": True,
+    }
+    unranked_failure = {
+        "source_key": "clinvar",
+        "source_family": "unknown",
+        "search_id": _SEARCH_ID,
+        "decision": "deferred",
+        "relevance_label": "deferred",
+        "reason": "Saved source search was not found.",
+        "deferral_reason": "missing_source_search",
+    }
+    payload["selected_records"] = []
+    payload["skipped_records"] = []
+    payload["deferred_records"] = [unranked_failure, ranked_candidate]
+    payload.pop("review_ranking_items")
+    run_result_path.write_text(json.dumps(payload))
+
+    exit_code = cli.main(
+        (
+            "--run-result",
+            str(run_result_path),
+            "--study-id",
+            "shadow-study-2026-07-07",
+            "--output",
+            str(output_path),
+        ),
+    )
+
+    assert exit_code == 0
+    packet = json.loads(output_path.read_text())
+    assert [form["item_id"] for form in packet["review_ranking_forms"]] == [
+        f"pubmed:{_SEARCH_ID}:1",
+    ]
+    assert packet["selection_review_forms"][0]["harness_deferred_record_ids"] == []
+
+
 def test_shadow_review_packet_cli_writes_selection_only_packet_without_ranking_items(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

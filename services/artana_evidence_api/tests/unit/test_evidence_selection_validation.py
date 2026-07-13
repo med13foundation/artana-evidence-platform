@@ -219,6 +219,7 @@ def test_expert_study_gate_can_run_balanced_diagnostic_without_calibration() -> 
         review_ranking_thresholds=ReviewRankingCalibrationGateThresholds(
             require_calibrated_probabilities=False,
             require_authenticated_protocol=False,
+            require_independent_expert_labels=False,
         ),
     )
 
