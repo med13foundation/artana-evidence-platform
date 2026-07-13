@@ -218,6 +218,11 @@ class ReviewRankingCalibrationDecision(BaseModel):
     goal: str | None = None
     evidence_shape: str | None = None
 
+    @property
+    def has_decided_outcome(self) -> bool:
+        """Return whether this decision contributes labeled calibration evidence."""
+        return self.outcome != "abstained"
+
     @field_validator("item_id", "research_question_id")
     @classmethod
     def _normalize_required_ids(cls, value: str, info: ValidationInfo) -> str:

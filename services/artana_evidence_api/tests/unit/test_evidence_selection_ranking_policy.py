@@ -377,6 +377,57 @@ def test_review_ranking_gate_counts_observed_held_out_questions() -> None:
     assert any("got 1" in reason for reason in report.blocking_reasons)
 
 
+def test_review_ranking_gate_excludes_abstained_only_questions_from_coverage() -> None:
+    identity = _identity()
+    protocol = _protocol(identity=identity).model_copy(
+        update={"held_out_research_question_ids": ("held-out-a", "held-out-b")},
+    )
+    decided = _decision(
+        "proposal",
+        "decided",
+        4.0,
+        "positive",
+        probability=_probability(identity=identity, value=0.8, status="diagnostic"),
+    )
+    abstained = _decision(
+        "proposal",
+        "abstained",
+        2.0,
+        "abstained",
+        probability=_probability(identity=identity, value=0.4, status="diagnostic"),
+    ).model_copy(update={"research_question_id": "held-out-b"})
+
+    report = evaluate_review_ranking_calibration_gate(
+        decisions=(decided, abstained),
+        calibration_protocol=protocol,
+        thresholds=ReviewRankingCalibrationGateThresholds(
+            min_sample_count=1,
+            min_roc_auc=0.0,
+            min_mean_operational_weight_separation=0.0,
+            min_distinct_goals=0,
+            min_distinct_evidence_shapes=0,
+            min_training_research_questions=1,
+            min_held_out_research_questions=2,
+            min_observed_held_out_research_questions=2,
+            require_calibrated_probabilities=False,
+            require_authenticated_protocol=False,
+            require_independent_expert_labels=False,
+            require_reviewer_ids=False,
+            require_adjudication_note=False,
+            require_proposal_and_review_item_sources=False,
+            require_positive_and_negative_outcomes=False,
+            require_positive_and_negative_per_source=False,
+        ),
+    )
+
+    assert report.calibration.decided_probability_count == 1
+    assert report.passed is False
+    assert any(
+        "held-out research questions; got 1" in reason
+        for reason in report.blocking_reasons
+    )
+
+
 def _decision(
     source_kind: str,
     item_id: str,
