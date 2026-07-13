@@ -93,7 +93,7 @@ def build_ranking_probability_calibration_summary(
     decided_probability_decisions = tuple(
         decision
         for decision in probability_decisions
-        if decision.outcome != "abstained"
+        if decision.has_decided_outcome
     )
     availability = _calibration_availability(
         decisions=decisions,
