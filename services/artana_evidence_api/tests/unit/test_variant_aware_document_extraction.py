@@ -622,14 +622,15 @@ def test_llm_extraction_rejects_nonzero_float_underflow() -> None:
     [
         ("1e400", "exceeds"),
         ("100000000000000000001", "loses precision"),
+        ("9007199254740991.5", "loses precision"),
     ],
 )
-def test_llm_extraction_rejects_unsupported_integral_measurement(
+def test_llm_extraction_rejects_unsupported_numeric_measurement(
     value: str,
     match: str,
 ) -> None:
     contract = LLMExtractionContract(
-        rationale="Copied an integer unsupported by the graph numeric path.",
+        rationale="Copied a number unsupported by the graph numeric path.",
         evidence=[],
         decision="generated",
         source_type="paper",
@@ -860,6 +861,18 @@ def test_llm_dynamic_fields_reject_untyped_numbers(
 ) -> None:
     with pytest.raises(ValueError, match="value"):
         field_type.model_validate({"key": "source_field", "value": value})
+
+
+@pytest.mark.parametrize("key", ["clinvar_id", "source_span_start"])
+def test_llm_identifier_field_rejects_numeric_only_anchor(key: str) -> None:
+    with pytest.raises(ValueError, match="Numeric-only anchor"):
+        LLMIdentifierField(key=key, value="12345")
+
+
+def test_llm_identifier_field_accepts_namespaced_numeric_identifier() -> None:
+    field = LLMIdentifierField(key="dbsnp_id", value="rs12345")
+
+    assert field.value == "rs12345"
 
 
 def test_llm_extraction_rejects_duplicate_dynamic_identifiers() -> None:
@@ -1556,6 +1569,41 @@ def test_source_measurement_maps_known_field_to_canonical_variable_id() -> None:
     assert skipped_items == []
     assert len(drafts) == 1
     assert drafts[0].payload["variable_id"] == "VAR_ALLELE_FREQUENCY"
+
+
+def test_source_measurement_matches_normalized_variant_identity_anchors() -> None:
+    document = _document(text="MED13 c.977C>A had an allele frequency of 0.125.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    observation = ExtractedObservation(
+        field_name="allele_frequency",
+        variable_id="VAR_ALLELE_FREQUENCY",
+        value=0.125,
+        unit="ratio",
+        subject_label=candidate.label,
+        subject_anchors={
+            "gene_symbol": "  med13 ",
+            "hgvs_notation": " C.977C>A ",
+        },
+        source_measurement=SourceMeasurementNumber(
+            value="0.125",
+            source_locator="raw_record.text",
+            literal_span="0.125",
+            field_name="allele_frequency",
+            unit="ratio",
+            extraction_method="literal_copy",
+            source_hash="source-hash-normalized-anchors",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert skipped_items == []
+    assert len(drafts) == 1
 
 
 @pytest.mark.parametrize(

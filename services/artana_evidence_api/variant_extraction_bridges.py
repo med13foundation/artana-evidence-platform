@@ -146,7 +146,7 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v7"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v8"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
 _MEASUREMENT_SOURCE_FIELDS = frozenset(
     {"abstract", "content", "full_text", "text", "title"},
@@ -177,8 +177,9 @@ Useful output conventions:
 - Represent anchors, metadata, source_anchors, target_anchors, and rejected
   payload as arrays of {"key": "...", "value": "..."} entries, not nested JSON
   objects.
-- Anchor values are identifiers: always return them as non-empty strings, even
-  when an identifier contains only digits.
+- Anchor values are identifiers: always return them as non-empty strings. Do
+  not emit bare numeric tokens as anchors; preserve a namespace or structured
+  identifier such as HGVS, HPO, or rsID syntax.
 - Metadata and rejected payload values must be strings, booleans, or null. Keep
   all numeric-looking values out of those fields. Return numeric observations
   only through the source_measurement envelope.

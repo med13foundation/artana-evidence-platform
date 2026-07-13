@@ -95,6 +95,17 @@ class LLMIdentifierField(BaseModel):
 
     model_config = ConfigDict(strict=True, extra="forbid")
 
+    @model_validator(mode="after")
+    def reject_numeric_only_anchor(self) -> LLMIdentifierField:
+        """Keep unnamespaced numeric tokens out of model-authored anchors."""
+        if re.fullmatch(_SOURCE_NUMBER_TEXT, self.value.strip()):
+            msg = (
+                f"Numeric-only anchor {self.key!r} is not allowed; preserve a "
+                "namespaced identifier or use source_measurement."
+            )
+            raise ValueError(msg)
+        return self
+
 
 class LLMLiteralField(BaseModel):
     """A nonnumeric literal field for metadata and rejected diagnostics."""
@@ -227,6 +238,9 @@ def _source_measurement_json_value(value: str) -> int | float:
         raise ValueError(msg)
     if parsed != 0 and rendered == 0.0:
         msg = "Numeric observation value underflows the supported JSON range."
+        raise ValueError(msg)
+    if Decimal(str(rendered)) != parsed:
+        msg = "Numeric observation value loses precision in the graph numeric path."
         raise ValueError(msg)
     return rendered
 

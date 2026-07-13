@@ -109,8 +109,9 @@ def _matching_observation_subject(
         if not _variant_candidate_is_persistable(candidate):
             continue
         if all(
-            candidate.anchors.get(key) == value
-            for key, value in observation.subject_anchors.items()
+            _normalized_string(candidate.anchors.get(key))
+            == _normalized_string(observation.subject_anchors.get(key))
+            for key in _REQUIRED_VARIANT_IDENTITY_ANCHORS
         ):
             return candidate
     return None

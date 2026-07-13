@@ -315,10 +315,6 @@ def candidate_resolution_labels(candidate_payload: JSONObject) -> list[str]:
         _add(alias)
     for identifier_value in payload_entity_identifiers(candidate_payload).values():
         _add(identifier_value)
-    anchors = candidate_payload.get("anchors")
-    if isinstance(anchors, dict):
-        for value in anchors.values():
-            _add(value)
     return labels
 
 
