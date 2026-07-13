@@ -146,7 +146,7 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v8"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v9"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
 _MEASUREMENT_SOURCE_FIELDS = frozenset(
     {"abstract", "content", "full_text", "text", "title"},
@@ -191,8 +191,11 @@ Useful output conventions:
   comparators as scalar measurements. Use one allowed_source_locator; set
   extraction_method to "literal_copy"; set field_name and the source-supported
   unit; and provide subject_label plus subject_anchors matching an extracted
-  variant. Structured genomics signals may guide categorical extraction but are
-  not measurement provenance.
+  variant. Preserve the complete source unit, including compound denominators
+  such as mg/kg; never cite only the leading unit. The matched variant entity's
+  evidence_excerpt must include its gene/HGVS anchors and the complete copied
+  measurement span. Structured genomics signals may guide categorical
+  extraction but are not measurement provenance.
 - Any observation text containing a numeric literal also requires that envelope;
   do not quote a number to bypass source-measurement provenance.
 - Do not return a run confidence score. Return the qualitative FactAssessment

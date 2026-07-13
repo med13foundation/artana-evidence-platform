@@ -492,6 +492,8 @@ def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
         ("12345", "12345", "unitless", "Position chr1:12345 was reported."),
         ("30", "30", "unitless", "Ratio was 10:30."),
         ("10", "10", "unitless", "Ratio was 10:30."),
+        ("5 mg", "5", "mg", "Dose was 5 mg per kg."),
+        ("5 mg", "5", "mg", "Dose was 5 mg / kg."),
     ],
 )
 def test_llm_extraction_rejects_unit_stripping_bounds_and_ranges(
@@ -1343,8 +1345,16 @@ def test_extract_variant_aware_document_stages_source_measurement_observation(
             "of 0.125."
         ),
     )
-    contract = _single_variant_contract(document_id=document.id).model_copy(
+    base_contract = _single_variant_contract(document_id=document.id)
+    grounded_candidate = base_contract.entities[0].model_copy(
         update={
+            "evidence_excerpt": document.text_content,
+            "evidence_locator": "raw_record.text",
+        },
+    )
+    contract = base_contract.model_copy(
+        update={
+            "entities": [grounded_candidate],
             "observations": [
                 ExtractedObservation(
                     field_name="allele_frequency",
@@ -1420,8 +1430,12 @@ def test_extract_variant_aware_document_stages_source_measurement_observation(
 
 
 def test_source_measurement_fingerprint_includes_unit() -> None:
-    document = _document(text="Dose measurements were 5mg and 5g.")
-    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    document = _document(
+        text="MED13 c.977C>A dose measurements were 5mg and 5g.",
+    )
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"evidence_excerpt": document.text_content},
+    )
     observations = [
         ExtractedObservation(
             field_name="dose",
@@ -1536,24 +1550,26 @@ def test_source_measurement_requires_complete_variant_identity_anchors() -> None
 
 
 def test_source_measurement_maps_known_field_to_canonical_variable_id() -> None:
-    document = _document(text="MED13 c.977C>A had a value of 5mg.")
-    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    document = _document(text="MED13 c.977C>A had an allele frequency of 0.5.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"evidence_excerpt": document.text_content},
+    )
     observation = ExtractedObservation(
         field_name="allele_frequency",
         variable_id="allele_frequency",
-        value=5,
-        unit="mg",
+        value=0.5,
+        unit="ratio",
         subject_label=candidate.label,
         subject_anchors={
             "gene_symbol": "MED13",
             "hgvs_notation": "c.977C>A",
         },
         source_measurement=SourceMeasurementNumber(
-            value="5",
+            value="0.5",
             source_locator="raw_record.text",
-            literal_span="5mg",
+            literal_span="0.5",
             field_name="allele_frequency",
-            unit="mg",
+            unit="ratio",
             extraction_method="literal_copy",
             source_hash="source-hash-unknown-variable",
         ),
@@ -1571,9 +1587,44 @@ def test_source_measurement_maps_known_field_to_canonical_variable_id() -> None:
     assert drafts[0].payload["variable_id"] == "VAR_ALLELE_FREQUENCY"
 
 
+def test_source_measurement_rejects_unit_incompatible_with_variable() -> None:
+    document = _document(text="MED13 c.977C>A had an allele frequency of 5mg.")
+    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    observation = ExtractedObservation(
+        field_name="allele_frequency",
+        variable_id="VAR_ALLELE_FREQUENCY",
+        value=5,
+        unit="mg",
+        subject_label=candidate.label,
+        subject_anchors=candidate.anchors,
+        source_measurement=SourceMeasurementNumber(
+            value="5",
+            source_locator="raw_record.text",
+            literal_span="5mg",
+            field_name="allele_frequency",
+            unit="mg",
+            extraction_method="literal_copy",
+            source_hash="source-hash-incompatible-unit",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(candidate,),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "unit did not match" in str(skipped_items[0]["reason"])
+
+
 def test_source_measurement_matches_normalized_variant_identity_anchors() -> None:
     document = _document(text="MED13 c.977C>A had an allele frequency of 0.125.")
-    candidate = _single_variant_contract(document_id=document.id).entities[0]
+    candidate = _single_variant_contract(document_id=document.id).entities[0].model_copy(
+        update={"evidence_excerpt": document.text_content},
+    )
     observation = ExtractedObservation(
         field_name="allele_frequency",
         variable_id="VAR_ALLELE_FREQUENCY",
@@ -1604,6 +1655,60 @@ def test_source_measurement_matches_normalized_variant_identity_anchors() -> Non
 
     assert skipped_items == []
     assert len(drafts) == 1
+
+
+def test_source_measurement_rejects_value_nearest_another_variant() -> None:
+    document = _document(
+        text=(
+            "MED13 c.977C>A had an allele frequency of 0.125. "
+            "MED13 c.123G>T had an allele frequency of 0.75."
+        ),
+    )
+    first_candidate = _single_variant_contract(
+        document_id=document.id,
+    ).entities[0].model_copy(
+        update={
+            "evidence_excerpt": "MED13 c.977C>A had an allele frequency of 0.125.",
+        },
+    )
+    second_candidate = first_candidate.model_copy(
+        update={
+            "label": "MED13 c.123G>T",
+            "anchors": {
+                "gene_symbol": "MED13",
+                "hgvs_notation": "c.123G>T",
+            },
+            "evidence_excerpt": "MED13 c.123G>T had an allele frequency of 0.75.",
+        },
+    )
+    observation = ExtractedObservation(
+        field_name="allele_frequency",
+        variable_id="VAR_ALLELE_FREQUENCY",
+        value=0.75,
+        unit="ratio",
+        subject_label=first_candidate.label,
+        subject_anchors=first_candidate.anchors,
+        source_measurement=SourceMeasurementNumber(
+            value="0.75",
+            source_locator="raw_record.text",
+            literal_span="0.75",
+            field_name="allele_frequency",
+            unit="ratio",
+            extraction_method="literal_copy",
+            source_hash="source-hash-wrong-subject",
+        ),
+        assessment=_assessment(),
+    )
+
+    drafts, skipped_items = build_source_measurement_observation_drafts(
+        document=document,
+        observations=[observation],
+        variant_entities=(first_candidate, second_candidate),
+    )
+
+    assert drafts == []
+    assert len(skipped_items) == 1
+    assert "did not match" in str(skipped_items[0]["reason"])
 
 
 @pytest.mark.parametrize(

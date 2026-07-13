@@ -68,6 +68,7 @@ _BETWEEN_RANGE_AFTER_ENDPOINT = re.compile(
     rf"^and\s+{_RANGE_ENDPOINT_TEXT}\b",
     re.IGNORECASE,
 )
+_COMPOUND_UNIT_CONTINUATION = re.compile(r"^(?:per\b|/\s*\S)", re.IGNORECASE)
 
 
 def _has_worded_bound_or_range_context(*, prefix: str, suffix: str) -> bool:
@@ -197,6 +198,7 @@ def _source_contains_exact_literal_span(
             prefix=prefix,
             suffix=suffix,
         )
+        compound_unit_continuation = bool(_COMPOUND_UNIT_CONTINUATION.search(suffix))
         dimensionless_unit_context = False
         if unit.strip().casefold() in _DIMENSIONLESS_UNITS:
             dimensionless_unit_context = prefix.endswith(("$", "€", "£", "¥")) or (
@@ -208,6 +210,7 @@ def _source_contains_exact_literal_span(
             or invalid_after
             or symbolic_bound_or_range_context
             or worded_bound_or_range_context
+            or compound_unit_continuation
             or dimensionless_unit_context
         ):
             return True

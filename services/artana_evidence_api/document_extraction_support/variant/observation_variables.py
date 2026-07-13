@@ -26,6 +26,49 @@ VARIANT_SOURCE_MEASUREMENT_VARIABLE_IDS: Mapping[str, str] = MappingProxyType(
         "read_depth": "VAR_READ_DEPTH",
     },
 )
+VARIANT_SOURCE_MEASUREMENT_ALLOWED_UNITS: Mapping[str, frozenset[str]] = (
+    MappingProxyType(
+        {
+            "allele_frequency": frozenset(
+                {"%", "dimensionless", "percent", "percentage", "ratio", "unitless"},
+            ),
+            "dose": frozenset(
+                {
+                    "g",
+                    "iu",
+                    "kg",
+                    "l",
+                    "mcg",
+                    "mcg/kg",
+                    "mg",
+                    "mg/kg",
+                    "mg/m2",
+                    "mg/m²",
+                    "ml",
+                    "ng",
+                    "ng/kg",
+                    "pg",
+                    "u",
+                    "ug",
+                    "ug/kg",
+                    "ul",
+                    "unit",
+                    "units",
+                    "µg",
+                    "µg/kg",
+                    "µl",
+                    "μg",
+                    "μg/kg",
+                    "μl",
+                },
+            ),
+            "p_value": frozenset({"dimensionless", "ratio", "unitless"}),
+            "read_depth": frozenset(
+                {"fold", "read", "reads", "unitless", "x", "×"},
+            ),
+        },
+    )
+)
 
 
 def resolve_variant_observation_variable_id(
@@ -38,8 +81,22 @@ def resolve_variant_observation_variable_id(
     )
 
 
+def variant_source_measurement_unit_is_allowed(
+    *,
+    field_name: str,
+    unit: str,
+) -> bool:
+    """Return whether a scalar field accepts the source-reported unit."""
+    normalized_field = field_name.strip().casefold()
+    normalized_unit = "".join(unit.strip().casefold().split())
+    allowed_units = VARIANT_SOURCE_MEASUREMENT_ALLOWED_UNITS.get(normalized_field)
+    return allowed_units is not None and normalized_unit in allowed_units
+
+
 __all__ = [
     "VARIANT_METADATA_VARIABLE_IDS",
+    "VARIANT_SOURCE_MEASUREMENT_ALLOWED_UNITS",
     "VARIANT_SOURCE_MEASUREMENT_VARIABLE_IDS",
     "resolve_variant_observation_variable_id",
+    "variant_source_measurement_unit_is_allowed",
 ]
