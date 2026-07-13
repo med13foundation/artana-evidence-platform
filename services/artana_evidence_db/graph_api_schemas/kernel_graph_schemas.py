@@ -62,6 +62,20 @@ class KernelProvenanceResponse(BaseModel):
         )
 
 
+class KernelProvenanceCreateRequest(BaseModel):
+    """Inline provenance to persist atomically with one graph fact."""
+
+    model_config = ConfigDict(strict=False, extra="forbid")
+
+    source_type: str = Field(..., min_length=1, max_length=64)
+    source_ref: str | None = Field(default=None, max_length=1024)
+    extraction_run_id: str | None = Field(default=None, max_length=255)
+    mapping_method: str | None = Field(default=None, max_length=64)
+    mapping_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    agent_model: str | None = Field(default=None, max_length=128)
+    raw_input: JSONObject | None = None
+
+
 class KernelProvenanceListResponse(BaseModel):
     """List response for provenance records."""
 

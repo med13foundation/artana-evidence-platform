@@ -2,35 +2,318 @@
 
 from __future__ import annotations
 
+import re
+from collections.abc import Mapping
+from decimal import Decimal, InvalidOperation
+from math import isfinite
 from typing import Literal, cast
 
-from artana_evidence_api.agent_contracts import EvidenceBackedAgentContract
+from artana_evidence_api.agent_contracts import (
+    EvidenceBackedAgentContract,
+    ModelEvidenceCitation,
+)
+from artana_evidence_api.runtime.agent_output_schema import SourceMeasurementNumber
 from artana_evidence_api.types.common import JSONObject, JSONValue
 from artana_evidence_api.types.graph_fact_assessment import (
     FactAssessment,
     assessment_confidence_weight,
 )
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-LLMScalarValue = str | int | float | bool | None
+LLMLiteralValue = str | bool | None
+LLMObservationValue = LLMLiteralValue | SourceMeasurementNumber
+_SOURCE_NUMBER_TEXT = (
+    r"[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
+    r"(?:[eE][-+]?\d+)?"
+)
+_SOURCE_NUMBER_PATTERN = re.compile(
+    rf"(?<![\w.]){_SOURCE_NUMBER_TEXT}(?!\d)",
+)
+_DIMENSIONLESS_UNITS = frozenset({"dimensionless", "ratio", "unitless"})
+_UNIT_ALIASES: Mapping[str, tuple[str, ...]] = {
+    "percent": ("percent", "%"),
+    "percentage": ("percentage", "percent", "%"),
+}
+_PREFIX_UNIT_ALIASES: Mapping[str, tuple[str, ...]] = {
+    "$": ("$",),
+    "eur": ("€", "eur"),
+    "gbp": ("£", "gbp"),
+    "jpy": ("¥", "jpy"),
+    "usd": ("$", "usd"),
+}
+_WORDED_BOUND_PREFIX = re.compile(
+    r"(?:\b(?:about|above|approximately|around|below|over|under)|"
+    r"\b(?:at\s+(?:least|most)|less\s+than|greater\s+than|no\s+(?:less|more)\s+than|up\s+to))\s*$",
+    re.IGNORECASE,
+)
+_WORDED_BOUND_SUFFIX = re.compile(
+    r"^(?:or\s+(?:fewer|greater|less|more)|and\s+(?:above|below))\b",
+    re.IGNORECASE,
+)
+_SOURCE_UNIT_COMPONENT = r"[A-Za-z0-9%µμ²]+"
+_SOURCE_COMPOUND_UNIT_TEXT = (
+    rf"{_SOURCE_UNIT_COMPONENT}"
+    rf"(?:\s*(?:/|per)\s*{_SOURCE_UNIT_COMPONENT})*"
+)
+_RANGE_ENDPOINT_TEXT = rf"{_SOURCE_NUMBER_TEXT}(?:\s*{_SOURCE_COMPOUND_UNIT_TEXT})?"
+_WORDED_RANGE_AFTER_ENDPOINT = re.compile(
+    rf"^(?:through|to)\s+{_RANGE_ENDPOINT_TEXT}\b",
+    re.IGNORECASE,
+)
+_WORDED_RANGE_BEFORE_ENDPOINT = re.compile(
+    rf"{_RANGE_ENDPOINT_TEXT}\s+(?:through|to)\s*$",
+    re.IGNORECASE,
+)
+_BETWEEN_RANGE_BEFORE_ENDPOINT = re.compile(
+    rf"\bbetween\s+{_RANGE_ENDPOINT_TEXT}\s+and\s*$",
+    re.IGNORECASE,
+)
+_BETWEEN_PREFIX = re.compile(r"\bbetween\b", re.IGNORECASE)
+_BETWEEN_RANGE_AFTER_ENDPOINT = re.compile(
+    rf"^and\s+{_RANGE_ENDPOINT_TEXT}\b",
+    re.IGNORECASE,
+)
+_COMPOUND_UNIT_CONTINUATION = re.compile(r"^(?:per\b|/\s*\S)", re.IGNORECASE)
+_MULTIPLICATION_CONTINUATION = re.compile(
+    r"^(?:[×*·]|[xX](?=\s*10(?:\s*\^)?\s*[+\-−]?\d))",
+)
+_EXPONENT_CONTINUATION = re.compile(r"^(?:\^|[⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹])")
+_REJECTED_FACT_LABEL_KEYS = frozenset(
+    {
+        "entity_label",
+        "object_label",
+        "source_label",
+        "subject_label",
+        "target_label",
+        "variant_label",
+    },
+)
+_REJECTED_FACT_IDENTIFIER_KEYS = frozenset(
+    {
+        "accession",
+        "clinvar_id",
+        "dbsnp_id",
+        "gene_symbol",
+        "hgvs_notation",
+        "hpo_term",
+        "object_curie",
+        "object_identifier",
+        "source_curie",
+        "source_identifier",
+        "source_record_id",
+        "subject_curie",
+        "subject_identifier",
+        "target_curie",
+        "target_identifier",
+        "transcript",
+        "variation_id",
+    },
+)
 
 
-class LLMKeyValueField(BaseModel):
-    """OpenAI structured-output-safe representation of a dynamic JSON field."""
+def _has_worded_bound_or_range_context(*, prefix: str, suffix: str) -> bool:
+    if _WORDED_BOUND_PREFIX.search(prefix):
+        return True
+    if _WORDED_BOUND_SUFFIX.search(suffix):
+        return True
+    if _WORDED_RANGE_BEFORE_ENDPOINT.search(prefix):
+        return True
+    if _BETWEEN_RANGE_BEFORE_ENDPOINT.search(prefix):
+        return True
+    if _WORDED_RANGE_AFTER_ENDPOINT.search(suffix):
+        return True
+    return bool(
+        _BETWEEN_PREFIX.search(prefix)
+        and _BETWEEN_RANGE_AFTER_ENDPOINT.search(suffix)
+    )
+
+
+class LLMIdentifierField(BaseModel):
+    """A dynamic identifier whose lexical representation must remain a string."""
 
     key: str = Field(..., min_length=1, max_length=128)
-    value: LLMScalarValue
+    value: str = Field(..., min_length=1, max_length=512)
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    @model_validator(mode="after")
+    def reject_numeric_only_anchor(self) -> LLMIdentifierField:
+        """Keep unnamespaced numeric tokens out of model-authored anchors."""
+        if re.fullmatch(_SOURCE_NUMBER_TEXT, self.value.strip()):
+            msg = (
+                f"Numeric-only anchor {self.key!r} is not allowed; preserve a "
+                "namespaced identifier or use source_measurement."
+            )
+            raise ValueError(msg)
+        return self
 
 
-def _fields_to_json_object(fields: list[LLMKeyValueField]) -> JSONObject:
+class LLMLiteralField(BaseModel):
+    """A nonnumeric literal field for metadata and rejected diagnostics."""
+
+    key: str = Field(..., min_length=1, max_length=128)
+    value: LLMLiteralValue
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+
+def _fields_to_json_object(
+    fields: list[LLMIdentifierField] | list[LLMLiteralField],
+) -> JSONObject:
     """Convert LLM-safe key/value fields back into the service JSON shape."""
     payload: JSONObject = {}
     for field in fields:
         key = field.key.strip()
         if key == "":
             continue
+        if key in payload:
+            msg = f"Duplicate dynamic field key {key!r} is not allowed."
+            raise ValueError(msg)
         payload[key] = cast("JSONValue", field.value)
     return payload
+
+
+def _literal_span_is_exact_measurement(*, text: str, value: str, unit: str) -> bool:
+    normalized_unit = unit.strip().casefold()
+    if normalized_unit == "" or text != text.strip():
+        return False
+    if normalized_unit in _DIMENSIONLESS_UNITS:
+        return text == value
+    aliases = _UNIT_ALIASES.get(normalized_unit, (unit.strip(),))
+    for alias in aliases:
+        if alias == "":
+            continue
+        escaped_alias = re.escape(alias)
+        escaped_value = re.escape(value)
+        if re.fullmatch(
+            rf"{escaped_value}\s*{escaped_alias}",
+            text,
+            re.IGNORECASE,
+        ):
+            return True
+    for alias in _PREFIX_UNIT_ALIASES.get(normalized_unit, ()):
+        if re.fullmatch(
+            rf"{re.escape(alias)}\s*{re.escape(value)}",
+            text,
+            re.IGNORECASE,
+        ):
+            return True
+    return False
+
+
+def source_contains_exact_measurement_literal(
+    *,
+    source_text: str,
+    literal_span: str,
+    unit: str,
+) -> bool:
+    """Return whether a copied literal is an isolated scalar in source text."""
+    start = 0
+    while True:
+        index = source_text.find(literal_span, start)
+        if index < 0:
+            return False
+        before = source_text[index - 1] if index > 0 else ""
+        before_previous = source_text[index - 2] if index > 1 else ""
+        end = index + len(literal_span)
+        after = source_text[end] if end < len(source_text) else ""
+        after_next = source_text[end + 1] if end + 1 < len(source_text) else ""
+        prefix = source_text[:index].rstrip()
+        suffix = source_text[end:].lstrip()
+        invalid_before = (
+            before.isalnum()
+            or before in {"_", ".", "/", ":", "−", "×", "*", "·"}
+            or (before == "," and before_previous.isdigit())
+        )
+        invalid_after = (
+            after.isalnum()
+            or after in {"_", "/", ":"}
+            or (after in {".", ","} and after_next.isdigit())
+        )
+        symbolic_bound_or_range_context = prefix.endswith(
+            ("<", ">", "<=", ">=", "≤", "≥", "~", "≈", "±", "-", "–", "—", "−"),
+        ) or suffix.startswith(
+            ("<", ">", "≤", "≥", "~", "≈", "±", "-", "–", "—", "−"),
+        )
+        worded_bound_or_range_context = _has_worded_bound_or_range_context(
+            prefix=prefix,
+            suffix=suffix,
+        )
+        compound_unit_continuation = bool(_COMPOUND_UNIT_CONTINUATION.search(suffix))
+        numeric_token_continuation = (
+            bool(_MULTIPLICATION_CONTINUATION.search(suffix))
+            or bool(_EXPONENT_CONTINUATION.search(suffix))
+            or prefix.endswith(("×", "*", "·"))
+        )
+        dimensionless_unit_context = False
+        if unit.strip().casefold() in _DIMENSIONLESS_UNITS:
+            dimensionless_unit_context = prefix.endswith(("$", "€", "£", "¥")) or (
+                bool(suffix)
+                and (suffix[0].isalpha() or suffix[0] in {"%", "$", "€", "£", "¥"})
+            )
+        if not (
+            invalid_before
+            or invalid_after
+            or symbolic_bound_or_range_context
+            or worded_bound_or_range_context
+            or compound_unit_continuation
+            or numeric_token_continuation
+            or dimensionless_unit_context
+        ):
+            return True
+        start = index + 1
+
+
+def _source_measurement_json_value(value: str) -> int | float:
+    try:
+        parsed = Decimal(value.replace(",", ""))
+    except InvalidOperation as exc:
+        msg = "Numeric observation value is not a valid source number."
+        raise ValueError(msg) from exc
+    if not parsed.is_finite():
+        msg = "Numeric observation value must be finite."
+        raise ValueError(msg)
+    if parsed == parsed.to_integral_value():
+        rendered = float(parsed)
+        if not isfinite(rendered):
+            msg = "Numeric observation value exceeds the supported JSON range."
+            raise ValueError(msg)
+        if Decimal.from_float(rendered) != parsed:
+            msg = "Numeric observation integer loses precision in the graph numeric path."
+            raise ValueError(msg)
+        return int(parsed)
+    rendered = float(parsed)
+    if not isfinite(rendered):
+        msg = "Numeric observation value exceeds the supported JSON range."
+        raise ValueError(msg)
+    if parsed != 0 and rendered == 0.0:
+        msg = "Numeric observation value underflows the supported JSON range."
+        raise ValueError(msg)
+    if Decimal(str(rendered)) != parsed:
+        msg = "Numeric observation value loses precision in the graph numeric path."
+        raise ValueError(msg)
+    return rendered
+
+
+def observation_text_requires_source_measurement(value: str) -> bool:
+    """Return whether an observation-like string contains a numeric literal."""
+    return _SOURCE_NUMBER_PATTERN.search(value) is not None
+
+
+def _rejected_fact_field_allows_numeric_identifier(
+    *,
+    key: str,
+    value: str,
+) -> bool:
+    if key in _REJECTED_FACT_IDENTIFIER_KEYS:
+        return True
+    if key not in _REJECTED_FACT_LABEL_KEYS or any(
+        character.isspace() for character in value
+    ):
+        return False
+    return any(character.isalpha() for character in value) and any(
+        character.isdigit() for character in value
+    )
 
 
 class ExtractedObservation(BaseModel):
@@ -40,6 +323,12 @@ class ExtractedObservation(BaseModel):
     variable_id: str = Field(..., min_length=1, max_length=64)
     value: JSONValue
     unit: str | None = Field(default=None, max_length=64)
+    subject_label: str | None = Field(default=None, max_length=255)
+    subject_anchors: JSONObject = Field(default_factory=dict)
+    source_measurement: SourceMeasurementNumber | None = Field(
+        default=None,
+        description="Validated provenance retained when value is a source number.",
+    )
     assessment: FactAssessment
 
     @property
@@ -137,17 +426,94 @@ class LLMExtractedObservation(BaseModel):
 
     field_name: str = Field(..., min_length=1, max_length=128)
     variable_id: str = Field(..., min_length=1, max_length=64)
-    value: LLMScalarValue
+    value: LLMObservationValue
     unit: str | None = Field(default=None, max_length=64)
+    subject_label: str | None = Field(default=None, min_length=1, max_length=255)
+    subject_anchors: list[LLMIdentifierField] = Field(default_factory=list)
     assessment: FactAssessment
 
-    def to_extracted_observation(self) -> ExtractedObservation:
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    @model_validator(mode="after")
+    def require_source_measurement_subject(self) -> LLMExtractedObservation:
+        """Require an explicit, anchored subject for staged measurements."""
+        if isinstance(self.value, SourceMeasurementNumber) and (
+            self.subject_label is None or not self.subject_anchors
+        ):
+            msg = (
+                "Source-measurement observations require subject_label and "
+                "subject_anchors."
+            )
+            raise ValueError(msg)
+        return self
+
+    def to_extracted_observation(
+        self,
+        *,
+        expected_source_hash: str,
+        source_values_by_locator: Mapping[str, JSONValue],
+    ) -> ExtractedObservation:
         """Return the internal service observation contract."""
+        if isinstance(self.value, SourceMeasurementNumber):
+            measurement = self.value
+            if measurement.source_hash != expected_source_hash:
+                msg = "Numeric observation source_hash does not match request context."
+                raise ValueError(msg)
+            if measurement.source_locator not in source_values_by_locator:
+                msg = "Numeric observation source_locator is absent from request context."
+                raise ValueError(msg)
+            source_value = source_values_by_locator[measurement.source_locator]
+            if not isinstance(source_value, str):
+                msg = "Numeric observation source_locator must contain source text."
+                raise TypeError(msg)
+            if not source_contains_exact_measurement_literal(
+                source_text=source_value,
+                literal_span=measurement.literal_span,
+                unit=measurement.unit,
+            ):
+                msg = "Numeric observation literal_span is absent from its source locator."
+                raise ValueError(msg)
+            if not _literal_span_is_exact_measurement(
+                text=measurement.literal_span,
+                value=measurement.value,
+                unit=measurement.unit,
+            ):
+                msg = (
+                    "Numeric observation value and unit are absent from its "
+                    "literal_span."
+                )
+                raise ValueError(msg)
+            if measurement.field_name != self.field_name:
+                msg = "Numeric observation field_name does not match its envelope."
+                raise ValueError(msg)
+            if measurement.extraction_method != "literal_copy":
+                msg = "Numeric observation extraction_method must be literal_copy."
+                raise ValueError(msg)
+            if measurement.unit != self.unit:
+                msg = "Numeric observation unit does not match its envelope."
+                raise ValueError(msg)
+            return ExtractedObservation(
+                field_name=self.field_name,
+                variable_id=self.variable_id,
+                value=_source_measurement_json_value(measurement.value),
+                unit=measurement.unit,
+                subject_label=self.subject_label,
+                subject_anchors=_fields_to_json_object(self.subject_anchors),
+                source_measurement=measurement,
+                assessment=self.assessment,
+            )
+        if isinstance(self.value, str) and observation_text_requires_source_measurement(
+            self.value,
+        ):
+            msg = "Numeric observation text requires a source_measurement envelope."
+            raise ValueError(msg)
         return ExtractedObservation(
             field_name=self.field_name,
             variable_id=self.variable_id,
             value=cast("JSONValue", self.value),
             unit=self.unit,
+            subject_label=self.subject_label,
+            subject_anchors=_fields_to_json_object(self.subject_anchors),
             assessment=self.assessment,
         )
 
@@ -157,11 +523,30 @@ class LLMExtractedEntityCandidate(BaseModel):
 
     entity_type: str = Field(..., min_length=1, max_length=64)
     label: str = Field(..., min_length=1, max_length=255)
-    anchors: list[LLMKeyValueField] = Field(default_factory=list)
-    metadata: list[LLMKeyValueField] = Field(default_factory=list)
+    anchors: list[LLMIdentifierField] = Field(default_factory=list)
+    metadata: list[LLMLiteralField] = Field(default_factory=list)
     evidence_excerpt: str = Field(..., min_length=1, max_length=1200)
     evidence_locator: str = Field(..., min_length=1, max_length=255)
     assessment: FactAssessment
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    @model_validator(mode="after")
+    def reject_numeric_metadata(
+        self,
+    ) -> LLMExtractedEntityCandidate:
+        """Keep every untyped numeric string out of staged entity metadata."""
+        for field in self.metadata:
+            if (
+                isinstance(field.value, str)
+                and observation_text_requires_source_measurement(field.value)
+            ):
+                msg = (
+                    f"Numeric entity metadata {field.key!r} is not allowed; use an "
+                    "explicit source_measurement observation."
+                )
+                raise ValueError(msg)
+        return self
 
     def to_extracted_entity_candidate(self) -> ExtractedEntityCandidate:
         """Return the internal service entity candidate contract."""
@@ -189,11 +574,13 @@ class LLMExtractedRelation(BaseModel):
     claim_section: str | None = Field(default=None, max_length=64)
     source_label: str | None = Field(default=None, max_length=255)
     target_label: str | None = Field(default=None, max_length=255)
-    source_anchors: list[LLMKeyValueField] = Field(default_factory=list)
-    target_anchors: list[LLMKeyValueField] = Field(default_factory=list)
+    source_anchors: list[LLMIdentifierField] = Field(default_factory=list)
+    target_anchors: list[LLMIdentifierField] = Field(default_factory=list)
     evidence_excerpt: str | None = Field(default=None, max_length=1200)
     evidence_locator: str | None = Field(default=None, max_length=255)
     assessment: FactAssessment
+
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     def to_extracted_relation(self) -> ExtractedRelation:
         """Return the internal service relation contract."""
@@ -219,8 +606,29 @@ class LLMRejectedFact(BaseModel):
 
     fact_type: Literal["observation", "relation"]
     reason: str = Field(..., min_length=1, max_length=255)
-    payload: list[LLMKeyValueField] = Field(default_factory=list)
+    payload: list[LLMLiteralField] = Field(default_factory=list)
     assessment: FactAssessment | None = Field(default=None)
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    @model_validator(mode="after")
+    def reject_numeric_payload(self) -> LLMRejectedFact:
+        """Keep numeric strings out of rejected facts that can become proposals."""
+        for field in self.payload:
+            normalized_key = field.key.strip().casefold()
+            if (
+                isinstance(field.value, str)
+                and observation_text_requires_source_measurement(field.value)
+                and not _rejected_fact_field_allows_numeric_identifier(
+                    key=normalized_key,
+                    value=field.value.strip(),
+                )
+            ):
+                msg = (
+                    f"Numeric rejected-fact payload {field.key!r} is not allowed."
+                )
+                raise ValueError(msg)
+        return self
 
     def to_rejected_fact(self) -> RejectedFact:
         """Return the internal service rejected fact contract."""
@@ -284,15 +692,11 @@ class ExtractionContract(EvidenceBackedAgentContract):
         return self
 
 
-class LLMExtractionContract(EvidenceBackedAgentContract):
+class LLMExtractionContract(BaseModel):
     """OpenAI structured-output-safe contract for live variant extraction."""
 
-    confidence_score: float = Field(
-        default=0.0,
-        ge=0.0,
-        le=1.0,
-        description="Derived backend run-level confidence for routing decisions.",
-    )
+    rationale: str
+    evidence: list[ModelEvidenceCitation] = Field(default_factory=list)
     decision: Literal["generated", "fallback", "escalate"] = Field(
         ...,
         description="Outcome of the extraction run.",
@@ -306,12 +710,18 @@ class LLMExtractionContract(EvidenceBackedAgentContract):
     shadow_mode: bool = Field(default=True)
     agent_run_id: str | None = Field(default=None)
 
-    def to_extraction_contract(self) -> ExtractionContract:
+    model_config = ConfigDict(strict=True, use_enum_values=True, extra="forbid")
+
+    def to_extraction_contract(
+        self,
+        *,
+        expected_source_hash: str,
+        source_values_by_locator: Mapping[str, JSONValue],
+    ) -> ExtractionContract:
         """Convert the LLM-safe schema into the internal service contract."""
         return ExtractionContract(
             rationale=self.rationale,
-            evidence=self.evidence,
-            confidence_score=self.confidence_score,
+            evidence=[citation.to_legacy_evidence_item() for citation in self.evidence],
             decision=self.decision,
             source_type=self.source_type,
             document_id=self.document_id,
@@ -319,7 +729,10 @@ class LLMExtractionContract(EvidenceBackedAgentContract):
                 entity.to_extracted_entity_candidate() for entity in self.entities
             ],
             observations=[
-                observation.to_extracted_observation()
+                observation.to_extracted_observation(
+                    expected_source_hash=expected_source_hash,
+                    source_values_by_locator=source_values_by_locator,
+                )
                 for observation in self.observations
             ],
             relations=[relation.to_extracted_relation() for relation in self.relations],
@@ -342,7 +755,9 @@ __all__ = [
     "LLMExtractedEntityCandidate",
     "LLMExtractedObservation",
     "LLMExtractedRelation",
-    "LLMKeyValueField",
+    "LLMIdentifierField",
+    "LLMLiteralField",
     "LLMRejectedFact",
     "RejectedFact",
+    "observation_text_requires_source_measurement",
 ]

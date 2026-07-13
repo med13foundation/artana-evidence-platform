@@ -206,6 +206,19 @@ def test_entity_create_rejects_conflicting_identifier_anchor_matches(
         },
     )
     assert first_response.status_code == 201, first_response.text
+    assert first_response.json()["entity"]["identifiers"] == {
+        "hgnc_id": "HGNC:1234",
+    }
+
+    search_response = graph_client.get(
+        f"/v1/spaces/{space_id}/entities",
+        headers=headers,
+        params={"q": "MED13"},
+    )
+    assert search_response.status_code == 200, search_response.text
+    assert search_response.json()["entities"][0]["identifiers"] == {
+        "hgnc_id": "HGNC:1234",
+    }
 
     second_response = graph_client.post(
         f"/v1/spaces/{space_id}/entities",

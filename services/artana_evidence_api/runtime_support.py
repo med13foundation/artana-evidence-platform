@@ -59,6 +59,7 @@ from artana_evidence_api.runtime.postgres_store import (
     resolve_artana_postgres_store_config,
     resolve_artana_state_uri,
 )
+from artana_evidence_api.step_helpers import run_single_step_with_policy
 
 if TYPE_CHECKING:
     from artana.store import EventStore
@@ -136,7 +137,8 @@ async def _run_model_health_probe(
     client = SingleStepModelClient(kernel=kernel)
     started_at = time.perf_counter()
     try:
-        await client.step(
+        await run_single_step_with_policy(
+            client,
             run_id=f"model-health:{uuid4()}",
             tenant=TenantContext(
                 tenant_id="model-health",
@@ -148,6 +150,7 @@ async def _run_model_health_probe(
                 "Return JSON with the exact field `status` set to `ok` and nothing else."
             ),
             output_schema=output_schema,
+            schema_id="model_health.probe.v1",
             step_key="model_health.probe.v1",
             replay_policy="fork_on_drift",
         )

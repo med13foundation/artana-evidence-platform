@@ -108,6 +108,12 @@ class EntityRepositoryLike(Protocol):
         sensitivity: str = "INTERNAL",
     ) -> KernelEntityIdentifier: ...
 
+    def list_non_phi_identifiers(
+        self,
+        *,
+        entity_id: str,
+    ) -> list[KernelEntityIdentifier]: ...
+
     def add_alias(
         self,
         *,
@@ -445,6 +451,15 @@ class KernelEntityService:
     def get_entity(self, entity_id: str) -> KernelEntity | None:
         """Retrieve a single entity."""
         return self._entities.get_by_id(entity_id)
+
+    def get_non_phi_identifiers(self, entity_id: str) -> dict[str, str]:
+        """Return identifiers safe for standard entity API responses."""
+        return {
+            identifier.namespace: identifier.identifier_value
+            for identifier in self._entities.list_non_phi_identifiers(
+                entity_id=entity_id,
+            )
+        }
 
     def update_entity(
         self,

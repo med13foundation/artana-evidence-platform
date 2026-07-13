@@ -97,6 +97,9 @@ class _GraphGateway:
                     id=payload["id"],
                     display_label=payload["display_label"],
                     aliases=aliases,
+                    entity_type=payload.get("entity_type", "GENE"),
+                    identifiers=payload.get("identifiers", {}),
+                    metadata=payload.get("metadata", {}),
                 ),
             )
         return SimpleNamespace(entities=entities)
@@ -197,7 +200,7 @@ def test_prompt_schema_builders_validate_structured_outputs() -> None:
         {
             "reviews": [
                 {
-                    "index": 0,
+                    "draft_ref": "draft_111111111111111111111111",
                     "factual_support": "strong",
                     "goal_relevance": "direct",
                     "priority": "prioritize",

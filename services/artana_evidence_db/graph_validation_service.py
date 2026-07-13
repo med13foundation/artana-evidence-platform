@@ -631,6 +631,7 @@ class GraphValidationService:
         if (
             request.observation_origin != "MANUAL"
             and request.provenance_id is None
+            and request.provenance is None
         ):
             return self._response(
                 valid=False,

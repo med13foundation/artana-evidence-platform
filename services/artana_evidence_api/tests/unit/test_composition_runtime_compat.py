@@ -7,6 +7,9 @@ from datetime import UTC, datetime
 
 import pytest
 from artana_evidence_api.composition import GraphHarnessKernelRuntime, _AsyncLoopRunner
+from artana_evidence_api.runtime.model_health import (
+    build_model_health_probe_output_schema,
+)
 from artana_evidence_api.runtime_errors import (
     GraphHarnessToolReconciliationRequiredError,
 )
@@ -549,7 +552,8 @@ def test_run_single_step_with_policy_records_step_health() -> None:
             tenant=object(),
             model="openai/gpt-5-mini",
             prompt="return ok",
-            output_schema=dict,
+            output_schema=build_model_health_probe_output_schema(),
+            schema_id="model_health.probe.v1",
             step_key="document_extraction.proposal_review.v1",
             replay_policy="fork_on_drift",
         ),

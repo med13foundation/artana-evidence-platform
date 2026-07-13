@@ -17,7 +17,6 @@ from artana_evidence_api.evidence_selection.semantic.model import (
     EvidenceSelectionSemanticModelRunner,
     SemanticSelectionAgentUnavailableError,
 )
-from artana_evidence_api.types.common import JSONObject
 
 _MAX_AGENT_ATTEMPTS = 2
 
@@ -46,8 +45,7 @@ async def assess_validated_semantic_batch(
             contract = await runner.assess(context=context)
             assessments = validate_semantic_assessment_batch(
                 contract=contract,
-                records=context.records,
-                record_indices=context.record_indices,
+                context=context,
             )
             agent_run_id = _require_agent_run_id(contract)
             records_by_index = dict(
@@ -55,7 +53,7 @@ async def assess_validated_semantic_batch(
             )
             evidence_options = {
                 index: resolve_semantic_evidence_references(
-                    record_index=index,
+                    record_ref=assessment.record_ref,
                     record=records_by_index[index],
                     references=assessment.evidence_references,
                 )
@@ -81,27 +79,30 @@ async def assess_validated_semantic_batch(
 def validate_semantic_assessment_batch(
     *,
     contract: EvidenceSelectionSemanticBatchContract,
-    records: tuple[JSONObject, ...],
-    record_indices: tuple[int, ...] | None = None,
+    context: EvidenceSelectionSemanticContext,
 ) -> dict[int, EvidenceSelectionSemanticCandidateAssessment]:
     """Require exact record coverage before resolving source-owned evidence."""
 
-    by_index = {
-        assessment.record_index: assessment for assessment in contract.assessments
+    by_reference = {
+        assessment.record_ref: assessment for assessment in contract.assessments
     }
-    indices = record_indices or tuple(range(len(records)))
-    if len(indices) != len(records) or len(set(indices)) != len(indices):
-        raise ValueError("semantic validation records and indices must align")
-    expected = set(indices)
-    if set(by_index) != expected:
-        missing = sorted(expected - set(by_index))
-        unexpected = sorted(set(by_index) - expected)
+    expected = set(context.record_references)
+    if set(by_reference) != expected:
+        missing = sorted(expected - set(by_reference))
+        unexpected = sorted(set(by_reference) - expected)
         msg = (
             "semantic agent assessment coverage mismatch: "
             f"missing={missing}, unexpected={unexpected}"
         )
         raise ValueError(msg)
-    return by_index
+    return {
+        index: by_reference[record_ref]
+        for index, record_ref in zip(
+            context.record_indices,
+            context.record_references,
+            strict=True,
+        )
+    }
 
 
 def _require_agent_run_id(

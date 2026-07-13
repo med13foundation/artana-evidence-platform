@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from artana.kernel import ArtanaKernel
@@ -15,8 +15,6 @@ from artana.ports.model import LiteLLMAdapter
 from artana_evidence_api.agent_contracts import (
     EvidenceItem,
     GraphConnectionContract,
-    ProposedRelation,
-    RejectedCandidate,
 )
 from artana_evidence_api.composition import build_graph_harness_kernel_middleware
 from artana_evidence_api.graph_domain_config import (
@@ -26,6 +24,9 @@ from artana_evidence_api.harness_registry import get_harness_template
 from artana_evidence_api.policy import build_graph_harness_policy
 from artana_evidence_api.queued_run_support import store_primary_result_artifact
 from artana_evidence_api.response_serialization import serialize_run_record
+from artana_evidence_api.runtime.graph_agents.connection import (
+    _GraphConnectionExecutionContract,
+)
 from artana_evidence_api.runtime_skill_agent import (
     GraphHarnessSkillAutonomousAgent,
     GraphHarnessSkillContextBuilder,
@@ -42,13 +43,13 @@ from artana_evidence_api.runtime_support import (
     load_runtime_policy,
     normalize_litellm_model_id,
 )
+from artana_evidence_api.step_helpers import run_registered_agent
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
-from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import ValidationError
 
 _DEFAULT_AGENT_IDENTITY = "You are the graph-harness autonomous graph-connection agent."
 _MAX_GRAPH_CONNECTION_ITERATIONS = 6
-_GRAPH_CONNECTION_RUN_ID_VERSION = "v3"
+_GRAPH_CONNECTION_RUN_ID_VERSION = "v4"
 _LEGACY_GRAPH_CONNECTION_REPLAY_FIELDS = frozenset(
     {
         "confidence_score",
@@ -76,24 +77,6 @@ if TYPE_CHECKING:
     from artana_evidence_api.harness_registry import HarnessTemplate
     from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
     from artana_evidence_api.types.common import ResearchSpaceSettings
-
-
-class _GraphConnectionExecutionContract(BaseModel):
-    """Replay-tolerant execution schema for Artana model turns."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    confidence_score: float | None = Field(default=None, ge=0.0, le=1.0)
-    rationale: str | None = Field(default=None, min_length=1, max_length=4000)
-    evidence: list[EvidenceItem] = Field(default_factory=list)
-    decision: Literal["generated", "fallback", "escalate"] | None = None
-    source_type: str | None = Field(default=None, min_length=1, max_length=64)
-    research_space_id: str | None = Field(default=None, min_length=1, max_length=64)
-    seed_entity_id: str | None = Field(default=None, min_length=1, max_length=64)
-    proposed_relations: list[ProposedRelation] = Field(default_factory=list)
-    rejected_candidates: list[RejectedCandidate] = Field(default_factory=list)
-    shadow_mode: bool = Field(default=True)
-    agent_run_id: str | None = Field(default=None, max_length=128)
 
 
 @dataclass(frozen=True, slots=True)
@@ -225,7 +208,9 @@ class HarnessGraphConnectionRunner:
                 replay_policy=self._runtime_policy.replay_policy,
             )
             stage = "agent_run"
-            contract = await agent.run(
+            model_output = await run_registered_agent(
+                agent,
+                schema_id="graph_connection.agent.v1",
                 run_id=run_id,
                 tenant=tenant,
                 model=execution_model_id,
@@ -234,10 +219,7 @@ class HarnessGraphConnectionRunner:
                     request=request,
                     source_type=resolved_source_type,
                 ),
-                output_schema=cast(
-                    "type[GraphConnectionContract]",
-                    _GraphConnectionExecutionContract,
-                ),
+                output_schema=_GraphConnectionExecutionContract,
                 max_iterations=_MAX_GRAPH_CONNECTION_ITERATIONS,
             )
             stage = "post_agent"
@@ -247,7 +229,7 @@ class HarnessGraphConnectionRunner:
                 step_key="graph_connection.active_skills",
             )
             normalized_contract = self._normalize_contract(
-                contract=cast("_GraphConnectionExecutionContract", contract),
+                contract=model_output,
                 request=request,
                 source_type=resolved_source_type,
                 agent_run_id=run_id,
@@ -355,6 +337,10 @@ class HarnessGraphConnectionRunner:
             "skill is allowed in the runtime panel.\n"
             "- If relation discovery still finds no safe candidates, return the normal "
             "fallback contract instead of inventing unsupported relations.\n"
+            "- Author qualitative assessment categories and confidence_rationale only. "
+            "Never author confidence scores or support counts.\n"
+            "- List each supporting document locator and cite the same locator in the "
+            "top-level evidence list; the backend deduplicates and counts them.\n"
         )
 
     @staticmethod
@@ -381,7 +367,7 @@ class HarnessGraphConnectionRunner:
             f"RELATION TYPES FILTER: {relation_types}\n"
             f"SHADOW MODE: {request.shadow_mode}\n\n"
             f"RESEARCH SPACE SETTINGS JSON:\n{settings_payload}\n"
-            "Return a valid GraphConnectionContract.\n"
+            "Return the strict graph-connection execution schema.\n"
         )
 
     @staticmethod
@@ -450,30 +436,17 @@ class HarnessGraphConnectionRunner:
         agent_run_id: str | None,
     ) -> GraphConnectionContract:
         normalized_proposed_relations = tuple(
-            relation.model_copy(
-                update={
-                    "confidence": HarnessGraphConnectionRunner._derive_relation_confidence(
-                        relation,
-                    ),
-                },
-            )
+            relation.to_public_relation(cited_locators=contract.cited_locators)
             for relation in contract.proposed_relations
         )
         normalized_rejected_candidates = tuple(
-            candidate.model_copy(
-                update={
-                    "confidence": HarnessGraphConnectionRunner._derive_relation_confidence(
-                        candidate,
-                    ),
-                },
-            )
+            candidate.to_public_candidate()
             for candidate in contract.rejected_candidates
         )
-        confidence_score = contract.confidence_score
-        if confidence_score in {None, 0.0} and normalized_proposed_relations:
-            confidence_score = max(
-                relation.confidence for relation in normalized_proposed_relations
-            )
+        confidence_score = max(
+            (relation.confidence for relation in normalized_proposed_relations),
+            default=0.0,
+        )
         rationale = (
             contract.rationale.strip() if isinstance(contract.rationale, str) else ""
         )
@@ -483,27 +456,17 @@ class HarnessGraphConnectionRunner:
             decision=contract.decision or "fallback",
             confidence_score=confidence_score or 0.0,
             rationale=rationale,
-            evidence=contract.evidence,
+            evidence=[
+                citation.to_legacy_evidence_item() for citation in contract.evidence
+            ],
             source_type=source_type,
             research_space_id=request.research_space_id,
             seed_entity_id=request.seed_entity_id,
             proposed_relations=list(normalized_proposed_relations),
             rejected_candidates=list(normalized_rejected_candidates),
             shadow_mode=request.shadow_mode,
-            agent_run_id=contract.agent_run_id or agent_run_id,
+            agent_run_id=agent_run_id,
         )
-
-    @staticmethod
-    def _derive_relation_confidence(
-        relation: ProposedRelation | RejectedCandidate,
-    ) -> float:
-        confidence = getattr(relation, "confidence", None)
-        if isinstance(confidence, int | float) and confidence > 0:
-            return max(0.0, min(float(confidence), 1.0))
-        assessment = getattr(relation, "assessment", None)
-        if assessment is None:
-            return 0.0
-        return assessment_confidence(assessment)
 
     @staticmethod
     def _looks_like_legacy_replay_validation(error: Exception) -> bool:

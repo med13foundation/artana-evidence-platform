@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from artana_evidence_api.full_ai_orchestrator.shadow_planner.findings import (
+    ShadowBenefitFindingKind,
+)
 from artana_evidence_api.full_ai_orchestrator.shadow_planner.models import (
     ShadowPlannerRecommendationOutput,
     _PlannerConstraintsSummary,
@@ -19,6 +22,34 @@ from artana_evidence_api.full_ai_orchestrator_contracts import (
     ResearchOrchestratorActionType,
 )
 from artana_evidence_api.types.common import JSONObject, ResearchSpaceSourcePreferences
+
+_FALLBACK_BENEFIT_EVIDENCE: dict[ShadowBenefitFindingKind, str] = {
+    "closes_evidence_gap": "Deterministic fallback policy identified a required evidence step.",
+    "resolves_pending_question": "Deterministic fallback policy identified a pending question.",
+    "adds_objective_relevant_evidence": "Deterministic fallback policy identified an objective-relevant next step.",
+    "corroborates_existing_evidence": "Deterministic fallback policy identified a corroborating next step.",
+    "enables_synthesis": "Deterministic fallback policy identified the synthesis boundary.",
+    "no_material_benefit": "Deterministic fallback policy identified no material benefit from continuing.",
+}
+
+
+def _fallback_findings(
+    benefit_kind: ShadowBenefitFindingKind,
+) -> dict[str, object]:
+    return {
+        "benefit_findings": [
+            {
+                "kind": benefit_kind,
+                "evidence": _FALLBACK_BENEFIT_EVIDENCE[benefit_kind],
+            },
+        ],
+        "risk_findings": [
+            {
+                "kind": "no_material_risk",
+                "evidence": "Deterministic fallback policy identified no material action risk.",
+            },
+        ],
+    }
 
 
 def _checkpoint_fallback_output(
@@ -52,9 +83,7 @@ def _checkpoint_fallback_output(
                 "Stop because the deterministic workflow has already reached its final "
                 "terminal checkpoint."
             ),
-            "expected_value_band": "low",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("no_material_benefit"),
             "budget_estimate": {
                 "relative_size": "none",
                 "basis": "terminal_checkpoint",
@@ -73,9 +102,7 @@ def _checkpoint_fallback_output(
                 "Generate the brief because the deterministic workflow has already "
                 "gathered evidence and reached the final synthesis boundary."
             ),
-            "expected_value_band": "medium",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("adds_objective_relevant_evidence"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "brief_checkpoint",
@@ -100,9 +127,7 @@ def _checkpoint_fallback_output(
                 "found grounded literature and should turn that discovery step into "
                 "usable evidence before branching into structured follow-up."
             ),
-            "expected_value_band": "high",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("closes_evidence_gap"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "pubmed_ingest_after_discovery",
@@ -128,9 +153,7 @@ def _checkpoint_fallback_output(
                 "indicates that this source is the best remaining qualitative fit "
                 "for the current research objective."
             ),
-            "expected_value_band": "medium",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("adds_objective_relevant_evidence"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "post_pubmed_structured_enrichment",
@@ -172,9 +195,7 @@ def _checkpoint_fallback_output(
                     "or too few to justify another bounded chase round."
                 )
             ),
-            "expected_value_band": "low",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("no_material_benefit"),
             "budget_estimate": {
                 "relative_size": "none",
                 "basis": (
@@ -208,9 +229,7 @@ def _checkpoint_fallback_output(
                 "contains specific newly surfaced entities that are worth testing as "
                 "the next discovery step."
             ),
-            "expected_value_band": "medium",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("adds_objective_relevant_evidence"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "single_chase_round",
@@ -238,9 +257,7 @@ def _checkpoint_fallback_output(
                 "Move to brief generation because the bounded chase budget has been "
                 "used and the workflow should now synthesize what it has learned."
             ),
-            "expected_value_band": "medium",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("adds_objective_relevant_evidence"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "post_chase_brief",
@@ -272,9 +289,7 @@ def _default_fallback_output(
                 "Start with literature discovery to ground the run in retrieved "
                 "evidence before deciding which structured sources deserve follow-up."
             ),
-            "expected_value_band": "high",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("closes_evidence_gap"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "single_source_query",
@@ -296,9 +311,7 @@ def _default_fallback_output(
                 f"Move to {preferred_structured_source} to broaden evidence coverage "
                 "while the deterministic baseline remains in control."
             ),
-            "expected_value_band": "medium",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("adds_objective_relevant_evidence"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "single_source_enrichment",
@@ -316,9 +329,7 @@ def _default_fallback_output(
                 "Move toward brief generation because the planner cannot open a "
                 "grounded source step from the current live action set."
             ),
-            "expected_value_band": "low",
-            "risk_level": "low",
-            "requires_approval": False,
+            **_fallback_findings("no_material_benefit"),
             "budget_estimate": {
                 "relative_size": "small",
                 "basis": "brief_only",
@@ -334,9 +345,7 @@ def _default_fallback_output(
         "qualitative_rationale": (
             "Stop because there is no live action capable of adding grounded evidence."
         ),
-        "expected_value_band": "low",
-        "risk_level": "low",
-        "requires_approval": False,
+        **_fallback_findings("no_material_benefit"),
         "budget_estimate": {
             "relative_size": "none",
             "basis": "no_live_actions",

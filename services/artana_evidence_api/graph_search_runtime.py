@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from artana.kernel import ArtanaKernel
@@ -14,10 +14,8 @@ from artana.models import TenantContext
 from artana.ports.model import LiteLLMAdapter
 from artana_evidence_api.agent_contracts import (
     EvidenceItem,
-    GraphSearchAssessment,
     GraphSearchContract,
     GraphSearchGroundingLevel,
-    GraphSearchResultEntry,
     build_graph_search_assessment_from_confidence,
     graph_search_assessment_confidence,
 )
@@ -28,6 +26,10 @@ from artana_evidence_api.graph_domain_config import (
 from artana_evidence_api.harness_registry import get_harness_template
 from artana_evidence_api.policy import build_graph_harness_policy
 from artana_evidence_api.queued_run_support import store_primary_result_artifact
+from artana_evidence_api.runtime.graph_agents.search import (
+    _GraphSearchExecutionContract,
+    normalize_graph_search_results,
+)
 from artana_evidence_api.runtime_skill_agent import (
     GraphHarnessSkillAutonomousAgent,
     GraphHarnessSkillContextBuilder,
@@ -45,12 +47,12 @@ from artana_evidence_api.runtime_support import (
     normalize_litellm_model_id,
     stable_sha256_digest,
 )
+from artana_evidence_api.step_helpers import run_registered_agent
 from artana_evidence_api.tool_registry import build_graph_harness_tool_registry
-from pydantic import BaseModel, ConfigDict, Field
 
 _DEFAULT_AGENT_IDENTITY = "You are the graph-harness autonomous graph-search agent."
 _MAX_GRAPH_SEARCH_ITERATIONS = 6
-_GRAPH_SEARCH_RUN_ID_VERSION = "v3"
+_GRAPH_SEARCH_RUN_ID_VERSION = "v4"
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -58,35 +60,6 @@ if TYPE_CHECKING:
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
     from artana_evidence_api.harness_registry import HarnessTemplate
     from artana_evidence_api.run_registry import HarnessRunRecord, HarnessRunRegistry
-
-
-class _GraphSearchExecutionContract(BaseModel):
-    """Replay-safe contract shape for intermediate graph-search tool turns."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    assessment: GraphSearchAssessment | None = Field(
-        default=None,
-        description="Qualitative assessment for the graph-search run.",
-    )
-    confidence_score: float | None = Field(
-        default=None,
-        ge=0.0,
-        le=1.0,
-        description="Derived numeric weight for routing compatibility.",
-    )
-    rationale: str | None = Field(default=None, min_length=1, max_length=4000)
-    evidence: list[EvidenceItem] = Field(default_factory=list)
-    decision: Literal["generated", "fallback", "escalate"] | None = None
-    research_space_id: str | None = Field(default=None, min_length=1, max_length=64)
-    original_query: str | None = Field(default=None, min_length=1, max_length=2000)
-    interpreted_intent: str | None = Field(default=None, min_length=1, max_length=2000)
-    query_plan_summary: str | None = Field(default=None, min_length=1, max_length=4000)
-    total_results: int = Field(default=0, ge=0)
-    results: list[GraphSearchResultEntry] = Field(default_factory=list)
-    executed_path: Literal["deterministic", "agent", "agent_fallback"] | None = None
-    warnings: list[str] = Field(default_factory=list)
-    agent_run_id: str | None = Field(default=None, max_length=128)
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,7 +163,9 @@ class HarnessGraphSearchRunner:
                 replay_policy=self._runtime_policy.replay_policy,
             )
             stage = "agent_run"
-            contract = await agent.run(
+            model_output = await run_registered_agent(
+                agent,
+                schema_id="graph_search.agent.v1",
                 run_id=run_id,
                 tenant=tenant,
                 model=execution_model_id,
@@ -198,10 +173,7 @@ class HarnessGraphSearchRunner:
                     ARTANA_EVIDENCE_API_SEARCH_CONFIG.system_prompt,
                 ),
                 prompt=self._request_prompt(request),
-                output_schema=cast(
-                    "type[GraphSearchContract]",
-                    _GraphSearchExecutionContract,
-                ),
+                output_schema=_GraphSearchExecutionContract,
                 max_iterations=_MAX_GRAPH_SEARCH_ITERATIONS,
             )
             stage = "post_agent"
@@ -210,15 +182,35 @@ class HarnessGraphSearchRunner:
                 tenant=tenant,
                 step_key="graph_search.active_skills",
             )
-            normalized_contract = GraphSearchContract.model_validate(
-                {
-                    **contract.model_dump(mode="json", exclude_none=True),
-                    "research_space_id": request.research_space_id,
-                    "original_query": request.question,
-                    "total_results": len(contract.results),
-                    "executed_path": "agent",
-                    "agent_run_id": contract.agent_run_id or run_id,
-                },
+            normalized_results = normalize_graph_search_results(
+                model_output.results,
+                limit=request.top_k,
+            )
+            normalized_contract = GraphSearchContract(
+                decision=model_output.decision or "fallback",
+                assessment=model_output.assessment,
+                rationale=(
+                    model_output.rationale
+                    or "Graph search returned without an explicit rationale."
+                ),
+                evidence=[
+                    citation.to_legacy_evidence_item()
+                    for citation in model_output.evidence
+                ],
+                research_space_id=request.research_space_id,
+                original_query=request.question,
+                interpreted_intent=(
+                    model_output.interpreted_intent or request.question
+                ),
+                query_plan_summary=(
+                    model_output.query_plan_summary
+                    or "Categorical graph-search execution."
+                ),
+                total_results=len(normalized_results),
+                results=normalized_results,
+                executed_path="agent",
+                warnings=model_output.warnings,
+                agent_run_id=run_id,
             )
             return HarnessGraphSearchResult(
                 contract=normalized_contract,
@@ -309,6 +301,8 @@ class HarnessGraphSearchRunner:
             "- load_skill(skill_name=...) loads one named runtime skill, not an "
             "individual tool.\n"
             "- Never invent hidden tools, extra evidence IDs, or graph writes.\n"
+            "- Author assessment categories and confidence_rationale only. Never author "
+            "confidence_score, relevance_score, or evidence confidence.\n"
         )
 
     @staticmethod
@@ -326,8 +320,8 @@ class HarnessGraphSearchRunner:
             f"CURATION STATUSES: {curation_statuses}\n"
             f"INCLUDE EVIDENCE CHAINS: {request.include_evidence_chains}\n"
             "Use assessment objects on the run, each result, and each evidence-chain item.\n"
-            "Relevance scores are for ranking only.\n"
-            "Return a valid GraphSearchContract.\n"
+            "The backend derives numeric compatibility values and result ordering.\n"
+            "Return the strict graph-search execution schema.\n"
         )
 
     @staticmethod

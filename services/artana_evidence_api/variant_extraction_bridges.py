@@ -146,8 +146,11 @@ _EXON_INTRON_PATTERN = re.compile(
     r"\b((?:exon|intron)\s+\d+[A-Za-z]?)\b",
     re.IGNORECASE,
 )
-_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v1"
+_VARIANT_EXTRACTION_STEP_KEY_VERSION = "v11"
 _VARIANT_EXTRACTION_TEXT_LIMIT = 12000
+_MEASUREMENT_SOURCE_FIELDS = frozenset(
+    {"abstract", "content", "full_text", "text", "title"},
+)
 _VARIANT_EXTRACTION_SYSTEM_PROMPT = """
 You are the Artana Variant-Aware Extraction Agent.
 
@@ -174,9 +177,39 @@ Useful output conventions:
 - Represent anchors, metadata, source_anchors, target_anchors, and rejected
   payload as arrays of {"key": "...", "value": "..."} entries, not nested JSON
   objects.
+- Anchor values are identifiers: always return them as non-empty strings. Do
+  not emit bare numeric tokens as anchors; preserve a namespace or structured
+  identifier such as HGVS, HPO, or rsID syntax.
+- Metadata and rejected payload values must be strings, booleans, or null. Keep
+  numeric scalar values out of those fields, but preserve digits inside explicit
+  entity label and identifier fields such as source_label, target_label,
+  gene_symbol, and hgvs_notation only when the value is a compact identifier,
+  not a generic numeric phrase such as "stage 2". Return numeric observations
+  only through the source_measurement envelope.
+- A numeric observation value must use the source_measurement envelope. Copy
+  value as the exact numeric token string from the source, without converting it
+  to a JSON number. Copy source_hash from the request context. literal_span must
+  be exactly that token for dimensionless values, or exactly that token plus its
+  adjacent unit for unit-bearing values. Do not encode ranges, bounds, or
+  comparators as scalar measurements. Use one allowed_source_locator; set
+  extraction_method to "literal_copy"; set field_name and the source-supported
+  unit; and provide subject_label plus subject_anchors matching an extracted
+  variant. Preserve the complete source unit, including compound denominators
+  such as mg/kg; never cite only the leading unit. The matched variant entity's
+  evidence_excerpt must include its gene/HGVS anchors and the complete copied
+  measurement span. Structured genomics signals may guide categorical
+  extraction but are not measurement provenance.
+- Any observation text containing a numeric literal also requires that envelope;
+  do not quote a number to bypass source-measurement provenance.
+- Do not return a run confidence score. Return the qualitative FactAssessment
+  fields and their evidence-based confidence_rationale instead.
 - Variant metadata can include transcript, hgvs_cdna, hgvs_protein,
-  hgvs_genomic, genomic_position, genome_build, zygosity, inheritance,
-  exon_or_intron, and classification.
+  hgvs_genomic, genome_build, zygosity, inheritance, and classification when
+  their values contain no free numeric literal. Use source_measurement only for
+  true scalar fields such as allele_frequency, dose, p_value, and read_depth.
+  Do not flatten structured identifiers such as genomic positions or numbered
+  exons or introns into scalar measurements; return them as rejected facts when
+  their full literal semantics cannot be represented without numeric metadata.
 - Relations should be small typed claims such as VARIANT CAUSES PHENOTYPE,
   VARIANT ASSOCIATED_WITH PHENOTYPE, VARIANT LOCATED_IN PROTEIN_DOMAIN, or
   VARIANT AFFECTS PROCESS.
@@ -731,6 +764,21 @@ def _truncate_prompt_value(value: object, *, limit: int = 4000) -> str:
 
 
 def _prompt_payload_from_context(context: ExtractionContext) -> JSONObject:
+    source_payload, _, source_hash, source_values = _variant_source_material(context)
+    return {
+        "document_id": context.document_id,
+        "source_type": context.source_type,
+        "research_space_id": context.research_space_id,
+        "shadow_mode": context.shadow_mode,
+        "source_hash": source_hash,
+        "allowed_source_locators": sorted(source_values),
+        **source_payload,
+    }
+
+
+def _variant_source_material(
+    context: ExtractionContext,
+) -> tuple[JSONObject, str, str, dict[str, JSONValue]]:
     raw_record = dict(context.raw_record)
     for key in ("text", "content", "abstract", "full_text"):
         value = raw_record.get(key)
@@ -739,16 +787,25 @@ def _prompt_payload_from_context(context: ExtractionContext) -> JSONObject:
                 value,
                 limit=_VARIANT_EXTRACTION_TEXT_LIMIT,
             )
-    return {
-        "document_id": context.document_id,
-        "source_type": context.source_type,
-        "research_space_id": context.research_space_id,
-        "shadow_mode": context.shadow_mode,
+    source_payload: JSONObject = {
         "raw_record": raw_record,
         "recognized_entities": context.recognized_entities,
         "recognized_observations": context.recognized_observations,
         "genomics_signals": context.genomics_signals,
     }
+    rendered = json.dumps(source_payload, sort_keys=True, separators=(",", ":"))
+    source_hash = stable_sha256_digest(rendered, length=64)
+    source_values = _measurement_source_values(raw_record)
+    return source_payload, rendered, source_hash, source_values
+
+
+def _measurement_source_values(raw_record: JSONObject) -> dict[str, JSONValue]:
+    values: dict[str, JSONValue] = {}
+    for field_name in sorted(_MEASUREMENT_SOURCE_FIELDS):
+        value = raw_record.get(field_name)
+        if isinstance(value, str) and value.strip():
+            values[f"raw_record.{field_name}"] = value
+    return values
 
 
 class ArtanaExtractionAdapter:
@@ -821,6 +878,7 @@ class ArtanaExtractionAdapter:
                 model=execution_model_id,
                 prompt=self._build_prompt(context),
                 output_schema=LLMExtractionContract,
+                schema_id="variant_extraction.agent.v1",
                 step_key=_variant_extraction_step_key(context=context),
                 replay_policy=self._runtime_policy.replay_policy,
             )
@@ -830,7 +888,13 @@ class ArtanaExtractionAdapter:
                 if isinstance(output, LLMExtractionContract)
                 else LLMExtractionContract.model_validate(output)
             )
-            contract = llm_contract.to_extraction_contract()
+            _, _, source_hash, source_values = (
+                _variant_source_material(context)
+            )
+            contract = llm_contract.to_extraction_contract(
+                expected_source_hash=source_hash,
+                source_values_by_locator=source_values,
+            )
             return contract.model_copy(
                 update={
                     "source_type": context.source_type,

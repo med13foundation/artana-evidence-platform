@@ -384,6 +384,7 @@ async def test_run_kernel_agent_uses_fresh_store_and_closes(
         system_prompt="system",
         prompt="resolve relation",
         output_schema=RelationTypeDecision,
+        schema_id="relation_type_resolution.agent.v1",
         run_id_prefix="relation-test",
         tenant_id="tenant-1",
     )
@@ -391,6 +392,7 @@ async def test_run_kernel_agent_uses_fresh_store_and_closes(
         system_prompt="system",
         prompt="resolve relation",
         output_schema=RelationTypeDecision,
+        schema_id="relation_type_resolution.agent.v1",
         run_id_prefix="relation-test",
         tenant_id="tenant-1",
     )
@@ -465,6 +467,7 @@ async def test_run_kernel_agent_closes_store_on_failure(
             system_prompt="system",
             prompt="resolve relation",
             output_schema=RelationTypeDecision,
+            schema_id="relation_type_resolution.agent.v1",
             run_id_prefix="relation-test",
             tenant_id="tenant-1",
         )

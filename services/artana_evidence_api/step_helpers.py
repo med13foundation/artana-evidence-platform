@@ -7,14 +7,15 @@ import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from threading import Lock
-from typing import Protocol, runtime_checkable
+from typing import Literal, Protocol, TypeVar, cast, runtime_checkable
 
-from artana_evidence_api.runtime_support import ReplayPolicy
 from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 _FAILURE_BREAKER_THRESHOLD = 3
 _STEP_EXECUTION_LOCK = Lock()
+AgentOutputT = TypeVar("AgentOutputT")
+ReplayPolicy = Literal["strict", "allow_prompt_drift", "fork_on_drift"]
 
 
 class StepResultLike(Protocol):
@@ -39,6 +40,37 @@ class StepClientLike(Protocol):
         replay_policy: ReplayPolicy,
         context_version: object | None = None,
     ) -> StepResultLike: ...
+
+
+@runtime_checkable
+class AgentClientLike(Protocol):
+    """Runtime-checkable protocol for autonomous agent execution."""
+
+    async def run(  # noqa: PLR0913 - mirrors the Artana agent contract
+        self,
+        *,
+        run_id: str,
+        tenant: object,
+        model: str,
+        system_prompt: str,
+        prompt: str,
+        output_schema: type[object],
+        max_iterations: int,
+    ) -> object: ...
+
+
+@runtime_checkable
+class HarnessAgentLike(Protocol):
+    """Runtime-checkable protocol for strong-model harness execution."""
+
+    async def run_agent(
+        self,
+        *,
+        run_id: str,
+        prompt: str,
+        output_schema: type[object],
+        workspace_aware: bool,
+    ) -> object: ...
 
 
 class StepExecutionHealth(BaseModel):
@@ -215,11 +247,16 @@ async def run_single_step_with_policy(  # noqa: PLR0913
     model: str,
     prompt: str,
     output_schema: type[object],
+    schema_id: str,
     step_key: str,
     replay_policy: ReplayPolicy,
     context_version: object | None = None,
 ) -> StepResultLike:
     """Execute ``SingleStepModelClient.step`` with replay policy support."""
+    _validate_registered_output_schema(
+        schema_id=schema_id,
+        output_schema=output_schema,
+    )
     if not isinstance(client, StepClientLike):
         msg = "Client does not expose a compatible callable 'step' method."
         raise TypeError(msg)
@@ -316,9 +353,88 @@ async def run_single_step_with_policy(  # noqa: PLR0913
     return result
 
 
+async def run_registered_agent(  # noqa: PLR0913
+    client: object,
+    *,
+    schema_id: str,
+    run_id: str,
+    tenant: object,
+    model: str,
+    system_prompt: str,
+    prompt: str,
+    output_schema: type[AgentOutputT],
+    max_iterations: int,
+) -> AgentOutputT:
+    """Run an autonomous agent only after schema-registry validation."""
+
+    _validate_registered_output_schema(
+        schema_id=schema_id,
+        output_schema=output_schema,
+    )
+    if not isinstance(client, AgentClientLike):
+        msg = "Client does not expose a compatible callable 'run' method."
+        raise TypeError(msg)
+    result = await client.run(
+        run_id=run_id,
+        tenant=tenant,
+        model=model,
+        system_prompt=system_prompt,
+        prompt=prompt,
+        output_schema=output_schema,
+        max_iterations=max_iterations,
+    )
+    return cast("AgentOutputT", result)
+
+
+async def run_registered_harness_agent(
+    client: object,
+    *,
+    schema_id: str,
+    run_id: str,
+    prompt: str,
+    output_schema: type[AgentOutputT],
+    workspace_aware: bool,
+) -> AgentOutputT:
+    """Run a strong-model harness only after schema-registry validation."""
+
+    _validate_registered_output_schema(
+        schema_id=schema_id,
+        output_schema=output_schema,
+    )
+    if not isinstance(client, HarnessAgentLike):
+        msg = "Client does not expose a compatible callable 'run_agent' method."
+        raise TypeError(msg)
+    result = await client.run_agent(
+        run_id=run_id,
+        prompt=prompt,
+        output_schema=output_schema,
+        workspace_aware=workspace_aware,
+    )
+    return cast("AgentOutputT", result)
+
+
+def _validate_registered_output_schema(
+    *,
+    schema_id: str,
+    output_schema: type[object],
+) -> None:
+    # Import lazily so runtime.model_health can import this module during
+    # runtime package initialization without creating a package cycle.
+    from artana_evidence_api.runtime.agent_output_manifest import (
+        validate_registered_agent_output_schema,
+    )
+
+    validate_registered_agent_output_schema(
+        schema_id=schema_id,
+        output_schema=output_schema,
+    )
+
+
 __all__ = [
     "StepExecutionHealth",
     "get_step_execution_health",
     "reset_step_execution_health",
+    "run_registered_agent",
+    "run_registered_harness_agent",
     "run_single_step_with_policy",
 ]

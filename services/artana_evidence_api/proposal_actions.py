@@ -20,6 +20,9 @@ from artana_evidence_api.confidence_assessment import (
     proposal_fact_assessment,
 )
 from artana_evidence_api.document_extraction import resolve_graph_entity_label
+from artana_evidence_api.document_extraction_support.variant import (
+    observation_promotion_support,
+)
 from artana_evidence_api.graph_client import (
     GraphServiceClientError,
     GraphTransportBundle,  # noqa: TC001
@@ -47,7 +50,6 @@ from artana_evidence_api.types.graph_contracts import (
     ClaimAIProvenanceEnvelope,
     CreateManualHypothesisRequest,
     KernelObservationCreateRequest,
-    KernelObservationResponse,
     KernelRelationClaimCreateRequest,
     KernelRelationClaimResponse,
     KernelRelationCreateRequest,
@@ -576,11 +578,16 @@ def build_graph_observation_request(
             detail="Observation proposal payload is missing required 'value'",
         )
     unit = optional_json_string(proposal.payload.get("unit"))
+    provenance = observation_promotion_support.build_source_measurement_provenance_request(
+        proposal=proposal, mapping_confidence=assessment_confidence(assessment)
+    )
     return KernelObservationCreateRequest(
         subject_id=UUID(subject_id),
         variable_id=_require_payload_string(proposal.payload, field_name="variable_id"),
         value=proposal.payload["value"],
         unit=unit,
+        provenance=provenance,
+        observation_origin="AI_AUTHORED" if provenance is not None else "MANUAL",
         confidence=assessment_confidence(assessment),
     )
 
@@ -1055,18 +1062,9 @@ def promote_to_graph_observation(
             status_code=status_code,
             detail=detail,
         ) from exc
-    return _graph_observation_promotion_result(observation=observation)
-
-
-def _graph_observation_promotion_result(
-    *,
-    observation: KernelObservationResponse,
-) -> JSONObject:
-    return {
-        "graph_observation_id": str(observation.id),
-        "graph_observation_subject_id": str(observation.subject_id),
-        "graph_observation_variable_id": observation.variable_id,
-    }
+    return observation_promotion_support.graph_observation_promotion_result(
+        observation=observation,
+    )
 
 
 def promote_to_graph_hypothesis(

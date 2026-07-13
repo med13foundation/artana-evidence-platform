@@ -79,22 +79,41 @@ def create_observation(
         required_role=MembershipRole.RESEARCHER,
     )
 
-    validation_service = GraphValidationService(
-        entity_service=entity_service,
-        dictionary_service=dictionary_service,
-        provenance_service=provenance_service,
-    )
-    validation = validation_service.validate_observation_write(
-        space_id=str(space_id),
-        request=request,
-    )
-    if not validation.valid or validation.persistability != "PERSISTABLE":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=_build_validation_error_detail(validation),
-        )
-
     try:
+        provenance_id = request.provenance_id
+        if request.provenance is not None:
+            provenance_payload = request.provenance
+            provenance = provenance_service.create_provenance(
+                research_space_id=str(space_id),
+                source_type=provenance_payload.source_type,
+                source_ref=provenance_payload.source_ref,
+                extraction_run_id=provenance_payload.extraction_run_id,
+                mapping_method=provenance_payload.mapping_method,
+                mapping_confidence=provenance_payload.mapping_confidence,
+                agent_model=provenance_payload.agent_model,
+                raw_input=provenance_payload.raw_input,
+            )
+            provenance_id = provenance.id
+
+        validated_request = request.model_copy(
+            update={"provenance_id": provenance_id, "provenance": None},
+        )
+        validation_service = GraphValidationService(
+            entity_service=entity_service,
+            dictionary_service=dictionary_service,
+            provenance_service=provenance_service,
+        )
+        validation = validation_service.validate_observation_write(
+            space_id=str(space_id),
+            request=validated_request,
+        )
+        if not validation.valid or validation.persistability != "PERSISTABLE":
+            session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_build_validation_error_detail(validation),
+            )
+
         observation = observation_service.record_observation_value(
             research_space_id=str(space_id),
             subject_id=str(request.subject_id),
@@ -102,13 +121,13 @@ def create_observation(
             value=request.value,
             unit=request.unit,
             observed_at=request.observed_at,
-            provenance_id=(
-                str(request.provenance_id) if request.provenance_id else None
-            ),
+            provenance_id=str(provenance_id) if provenance_id else None,
             confidence=request.confidence,
         )
         session.commit()
         return KernelObservationResponse.from_model(observation)
+    except HTTPException:
+        raise
     except ValueError as exc:
         session.rollback()
         raise HTTPException(

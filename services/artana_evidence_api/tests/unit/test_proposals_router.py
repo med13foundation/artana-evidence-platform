@@ -656,7 +656,12 @@ def test_promote_observation_candidate_routes_through_graph_observation_creation
             entity_type="VARIANT",
             display_label="NM_015335.6:c.977C>A (p.Thr326Lys)",
             aliases=["c.977C>A"],
-            metadata={},
+            metadata={
+                "source_anchors": {
+                    "gene_symbol": "MED13",
+                    "hgvs_notation": "c.977C>A",
+                },
+            },
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         ),

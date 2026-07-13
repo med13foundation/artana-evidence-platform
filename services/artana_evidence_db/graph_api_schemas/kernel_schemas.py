@@ -35,6 +35,7 @@ from artana_evidence_db.graph_api_schemas.kernel_graph_schemas import (
     KernelGraphSubgraphMeta,
     KernelGraphSubgraphRequest,
     KernelGraphSubgraphResponse,
+    KernelProvenanceCreateRequest,
     KernelProvenanceListResponse,
     KernelProvenanceResponse,
 )
@@ -109,6 +110,7 @@ __all__ = [
     "KernelMechanisticGapListResponse",
     "KernelMechanisticGapResponse",
     "KernelProvenanceListResponse",
+    "KernelProvenanceCreateRequest",
     "KernelProvenanceResponse",
     "KernelReachabilityGapListResponse",
     "KernelReachabilityGapResponse",

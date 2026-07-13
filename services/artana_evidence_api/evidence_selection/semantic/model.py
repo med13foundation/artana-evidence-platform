@@ -25,7 +25,9 @@ from artana_evidence_api.runtime import (
 from artana_evidence_api.step_helpers import run_single_step_with_policy
 from artana_evidence_api.types.common import JSONObject
 
-_SEMANTIC_SELECTION_STEP_KEY = "evidence_selection.semantic_selector.v1"
+from .references import semantic_record_reference
+
+_SEMANTIC_SELECTION_STEP_KEY = "evidence_selection.semantic_selector.v2"
 
 
 class SemanticSelectionAgentUnavailableError(RuntimeError):
@@ -55,6 +57,26 @@ class EvidenceSelectionSemanticContext:
             raise ValueError("semantic context record indices must be unique")
         if any(index < 0 for index in self.record_indices):
             raise ValueError("semantic context record indices must be non-negative")
+        if len(set(self.record_references)) != len(self.record_references):
+            raise ValueError("semantic context record references must be unique")
+
+    @property
+    def record_references(self) -> tuple[str, ...]:
+        """Return service-owned references aligned with records and indices."""
+
+        return tuple(
+            semantic_record_reference(
+                source_key=self.source_key,
+                search_id=self.search_id,
+                record_index=index,
+                record=record,
+            )
+            for index, record in zip(
+                self.record_indices,
+                self.records,
+                strict=True,
+            )
+        )
 
 
 class EvidenceSelectionSemanticModelRunner(Protocol):
@@ -123,6 +145,7 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
                 model=execution_model_id,
                 prompt=_build_semantic_selection_prompt(context=context),
                 output_schema=EvidenceSelectionSemanticBatchContract,
+                schema_id="evidence_selection.semantic.v2",
                 step_key=_SEMANTIC_SELECTION_STEP_KEY,
                 replay_policy=self._runtime_policy.replay_policy,
             )
@@ -199,7 +222,7 @@ def _build_semantic_selection_prompt(
         },
         "records": [
             {
-                "record_index": index,
+                "record_ref": record_ref,
                 "evidence_options": [
                     {
                         "reference": option.reference,
@@ -207,13 +230,13 @@ def _build_semantic_selection_prompt(
                         "text": option.text,
                     }
                     for option in semantic_evidence_options(
-                        record_index=index,
+                        record_ref=record_ref,
                         record=record,
                     )
                 ],
             }
-            for index, record in zip(
-                context.record_indices,
+            for record_ref, record in zip(
+                context.record_references,
                 context.records,
                 strict=True,
             )
@@ -224,7 +247,7 @@ def _build_semantic_selection_prompt(
         "Judge each supplied title/abstract or source record against the complete "
         "research objective. Return only EvidenceSelectionSemanticBatchContract.\n"
         "\nDecision rules:\n"
-        "- Return exactly one assessment for every record_index and no others.\n"
+        "- Return exactly one assessment for every record_ref and no others.\n"
         "- Use select only when the record directly or supportingly addresses the "
         "objective, satisfies inclusion criteria, and does not trigger an exclusion.\n"
         "- Evaluate entity or variant, population, intervention or exposure, outcome, "

@@ -9,6 +9,8 @@ from dataclasses import dataclass
 
 from artana_evidence_api.types.common import JSONObject, JSONValue
 
+from .references import semantic_evidence_reference
+
 _MAX_EVIDENCE_OPTION_CHARACTERS = 500
 _MAX_EVIDENCE_OPTIONS_PER_RECORD = 64
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+")
@@ -53,7 +55,7 @@ class SemanticEvidenceOption:
 
 def semantic_evidence_options(
     *,
-    record_index: int,
+    record_ref: str,
     record: JSONObject,
 ) -> tuple[SemanticEvidenceOption, ...]:
     """Expose exact bounded spans without asking the model to transcribe them."""
@@ -68,7 +70,11 @@ def semantic_evidence_options(
             seen_groundings.add(grounding_key)
             options.append(
                 SemanticEvidenceOption(
-                    reference=(f"record:{record_index}:evidence:{len(options)}"),
+                    reference=semantic_evidence_reference(
+                        record_ref=record_ref,
+                        source_path=source_path,
+                        text=span,
+                    ),
                     source_path=source_path,
                     text=span,
                 ),
@@ -90,7 +96,7 @@ def _iter_record_evidence_values(record: JSONObject) -> Iterator[tuple[str, str]
 
 def resolve_semantic_evidence_references(
     *,
-    record_index: int,
+    record_ref: str,
     record: JSONObject,
     references: tuple[str, ...],
 ) -> tuple[SemanticEvidenceOption, ...]:
@@ -99,15 +105,15 @@ def resolve_semantic_evidence_references(
     options = {
         option.reference: option
         for option in semantic_evidence_options(
-            record_index=record_index,
+            record_ref=record_ref,
             record=record,
         )
     }
     unknown = tuple(reference for reference in references if reference not in options)
     if unknown:
         msg = (
-            f"semantic agent returned unknown evidence references for record "
-            f"{record_index}: {list(unknown)}"
+            "semantic agent returned unknown evidence references for record "
+            f"{record_ref}: {list(unknown)}"
         )
         raise ValueError(msg)
     return tuple(options[reference] for reference in references)

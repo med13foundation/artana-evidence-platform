@@ -4,17 +4,20 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from artana_evidence_db.common_types import JSONValue
+from artana_evidence_db.graph_api_schemas.kernel_graph_schemas import (
+    KernelProvenanceCreateRequest,
+)
 from artana_evidence_db.graph_api_schemas.kernel_schema_common import (
     _to_required_utc_datetime,
     _to_utc_datetime,
     _to_uuid,
 )
 from artana_evidence_db.kernel_domain_models import KernelObservation
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Literal
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class KernelObservationCreateRequest(BaseModel):
@@ -28,8 +31,27 @@ class KernelObservationCreateRequest(BaseModel):
     unit: str | None = Field(None, max_length=64)
     observed_at: datetime | None = None
     provenance_id: UUID | None = None
+    provenance: KernelProvenanceCreateRequest | None = None
     observation_origin: Literal["MANUAL", "IMPORTED", "AI_AUTHORED"] = "MANUAL"
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def validate_provenance_inputs(self) -> KernelObservationCreateRequest:
+        """Require unambiguous provenance for non-manual observations."""
+        if self.provenance_id is not None and self.provenance is not None:
+            msg = "Provide provenance_id or inline provenance, not both."
+            raise ValueError(msg)
+        if self.provenance is not None and self.observation_origin == "MANUAL":
+            msg = "Inline provenance requires IMPORTED or AI_AUTHORED origin."
+            raise ValueError(msg)
+        if (
+            self.observation_origin == "AI_AUTHORED"
+            and self.provenance_id is None
+            and self.provenance is None
+        ):
+            msg = "AI_AUTHORED observations require provenance."
+            raise ValueError(msg)
+        return self
 
 
 class KernelObservationResponse(BaseModel):

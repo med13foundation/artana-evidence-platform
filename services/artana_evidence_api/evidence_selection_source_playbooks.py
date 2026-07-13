@@ -33,7 +33,6 @@ class SourceQueryIntent(Protocol):
     disease: str | None
     phenotype: str | None
     organism: str | None
-    taxon_id: int | None
     panels: list[str] | None
 
 

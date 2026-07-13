@@ -1,0 +1,988 @@
+{
+  "active_debt_count": 0,
+  "debt_manifest": [],
+  "debt_numeric_field_count": 0,
+  "origin_governed_numeric_field_count": 1,
+  "registered_category_field_count": 66,
+  "registered_numeric_field_count": 1,
+  "registered_schema_count": 15,
+  "registered_schemas": [
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.reviews[].factual_support",
+          "values": [
+            "strong",
+            "moderate",
+            "tentative",
+            "unsupported"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.reviews[].goal_relevance",
+          "values": [
+            "direct",
+            "supporting",
+            "peripheral",
+            "off_target",
+            "unscoped"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.reviews[].priority",
+          "values": [
+            "prioritize",
+            "review",
+            "background",
+            "ignore"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "document_extraction.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.proposal_review.v1"
+      ],
+      "schema_id": "document_extraction.proposal_review.v1",
+      "schema_names": [
+        "ProposalReviewResult"
+      ],
+      "shape_hash": "172c1f2ab7a2a8d6f3b47dfab1fe2a50a185aac1460b30adb27a4fea22058247"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].review_status",
+          "values": [
+            "candidate",
+            "review_only"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "document_extraction_support/llm_fulltext_extraction.py"
+      ],
+      "prompt_identifiers": [
+        "document_extraction.relation.v2"
+      ],
+      "schema_id": "document_extraction.relation.v2",
+      "schema_names": [
+        "LLMExtractionResult"
+      ],
+      "shape_hash": "53bd185c9ca1906c8bad89ff584e2dd623b7ce49b3a1b2485c42f2fe1e8abc11"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.action",
+          "values": [
+            "match_existing",
+            "create_new"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "relation_type_resolver.py"
+      ],
+      "prompt_identifiers": [
+        "entity_resolution.system_and_request.v1"
+      ],
+      "schema_id": "entity_resolution.agent.v1",
+      "schema_names": [
+        "EntityDecision"
+      ],
+      "shape_hash": "1f930649a4bbc34b39bd204d05073fd27db6d8b5de88c9cda5050c7ac0d3835c"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.schema_version",
+          "values": [
+            "evidence_selection_semantic_agent.v2"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].decision",
+          "values": [
+            "select",
+            "reject",
+            "review"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].objective_match",
+          "values": [
+            "direct",
+            "supporting",
+            "context_only",
+            "off_objective",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].entity_variant_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].population_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].intervention_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].outcome_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].study_type_match",
+          "values": [
+            "match",
+            "no_match",
+            "not_required",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].inclusion_assessment",
+          "values": [
+            "met",
+            "not_met",
+            "uncertain"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessments[].exclusion_assessment",
+          "values": [
+            "not_triggered",
+            "triggered",
+            "uncertain"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "evidence_selection/semantic/model.py"
+      ],
+      "prompt_identifiers": [
+        "evidence_selection.semantic_selector.v2"
+      ],
+      "schema_id": "evidence_selection.semantic.v2",
+      "schema_names": [
+        "EvidenceSelectionSemanticBatchContract"
+      ],
+      "shape_hash": "b1428a8b75b9e6eb14bf2faddd7db7c8689bb2097c5282a7b9dfebd67744bdab"
+    },
+    {
+      "categorical_fields": [],
+      "numeric_fields": [],
+      "producer_paths": [
+        "evidence_selection_model_planner.py"
+      ],
+      "prompt_identifiers": [
+        "evidence_selection.source_planner.v1"
+      ],
+      "schema_id": "evidence_selection.source_plan.v1",
+      "schema_names": [
+        "ModelEvidenceSelectionSourcePlanContract"
+      ],
+      "shape_hash": "4b0643668ca687eafd5796f669b25d728ca7cbac352dadb7c6a7f1800a4a7780"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": true,
+          "debt_id": null,
+          "path": "$.action_type",
+          "values": [
+            "DERIVE_DRIVEN_TERMS",
+            "ESCALATE_TO_HUMAN",
+            "GENERATE_BRIEF",
+            "INGEST_AND_EXTRACT_PUBMED",
+            "INITIALIZE_WORKSPACE",
+            "LOAD_MONDO_GROUNDING",
+            "QUERY_PUBMED",
+            "REVIEW_PDF_WORKSET",
+            "REVIEW_TEXT_WORKSET",
+            "RUN_BOOTSTRAP",
+            "RUN_CHASE_ROUND",
+            "RUN_GRAPH_CONNECTION",
+            "RUN_GRAPH_SEARCH",
+            "RUN_HGNC_GROUNDING",
+            "RUN_HYPOTHESIS_GENERATION",
+            "RUN_STRUCTURED_ENRICHMENT",
+            "RUN_UNIPROT_GROUNDING",
+            "SEARCH_DISCONFIRMING",
+            "STOP"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.benefit_findings[].kind",
+          "values": [
+            "closes_evidence_gap",
+            "resolves_pending_question",
+            "adds_objective_relevant_evidence",
+            "corroborates_existing_evidence",
+            "enables_synthesis",
+            "no_material_benefit"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.risk_findings[].kind",
+          "values": [
+            "external_side_effect",
+            "irreversible_action",
+            "sensitive_data_exposure",
+            "requires_human_judgment",
+            "uncertain_cost",
+            "no_material_risk"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "full_ai_orchestrator/shadow_planner/runtime.py"
+      ],
+      "prompt_identifiers": [
+        "full_ai.shadow_planner.prompt.v1"
+      ],
+      "schema_id": "full_ai.shadow_planner.v1",
+      "schema_names": [
+        "ShadowPlannerLiveRecommendationOutput",
+        "ShadowPlannerRecommendationOutput"
+      ],
+      "shape_hash": "fd01368f0ece1492b7ab09d5db7188e82268c319729e83473339c576a98256dc"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.decision",
+          "values": [
+            "generated",
+            "fallback",
+            "escalate"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].evidence_tier",
+          "values": [
+            "COMPUTATIONAL"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.proposed_relations[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_candidates[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "graph_connection_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "graph_connection.system_and_request.v2"
+      ],
+      "schema_id": "graph_connection.agent.v1",
+      "schema_names": [
+        "_GraphConnectionExecutionContract"
+      ],
+      "shape_hash": "8abaa06aefb8c10ee2b151274733f43e6795ac1e206d011e0c33dec9274c7a5d"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.decision",
+          "values": [
+            "generated",
+            "fallback",
+            "escalate"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.assessment.grounding_level",
+          "values": [
+            "NONE",
+            "ENTITY",
+            "RELATION",
+            "OBSERVATION",
+            "AGGREGATED"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].assessment.grounding_level",
+          "values": [
+            "NONE",
+            "ENTITY",
+            "RELATION",
+            "OBSERVATION",
+            "AGGREGATED"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].evidence_chain[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.results[].evidence_chain[].assessment.grounding_level",
+          "values": [
+            "NONE",
+            "ENTITY",
+            "RELATION",
+            "OBSERVATION",
+            "AGGREGATED"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "graph_search_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "graph_search.system_and_request.v2"
+      ],
+      "schema_id": "graph_search.agent.v1",
+      "schema_names": [
+        "_GraphSearchExecutionContract"
+      ],
+      "shape_hash": "7015f3a669f3d7794b2d287bc6b52081e5d4f976fd9d1c061f6b2e950faaa855"
+    },
+    {
+      "categorical_fields": [],
+      "numeric_fields": [],
+      "producer_paths": [
+        "marrvel_enrichment.py"
+      ],
+      "prompt_identifiers": [
+        "marrvel.gene_inference.v1"
+      ],
+      "schema_id": "marrvel.gene_inference.v1",
+      "schema_names": [
+        "_MarrvelGeneInferenceResult"
+      ],
+      "shape_hash": "e36df65cd58006ebeef2350b47cc09662baa1ae957e17d1001fe64a0204a7d5e"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.status",
+          "values": [
+            "ok"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "runtime/model_health.py",
+        "runtime_support.py"
+      ],
+      "prompt_identifiers": [
+        "model_health.probe.v1"
+      ],
+      "schema_id": "model_health.probe.v1",
+      "schema_names": [
+        "_ProbeOutput"
+      ],
+      "shape_hash": "53ceee97278087ef366f8a0a8399cfab1b60ca83917bf20b3e1063310fe9fce4"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relevance",
+          "values": [
+            "relevant",
+            "non_relevant"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "pubmed_relevance.py"
+      ],
+      "prompt_identifiers": [
+        "pubmed.relevance.title_abstract.v1"
+      ],
+      "schema_id": "pubmed.relevance.v1",
+      "schema_names": [
+        "PubMedRelevanceModelOutput"
+      ],
+      "shape_hash": "edeba4193516a67036849983c26be40ce62ac17794e317d2fbc654e50c634e66"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.action",
+          "values": [
+            "map_to_existing",
+            "register_new",
+            "requires_review",
+            "typo_correction"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "relation_type_resolver.py"
+      ],
+      "prompt_identifiers": [
+        "relation_type_resolution.system_and_request.v1"
+      ],
+      "schema_id": "relation_type_resolution.agent.v1",
+      "schema_names": [
+        "RelationTypeDecision"
+      ],
+      "shape_hash": "4ae532517c388aa19610e41bbfa6ae129e11a3251a6b53a00ba671b1ba6b8f78"
+    },
+    {
+      "categorical_fields": [],
+      "numeric_fields": [],
+      "producer_paths": [
+        "research_init_brief.py"
+      ],
+      "prompt_identifiers": [
+        "research.llm_brief_synthesis.v1"
+      ],
+      "schema_id": "research.brief.v1",
+      "schema_names": [
+        "LLMBriefOutput"
+      ],
+      "shape_hash": "9c7621ed9f2066c3bc01806be1f8946caff0dcb1c6445db460431d91a8e5c019"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.message_type",
+          "values": [
+            "clarification_request",
+            "plan_ready"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.state_patch.onboarding_status",
+          "values": [
+            "awaiting_researcher_reply",
+            "plan_ready"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.state_patch.thread_status",
+          "values": [
+            "your_turn",
+            "review_needed"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.suggested_actions[].action_type",
+          "values": [
+            "reply",
+            "review"
+          ]
+        }
+      ],
+      "numeric_fields": [],
+      "producer_paths": [
+        "research_onboarding_agent_runtime.py"
+      ],
+      "prompt_identifiers": [
+        "research_onboarding.system_and_turn.v1"
+      ],
+      "schema_id": "research_onboarding.agent.v1",
+      "schema_names": [
+        "OnboardingAssistantModelOutput"
+      ],
+      "shape_hash": "0fed46693511f4f2807d37e872c2f96677f80991a3cded883d5a7fbb319a6849"
+    },
+    {
+      "categorical_fields": [
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.decision",
+          "values": [
+            "generated",
+            "fallback",
+            "escalate"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.evidence[].source_type",
+          "values": [
+            "tool",
+            "db",
+            "paper",
+            "web",
+            "note",
+            "api"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].fact_type",
+          "values": [
+            "observation",
+            "relation"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].polarity",
+          "values": [
+            "SUPPORT",
+            "REFUTE",
+            "UNCERTAIN",
+            "HYPOTHESIS"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.entities[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.observations[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.support_band",
+          "values": [
+            "INSUFFICIENT",
+            "TENTATIVE",
+            "SUPPORTED",
+            "STRONG"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.grounding_level",
+          "values": [
+            "SPAN",
+            "SECTION",
+            "DOCUMENT",
+            "GENERATED",
+            "GRAPH_INFERENCE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.speculation_level",
+          "values": [
+            "DIRECT",
+            "HEDGED",
+            "HYPOTHETICAL",
+            "NOT_APPLICABLE"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.rejected_facts[].assessment.mapping_status",
+          "values": [
+            "RESOLVED",
+            "AMBIGUOUS",
+            "NOT_APPLICABLE"
+          ]
+        }
+      ],
+      "numeric_fields": [
+        {
+          "debt_id": null,
+          "origin": "source_measurement",
+          "path": "$.observations[].value.value"
+        }
+      ],
+      "producer_paths": [
+        "variant_extraction_bridges.py"
+      ],
+      "prompt_identifiers": [
+        "variant_extraction.context.v9"
+      ],
+      "schema_id": "variant_extraction.agent.v1",
+      "schema_names": [
+        "LLMExtractionContract"
+      ],
+      "shape_hash": "6fa90f3c8d685e7829ad3ec44a89f5e435f525e1e77938fead762ed1a3ca65e4"
+    }
+  ],
+  "schema_version": "agent_output_registry_report.v1",
+  "unquarantined_debt_count": 0,
+  "unquarantined_debt_ids": []
+}

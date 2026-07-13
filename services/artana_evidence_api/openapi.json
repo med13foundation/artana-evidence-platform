@@ -8819,6 +8819,13 @@
             "title": "Id",
             "type": "string"
           },
+          "identifiers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Identifiers",
+            "type": "object"
+          },
           "metadata": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JSONValue-Output"
@@ -11568,6 +11575,13 @@
             "minimum": 0.0,
             "title": "Supporting Document Count",
             "type": "integer"
+          },
+          "supporting_document_locators": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supporting Document Locators",
+            "type": "array"
           },
           "supporting_provenance_ids": {
             "items": {
