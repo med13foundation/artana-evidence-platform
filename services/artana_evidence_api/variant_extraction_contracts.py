@@ -155,20 +155,27 @@ def _source_contains_exact_literal_span(
         if index < 0:
             return False
         before = source_text[index - 1] if index > 0 else ""
+        before_previous = source_text[index - 2] if index > 1 else ""
         end = index + len(literal_span)
         after = source_text[end] if end < len(source_text) else ""
         after_next = source_text[end + 1] if end + 1 < len(source_text) else ""
         prefix = source_text[:index].rstrip()
         suffix = source_text[end:].lstrip()
-        invalid_before = before.isalnum() or before in {"_", "."}
+        invalid_before = (
+            before.isalnum()
+            or before in {"_", ".", "/", "−"}
+            or (before == "," and before_previous.isdigit())
+        )
         invalid_after = (
             after.isalnum()
             or after in {"_", "/"}
-            or (after == "." and after_next.isdigit())
+            or (after in {".", ","} and after_next.isdigit())
         )
         symbolic_bound_or_range_context = prefix.endswith(
-            ("<", ">", "<=", ">=", "≤", "≥", "~", "≈", "±", "-", "–", "—"),
-        ) or suffix.startswith(("<", ">", "≤", "≥", "~", "≈", "±", "-", "–", "—"))
+            ("<", ">", "<=", ">=", "≤", "≥", "~", "≈", "±", "-", "–", "—", "−"),
+        ) or suffix.startswith(
+            ("<", ">", "≤", "≥", "~", "≈", "±", "-", "–", "—", "−"),
+        )
         worded_bound_or_range_context = _has_worded_bound_or_range_context(
             prefix=prefix,
             suffix=suffix,
@@ -204,6 +211,9 @@ def _source_measurement_json_value(value: str) -> int | float:
     rendered = float(parsed)
     if not isfinite(rendered):
         msg = "Numeric observation value exceeds the supported JSON range."
+        raise ValueError(msg)
+    if parsed != 0 and rendered == 0.0:
+        msg = "Numeric observation value underflows the supported JSON range."
         raise ValueError(msg)
     return rendered
 

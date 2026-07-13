@@ -483,6 +483,10 @@ def test_llm_extraction_rejects_unsupported_or_inconsistent_unit(
         ("10 mg", "10", "mg", "Reported 5 to 10 mg."),
         ("5 mg", "5", "mg", "Reported between 5 mg and 10 mg."),
         ("MG5", "5", "mg", "Marker MG5 was measured."),
+        ("1", "1", "unitless", "Read depth was 1,234."),
+        ("234", "234", "unitless", "Read depth was 1,234."),
+        ("10 mg", "10", "mg", "Ratio was 5/10 mg."),
+        ("5 mg", "5", "mg", "Change was −5 mg."),
     ],
 )
 def test_llm_extraction_rejects_unit_stripping_bounds_and_ranges(
@@ -583,6 +587,29 @@ def test_llm_extraction_preserves_large_integer_lexeme() -> None:
     assert extracted.observations[0].value == 100000000000000000001
     assert extracted.observations[0].source_measurement is not None
     assert extracted.observations[0].source_measurement.value == value
+
+
+def test_llm_extraction_rejects_nonzero_float_underflow() -> None:
+    contract = LLMExtractionContract(
+        rationale="Copied a scalar too small for the graph numeric range.",
+        evidence=[],
+        decision="generated",
+        source_type="paper",
+        document_id="document-underflow",
+        observations=[
+            _llm_source_measurement_observation(
+                value="1e-400",
+                literal_span="1e-400",
+                unit="unitless",
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="underflows"):
+        contract.to_extraction_contract(
+            expected_source_hash="source-hash-adversarial",
+            source_values_by_locator={"raw_record.text": "Value was 1e-400."},
+        )
 
 
 @pytest.mark.parametrize(
@@ -1036,7 +1063,7 @@ def test_variant_prompt_exposes_hash_and_valid_scalar_locators() -> None:
     assert "genomic_position, genome_build" not in (
         variant_extraction_bridges._VARIANT_EXTRACTION_SYSTEM_PROMPT
     )
-    assert "numbered exons or introns" in (
+    assert "Do not flatten structured identifiers" in (
         variant_extraction_bridges._VARIANT_EXTRACTION_SYSTEM_PROMPT
     )
 
@@ -1493,12 +1520,23 @@ def test_source_measurement_maps_known_field_to_canonical_variable_id() -> None:
     assert drafts[0].payload["variable_id"] == "VAR_ALLELE_FREQUENCY"
 
 
-def test_source_measurement_rejects_unknown_variable_field() -> None:
+@pytest.mark.parametrize(
+    ("field_name", "variable_id"),
+    [
+        ("invented_numeric_field", "VAR_INVENTED"),
+        ("genomic_position", "VAR_GENOMIC_POSITION"),
+        ("exon_or_intron", "VAR_EXON_INTRON"),
+    ],
+)
+def test_source_measurement_rejects_non_scalar_variable_field(
+    field_name: str,
+    variable_id: str,
+) -> None:
     document = _document(text="MED13 c.977C>A had a value of 5mg.")
     candidate = _single_variant_contract(document_id=document.id).entities[0]
     observation = ExtractedObservation(
-        field_name="invented_numeric_field",
-        variable_id="VAR_INVENTED",
+        field_name=field_name,
+        variable_id=variable_id,
         value=5,
         unit="mg",
         subject_label=candidate.label,
@@ -1510,7 +1548,7 @@ def test_source_measurement_rejects_unknown_variable_field() -> None:
             value="5",
             source_locator="raw_record.text",
             literal_span="5mg",
-            field_name="invented_numeric_field",
+            field_name=field_name,
             unit="mg",
             extraction_method="literal_copy",
             source_hash="source-hash-unknown-variable",

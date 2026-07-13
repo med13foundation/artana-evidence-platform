@@ -9254,6 +9254,16 @@
             ],
             "title": "Observed At"
           },
+          "provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KernelProvenanceCreateRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "provenance_id": {
             "anyOf": [
               {
@@ -9490,6 +9500,98 @@
           "updated_at"
         ],
         "title": "KernelObservationResponse",
+        "type": "object"
+      },
+      "KernelProvenanceCreateRequest": {
+        "additionalProperties": false,
+        "description": "Inline provenance to persist atomically with one graph fact.",
+        "properties": {
+          "agent_model": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Model"
+          },
+          "extraction_run_id": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Run Id"
+          },
+          "mapping_confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping Confidence"
+          },
+          "mapping_method": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping Method"
+          },
+          "raw_input": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JSONValue-Input"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Input"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "source_type": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_type"
+        ],
+        "title": "KernelProvenanceCreateRequest",
         "type": "object"
       },
       "KernelProvenanceListResponse": {

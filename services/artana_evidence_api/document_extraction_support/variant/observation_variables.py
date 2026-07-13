@@ -20,7 +20,6 @@ VARIANT_METADATA_VARIABLE_IDS: Mapping[str, str] = MappingProxyType(
 )
 VARIANT_SOURCE_MEASUREMENT_VARIABLE_IDS: Mapping[str, str] = MappingProxyType(
     {
-        **VARIANT_METADATA_VARIABLE_IDS,
         "allele_frequency": "VAR_ALLELE_FREQUENCY",
         "dose": "DOSE",
         "p_value": "STUDY_P_VALUE",
@@ -33,7 +32,7 @@ def resolve_variant_observation_variable_id(
     *,
     field_name: str,
 ) -> str | None:
-    """Map one allowed categorical field name to its canonical variable ID."""
+    """Map one allowed scalar field name to its canonical variable ID."""
     return VARIANT_SOURCE_MEASUREMENT_VARIABLE_IDS.get(
         field_name.strip().casefold(),
     )

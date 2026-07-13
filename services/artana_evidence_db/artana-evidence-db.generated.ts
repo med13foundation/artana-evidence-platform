@@ -1137,6 +1137,7 @@ export interface KernelObservationCreateRequest {
   unit?: string | null;
   observed_at?: string | null;
   provenance_id?: string | null;
+  provenance?: KernelProvenanceCreateRequest | null;
   observation_origin?: 'AI_AUTHORED' | 'IMPORTED' | 'MANUAL';
   confidence?: number;
 }
@@ -1165,6 +1166,16 @@ export interface KernelObservationResponse {
   confidence: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface KernelProvenanceCreateRequest {
+  source_type: string;
+  source_ref?: string | null;
+  extraction_run_id?: string | null;
+  mapping_method?: string | null;
+  mapping_confidence?: number | null;
+  agent_model?: string | null;
+  raw_input?: Record<string, unknown> | null;
 }
 
 export interface KernelProvenanceListResponse {

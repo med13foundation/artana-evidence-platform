@@ -6,6 +6,7 @@ from artana_evidence_db.decision_confidence import (
     DecisionConfidenceAssessment,
     DecisionConfidenceResult,
 )
+from artana_evidence_db.fact_assessment import FactAssessment
 from artana_evidence_db.graph_api_schemas.ai_full_mode_schemas import (
     AIDecisionListResponse,
     AIDecisionResponse,
@@ -116,17 +117,6 @@ from artana_evidence_db.graph_api_schemas.kernel_reasoning_path_schemas import (
     KernelReasoningPathResponse,
     KernelReasoningPathStepResponse,
 )
-from artana_evidence_db.graph_api_schemas.workflow_schemas import (
-    ExplanationResponse,
-    GraphWorkflowActionRequest,
-    GraphWorkflowCreateRequest,
-    GraphWorkflowListResponse,
-    GraphWorkflowResponse,
-    OperatingModeCapabilitiesResponse,
-    OperatingModeRequest,
-    OperatingModeResponse,
-    ValidationExplanationRequest,
-)
 from artana_evidence_db.graph_api_schemas.kernel_schemas import (
     ClaimAIProvenanceEnvelope,
     DictionaryEntityTypeValidationRequest,
@@ -165,6 +155,7 @@ from artana_evidence_db.graph_api_schemas.kernel_schemas import (
     KernelObservationCreateRequest,
     KernelObservationListResponse,
     KernelObservationResponse,
+    KernelProvenanceCreateRequest,
     KernelProvenanceListResponse,
     KernelProvenanceResponse,
     KernelReachabilityGapListResponse,
@@ -188,8 +179,17 @@ from artana_evidence_db.graph_api_schemas.kernel_schemas import (
     KernelRelationSuggestionSkippedSourceResponse,
     KernelRelationTripleValidationRequest,
 )
-
-from artana_evidence_db.fact_assessment import FactAssessment
+from artana_evidence_db.graph_api_schemas.workflow_schemas import (
+    ExplanationResponse,
+    GraphWorkflowActionRequest,
+    GraphWorkflowCreateRequest,
+    GraphWorkflowListResponse,
+    GraphWorkflowResponse,
+    OperatingModeCapabilitiesResponse,
+    OperatingModeRequest,
+    OperatingModeResponse,
+    ValidationExplanationRequest,
+)
 
 __all__ = [
     "AIDecisionListResponse",
@@ -306,6 +306,7 @@ __all__ = [
     "KernelObservationListResponse",
     "KernelObservationResponse",
     "KernelProvenanceListResponse",
+    "KernelProvenanceCreateRequest",
     "KernelProvenanceResponse",
     "KernelReasoningPathDetailResponse",
     "KernelReasoningPathListResponse",
