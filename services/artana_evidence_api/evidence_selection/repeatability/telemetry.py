@@ -91,13 +91,18 @@ async def _collect_model_attempts(
 ) -> tuple[SemanticRuntimeModelAttempt, ...]:
     from artana.events import (
         EventType,
-        ModelRequestedPayload,
         ModelTerminalPayload,
     )
 
     normalized: list[SemanticRuntimeModelAttempt] = []
     for attempt in attempts:
         events = await store.get_events_for_run(attempt.execution_id)
+        requests = [
+            event
+            for event in events
+            if getattr(event, "event_type", None)
+            in {EventType.MODEL_REQUESTED, EventType.MODEL_REQUESTED.value}
+        ]
         terminals = [
             event
             for event in events
@@ -107,6 +112,8 @@ async def _collect_model_attempts(
         ]
         if len(terminals) > 1:
             raise ValueError("semantic execution contains multiple terminal events")
+        if len(requests) > 1:
+            raise ValueError("semantic execution contains orphan model request events")
         if not terminals:
             normalized.append(
                 missing_semantic_terminal_attempt(
@@ -115,19 +122,9 @@ async def _collect_model_attempts(
                 ),
             )
             continue
-        terminal_payload = getattr(terminals[0], "payload", None)
-        request_id = getattr(terminal_payload, "source_model_requested_event_id", None)
-        requests = [
-            event
-            for event in events
-            if getattr(event, "event_type", None)
-            in {EventType.MODEL_REQUESTED, EventType.MODEL_REQUESTED.value}
-            and isinstance(getattr(event, "payload", None), ModelRequestedPayload)
-            and getattr(event, "event_id", None) == request_id
-        ]
         if len(requests) != 1:
             raise ValueError(
-                "semantic terminal must reference exactly one model request event",
+                "semantic terminal requires exactly one model request event",
             )
         normalized.append(
             normalize_semantic_terminal_attempt(

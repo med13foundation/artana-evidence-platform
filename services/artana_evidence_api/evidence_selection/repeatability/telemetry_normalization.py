@@ -302,7 +302,7 @@ def _token_unavailable_reason(
     if prompt_tokens is not None and completion_tokens is not None:
         return None
     if schema_validation_failure and prompt_tokens is None and completion_tokens is None:
-        return "artana_exception_did_not_preserve_provider_usage"
+        return "artana_exception_did_not_preserve_provider_token_usage"
     if (prompt_tokens is None) != (completion_tokens is None):
         return "artana_terminal_partial_token_usage"
     return "artana_terminal_missing_token_usage"
@@ -316,7 +316,7 @@ def _cost_unavailable_reason(
     if cost_usd is not None:
         return None
     if schema_validation_failure:
-        return "artana_exception_did_not_preserve_provider_usage"
+        return "artana_exception_did_not_preserve_provider_cost_usage"
     return "artana_terminal_missing_cost_usage"
 
 

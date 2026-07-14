@@ -10,6 +10,8 @@ from artana_evidence_api.evidence_selection.semantic.attempts import (
 )
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from .order import validate_semantic_attempt_order
+
 
 class SemanticAttemptedExecutionManifest(BaseModel):
     """Immutable recorder snapshot written before ledger normalization."""
@@ -25,7 +27,7 @@ class SemanticAttemptedExecutionManifest(BaseModel):
 
     @model_validator(mode="after")
     def _attempt_order_is_exact(self) -> SemanticAttemptedExecutionManifest:
-        _validate_manifest_order(self.attempts)
+        validate_semantic_attempt_order(self.attempts)
         return self
 
 
@@ -41,25 +43,6 @@ def validate_attempt_manifest_matches_ledger(
     declared = tuple(_runtime_attempt_context(attempt) for attempt in attempts)
     if manifest.attempts != declared:
         raise ValueError("attempt manifest does not exactly match runtime ledger")
-
-
-def _validate_manifest_order(
-    attempts: tuple[SemanticModelAttemptContext, ...],
-) -> None:
-    execution_ids = tuple(attempt.execution_id for attempt in attempts)
-    if len(set(execution_ids)) != len(execution_ids):
-        raise ValueError("attempt manifest execution IDs must be unique")
-    sequences = tuple(attempt.attempt_sequence for attempt in attempts)
-    if sequences != tuple(range(1, len(attempts) + 1)):
-        raise ValueError("attempt manifest sequence must be contiguous from one")
-    per_batch: dict[str, list[int]] = {}
-    for attempt in attempts:
-        per_batch.setdefault(attempt.batch_id, []).append(
-            attempt.batch_attempt_number,
-        )
-    for numbers in per_batch.values():
-        if tuple(numbers) != tuple(range(1, len(numbers) + 1)):
-            raise ValueError("attempt manifest per-batch numbers must be contiguous")
 
 
 def _runtime_attempt_context(

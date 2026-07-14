@@ -3371,12 +3371,16 @@ Progress:
   objective, instructions, criteria, population, evidence types, outcomes,
   record indices, and record content.
 - Each terminal is joined to its exact `MODEL_REQUESTED` event and validated for
-  request ID/hash/sequence, run, cycle, model, step, and event ordering.
+  request ID/hash/sequence, run, cycle, model, step, and event ordering. Extra
+  request events are rejected rather than ignored as orphan cycles.
 - Adoption policy `1.3.0` permits zero failed, locally rejected, abandoned, or
   telemetry-unavailable candidate attempts. Material quality gains cannot
   override attempt unreliability.
 - Confirmed failures, local rejections, abandonment, and telemetry-unavailable
   attempts have separate summary counts and report rows.
+- Telemetry completeness precedes retry reliability in adoption, and mixed
+  token/cost availability uses dimension-specific unavailable reasons.
+- Attempt-manifest and runtime-ledger ordering use one shared typed validator.
 - Agent outputs remain categorical and deterministic scoring is unchanged.
 - Focused unit/regression coverage, isolated-Postgres Artana failure-path
   coverage, Ruff, mypy, and service gates are recorded in the PR152 report.
@@ -3386,7 +3390,7 @@ Remaining proof boundary:
 - Artana's current LiteLLM adapter extracts usage before Pydantic validation
   but re-raises a bare `ValidationError`; the kernel therefore cannot persist
   usage for that failed response. The service records
-  `artana_exception_did_not_preserve_provider_usage` and does not invent the
+  dimension-specific token/cost usage-loss reasons and does not invent the
   missing values.
 - Provider sub-attempts performed inside Artana/LiteLLM retry handling are not
   separately exposed as terminal events. PR152 preserves every service-owned

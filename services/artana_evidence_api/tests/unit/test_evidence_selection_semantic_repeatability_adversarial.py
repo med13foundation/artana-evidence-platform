@@ -242,6 +242,29 @@ async def test_materially_better_candidate_that_retries_every_batch_is_not_adopt
 
 
 @pytest.mark.asyncio
+async def test_missing_candidate_telemetry_precedes_retry_reliability(tmp_path) -> None:
+    protocol = comparison_protocol()
+    current, candidate = await _summaries(tmp_path)
+    candidate = candidate.model_copy(
+        update={
+            "telemetry_complete": False,
+            "telemetry_unavailable_attempt_count": 1,
+            "attempt_reliability_passed": False,
+        },
+    )
+
+    decision = semantic_model_adoption_decision(
+        protocol=protocol,
+        current=current,
+        candidate=candidate,
+    )
+
+    assert decision.outcome == "inconclusive"
+    assert decision.selected_model_id is None
+    assert decision.reason_codes == ("runtime_telemetry_incomplete",)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "resource_field",
     ["total_cost_usd", "total_model_latency_seconds"],

@@ -27,13 +27,6 @@ def semantic_model_adoption_decision(
     )
     if availability_decision is not None:
         return availability_decision
-    reliability_decision = _candidate_reliability_decision(
-        current=current,
-        candidate=candidate,
-        deltas=deltas,
-    )
-    if reliability_decision is not None:
-        return reliability_decision
     precondition_decision = _precondition_decision(
         protocol=protocol,
         current=current,
@@ -42,6 +35,13 @@ def semantic_model_adoption_decision(
     )
     if precondition_decision is not None:
         return precondition_decision
+    reliability_decision = _candidate_reliability_decision(
+        current=current,
+        candidate=candidate,
+        deltas=deltas,
+    )
+    if reliability_decision is not None:
+        return reliability_decision
     return _candidate_benefit_decision(
         protocol=protocol,
         current=current,

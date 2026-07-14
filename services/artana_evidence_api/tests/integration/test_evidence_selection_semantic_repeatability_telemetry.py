@@ -98,7 +98,11 @@ async def test_postgres_failure_path_retains_schema_stage_and_association() -> N
     assert attempt.cost_usd is None
     assert (
         attempt.token_usage_unavailable_reason
-        == "artana_exception_did_not_preserve_provider_usage"
+        == "artana_exception_did_not_preserve_provider_token_usage"
+    )
+    assert (
+        attempt.cost_usage_unavailable_reason
+        == "artana_exception_did_not_preserve_provider_cost_usage"
     )
 
 

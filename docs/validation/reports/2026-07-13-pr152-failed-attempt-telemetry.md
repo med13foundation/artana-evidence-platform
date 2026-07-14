@@ -51,23 +51,28 @@ missing provider usage an explicit fact rather than a value to reconstruct.
   candidate attempts.
 - Each terminal is joined to its referenced `MODEL_REQUESTED` event. Request
   event ID/hash/sequence, run, cycle, model, and step must agree with the
-  terminal and frozen semantic attempt.
+  terminal and frozen semantic attempt. The collector counts every request
+  event in the execution and rejects extra/orphan cycles instead of filtering
+  them away.
 - Added typed Artana outcome classification. Pydantic terminal failures map to
   `output_schema_validation/schema_contract_rejected`; abandonment is distinct,
   and inconsistent outcome/category pairs are rejected.
 - Removed all service-side token-pricing cost reconstruction. Token and cost
   values are copied only from Artana terminal fields and use
   `artana_model_terminal` provenance. Missing values carry typed unavailable
-  reasons. `artana_exception_did_not_preserve_provider_usage` is reserved for
-  the proven Pydantic schema-validation path; timeouts and abandonment use
-  generic terminal-missing usage reasons.
+  reasons. Dimension-specific schema-exception reasons identify token usage and
+  cost usage independently; timeouts and abandonment use generic
+  terminal-missing usage reasons.
 - Expanded the attempt digest to cover execution/batch association, terminal
   event identity/hash, failure stage/cause, usage values, and provenance.
   Aggregates and availability status are recomputed from the locked attempts.
 - Added separate deterministic counts and rendering for confirmed failures,
   local rejections, abandonment, and telemetry-unavailable attempts.
 - Moved attempt aggregation, digest, ordering, and availability policy out of
-  `contracts.py` into the focused `repeatability.runtime` package.
+  `contracts.py` into the focused `repeatability.runtime` package. Manifest and
+  ledger ordering now use one shared typed structural validator.
+- Telemetry completeness is evaluated before retry reliability, so missing or
+  unobserved candidate telemetry is always inconclusive.
 - Kept agent outputs categorical, deterministic scoring unchanged, registered
   schema checks intact, frozen model identity intact, and source-lock/bundle
   verification unchanged.
@@ -77,7 +82,7 @@ missing provider usage an explicit fact rather than a value to reconstruct.
 Focused semantic and repeatability unit/regression suite:
 
 ```text
-109 passed
+113 passed
 ```
 
 Isolated-Postgres Artana failure-path integration:
@@ -95,7 +100,7 @@ Static validation completed before the aggregate service gate:
 
 ```text
 Focused Ruff: all checks passed
-Evidence API mypy: no issues in 556 source files
+Evidence API mypy: no issues in 557 source files
 Strict script mypy checks: all passed
 ```
 
@@ -115,6 +120,9 @@ Service-gate results:
 - Duplicate execution IDs, global sequence gaps, and per-batch numbering gaps
   are rejected during ledger validation.
 - Request/terminal ID, hash, run, cycle, model, and step mismatches are rejected.
+- An otherwise valid linked pair plus an orphan request event is rejected.
+- Mixed schema-failure usage retains the available dimension and assigns a
+  token-specific or cost-specific unavailable reason only to the missing one.
 - Changing batch identity, governed-context digest, failure stage/cause, request
   identity, or unavailable-usage reason without recomputing the attempt digest
   is rejected.
@@ -127,9 +135,9 @@ Service-gate results:
 
 Artana's current adapter does not attach response usage to Pydantic validation
 exceptions. Once that bare exception reaches the kernel, the original provider
-usage is unavailable to this service. PR152 reserves the typed
-`artana_exception_did_not_preserve_provider_usage` reason for this proven path
-and never estimates the missing values. Artana/LiteLLM provider retries
+usage is unavailable to this service. PR152 reserves typed, dimension-specific
+token/cost usage-loss reasons for this proven path and never estimates the
+missing values. Artana/LiteLLM provider retries
 also remain one terminal model cycle rather than separately queryable provider
 sub-attempts.
 

@@ -64,7 +64,8 @@ SemanticUsageProvenance = Literal[
     "unavailable",
 ]
 SemanticTelemetryUnavailableReason = Literal[
-    "artana_exception_did_not_preserve_provider_usage",
+    "artana_exception_did_not_preserve_provider_token_usage",
+    "artana_exception_did_not_preserve_provider_cost_usage",
     "artana_terminal_missing_token_usage",
     "artana_terminal_partial_token_usage",
     "artana_terminal_missing_cost_usage",
@@ -375,8 +376,8 @@ class SemanticRuntimeLedgerObservation(BaseModel):
             aggregate_semantic_model_attempts,
             semantic_ledger_status,
             semantic_model_attempts_sha256,
-            validate_semantic_attempt_order,
         )
+        from .runtime.order import validate_semantic_attempt_order
 
         validate_semantic_attempt_order(self.model_attempts)
         if self.model_attempt_count != len(self.model_attempts):

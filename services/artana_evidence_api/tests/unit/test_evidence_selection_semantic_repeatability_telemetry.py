@@ -189,9 +189,80 @@ async def test_schema_failure_is_typed_and_usage_is_explicitly_unavailable() -> 
     assert observed.cost_usage_provenance == "unavailable"
     assert (
         observed.token_usage_unavailable_reason
-        == "artana_exception_did_not_preserve_provider_usage"
+        == "artana_exception_did_not_preserve_provider_token_usage"
+    )
+    assert (
+        observed.cost_usage_unavailable_reason
+        == "artana_exception_did_not_preserve_provider_cost_usage"
     )
     assert telemetry.ledger.status == "partial"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    (
+        "prompt_tokens",
+        "completion_tokens",
+        "cost_usd",
+        "token_reason",
+        "cost_reason",
+    ),
+    [
+        (
+            None,
+            None,
+            0.001,
+            "artana_exception_did_not_preserve_provider_token_usage",
+            None,
+        ),
+        (
+            100,
+            20,
+            None,
+            None,
+            "artana_exception_did_not_preserve_provider_cost_usage",
+        ),
+    ],
+)
+async def test_schema_failure_reports_mixed_usage_per_dimension(
+    prompt_tokens: int | None,
+    completion_tokens: int | None,
+    cost_usd: float | None,
+    token_reason: str | None,
+    cost_reason: str | None,
+) -> None:
+    execution_id = "run-schema-mixed"
+    terminal = _terminal_event(
+        execution_id,
+        outcome="failed",
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
+        cost_usd=cost_usd,
+        error_category="internal",
+        error_class="ValidationError",
+        diagnostics_json=json.dumps(
+            {
+                "message": "schema mismatch",
+                "exception_module": "pydantic_core._pydantic_core",
+            },
+        ),
+    )
+    telemetry = await collect_semantic_run_telemetry(
+        store=_EventStore({execution_id: _run_events(execution_id, terminal)}),
+        attempts=(_attempt(execution_id),),
+        expected_model_id=_MODEL_ID,
+        wall_elapsed_seconds=0.1,
+    )
+
+    observed = telemetry.ledger.model_attempts[0]
+    assert observed.token_usage_unavailable_reason == token_reason
+    assert observed.cost_usage_unavailable_reason == cost_reason
+    assert observed.token_usage_provenance == (
+        "unavailable" if token_reason is not None else "artana_model_terminal"
+    )
+    assert observed.cost_usage_provenance == (
+        "unavailable" if cost_reason is not None else "artana_model_terminal"
+    )
 
 
 @pytest.mark.asyncio
@@ -237,6 +308,35 @@ async def test_missing_terminal_preserves_attempt_and_typed_unavailable_reason()
 
 
 @pytest.mark.asyncio
+async def test_execution_rejects_orphan_request_alongside_linked_pair() -> None:
+    execution_id = "run-extra-request"
+    linked_request = _requested_event(execution_id)
+    orphan_request = SimpleNamespace(
+        **{
+            **vars(_requested_event(execution_id)),
+            "event_id": "orphan-request",
+            "event_hash": "d" * 64,
+        },
+    )
+
+    with pytest.raises(ValueError, match="orphan model request"):
+        await collect_semantic_run_telemetry(
+            store=_EventStore(
+                {
+                    execution_id: [
+                        linked_request,
+                        orphan_request,
+                        _terminal_event(execution_id),
+                    ],
+                },
+            ),
+            attempts=(_attempt(execution_id),),
+            expected_model_id=_MODEL_ID,
+            wall_elapsed_seconds=0.1,
+        )
+
+
+@pytest.mark.asyncio
 async def test_runtime_telemetry_is_explicitly_unavailable_without_attempts() -> None:
     telemetry = await collect_semantic_run_telemetry(
         store=_EventStore({}),
@@ -278,7 +378,7 @@ async def test_runtime_telemetry_rejects_wrong_model_terminal_event() -> None:
         ("model_requested_event_hash", "f" * 64),
         (
             "token_usage_unavailable_reason",
-            "artana_exception_did_not_preserve_provider_usage",
+            "artana_exception_did_not_preserve_provider_token_usage",
         ),
     ],
 )

@@ -28,27 +28,6 @@ class SemanticRuntimeEventAggregate:
     unavailable_reasons: tuple[SemanticTelemetryUnavailableReason, ...]
 
 
-def validate_semantic_attempt_order(
-    attempts: tuple[SemanticRuntimeModelAttempt, ...],
-) -> None:
-    """Require one exact, unique, contiguous global and per-batch sequence."""
-
-    execution_ids = tuple(attempt.execution_id for attempt in attempts)
-    if len(set(execution_ids)) != len(execution_ids):
-        raise ValueError("runtime attempt execution IDs must be unique")
-    sequences = tuple(attempt.attempt_sequence for attempt in attempts)
-    if sequences != tuple(range(1, len(attempts) + 1)):
-        raise ValueError("runtime attempt sequence must be contiguous from one")
-    batch_numbers: dict[str, list[int]] = {}
-    for attempt in attempts:
-        batch_numbers.setdefault(attempt.batch_id, []).append(
-            attempt.batch_attempt_number,
-        )
-    for numbers in batch_numbers.values():
-        if tuple(numbers) != tuple(range(1, len(numbers) + 1)):
-            raise ValueError("runtime per-batch attempt numbers must be contiguous")
-
-
 def aggregate_semantic_model_attempts(
     attempts: tuple[SemanticRuntimeModelAttempt, ...],
 ) -> SemanticRuntimeEventAggregate:
@@ -170,5 +149,4 @@ __all__ = [
     "aggregate_semantic_model_attempts",
     "semantic_ledger_status",
     "semantic_model_attempts_sha256",
-    "validate_semantic_attempt_order",
 ]
