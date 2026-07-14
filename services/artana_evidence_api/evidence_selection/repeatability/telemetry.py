@@ -13,6 +13,8 @@ from .contracts import (
     SemanticRuntimeLedgerObservation,
     SemanticRuntimeModelAttempt,
     SemanticWallClockObservation,
+)
+from .runtime.ledger import (
     aggregate_semantic_model_attempts,
     semantic_ledger_status,
     semantic_model_attempts_sha256,
@@ -87,7 +89,11 @@ async def _collect_model_attempts(
     attempts: tuple[SemanticModelAttemptContext, ...],
     expected_model_id: str,
 ) -> tuple[SemanticRuntimeModelAttempt, ...]:
-    from artana.events import EventType, ModelTerminalPayload
+    from artana.events import (
+        EventType,
+        ModelRequestedPayload,
+        ModelTerminalPayload,
+    )
 
     normalized: list[SemanticRuntimeModelAttempt] = []
     for attempt in attempts:
@@ -109,9 +115,24 @@ async def _collect_model_attempts(
                 ),
             )
             continue
+        terminal_payload = getattr(terminals[0], "payload", None)
+        request_id = getattr(terminal_payload, "source_model_requested_event_id", None)
+        requests = [
+            event
+            for event in events
+            if getattr(event, "event_type", None)
+            in {EventType.MODEL_REQUESTED, EventType.MODEL_REQUESTED.value}
+            and isinstance(getattr(event, "payload", None), ModelRequestedPayload)
+            and getattr(event, "event_id", None) == request_id
+        ]
+        if len(requests) != 1:
+            raise ValueError(
+                "semantic terminal must reference exactly one model request event",
+            )
         normalized.append(
             normalize_semantic_terminal_attempt(
                 attempt=attempt,
+                requested_event=requests[0],
                 event=terminals[0],
                 expected_model_id=expected_model_id,
             ),

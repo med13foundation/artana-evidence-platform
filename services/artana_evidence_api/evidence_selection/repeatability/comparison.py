@@ -60,9 +60,10 @@ def build_semantic_model_comparison(
         decision.outcome != "inconclusive"
         and selected_summary.quality_gate_passed
         and selected_summary.telemetry_complete
+        and selected_summary.attempt_reliability_passed
     )
     return SemanticModelComparisonReport(
-        schema_version="evidence_selection_semantic_model_comparison.v4",
+        schema_version="evidence_selection_semantic_model_comparison.v5",
         generated_at=generated_at,
         protocol=protocol,
         protocol_sha256=protocol_sha256(protocol),

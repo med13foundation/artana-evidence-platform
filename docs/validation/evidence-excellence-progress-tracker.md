@@ -3363,9 +3363,21 @@ Progress:
   unavailable reasons.
 - The complete normalized attempt snapshot, including failure association and
   usage provenance, is SHA-256 locked and all aggregates are recomputed from it.
-- Model adoption remains fail closed when any attempt has incomplete runtime
-  telemetry. Agent outputs remain categorical and deterministic scoring is
-  unchanged.
+- Every run now publishes a separately hashed attempted-execution manifest.
+  Replay requires exact manifest/ledger equality plus unique contiguous global
+  sequence and contiguous per-batch attempt numbers, so recomputing an inner
+  telemetry digest cannot conceal omission or insertion.
+- Batch identity fingerprints the complete governed semantic context, including
+  objective, instructions, criteria, population, evidence types, outcomes,
+  record indices, and record content.
+- Each terminal is joined to its exact `MODEL_REQUESTED` event and validated for
+  request ID/hash/sequence, run, cycle, model, step, and event ordering.
+- Adoption policy `1.3.0` permits zero failed, locally rejected, abandoned, or
+  telemetry-unavailable candidate attempts. Material quality gains cannot
+  override attempt unreliability.
+- Confirmed failures, local rejections, abandonment, and telemetry-unavailable
+  attempts have separate summary counts and report rows.
+- Agent outputs remain categorical and deterministic scoring is unchanged.
 - Focused unit/regression coverage, isolated-Postgres Artana failure-path
   coverage, Ruff, mypy, and service gates are recorded in the PR152 report.
 

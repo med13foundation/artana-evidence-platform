@@ -31,31 +31,43 @@ missing provider usage an explicit fact rather than a value to reconstruct.
 
 ## Implementation
 
-- Added a request-local semantic attempt recorder. It registers execution ID,
-  deterministic batch SHA-256 identity, execution order, per-batch retry
-  number, step key, source/search identity, and opaque record references before
-  runtime setup can fail.
+- Added a request-local semantic attempt recorder as the sole execution-ID
+  owner. It registers execution order and per-batch retry number before runtime
+  setup can fail. Batch identity now fingerprints the complete governed context:
+  objective, instructions, criteria, population, evidence types, outcomes,
+  source/search identity, record indices, and record content.
 - Added typed local-validation failures for record coverage, evidence
   references, and service run identity. A completed terminal response can now
   be represented as locally rejected without changing the Artana outcome.
 - Replaced terminal-only normalization with one immutable telemetry record per
   semantic attempt. Missing terminal events remain explicit attempts with
   `telemetry_collection/model_terminal_event_missing`.
-- Bumped the changed comparison report envelope from v3 to v4 while retaining
-  the unchanged frozen comparison protocol at v3, so old evidence is not
-  silently reinterpreted under the new attempt schema.
-- Added typed Artana failure classification. Pydantic terminal failures map to
-  `output_schema_validation/schema_contract_rejected`; provider and runtime
-  categories remain categorical.
+- Added a separately hashed attempted-execution manifest for every model run.
+  Replay requires exact equality with the normalized ledger and rejects omitted,
+  inserted, duplicated, non-contiguous, or per-batch-discontiguous attempts even
+  when an attacker recomputes the ledger's inner digest.
+- Bumped the frozen protocol to v4 and report envelope to v5. Adoption policy
+  `1.3.0` allows zero failed, locally rejected, abandoned, or unobserved
+  candidate attempts.
+- Each terminal is joined to its referenced `MODEL_REQUESTED` event. Request
+  event ID/hash/sequence, run, cycle, model, and step must agree with the
+  terminal and frozen semantic attempt.
+- Added typed Artana outcome classification. Pydantic terminal failures map to
+  `output_schema_validation/schema_contract_rejected`; abandonment is distinct,
+  and inconsistent outcome/category pairs are rejected.
 - Removed all service-side token-pricing cost reconstruction. Token and cost
   values are copied only from Artana terminal fields and use
   `artana_model_terminal` provenance. Missing values carry typed unavailable
-  reasons, including `artana_exception_did_not_preserve_provider_usage`.
+  reasons. `artana_exception_did_not_preserve_provider_usage` is reserved for
+  the proven Pydantic schema-validation path; timeouts and abandonment use
+  generic terminal-missing usage reasons.
 - Expanded the attempt digest to cover execution/batch association, terminal
   event identity/hash, failure stage/cause, usage values, and provenance.
   Aggregates and availability status are recomputed from the locked attempts.
-- Added deterministic summary counts and failed-attempt Markdown rendering.
-  Model adoption remains inconclusive when runtime telemetry is incomplete.
+- Added separate deterministic counts and rendering for confirmed failures,
+  local rejections, abandonment, and telemetry-unavailable attempts.
+- Moved attempt aggregation, digest, ordering, and availability policy out of
+  `contracts.py` into the focused `repeatability.runtime` package.
 - Kept agent outputs categorical, deterministic scoring unchanged, registered
   schema checks intact, frozen model identity intact, and source-lock/bundle
   verification unchanged.
@@ -65,7 +77,7 @@ missing provider usage an explicit fact rather than a value to reconstruct.
 Focused semantic and repeatability unit/regression suite:
 
 ```text
-84 passed
+109 passed
 ```
 
 Isolated-Postgres Artana failure-path integration:
@@ -83,7 +95,7 @@ Static validation completed before the aggregate service gate:
 
 ```text
 Focused Ruff: all checks passed
-Evidence API mypy: no issues in 553 source files
+Evidence API mypy: no issues in 556 source files
 Strict script mypy checks: all passed
 ```
 
@@ -98,20 +110,26 @@ Service-gate results:
 
 ## Tamper And Rendering Coverage
 
-- Changing batch identity, failure stage, failure cause, or unavailable-usage
-  reason without recomputing the attempt digest is rejected.
+- Attempt omission or insertion is rejected against the separately hashed
+  attempted-execution manifest after inner digest and aggregate recomputation.
+- Duplicate execution IDs, global sequence gaps, and per-batch numbering gaps
+  are rejected during ledger validation.
+- Request/terminal ID, hash, run, cycle, model, and step mismatches are rejected.
+- Changing batch identity, governed-context digest, failure stage/cause, request
+  identity, or unavailable-usage reason without recomputing the attempt digest
+  is rejected.
 - Forging token, cost, latency, provenance, or unavailable-reason aggregates is
   rejected even when the envelope remains structurally valid.
-- The comparison renderer lists failed and locally rejected attempts with
-  execution ID, batch ID, status, typed stage/cause, and explicit token/cost
-  availability.
+- The comparison renderer lists all non-completed attempts and keeps confirmed
+  failure counts separate from telemetry-unavailable counts.
 
 ## Remaining Upstream Limitation
 
 Artana's current adapter does not attach response usage to Pydantic validation
 exceptions. Once that bare exception reaches the kernel, the original provider
-usage is unavailable to this service. PR152 exposes the limitation with a typed
-reason and never estimates the missing values. Artana/LiteLLM provider retries
+usage is unavailable to this service. PR152 reserves the typed
+`artana_exception_did_not_preserve_provider_usage` reason for this proven path
+and never estimates the missing values. Artana/LiteLLM provider retries
 also remain one terminal model cycle rather than separately queryable provider
 sub-attempts.
 

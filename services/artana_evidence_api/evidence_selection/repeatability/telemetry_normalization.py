@@ -29,15 +29,25 @@ class _TerminalEvent(Protocol):
     seq: object
 
 
+class _RequestedEvent(Protocol):
+    event_id: object
+    event_hash: object
+    payload: object
+    run_id: object
+    seq: object
+
+
 def normalize_semantic_terminal_attempt(
     *,
     attempt: SemanticModelAttemptContext,
+    requested_event: object,
     event: object,
     expected_model_id: str,
 ) -> SemanticRuntimeModelAttempt:
     """Join one service attempt to one matching Artana terminal event."""
 
     typed_event = cast("_TerminalEvent", event)
+    typed_requested_event = cast("_RequestedEvent", requested_event)
     payload = typed_event.payload
     model_id = normalize_semantic_model_id(_required_string(payload, "model"))
     if model_id != expected_model_id:
@@ -47,11 +57,20 @@ def normalize_semantic_terminal_attempt(
         raise ValueError("runtime ledger terminal event does not match the semantic step")
     if typed_event.run_id != attempt.execution_id:
         raise ValueError("runtime ledger terminal event does not match the execution")
+    requested_event_id, requested_event_seq, requested_event_hash = (
+        _validate_requested_event(
+            attempt=attempt,
+            event=typed_requested_event,
+            expected_model_id=expected_model_id,
+            terminal_payload=payload,
+        )
+    )
 
     terminal_outcome = cast(
         "SemanticTerminalOutcome",
         _string_value(getattr(payload, "outcome", None)),
     )
+    _validate_outcome_category(payload=payload, terminal_outcome=terminal_outcome)
     status, failure_stage, failure_cause = _attempt_outcome(
         attempt=attempt,
         payload=payload,
@@ -62,17 +81,18 @@ def normalize_semantic_terminal_attempt(
     token_reason = _token_unavailable_reason(
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
-        failed=terminal_outcome != "completed",
+        schema_validation_failure=failure_stage == "output_schema_validation",
     )
     cost_usd = _optional_number(payload, "cost_usd")
     cost_reason = _cost_unavailable_reason(
         cost_usd=cost_usd,
-        failed=terminal_outcome != "completed",
+        schema_validation_failure=failure_stage == "output_schema_validation",
     )
     event_id, event_seq, event_hash = _terminal_event_identity(typed_event)
     return SemanticRuntimeModelAttempt(
         execution_id=attempt.execution_id,
         batch_id=attempt.batch_id,
+        governed_context_sha256=attempt.governed_context_sha256,
         attempt_sequence=attempt.attempt_sequence,
         batch_attempt_number=attempt.batch_attempt_number,
         source_key=attempt.source_key,
@@ -83,10 +103,9 @@ def normalize_semantic_terminal_attempt(
         terminal_outcome=terminal_outcome,
         model_id=model_id,
         model_cycle_id=_required_string(payload, "model_cycle_id"),
-        source_model_requested_event_id=_required_string(
-            payload,
-            "source_model_requested_event_id",
-        ),
+        source_model_requested_event_id=requested_event_id,
+        model_requested_event_seq=requested_event_seq,
+        model_requested_event_hash=requested_event_hash,
         terminal_event_id=event_id,
         terminal_event_seq=event_seq,
         terminal_event_hash=event_hash,
@@ -119,6 +138,7 @@ def missing_semantic_terminal_attempt(
     return SemanticRuntimeModelAttempt(
         execution_id=attempt.execution_id,
         batch_id=attempt.batch_id,
+        governed_context_sha256=attempt.governed_context_sha256,
         attempt_sequence=attempt.attempt_sequence,
         batch_attempt_number=attempt.batch_attempt_number,
         source_key=attempt.source_key,
@@ -169,6 +189,8 @@ def _attempt_outcome(
         )
     if terminal_outcome == "completed":
         return "completed", None, None
+    if terminal_outcome == "abandoned":
+        return "abandoned", "runtime_execution", "abandoned"
     failure_stage, failure_cause = _classify_terminal_failure(payload)
     return "failed", failure_stage, failure_cause
 
@@ -196,6 +218,67 @@ def _classify_terminal_failure(
     )
 
 
+def _validate_outcome_category(
+    *,
+    payload: object,
+    terminal_outcome: SemanticTerminalOutcome,
+) -> None:
+    category = _optional_string(payload, "error_category")
+    error_class = _optional_string(payload, "error_class")
+    if terminal_outcome == "completed":
+        if category is not None or error_class is not None:
+            raise ValueError("completed terminal cannot declare an error")
+        return
+    expected_categories: dict[SemanticTerminalOutcome, str] = {
+        "timeout": "timeout",
+        "cancelled": "cancelled",
+        "abandoned": "abandoned",
+    }
+    expected = expected_categories.get(terminal_outcome)
+    if expected is not None and category != expected:
+        raise ValueError("terminal outcome contradicts its error category")
+    if terminal_outcome == "failed" and category in {
+        None,
+        "timeout",
+        "cancelled",
+        "abandoned",
+    }:
+        raise ValueError("failed terminal requires a consistent error category")
+
+
+def _validate_requested_event(
+    *,
+    attempt: SemanticModelAttemptContext,
+    event: _RequestedEvent,
+    expected_model_id: str,
+    terminal_payload: object,
+) -> tuple[str, int, str]:
+    event_id, event_seq, event_hash = _event_identity(
+        event,
+        event_name="model request",
+    )
+    terminal_request_id = _required_string(
+        terminal_payload,
+        "source_model_requested_event_id",
+    )
+    if event_id != terminal_request_id:
+        raise ValueError("terminal does not reference the joined model request")
+    if event.run_id != attempt.execution_id:
+        raise ValueError("model request does not match the semantic execution")
+    payload = event.payload
+    requested_model = normalize_semantic_model_id(_required_string(payload, "model"))
+    if requested_model != expected_model_id:
+        raise ValueError("model request does not match the frozen model")
+    if getattr(payload, "step_key", None) != attempt.step_key:
+        raise ValueError("model request does not match the semantic step")
+    if _required_string(payload, "model_cycle_id") != _required_string(
+        terminal_payload,
+        "model_cycle_id",
+    ):
+        raise ValueError("model request and terminal cycle do not match")
+    return event_id, event_seq, event_hash
+
+
 def _is_pydantic_diagnostic(payload: object) -> bool:
     diagnostics_json = _optional_string(payload, "diagnostics_json")
     if diagnostics_json is None:
@@ -214,11 +297,11 @@ def _token_unavailable_reason(
     *,
     prompt_tokens: int | None,
     completion_tokens: int | None,
-    failed: bool,
+    schema_validation_failure: bool,
 ) -> SemanticTelemetryUnavailableReason | None:
     if prompt_tokens is not None and completion_tokens is not None:
         return None
-    if failed and prompt_tokens is None and completion_tokens is None:
+    if schema_validation_failure and prompt_tokens is None and completion_tokens is None:
         return "artana_exception_did_not_preserve_provider_usage"
     if (prompt_tokens is None) != (completion_tokens is None):
         return "artana_terminal_partial_token_usage"
@@ -228,29 +311,37 @@ def _token_unavailable_reason(
 def _cost_unavailable_reason(
     *,
     cost_usd: float | None,
-    failed: bool,
+    schema_validation_failure: bool,
 ) -> SemanticTelemetryUnavailableReason | None:
     if cost_usd is not None:
         return None
-    if failed:
+    if schema_validation_failure:
         return "artana_exception_did_not_preserve_provider_usage"
     return "artana_terminal_missing_cost_usage"
 
 
 def _terminal_event_identity(event: _TerminalEvent) -> tuple[str, int, str]:
+    return _event_identity(event, event_name="terminal")
+
+
+def _event_identity(
+    event: _TerminalEvent | _RequestedEvent,
+    *,
+    event_name: str,
+) -> tuple[str, int, str]:
     event_id = event.event_id
     seq = event.seq
     event_hash = event.event_hash
     if not isinstance(event_id, str) or not event_id:
-        raise ValueError("runtime terminal event is missing event identity")
+        raise ValueError(f"runtime {event_name} event is missing event identity")
     if not isinstance(seq, int) or isinstance(seq, bool) or seq < 1:
-        raise ValueError("runtime terminal event is missing sequence identity")
+        raise ValueError(f"runtime {event_name} event is missing sequence identity")
     if (
         not isinstance(event_hash, str)
         or len(event_hash) != _SHA256_HEX_LENGTH
         or any(character not in "0123456789abcdef" for character in event_hash)
     ):
-        raise ValueError("runtime terminal event is missing hash identity")
+        raise ValueError(f"runtime {event_name} event is missing hash identity")
     return event_id, seq, event_hash
 
 

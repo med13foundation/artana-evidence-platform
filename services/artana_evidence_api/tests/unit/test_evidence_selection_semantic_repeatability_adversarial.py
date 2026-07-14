@@ -14,7 +14,12 @@ from artana_evidence_api.evidence_selection.repeatability.comparison import (
 from artana_evidence_api.evidence_selection.repeatability.contracts import (
     SemanticModelEvaluationRun,
     SemanticRepositorySourceFile,
+    SemanticRuntimeLedgerObservation,
     SemanticRuntimeModelAttempt,
+)
+from artana_evidence_api.evidence_selection.repeatability.runtime.ledger import (
+    aggregate_semantic_model_attempts,
+    semantic_ledger_status,
     semantic_model_attempts_sha256,
 )
 from pydantic import ValidationError
@@ -118,6 +123,62 @@ async def test_run_contract_rejects_telemetry_for_another_model(tmp_path) -> Non
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("operation", ["omit", "insert"])
+async def test_replay_rejects_attempt_manifest_drift_after_inner_rehash(
+    tmp_path,
+    operation: str,
+) -> None:
+    fixture = load_fixture()
+    protocol = comparison_protocol()
+    current_runs, candidate_runs = await _model_matrix(tmp_path)
+    run = current_runs[0]
+    attempts = list(run.telemetry.ledger.model_attempts)
+    if operation == "omit":
+        attempts.pop()
+    else:
+        source = attempts[-1]
+        attempts.append(
+            source.model_copy(
+                update={
+                    "execution_id": "injected-execution",
+                    "attempt_sequence": len(attempts) + 1,
+                    "batch_attempt_number": source.batch_attempt_number + 1,
+                    "source_model_requested_event_id": "injected-request",
+                    "model_requested_event_hash": "b" * 64,
+                    "terminal_event_id": "injected-terminal",
+                    "terminal_event_hash": "c" * 64,
+                },
+            ),
+        )
+    forged_run = _run_with_attempts(run, tuple(attempts))
+
+    with pytest.raises(ValueError, match="does not exactly match runtime ledger"):
+        build_semantic_model_comparison(
+            protocol=protocol,
+            fixture=fixture,
+            current_runs=(forged_run, *current_runs[1:]),
+            candidate_runs=candidate_runs,
+            generated_at=datetime(2026, 7, 13, 8, tzinfo=UTC),
+        )
+
+
+@pytest.mark.asyncio
+async def test_runtime_ledger_rejects_duplicate_attempt_after_inner_rehash(tmp_path) -> None:
+    current_runs, _candidate_runs = await _model_matrix(tmp_path)
+    ledger = current_runs[0].telemetry.ledger
+    attempts = (*ledger.model_attempts, ledger.model_attempts[-1])
+    payload = ledger.model_dump(mode="python")
+    payload["execution_ids"] = (*ledger.execution_ids, ledger.execution_ids[-1])
+    payload["model_attempt_count"] = len(attempts)
+    payload["model_terminal_count"] = len(attempts)
+    payload["model_attempts"] = attempts
+    payload["model_attempts_sha256"] = semantic_model_attempts_sha256(attempts)
+
+    with pytest.raises(ValidationError, match="execution IDs must be unique"):
+        SemanticRuntimeLedgerObservation.model_validate(payload)
+
+
+@pytest.mark.asyncio
 async def test_material_gain_cannot_override_absolute_resource_cap(tmp_path) -> None:
     protocol = comparison_protocol()
     current, candidate = await _summaries(tmp_path)
@@ -152,6 +213,32 @@ async def test_material_gain_cannot_override_absolute_resource_cap(tmp_path) -> 
     )
     assert only_passing.outcome == "inconclusive"
     assert only_passing.reason_codes == ("candidate_exceeds_maximum_resource_ratio",)
+
+
+@pytest.mark.asyncio
+async def test_materially_better_candidate_that_retries_every_batch_is_not_adopted(
+    tmp_path,
+) -> None:
+    protocol = comparison_protocol()
+    current, candidate = await _summaries(tmp_path)
+    candidate = candidate.model_copy(
+        update={
+            "worst_precision": min(1.0, current.worst_precision + 0.1),
+            "worst_recall": min(1.0, current.worst_recall + 0.1),
+            "model_attempt_count": 24,
+            "rejected_attempt_count": 12,
+            "attempt_reliability_passed": False,
+        },
+    )
+
+    decision = semantic_model_adoption_decision(
+        protocol=protocol,
+        current=current,
+        candidate=candidate,
+    )
+
+    assert decision.outcome == "keep_current"
+    assert decision.reason_codes == ("candidate_attempt_reliability_failed",)
 
 
 @pytest.mark.asyncio
@@ -214,6 +301,53 @@ def _symlink_run_group(bundle, runs):
     escaped = []
     for run in runs:
         name = f"{run.model_role}-{run.run_index}.json"
+        manifest_name = f"{run.model_role}-{run.run_index}-attempts.json"
         (bundle / name).symlink_to(run.evaluation_path)
-        escaped.append(run.model_copy(update={"evaluation_path": name}))
+        (bundle / manifest_name).symlink_to(run.attempt_manifest_path)
+        escaped.append(
+            run.model_copy(
+                update={
+                    "evaluation_path": name,
+                    "attempt_manifest_path": manifest_name,
+                },
+            ),
+        )
     return tuple(escaped)
+
+
+def _run_with_attempts(
+    run: SemanticModelEvaluationRun,
+    attempts: tuple[SemanticRuntimeModelAttempt, ...],
+) -> SemanticModelEvaluationRun:
+    aggregate = aggregate_semantic_model_attempts(attempts)
+    ledger = SemanticRuntimeLedgerObservation(
+        status=semantic_ledger_status(attempts),
+        expected_model_id=run.model_id,
+        execution_ids=tuple(attempt.execution_id for attempt in attempts),
+        model_attempt_count=len(attempts),
+        model_terminal_count=sum(
+            attempt.terminal_outcome is not None for attempt in attempts
+        ),
+        model_attempts=attempts,
+        model_attempts_sha256=semantic_model_attempts_sha256(attempts),
+        prompt_tokens=aggregate.prompt_tokens,
+        completion_tokens=aggregate.completion_tokens,
+        total_tokens=aggregate.total_tokens,
+        cost_usd=aggregate.cost_usd,
+        model_latency_seconds=aggregate.model_latency_seconds,
+        token_usage_provenance=aggregate.token_usage_provenance,
+        cost_usage_provenance=aggregate.cost_usage_provenance,
+        unavailable_reasons=aggregate.unavailable_reasons,
+    )
+    return run.model_copy(
+        update={
+            "telemetry": run.telemetry.model_copy(
+                update={
+                    "ledger": ledger,
+                    "wall_clock": run.telemetry.wall_clock.model_copy(
+                        update={"execution_ids": ledger.execution_ids},
+                    ),
+                },
+            ),
+        },
+    )

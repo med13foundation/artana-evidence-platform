@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 from artana.agent import SingleStepModelClient
-from artana.events import EventType, ModelTerminalPayload
+from artana.events import EventType, ModelRequestedPayload, ModelTerminalPayload
 from artana.kernel import ArtanaKernel
 from artana.models import TenantContext
 from artana.ports.model import ModelPort
@@ -90,6 +90,9 @@ async def test_postgres_failure_path_retains_schema_stage_and_association() -> N
     assert attempt.failure_cause == "schema_contract_rejected"
     assert attempt.execution_id == execution_id
     assert attempt.batch_id == recorder.attempts()[0].batch_id
+    assert attempt.source_model_requested_event_id is not None
+    assert attempt.model_requested_event_seq is not None
+    assert attempt.model_requested_event_hash is not None
     assert attempt.prompt_tokens is None
     assert attempt.completion_tokens is None
     assert attempt.cost_usd is None
@@ -105,6 +108,18 @@ async def test_postgres_terminal_usage_is_copied_without_estimation() -> None:
     execution_id = f"semantic-complete-telemetry-test:{uuid4()}"
     recorder = _attempt_recorder(execution_id)
     try:
+        request = await store.append_event(
+            run_id=execution_id,
+            tenant_id="semantic_complete_telemetry_test",
+            event_type=EventType.MODEL_REQUESTED,
+            payload=ModelRequestedPayload(
+                model=_MODEL_ID,
+                prompt="Return a complete semantic batch.",
+                messages=(),
+                step_key=_STEP_KEY,
+                model_cycle_id=f"cycle-{execution_id}",
+            ),
+        )
         await store.append_event(
             run_id=execution_id,
             tenant_id="semantic_complete_telemetry_test",
@@ -113,7 +128,7 @@ async def test_postgres_terminal_usage_is_copied_without_estimation() -> None:
                 outcome="completed",
                 model=_MODEL_ID,
                 model_cycle_id=f"cycle-{execution_id}",
-                source_model_requested_event_id=f"request-{execution_id}",
+                source_model_requested_event_id=request.event_id,
                 step_key=_STEP_KEY,
                 elapsed_ms=125,
                 prompt_tokens=80,
@@ -144,5 +159,6 @@ def _attempt_recorder(execution_id: str) -> SemanticAttemptRecorder:
         source_key="pubmed",
         search_id="search-1",
         record_references=(_RECORD_REFERENCE,),
+        governed_context_sha256="c" * 64,
     )
     return recorder

@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Literal
@@ -23,6 +20,7 @@ SemanticModelRole = Literal["current", "candidate"]
 SemanticAttemptStatus = Literal[
     "completed",
     "failed",
+    "abandoned",
     "rejected",
     "telemetry_unavailable",
 ]
@@ -51,6 +49,7 @@ SemanticFailureCause = Literal[
     "unexpected_local_validation_error",
     "timeout",
     "cancelled",
+    "abandoned",
     "provider_refusal",
     "provider_client_error",
     "provider_server_error",
@@ -112,7 +111,7 @@ class SemanticModelComparisonThresholds(BaseModel):
     policy_id: Literal["evidence_selection.semantic_model_adoption"] = (
         "evidence_selection.semantic_model_adoption"
     )
-    policy_version: Literal["1.2.0"] = "1.2.0"
+    policy_version: Literal["1.3.0"] = "1.3.0"
     minimum_runs_per_model: int = Field(default=3, ge=3)
     minimum_worst_precision: float = Field(default=0.8, ge=0.8, le=1.0)
     minimum_worst_recall: float = Field(default=0.8, ge=0.8, le=1.0)
@@ -141,6 +140,10 @@ class SemanticModelComparisonThresholds(BaseModel):
         ge=2.0,
         le=100.0,
     )
+    maximum_adoption_failed_attempts: Literal[0] = 0
+    maximum_adoption_rejected_attempts: Literal[0] = 0
+    maximum_adoption_abandoned_attempts: Literal[0] = 0
+    maximum_adoption_telemetry_unavailable_attempts: Literal[0] = 0
 
 
 class SemanticModelComparisonProtocol(BaseModel):
@@ -237,6 +240,7 @@ class SemanticRuntimeModelAttempt(BaseModel):
 
     execution_id: str = Field(min_length=1)
     batch_id: str = Field(pattern=r"^semantic_batch_[a-f0-9]{32}$")
+    governed_context_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     attempt_sequence: int = Field(ge=1)
     batch_attempt_number: int = Field(ge=1)
     source_key: str = Field(min_length=1)
@@ -248,6 +252,11 @@ class SemanticRuntimeModelAttempt(BaseModel):
     model_id: str = Field(min_length=1)
     model_cycle_id: str | None = Field(default=None, min_length=1)
     source_model_requested_event_id: str | None = Field(default=None, min_length=1)
+    model_requested_event_seq: int | None = Field(default=None, ge=1)
+    model_requested_event_hash: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{64}$",
+    )
     terminal_event_id: str | None = Field(default=None, min_length=1)
     terminal_event_seq: int | None = Field(default=None, ge=1)
     terminal_event_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
@@ -265,11 +274,13 @@ class SemanticRuntimeModelAttempt(BaseModel):
     cost_usage_unavailable_reason: SemanticTelemetryUnavailableReason | None = None
 
     @model_validator(mode="after")
-    def _attempt_facts_must_be_consistent(self) -> SemanticRuntimeModelAttempt:
+    def _terminal_identity_must_be_consistent(self) -> SemanticRuntimeModelAttempt:
         terminal_fields = (
             self.terminal_outcome,
             self.model_cycle_id,
             self.source_model_requested_event_id,
+            self.model_requested_event_seq,
+            self.model_requested_event_hash,
             self.terminal_event_id,
             self.terminal_event_seq,
             self.terminal_event_hash,
@@ -278,14 +289,35 @@ class SemanticRuntimeModelAttempt(BaseModel):
         has_terminal = self.terminal_outcome is not None
         if has_terminal != all(value is not None for value in terminal_fields):
             raise ValueError("attempt terminal identity must be complete or unavailable")
+        if (
+            self.model_requested_event_seq is not None
+            and self.terminal_event_seq is not None
+            and self.model_requested_event_seq >= self.terminal_event_seq
+        ):
+            raise ValueError("model request must precede its terminal event")
+        return self
+
+    @model_validator(mode="after")
+    def _status_must_match_terminal_outcome(self) -> SemanticRuntimeModelAttempt:
+        has_terminal = self.terminal_outcome is not None
         if self.status == "completed" and self.terminal_outcome != "completed":
             raise ValueError("completed attempt requires a completed terminal event")
         if self.status == "rejected" and self.terminal_outcome != "completed":
             raise ValueError("locally rejected attempt requires a completed terminal event")
-        if self.status == "failed" and self.terminal_outcome in {None, "completed"}:
+        if self.status == "failed" and self.terminal_outcome not in {
+            "failed",
+            "timeout",
+            "cancelled",
+        }:
             raise ValueError("failed attempt requires a failed terminal event")
+        if self.status == "abandoned" and self.terminal_outcome != "abandoned":
+            raise ValueError("abandoned attempt requires an abandoned terminal event")
         if self.status == "telemetry_unavailable" and has_terminal:
             raise ValueError("telemetry-unavailable attempt cannot contain a terminal event")
+        return self
+
+    @model_validator(mode="after")
+    def _failure_and_usage_must_be_consistent(self) -> SemanticRuntimeModelAttempt:
         has_failure = self.failure_stage is not None and self.failure_cause is not None
         if (self.status != "completed") != has_failure:
             raise ValueError("non-completed attempt requires typed failure stage and cause")
@@ -306,113 +338,6 @@ class SemanticRuntimeModelAttempt(BaseModel):
         if cost_available != (self.cost_usage_unavailable_reason is None):
             raise ValueError("cost availability must have explicit provenance")
         return self
-
-
-@dataclass(frozen=True)
-class SemanticRuntimeEventAggregate:
-    """Deterministic aggregates recomputed from immutable model attempts."""
-
-    prompt_tokens: int | None
-    completion_tokens: int | None
-    total_tokens: int | None
-    cost_usd: float | None
-    model_latency_seconds: float | None
-    token_usage_provenance: SemanticUsageProvenance
-    cost_usage_provenance: SemanticUsageProvenance
-    unavailable_reasons: tuple[SemanticTelemetryUnavailableReason, ...]
-
-
-def aggregate_semantic_model_attempts(
-    attempts: tuple[SemanticRuntimeModelAttempt, ...],
-) -> SemanticRuntimeEventAggregate:
-    """Derive usage totals solely from embedded immutable attempt facts."""
-
-    if not attempts:
-        return SemanticRuntimeEventAggregate(
-            prompt_tokens=None,
-            completion_tokens=None,
-            total_tokens=None,
-            cost_usd=None,
-            model_latency_seconds=None,
-            token_usage_provenance="unavailable",
-            cost_usage_provenance="unavailable",
-            unavailable_reasons=("no_model_attempts",),
-        )
-    prompt_tokens = _complete_int_sum(
-        tuple(attempt.prompt_tokens for attempt in attempts),
-    )
-    completion_tokens = _complete_int_sum(
-        tuple(attempt.completion_tokens for attempt in attempts),
-    )
-    total_tokens = (
-        prompt_tokens + completion_tokens
-        if prompt_tokens is not None and completion_tokens is not None
-        else None
-    )
-    cost_values = tuple(attempt.cost_usd for attempt in attempts)
-    cost_usd = (
-        round(sum(value for value in cost_values if value is not None), 8)
-        if all(value is not None for value in cost_values)
-        else None
-    )
-    token_usage_provenance: SemanticUsageProvenance = (
-        "artana_model_terminal" if total_tokens is not None else "unavailable"
-    )
-    cost_usage_provenance: SemanticUsageProvenance = (
-        "artana_model_terminal" if cost_usd is not None else "unavailable"
-    )
-    unavailable_reasons = tuple(
-        sorted(
-            {
-                reason
-                for attempt in attempts
-                for reason in (
-                    attempt.token_usage_unavailable_reason,
-                    attempt.cost_usage_unavailable_reason,
-                )
-                if reason is not None
-            },
-        ),
-    )
-    return SemanticRuntimeEventAggregate(
-        prompt_tokens=prompt_tokens,
-        completion_tokens=completion_tokens,
-        total_tokens=total_tokens,
-        cost_usd=cost_usd,
-        model_latency_seconds=round(
-            sum(
-                attempt.elapsed_ms
-                for attempt in attempts
-                if attempt.elapsed_ms is not None
-            )
-            / 1000.0,
-            6,
-        )
-        if any(attempt.elapsed_ms is not None for attempt in attempts)
-        else None,
-        token_usage_provenance=token_usage_provenance,
-        cost_usage_provenance=cost_usage_provenance,
-        unavailable_reasons=unavailable_reasons,
-    )
-
-
-def _complete_int_sum(values: tuple[int | None, ...]) -> int | None:
-    if any(value is None for value in values):
-        return None
-    return sum(value for value in values if value is not None)
-
-
-def semantic_model_attempts_sha256(
-    attempts: tuple[SemanticRuntimeModelAttempt, ...],
-) -> str:
-    """Hash the complete normalized model-attempt snapshot."""
-
-    payload = json.dumps(
-        [attempt.model_dump(mode="json") for attempt in attempts],
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
 
 
 class SemanticRuntimeLedgerObservation(BaseModel):
@@ -446,8 +371,14 @@ class SemanticRuntimeLedgerObservation(BaseModel):
 
     @model_validator(mode="after")
     def _validate_observation(self) -> SemanticRuntimeLedgerObservation:
-        if len(set(self.execution_ids)) != len(self.execution_ids):
-            raise ValueError("runtime execution IDs must be unique")
+        from .runtime.ledger import (
+            aggregate_semantic_model_attempts,
+            semantic_ledger_status,
+            semantic_model_attempts_sha256,
+            validate_semantic_attempt_order,
+        )
+
+        validate_semantic_attempt_order(self.model_attempts)
         if self.model_attempt_count != len(self.model_attempts):
             raise ValueError("model attempt count must match the ledger snapshot")
         if self.model_terminal_count != sum(
@@ -513,29 +444,6 @@ class SemanticRuntimeLedgerObservation(BaseModel):
         return self
 
 
-def semantic_ledger_status(
-    attempts: tuple[SemanticRuntimeModelAttempt, ...],
-) -> Literal["available", "partial", "unavailable"]:
-    """Derive availability from attempt coverage and observed provider usage."""
-
-    if not attempts or not any(
-        attempt.terminal_outcome is not None for attempt in attempts
-    ):
-        return "unavailable"
-    aggregate = aggregate_semantic_model_attempts(attempts)
-    complete = all(
-        value is not None
-        for value in (
-            aggregate.prompt_tokens,
-            aggregate.completion_tokens,
-            aggregate.total_tokens,
-            aggregate.cost_usd,
-            aggregate.model_latency_seconds,
-        )
-    ) and all(attempt.terminal_outcome is not None for attempt in attempts)
-    return "available" if complete else "partial"
-
-
 class SemanticWallClockObservation(BaseModel):
     """Wall-clock duration measured independently of provider telemetry."""
 
@@ -583,6 +491,8 @@ class SemanticModelEvaluationRun(BaseModel):
     run_index: int = Field(ge=1)
     evaluation_path: str = Field(min_length=1)
     evaluation_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    attempt_manifest_path: str = Field(min_length=1)
+    attempt_manifest_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     generated_at: datetime
     evaluated_commit: str = Field(pattern=r"^[a-f0-9]{40}$")
     model_id: str = Field(min_length=1)
@@ -594,7 +504,6 @@ class SemanticModelEvaluationRun(BaseModel):
     canary_passed: bool
     quality_gate_passed: bool
     adoption_score: EvidenceSelectionBenchmarkV2Score
-    agent_run_ids: tuple[str, ...]
     record_decisions: tuple[SemanticRecordDecision, ...]
     telemetry: SemanticRunTelemetry
     calibration_status: Literal["unavailable"] = "unavailable"
@@ -605,10 +514,6 @@ class SemanticModelEvaluationRun(BaseModel):
     def _run_identity_must_be_complete(self) -> SemanticModelEvaluationRun:
         if self.generated_at.tzinfo is None or self.generated_at.utcoffset() is None:
             raise ValueError("model run generated_at must include a timezone")
-        if len(set(self.agent_run_ids)) != len(self.agent_run_ids):
-            raise ValueError("agent run IDs must be unique within an evaluation")
-        if self.telemetry.ledger.execution_ids != self.agent_run_ids:
-            raise ValueError("runtime telemetry must bind every agent run ID")
         if self.telemetry.ledger.expected_model_id != self.model_id:
             raise ValueError("runtime telemetry model must match the evaluation model")
         decision_keys = tuple(
@@ -671,9 +576,12 @@ class SemanticModelRunSummary(BaseModel):
     model_attempt_count: int = Field(ge=0)
     failed_attempt_count: int = Field(ge=0)
     rejected_attempt_count: int = Field(ge=0)
+    abandoned_attempt_count: int = Field(ge=0)
+    telemetry_unavailable_attempt_count: int = Field(ge=0)
     schema_validation_failure_count: int = Field(ge=0)
     usage_unavailable_attempt_count: int = Field(ge=0)
     telemetry_complete: bool
+    attempt_reliability_passed: bool
     total_prompt_tokens: int | None = Field(default=None, ge=0)
     total_completion_tokens: int | None = Field(default=None, ge=0)
     total_tokens: int | None = Field(default=None, ge=0)
@@ -725,6 +633,7 @@ SemanticAdoptionReason = Literal[
     "candidate_quality_gate_failed",
     "current_and_candidate_quality_gates_failed",
     "runtime_telemetry_incomplete",
+    "candidate_attempt_reliability_failed",
     "runtime_resource_ratio_undefined",
     "candidate_exceeds_maximum_resource_ratio",
     "candidate_worst_run_metric_regressed",
@@ -751,7 +660,7 @@ class SemanticModelComparisonReport(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_model_comparison.v4"]
+    schema_version: Literal["evidence_selection_semantic_model_comparison.v5"]
     generated_at: datetime
     protocol: SemanticModelComparisonProtocol
     protocol_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
@@ -802,14 +711,10 @@ __all__ = [
     "SemanticRecordConsensus",
     "SemanticRecordDecision",
     "SemanticRunTelemetry",
-    "SemanticRuntimeEventAggregate",
     "SemanticRuntimeLedgerObservation",
     "SemanticRuntimeModelAttempt",
     "SemanticTelemetryUnavailableReason",
     "SemanticTerminalOutcome",
     "SemanticUsageProvenance",
     "SemanticWallClockObservation",
-    "aggregate_semantic_model_attempts",
-    "semantic_ledger_status",
-    "semantic_model_attempts_sha256",
 ]

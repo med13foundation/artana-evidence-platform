@@ -7,6 +7,7 @@ import json
 from collections import Counter
 from typing import Literal, Protocol, runtime_checkable
 
+from artana_evidence_api.types.common import JSONObject
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 SemanticLocalFailureStage = Literal[
@@ -38,6 +39,7 @@ class SemanticModelAttemptContext(BaseModel):
 
     execution_id: str = Field(min_length=1)
     batch_id: str = Field(pattern=r"^semantic_batch_[a-f0-9]{32}$")
+    governed_context_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     attempt_sequence: int = Field(ge=1)
     batch_attempt_number: int = Field(ge=1)
     step_key: str = Field(min_length=1)
@@ -85,6 +87,7 @@ class SemanticAttemptRecorder:
         source_key: str,
         search_id: str,
         record_references: tuple[str, ...],
+        governed_context_sha256: str,
     ) -> SemanticModelAttemptContext:
         """Record an attempt before any runtime component can fail."""
 
@@ -92,11 +95,13 @@ class SemanticAttemptRecorder:
             source_key=source_key,
             search_id=search_id,
             record_references=record_references,
+            governed_context_sha256=governed_context_sha256,
         )
         self._batch_counts[batch_id] += 1
         attempt = SemanticModelAttemptContext(
             execution_id=execution_id,
             batch_id=batch_id,
+            governed_context_sha256=governed_context_sha256,
             attempt_sequence=len(self._attempts) + 1,
             batch_attempt_number=self._batch_counts[batch_id],
             step_key=self._step_key,
@@ -125,12 +130,18 @@ class SemanticAttemptRecorder:
 
         return tuple(self._attempts)
 
+    def execution_ids(self) -> tuple[str, ...]:
+        """Derive execution identity from the recorder's immutable attempt order."""
+
+        return tuple(attempt.execution_id for attempt in self._attempts)
+
 
 def semantic_batch_id(
     *,
     source_key: str,
     search_id: str,
     record_references: tuple[str, ...],
+    governed_context_sha256: str,
 ) -> str:
     """Hash the source-owned batch identity without storing prompt text."""
 
@@ -139,11 +150,48 @@ def semantic_batch_id(
             "record_references": record_references,
             "search_id": search_id,
             "source_key": source_key,
+            "governed_context_sha256": governed_context_sha256,
         },
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
     return f"semantic_batch_{hashlib.sha256(payload).hexdigest()[:32]}"
+
+
+def semantic_governed_context_sha256(
+    *,
+    goal: str,
+    instructions: str | None,
+    inclusion_criteria: tuple[str, ...],
+    exclusion_criteria: tuple[str, ...],
+    population_context: str | None,
+    evidence_types: tuple[str, ...],
+    priority_outcomes: tuple[str, ...],
+    source_key: str,
+    search_id: str,
+    records: tuple[JSONObject, ...],
+    record_indices: tuple[int, ...],
+) -> str:
+    """Fingerprint every governed input that can change a semantic judgment."""
+
+    payload = json.dumps(
+        {
+            "evidence_types": evidence_types,
+            "exclusion_criteria": exclusion_criteria,
+            "goal": goal,
+            "inclusion_criteria": inclusion_criteria,
+            "instructions": instructions,
+            "population_context": population_context,
+            "priority_outcomes": priority_outcomes,
+            "record_indices": record_indices,
+            "records": records,
+            "search_id": search_id,
+            "source_key": source_key,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 __all__ = [
@@ -155,4 +203,5 @@ __all__ = [
     "SemanticLocalValidationFailure",
     "SemanticModelAttemptContext",
     "semantic_batch_id",
+    "semantic_governed_context_sha256",
 ]

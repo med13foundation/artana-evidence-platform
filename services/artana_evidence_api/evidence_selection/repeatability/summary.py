@@ -89,6 +89,25 @@ def summarize_semantic_model_runs(
         for attempt in run.telemetry.ledger.model_attempts
     )
     thresholds = protocol.thresholds
+    failed_attempt_count = sum(
+        attempt.status == "failed" for attempt in model_attempts
+    )
+    rejected_attempt_count = sum(
+        attempt.status == "rejected" for attempt in model_attempts
+    )
+    abandoned_attempt_count = sum(
+        attempt.status == "abandoned" for attempt in model_attempts
+    )
+    telemetry_unavailable_attempt_count = sum(
+        attempt.status == "telemetry_unavailable" for attempt in model_attempts
+    )
+    attempt_reliability_passed = (
+        failed_attempt_count <= thresholds.maximum_adoption_failed_attempts
+        and rejected_attempt_count <= thresholds.maximum_adoption_rejected_attempts
+        and abandoned_attempt_count <= thresholds.maximum_adoption_abandoned_attempts
+        and telemetry_unavailable_attempt_count
+        <= thresholds.maximum_adoption_telemetry_unavailable_attempts
+    )
     quality_gate_passed = (
         len(runs) >= thresholds.minimum_runs_per_model
         and metrics_available
@@ -130,13 +149,10 @@ def summarize_semantic_model_runs(
         unstable_record_count=unstable_record_count,
         record_consensus=record_consensus,
         model_attempt_count=len(model_attempts),
-        failed_attempt_count=sum(
-            attempt.status in {"failed", "telemetry_unavailable"}
-            for attempt in model_attempts
-        ),
-        rejected_attempt_count=sum(
-            attempt.status == "rejected" for attempt in model_attempts
-        ),
+        failed_attempt_count=failed_attempt_count,
+        rejected_attempt_count=rejected_attempt_count,
+        abandoned_attempt_count=abandoned_attempt_count,
+        telemetry_unavailable_attempt_count=telemetry_unavailable_attempt_count,
         schema_validation_failure_count=sum(
             attempt.failure_stage == "output_schema_validation"
             for attempt in model_attempts
@@ -147,6 +163,7 @@ def summarize_semantic_model_runs(
             for attempt in model_attempts
         ),
         telemetry_complete=telemetry_complete,
+        attempt_reliability_passed=attempt_reliability_passed,
         total_prompt_tokens=_sum_complete_ledger_int(runs, "prompt_tokens"),
         total_completion_tokens=_sum_complete_ledger_int(runs, "completion_tokens"),
         total_tokens=_sum_complete_ledger_int(runs, "total_tokens"),

@@ -27,6 +27,10 @@ from .contracts import (
     SemanticModelRole,
 )
 from .protocol import sha256_path, source_lock_sha256
+from .runtime.attempt_manifest import (
+    SemanticAttemptedExecutionManifest,
+    validate_attempt_manifest_matches_ledger,
+)
 
 
 def validate_semantic_run_matrix(
@@ -71,7 +75,9 @@ def validate_semantic_run_matrix(
     if len({run.evaluation_path for run in all_runs}) != len(all_runs):
         raise ValueError("comparison runs must use distinct evaluation paths")
     execution_ids = tuple(
-        execution_id for run in all_runs for execution_id in run.agent_run_ids
+        execution_id
+        for run in all_runs
+        for execution_id in run.telemetry.ledger.execution_ids
     )
     if len(set(execution_ids)) != len(execution_ids):
         raise ValueError("comparison runs must use distinct agent executions")
@@ -85,6 +91,7 @@ def validate_semantic_run_matrix(
     if not expected_keys:
         raise ValueError("comparison runs require record decisions")
     for run in all_runs:
+        _validate_attempt_manifest(run, artifact_root=artifact_root)
         _validate_evaluation_artifact(run, artifact_root=artifact_root)
         if _decision_keys(run) != expected_keys:
             raise ValueError("all model runs must evaluate the same source records")
@@ -153,7 +160,9 @@ def _validate_evaluation_artifact(
         (decision.case_id, decision.record_id, decision.decision)
         for decision in run.record_decisions
     )
-    successful_run_ids_are_bound = set(expected_run_ids).issubset(run.agent_run_ids)
+    successful_run_ids_are_bound = set(expected_run_ids).issubset(
+        run.telemetry.ledger.execution_ids,
+    )
     bound_values_match = (
         run.generated_at == evaluation.generated_at
         and run.evaluated_commit == evaluation.evaluated_commit
@@ -173,6 +182,28 @@ def _validate_evaluation_artifact(
             "comparison run envelope does not match its evaluation artifact"
         )
     _validate_assessment_decisions(evaluation)
+
+
+def _validate_attempt_manifest(
+    run: SemanticModelEvaluationRun,
+    *,
+    artifact_root: Path | None,
+) -> None:
+    path = resolve_comparison_artifact_path(
+        reference=run.attempt_manifest_path,
+        artifact_root=artifact_root,
+    )
+    if not path.is_file():
+        raise ValueError("attempted-execution manifest does not exist")
+    if sha256_path(path) != run.attempt_manifest_sha256:
+        raise ValueError("attempted-execution manifest hash does not match")
+    manifest = SemanticAttemptedExecutionManifest.model_validate_json(
+        path.read_text(encoding="utf-8"),
+    )
+    validate_attempt_manifest_matches_ledger(
+        manifest=manifest,
+        attempts=run.telemetry.ledger.model_attempts,
+    )
 
 
 def resolve_comparison_artifact_path(
