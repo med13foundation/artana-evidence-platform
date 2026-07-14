@@ -1,0 +1,31 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "39227072",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/39227072/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Impact of the expanded label for elexacaftor/tezacaftor/ivacaftor in people with cystic fibrosis with no F508del variant in the USA.",
+  "doi": "10.1183/13993003.01146-2024",
+  "publication_types": [
+    "Journal Article"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Elexacaftor/tezacaftor/ivacaftor (ETI), which is approved for people with cystic fibrosis (pwCF) with a F508del variant, was further approved based on in vitro data in the USA for those carrying at least one of 177 rare CFTR (cystic fibrosis transmembrane conductance regulator) variants."
+    },
+    {
+      "section": "METHODS",
+      "text": "PwCF, aged \u22656 years, carrying no F508del variant but with at least one of these 177 rare variants, were identified within the US Cystic Fibrosis Foundation Patient Registry (CFFPR) between 2020 and 2022. The evolution of forced expiratory volume in 1 s (FEV1) percentage predicted and rates of pulmonary exacerbations were analysed over the first year following ETI initiation, using a linear regression with generalised estimating equations and a negative binomial model, respectively."
+    },
+    {
+      "section": "RESULTS",
+      "text": "A total of 1791 individuals aged \u22656 years with rare CFTR variants were eligible for ETI, corresponding to 5.2% of CFFPR participants. 815 individuals (45.5%), of which 57.9% were already treated with another CFTR modulator, initiated ETI within the first 2 years following approval. Individuals with more severe respiratory disease were more likely to initiate ETI, whereas those previously treated with another CFTR modulator or those with no private insurance coverage had less ETI initiation. ETI initiation was associated with an increase in mean FEV1 % pred by +3.39 (95% CI 2.14-4.64) and a decrease in the rates of pulmonary exacerbations (adjusted rate ratio 0.55, 95% CI 0.38-0.79). These effects were greater in individuals na\u00efve of previous CFTR modulators."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "Extension of the ETI label to rare CFTR variants is associated with meaningful improvements in lung function and a marked reduction in pulmonary exacerbations."
+    }
+  ]
+}

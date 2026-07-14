@@ -1,0 +1,34 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "22889855",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/22889855/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "BRCA1 R1699Q variant displaying ambiguous functional abrogation confers intermediate breast and ovarian cancer risk.",
+  "doi": "10.1136/jmedgenet-2012-101037",
+  "publication_types": [
+    "Comparative Study",
+    "Journal Article",
+    "Research Support, N.I.H., Extramural",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Clinical classification of rare sequence changes identified in the breast cancer susceptibility genes BRCA1 and BRCA2 is essential for appropriate genetic counselling of individuals carrying these variants. We previously showed that variant BRCA1 c.5096G>A p.Arg1699Gln in the BRCA1 transcriptional transactivation domain demonstrated equivocal results from a series of functional assays, and proposed that this variant may confer low to moderate risk of cancer."
+    },
+    {
+      "section": "METHODS",
+      "text": "Measures of genetic risk (report of family history, segregation) were assessed for 68 BRCA1 c.5096G>A p.Arg1699Gln (R1699Q) families recruited through family cancer clinics, comparing results with 34 families carrying the previously classified pathogenic BRCA1 c.5095C>T p.Arg1699Trp (R1699W) mutation at the same residue, and to 243 breast cancer families with no BRCA1 pathogenic mutation (BRCA-X)."
+    },
+    {
+      "section": "RESULTS",
+      "text": "Comparison of BRCA1 carrier prediction scores of probands using the BOADICEA risk prediction tool revealed that BRCA1 c.5096G>A p.Arg1699Gln variant carriers had family histories that were less 'BRCA1-like' than BRCA1 c.5095C>T p.Arg1699Trp mutation carriers (p<0.00001), but more 'BRCA1-like' than BRCA-X families (p=0.0004). Further, modified segregation analysis of the subset of 30 families with additional genotyping showed that BRCA1 c.5096G >A p.Arg1699Gln had reduced penetrance compared with the average truncating BRCA1 mutation penetrance (p=0.0002), with estimated cumulative risks to age 70 of breast or ovarian cancer of 24%."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "Our results provide substantial evidence that the BRCA1 c.5096G>A p.Arg1699Gln (R1699Q) variant, demonstrating ambiguous functional deficiency across multiple assays, is associated with intermediate risk of breast and ovarian cancer, highlighting challenges for risk modelling and clinical management of patients of this and other potential moderate-risk variants."
+    }
+  ]
+}

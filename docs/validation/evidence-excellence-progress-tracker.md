@@ -3399,6 +3399,48 @@ Remaining proof boundary:
   repair the AI-adjudicated fixture, or establish production/trusted-graph
   readiness.
 
+### 2026-07-14 - PR153 Independent Expert Pilot Packets
+
+Branch: `alvaro/evidence-pr153-expert-pilot`
+
+Goal: turn benchmark v2 into an executable blinded human-review handoff without
+letting agents, historical labels, or model outputs become expert evidence.
+
+Progress:
+
+- Added a frozen diagnostic-pilot protocol for three distinct questions, four
+  cases, 33 records, two independent reviewer slots, and third-reviewer
+  disagreement adjudication.
+- Froze categorical reviewer and packet-sufficiency findings. Numeric reviewer
+  judgments are forbidden; precision, recall, percent agreement, and overclaim
+  gates are deterministically computed later from categorical findings.
+- Added content-addressed NCBI PubMed metadata and abstracts for all 29 unique
+  sources used by the 33 records, without changing historical v1 bytes or
+  declaring any packet sufficient. Reviewer packets never substitute the
+  benchmark-authored excerpts for these independent source snapshots.
+- Added separately shuffled blinded reviewer packets. Reviewer artifacts expose
+  source content and criteria but omit model identity, expected labels, AI
+  diagnostics, harness decisions, ranking values, and private record mappings.
+- Added signed machine-only sidecars whose signatures cover packet identity,
+  source/protocol hashes, candidate order, and every candidate-to-record binding.
+- Added atomic, no-replace publication with a complete artifact manifest,
+  pre-publication signature verification, and no partial output on failure.
+- Production readiness and calibration remain false. The current pilot does not
+  meet the predeclared 20-question/200-record production-calibration scale.
+- Validation evidence:
+  `docs/validation/reports/2026-07-14-pr153-independent-expert-pilot-summary.md`.
+
+Remaining proof boundary:
+
+- Two real qualified humans must independently complete every packet, with a
+  third qualified human adjudicating disagreements.
+- A trusted external process must authenticate those identities and bind signed
+  attestations to the packet and source hashes.
+- Completed-packet import, attestation verification, adjudicated gold creation,
+  and deterministic metric calculation belong to the next PR. Until real
+  artifacts pass that boundary, benchmark v2 remains at zero expert-eligible
+  records.
+
 ## PR Update Template
 
 Copy this block when a PR is opened or merged.

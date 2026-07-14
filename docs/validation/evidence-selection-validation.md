@@ -234,6 +234,22 @@ subdirectories from packet study IDs, stores packet paths relative to the
 manifest, derives unique source-export IDs from the export prefix, and refuses
 to overwrite a source packet.
 
+Semantic benchmark independent expert pilot packets:
+
+```bash
+export ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY=...
+uv run python scripts/build_evidence_selection_expert_pilot_packets.py \
+  --protocol scripts/validation/evidence_selection/fixtures/semantic_relevance_expert_pilot_protocol_v1.json \
+  --output-dir reports/human-shadow-study/semantic-relevance-expert-pilot-v1
+```
+
+This command produces separately ordered blinded packets for two reviewer slots
+and keeps signed candidate mappings in a machine-only directory. The current
+three-question, 33-record protocol is diagnostic and explicitly leaves
+production calibration and readiness unavailable. Follow
+`docs/validation/evidence-selection-expert-pilot-runbook.md` for distribution,
+reviewer independence, categorical findings, adjudication, and attestation.
+
 Full expert/shadow study gate:
 
 For a selection-only study, pass `--study-type selection_relevance` to the

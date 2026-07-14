@@ -1,0 +1,32 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "34642874",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/34642874/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Penetrance of male breast cancer susceptibility genes: a systematic review.",
+  "doi": "10.1007/s10549-021-06413-2",
+  "publication_types": [
+    "Journal Article",
+    "Systematic Review"
+  ],
+  "abstract_sections": [
+    {
+      "section": "PURPOSE",
+      "text": "Several male breast cancer (MBC) susceptibility genes have been identified, but the MBC risk for individuals with a pathogenic variant in each of these genes (i.e., penetrance) remains unclear. We conducted a systematic review of studies reporting the penetrance of MBC susceptibility genes to better summarize current estimates of penetrance."
+    },
+    {
+      "section": "METHODS",
+      "text": "A search query was developed to identify MBC-related papers indexed in PubMed/MEDLINE. A validated natural language processing method was applied to identify papers reporting penetrance estimates. These penetrance studies' bibliographies were reviewed to ensure comprehensiveness. We accessed the potential ascertainment bias for each enrolled study."
+    },
+    {
+      "section": "RESULTS",
+      "text": "Fifteen penetrance studies were identified from 12,182 abstracts, covering five purported MBC susceptibility genes: ATM, BRCA1, BRCA2, CHEK2, and PALB2. Cohort (n = 6, 40%) and case-control (n = 5, 33%) studies were the two most common study designs, followed by family-based (n = 3, 20%), and a kin-cohort study (n = 1, 7%). Seven of the 15 studies (47%) adjusted for ascertainment adequately and therefore the MBC risks reported by these seven studies can be considered applicable to the general population. Based on these seven studies, we found pathogenic variants in ATM, BRCA2, CHEK2 c.1100delC, and PALB2 show an increased risk for MBC. The association between BRCA1 and MBC was not statistically significant."
+    },
+    {
+      "section": "CONCLUSION",
+      "text": "This work supports the conclusion that pathogenic variants in ATM, BRCA2, CHEK2 c.1100delC, and PALB2 increase the risk of MBC, whereas pathogenic variants in BRCA1 may not be associated with increased MBC risk."
+    }
+  ]
+}

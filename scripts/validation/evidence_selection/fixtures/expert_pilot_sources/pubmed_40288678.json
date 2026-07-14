@@ -1,0 +1,31 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "40288678",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/40288678/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Association of gene variant type and location with breast cancer risk in the general population.",
+  "doi": "10.1016/j.annonc.2025.04.010",
+  "publication_types": [
+    "Journal Article"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Pathogenic variants (PVs) in ATM, BRCA1, BRCA2, CHEK2, and PALB2 are associated with increased breast cancer risk. It is unknown, however, whether this risk differs by PV type or location in carriers ascertained from the general population."
+    },
+    {
+      "section": "PATIENTS AND METHODS",
+      "text": "To evaluate breast cancer risks associated with PV type and location in ATM, BRCA1, BRCA2, CHEK2, and PALB2, we carried out age-adjusted case-control association analysis in 32 247 women with and 32 544 age-matched women without breast cancer from the CARRIERS Consortium. PVs were grouped by type and location within genes and assessed for risks of breast cancer [odds ratios (OR), 95% confidence intervals (CI), and P values] using logistic regression."
+    },
+    {
+      "section": "RESULTS",
+      "text": "Compared with women carrying BRCA2 exon 11 protein truncating variants (PTVs) in the CARRIERS population-based study, women with BRCA2 ex1-10 PTVs (OR = 13.5, 95% CI 6.0-38.7, P < 0.001) and ex13-27 PTVs (OR = 9.0, 95% CI 4.9-18.5, P < 0.001) had higher breast cancer risks, lower rates of estrogen receptor (ER)-negative breast cancer (ex13-27 OR = 0.5, 95% CI 0.2-0.9, P = 0.035; ex1-10 OR = 0.5, 95% CI 0.1-1.0, P = 0.065), and earlier age at breast cancer diagnosis (ex13-27 5.5 years, P < 0.001; ex1-10 2.4 years, P = 0.169). These associations with ER-negative breast cancer and age were replicated in a high-risk clinical cohort from Ambry Genetics and the population-based UK Biobank cohort. No differences in risk by gene region were observed for PTVs in other predisposition genes."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "Population-based and clinical high-risk cohorts establish that PTVs in exon 11 of BRCA2 are associated with reduced breast cancer risk, later age at diagnosis, and greater risk of ER-negative disease. These differential risks may improve individualized risk prediction and clinical management for women carrying BRCA2 PTVs."
+    }
+  ]
+}

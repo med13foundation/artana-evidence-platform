@@ -1,0 +1,22 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "35816621",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/35816621/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Efficacy and Safety of Elexacaftor/Tezacaftor/Ivacaftor in Children 6 Through 11 Years of Age with Cystic Fibrosis Heterozygous for F508del and a Minimal Function Mutation: A Phase 3b, Randomized, Placebo-controlled Study.",
+  "doi": "10.1164/rccm.202202-0392OC",
+  "publication_types": [
+    "Randomized Controlled Trial",
+    "Clinical Trial, Phase III",
+    "Journal Article",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Rationale: The triple-combination regimen elexacaftor/tezacaftor/ivacaftor (ELX/TEZ/IVA) was shown to be safe and efficacious in children aged 6 through 11 years with cystic fibrosis and at least one F508del-CFTR allele in a phase 3, open-label, single-arm study. Objectives: To further evaluate the efficacy and safety of ELX/TEZ/IVA in children 6 through 11 years of age with cystic fibrosis heterozygous for F508del and a minimal function CFTR mutation (F/MF genotypes) in a randomized, double-blind, placebo-controlled phase 3b trial. Methods: Children were randomized to receive either ELX/TEZ/IVA (n = 60) or placebo (n = 61) during a 24-week treatment period. The dose of ELX/TEZ/IVA administered was based on weight at screening, with children <30 kg receiving ELX 100 mg once daily, TEZ 50 mg once daily, and IVA 75 mg every 12 hours, and children \u2a7e30 kg receiving ELX 200 mg once daily, TEZ 100 mg once daily, and IVA 150 mg every 12 hours (adult dose). Measurements and Main Results: The primary endpoint was absolute change in lung clearance index2.5 from baseline through Week 24. Children given ELX/TEZ/IVA had a mean decrease in lung clearance index2.5 of 2.29 units (95% confidence interval [CI], 1.97-2.60) compared with 0.02 units (95% CI, -0.29 to 0.34) in children given placebo (between-group treatment difference, -2.26 units; 95% CI, -2.71 to -1.81; P < 0.0001). ELX/TEZ/IVA treatment also led to improvements in the secondary endpoint of sweat chloride concentration (between-group treatment difference, -51.2 mmol/L; 95% CI, -55.3 to -47.1) and in the other endpoints of percent predicted FEV1 (between-group treatment difference, 11.0 percentage points; 95% CI, 6.9-15.1) and Cystic Fibrosis Questionnaire-Revised Respiratory domain score (between-group treatment difference, 5.5 points; 95% CI, 1.0-10.0) compared with placebo from baseline through Week 24. The most common adverse events in children receiving ELX/TEZ/IVA were headache and cough (30.0% and 23.3%, respectively); most adverse events were mild or moderate in severity. Conclusions: In this first randomized, controlled study of a cystic fibrosis transmembrane conductance regulator modulator conducted in children 6 through 11 years of age with F/MF genotypes, ELX/TEZ/IVA treatment led to significant improvements in lung function, as well as robust improvements in respiratory symptoms and cystic fibrosis transmembrane conductance regulator function. ELX/TEZ/IVA was generally safe and well tolerated in this pediatric population with no new safety findings."
+    }
+  ]
+}

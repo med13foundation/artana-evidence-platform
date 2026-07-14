@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "26195121",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/26195121/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Breast cancer risk for Korean women with germline mutations in BRCA1 and BRCA2.",
+  "doi": "10.1007/s10549-015-3495-z",
+  "publication_types": [
+    "Journal Article",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "The average age-specific cumulative risk (penetrance) of breast cancer has been studied for BRCA1 and BRCA2 mutation carriers living in Western countries, but not for those living in East Asian countries where the population breast cancer incidence is lower. From 2007 to 2011, the Korean Hereditary Breast Cancer study identified 151 BRCA1 and 225 BRCA2 mutation-carrying families from family cancer clinics. We estimated the hazard ratio (HR) for female carriers relative to the population, and hence the penetrance, using a modified segregation analysis of cancer family histories conditioned on ascertainment. The breast cancer HR estimates [95 % confidence interval (CI)] for BRCA1 and BRCA2 mutation carriers were 18 (3-103) and 11 (5-27), respectively. The breast cancer penetrance estimates (95 % CI) to age 70 years were 49 % (11-98) and 35 % (16-65) for BRCA1 and BRCA2 mutation carriers, respectively. The breast cancer HR and penetrance estimates were similar for Korean and Western women (all P > 0.4). The point estimates of breast cancer penetrance were similar to age 50 years, though less for Korean carriers at older ages. Breast cancer risk for Korean and Western mutation carriers might reflect underlying population risks which in turn likely reflect differences in environmental and lifestyle factors. This raises the possibility of identifying modifiers of cancer risk for carriers with implications for prevention."
+    }
+  ]
+}

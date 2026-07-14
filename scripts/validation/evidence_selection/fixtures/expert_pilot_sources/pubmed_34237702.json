@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "34237702",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/34237702/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "BRCA1 and BRCA2 whole cDNA analysis in unsolved hereditary breast/ovarian cancer patients.",
+  "doi": "10.1016/j.cancergen.2021.06.003",
+  "publication_types": [
+    "Journal Article",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Germline pathogenic variants in BRCA1 and BRCA2 genes (BRCA1/2) explain an important fraction of hereditary breast/ovarian cancer (HBOC) cases. Genetic testing generally involves examining coding regions and exon/intron boundaries, thus the frequency of deleterious variants in non-coding regions is unknown. Here we analysed BRCA1/2 whole cDNA in a large cohort of 320 unsolved high-risk HBOC cases in order to identify potential splicing alterations explained by variants in BRCA1/2 deep intronic regions. Whole RNA splicing profiles were analysed by RT-PCR using Sanger sequencing or high-resolution electrophoresis in a QIAxcel instrument. Known predominant BRCA1/2 alternative splicing events were detected, together with two novel events BRCA1 \u25bc21 and BRCA2 \u039418q_27p. BRCA2 exon 3 skipping was detected in one patient (male) affected with breast cancer, caused by a known Portuguese founder mutation (c.156_157insAluYa5). An altered BRCA2 splicing pattern was detected in three patients, consisting in the up-regulation of \u25bc20A, \u039422 and \u25bc20A+\u039422 transcripts. In silico analysis and semi-quantitative data identified the polymorphism BRCA2 c.8755-66T>C as a potential modifier of \u039422 levels. Our findings suggest that mRNA alterations in BRCA1/2 caused by deep intronic variants are rare in Spanish population. However, RNA analysis complements DNA-based strategies allowing the identification of alterations that could go undetected by conventional testing."
+    }
+  ]
+}

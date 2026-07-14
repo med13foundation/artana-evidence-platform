@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "41512290",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/41512290/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Targeting common EGFR mutations in non-small cell lung cancer: a review of global phase 3 trials of third-generation inhibitors.",
+  "doi": "10.1093/jnci/djag008",
+  "publication_types": [
+    "Journal Article",
+    "Review"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Mutations of the gene EGFR are frequent oncogenic drivers in non-small cell lung cancer (NSCLC). Third-generation EGFR tyrosine kinase inhibitors, which target common EGFR mutations and the acquired T790M resistance mutation, offer improved inhibitory potency and selectivity. Our review critically assessed the evolving role of these agents for management of NSCLC harboring common EGFR mutations. Multiple global phase 3 trials have evaluated third-generation EGFR tyrosine kinase inhibitors in patients with NSCLC and common EGFR mutations. The addition of osimertinib to curative-intent strategies have demonstrated improvements in disease-free survival and overall survival as adjuvant therapy in patients with resected stage IB-IIIA tumors, major pathological responses compared with chemotherapy when used as neoadjuvant therapy, and progression-free survival compared with placebo when used as consolidation therapy in patients with unresectable stage III disease. Furthermore, third-generation EGFR tyrosine kinase inhibitor monotherapy improved progression-free survival compared with first-generation EGFR tyrosine kinase inhibitors in the first-line treatment of advanced disease. Intensification strategies, such as the addition of chemotherapy or a bispecific antibody, have further enhanced progression-free survival and overall survival outcomes. Several new therapeutic options are emerging for patients previously treated with third-generation EGFR tyrosine kinase inhibitors. Currently, subsequent treatment recommendations include chemotherapy or datopotamab deruxtecan following progression on a third-generation EGFR tyrosine kinase inhibitor combination and amivantamab plus platinum-based chemotherapy following progression on monotherapy. The treatment landscape for NSCLC with common EGFR mutations is rapidly evolving, and third-generation EGFR tyrosine kinase inhibitors play an integral role in both the curative-intent and palliative settings."
+    }
+  ]
+}

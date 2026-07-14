@@ -1,0 +1,34 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "40210412",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/40210412/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Elexacaftor/tezacaftor/ivacaftor in children aged \u22656 years with cystic fibrosis heterozygous for F508del and a minimal function mutation: results from a 96-week open-label extension study.",
+  "doi": "10.1183/13993003.02435-2024",
+  "publication_types": [
+    "Journal Article",
+    "Clinical Trial, Phase III",
+    "Multicenter Study",
+    "Randomized Controlled Trial"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Elexacaftor/tezacaftor/ivacaftor (ELX/TEZ/IVA) was efficacious and safe in children aged 6-11 years with cystic fibrosis (CF) heterozygous for F508del and a minimal function CF transmembrane conductance regulator (CFTR) variant (F/MF genotypes) in a 24-week, placebo-controlled trial. We conducted a 96-week open-label extension study for children who completed the 24-week parent study."
+    },
+    {
+      "section": "METHODS",
+      "text": "In this phase 3b extension study, dosing was based on weight and age, with children weighing <30 kg and aged <12 years receiving ELX 100 mg once daily, TEZ 50 mg once daily and IVA 75 mg every 12 h, and children \u226530 kg or \u226512 years receiving ELX 200 mg once daily, TEZ 100 mg once daily and IVA 150 mg every 12 h. The primary end-point was safety and tolerability. Secondary and other efficacy end-points included absolute changes from parent study baseline in sweat chloride concentration, lung clearance index (LCI2.5), percentage predicted forced expiratory volume in 1 s (FEV1) and Cystic Fibrosis Questionnaire-Revised (CFQ-R) respiratory domain score."
+    },
+    {
+      "section": "RESULTS",
+      "text": "A total of 120 children were enrolled and dosed. 118 children (98.3%) had adverse events (AEs), which for most were mild (43.3%) or moderate (48.3%) in severity. The most common AEs (\u226520% of children) were COVID-19 (58.3%), cough (51.7%), nasopharyngitis (45.0%), pyrexia (40.0%), headache (37.5%), upper respiratory tract infection (30.8%), oropharyngeal pain (26.7%), rhinitis (24.2%), abdominal pain (22.5%) and vomiting (20.0%). Children who transitioned from the placebo and ELX/TEZ/IVA groups of the parent study had improvements from parent study baseline at Week 96 in mean sweat chloride concentration (-57.3 (95% CI -61.6- -52.9) and -57.5 (95% CI -62.0- -53.0) mmol\u00b7L-1), LCI2.5 (-1.74 (95% CI -2.09- -1.38) and -2.35 (95% CI -2.72- -1.97) units), FEV1 % pred (6.1 (95% CI 2.6-9.7) and 6.9 (95% CI 3.2-10.5) percentage points) and CFQ-R respiratory domain score (6.6 (95% CI 2.5-10.8) and 2.6 (95% CI -1.6-6.8) points)."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "ELX/TEZ/IVA treatment was generally safe and well tolerated, with a safety profile consistent with the parent study and older age groups. After starting ELX/TEZ/IVA, children had robust improvements in sweat chloride concentration and lung function that were maintained through 96 weeks. These results demonstrate the safety and durable efficacy of ELX/TEZ/IVA in this paediatric population."
+    }
+  ]
+}

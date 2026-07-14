@@ -1,0 +1,31 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "30191368",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/30191368/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "A tandem duplication of BRCA1 exons 1-19 through DHX8 exon 2 in four families with hereditary breast and ovarian cancer syndrome.",
+  "doi": "10.1007/s10549-018-4957-x",
+  "publication_types": [
+    "Journal Article"
+  ],
+  "abstract_sections": [
+    {
+      "section": "PURPOSE",
+      "text": "The purpose of this study is to characterize a novel structural variant, a large duplication involving exons 1-19 of the BRCA1 gene in four independent families, and to provide diagnostically valuable information including the position of the breakpoints as well as clues to its clinical significance."
+    },
+    {
+      "section": "METHODS",
+      "text": "The duplication of exons 1-19 of the BRCA1 gene was initially detected by routine laboratory testing including MLPA analysis and next generation sequencing. For detailed characterization we performed array-comparative genome hybridization analysis, fluorescent in situ hybridization, next generation mapping, and long-distance PCR for break-point sequencing."
+    },
+    {
+      "section": "RESULTS",
+      "text": "Our data revealed a tandem duplication on chromosome 17 that encompassed 357 kb and included exons 1-19 of the BRCA1 gene and the genes NBR2, NBR1, TMEM106A, LOC100130581, ARL4D, MIR2117 up to parts of the DHX8 gene. This structural variant appeared as a tandem duplication with breakpoints in intron 19 of the BRCA1 gene and in intron 3 of the DHX8 gene (HGVS:chr17(hg19):g.41210776_41568516dup). Segregation analysis indicated that this structural rearrangement is phased in trans with a known pathogenic exon deletion of the BRCA1 gene in one family."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "The copy number variation initially recognized as duplication of exon 1-19 of the BRCA1 gene by MLPA analysis is a structural variation with breakpoints in the BRCA1 and DHX8 genes. Although currently to be classified as a variant of unknown significance, our family data indicates that this duplication may be a benign variation or at least of markedly reduced penetrance since it occurs in trans with another known fully pathogenic variant in the BRCA1 gene."
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_supplements.v1",
+  "supplements": [
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_17018160.json",
+      "sha256": "0e64c0ae03f045e488c3382be92971a247ce3d957808ccc212a972bd089b7949",
+      "source_key": "pubmed",
+      "source_record_id": "17018160"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_21356067.json",
+      "sha256": "eb13b835d36ec7df6655443da3735740f00372b6f2e8ea49cc25ee1214600bb7",
+      "source_key": "pubmed",
+      "source_record_id": "21356067"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_22889855.json",
+      "sha256": "73fb1595af3364f396f28be3c9a6052f9c76e67cf30402a91204c7d96ec26a80",
+      "source_key": "pubmed",
+      "source_record_id": "22889855"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_23985030.json",
+      "sha256": "06ce94eb22003b2020c2a7d639a83f9fdf38b9a7bc75fc6a07c35ada2789e036",
+      "source_key": "pubmed",
+      "source_record_id": "23985030"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_25923549.json",
+      "sha256": "0659bfaac1ddb602fee29024d899b4405afc394f84a174fb61a5c8b74cfe4a05",
+      "source_key": "pubmed",
+      "source_record_id": "25923549"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_26195121.json",
+      "sha256": "65bb686bb11ab5e64f9a64760a88b4d61e66c63db2887903561f1dbfdb3a4869",
+      "source_key": "pubmed",
+      "source_record_id": "26195121"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_26314834.json",
+      "sha256": "821d5c860e2342f210e4b480c2b66ca381e77427c3be57f1e38b3b791b0f1da0",
+      "source_key": "pubmed",
+      "source_record_id": "26314834"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_26344711.json",
+      "sha256": "888f90d5481943d1871dc1c4eacaf7ced8aaa345bd977d1e718cfb35ef3d2b7c",
+      "source_key": "pubmed",
+      "source_record_id": "26344711"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_27393503.json",
+      "sha256": "1f3dff7afb499317cbb6fbd715ad28e3b18ad09e8a434da8b55fef2a0205faa8",
+      "source_key": "pubmed",
+      "source_record_id": "27393503"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_27913932.json",
+      "sha256": "f66f6107b0af95ae067d405334b57738b870e004e15bb46ee610ccb100ebd46c",
+      "source_key": "pubmed",
+      "source_record_id": "27913932"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_27959700.json",
+      "sha256": "21852796188cea7216a47d97da305e4a956fa63d6d17ce1c716e1feabd12b3dc",
+      "source_key": "pubmed",
+      "source_record_id": "27959700"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_30191368.json",
+      "sha256": "f5748033ff3f7d5484d4b0e5c51f415548585118b50b6b50b4c9d6463c4a010f",
+      "source_key": "pubmed",
+      "source_record_id": "30191368"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_30610487.json",
+      "sha256": "2bc9952bd2bbbcdff8d870f56cfc3f2c3ddf1b4676ee19cb93a2867cb8ff9012",
+      "source_key": "pubmed",
+      "source_record_id": "30610487"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_30657347.json",
+      "sha256": "db378ed5afaa76f62a3cac27b368b86ce3aca35712c7480306fe3b319b9084bf",
+      "source_key": "pubmed",
+      "source_record_id": "30657347"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_31039766.json",
+      "sha256": "d9cbbc0954c75ecc1722e024ab3f4de4928355c3fc67f116f15d22bf88d4cea0",
+      "source_key": "pubmed",
+      "source_record_id": "31039766"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_31206626.json",
+      "sha256": "8b6fb26a09918f1d34634227f35d6fbc877783c83e9952bd60210fe891aea219",
+      "source_key": "pubmed",
+      "source_record_id": "31206626"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_32658311.json",
+      "sha256": "344e8902f323eaeede4ddd0ef71f65b6d42a6428eb3f8c17ca79f294045378e3",
+      "source_key": "pubmed",
+      "source_record_id": "32658311"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_34237702.json",
+      "sha256": "5c58b4e25fe3e45d2da8b5af1fb42d5225cbcd813e9e9924ee5154d3c4ee2007",
+      "source_key": "pubmed",
+      "source_record_id": "34237702"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_34642874.json",
+      "sha256": "29e78b336252fe8cc7987b993cd80a4b2ecffa1120694871293b7103cf62d323",
+      "source_key": "pubmed",
+      "source_record_id": "34642874"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_35681464.json",
+      "sha256": "63547f0f37dfebe8d2ad7411a0410d025557145192ab38ff4ae03df7626f6ce0",
+      "source_key": "pubmed",
+      "source_record_id": "35681464"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_35816621.json",
+      "sha256": "0898b2118f23ee3b69019aa69793c0b18ec6c3358bf342e84e2ac9fccf9f56af",
+      "source_key": "pubmed",
+      "source_record_id": "35816621"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_38198345.json",
+      "sha256": "ea8f52029e4cd956970768b79db1878f961eb1d5672cbab2bab746f8defd0ad1",
+      "source_key": "pubmed",
+      "source_record_id": "38198345"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_39227072.json",
+      "sha256": "1881c9f34daf4c5ba22a70f56d2fbb87de7f77c6d9508600dc00a7463196dbdf",
+      "source_key": "pubmed",
+      "source_record_id": "39227072"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_40209082.json",
+      "sha256": "868eb40174ead143ec4a278805736bf84b0af80669f7fcbe750f7f322a55dc0d",
+      "source_key": "pubmed",
+      "source_record_id": "40209082"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_40210412.json",
+      "sha256": "f75bf520c7c20b2091e915e81bcd7dae59c99f3c88318a7bc3a4ac667f430e16",
+      "source_key": "pubmed",
+      "source_record_id": "40210412"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_40288678.json",
+      "sha256": "1f5330d27fcab5f4a53d1826367f1688e5d5ff98002c91771fa086f195a46ca8",
+      "source_key": "pubmed",
+      "source_record_id": "40288678"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_40403695.json",
+      "sha256": "6633e913e048da7f657b49f61023bba419ee4bda1d1bf58c4b58d9fc21c4c300",
+      "source_key": "pubmed",
+      "source_record_id": "40403695"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_41138737.json",
+      "sha256": "23023c406640e2e2e587c855b1e8914f4952496eff102315a0ea29f6d9895185",
+      "source_key": "pubmed",
+      "source_record_id": "41138737"
+    },
+    {
+      "path": "scripts/validation/evidence_selection/fixtures/expert_pilot_sources/pubmed_41512290.json",
+      "sha256": "46cbaff63c7cb0dc52645ad8f34b2b82bdd8612a598bab2dbeb41233d39513f7",
+      "source_key": "pubmed",
+      "source_record_id": "41512290"
+    }
+  ]
+}
