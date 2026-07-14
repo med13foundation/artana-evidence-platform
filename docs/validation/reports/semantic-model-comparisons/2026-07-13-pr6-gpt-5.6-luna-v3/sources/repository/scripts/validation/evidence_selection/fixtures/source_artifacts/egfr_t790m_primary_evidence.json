@@ -1,0 +1,77 @@
+{
+  "schema_version": "evidence_selection_semantic_source_snapshot.v1",
+  "source_kind": "sanitized_live_shadow_result_snapshot",
+  "case": {
+    "case_id": "egfr_t790m_primary_evidence",
+    "evaluation_role": "primary",
+    "source_run_id": "ed628a98-3eb0-4a98-8beb-0b94614c2641",
+    "upstream_source_artifact_sha256": "213fa9ef8a2c46379d665391ea9064259522d64fd2a57717dc28c407296129b3",
+    "goal": "Identify primary biomedical evidence about EGFR T790M-mediated resistance to first-generation EGFR inhibitors and response to osimertinib in non-small-cell lung cancer.",
+    "instructions": "Prioritize primary human clinical or translational studies directly connecting EGFR T790M with acquired resistance or osimertinib response.",
+    "inclusion_criteria": [
+      "EGFR T790M in non-small-cell lung cancer",
+      "Drug resistance or osimertinib response"
+    ],
+    "exclusion_criteria": [
+      "Non-human study unrelated to clinical resistance"
+    ],
+    "records": [
+      {
+        "record_id": "egfr:pmid:27959700",
+        "source_key": "pubmed",
+        "source_record_id": "27959700",
+        "title": "Osimertinib or Platinum-Pemetrexed in EGFR T790M-Positive Lung Cancer.",
+        "evidence_excerpt": "A randomized phase 3 trial compared osimertinib with platinum-pemetrexed in patients with T790M-positive advanced non-small-cell lung cancer after progression on first-line EGFR therapy."
+      },
+      {
+        "record_id": "egfr:pmid:25923549",
+        "source_key": "pubmed",
+        "source_record_id": "25923549",
+        "title": "AZD9291 in EGFR inhibitor-resistant non-small-cell lung cancer.",
+        "evidence_excerpt": "Patients with advanced EGFR inhibitor-resistant lung cancer received AZD9291, with activity evaluated in tumors carrying the EGFR T790M resistance mutation."
+      },
+      {
+        "record_id": "egfr:pmid:27393503",
+        "source_key": "pubmed",
+        "source_record_id": "27393503",
+        "title": "Temporal changes of EGFR mutations and T790M levels in tumour and plasma DNA following AZD9291 treatment.",
+        "evidence_excerpt": "Paired tumor and plasma samples from patients treated with AZD9291 were used to track T790M and resistance evolution."
+      },
+      {
+        "record_id": "egfr:pmid:41512290",
+        "source_key": "pubmed",
+        "source_record_id": "41512290",
+        "title": "Targeting common EGFR mutations in non-small cell lung cancer: a review of global phase 3 trials of third-generation inhibitors.",
+        "evidence_excerpt": "This secondary review summarizes global phase 3 trials of third-generation EGFR inhibitors."
+      },
+      {
+        "record_id": "egfr:pmid:30657347",
+        "source_key": "pubmed",
+        "source_record_id": "30657347",
+        "title": "Role of osimertinib in the treatment of EGFR-mutation positive non-small-cell lung cancer.",
+        "evidence_excerpt": "This review discusses osimertinib across EGFR-mutated non-small-cell lung cancer treatment settings."
+      },
+      {
+        "record_id": "egfr:pmid:26314834",
+        "source_key": "pubmed",
+        "source_record_id": "26314834",
+        "title": "Afatinib: a second-generation EGF receptor and ErbB tyrosine kinase inhibitor for the treatment of advanced non-small-cell lung cancer.",
+        "evidence_excerpt": "A secondary overview describes afatinib treatment and resistance in advanced non-small-cell lung cancer."
+      },
+      {
+        "record_id": "egfr:pmid:31039766",
+        "source_key": "pubmed",
+        "source_record_id": "31039766",
+        "title": "The increase in activating EGFR mutation in plasma is an early biomarker to monitor response to osimertinib: a case report.",
+        "evidence_excerpt": "A single case tracked activating EGFR mutation levels during osimertinib treatment without directly establishing T790M-mediated resistance."
+      },
+      {
+        "record_id": "egfr:pmid:23985030",
+        "source_key": "pubmed",
+        "source_record_id": "23985030",
+        "title": "The role of afatinib in the management of non-small cell lung carcinoma.",
+        "evidence_excerpt": "A secondary article discusses afatinib and general mechanisms of acquired resistance in lung carcinoma."
+      }
+    ]
+  }
+}

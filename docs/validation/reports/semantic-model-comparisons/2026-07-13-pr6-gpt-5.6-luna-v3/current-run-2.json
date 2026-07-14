@@ -1,0 +1,1198 @@
+{
+  "schema_version": "evidence_selection_semantic_agent_evaluation.v1",
+  "generated_at": "2026-07-14T01:27:00.256933Z",
+  "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+  "model_id": "openai:gpt-5.4-mini",
+  "fixture_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json",
+  "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+  "fixture_provenance": "ai_adjudicated_diagnostic",
+  "baseline_report_path": "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json",
+  "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+  "baseline_precision": 0.23809523809523808,
+  "baseline_end_to_end_recall": 0.38461538461538464,
+  "minimum_precision": 0.8,
+  "minimum_end_to_end_recall": 0.8,
+  "deterministic_fallback_count": 0,
+  "record_results": [
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:27959700",
+      "agent_run_id": "evidence-selection-semantic-selector:fb454650-5e46-4de8-b03c-d1fa11dd7caa",
+      "assessment": {
+        "record_ref": "sr_2a46292275a86dc33855534202f8c2f4",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets the objective directly: human randomized phase 3 study in advanced non-small-cell lung cancer with EGFR T790M-positive disease comparing osimertinib versus platinum-pemetrexed after progression on first-line EGFR therapy, which directly addresses T790M-associated resistance and osimertinib response. No exclusion is triggered.",
+        "evidence_references": [
+          "se_17a88dd21e13aba0968fcdff846a0af2",
+          "se_eb4d09467f0cbd3a698ac577b2be03b2"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Osimertinib or Platinum-Pemetrexed in EGFR T790M-Positive Lung Cancer.",
+        "A randomized phase 3 trial compared osimertinib with platinum-pemetrexed in patients with T790M-positive advanced non-small-cell lung cancer after progression on first-line EGFR therapy."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:25923549",
+      "agent_run_id": "evidence-selection-semantic-selector:fb454650-5e46-4de8-b03c-d1fa11dd7caa",
+      "assessment": {
+        "record_ref": "sr_b71019243d7ffa050dfe4fea573c2039",
+        "decision": "review",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "match",
+        "inclusion_assessment": "uncertain",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "The record concerns advanced EGFR inhibitor-resistant non-small-cell lung cancer treated with AZD9291 and mentions activity in T790M-mutant tumors, so it is on-topic, but the bounded text does not clearly establish the specific resistance/response outcome required by the objective. Because the decisive clinical linkage is insufficiently explicit, review is needed.",
+        "evidence_references": [
+          "se_8a8b387b5efab44c8aad79d46628be78",
+          "se_c38cf1454b8bac23171d2daa8dd11f21"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "AZD9291 in EGFR inhibitor-resistant non-small-cell lung cancer.",
+        "Patients with advanced EGFR inhibitor-resistant lung cancer received AZD9291, with activity evaluated in tumors carrying the EGFR T790M resistance mutation."
+      ],
+      "prediction_decision": "abstain",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:27393503",
+      "agent_run_id": "evidence-selection-semantic-selector:fb454650-5e46-4de8-b03c-d1fa11dd7caa",
+      "assessment": {
+        "record_ref": "sr_6468095566cf873a8d4750f32a32b563",
+        "decision": "review",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "match",
+        "inclusion_assessment": "uncertain",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This translational study involves patients treated with AZD9291 and tracks T790M and resistance evolution in tumor and plasma, which is relevant to the objective, but the available text does not clearly state the exact resistance mechanism/response result needed for a definitive inclusion judgment. Review is required rather than guessing.",
+        "evidence_references": [
+          "se_63208ff2bd23400d1368b4915df451cc",
+          "se_dd79db0beb9170fbf679330ec876a468"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Temporal changes of EGFR mutations and T790M levels in tumour and plasma DNA following AZD9291 treatment.",
+        "Paired tumor and plasma samples from patients treated with AZD9291 were used to track T790M and resistance evolution."
+      ],
+      "prediction_decision": "abstain",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:41512290",
+      "agent_run_id": "evidence-selection-semantic-selector:37cb2a8c-d26b-408a-989a-38f127822ad1",
+      "assessment": {
+        "record_ref": "sr_8820090376629f6ea1c389d2a23bf3bf",
+        "decision": "reject",
+        "objective_match": "context_only",
+        "entity_variant_match": "uncertain",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This is a review of phase 3 trials, so it is not primary biomedical evidence. Although it concerns EGFR-mutant non-small-cell lung cancer and third-generation EGFR inhibitors, the record does not directly provide primary evidence about EGFR T790M-mediated resistance to first-generation EGFR inhibitors or osimertinib response.",
+        "evidence_references": [
+          "se_8c6cb6a8743168c814f8a2c0719ca44b",
+          "se_55f56f5612fbe1a7f7313aa9e2224862"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Targeting common EGFR mutations in non-small cell lung cancer: a review of global phase 3 trials of third-generation inhibitors.",
+        "This secondary review summarizes global phase 3 trials of third-generation EGFR inhibitors."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:30657347",
+      "agent_run_id": "evidence-selection-semantic-selector:37cb2a8c-d26b-408a-989a-38f127822ad1",
+      "assessment": {
+        "record_ref": "sr_1a17c4ebb95b3711aa6e24e4dd1d604c",
+        "decision": "reject",
+        "objective_match": "supporting",
+        "entity_variant_match": "uncertain",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This is a review discussing osimertinib across EGFR-mutated non-small-cell lung cancer treatment settings, not a primary study. It lacks direct primary evidence on EGFR T790M-mediated resistance to first-generation EGFR inhibitors or a primary osimertinib response analysis.",
+        "evidence_references": [
+          "se_776ecf22143f2e6ad2b158284e7b6433",
+          "se_90a0f242ae139728a7c447bc2a8e3a11"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Role of osimertinib in the treatment of EGFR-mutation positive non-small-cell lung cancer.",
+        "This review discusses osimertinib across EGFR-mutated non-small-cell lung cancer treatment settings."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:26314834",
+      "agent_run_id": "evidence-selection-semantic-selector:37cb2a8c-d26b-408a-989a-38f127822ad1",
+      "assessment": {
+        "record_ref": "sr_e57a5fdb1b44b7caedc372c60aa6c64f",
+        "decision": "reject",
+        "objective_match": "supporting",
+        "entity_variant_match": "uncertain",
+        "population_match": "match",
+        "intervention_match": "uncertain",
+        "outcome_match": "uncertain",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This record is a secondary overview of afatinib treatment and resistance in advanced non-small-cell lung cancer. It is not primary human clinical or translational evidence and does not specifically establish EGFR T790M-mediated resistance or osimertinib response.",
+        "evidence_references": [
+          "se_88bb7d9294f6f768f464008f3425fd3a",
+          "se_c91b12065350b498c534ce59dd32bf4b"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Afatinib: a second-generation EGF receptor and ErbB tyrosine kinase inhibitor for the treatment of advanced non-small-cell lung cancer.",
+        "A secondary overview describes afatinib treatment and resistance in advanced non-small-cell lung cancer."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:31039766",
+      "agent_run_id": "evidence-selection-semantic-selector:7883e3f4-bd7b-4466-ae15-e0090e4aa06f",
+      "assessment": {
+        "record_ref": "sr_2fc78629539ac5613199b0023113a2f7",
+        "decision": "review",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "match",
+        "inclusion_assessment": "uncertain",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "The record is a primary human case in NSCLC involving osimertinib and EGFR mutation monitoring, so the entity, population, intervention, and study type align. However, the decisive outcome criterion is uncertain because the text explicitly says it does not directly establish T790M-mediated resistance, so it cannot be confirmed as meeting the objective's core resistance linkage.",
+        "evidence_references": [
+          "se_2a0455497f44f6115d41d9c82fb2945a",
+          "se_671c7b63303d14b60d954aded4b23f64"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "The increase in activating EGFR mutation in plasma is an early biomarker to monitor response to osimertinib: a case report.",
+        "A single case tracked activating EGFR mutation levels during osimertinib treatment without directly establishing T790M-mediated resistance."
+      ],
+      "prediction_decision": "abstain",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_t790m_primary_evidence",
+      "record_id": "egfr:pmid:23985030",
+      "agent_run_id": "evidence-selection-semantic-selector:7883e3f4-bd7b-4466-ae15-e0090e4aa06f",
+      "assessment": {
+        "record_ref": "sr_e758e3e5b7783dab2721924d3a7fd857",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This is a secondary article about afatinib and general acquired resistance mechanisms, not a primary biomedical study directly connecting EGFR T790M with acquired resistance or osimertinib response. The study type therefore fails the objective, and the required T790M-specific primary evidence is not established.",
+        "evidence_references": [
+          "se_c142b94c5c190c55ff77adcf229e33f5",
+          "se_2d2ebf76d34496e2be76dc9a786abd7e"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "The role of afatinib in the management of non-small cell lung carcinoma.",
+        "A secondary article discusses afatinib and general mechanisms of acquired resistance in lung carcinoma."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:40403695",
+      "agent_run_id": "evidence-selection-semantic-selector:a0b88247-de24-4cd2-9d90-2330958e06a7",
+      "assessment": {
+        "record_ref": "sr_ce368e75182c14ac19f00e2bdf204247",
+        "decision": "review",
+        "objective_match": "supporting",
+        "entity_variant_match": "uncertain",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "uncertain",
+        "inclusion_assessment": "uncertain",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "The record addresses human breast/ovarian cancer risk with pathogenic BRCA1/BRCA2 variants, which is directionally relevant, but the bounded text does not clearly establish primary BRCA1-specific evidence versus mixed-gene cohort/meta-analysis context. Because BRCA1 specificity and primary-study status are decision-critical, this cannot be selected without more detail.",
+        "evidence_references": [
+          "se_27ba870e31edaa8c8606bac3aeaa33d0",
+          "se_5540197e3d726ee399f8a9faa6849cc4"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Impact of germline variants on breast and ovarian cancer risk in Japanese women: an original cohort study and meta-analysis.",
+        "A large human case-control cohort estimated breast and ovarian cancer risks associated with pathogenic BRCA1 and BRCA2 variants."
+      ],
+      "prediction_decision": "abstain",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:22889855",
+      "agent_run_id": "evidence-selection-semantic-selector:a0b88247-de24-4cd2-9d90-2330958e06a7",
+      "assessment": {
+        "record_ref": "sr_6110b5c585215b357c5405c10c67c857",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This is direct human evidence for a BRCA1 variant (R1699Q) and breast/ovarian cancer risk, with family and genetic evidence estimating clinically relevant risk. It matches the requested BRCA1 variant evidence, the cancer-risk outcome, and the primary human study intent.",
+        "evidence_references": [
+          "se_335c8c25f28e514ebea9944d3b3e75e0",
+          "se_cf1a3b5b818fe75a035eadb4c298cd7d"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "BRCA1 R1699Q variant displaying ambiguous functional abrogation confers intermediate breast and ovarian cancer risk.",
+        "Family and genetic evidence estimated intermediate breast and ovarian cancer risk for the BRCA1 R1699Q variant."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:26195121",
+      "agent_run_id": "evidence-selection-semantic-selector:a0b88247-de24-4cd2-9d90-2330958e06a7",
+      "assessment": {
+        "record_ref": "sr_d9c63508edf36752c26c56207ae8f925",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This record is primary human evidence on BRCA1/BRCA2 mutation carriers and estimates age-specific breast cancer penetrance, which is clinically relevant cancer-risk evidence. It satisfies the human BRCA1 variant and breast cancer outcome requirements and is consistent with the prioritized cohort evidence type.",
+        "evidence_references": [
+          "se_d4ae00ca3beeeebe577a5ac65b323dac",
+          "se_e69ae0652e8c20ab25354add9f6763b2"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Breast cancer risk for Korean women with germline mutations in BRCA1 and BRCA2.",
+        "A hereditary cancer cohort estimated age-specific breast cancer penetrance for BRCA1 and BRCA2 mutation carriers."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:30191368",
+      "agent_run_id": "evidence-selection-semantic-selector:c1ade68d-8386-4b2b-ade6-eb8d0385591e",
+      "assessment": {
+        "record_ref": "sr_59b5aad925ff15377717cdb326ded06b",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "not_required",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Direct human BRCA1 structural-variant evidence in families, with segregation and clinical-significance information relevant to hereditary breast and ovarian cancer risk/penetrance; not animal-only and fits the requested primary variant evidence.",
+        "evidence_references": [
+          "se_06d8a3f076bb08e7044983be9c33d1ac",
+          "se_4975a1f8687b331259cb44c73cdc073e"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "A tandem duplication of BRCA1 exons 1-19 through DHX8 exon 2 in four families with hereditary breast and ovarian cancer syndrome.",
+        "Four families provided segregation and clinical-significance evidence for a large BRCA1 structural variant."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:40288678",
+      "agent_run_id": "evidence-selection-semantic-selector:c1ade68d-8386-4b2b-ade6-eb8d0385591e",
+      "assessment": {
+        "record_ref": "sr_916d1c3f00ca734ff99206a15738ad3a",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "not_required",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Primary human case-control evidence evaluating BRCA1 variant type/location against breast cancer risk in the general population, which matches the requested BRCA1 variant and cancer-risk outcome evidence.",
+        "evidence_references": [
+          "se_3b82e1e622aef6b5616050b30880606c",
+          "se_6971e9be5ef72dc29578c15e27afd38d"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Association of gene variant type and location with breast cancer risk in the general population.",
+        "A population case-control analysis evaluated breast cancer risk by pathogenic variant type and location in BRCA1 and other susceptibility genes."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:17018160",
+      "agent_run_id": "evidence-selection-semantic-selector:c1ade68d-8386-4b2b-ade6-eb8d0385591e",
+      "assessment": {
+        "record_ref": "sr_4b34193ead303b8a9b7ad836b55050f1",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "not_required",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Human case-control study of germline BRCA1/BRCA2 alterations and breast cancer susceptibility; the BRCA1 component directly addresses the objective of pathogenic BRCA1 variants and cancer risk.",
+        "evidence_references": [
+          "se_0f3b7a99ee7293f86a65fa31a082b76c",
+          "se_e5dc33772b82e60ba2b43d38bf626f89"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Contribution of germline BRCA1 and BRCA2 sequence alterations to breast cancer in Northern India.",
+        "Cases and controls were analyzed for BRCA1 and BRCA2 germline changes and breast cancer susceptibility."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:34237702",
+      "agent_run_id": "evidence-selection-semantic-selector:dd2aafec-fd0a-4c59-91ce-02878ef9ce0b",
+      "assessment": {
+        "record_ref": "sr_f46c66d12120859089b7c9aa8c7ef577",
+        "decision": "reject",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "no_match",
+        "study_type_match": "uncertain",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Human BRCA1/BRCA2 variant analysis is present, but the decisive outcome criterion fails because the record states it did not estimate penetrance or cancer risk, so it does not provide the required BRCA1 cancer-risk evidence.",
+        "evidence_references": [
+          "se_81f7a2aa049bbeae2df76caaf2416d6f",
+          "se_c617e1004d8b4e2fe244760d3df0ba68"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "BRCA1 and BRCA2 whole cDNA analysis in unsolved hereditary breast/ovarian cancer patients.",
+        "The analysis searched for non-coding splice variants in unsolved hereditary cancer cases but did not estimate penetrance or cancer risk."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:21356067",
+      "agent_run_id": "evidence-selection-semantic-selector:dd2aafec-fd0a-4c59-91ce-02878ef9ce0b",
+      "assessment": {
+        "record_ref": "sr_3f2498e6f6602b859ad6ae0f66ec8270",
+        "decision": "reject",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "no_match",
+        "outcome_match": "no_match",
+        "study_type_match": "uncertain",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Although BRCA1/2 mutation screening in human high-risk breast/ovarian cancer individuals is described, the record is focused on founder-negative families and additional genes rather than BRCA1 penetrance or cancer-risk outcome, so the core objective is not met.",
+        "evidence_references": [
+          "se_25b2fb7abf5be68249273c522ba54218",
+          "se_1842ede2dd2473bbd1464a846a848b1f"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Screening for BRCA1, BRCA2, CHEK2, PALB2, BRIP1, RAD50, and CDH1 mutations in high-risk Finnish BRCA1/2-founder mutation-negative breast and/or ovarian cancer individuals.",
+        "A mutation-screening project focused on unresolved founder-negative families and additional genes rather than BRCA1 penetrance."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:32658311",
+      "agent_run_id": "evidence-selection-semantic-selector:dd2aafec-fd0a-4c59-91ce-02878ef9ce0b",
+      "assessment": {
+        "record_ref": "sr_9ca2b3c3d70d957ccb188c7641426883",
+        "decision": "reject",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "no_match",
+        "outcome_match": "no_match",
+        "study_type_match": "uncertain",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This is human germline variant evidence, but it is a broad 25-gene panel in breast/colorectal cancer patients and controls, and it explicitly lacks a direct BRCA1 penetrance estimate. Therefore it does not directly link pathogenic BRCA1 variants to breast or ovarian cancer risk.",
+        "evidence_references": [
+          "se_948fe1fb9a8ba761920227b2d39a4fad",
+          "se_6db8491d9f707cd120700d82c28ac053"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Germline pathogenic variant spectrum in 25 cancer susceptibility genes in Turkish breast and colorectal cancer patients and elderly controls.",
+        "A broad panel described variant frequencies across 25 genes and two cancers without a direct BRCA1 penetrance estimate."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:31206626:selected-duplicate",
+      "agent_run_id": "evidence-selection-semantic-selector:d16aac9c-5d00-45bd-8b38-79fb91d40132",
+      "assessment": {
+        "record_ref": "sr_9fd43b3c00814e834fb27941a8f96cb3",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "no_match",
+        "population_match": "match",
+        "intervention_match": "no_match",
+        "outcome_match": "no_match",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Fails the decisive inclusion criteria because the record is about PALB2, CHEK2, and other susceptibility genes in BRCA-negative Hispanics, not human BRCA1 variant evidence with breast or ovarian cancer risk outcome. It is also not a primary BRCA1 risk study.",
+        "evidence_references": [
+          "se_b278302723e52bb0b529224f2df5ec24",
+          "se_15c9e9dabd83e2a81973498a6970e123"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Pathogenic and likely pathogenic variants in PALB2, CHEK2, and other known breast cancer susceptibility genes among 1054 BRCA-negative Hispanics with breast cancer.",
+        "The cohort explicitly excluded BRCA mutation carriers and evaluated PALB2, CHEK2, and other susceptibility genes."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:31206626:rejected-duplicate",
+      "agent_run_id": "evidence-selection-semantic-selector:d16aac9c-5d00-45bd-8b38-79fb91d40132",
+      "assessment": {
+        "record_ref": "sr_e65c57bb315f3929a6c239d1e6ca84d3",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "no_match",
+        "population_match": "uncertain",
+        "intervention_match": "no_match",
+        "outcome_match": "no_match",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Fails the objective because it is a duplicate record about PALB2/CHEK2-related BRCA-negative breast cancer, not direct BRCA1 variant evidence for breast or ovarian cancer risk. The required gene, outcome, and primary-study focus are absent.",
+        "evidence_references": [
+          "se_6061256b6ab40f912ef494b32c2a7c5e",
+          "se_9276f2a38d426b04cc869111047d1738"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Pathogenic and likely pathogenic variants in PALB2, CHEK2, and other known breast cancer susceptibility genes among 1054 BRCA-negative Hispanics with breast cancer.",
+        "The duplicate source record was returned by a second search and remained off target for BRCA1."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:34642874",
+      "agent_run_id": "evidence-selection-semantic-selector:d16aac9c-5d00-45bd-8b38-79fb91d40132",
+      "assessment": {
+        "record_ref": "sr_0d5d5058fd117c6f6fa41f635988bd68",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "no_match",
+        "population_match": "uncertain",
+        "intervention_match": "no_match",
+        "outcome_match": "no_match",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Fails inclusion because it is a systematic review rather than primary human BRCA1 variant evidence, and the abstract indicates it addresses male breast cancer susceptibility genes instead of direct BRCA1 risk evidence for breast or ovarian cancer.",
+        "evidence_references": [
+          "se_9ebeac0ac2b95a10b8957e1d4b185878",
+          "se_2b11f50bbe7a6dd1f5f59964e360bfc5"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Penetrance of male breast cancer susceptibility genes: a systematic review.",
+        "A systematic review summarizes male breast cancer susceptibility genes rather than providing primary BRCA1 risk evidence for the requested population."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:27913932",
+      "agent_run_id": "evidence-selection-semantic-selector:19328e1b-6b68-431e-8b32-2dc4116eea96",
+      "assessment": {
+        "record_ref": "sr_6e31ccdf4700a37add04ebe494a5496e",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "no_match",
+        "population_match": "match",
+        "intervention_match": "no_match",
+        "outcome_match": "no_match",
+        "study_type_match": "uncertain",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Rejected because the record is about germline pathogenic ATM mutations in BRCA1/2-negative families, not BRCA1 variants. The required human BRCA1 variant evidence and breast/ovarian cancer risk link are not present.",
+        "evidence_references": [
+          "se_b1b2b6f2ba2f7c0fec87cc7035ba76a5",
+          "se_05fdfbccfd75afe1927d9a2ede00abe5"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Almost 2% of Spanish breast cancer families are associated to germline pathogenic mutations in the ATM gene.",
+        "The family evidence concerns pathogenic ATM mutations in BRCA1/2-negative families."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:30610487",
+      "agent_run_id": "evidence-selection-semantic-selector:19328e1b-6b68-431e-8b32-2dc4116eea96",
+      "assessment": {
+        "record_ref": "sr_88f33b1c21403d3456552a02403bd8c3",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "no_match",
+        "population_match": "match",
+        "intervention_match": "no_match",
+        "outcome_match": "uncertain",
+        "study_type_match": "not_required",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Rejected because the article is a review of RECQL as a proposed hereditary breast cancer gene, not primary human evidence for pathogenic BRCA1 variants. It fails the required direct BRCA1 variant criterion and the instructed primary study type focus.",
+        "evidence_references": [
+          "se_b8e82558ebf074346b1fac46fe51c90a",
+          "se_9e07a69b3cbf90b26b4de5a8fbc816f6"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Clinical implications of germline mutations in breast cancer genes: RECQL.",
+        "The article reviews evidence for RECQL as a proposed hereditary breast cancer gene."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "brca1_risk_penetrance",
+      "record_id": "brca1:pmid:26344711",
+      "agent_run_id": "evidence-selection-semantic-selector:19328e1b-6b68-431e-8b32-2dc4116eea96",
+      "assessment": {
+        "record_ref": "sr_a18209ea739c022aa1bf58b3deef45a4",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "no_match",
+        "population_match": "match",
+        "intervention_match": "no_match",
+        "outcome_match": "uncertain",
+        "study_type_match": "uncertain",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Rejected because the abstract states there was an untested candidate variant without established BRCA1 pathogenicity. That does not satisfy the required human BRCA1 variant evidence or a clear breast/ovarian cancer risk link.",
+        "evidence_references": [
+          "se_a9d76f49554b08c778cf39db7cd33e47",
+          "se_a8c7b87355917cf83bb24590a02f8b91"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Does familial breast cancer and thymoma suggest a cancer syndrome?",
+        "A family with breast or ovarian cancer and thymoma had an untested candidate variant without established BRCA1 pathogenicity."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "record_id": "cftr:pmid:35816621",
+      "agent_run_id": "evidence-selection-semantic-selector:b05f253c-2d47-4e76-b0ac-bc1987a5bca0",
+      "assessment": {
+        "record_ref": "sr_ced16d157394b2c8fe91c60d6b71382e",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets the objective directly: cystic fibrosis with F508del/minimal function mutation, randomized placebo-controlled phase 3b study of elexacaftor/tezacaftor/ivacaftor, and it reports lung-function improvement (percent predicted FEV1).",
+        "evidence_references": [
+          "se_ab9c38d0518d12d513ce5c6cb17be301",
+          "se_5b4ba979f6eb320f05581cb5f49214b1"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Efficacy and Safety of Elexacaftor/Tezacaftor/Ivacaftor in Children 6 Through 11 Years of Age with Cystic Fibrosis Heterozygous for F508del and a Minimal Function Mutation: A Phase 3b, Randomized, Placebo-controlled Study.",
+        "A randomized placebo-controlled phase 3b trial in children with F508del showed an 11-point between-group improvement in percent predicted FEV1."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "record_id": "cftr:pmid:40210412",
+      "agent_run_id": "evidence-selection-semantic-selector:b05f253c-2d47-4e76-b0ac-bc1987a5bca0",
+      "assessment": {
+        "record_ref": "sr_a34bb20dbbb1fb0a5a31d4bb2d2dfd3a",
+        "decision": "select",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets inclusion as a human clinical extension study in children with cystic fibrosis and at least one F508del allele receiving elexacaftor/tezacaftor/ivacaftor, with reported sustained lung-function benefits. It is supportive clinical evidence rather than the primary randomized efficacy trial.",
+        "evidence_references": [
+          "se_47343dd9c3f4222cff193e5891e24802",
+          "se_869fb095635a2e03ce8d6b2541001b4d"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Elexacaftor/tezacaftor/ivacaftor in children aged 6 years or older with cystic fibrosis heterozygous for F508del and a minimal function mutation: results from a 96-week open-label extension study.",
+        "A 96-week extension in children with F508del reported sustained lung-function benefits after ETI."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "record_id": "cftr:pmid:41138737",
+      "agent_run_id": "evidence-selection-semantic-selector:b05f253c-2d47-4e76-b0ac-bc1987a5bca0",
+      "assessment": {
+        "record_ref": "sr_0449dba8d91f7ed49bb6bb648286607d",
+        "decision": "select",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets inclusion as a prospective observational clinical study in adolescents with cystic fibrosis and F508del receiving elexacaftor/tezacaftor/ivacaftor, and it reports a lung-function outcome (percent predicted FEV1).",
+        "evidence_references": [
+          "se_2319793ca8d85b29c87b0a2ec65efde8",
+          "se_d08674f05c44c4521e8f33e5beaf39ed"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Effect of elexacaftor-tezacaftor-ivacaftor on bronchial dilatations in adolescents with cystic fibrosis: a multicentre prospective observational study.",
+        "A prospective F508del adolescent cohort showed a sustained 14-point improvement in percent predicted FEV1 after ETI."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "record_id": "cftr:pmid:40209082",
+      "agent_run_id": "evidence-selection-semantic-selector:5c4944ae-ff51-4227-86d3-77088bb9726f",
+      "assessment": {
+        "record_ref": "sr_e4f8317f96a6b60ea5d0fec4e0382520",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "match",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets the objective as a primary phase 3 open-label extension study in adults/adolescents with cystic fibrosis and at least one F508del allele, and it reports sustained lung-function improvement after elexacaftor/tezacaftor/ivacaftor. No exclusion is triggered.",
+        "evidence_references": [
+          "se_dbe88467440e0450fb76f541913245bc",
+          "se_1ef225915fcc2adc9dcb875dfd795435"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Long-Term Safety and Efficacy of Elexacaftor/Tezacaftor/Ivacaftor in Adults and Adolescents with Cystic Fibrosis and at Least One F508del Allele: A Phase 3 Open-Label Extension Study.",
+        "A 192-week phase 3 extension in people with at least one F508del allele reported sustained improvements in lung function after ETI."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "record_id": "cftr:pmid:38198345",
+      "agent_run_id": "evidence-selection-semantic-selector:5c4944ae-ff51-4227-86d3-77088bb9726f",
+      "assessment": {
+        "record_ref": "sr_5604a96370d142f079f9148a06804ccc",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "The topic is relevant to cystic fibrosis and elexacaftor/tezacaftor/ivacaftor, but the record is a systematic review and meta-analysis rather than primary clinical evidence, so the study type does not meet the objective. The abstract also states it synthesizes prior randomized evidence instead of reporting a new primary clinical cohort.",
+        "evidence_references": [
+          "se_ab97685a946f1f952ab6fdcaab2c36a2",
+          "se_b134ab45e81d8390c352888d74aa3db3"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Use of elexacaftor plus tezacaftor plus ivacaftor in individuals with cystic fibrosis and at least one F508del allele: a systematic review and meta-analysis.",
+        "A systematic review combines prior randomized evidence rather than reporting a new primary clinical cohort."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "record_id": "cftr:pmid:35681464",
+      "agent_run_id": "evidence-selection-semantic-selector:5c4944ae-ff51-4227-86d3-77088bb9726f",
+      "assessment": {
+        "record_ref": "sr_b8121c3fe36f1cfdf660d5635ca2671c",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "uncertain",
+        "population_match": "match",
+        "intervention_match": "not_required",
+        "outcome_match": "uncertain",
+        "study_type_match": "no_match",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "This is a narrative review of CFTR modulator evidence in France, not a primary clinical study reporting lung-function outcomes after elexacaftor/tezacaftor/ivacaftor in the target population. Therefore the study type does not satisfy the inclusion criteria.",
+        "evidence_references": [
+          "se_74a852b233a4916205328fc45bc0c1e2",
+          "se_aa8d185b3cfb503e8355aa781d072d96"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "CFTR Modulators in People with Cystic Fibrosis: Real-World Evidence in France.",
+        "A narrative review summarizes French registry projects and prior CFTR modulator trials."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "cftr_f508del_eti_response",
+      "record_id": "cftr:pmid:39227072",
+      "agent_run_id": "evidence-selection-semantic-selector:d59ce0f1-c75c-48a8-8a13-f0f78981257c",
+      "assessment": {
+        "record_ref": "sr_955f2a92d14b7432ee40967be3652811",
+        "decision": "reject",
+        "objective_match": "off_objective",
+        "entity_variant_match": "no_match",
+        "population_match": "no_match",
+        "intervention_match": "match",
+        "outcome_match": "uncertain",
+        "study_type_match": "uncertain",
+        "inclusion_assessment": "not_met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Fails the required CFTR variant criterion because the record explicitly says the population had no F508del variant, whereas inclusion requires at least one F508del allele. It is therefore off-objective despite mentioning elexacaftor/tezacaftor/ivacaftor and cystic fibrosis. No lung-function outcome is provided in the bounded record.",
+        "evidence_references": [
+          "se_596cb1d29c38803739866267fbeb0cad",
+          "se_30bb1855f647a743dc56a44126dda2a3"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Impact of the expanded label for elexacaftor/tezacaftor/ivacaftor in people with cystic fibrosis with no F508del variant in the USA.",
+        "The registry population explicitly carried no F508del variant."
+      ],
+      "prediction_decision": "reject",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_exclusion_token_canary",
+      "record_id": "canary:pmid:27959700",
+      "agent_run_id": "evidence-selection-semantic-selector:a6a39434-8726-4f78-a173-e1fd462ee303",
+      "assessment": {
+        "record_ref": "sr_103ea5cd3a28b55473b524dbb7e2e242",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "not_required",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets the objective by directly addressing EGFR T790M-positive lung cancer and osimertinib versus platinum-pemetrexed in a primary clinical study; this is direct human clinical evidence and not a generic review.",
+        "evidence_references": [
+          "se_5286bf340ccc79f453946bdec346395d",
+          "se_b94dafa7fb56bab4c3964695490f46b9"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Osimertinib or Platinum-Pemetrexed in EGFR T790M-Positive Lung Cancer.",
+        "This primary clinical study provides direct T790M-positive treatment evidence."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_exclusion_token_canary",
+      "record_id": "canary:pmid:25923549",
+      "agent_run_id": "evidence-selection-semantic-selector:a6a39434-8726-4f78-a173-e1fd462ee303",
+      "assessment": {
+        "record_ref": "sr_cfe7ecc69b358f8f4f6b19fa21fbfcbe",
+        "decision": "select",
+        "objective_match": "direct",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "not_required",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets the objective because it reports a primary human study in EGFR inhibitor-resistant, T790M-positive non-small-cell lung cancer and concerns AZD9291, which is relevant osimertinib evidence.",
+        "evidence_references": [
+          "se_0e485302e7b72201cdec0256b22abdd5",
+          "se_2c0fcf7b102dbef799fdc5dd81840967"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "AZD9291 in EGFR inhibitor-resistant non-small-cell lung cancer.",
+        "The evidence reports a primary human study of T790M-positive inhibitor-resistant lung cancer."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    },
+    {
+      "case_id": "egfr_exclusion_token_canary",
+      "record_id": "canary:pmid:27393503",
+      "agent_run_id": "evidence-selection-semantic-selector:a6a39434-8726-4f78-a173-e1fd462ee303",
+      "assessment": {
+        "record_ref": "sr_3913adb290b0ecad319ccb8a8765091e",
+        "decision": "select",
+        "objective_match": "supporting",
+        "entity_variant_match": "match",
+        "population_match": "match",
+        "intervention_match": "match",
+        "outcome_match": "not_required",
+        "study_type_match": "match",
+        "inclusion_assessment": "met",
+        "exclusion_assessment": "not_triggered",
+        "explanation": "Meets the objective through case-level translational evidence tracking EGFR T790M during AZD9291 treatment in tumour and plasma DNA; this is direct study evidence rather than a generic review.",
+        "evidence_references": [
+          "se_96733a95f14d91b9c95ceca3955df71f",
+          "se_db24a1ede5076d77211ca28ca2a9089d"
+        ]
+      },
+      "evidence_source_paths": [
+        "$.title",
+        "$.abstract"
+      ],
+      "evidence_spans": [
+        "Temporal changes of EGFR mutations and T790M levels in tumour and plasma DNA following AZD9291 treatment.",
+        "Case-level translational evidence follows T790M during AZD9291 treatment."
+      ],
+      "prediction_decision": "select",
+      "failure_type": null
+    }
+  ],
+  "score": {
+    "scored_case_count": 3,
+    "canary_case_count": 1,
+    "case_results": [
+      {
+        "record_count": 8,
+        "expected_positive_count": 3,
+        "expected_negative_count": 5,
+        "predicted_select_count": 1,
+        "predicted_reject_count": 4,
+        "true_positive_count": 1,
+        "false_positive_count": 0,
+        "false_negative_count": 0,
+        "true_negative_count": 4,
+        "abstention_count": 3,
+        "invalid_agent_count": 0,
+        "precision": 1.0,
+        "end_to_end_recall": 0.3333333333333333,
+        "decision_accuracy": 0.625,
+        "decision_coverage": 0.625,
+        "abstention_rate": 0.375,
+        "invalid_agent_rate": 0.0,
+        "case_id": "egfr_t790m_primary_evidence",
+        "display_name": "EGFR T790M primary evidence",
+        "evaluation_role": "primary"
+      },
+      {
+        "record_count": 15,
+        "expected_positive_count": 6,
+        "expected_negative_count": 9,
+        "predicted_select_count": 5,
+        "predicted_reject_count": 9,
+        "true_positive_count": 5,
+        "false_positive_count": 0,
+        "false_negative_count": 0,
+        "true_negative_count": 9,
+        "abstention_count": 1,
+        "invalid_agent_count": 0,
+        "precision": 1.0,
+        "end_to_end_recall": 0.8333333333333334,
+        "decision_accuracy": 0.9333333333333333,
+        "decision_coverage": 0.9333333333333333,
+        "abstention_rate": 0.06666666666666667,
+        "invalid_agent_rate": 0.0,
+        "case_id": "brca1_risk_penetrance",
+        "display_name": "BRCA1 risk and penetrance",
+        "evaluation_role": "primary"
+      },
+      {
+        "record_count": 7,
+        "expected_positive_count": 4,
+        "expected_negative_count": 3,
+        "predicted_select_count": 4,
+        "predicted_reject_count": 3,
+        "true_positive_count": 4,
+        "false_positive_count": 0,
+        "false_negative_count": 0,
+        "true_negative_count": 3,
+        "abstention_count": 0,
+        "invalid_agent_count": 0,
+        "precision": 1.0,
+        "end_to_end_recall": 1.0,
+        "decision_accuracy": 1.0,
+        "decision_coverage": 1.0,
+        "abstention_rate": 0.0,
+        "invalid_agent_rate": 0.0,
+        "case_id": "cftr_f508del_eti_response",
+        "display_name": "CFTR F508del ETI response",
+        "evaluation_role": "primary"
+      },
+      {
+        "record_count": 3,
+        "expected_positive_count": 3,
+        "expected_negative_count": 0,
+        "predicted_select_count": 3,
+        "predicted_reject_count": 0,
+        "true_positive_count": 3,
+        "false_positive_count": 0,
+        "false_negative_count": 0,
+        "true_negative_count": 0,
+        "abstention_count": 0,
+        "invalid_agent_count": 0,
+        "precision": 1.0,
+        "end_to_end_recall": 1.0,
+        "decision_accuracy": 1.0,
+        "decision_coverage": 1.0,
+        "abstention_rate": 0.0,
+        "invalid_agent_rate": 0.0,
+        "case_id": "egfr_exclusion_token_canary",
+        "display_name": "EGFR exclusion-token canary",
+        "evaluation_role": "canary"
+      }
+    ],
+    "micro": {
+      "record_count": 30,
+      "expected_positive_count": 13,
+      "expected_negative_count": 17,
+      "predicted_select_count": 10,
+      "predicted_reject_count": 16,
+      "true_positive_count": 10,
+      "false_positive_count": 0,
+      "false_negative_count": 0,
+      "true_negative_count": 16,
+      "abstention_count": 4,
+      "invalid_agent_count": 0,
+      "precision": 1.0,
+      "end_to_end_recall": 0.7692307692307693,
+      "decision_accuracy": 0.8666666666666667,
+      "decision_coverage": 0.8666666666666667,
+      "abstention_rate": 0.13333333333333333,
+      "invalid_agent_rate": 0.0
+    },
+    "macro": {
+      "precision": 1.0,
+      "end_to_end_recall": 0.7222222222222222,
+      "decision_accuracy": 0.8527777777777779,
+      "decision_coverage": 0.8527777777777779,
+      "abstention_rate": 0.14722222222222223,
+      "invalid_agent_rate": 0.0
+    }
+  },
+  "canary_passed": true,
+  "quality_gate_passed": false,
+  "production_readiness_claim": false
+}

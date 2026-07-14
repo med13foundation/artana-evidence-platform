@@ -3198,6 +3198,88 @@ Remaining proof boundary:
 - Trusted-graph readiness remains blocked until the signed real-human study and
   the existing live relation-quality gates both pass.
 
+### 2026-07-13 - Semantic Selector Repeatability Harness
+
+Branch: `alvaro/evidence-semantic-pr6-live-repeatability`
+
+Evidence report:
+`docs/validation/reports/2026-07-13-pr-semantic-pr6-live-repeatability-harness.md`
+
+Progress:
+
+- A frozen source-lock protocol is written before any model execution.
+- Current and candidate judge models run in an interleaved schedule over
+  identical source records, with distinct IDs required for every agent attempt,
+  including failed validation retries.
+- Numeric quality metrics are recomputed from categorical decisions and the
+  frozen fixture instead of accepted from an agent or report envelope.
+- Run envelopes are rebound to exact evaluation files and SHA-256 digests.
+- Deterministic policy hard-gates worst-run and per-case precision, recall,
+  coverage, categorical stability, abstention burden, invalid-agent decisions,
+  canaries, and runtime observations. Variance remains diagnostic and cannot by
+  itself cause model adoption.
+- Exact registered judge models are pinned without enabling public runtime model
+  overrides. Candidate adoption cannot use model-authored confidence.
+- Normalized terminal-event snapshots bind model identity, every execution ID,
+  token use, cost, and latency. Every aggregate is recomputed from those events,
+  and zero-denominator ratios fail closed.
+- Source copies, run artifacts, protocol, recomputed report, and Markdown are
+  covered by an in-generation bundle manifest and digest anchor. Publication is
+  one atomic directory rename; a failure produces only an explicit failure
+  receipt.
+- The trusted mainline must contain merged PR `#148` commit `d23b1dea`, and the
+  evaluated commit must contain that frozen mainline snapshot. Commit, ref,
+  worktree, and source bytes are checked again before publication.
+- The registered live candidate is `openai:gpt-5.6-luna`; its availability and a
+  minimal Responses API inference were verified with the configured account.
+- The branch was rebased onto merged PR `#148` commit `d23b1dea`. The focused
+  post-adversarial suite now has 59 passing tests; package mypy and the full
+  `make service-checks` gate pass with `87.43%` coverage.
+- An initial live diagnostic exposed missing bundled source provenance. After
+  that adversarial finding was fixed, the final three-run interleaved v3 matrix
+  completed at evaluated commit `71460f59`.
+- The protocol now freezes those five repository source files into the source
+  lock, copies them under repository-relative bundle paths, and replays the
+  existing prediction-to-snapshot provenance checks from bundled bytes.
+- The final committed bundle has 23 verified manifest entries and is published
+  at
+  `docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/`.
+- New regressions reject repository path escape, pre-run source drift, and a
+  tampered source snapshot even when the generic manifest is rehashed.
+- The baseline score is recomputed from its bundled categorical predictions,
+  and execution loads its in-memory fixture and baseline only from staged bytes.
+  An adversarial re-review found no remaining blocker in these boundaries.
+- The deterministic result is `INCONCLUSIVE`: neither model passed the repeated
+  quality gate, no model is selected, and production readiness remains false.
+- The current model had seven unstable records, worst recall `0.7692`, and one
+  failed schema-validation attempt in every run whose token/cost usage was
+  unavailable. It passed all canary runs and used no deterministic fallback.
+- Luna was stable on every primary record with worst recall `1.0000` and
+  complete telemetry, but its two malformed canaries changed from select in run
+  1 to abstain in runs 2 and 3. It passed only one of three canary runs and used
+  no deterministic fallback.
+- The apparent Luna recall gain is not admissible evidence because
+  `brca1:pmid:30191368` is labeled pathogenic in the fixture while the underlying
+  abstract describes uncertain significance and possible benign or
+  reduced-penetrance interpretations.
+
+Remaining proof boundary:
+
+- No production model switch is justified by this matrix. The ambiguous canary
+  records require independent expert adjudication against a richer bounded
+  source packet before the gold labels are changed or the comparison is rerun.
+- The source-complete v3 artifact is published and verified. The next run must
+  wait for independent correction of the defective AI-adjudicated gold rather
+  than repeat the same invalid benchmark.
+- Failed local output-validation attempts need runtime usage retention so a
+  future resource comparison can deterministically account for every attempt.
+- The frozen fixture remains AI-adjudicated diagnostic evidence, not expert
+  gold.
+- Calibration remains unavailable until the real disjoint expert training and
+  held-out partitions are collected.
+- Model repeatability does not prove end-to-end trusted relation quality or
+  trusted-graph readiness.
+
 ## PR Update Template
 
 Copy this block when a PR is opened or merged.

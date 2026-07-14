@@ -1,0 +1,123 @@
+{
+  "entries": [
+    {
+      "relative_path": "candidate-run-1.json",
+      "sha256": "f62a9a56f42c374debd0b9a59be2de5a71e14176478d20d07b4e0eb66bdc47bd",
+      "size_bytes": 55923
+    },
+    {
+      "relative_path": "candidate-run-1.md",
+      "sha256": "f12e7ee2eaa26d2d3dcab0d9c9b9b5ad8897fdf6fd360b43558eb701c6313714",
+      "size_bytes": 1281
+    },
+    {
+      "relative_path": "candidate-run-2.json",
+      "sha256": "06801de9d934cb9b23c9ca139f3e2583aacbe3589c01c903b9794ee4046f64c1",
+      "size_bytes": 55590
+    },
+    {
+      "relative_path": "candidate-run-2.md",
+      "sha256": "c4ecb20f0faf1e25a4ff76ab0c19e3660aa88014b6f38398a90825e7b0d64d62",
+      "size_bytes": 1281
+    },
+    {
+      "relative_path": "candidate-run-3.json",
+      "sha256": "3c688cec981f62e49cb7332cb1a27cd75739b6d6b2aed996a85ab7bcd6a3a5f0",
+      "size_bytes": 56172
+    },
+    {
+      "relative_path": "candidate-run-3.md",
+      "sha256": "c4ecb20f0faf1e25a4ff76ab0c19e3660aa88014b6f38398a90825e7b0d64d62",
+      "size_bytes": 1281
+    },
+    {
+      "relative_path": "current-run-1.json",
+      "sha256": "f28c89e559adb587433d743346bb98562eaeea3a648316c39e860f7ebe993c82",
+      "size_bytes": 55378
+    },
+    {
+      "relative_path": "current-run-1.md",
+      "sha256": "180a5348cb5a13f147a3a7a4acf687bc5d35e0f229e49bc0bedc10d2e7aea11a",
+      "size_bytes": 1281
+    },
+    {
+      "relative_path": "current-run-2.json",
+      "sha256": "36f071bb5c500ac2d2039b9d73a2a9dc1e4f82343017511d2d2744660354fc10",
+      "size_bytes": 55210
+    },
+    {
+      "relative_path": "current-run-2.md",
+      "sha256": "236434c645b3872bd0f54bb6de3ace2887c0c78746b3ceaee7cbf78a26f2167a",
+      "size_bytes": 1281
+    },
+    {
+      "relative_path": "current-run-3.json",
+      "sha256": "df26eec63c147152fec256b2b42777359c0539c147bf80bebdbec523b2328b2f",
+      "size_bytes": 55296
+    },
+    {
+      "relative_path": "current-run-3.md",
+      "sha256": "2846df6063d4897edf98a3eb9e00ce11a3230f1fe6df940d4ba43f2c6b759202",
+      "size_bytes": 1281
+    },
+    {
+      "relative_path": "semantic_model_comparison_protocol.json",
+      "sha256": "92d5415c2a762c7bd27da79617d2f5e45d1b2d05827097db04a3c21931fc27c9",
+      "size_bytes": 3012
+    },
+    {
+      "relative_path": "semantic_model_comparison_protocol.md",
+      "sha256": "197b7afb6d83d16157e79111aec44bdbda7cf4f21bfd16016e6ca356b8db12c8",
+      "size_bytes": 2328
+    },
+    {
+      "relative_path": "semantic_model_comparison_report.json",
+      "sha256": "f159482dd5cab13c32b04487df5ff66808439309abfe166012a06fddc708763b",
+      "size_bytes": 157425
+    },
+    {
+      "relative_path": "semantic_model_comparison_report.md",
+      "sha256": "cd7bee9c53101aa5c7e147984c856e15ba24954a4c20e14d6328f39138f7506f",
+      "size_bytes": 2212
+    },
+    {
+      "relative_path": "sources/baseline_report.json",
+      "sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+      "size_bytes": 7012
+    },
+    {
+      "relative_path": "sources/fixture.json",
+      "sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+      "size_bytes": 27330
+    },
+    {
+      "relative_path": "sources/repository/scripts/validation/evidence_selection/fixtures/semantic_relevance_live_baseline_predictions_v1.json",
+      "sha256": "93844ba87ca9985da90b635de831cd0c5fc86c801cd63544bf9a5835de7f1b2f",
+      "size_bytes": 7843
+    },
+    {
+      "relative_path": "sources/repository/scripts/validation/evidence_selection/fixtures/source_artifacts/brca1_risk_penetrance.json",
+      "sha256": "7254d4cd0f74fb92e67d1caf1f545c2ff6bf471774047212ab1de344808baeb7",
+      "size_bytes": 7146
+    },
+    {
+      "relative_path": "sources/repository/scripts/validation/evidence_selection/fixtures/source_artifacts/cftr_f508del_eti_response.json",
+      "sha256": "b8fdf86290b33f4d7b9ae29cada157952f43d6eb0d1ec6527d84ca82c3f33477",
+      "size_bytes": 4182
+    },
+    {
+      "relative_path": "sources/repository/scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_exclusion_token_canary.json",
+      "sha256": "a935301454764c1c54b8ccb2cb857ffd73d24d6f206f6ef5fb914ca57d354d32",
+      "size_bytes": 1847
+    },
+    {
+      "relative_path": "sources/repository/scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_t790m_primary_evidence.json",
+      "sha256": "eb757ece0f13815d41e9dc0d0122de0293971f0309d423d1a23d3f14c26b4abe",
+      "size_bytes": 4244
+    }
+  ],
+  "generated_at": "2026-07-14T01:30:56.942703Z",
+  "protocol_sha256": "12835761c37cb4514f84c6abd813ca47bdca09a39c754ed9516f30393fe82cf4",
+  "schema_version": "evidence_selection_semantic_bundle.v2",
+  "status": "complete"
+}
