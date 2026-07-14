@@ -196,7 +196,7 @@ def test_zero_eligible_score_cannot_carry_metrics_or_canary_pass() -> None:
         EvidenceSelectionBenchmarkV2Score.model_validate(payload)
 
 
-def test_report_builder_rejects_forged_score_for_pending_evaluation() -> None:
+def test_report_builder_derives_pending_evaluation_internally() -> None:
     loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
     pending_evaluation = evaluate_benchmark_v2(loaded)
     predictions = load_semantic_prediction_artifact(PREDICTION_PATH).predictions
@@ -222,20 +222,18 @@ def test_report_builder_rejects_forged_score_for_pending_evaluation() -> None:
     assert forged_score.adoption_metrics is None
     assert forged_score.canary_gate_status == "unavailable"
 
-    with pytest.raises(TypeError, match="unexpected keyword argument 'score'"):
+    with pytest.raises(TypeError, match="unexpected keyword argument 'evaluation'"):
         build_benchmark_v2_report(
             fixture_path=FIXTURE_PATH,
             prediction_path=PREDICTION_PATH,
-            evaluation=pending_evaluation,
+            evaluation=forged_evaluation,  # type: ignore[call-arg]
             repository_root=Path.cwd(),
-            score=forged_score,  # type: ignore[call-arg]
             generated_at=datetime(2026, 7, 13, tzinfo=UTC),
         )
 
     report = build_benchmark_v2_report(
         fixture_path=FIXTURE_PATH,
         prediction_path=PREDICTION_PATH,
-        evaluation=pending_evaluation,
         repository_root=Path.cwd(),
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
     )
@@ -251,13 +249,10 @@ def test_report_builder_rejects_prediction_with_wrong_baseline_provenance(
     prediction_payload["baseline_model"] = "openai:different-model"
     prediction_path = tmp_path / "wrong-baseline-predictions.json"
     prediction_path.write_text(json.dumps(prediction_payload), encoding="utf-8")
-    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
-
     with pytest.raises(ValueError, match="baseline identity does not match"):
         build_benchmark_v2_report(
             fixture_path=FIXTURE_PATH,
             prediction_path=prediction_path,
-            evaluation=evaluate_benchmark_v2(loaded),
             repository_root=Path.cwd(),
             generated_at=datetime(2026, 7, 13, tzinfo=UTC),
         )
@@ -368,12 +363,9 @@ def test_verified_source_exports_still_require_external_reviewer_attestation(
 
 
 def test_report_wording_is_honest_and_keeps_excluded_records_visible() -> None:
-    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
-    evaluation = evaluate_benchmark_v2(loaded)
     report = build_benchmark_v2_report(
         fixture_path=FIXTURE_PATH,
         prediction_path=PREDICTION_PATH,
-        evaluation=evaluation,
         repository_root=Path.cwd(),
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
     )

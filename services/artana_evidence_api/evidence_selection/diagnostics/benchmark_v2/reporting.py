@@ -11,10 +11,8 @@ from artana_evidence_api.evidence_selection.diagnostics.predictions import (
     verify_prediction_provenance,
 )
 
-from .contracts import (
-    EvidenceSelectionBenchmarkEvaluation,
-    EvidenceSelectionBenchmarkV2Report,
-)
+from .contracts import EvidenceSelectionBenchmarkV2Report
+from .evaluation import evaluate_benchmark_v2
 from .loader import load_benchmark_v2
 from .scoring import score_benchmark_v2
 
@@ -23,15 +21,12 @@ def build_benchmark_v2_report(
     *,
     fixture_path: Path,
     prediction_path: Path,
-    evaluation: EvidenceSelectionBenchmarkEvaluation,
     repository_root: Path,
     generated_at: datetime,
 ) -> EvidenceSelectionBenchmarkV2Report:
-    """Load categorical predictions and recompute the exact reported score."""
+    """Derive eligibility and recompute the exact score from verified inputs."""
 
     fixture_sha256 = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
-    if fixture_sha256 != evaluation.fixture_sha256:
-        raise ValueError("report fixture bytes do not match evaluated fixture")
     prediction_bytes = prediction_path.read_bytes()
     prediction_artifact = (
         EvidenceSelectionSemanticPredictionArtifact.model_validate_json(
@@ -42,13 +37,14 @@ def build_benchmark_v2_report(
         fixture_path=fixture_path,
         repository_root=repository_root,
     )
-    if loaded.fixture_sha256 != evaluation.fixture_sha256:
-        raise ValueError("report evaluation does not match the loaded benchmark")
+    if loaded.fixture_sha256 != fixture_sha256:
+        raise ValueError("loaded benchmark does not match the report fixture bytes")
     verify_prediction_provenance(
         fixture=loaded.historical_v1,
         artifact=prediction_artifact,
         repository_root=repository_root,
     )
+    evaluation = evaluate_benchmark_v2(loaded)
     score = score_benchmark_v2(
         evaluation=evaluation,
         predictions=prediction_artifact.predictions,

@@ -11,13 +11,7 @@ from pathlib import Path
 
 from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2 import (
     build_benchmark_v2_report,
-    evaluate_benchmark_v2,
-    load_benchmark_v2,
     render_benchmark_v2_markdown,
-)
-from artana_evidence_api.evidence_selection.diagnostics.predictions import (
-    load_semantic_prediction_artifact,
-    verify_prediction_provenance,
 )
 from artana_evidence_api.evidence_selection.output_paths import paths_alias
 
@@ -41,21 +35,9 @@ def main(argv: tuple[str, ...] | None = None) -> int:
     args = _parse_args(argv)
     try:
         _validate_output_paths(args)
-        loaded = load_benchmark_v2(
-            fixture_path=args.fixture,
-            repository_root=Path.cwd(),
-        )
-        prediction_artifact = load_semantic_prediction_artifact(args.predictions)
-        verify_prediction_provenance(
-            fixture=loaded.historical_v1,
-            artifact=prediction_artifact,
-            repository_root=Path.cwd(),
-        )
-        evaluation = evaluate_benchmark_v2(loaded)
         report = build_benchmark_v2_report(
             fixture_path=args.fixture,
             prediction_path=args.predictions,
-            evaluation=evaluation,
             repository_root=Path.cwd(),
             generated_at=_parse_generated_at(args.generated_at),
         )
@@ -76,7 +58,7 @@ def main(argv: tuple[str, ...] | None = None) -> int:
         f"visible={report.score.total_record_count} "
         f"score_eligible={report.score.score_eligible_record_count} "
         f"canary_gate={report.score.canary_gate_status} "
-        f"expert_study={evaluation.expert_study_status}",
+        f"expert_study={report.expert_study_status}",
     )
     action = "Checked" if args.check else "Wrote"
     print(f"{action} JSON report: {args.json_output}")
