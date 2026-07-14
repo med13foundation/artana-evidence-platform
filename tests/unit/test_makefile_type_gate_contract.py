@@ -76,6 +76,27 @@ def test_evidence_api_gates_cover_semantic_agent_evaluation_script() -> None:
     )
 
 
+def test_evidence_api_gates_cover_semantic_model_comparison_script() -> None:
+    makefile_text = _makefile_text()
+    type_check_body = _target_body(makefile_text, "artana-evidence-api-type-check")
+    comparison_body = _target_body(
+        makefile_text,
+        "evidence-selection-semantic-model-comparison",
+    )
+
+    assert "../scripts/run_evidence_selection_semantic_model_comparison.py" in (
+        type_check_body
+    )
+    assert "scripts/run_evidence_selection_semantic_model_comparison.py \\" in (
+        makefile_text
+    )
+    assert "--required-mainline-commit" in comparison_body
+    assert (
+        "EVIDENCE_SELECTION_REQUIRED_MAINLINE_COMMIT ?= "
+        "d23b1dea194d7fc6f116de84738fdf720c536a71"
+    ) in makefile_text
+
+
 def test_evidence_api_gates_cover_shadow_review_packet_cli_script() -> None:
     makefile_text = _makefile_text()
     type_check_body = _target_body(makefile_text, "artana-evidence-api-type-check")

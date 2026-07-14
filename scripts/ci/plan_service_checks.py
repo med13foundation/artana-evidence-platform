@@ -32,6 +32,7 @@ HIGH_RISK_PREFIXES = (
 EVIDENCE_API_PREFIXES = (
     "services/artana_evidence_api/",
     "scripts/validation/evidence_selection/",
+    "docs/validation/reports/semantic-model-comparisons/",
     "tests/e2e/artana_evidence_api/",
 )
 EVIDENCE_API_FILES = (
@@ -49,6 +50,7 @@ EVIDENCE_API_FILES = (
     "scripts/generate_evidence_selection_semantic_baseline.py",
     "scripts/ci/validate_agent_output_boundaries.py",
     "scripts/run_evidence_selection_semantic_agent_evaluation.py",
+    "scripts/run_evidence_selection_semantic_model_comparison.py",
     "scripts/export_artana_evidence_api_openapi.py",
     "scripts/run_evidence_selection_expert_study_gate.py",
     "scripts/run_evidence_selection_review_calibration_gate.py",

@@ -319,6 +319,58 @@ review-ranking calibration together. Reports expose both
 from the diagnostic view. `--allow-failed-gate` is diagnostic only; it lets reports
 be written with exit success but does not make a failed suite production-ready.
 
+## Semantic Selector Repeatability And Model Comparison
+
+Run the controlled selector comparison only from a clean commit containing the
+declared trusted mainline commit. Both models receive the same frozen source
+records from the semantic diagnostic fixture in an interleaved schedule. The
+harness freezes its protocol before the first model call and rechecks the commit,
+mainline ref, worktree, and source hashes before publication.
+
+```bash
+COMMIT="$(git rev-parse HEAD)"
+make evidence-selection-semantic-model-comparison \
+  EVALUATED_COMMIT="$COMMIT" \
+  TRUSTED_MAINLINE_REF=origin/main \
+  EVIDENCE_SELECTION_REQUIRED_MAINLINE_COMMIT=d23b1dea194d7fc6f116de84738fdf720c536a71 \
+  CURRENT_MODEL=openai:gpt-5.4-mini \
+  CANDIDATE_MODEL=openai:gpt-5.6-luna \
+  COMPARISON_OUTPUT_DIR=reports/evidence_selection_semantic_model_comparison/<date>-<comparison-id>
+```
+
+`CURRENT_MODEL` may be omitted to use the configured default judge model. A
+candidate override must resolve to a distinct registered judge model before any
+run starts. The command requires the configured Postgres/runtime environment and
+an API key, writes to a new output directory, and refuses to overwrite an older
+comparison.
+
+The deterministic adoption policy requires worst-run precision, recall, and
+decision coverage of at least `0.80`; every case must keep at least `0.70`
+decision coverage and every primary case must keep at least `0.70` precision and
+recall. Record-level decisions must be stable across runs. Invalid-agent output,
+semantic fallback, failed canaries, incomplete telemetry, undefined resource
+ratios, or a model mismatch in the Artana event ledger fail closed. A three-run
+comparison may adopt only for material worst-run quality improvement. Variance
+and disagreement remain diagnostic measurements and cannot independently cause
+a model switch. No quality improvement can override the frozen absolute `10x`
+candidate cost or latency cap.
+
+Every retry execution is included in token, cost, latency, replay, and model
+identity checks. The command writes into a private staging directory, embeds
+exact source copies and normalized ledger-event snapshots, recomputes all usage
+aggregates from those embedded events, and recomputes the final quality report
+from categorical decisions. The content manifest and its digest anchor live in
+the same staged generation, which is published with one atomic directory rename.
+A failed run leaves a `*.failed.json` receipt and no partial evidence directory.
+Committed live bundles belong under
+`docs/validation/reports/semantic-model-comparisons/`, which is routed through
+the Evidence API CI gate.
+
+This comparison uses AI-adjudicated diagnostic labels. Calibration remains
+explicitly unavailable until the independent expert training and held-out
+partitions exist, and the comparison never makes a production-readiness or
+trusted-graph claim.
+
 ## Expert-Review Study
 
 Use a small expert-review study before production rollout.

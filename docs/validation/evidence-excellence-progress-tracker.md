@@ -3198,6 +3198,53 @@ Remaining proof boundary:
 - Trusted-graph readiness remains blocked until the signed real-human study and
   the existing live relation-quality gates both pass.
 
+### 2026-07-13 - Semantic Selector Repeatability Harness
+
+Branch: `alvaro/evidence-semantic-pr6-live-repeatability`
+
+Evidence report:
+`docs/validation/reports/2026-07-13-pr-semantic-pr6-live-repeatability-harness.md`
+
+Progress:
+
+- A frozen source-lock protocol is written before any model execution.
+- Current and candidate judge models run in an interleaved schedule over
+  identical source records, with distinct IDs required for every agent attempt,
+  including failed validation retries.
+- Numeric quality metrics are recomputed from categorical decisions and the
+  frozen fixture instead of accepted from an agent or report envelope.
+- Run envelopes are rebound to exact evaluation files and SHA-256 digests.
+- Deterministic policy hard-gates worst-run and per-case precision, recall,
+  coverage, categorical stability, abstention burden, invalid-agent decisions,
+  canaries, and runtime observations. Variance remains diagnostic and cannot by
+  itself cause model adoption.
+- Exact registered judge models are pinned without enabling public runtime model
+  overrides. Candidate adoption cannot use model-authored confidence.
+- Normalized terminal-event snapshots bind model identity, every execution ID,
+  token use, cost, and latency. Every aggregate is recomputed from those events,
+  and zero-denominator ratios fail closed.
+- Source copies, run artifacts, protocol, recomputed report, and Markdown are
+  covered by an in-generation bundle manifest and digest anchor. Publication is
+  one atomic directory rename; a failure produces only an explicit failure
+  receipt.
+- The trusted mainline must contain merged PR `#148` commit `d23b1dea`, and the
+  evaluated commit must contain that frozen mainline snapshot. Commit, ref,
+  worktree, and source bytes are checked again before publication.
+- The registered live candidate is `openai:gpt-5.6-luna`; its availability and a
+  minimal Responses API inference were verified with the configured account.
+
+Remaining proof boundary:
+
+- Ranking-calibration PR `#148` is merged. The branch must now be rebased onto
+  integrated `main`, revalidated, and run for three interleaved executions per
+  model before any model recommendation is recorded.
+- The frozen fixture remains AI-adjudicated diagnostic evidence, not expert
+  gold.
+- Calibration remains unavailable until the real disjoint expert training and
+  held-out partitions are collected.
+- Model repeatability does not prove end-to-end trusted relation quality or
+  trusted-graph readiness.
+
 ## PR Update Template
 
 Copy this block when a PR is opened or merged.

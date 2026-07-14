@@ -19,6 +19,7 @@ POSTGRES_ACTIVE_FLAG := .postgres-active
 GRAPH_SERVICE_PORT ?= 8090
 ARTANA_EVIDENCE_API_PORT ?= 8091
 COVERAGE_MIN ?= 86
+EVIDENCE_SELECTION_REQUIRED_MAINLINE_COMMIT ?= d23b1dea194d7fc6f116de84738fdf720c536a71
 
 BACKEND_DEV_JWT_SECRET ?= artana-platform-backend-jwt-secret-for-development-2026-01
 BACKEND_DEV_JWT_ISSUER ?= artana-platform
@@ -78,6 +79,7 @@ ARTANA_EVIDENCE_API_LINT_PATHS := \
  scripts/build_evidence_selection_expert_study_bundle.py \
  scripts/generate_evidence_selection_semantic_baseline.py \
  scripts/run_evidence_selection_semantic_agent_evaluation.py \
+ scripts/run_evidence_selection_semantic_model_comparison.py \
  scripts/ci/validate_agent_output_boundaries.py \
  scripts/export_artana_evidence_api_openapi.py \
  scripts/validate_artana_evidence_api_service_boundary.py \
@@ -136,7 +138,7 @@ define check_venv
 fi
 endef
 
-.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check agent-output-boundary-check graph-phase6-release-check architecture-size-check architecture-structure-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test evidence-selection-semantic-baseline-check coverage-check relation-feasibility-quality-gate artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-agent-relation-feasibility-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
+.PHONY: help all venv install-dev docker-postgres-up docker-postgres-down docker-postgres-destroy docker-postgres-logs docker-postgres-status postgres-wait graph-db-wait graph-db-migrate artana-evidence-api-db-wait artana-evidence-api-db-migrate init-artana-schema setup-postgres graph-service-openapi graph-service-client-types graph-service-sync-contracts graph-service-contract-check graph-service-boundary-check artana-evidence-api-openapi artana-evidence-api-contract-check artana-evidence-api-boundary-check agent-output-boundary-check graph-phase6-release-check architecture-size-check architecture-structure-check graph-service-lint graph-service-type-check graph-service-type-check-strict-imports graph-service-test graph-service-static-checks-core graph-service-static-checks graph-service-checks artana-evidence-api-lint artana-evidence-api-type-check artana-evidence-api-type-check-strict-imports artana-evidence-api-test evidence-selection-semantic-baseline-check evidence-selection-semantic-model-comparison coverage-check relation-feasibility-quality-gate artana-evidence-api-static-checks-core artana-evidence-api-static-checks artana-evidence-api-service-checks service-checks live-endpoint-contract-check live-external-api-check live-agent-relation-feasibility-check live-service-checks type-hardening-baseline run-graph-service run-artana-evidence-api-service run-artana-evidence-api-worker run-all
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-32s %s\n", $$1, $$2}'
@@ -312,6 +314,7 @@ artana-evidence-api-type-check: ## Run strict mypy on evidence API package
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/build_evidence_selection_expert_study_bundle.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/generate_evidence_selection_semantic_baseline.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_evidence_selection_semantic_agent_evaluation.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_evidence_selection_semantic_model_comparison.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/ci/validate_agent_output_boundaries.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 
 artana-evidence-api-type-check-strict-imports: ## Explicit strict-import evidence API mypy gate
@@ -350,6 +353,13 @@ evidence-selection-semantic-agent-evaluation: ## Run PR 2 live-agent semantic qu
 	$(call check_venv)
 	@test -n "$(EVALUATED_COMMIT)" || (echo "EVALUATED_COMMIT is required" >&2; exit 2)
 	$(call run_with_postgres_env,PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) scripts/run_evidence_selection_semantic_agent_evaluation.py --fixture scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json --baseline-report docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json --evaluated-commit "$(EVALUATED_COMMIT)" --generated-at "$${GENERATED_AT:-$$(date -u +%Y-%m-%dT%H:%M:%SZ)}" --json-output docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.json --markdown-output docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.md)
+
+evidence-selection-semantic-model-comparison: ## Run PR 6 repeated source-locked model A/B proof
+	$(call check_venv)
+	@test -n "$(EVALUATED_COMMIT)" || (echo "EVALUATED_COMMIT is required" >&2; exit 2)
+	@test -n "$(CANDIDATE_MODEL)" || (echo "CANDIDATE_MODEL is required" >&2; exit 2)
+	@test -n "$(COMPARISON_OUTPUT_DIR)" || (echo "COMPARISON_OUTPUT_DIR is required" >&2; exit 2)
+	$(call run_with_postgres_env,PYTHONPATH="$(CURDIR)/services:$(CURDIR)" $(USE_PYTHON) scripts/run_evidence_selection_semantic_model_comparison.py --fixture scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json --baseline-report docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json --evaluated-commit "$(EVALUATED_COMMIT)" --trusted-mainline-ref "$(or $(TRUSTED_MAINLINE_REF),origin/main)" --required-mainline-commit "$(EVIDENCE_SELECTION_REQUIRED_MAINLINE_COMMIT)" $(if $(CURRENT_MODEL),--current-model "$(CURRENT_MODEL)",) --candidate-model "$(CANDIDATE_MODEL)" --generated-at "$${GENERATED_AT:-$$(date -u +%Y-%m-%dT%H:%M:%SZ)}" --output-dir "$(COMPARISON_OUTPUT_DIR)")
 
 artana-evidence-api-static-checks-core: ## Run evidence API static gates except repo-wide size check
 	@$(MAKE) -s artana-evidence-api-lint
