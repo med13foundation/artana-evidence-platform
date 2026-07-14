@@ -113,17 +113,19 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         "| --- | ---: | ---: |",
         f"| Runs | {current.run_count} | {candidate.run_count} |",
         f"| Quality gate | {'PASS' if current.quality_gate_passed else 'FAIL'} | {'PASS' if candidate.quality_gate_passed else 'FAIL'} |",
-        f"| Worst precision | {current.worst_precision:.4f} | {candidate.worst_precision:.4f} |",
-        f"| Worst recall | {current.worst_recall:.4f} | {candidate.worst_recall:.4f} |",
-        f"| Minimum case precision | {current.minimum_case_precision:.4f} | {candidate.minimum_case_precision:.4f} |",
-        f"| Minimum case recall | {current.minimum_case_recall:.4f} | {candidate.minimum_case_recall:.4f} |",
-        f"| Worst decision coverage | {current.worst_decision_coverage:.4f} | {candidate.worst_decision_coverage:.4f} |",
-        f"| Minimum case coverage | {current.minimum_case_decision_coverage:.4f} | {candidate.minimum_case_decision_coverage:.4f} |",
-        f"| Mean abstention rate | {current.mean_abstention_rate:.4f} | {candidate.mean_abstention_rate:.4f} |",
-        f"| Mean precision | {current.mean_precision:.4f} | {candidate.mean_precision:.4f} |",
-        f"| Mean recall | {current.mean_recall:.4f} | {candidate.mean_recall:.4f} |",
-        f"| Precision variance | {current.precision_variance:.6f} | {candidate.precision_variance:.6f} |",
-        f"| Recall variance | {current.recall_variance:.6f} | {candidate.recall_variance:.6f} |",
+        f"| Adoption metrics | {current.adoption_metrics_status} | {candidate.adoption_metrics_status} |",
+        f"| Canary gate | {current.canary_gate_status} | {candidate.canary_gate_status} |",
+        f"| Worst precision | {_format_metric(current.worst_precision)} | {_format_metric(candidate.worst_precision)} |",
+        f"| Worst recall | {_format_metric(current.worst_recall)} | {_format_metric(candidate.worst_recall)} |",
+        f"| Minimum case precision | {_format_metric(current.minimum_case_precision)} | {_format_metric(candidate.minimum_case_precision)} |",
+        f"| Minimum case recall | {_format_metric(current.minimum_case_recall)} | {_format_metric(candidate.minimum_case_recall)} |",
+        f"| Worst decision coverage | {_format_metric(current.worst_decision_coverage)} | {_format_metric(candidate.worst_decision_coverage)} |",
+        f"| Minimum case coverage | {_format_metric(current.minimum_case_decision_coverage)} | {_format_metric(candidate.minimum_case_decision_coverage)} |",
+        f"| Mean abstention rate | {_format_metric(current.mean_abstention_rate)} | {_format_metric(candidate.mean_abstention_rate)} |",
+        f"| Mean precision | {_format_metric(current.mean_precision)} | {_format_metric(candidate.mean_precision)} |",
+        f"| Mean recall | {_format_metric(current.mean_recall)} | {_format_metric(candidate.mean_recall)} |",
+        f"| Precision variance | {_format_metric(current.precision_variance, 6)} | {_format_metric(candidate.precision_variance, 6)} |",
+        f"| Recall variance | {_format_metric(current.recall_variance, 6)} | {_format_metric(candidate.recall_variance, 6)} |",
         f"| Unstable records | {current.unstable_record_count} | {candidate.unstable_record_count} |",
         f"| Invalid-agent decisions | {current.invalid_agent_count} | {candidate.invalid_agent_count} |",
         "| Deterministic fallback | 0 | 0 |",
@@ -146,9 +148,9 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         lines.extend(f"- {reason}" for reason in decision.blocking_reasons)
     lines.extend(
         [
-            f"- Worst precision delta: `{decision.metric_deltas.worst_precision:.4f}`",
-            f"- Worst recall delta: `{decision.metric_deltas.worst_recall:.4f}`",
-            f"- Combined variance delta: `{decision.metric_deltas.combined_variance:.6f}`",
+            f"- Worst precision delta: `{_format_metric(decision.metric_deltas.worst_precision)}`",
+            f"- Worst recall delta: `{_format_metric(decision.metric_deltas.worst_recall)}`",
+            f"- Combined variance delta: `{_format_metric(decision.metric_deltas.combined_variance, 6)}`",
             f"- Cost ratio: `{_optional_float(decision.metric_deltas.cost_ratio, 4)}`",
             f"- Model latency ratio: `{_optional_float(decision.metric_deltas.model_latency_ratio, 4)}`",
             f"- Cross-model categorical disagreements: `{report.cross_model_disagreement_count}`",
@@ -162,6 +164,10 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         ],
     )
     return "\n".join(lines)
+
+
+def _format_metric(value: float | None, digits: int = 4) -> str:
+    return "unavailable" if value is None else f"{value:.{digits}f}"
 
 
 def _write_atomic(*, path: Path, content: str) -> None:

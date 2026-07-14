@@ -10,6 +10,15 @@ from pathlib import Path
 from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import (
     EvidenceSelectionSemanticAgentEvaluation,
 )
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.contracts import (
+    EvidenceSelectionBenchmarkEvaluation,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.scoring import (
+    score_benchmark_v2,
+)
+from artana_evidence_api.evidence_selection.diagnostics.predictions import (
+    EvidenceSelectionSemanticPrediction,
+)
 
 from .contracts import (
     SemanticModelComparisonProtocol,
@@ -31,6 +40,9 @@ def build_semantic_model_comparison_protocol(
     required_mainline_commit: str,
     fixture_path: Path,
     fixture_sha256: str,
+    benchmark_fixture_path: Path,
+    benchmark_fixture_sha256: str,
+    benchmark_evaluation: EvidenceSelectionBenchmarkEvaluation,
     baseline_report_path: Path,
     baseline_report_sha256: str,
     repository_source_files: tuple[SemanticRepositorySourceFile, ...],
@@ -44,11 +56,12 @@ def build_semantic_model_comparison_protocol(
     resolved_thresholds = thresholds or SemanticModelComparisonThresholds()
     source_lock_digest = source_lock_sha256(
         fixture_sha256=fixture_sha256,
+        benchmark_fixture_sha256=benchmark_fixture_sha256,
         baseline_report_sha256=baseline_report_sha256,
         repository_source_files=repository_source_files,
     )
     return SemanticModelComparisonProtocol(
-        schema_version="evidence_selection_semantic_model_protocol.v3",
+        schema_version="evidence_selection_semantic_model_protocol.v4",
         generated_at=generated_at,
         evaluated_commit=evaluated_commit,
         trusted_mainline_ref=trusted_mainline_ref,
@@ -57,6 +70,9 @@ def build_semantic_model_comparison_protocol(
         fixture_path=str(fixture_path),
         fixture_sha256=fixture_sha256,
         fixture_provenance="ai_adjudicated_diagnostic",
+        benchmark_fixture_path=str(benchmark_fixture_path),
+        benchmark_fixture_sha256=benchmark_fixture_sha256,
+        benchmark_evaluation=benchmark_evaluation,
         baseline_report_path=str(baseline_report_path),
         baseline_report_sha256=baseline_report_sha256,
         repository_source_files=repository_source_files,
@@ -76,6 +92,7 @@ def build_semantic_model_evaluation_run(
     evaluation_path: Path,
     evaluation_reference: str | None = None,
     evaluation: EvidenceSelectionSemanticAgentEvaluation,
+    benchmark_evaluation: EvidenceSelectionBenchmarkEvaluation,
     telemetry: SemanticRunTelemetry,
     agent_run_ids: tuple[str, ...] | None = None,
 ) -> SemanticModelEvaluationRun:
@@ -91,6 +108,17 @@ def build_semantic_model_evaluation_run(
         ),
     )
     bound_agent_run_ids = agent_run_ids or successful_agent_run_ids
+    adoption_score = score_benchmark_v2(
+        evaluation=benchmark_evaluation,
+        predictions=tuple(
+            EvidenceSelectionSemanticPrediction(
+                record_id=result.record_id,
+                decision=result.prediction_decision,
+                reason=result.failure_type or "categorical semantic selector output",
+            )
+            for result in evaluation.record_results
+        ),
+    )
     return SemanticModelEvaluationRun(
         model_role=role,
         run_index=run_index,
@@ -106,6 +134,7 @@ def build_semantic_model_evaluation_run(
         score=evaluation.score,
         canary_passed=evaluation.canary_passed,
         quality_gate_passed=evaluation.quality_gate_passed,
+        adoption_score=adoption_score,
         agent_run_ids=bound_agent_run_ids,
         record_decisions=tuple(
             SemanticRecordDecision(
@@ -142,6 +171,7 @@ def protocol_sha256(protocol: SemanticModelComparisonProtocol) -> str:
 def source_lock_sha256(
     *,
     fixture_sha256: str,
+    benchmark_fixture_sha256: str,
     baseline_report_sha256: str,
     repository_source_files: tuple[SemanticRepositorySourceFile, ...],
 ) -> str:
@@ -149,6 +179,7 @@ def source_lock_sha256(
         {
             "baseline_report_sha256": baseline_report_sha256,
             "fixture_sha256": fixture_sha256,
+            "benchmark_fixture_sha256": benchmark_fixture_sha256,
             "repository_source_files": [
                 source.model_dump(mode="json") for source in repository_source_files
             ],

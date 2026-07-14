@@ -26,6 +26,7 @@ def score_benchmark_v2(
     prediction_by_id = _prediction_map(evaluation=evaluation, predictions=predictions)
     outcomes = tuple(
         EvidenceSelectionBenchmarkRecordOutcome(
+            case_id=record.case_id,
             record_id=record.record_id,
             evaluation_role=record.evaluation_role,
             diagnostic_decision=record.diagnostic_decision,
@@ -59,7 +60,7 @@ def score_benchmark_v2(
             outcome.eligibility_status == "pending_expert" for outcome in outcomes
         ),
         adoption_metrics=(
-            _metrics(eligible_primary) if eligible_primary else None
+            metrics_for_outcomes(eligible_primary) if eligible_primary else None
         ),
         canary_gate_status=_canary_gate_status(eligible_canaries),
         record_outcomes=outcomes,
@@ -86,7 +87,7 @@ def _prediction_map(
     return by_id
 
 
-def _metrics(
+def metrics_for_outcomes(
     outcomes: tuple[EvidenceSelectionBenchmarkRecordOutcome, ...],
 ) -> EvidenceSelectionBenchmarkMetrics:
     true_positive = sum(
@@ -106,7 +107,9 @@ def _metrics(
         for outcome in outcomes
     )
     abstentions = sum(outcome.prediction_decision == "abstain" for outcome in outcomes)
-    invalid = sum(outcome.prediction_decision == "invalid_agent" for outcome in outcomes)
+    invalid = sum(
+        outcome.prediction_decision == "invalid_agent" for outcome in outcomes
+    )
     expected_positive = sum(outcome.expert_label == "select" for outcome in outcomes)
     selected = true_positive + false_positive
     decided = true_positive + false_positive + false_negative + true_negative
@@ -118,6 +121,16 @@ def _metrics(
         true_negative_count=true_negative,
         abstention_count=abstentions,
         invalid_agent_count=invalid,
+        abstained_expected_positive_count=sum(
+            outcome.expert_label == "select"
+            and outcome.prediction_decision == "abstain"
+            for outcome in outcomes
+        ),
+        invalid_expected_positive_count=sum(
+            outcome.expert_label == "select"
+            and outcome.prediction_decision == "invalid_agent"
+            for outcome in outcomes
+        ),
         precision=true_positive / selected if selected else 0.0,
         end_to_end_recall=(
             true_positive / expected_positive if expected_positive else 0.0
@@ -137,4 +150,4 @@ def _canary_gate_status(
     return "passed" if passed else "failed"
 
 
-__all__ = ["score_benchmark_v2"]
+__all__ = ["metrics_for_outcomes", "score_benchmark_v2"]

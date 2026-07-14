@@ -58,8 +58,10 @@ def render_benchmark_v2_markdown(report: EvidenceSelectionBenchmarkV2Report) -> 
         f"- Canary gate: **{score.canary_gate_status.upper()}**",
         "",
         "AI diagnostic categories, rationales, and evidence spans remain visible but are "
-        "excluded from adoption metrics. Only labels derived through the existing "
-        "real-shadow-review bundle and provenance gate can become score-eligible.",
+        "excluded from adoption metrics. The existing real-shadow-review bundle and "
+        "provenance gate are required but not sufficient: score eligibility also "
+        "requires externally authenticated reviewer identity and independent per-record "
+        "packet-sufficiency attestation bound to the verified source exports.",
         "",
         "## Adoption Metrics",
         "",
@@ -68,8 +70,8 @@ def render_benchmark_v2_markdown(report: EvidenceSelectionBenchmarkV2Report) -> 
     if metrics is None:
         lines.extend(
             [
-                "**UNAVAILABLE**: no primary records have sufficient, gate-verified "
-                "human review evidence.",
+                "**UNAVAILABLE**: no primary records have independently attested "
+                "reviewer provenance and sufficient bounded source packets.",
             ],
         )
     else:

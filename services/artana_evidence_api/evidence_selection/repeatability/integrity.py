@@ -7,6 +7,9 @@ from pathlib import Path
 from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import (
     EvidenceSelectionSemanticAgentEvaluation,
 )
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.scoring import (
+    score_benchmark_v2,
+)
 from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     EvidenceSelectionSemanticDiagnosticFixture,
     load_semantic_diagnostic_fixture,
@@ -39,6 +42,7 @@ def validate_semantic_run_matrix(
 
     expected_source_lock = source_lock_sha256(
         fixture_sha256=protocol.fixture_sha256,
+        benchmark_fixture_sha256=protocol.benchmark_fixture_sha256,
         baseline_report_sha256=protocol.baseline_report_sha256,
         repository_source_files=protocol.repository_source_files,
     )
@@ -98,6 +102,21 @@ def validate_semantic_run_matrix(
         if recomputed_score != run.score:
             raise ValueError(
                 "model run numeric score does not match its categorical decisions",
+            )
+        recomputed_adoption_score = score_benchmark_v2(
+            evaluation=protocol.benchmark_evaluation,
+            predictions=tuple(
+                EvidenceSelectionSemanticPrediction(
+                    record_id=decision.record_id,
+                    decision=decision.decision,
+                    reason="Recomputed from the frozen categorical run artifact.",
+                )
+                for decision in run.record_decisions
+            ),
+        )
+        if recomputed_adoption_score != run.adoption_score:
+            raise ValueError(
+                "model run adoption score does not match eligible categorical outcomes",
             )
 
 

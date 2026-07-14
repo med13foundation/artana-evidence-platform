@@ -10,11 +10,11 @@
 - Ambiguous pending-expert records: `3`
 - Canary gate: **UNAVAILABLE**
 
-AI diagnostic categories, rationales, and evidence spans remain visible but are excluded from adoption metrics. Only labels derived through the existing real-shadow-review bundle and provenance gate can become score-eligible.
+AI diagnostic categories, rationales, and evidence spans remain visible but are excluded from adoption metrics. The existing real-shadow-review bundle and provenance gate are required but not sufficient: score eligibility also requires externally authenticated reviewer identity and independent per-record packet-sufficiency attestation bound to the verified source exports.
 
 ## Adoption Metrics
 
-**UNAVAILABLE**: no primary records have sufficient, gate-verified human review evidence.
+**UNAVAILABLE**: no primary records have independently attested reviewer provenance and sufficient bounded source packets.
 
 ## Record Inventory
 

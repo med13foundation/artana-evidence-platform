@@ -19,6 +19,7 @@ from .contracts import (
     EvidenceSelectionBenchmarkArtifactRef,
     EvidenceSelectionBenchmarkEvidenceSpan,
     EvidenceSelectionBenchmarkPacketManifest,
+    EvidenceSelectionBenchmarkPacketRecordStatus,
     EvidenceSelectionBenchmarkV2Fixture,
 )
 
@@ -75,6 +76,7 @@ class LoadedEvidenceSelectionBenchmarkV2:
     historical_v1: EvidenceSelectionSemanticDiagnosticFixture
     packet_manifest: EvidenceSelectionBenchmarkPacketManifest
     packets_by_case: dict[str, _BoundedSourcePacket]
+    packet_status_by_record: dict[str, EvidenceSelectionBenchmarkPacketRecordStatus]
     diagnostics_by_record: dict[str, EvidenceSelectionBenchmarkAIDiagnostic]
     repository_root: Path
 
@@ -106,6 +108,16 @@ def load_benchmark_v2(
         historical_v1=historical_v1,
         repository_root=resolved_root,
     )
+    historical_record_ids = {
+        record.record_id for case in historical_v1.cases for record in case.records
+    }
+    packet_status_by_record = {
+        item.record_id: item for item in packet_manifest.record_sufficiency
+    }
+    if set(packet_status_by_record) != historical_record_ids:
+        raise ValueError(
+            "packet sufficiency inventory must exactly match historical v1 records",
+        )
     diagnostics_by_record = _diagnostics(
         fixture=fixture,
         historical_v1=historical_v1,
@@ -116,7 +128,9 @@ def load_benchmark_v2(
         binding.case_id for binding in fixture.expert_review_bindings
     } - known_case_ids
     if unknown_bindings:
-        raise ValueError(f"expert review bindings contain unknown cases: {sorted(unknown_bindings)}")
+        raise ValueError(
+            f"expert review bindings contain unknown cases: {sorted(unknown_bindings)}"
+        )
     return LoadedEvidenceSelectionBenchmarkV2(
         fixture_path=fixture_path,
         fixture_sha256=hashlib.sha256(fixture_bytes).hexdigest(),
@@ -124,6 +138,7 @@ def load_benchmark_v2(
         historical_v1=historical_v1,
         packet_manifest=packet_manifest,
         packets_by_case=packets_by_case,
+        packet_status_by_record=packet_status_by_record,
         diagnostics_by_record=diagnostics_by_record,
         repository_root=resolved_root,
     )
@@ -139,11 +154,15 @@ def read_verified_artifact(
     resolved_root = repository_root.resolve()
     path = (resolved_root / reference.path).resolve()
     if not path.is_relative_to(resolved_root):
-        raise ValueError(f"benchmark artifact escapes repository root: {reference.path}")
+        raise ValueError(
+            f"benchmark artifact escapes repository root: {reference.path}"
+        )
     try:
         content = path.read_bytes()
     except OSError as exc:
-        raise ValueError(f"benchmark artifact is not resolvable: {reference.path}") from exc
+        raise ValueError(
+            f"benchmark artifact is not resolvable: {reference.path}"
+        ) from exc
     if hashlib.sha256(content).hexdigest() != reference.sha256:
         raise ValueError(f"benchmark artifact digest mismatch: {reference.path}")
     return path, content
@@ -157,7 +176,9 @@ def _load_packets(
 ) -> dict[str, _BoundedSourcePacket]:
     expected_cases = {case.case_id: case for case in historical_v1.cases}
     if {packet.case_id for packet in manifest.packets} != set(expected_cases):
-        raise ValueError("packet manifest case inventory must exactly match historical v1")
+        raise ValueError(
+            "packet manifest case inventory must exactly match historical v1"
+        )
     loaded: dict[str, _BoundedSourcePacket] = {}
     for reference in manifest.packets:
         historical_case = expected_cases[reference.case_id]
@@ -174,7 +195,9 @@ def _load_packets(
         )
         packet = _BoundedSourcePacket.model_validate_json(packet_bytes)
         if packet.case.model_dump() != _expected_packet_case(historical_case):
-            raise ValueError(f"bounded packet content drifted from v1: {reference.case_id}")
+            raise ValueError(
+                f"bounded packet content drifted from v1: {reference.case_id}"
+            )
         loaded[reference.case_id] = packet
     return loaded
 
@@ -228,7 +251,9 @@ def _diagnostics(
     }
     for override in fixture.diagnostic_overrides:
         if override.record_id not in migrated:
-            raise ValueError(f"diagnostic override has unknown record: {override.record_id}")
+            raise ValueError(
+                f"diagnostic override has unknown record: {override.record_id}"
+            )
         case_id = next(
             case.case_id
             for case in historical_v1.cases
@@ -248,11 +273,17 @@ def _verify_diagnostic_spans(
     packet: _BoundedSourcePacket,
 ) -> None:
     packet_record = next(
-        (record for record in packet.case.records if record.record_id == diagnostic.record_id),
+        (
+            record
+            for record in packet.case.records
+            if record.record_id == diagnostic.record_id
+        ),
         None,
     )
     if packet_record is None:
-        raise ValueError(f"diagnostic record is absent from bounded packet: {diagnostic.record_id}")
+        raise ValueError(
+            f"diagnostic record is absent from bounded packet: {diagnostic.record_id}"
+        )
     allowed = {
         f"{diagnostic.record_id}:title": packet_record.title,
         f"{diagnostic.record_id}:evidence_excerpt": packet_record.evidence_excerpt,

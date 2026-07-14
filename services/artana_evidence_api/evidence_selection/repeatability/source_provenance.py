@@ -6,6 +6,9 @@ import hashlib
 import shutil
 from pathlib import Path, PurePosixPath
 
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.loader import (
+    LoadedEvidenceSelectionBenchmarkV2,
+)
 from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     EvidenceSelectionSemanticDiagnosticFixture,
 )
@@ -19,6 +22,9 @@ from artana_evidence_api.evidence_selection.diagnostics.report import (
 from artana_evidence_api.evidence_selection.diagnostics.scoring import (
     score_semantic_diagnostic,
 )
+from artana_evidence_api.evidence_selection_validation import (
+    EvidenceSelectionExpertStudyInput,
+)
 
 from .contracts import SemanticRepositorySourceFile
 
@@ -29,6 +35,7 @@ def build_repository_source_files(
     *,
     fixture: EvidenceSelectionSemanticDiagnosticFixture,
     baseline: EvidenceSelectionSemanticDiagnosticReport,
+    benchmark: LoadedEvidenceSelectionBenchmarkV2,
     repository_root: Path,
 ) -> tuple[SemanticRepositorySourceFile, ...]:
     """Resolve and verify every repository file behind the baseline report."""
@@ -75,6 +82,75 @@ def build_repository_source_files(
             key=lambda item: item.source_artifact_path,
         )
     )
+    source_files.extend(
+        (
+            SemanticRepositorySourceFile(
+                role="benchmark_fixture",
+                relative_path=_repository_relative_path(
+                    path=benchmark.fixture_path,
+                    repository_root=repository_root,
+                ),
+                sha256=benchmark.fixture_sha256,
+            ),
+            SemanticRepositorySourceFile(
+                role="historical_fixture",
+                relative_path=benchmark.fixture.historical_v1.path,
+                sha256=benchmark.fixture.historical_v1.sha256,
+            ),
+            SemanticRepositorySourceFile(
+                role="benchmark_packet_manifest",
+                relative_path=benchmark.fixture.source_packet_manifest.path,
+                sha256=benchmark.fixture.source_packet_manifest.sha256,
+            ),
+        ),
+    )
+    if benchmark.fixture.expert_study_bundle is not None:
+        bundle_reference = benchmark.fixture.expert_study_bundle
+        source_files.append(
+            SemanticRepositorySourceFile(
+                role="expert_study_bundle",
+                relative_path=bundle_reference.path,
+                sha256=bundle_reference.sha256,
+            ),
+        )
+        bundle_path = _resolved_repository_path(
+            repository_root=repository_root,
+            relative_path=bundle_reference.path,
+        )
+        study = EvidenceSelectionExpertStudyInput.model_validate_json(
+            bundle_path.read_bytes(),
+        )
+        manifest = study.source_manifest
+        if manifest is None:
+            raise ValueError("linked expert-study bundle requires a source manifest")
+        existing_paths = {source.relative_path for source in source_files}
+        for artifact in manifest.source_artifacts:
+            relative_path = _canonical_relative_path(artifact.uri)
+            if relative_path in existing_paths:
+                existing = next(
+                    source
+                    for source in source_files
+                    if source.relative_path == relative_path
+                )
+                if existing.sha256 != artifact.sha256:
+                    raise ValueError(
+                        "expert-study source overlaps with a different digest"
+                    )
+                continue
+            artifact_path = _resolved_repository_path(
+                repository_root=repository_root,
+                relative_path=relative_path,
+            )
+            if _sha256_path(artifact_path) != artifact.sha256:
+                raise ValueError("expert-study source artifact digest mismatch")
+            source_files.append(
+                SemanticRepositorySourceFile(
+                    role="expert_study_source_artifact",
+                    relative_path=relative_path,
+                    sha256=artifact.sha256,
+                ),
+            )
+            existing_paths.add(relative_path)
     return tuple(source_files)
 
 
@@ -83,6 +159,7 @@ def verify_repository_source_provenance(
     expected_files: tuple[SemanticRepositorySourceFile, ...],
     fixture: EvidenceSelectionSemanticDiagnosticFixture,
     baseline: EvidenceSelectionSemanticDiagnosticReport,
+    benchmark: LoadedEvidenceSelectionBenchmarkV2,
     repository_root: Path,
 ) -> None:
     """Reject source-manifest, snapshot, or baseline-prediction drift."""
@@ -90,6 +167,7 @@ def verify_repository_source_provenance(
     observed_files = build_repository_source_files(
         fixture=fixture,
         baseline=baseline,
+        benchmark=benchmark,
         repository_root=repository_root,
     )
     if observed_files != expected_files:
@@ -123,6 +201,14 @@ def _canonical_relative_path(value: str) -> str:
     if path.is_absolute() or ".." in path.parts or value != path.as_posix():
         raise ValueError("semantic source paths must be canonical and relative")
     return value
+
+
+def _repository_relative_path(*, path: Path, repository_root: Path) -> str:
+    try:
+        relative = path.resolve().relative_to(repository_root.resolve())
+    except ValueError as exc:
+        raise ValueError("benchmark fixture must be inside the repository") from exc
+    return _canonical_relative_path(relative.as_posix())
 
 
 def _resolved_repository_path(*, repository_root: Path, relative_path: str) -> Path:

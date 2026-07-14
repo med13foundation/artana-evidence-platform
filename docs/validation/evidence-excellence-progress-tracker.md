@@ -3294,7 +3294,8 @@ Progress:
 - The v1 fixture and four source snapshots remain immutable historical AI
   diagnostic evidence, bound by their existing SHA-256 digests.
 - A separate content-addressed packet manifest establishes the bounded input
-  inventory for benchmark v2 without rewriting v1.
+  inventory for benchmark v2 without rewriting v1 and explicitly inventories
+  each record as `unverified` or `known_insufficient`.
 - AI adjudication has a strict categorical contract with rationale and literal
   packet spans. It cannot claim human/expert provenance or include numeric
   confidence/self-scores.
@@ -3304,28 +3305,32 @@ Progress:
 - Score eligibility is deterministic and reuses the existing expert-study
   bundle/provenance gate. The benchmark adds no parallel reviewer certification
   system.
-- A passed existing study is still insufficient by itself: its source manifest
-  must bind the benchmark packet manifest, its review inventory must match the
-  case, and each eligible record must have a citation that resolves to bounded
-  packet text.
+- A passed existing study is necessary but insufficient. The benchmark resolves
+  and hash-verifies declared source exports and verifies exact review, reviewer
+  roster, run ID, export identity, and packet-manifest bindings. It then remains
+  pending because the current provenance contract does not authenticate human
+  identity or independently attest per-record packet sufficiency.
+- The actual repeated model-comparison protocol now freezes benchmark v2 and
+  recomputes an eligibility-aware adoption score from categorical outcomes.
+  Pending evidence makes adoption and canary gates unavailable and forces an
+  inconclusive decision with no selected model. V1 metrics remain diagnostic.
 - All pending, ambiguous, and uncited records stay visible but are excluded from
   adoption metrics and canary gates. Empty eligible sets produce `unavailable`,
   not zero or pass.
 - The initial integrity report is honest: 33 records visible, 0 score-eligible,
   30 pending expert, 3 ambiguous pending expert, adoption metrics unavailable,
   canary gate unavailable, and no production-readiness claim.
-- Focused benchmark, diagnostic, replay, repeatability, adversarial, and CLI
-  tests pass (`59 passed`). Focused Ruff and mypy checks pass.
-- The full Postgres-backed `make artana-evidence-api-service-checks` gate passes,
-  including report drift, boundary, contract, architecture, and service tests.
+- Final focused, Ruff, mypy, and Postgres-backed service-check results are
+  recorded in the PR151 validation summary.
 
 Remaining proof boundary:
 
-- Genuine human reviewers must complete the bounded cases through the existing
-  real-shadow-review study bundle and provenance gate. No AI adjudication in
-  this PR satisfies that blocker.
-- The three ambiguous records need richer bounded source packets before they can
-  be fairly reviewed and become eligible.
+- A trusted external process must authenticate reviewer identity and bind that
+  attestation to the existing reviewer roster, review run IDs, source-export
+  digest, packet-manifest digest, and independent per-record sufficiency
+  decisions. No AI adjudication in this PR satisfies that blocker.
+- The three known-insufficient records need source-complete v2 packets before
+  they can be independently attested and become eligible.
 - The PR150 live model comparison remains historical diagnostic evidence and
   must not be reinterpreted with benchmark v2 metrics.
 

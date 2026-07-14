@@ -18,18 +18,27 @@ fit. Prompt pressure would only encourage models to reproduce defective labels.
 - Preserve v1 fixture and snapshot bytes as historical AI diagnostic evidence.
 - Keep AI adjudication categorical with rationale and literal bounded evidence
   spans; reject expert provenance and numeric self-scores in that contract.
-- Reuse the existing expert-study bundle and provenance gate as the only future
-  human-review authority.
-- Derive score eligibility only after the existing gate passes, the source
-  manifest binds the benchmark packet manifest, the review inventory exactly
-  matches the case, and record-level citations resolve into packet text.
+- Reuse the existing expert-study bundle and provenance gate; do not create a
+  parallel human-certification mechanism.
+- Resolve and hash every declared study source export, reproduce the bundle's
+  reviews from those bytes, and verify exact reviewer-roster, run, export
+  identity, and packet-manifest bindings.
+- Treat the existing gate as necessary but not sufficient for benchmark gold.
+  Score eligibility remains unavailable until an external trusted process
+  authenticates reviewer identity and independently attests packet sufficiency
+  per record, bound to the verified export digests and review run IDs.
+- Enumerate packet sufficiency for every record. The three PR150 defects are
+  `known_insufficient`; all other immutable v1 snapshots are `unverified`.
 - Compute adoption metrics and canary status only from eligible expert labels.
+- Make benchmark-v2 scoring authoritative in the actual repeated model
+  comparison path; v1 scoring remains historical diagnostic output only.
 - Keep every excluded record visible and represent no eligible evidence as
   `unavailable` rather than zero or pass.
 
 ## Initial Result
 
-The committed v2 fixture has no linked real-shadow-review bundle. Its report
+The committed v2 fixture has no linked real-shadow-review bundle or external
+reviewer/sufficiency attestation. Its report
 therefore shows 33 visible records, 0 score-eligible records, 30 pending-expert
 records, 3 ambiguous pending-expert records, unavailable adoption metrics, and
 an unavailable canary gate. It makes no human/expert or production-readiness
@@ -38,21 +47,28 @@ claim.
 ## Focused Validation
 
 ```text
-59 passed
-Ruff: passed
-mypy benchmark_v2 package: passed (6 source files)
-mypy validation CLI: passed (1 source file)
-make artana-evidence-api-service-checks: passed (Postgres-backed)
+```text
+Focused benchmark/comparison/provenance suite: 72 passed
+make evidence-selection-semantic-benchmark-v2-check: passed
+make artana-evidence-api-lint: passed
+make artana-evidence-api-type-check: passed (557 service sources plus strict-import CLIs)
+make artana-evidence-api-service-checks: passed
+  2,920 collected: 2,893 passed, 27 expected live/environment skips
+```
 ```
 
-Regression coverage includes forged expert provenance, model-authored numeric
-fields, pending-record score leakage, ambiguous-canary gate leakage, packet
-digest drift, AI-simulation bundle rejection, record-level source sufficiency,
-CLI report drift, and honest report wording.
+Regression coverage includes forged and nonexistent real-shadow source exports,
+reviewer/source binding drift, model-authored numeric fields, pending-record
+score leakage through the real model-comparison path, ambiguous-canary gate
+leakage, packet digest drift, explicit known-insufficiency, cross-object metric
+forgery, CLI report drift, and honest report wording.
 
 ## Human-Only Blocker
 
-Genuine human reviewers must complete the bounded benchmark cases through the
-existing real-shadow-review study bundle/provenance gate. The three ambiguous
-records also require richer bounded packets. Agent adjudication remains AI
-diagnostic and cannot close this blocker.
+An external trusted process must provide authenticated reviewer-identity
+attestation bound to the existing study's reviewer roster, review run IDs,
+selection-export digest, packet-manifest digest, and independent per-record
+packet-sufficiency decisions. The three known-insufficient records require
+source-complete v2 packets before that attestation. The repository does not
+claim cryptographic human identity, and agent adjudication cannot close this
+blocker.

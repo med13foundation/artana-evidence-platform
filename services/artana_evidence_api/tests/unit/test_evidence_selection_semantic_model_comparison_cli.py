@@ -18,6 +18,7 @@ from artana_evidence_api.runtime.model_registry import (
 
 from .evidence_selection_semantic_repeatability_test_support import (
     BASELINE_PATH,
+    BENCHMARK_V2_PATH,
     CANDIDATE_MODEL,
     CURRENT_MODEL,
     FIXTURE_PATH,
@@ -79,6 +80,8 @@ def test_cli_freezes_protocol_before_executor(monkeypatch, tmp_path) -> None:
         (
             "--fixture",
             str(FIXTURE_PATH),
+            "--benchmark-fixture",
+            str(BENCHMARK_V2_PATH),
             "--baseline-report",
             str(BASELINE_PATH),
             "--evaluated-commit",
@@ -103,7 +106,7 @@ def test_cli_freezes_protocol_before_executor(monkeypatch, tmp_path) -> None:
     assert protocol.trusted_mainline_ref == "origin/main"
     assert protocol.trusted_mainline_commit == "b" * 40
     assert protocol.required_mainline_commit == module._DEFAULT_REQUIRED_MAINLINE_COMMIT
-    assert len(protocol.repository_source_files) == 5
+    assert len(protocol.repository_source_files) == 8
     assert protocol.repository_source_files[0].role == "baseline_predictions"
     assert protocol.production_readiness_claim is False
 
@@ -165,6 +168,8 @@ def test_cli_rejects_candidate_that_resolves_to_current(monkeypatch, tmp_path) -
         (
             "--fixture",
             str(FIXTURE_PATH),
+            "--benchmark-fixture",
+            str(BENCHMARK_V2_PATH),
             "--baseline-report",
             str(BASELINE_PATH),
             "--evaluated-commit",

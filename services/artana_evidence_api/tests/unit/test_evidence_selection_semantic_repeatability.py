@@ -71,6 +71,48 @@ async def test_comparison_adopts_material_worst_run_improvement(
     )
     assert report.cross_model_disagreement_count == 1
     assert report.selected_model_repeatability_passed is True
+
+
+@pytest.mark.asyncio
+async def test_real_comparison_path_fails_closed_for_pending_benchmark(
+    tmp_path,
+) -> None:
+    fixture = load_fixture()
+    protocol = comparison_protocol(pending_benchmark=True)
+    current_runs = await build_model_runs(
+        tmp_path=tmp_path,
+        fixture=fixture,
+        protocol=protocol,
+        role="current",
+    )
+    candidate_runs = await build_model_runs(
+        tmp_path=tmp_path,
+        fixture=fixture,
+        protocol=protocol,
+        role="candidate",
+    )
+
+    report = build_semantic_model_comparison(
+        protocol=protocol,
+        fixture=fixture,
+        current_runs=current_runs,
+        candidate_runs=candidate_runs,
+        generated_at=datetime(2026, 7, 13, 12, tzinfo=UTC),
+    )
+
+    assert report.current_summary.adoption_metrics_status == "unavailable"
+    assert report.current_summary.canary_gate_status == "unavailable"
+    assert report.current_summary.record_consensus == ()
+    assert report.current_summary.decision_counts.model_dump() == {
+        "select": 0,
+        "reject": 0,
+        "abstain": 0,
+        "invalid_agent": 0,
+    }
+    assert report.decision.outcome == "inconclusive"
+    assert report.decision.selected_model_id is None
+    assert report.decision.reason_codes == ("benchmark_adoption_metrics_unavailable",)
+    assert report.selected_model_repeatability_passed is False
     assert report.calibration_status == "unavailable"
     assert report.calibration_ece is None
     assert report.production_readiness_claim is False
@@ -111,6 +153,40 @@ async def test_comparison_recomputes_scores_from_categorical_decisions(
     )
 
     with pytest.raises(ValueError, match="numeric score does not match"):
+        build_semantic_model_comparison(
+            protocol=protocol,
+            fixture=fixture,
+            current_runs=tampered_current,
+            candidate_runs=candidate_runs,
+            generated_at=datetime(2026, 7, 13, 8, tzinfo=UTC),
+        )
+
+
+@pytest.mark.asyncio
+async def test_comparison_recomputes_v2_adoption_score_from_outcomes(tmp_path) -> None:
+    fixture = load_fixture()
+    protocol = comparison_protocol()
+    current_runs = await build_model_runs(
+        tmp_path=tmp_path,
+        fixture=fixture,
+        protocol=protocol,
+        role="current",
+        abstain_record_ids=frozenset({"brca1:pmid:40403695"}),
+    )
+    candidate_runs = await build_model_runs(
+        tmp_path=tmp_path,
+        fixture=fixture,
+        protocol=protocol,
+        role="candidate",
+    )
+    tampered_current = (
+        current_runs[0].model_copy(
+            update={"adoption_score": candidate_runs[0].adoption_score},
+        ),
+        *current_runs[1:],
+    )
+
+    with pytest.raises(ValueError, match="adoption score does not match"):
         build_semantic_model_comparison(
             protocol=protocol,
             fixture=fixture,

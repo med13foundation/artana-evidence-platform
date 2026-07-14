@@ -9,6 +9,10 @@ from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Literal
 
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.contracts import (
+    EvidenceSelectionBenchmarkEvaluation,
+    EvidenceSelectionBenchmarkV2Score,
+)
 from artana_evidence_api.evidence_selection.diagnostics.scoring import (
     EvidenceSelectionSemanticDiagnosticScore,
 )
@@ -30,6 +34,11 @@ SemanticCostDerivation = Literal[
 SemanticRepositorySourceRole = Literal[
     "baseline_predictions",
     "sanitized_source_snapshot",
+    "benchmark_fixture",
+    "benchmark_packet_manifest",
+    "historical_fixture",
+    "expert_study_bundle",
+    "expert_study_source_artifact",
 ]
 
 
@@ -98,7 +107,7 @@ class SemanticModelComparisonProtocol(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_model_protocol.v3"]
+    schema_version: Literal["evidence_selection_semantic_model_protocol.v4"]
     generated_at: datetime
     evaluated_commit: str = Field(pattern=r"^[a-f0-9]{40}$")
     trusted_mainline_ref: str = Field(min_length=1)
@@ -107,6 +116,9 @@ class SemanticModelComparisonProtocol(BaseModel):
     fixture_path: str = Field(min_length=1)
     fixture_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     fixture_provenance: Literal["ai_adjudicated_diagnostic"]
+    benchmark_fixture_path: str = Field(min_length=1)
+    benchmark_fixture_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    benchmark_evaluation: EvidenceSelectionBenchmarkEvaluation
     baseline_report_path: str = Field(min_length=1)
     baseline_report_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     repository_source_files: tuple[SemanticRepositorySourceFile, ...] = Field(
@@ -127,6 +139,10 @@ class SemanticModelComparisonProtocol(BaseModel):
             raise ValueError("model comparison requires distinct model IDs")
         if self.runs_per_model < self.thresholds.minimum_runs_per_model:
             raise ValueError("runs_per_model is below the policy minimum")
+        if self.benchmark_evaluation.fixture_sha256 != self.benchmark_fixture_sha256:
+            raise ValueError(
+                "benchmark evaluation must match the frozen benchmark fixture"
+            )
         paths = tuple(source.relative_path for source in self.repository_source_files)
         if len(set(paths)) != len(paths):
             raise ValueError("repository source paths must be unique")
@@ -142,6 +158,30 @@ class SemanticModelComparisonProtocol(BaseModel):
             raise ValueError(
                 "protocol requires one baseline prediction file and source snapshots",
             )
+        if (
+            sum(
+                source.role == "benchmark_fixture"
+                for source in self.repository_source_files
+            )
+            != 1
+        ):
+            raise ValueError("protocol requires one benchmark-v2 fixture")
+        if (
+            sum(
+                source.role == "benchmark_packet_manifest"
+                for source in self.repository_source_files
+            )
+            != 1
+        ):
+            raise ValueError("protocol requires one benchmark-v2 packet manifest")
+        if (
+            sum(
+                source.role == "historical_fixture"
+                for source in self.repository_source_files
+            )
+            != 1
+        ):
+            raise ValueError("protocol requires one immutable historical fixture")
         return self
 
 
@@ -417,6 +457,7 @@ class SemanticModelEvaluationRun(BaseModel):
     score: EvidenceSelectionSemanticDiagnosticScore
     canary_passed: bool
     quality_gate_passed: bool
+    adoption_score: EvidenceSelectionBenchmarkV2Score
     agent_run_ids: tuple[str, ...]
     record_decisions: tuple[SemanticRecordDecision, ...]
     telemetry: SemanticRunTelemetry
@@ -473,20 +514,21 @@ class SemanticModelRunSummary(BaseModel):
     model_id: str = Field(min_length=1)
     run_count: int = Field(ge=1)
     quality_gate_passed: bool
-    worst_precision: float = Field(ge=0.0, le=1.0)
-    worst_recall: float = Field(ge=0.0, le=1.0)
-    minimum_case_precision: float = Field(ge=0.0, le=1.0)
-    minimum_case_recall: float = Field(ge=0.0, le=1.0)
-    minimum_case_decision_coverage: float = Field(ge=0.0, le=1.0)
-    mean_precision: float = Field(ge=0.0, le=1.0)
-    mean_recall: float = Field(ge=0.0, le=1.0)
-    precision_variance: float = Field(ge=0.0)
-    recall_variance: float = Field(ge=0.0)
-    worst_decision_coverage: float = Field(ge=0.0, le=1.0)
-    mean_abstention_rate: float = Field(ge=0.0, le=1.0)
+    adoption_metrics_status: Literal["available", "unavailable"]
+    canary_gate_status: Literal["passed", "failed", "unavailable"]
+    worst_precision: float | None = Field(default=None, ge=0.0, le=1.0)
+    worst_recall: float | None = Field(default=None, ge=0.0, le=1.0)
+    minimum_case_precision: float | None = Field(default=None, ge=0.0, le=1.0)
+    minimum_case_recall: float | None = Field(default=None, ge=0.0, le=1.0)
+    minimum_case_decision_coverage: float | None = Field(default=None, ge=0.0, le=1.0)
+    mean_precision: float | None = Field(default=None, ge=0.0, le=1.0)
+    mean_recall: float | None = Field(default=None, ge=0.0, le=1.0)
+    precision_variance: float | None = Field(default=None, ge=0.0)
+    recall_variance: float | None = Field(default=None, ge=0.0)
+    worst_decision_coverage: float | None = Field(default=None, ge=0.0, le=1.0)
+    mean_abstention_rate: float | None = Field(default=None, ge=0.0, le=1.0)
     invalid_agent_count: int = Field(ge=0)
     deterministic_fallback_count: Literal[0]
-    all_canaries_passed: bool
     decision_counts: SemanticDecisionCounts
     unstable_record_count: int = Field(ge=0)
     record_consensus: tuple[SemanticRecordConsensus, ...]
@@ -498,15 +540,40 @@ class SemanticModelRunSummary(BaseModel):
     total_model_latency_seconds: float | None = Field(default=None, ge=0.0)
     total_wall_latency_seconds: float = Field(ge=0.0)
 
+    @model_validator(mode="after")
+    def _availability_must_match_fields(self) -> SemanticModelRunSummary:
+        metric_values = (
+            self.worst_precision,
+            self.worst_recall,
+            self.minimum_case_precision,
+            self.minimum_case_recall,
+            self.minimum_case_decision_coverage,
+            self.mean_precision,
+            self.mean_recall,
+            self.precision_variance,
+            self.recall_variance,
+            self.worst_decision_coverage,
+            self.mean_abstention_rate,
+        )
+        if (self.adoption_metrics_status == "unavailable") != all(
+            value is None for value in metric_values
+        ):
+            raise ValueError("summary metric fields must follow adoption availability")
+        if self.adoption_metrics_status == "unavailable" and self.quality_gate_passed:
+            raise ValueError("unavailable adoption metrics cannot pass quality")
+        if self.canary_gate_status != "passed" and self.quality_gate_passed:
+            raise ValueError("quality requires a passed eligible canary gate")
+        return self
+
 
 class SemanticModelMetricDeltas(BaseModel):
     """Candidate minus current deterministic comparison metrics."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    worst_precision: float
-    worst_recall: float
-    combined_variance: float
+    worst_precision: float | None
+    worst_recall: float | None
+    combined_variance: float | None
     cost_ratio: float | None = Field(default=None, ge=0.0)
     model_latency_ratio: float | None = Field(default=None, ge=0.0)
 
@@ -522,6 +589,7 @@ SemanticAdoptionReason = Literal[
     "candidate_worst_run_metric_regressed",
     "candidate_resource_cost_not_justified",
     "candidate_has_no_material_benefit",
+    "benchmark_adoption_metrics_unavailable",
 ]
 
 
@@ -542,7 +610,7 @@ class SemanticModelComparisonReport(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_model_comparison.v3"]
+    schema_version: Literal["evidence_selection_semantic_model_comparison.v4"]
     generated_at: datetime
     protocol: SemanticModelComparisonProtocol
     protocol_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
@@ -562,6 +630,18 @@ class SemanticModelComparisonReport(BaseModel):
     def _report_timestamp_must_be_aware(self) -> SemanticModelComparisonReport:
         if self.generated_at.tzinfo is None or self.generated_at.utcoffset() is None:
             raise ValueError("comparison report generated_at must include a timezone")
+        unavailable = (
+            self.current_summary.adoption_metrics_status == "unavailable"
+            or self.candidate_summary.adoption_metrics_status == "unavailable"
+        )
+        if unavailable and (
+            self.decision.outcome != "inconclusive"
+            or self.decision.selected_model_id is not None
+            or self.selected_model_repeatability_passed
+        ):
+            raise ValueError(
+                "unavailable adoption evidence must fail comparison closed"
+            )
         return self
 
 

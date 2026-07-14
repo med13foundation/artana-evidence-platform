@@ -8,7 +8,7 @@
   },
   "source_packet_manifest": {
     "path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_benchmark_v2_packet_manifest.json",
-    "sha256": "de96786e088062fd259d774af13f5fdca1abc13a173f2206f16787969b25c4b8"
+    "sha256": "1ef9e6a3ff1e4f9a2bd9bade5107d9951704bb2bf412bcf8ee00c9b6ffd492d2"
   },
   "expert_study_bundle": null,
   "pending_expert_reason": "No passed real-shadow-review bundle from the existing expert-study provenance gate is linked yet.",

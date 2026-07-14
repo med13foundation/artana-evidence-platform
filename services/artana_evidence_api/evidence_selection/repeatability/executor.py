@@ -13,6 +13,13 @@ from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import 
     evaluate_semantic_selection_agent,
     render_semantic_agent_evaluation_markdown,
 )
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.evaluation import (
+    evaluate_benchmark_v2,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.loader import (
+    LoadedEvidenceSelectionBenchmarkV2,
+    load_benchmark_v2,
+)
 from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     EvidenceSelectionSemanticDiagnosticFixture,
     load_semantic_diagnostic_fixture,
@@ -228,6 +235,7 @@ async def _execute_model_run(
         evaluation_path=evaluation_path,
         evaluation_reference=evaluation_path.name,
         evaluation=evaluation,
+        benchmark_evaluation=protocol.benchmark_evaluation,
         telemetry=telemetry,
         agent_run_ids=execution_ids,
     )
@@ -266,6 +274,9 @@ def _load_and_freeze_sources(
         expected_files=protocol.repository_source_files,
         fixture=fixture,
         baseline=baseline,
+        benchmark=_load_protocol_benchmark(
+            protocol, staging_dir / BUNDLED_REPOSITORY_ROOT
+        ),
         repository_root=staging_dir / BUNDLED_REPOSITORY_ROOT,
     )
     return fixture, baseline
@@ -296,8 +307,29 @@ def _verify_protocol_source_files(
         expected_files=protocol.repository_source_files,
         fixture=fixture,
         baseline=baseline,
+        benchmark=_load_protocol_benchmark(protocol, repository_root),
         repository_root=repository_root,
     )
+
+
+def _load_protocol_benchmark(
+    protocol: SemanticModelComparisonProtocol,
+    repository_root: Path,
+) -> LoadedEvidenceSelectionBenchmarkV2:
+    benchmark_source = next(
+        source
+        for source in protocol.repository_source_files
+        if source.role == "benchmark_fixture"
+    )
+    loaded = load_benchmark_v2(
+        fixture_path=repository_root / benchmark_source.relative_path,
+        repository_root=repository_root,
+    )
+    if loaded.fixture_sha256 != protocol.benchmark_fixture_sha256:
+        raise ValueError("benchmark fixture bytes do not match the frozen protocol")
+    if evaluate_benchmark_v2(loaded) != protocol.benchmark_evaluation:
+        raise ValueError("benchmark evaluation does not match verified source evidence")
+    return loaded
 
 
 def _default_runner_factory(model_id: str) -> EvidenceSelectionSemanticModelRunner:

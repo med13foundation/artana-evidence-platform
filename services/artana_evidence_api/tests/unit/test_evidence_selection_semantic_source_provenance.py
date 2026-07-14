@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import pytest
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.loader import (
+    load_benchmark_v2,
+)
 from artana_evidence_api.evidence_selection.diagnostics.report import (
     EvidenceSelectionSemanticDiagnosticReport,
 )
@@ -12,6 +15,7 @@ from artana_evidence_api.evidence_selection.repeatability.source_provenance impo
 
 from .evidence_selection_semantic_repeatability_test_support import (
     BASELINE_PATH,
+    BENCHMARK_V2_PATH,
     REPOSITORY_ROOT,
     load_fixture,
 )
@@ -33,5 +37,9 @@ def test_source_provenance_recomputes_baseline_score_from_predictions() -> None:
         build_repository_source_files(
             fixture=load_fixture(),
             baseline=forged_baseline,
+            benchmark=load_benchmark_v2(
+                fixture_path=BENCHMARK_V2_PATH,
+                repository_root=REPOSITORY_ROOT,
+            ),
             repository_root=REPOSITORY_ROOT,
         )

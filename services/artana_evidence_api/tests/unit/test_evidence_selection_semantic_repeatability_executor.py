@@ -44,9 +44,17 @@ from artana_evidence_api.evidence_selection.semantic.model import (
 from .evidence_selection_semantic_repeatability_test_support import (
     REPOSITORY_ROOT,
     ExpectedLabelRunner,
-    comparison_protocol,
     load_fixture,
 )
+from .evidence_selection_semantic_repeatability_test_support import (
+    comparison_protocol as _comparison_protocol,
+)
+
+
+def comparison_protocol():
+    """Executor tests use the production pending benchmark evidence."""
+
+    return _comparison_protocol(pending_benchmark=True)
 
 
 class _LedgerStore:
@@ -122,8 +130,9 @@ async def test_executor_writes_complete_source_locked_matrix(tmp_path) -> None:
         store_factory=_LedgerStore,
     )
 
-    assert report.decision.outcome == "keep_current"
-    assert report.selected_model_repeatability_passed is True
+    assert report.decision.outcome == "inconclusive"
+    assert report.selected_model_repeatability_passed is False
+    assert report.decision.reason_codes == ("benchmark_adoption_metrics_unavailable",)
     assert report.current_summary.telemetry_complete is True
     assert report.candidate_summary.telemetry_complete is True
     assert factory_calls == 6
@@ -312,7 +321,7 @@ async def test_executor_rejects_repository_source_drift_before_model_calls(
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="source artifact digest mismatch"):
+    with pytest.raises(ValueError, match="artifact digest mismatch"):
         await execute_semantic_model_comparison(
             protocol=protocol,
             output_dir=tmp_path / "comparison",
@@ -399,7 +408,7 @@ async def test_semantic_verifier_rejects_forged_derived_report(tmp_path) -> None
     output_dir = await _build_bundle(tmp_path)
     report_path = output_dir / "semantic_model_comparison_report.json"
     payload = json.loads(report_path.read_text(encoding="utf-8"))
-    payload["selected_model_repeatability_passed"] = False
+    payload["cross_model_disagreement_count"] += 1
     report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     _reanchor_artifact(output_dir=output_dir, artifact=report_path)
 
@@ -424,7 +433,7 @@ async def test_semantic_verifier_rejects_reanchored_source_snapshot_tampering(
     _reanchor_artifact(output_dir=output_dir, artifact=source_path)
 
     verify_published_bundle(output_dir)
-    with pytest.raises(ValueError, match="source artifact digest mismatch"):
+    with pytest.raises(ValueError, match="artifact digest mismatch"):
         verify_semantic_comparison_bundle(output_dir)
 
 

@@ -20,6 +20,8 @@ from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2 import (
 from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.contracts import (
     EvidenceSelectionBenchmarkAIDiagnostic,
     EvidenceSelectionBenchmarkMetrics,
+    EvidenceSelectionBenchmarkRecordEvaluation,
+    EvidenceSelectionBenchmarkV2Score,
 )
 from artana_evidence_api.evidence_selection.diagnostics.predictions import (
     load_semantic_prediction_artifact,
@@ -32,6 +34,9 @@ from artana_evidence_api.evidence_selection.review.assessment import (
     EvidenceSelectionExplanationAssessment,
     EvidenceSelectionReviewCitation,
     EvidenceSelectionReviewInput,
+)
+from artana_evidence_api.evidence_selection.source_exports import (
+    EvidenceSelectionReviewExport,
 )
 from artana_evidence_api.evidence_selection_validation import (
     EvidenceSelectionExpertStudyInput,
@@ -60,7 +65,13 @@ def test_v2_preserves_v1_and_exposes_pending_and_ambiguous_records() -> None:
     assert hashlib.sha256(V1_PATH.read_bytes()).hexdigest() == V1_SHA256
     assert evaluation.expert_study_status == "pending"
     assert len(evaluation.records) == 33
-    assert sum(record.eligibility_status == "pending_expert" for record in evaluation.records) == 30
+    assert (
+        sum(
+            record.eligibility_status == "pending_expert"
+            for record in evaluation.records
+        )
+        == 30
+    )
     ambiguous = {
         record.record_id
         for record in evaluation.records
@@ -107,6 +118,55 @@ def test_pending_records_and_ambiguous_canaries_never_leak_into_scores() -> None
     assert score.pending_expert_record_count == 30
 
 
+def test_packet_manifest_marks_known_defects_insufficient() -> None:
+    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
+
+    assert {
+        record_id
+        for record_id, status in loaded.packet_status_by_record.items()
+        if status.sufficiency == "known_insufficient"
+    } == {
+        "brca1:pmid:30191368",
+        "canary:pmid:27959700",
+        "canary:pmid:27393503",
+    }
+
+
+def test_pending_record_cannot_carry_an_expert_label() -> None:
+    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
+    record = evaluate_benchmark_v2(loaded).records[0]
+    payload = record.model_dump()
+    payload["expert_label"] = "select"
+
+    with pytest.raises(ValidationError, match="eligibility, status, and expert label"):
+        EvidenceSelectionBenchmarkRecordEvaluation.model_validate(payload)
+
+
+def test_zero_eligible_score_cannot_carry_metrics_or_canary_pass() -> None:
+    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
+    evaluation = evaluate_benchmark_v2(loaded)
+    predictions = load_semantic_prediction_artifact(PREDICTION_PATH).predictions
+    score = score_benchmark_v2(evaluation=evaluation, predictions=predictions)
+    fake_metrics = EvidenceSelectionBenchmarkMetrics(
+        record_count=1,
+        true_positive_count=1,
+        false_positive_count=0,
+        false_negative_count=0,
+        true_negative_count=0,
+        abstention_count=0,
+        invalid_agent_count=0,
+        precision=1.0,
+        end_to_end_recall=1.0,
+        decision_coverage=1.0,
+    )
+    payload = score.model_dump(mode="json")
+    payload["adoption_metrics"] = fake_metrics.model_dump(mode="json")
+    payload["canary_gate_status"] = "passed"
+
+    with pytest.raises(ValidationError):
+        EvidenceSelectionBenchmarkV2Score.model_validate(payload)
+
+
 def test_forged_numeric_metric_envelope_is_rejected() -> None:
     with pytest.raises(ValidationError, match="precision is inconsistent"):
         EvidenceSelectionBenchmarkMetrics(
@@ -141,7 +201,7 @@ def test_source_packet_drift_fails_closed(tmp_path: Path) -> None:
 def test_ai_simulation_bundle_cannot_become_expert_evidence(tmp_path: Path) -> None:
     _copy_benchmark_inputs(tmp_path)
     bundle_path = tmp_path / "reports/ai-simulation-bundle.json"
-    bundle_path.parent.mkdir(parents=True)
+    bundle_path.parent.mkdir(parents=True, exist_ok=True)
     bundle_path.write_text(
         json.dumps(
             {
@@ -170,7 +230,7 @@ def test_ai_simulation_bundle_cannot_become_expert_evidence(tmp_path: Path) -> N
         evaluate_benchmark_v2(loaded)
 
 
-def test_passed_existing_gate_still_requires_record_level_packet_evidence(
+def test_forged_real_shadow_review_source_export_is_rejected(
     tmp_path: Path,
 ) -> None:
     _copy_benchmark_inputs(tmp_path)
@@ -182,17 +242,33 @@ def test_passed_existing_gate_still_requires_record_level_packet_evidence(
         omitted_record_id=omitted_record_id,
     )
 
+    with pytest.raises(ValueError, match="not locally resolvable"):
+        evaluate_benchmark_v2(
+            load_benchmark_v2(fixture_path=fixture_path, repository_root=tmp_path),
+        )
+
+
+def test_verified_source_exports_still_require_external_reviewer_attestation(
+    tmp_path: Path,
+) -> None:
+    _copy_benchmark_inputs(tmp_path)
+    fixture_path = tmp_path / FIXTURE_PATH
+    _link_real_study_bundle(
+        root=tmp_path,
+        fixture_path=fixture_path,
+        omitted_record_id="",
+        write_source_export=True,
+    )
+
     evaluation = evaluate_benchmark_v2(
         load_benchmark_v2(fixture_path=fixture_path, repository_root=tmp_path),
     )
-    omitted = next(
-        record for record in evaluation.records if record.record_id == omitted_record_id
-    )
 
-    assert evaluation.expert_study_status == "passed_existing_gate"
-    assert omitted.score_eligible is False
-    assert omitted.eligibility_status == "ambiguous_pending_expert"
-    assert sum(record.score_eligible for record in evaluation.records) == 29
+    assert evaluation.expert_study_status == (
+        "source_verified_external_attestation_pending"
+    )
+    assert not any(record.score_eligible for record in evaluation.records)
+    assert all(record.expert_label is None for record in evaluation.records)
 
 
 def test_report_wording_is_honest_and_keeps_excluded_records_visible() -> None:
@@ -234,6 +310,7 @@ def _link_real_study_bundle(
     root: Path,
     fixture_path: Path,
     omitted_record_id: str,
+    write_source_export: bool = False,
 ) -> None:
     loaded = load_benchmark_v2(fixture_path=fixture_path, repository_root=root)
     reviews: list[EvidenceSelectionReviewInput] = []
@@ -271,6 +348,25 @@ def _link_real_study_bundle(
         )
         bindings.append({"case_id": case.case_id, "review_run_id": str(run_id)})
     packet_manifest_sha = loaded.fixture.source_packet_manifest.sha256
+    selection_export_path = root / "reports/selection-export.json"
+    selection_export_sha = "f" * 64
+    if write_source_export:
+        selection_export_path.parent.mkdir(parents=True, exist_ok=True)
+        selection_export = EvidenceSelectionReviewExport(
+            schema_version="evidence_selection_review_export.v2",
+            source_system="artana-shadow-review",
+            export_id="benchmark-v2-test-export",
+            exported_at="2026-07-13T00:00:00Z",
+            exporter_id="review-ops",
+            redaction_statement="No PHI included.",
+            selection_reviews=tuple(reviews),
+        )
+        selection_export_path.write_text(
+            json.dumps(selection_export.model_dump(mode="json"), indent=2) + "\n",
+        )
+        selection_export_sha = hashlib.sha256(
+            selection_export_path.read_bytes()
+        ).hexdigest()
     study = EvidenceSelectionExpertStudyInput(
         schema_version="evidence_selection_expert_study.v2",
         study_id="benchmark-v2-existing-gate-test",
@@ -288,7 +384,7 @@ def _link_real_study_bundle(
                     artifact_id="selection-export",
                     artifact_kind="selection_review_export",
                     uri="reports/selection-export.json",
-                    sha256="f" * 64,
+                    sha256=selection_export_sha,
                 ),
                 EvidenceSelectionExpertStudySourceArtifact(
                     artifact_id="benchmark-packet-manifest",
@@ -304,7 +400,7 @@ def _link_real_study_bundle(
         description="Existing-gate integration fixture.",
     )
     bundle_path = root / "reports/real-shadow-review-bundle.json"
-    bundle_path.parent.mkdir(parents=True)
+    bundle_path.parent.mkdir(parents=True, exist_ok=True)
     bundle_path.write_text(
         json.dumps(study.model_dump(mode="json", exclude_none=True), indent=2) + "\n",
     )

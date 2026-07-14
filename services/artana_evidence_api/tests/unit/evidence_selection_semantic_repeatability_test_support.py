@@ -8,6 +8,16 @@ from pathlib import Path
 from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import (
     evaluate_semantic_selection_agent,
 )
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.contracts import (
+    EvidenceSelectionBenchmarkEvaluation,
+    EvidenceSelectionBenchmarkRecordEvaluation,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.evaluation import (
+    evaluate_benchmark_v2,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.loader import (
+    load_benchmark_v2,
+)
 from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     EvidenceSelectionSemanticDiagnosticFixture,
     load_semantic_diagnostic_fixture,
@@ -60,6 +70,10 @@ FIXTURE_PATH = (
 BASELINE_PATH = (
     REPOSITORY_ROOT
     / "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json"
+)
+BENCHMARK_V2_PATH = (
+    REPOSITORY_ROOT
+    / "scripts/validation/evidence_selection/fixtures/semantic_relevance_benchmark_v2.json"
 )
 CURRENT_MODEL = "openai:current-semantic-model"
 CANDIDATE_MODEL = "openai:candidate-semantic-model"
@@ -204,18 +218,32 @@ async def build_model_runs(
                 run_index=run_index,
                 evaluation_path=path,
                 evaluation=evaluation,
+                benchmark_evaluation=protocol.benchmark_evaluation,
                 telemetry=telemetry,
             ),
         )
     return tuple(runs)
 
 
-def comparison_protocol() -> SemanticModelComparisonProtocol:
+def comparison_protocol(
+    *, pending_benchmark: bool = False
+) -> SemanticModelComparisonProtocol:
     """Return the standard strict protocol used by unit tests."""
 
     fixture = load_semantic_diagnostic_fixture(FIXTURE_PATH)
     baseline = EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
         BASELINE_PATH.read_text(encoding="utf-8"),
+    )
+    benchmark = load_benchmark_v2(
+        fixture_path=BENCHMARK_V2_PATH,
+        repository_root=REPOSITORY_ROOT,
+    )
+    benchmark_evaluation = (
+        evaluate_benchmark_v2(benchmark)
+        if pending_benchmark
+        else _synthetic_externally_attested_evaluation(
+            fixture, benchmark.fixture_sha256
+        )
     )
     return build_semantic_model_comparison_protocol(
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
@@ -225,16 +253,52 @@ def comparison_protocol() -> SemanticModelComparisonProtocol:
         required_mainline_commit="a" * 40,
         fixture_path=FIXTURE_PATH,
         fixture_sha256=sha256_path(FIXTURE_PATH),
+        benchmark_fixture_path=BENCHMARK_V2_PATH,
+        benchmark_fixture_sha256=benchmark.fixture_sha256,
+        benchmark_evaluation=benchmark_evaluation,
         baseline_report_path=BASELINE_PATH,
         baseline_report_sha256=sha256_path(BASELINE_PATH),
         repository_source_files=build_repository_source_files(
             fixture=fixture,
             baseline=baseline,
+            benchmark=benchmark,
             repository_root=REPOSITORY_ROOT,
         ),
         current_model_id=CURRENT_MODEL,
         candidate_model_id=CANDIDATE_MODEL,
         runs_per_model=3,
+    )
+
+
+def _synthetic_externally_attested_evaluation(
+    fixture: EvidenceSelectionSemanticDiagnosticFixture,
+    fixture_sha256: str,
+) -> EvidenceSelectionBenchmarkEvaluation:
+    """Test-only eligible labels used to exercise policy branches."""
+
+    return EvidenceSelectionBenchmarkEvaluation(
+        fixture_sha256=fixture_sha256,
+        historical_v1_sha256=sha256_path(FIXTURE_PATH),
+        source_packet_manifest_sha256=(
+            "1ef9e6a3ff1e4f9a2bd9bade5107d9951704bb2bf412bcf8ee00c9b6ffd492d2"
+        ),
+        expert_study_status="externally_attested",
+        records=tuple(
+            EvidenceSelectionBenchmarkRecordEvaluation(
+                case_id=case.case_id,
+                display_name=case.display_name,
+                evaluation_role=case.evaluation_role,
+                record_id=record.record_id,
+                diagnostic_decision=record.expected_label,
+                diagnostic_rationale="Synthetic test-only external attestation.",
+                eligibility_status="score_eligible",
+                score_eligible=True,
+                expert_label=record.expected_label,
+                exclusion_reasons=(),
+            )
+            for case in fixture.cases
+            for record in case.records
+        ),
     )
 
 
@@ -355,6 +419,7 @@ def _split_int(total: int, count: int) -> tuple[int, ...]:
 
 __all__ = [
     "BASELINE_PATH",
+    "BENCHMARK_V2_PATH",
     "CANDIDATE_MODEL",
     "CURRENT_MODEL",
     "FIXTURE_PATH",

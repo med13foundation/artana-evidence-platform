@@ -19,6 +19,7 @@ BenchmarkEligibilityStatus = Literal[
     "pending_expert",
     "ambiguous_pending_expert",
 ]
+BenchmarkPacketSufficiency = Literal["unverified", "known_insufficient"]
 
 
 def _literal_nonblank(value: str) -> str:
@@ -52,15 +53,35 @@ class EvidenceSelectionBenchmarkPacketRef(EvidenceSelectionBenchmarkArtifactRef)
         return _literal_nonblank(value)
 
 
+class EvidenceSelectionBenchmarkPacketRecordStatus(BaseModel):
+    """Explicit sufficiency state for one record in a bounded packet."""
+
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
+
+    record_id: str = Field(min_length=1)
+    sufficiency: BenchmarkPacketSufficiency
+    reason: str = Field(min_length=1)
+
+    @field_validator("record_id", "reason")
+    @classmethod
+    def _validate_text(cls, value: str) -> str:
+        return _literal_nonblank(value)
+
+
 class EvidenceSelectionBenchmarkPacketManifest(BaseModel):
     """Content-addressed inventory of bounded source packets."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_packet_manifest.v1"]
+    schema_version: Literal["evidence_selection_semantic_packet_manifest.v2"]
     packets: tuple[EvidenceSelectionBenchmarkPacketRef, ...] = Field(min_length=1)
+    record_sufficiency: tuple[EvidenceSelectionBenchmarkPacketRecordStatus, ...] = (
+        Field(
+            min_length=1,
+        )
+    )
 
-    @field_validator("packets", mode="before")
+    @field_validator("packets", "record_sufficiency", mode="before")
     @classmethod
     def _accept_json_packets(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
@@ -73,6 +94,9 @@ class EvidenceSelectionBenchmarkPacketManifest(BaseModel):
             raise ValueError("packet case_id values must be unique")
         if len(set(paths)) != len(paths):
             raise ValueError("packet paths must be unique")
+        record_ids = [item.record_id for item in self.record_sufficiency]
+        if len(set(record_ids)) != len(record_ids):
+            raise ValueError("packet record sufficiency entries must be unique")
         return self
 
 
@@ -164,9 +188,13 @@ class EvidenceSelectionBenchmarkV2Fixture(BaseModel):
             if self.pending_expert_reason is None:
                 raise ValueError("pending expert benchmark requires an explicit reason")
             if self.expert_review_bindings:
-                raise ValueError("expert review bindings require an expert-study bundle")
+                raise ValueError(
+                    "expert review bindings require an expert-study bundle"
+                )
         elif self.pending_expert_reason is not None:
-            raise ValueError("linked expert-study bundle cannot remain globally pending")
+            raise ValueError(
+                "linked expert-study bundle cannot remain globally pending"
+            )
         case_ids = [binding.case_id for binding in self.expert_review_bindings]
         if len(set(case_ids)) != len(case_ids):
             raise ValueError("expert review case bindings must be unique")
@@ -197,7 +225,10 @@ class EvidenceSelectionBenchmarkRecordEvaluation(BaseModel):
         self,
     ) -> EvidenceSelectionBenchmarkRecordEvaluation:
         eligible = self.eligibility_status == "score_eligible"
-        if self.score_eligible != eligible or (self.expert_label is not None) != eligible:
+        if (
+            self.score_eligible != eligible
+            or (self.expert_label is not None) != eligible
+        ):
             raise ValueError("score eligibility, status, and expert label must agree")
         if eligible and self.exclusion_reasons:
             raise ValueError("score-eligible records cannot have exclusion reasons")
@@ -214,8 +245,27 @@ class EvidenceSelectionBenchmarkEvaluation(BaseModel):
     fixture_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     historical_v1_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     source_packet_manifest_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
-    expert_study_status: Literal["pending", "passed_existing_gate"]
+    expert_study_status: Literal[
+        "pending",
+        "source_verified_external_attestation_pending",
+        "externally_attested",
+    ]
     records: tuple[EvidenceSelectionBenchmarkRecordEvaluation, ...]
+
+    @model_validator(mode="after")
+    def _expert_status_must_control_eligibility(
+        self,
+    ) -> EvidenceSelectionBenchmarkEvaluation:
+        record_ids = [record.record_id for record in self.records]
+        if not record_ids or len(set(record_ids)) != len(record_ids):
+            raise ValueError("benchmark evaluation records must be nonempty and unique")
+        if self.expert_study_status != "externally_attested" and any(
+            record.score_eligible for record in self.records
+        ):
+            raise ValueError(
+                "pending external attestation cannot carry eligible labels"
+            )
+        return self
 
 
 class EvidenceSelectionBenchmarkMetrics(BaseModel):
@@ -230,6 +280,8 @@ class EvidenceSelectionBenchmarkMetrics(BaseModel):
     true_negative_count: int = Field(ge=0)
     abstention_count: int = Field(ge=0)
     invalid_agent_count: int = Field(ge=0)
+    abstained_expected_positive_count: int = Field(default=0, ge=0)
+    invalid_expected_positive_count: int = Field(default=0, ge=0)
     precision: float = Field(ge=0.0, le=1.0)
     end_to_end_recall: float = Field(ge=0.0, le=1.0)
     decision_coverage: float = Field(ge=0.0, le=1.0)
@@ -247,7 +299,12 @@ class EvidenceSelectionBenchmarkMetrics(BaseModel):
         if outcomes != self.record_count:
             raise ValueError("benchmark metric outcomes must partition record_count")
         selected = self.true_positive_count + self.false_positive_count
-        expected_positive = self.true_positive_count + self.false_negative_count
+        expected_positive = (
+            self.true_positive_count
+            + self.false_negative_count
+            + self.abstained_expected_positive_count
+            + self.invalid_expected_positive_count
+        )
         decided = (
             self.true_positive_count
             + self.false_positive_count
@@ -275,6 +332,7 @@ class EvidenceSelectionBenchmarkRecordOutcome(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
+    case_id: str
     record_id: str
     evaluation_role: BenchmarkEvaluationRole
     diagnostic_decision: BenchmarkDecision
@@ -282,6 +340,16 @@ class EvidenceSelectionBenchmarkRecordOutcome(BaseModel):
     eligibility_status: BenchmarkEligibilityStatus
     score_eligible: bool
     expert_label: Literal["select", "reject"] | None
+
+    @model_validator(mode="after")
+    def _eligibility_fields_must_agree(self) -> EvidenceSelectionBenchmarkRecordOutcome:
+        eligible = self.eligibility_status == "score_eligible"
+        if (
+            self.score_eligible != eligible
+            or (self.expert_label is not None) != eligible
+        ):
+            raise ValueError("outcome eligibility, status, and expert label must agree")
+        return self
 
 
 class EvidenceSelectionBenchmarkV2Score(BaseModel):
@@ -302,6 +370,9 @@ class EvidenceSelectionBenchmarkV2Score(BaseModel):
     def _inventory_counts_must_agree(self) -> EvidenceSelectionBenchmarkV2Score:
         if len(self.record_outcomes) != self.total_record_count:
             raise ValueError("record outcomes must match total_record_count")
+        record_ids = [outcome.record_id for outcome in self.record_outcomes]
+        if len(set(record_ids)) != len(record_ids):
+            raise ValueError("record outcomes must have unique record IDs")
         eligible = sum(outcome.score_eligible for outcome in self.record_outcomes)
         ambiguous = sum(
             outcome.eligibility_status == "ambiguous_pending_expert"
@@ -323,7 +394,85 @@ class EvidenceSelectionBenchmarkV2Score(BaseModel):
             for outcome in self.record_outcomes
         )
         if (self.canary_gate_status == "unavailable") != (eligible_canary_count == 0):
-            raise ValueError("canary availability must follow eligible canary inventory")
+            raise ValueError(
+                "canary availability must follow eligible canary inventory"
+            )
+        eligible_primary = tuple(
+            outcome
+            for outcome in self.record_outcomes
+            if outcome.score_eligible and outcome.evaluation_role == "primary"
+        )
+        if (self.adoption_metrics is None) != (not eligible_primary):
+            raise ValueError(
+                "adoption metric availability must follow eligible primary inventory"
+            )
+        if self.adoption_metrics is not None and (
+            self.adoption_metrics.record_count != len(eligible_primary)
+        ):
+            raise ValueError(
+                "adoption metric record_count must match eligible primaries"
+            )
+        if self.adoption_metrics is not None:
+            expected_counts = {
+                "true_positive_count": sum(
+                    outcome.expert_label == "select"
+                    and outcome.prediction_decision == "select"
+                    for outcome in eligible_primary
+                ),
+                "false_positive_count": sum(
+                    outcome.expert_label == "reject"
+                    and outcome.prediction_decision == "select"
+                    for outcome in eligible_primary
+                ),
+                "false_negative_count": sum(
+                    outcome.expert_label == "select"
+                    and outcome.prediction_decision == "reject"
+                    for outcome in eligible_primary
+                ),
+                "true_negative_count": sum(
+                    outcome.expert_label == "reject"
+                    and outcome.prediction_decision == "reject"
+                    for outcome in eligible_primary
+                ),
+                "abstention_count": sum(
+                    outcome.prediction_decision == "abstain"
+                    for outcome in eligible_primary
+                ),
+                "invalid_agent_count": sum(
+                    outcome.prediction_decision == "invalid_agent"
+                    for outcome in eligible_primary
+                ),
+                "abstained_expected_positive_count": sum(
+                    outcome.expert_label == "select"
+                    and outcome.prediction_decision == "abstain"
+                    for outcome in eligible_primary
+                ),
+                "invalid_expected_positive_count": sum(
+                    outcome.expert_label == "select"
+                    and outcome.prediction_decision == "invalid_agent"
+                    for outcome in eligible_primary
+                ),
+            }
+            if any(
+                getattr(self.adoption_metrics, field_name) != expected
+                for field_name, expected in expected_counts.items()
+            ):
+                raise ValueError(
+                    "adoption metrics must be recomputed from eligible outcomes"
+                )
+        expected_canary_status = "unavailable"
+        if eligible_canary_count:
+            expected_canary_status = (
+                "passed"
+                if all(
+                    outcome.prediction_decision == outcome.expert_label
+                    for outcome in self.record_outcomes
+                    if outcome.score_eligible and outcome.evaluation_role == "canary"
+                )
+                else "failed"
+            )
+        if self.canary_gate_status != expected_canary_status:
+            raise ValueError("canary gate status must derive from eligible outcomes")
         return self
 
 
@@ -339,7 +488,11 @@ class EvidenceSelectionBenchmarkV2Report(BaseModel):
     prediction_path: str
     prediction_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     fixture_provenance: Literal["ai_adjudicated_diagnostic"]
-    expert_study_status: Literal["pending", "passed_existing_gate"]
+    expert_study_status: Literal[
+        "pending",
+        "source_verified_external_attestation_pending",
+        "externally_attested",
+    ]
     production_readiness_claim: Literal[False]
     score: EvidenceSelectionBenchmarkV2Score
 
@@ -347,12 +500,14 @@ class EvidenceSelectionBenchmarkV2Report(BaseModel):
 __all__ = [
     "BenchmarkDecision",
     "BenchmarkEligibilityStatus",
+    "BenchmarkPacketSufficiency",
     "EvidenceSelectionBenchmarkAIDiagnostic",
     "EvidenceSelectionBenchmarkArtifactRef",
     "EvidenceSelectionBenchmarkEvaluation",
     "EvidenceSelectionBenchmarkExpertReviewBinding",
     "EvidenceSelectionBenchmarkMetrics",
     "EvidenceSelectionBenchmarkPacketManifest",
+    "EvidenceSelectionBenchmarkPacketRecordStatus",
     "EvidenceSelectionBenchmarkRecordEvaluation",
     "EvidenceSelectionBenchmarkV2Fixture",
     "EvidenceSelectionBenchmarkV2Report",

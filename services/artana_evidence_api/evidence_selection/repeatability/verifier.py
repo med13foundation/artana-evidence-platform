@@ -8,6 +8,13 @@ from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import 
     EvidenceSelectionSemanticAgentEvaluation,
     render_semantic_agent_evaluation_markdown,
 )
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.evaluation import (
+    evaluate_benchmark_v2,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.loader import (
+    LoadedEvidenceSelectionBenchmarkV2,
+    load_benchmark_v2,
+)
 from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     load_semantic_diagnostic_fixture,
 )
@@ -63,6 +70,9 @@ def verify_semantic_comparison_bundle(
         expected_files=protocol.repository_source_files,
         fixture=fixture,
         baseline=baseline,
+        benchmark=_load_bundled_benchmark(
+            protocol, directory / BUNDLED_REPOSITORY_ROOT
+        ),
         repository_root=directory / BUNDLED_REPOSITORY_ROOT,
     )
     recomputed = build_semantic_model_comparison(
@@ -88,6 +98,24 @@ def verify_semantic_comparison_bundle(
     ) != expected_report_markdown:
         raise ValueError("serialized report Markdown does not match the report")
     return report
+
+
+def _load_bundled_benchmark(
+    protocol: SemanticModelComparisonProtocol,
+    repository_root: Path,
+) -> LoadedEvidenceSelectionBenchmarkV2:
+    source = next(
+        item
+        for item in protocol.repository_source_files
+        if item.role == "benchmark_fixture"
+    )
+    loaded = load_benchmark_v2(
+        fixture_path=repository_root / source.relative_path,
+        repository_root=repository_root,
+    )
+    if evaluate_benchmark_v2(loaded) != protocol.benchmark_evaluation:
+        raise ValueError("bundled benchmark evaluation does not match protocol")
+    return loaded
 
 
 def _verify_run_markdown(

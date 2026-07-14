@@ -1,5 +1,5 @@
 {
-  "schema_version": "evidence_selection_semantic_packet_manifest.v1",
+  "schema_version": "evidence_selection_semantic_packet_manifest.v2",
   "packets": [
     {
       "case_id": "egfr_t790m_primary_evidence",
@@ -21,5 +21,40 @@
       "path": "scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_exclusion_token_canary.json",
       "sha256": "a935301454764c1c54b8ccb2cb857ffd73d24d6f206f6ef5fb914ca57d354d32"
     }
+  ],
+  "record_sufficiency": [
+    {"record_id": "egfr:pmid:27959700", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "egfr:pmid:25923549", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "egfr:pmid:27393503", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "egfr:pmid:41512290", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "egfr:pmid:30657347", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "egfr:pmid:26314834", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "egfr:pmid:31039766", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "egfr:pmid:23985030", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:40403695", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:22889855", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:26195121", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:30191368", "sufficiency": "known_insufficient", "reason": "PR150 established that the bounded v1 input does not support its historical gold label."},
+    {"record_id": "brca1:pmid:40288678", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:17018160", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:34237702", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:21356067", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:32658311", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:31206626:selected-duplicate", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:31206626:rejected-duplicate", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:34642874", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:27913932", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:30610487", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "brca1:pmid:26344711", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "cftr:pmid:35816621", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "cftr:pmid:40210412", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "cftr:pmid:41138737", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "cftr:pmid:40209082", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "cftr:pmid:38198345", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "cftr:pmid:35681464", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "cftr:pmid:39227072", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "canary:pmid:27959700", "sufficiency": "known_insufficient", "reason": "PR150 established that the bounded canary input omits facts required by the intended label."},
+    {"record_id": "canary:pmid:25923549", "sufficiency": "unverified", "reason": "Historical v1 packet sufficiency has not been independently attested."},
+    {"record_id": "canary:pmid:27393503", "sufficiency": "known_insufficient", "reason": "PR150 established that the bounded canary input omits facts required by the intended label."}
   ]
 }

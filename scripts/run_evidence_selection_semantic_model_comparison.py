@@ -11,6 +11,12 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.evaluation import (
+    evaluate_benchmark_v2,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.loader import (
+    load_benchmark_v2,
+)
 from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     load_semantic_diagnostic_fixture,
 )
@@ -43,6 +49,7 @@ def _parse_args(argv: tuple[str, ...] | None) -> argparse.Namespace:
         ),
     )
     parser.add_argument("--fixture", required=True, type=Path)
+    parser.add_argument("--benchmark-fixture", required=True, type=Path)
     parser.add_argument("--baseline-report", required=True, type=Path)
     parser.add_argument("--evaluated-commit", required=True)
     parser.add_argument("--trusted-mainline-ref", default="origin/main")
@@ -72,18 +79,25 @@ def main(argv: tuple[str, ...] | None = None) -> int:
         _require_clean_worktree()
         repository_root = _repository_root()
         fixture = load_semantic_diagnostic_fixture(args.fixture)
+        benchmark = load_benchmark_v2(
+            fixture_path=args.benchmark_fixture,
+            repository_root=repository_root,
+        )
+        benchmark_evaluation = evaluate_benchmark_v2(benchmark)
         baseline = EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
             args.baseline_report.read_text(encoding="utf-8"),
         )
         repository_source_files = build_repository_source_files(
             fixture=fixture,
             baseline=baseline,
+            benchmark=benchmark,
             repository_root=repository_root,
         )
         _validate_output_path(
             output_dir=args.output_dir,
             source_paths=(
                 args.fixture,
+                args.benchmark_fixture,
                 args.baseline_report,
                 *(
                     repository_root / source.relative_path
@@ -106,6 +120,9 @@ def main(argv: tuple[str, ...] | None = None) -> int:
             required_mainline_commit=args.required_mainline_commit,
             fixture_path=args.fixture,
             fixture_sha256=fixture_sha256,
+            benchmark_fixture_path=args.benchmark_fixture,
+            benchmark_fixture_sha256=benchmark.fixture_sha256,
+            benchmark_evaluation=benchmark_evaluation,
             baseline_report_path=args.baseline_report,
             baseline_report_sha256=sha256_path(args.baseline_report),
             repository_source_files=repository_source_files,

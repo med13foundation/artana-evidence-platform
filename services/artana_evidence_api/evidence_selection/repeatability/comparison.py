@@ -62,7 +62,7 @@ def build_semantic_model_comparison(
         and selected_summary.telemetry_complete
     )
     return SemanticModelComparisonReport(
-        schema_version="evidence_selection_semantic_model_comparison.v3",
+        schema_version="evidence_selection_semantic_model_comparison.v4",
         generated_at=generated_at,
         protocol=protocol,
         protocol_sha256=protocol_sha256(protocol),
