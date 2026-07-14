@@ -7,6 +7,13 @@ from collections.abc import Iterable
 from statistics import fmean, pvariance
 from typing import Literal
 
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.contracts import (
+    EvidenceSelectionBenchmarkRecordOutcome,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.scoring import (
+    metrics_for_outcomes,
+)
+
 from .contracts import (
     SemanticDecision,
     SemanticDecisionCounts,
@@ -24,69 +31,139 @@ def summarize_semantic_model_runs(
 ) -> SemanticModelRunSummary:
     """Compute repeatability metrics from already validated categorical runs."""
 
-    precision_values = tuple(run.score.micro.precision for run in runs)
-    recall_values = tuple(run.score.micro.end_to_end_recall for run in runs)
-    coverage_values = tuple(run.score.micro.decision_coverage for run in runs)
-    abstention_values = tuple(run.score.micro.abstention_rate for run in runs)
-    case_results = tuple(
-        case_result for run in runs for case_result in run.score.case_results
+    adoption_metrics = tuple(run.adoption_score.adoption_metrics for run in runs)
+    metrics_available = all(metrics is not None for metrics in adoption_metrics)
+    available_metrics = tuple(
+        metrics for metrics in adoption_metrics if metrics is not None
     )
-    primary_case_results = tuple(
-        case_result
-        for case_result in case_results
-        if case_result.evaluation_role == "primary"
+    precision_values = tuple(metrics.precision for metrics in available_metrics)
+    recall_values = tuple(metrics.end_to_end_recall for metrics in available_metrics)
+    coverage_values = tuple(metrics.decision_coverage for metrics in available_metrics)
+    abstention_values = tuple(
+        metrics.abstention_count / metrics.record_count for metrics in available_metrics
     )
-    minimum_case_precision = min(result.precision for result in primary_case_results)
-    minimum_case_recall = min(
-        result.end_to_end_recall for result in primary_case_results
+    primary_case_metrics = tuple(
+        metrics_for_outcomes(case_outcomes)
+        for run in runs
+        for case_outcomes in _eligible_primary_outcomes_by_case(run).values()
     )
-    minimum_case_decision_coverage = min(
-        result.decision_coverage for result in case_results
+    minimum_case_precision = (
+        min(result.precision for result in primary_case_metrics)
+        if primary_case_metrics
+        else None
     )
-    record_consensus = _record_consensus(runs)
+    minimum_case_recall = (
+        min(result.end_to_end_recall for result in primary_case_metrics)
+        if primary_case_metrics
+        else None
+    )
+    minimum_case_decision_coverage = (
+        min(result.decision_coverage for result in primary_case_metrics)
+        if primary_case_metrics
+        else None
+    )
+    eligible_record_ids = {
+        record.record_id
+        for record in protocol.benchmark_evaluation.records
+        if record.score_eligible
+    }
+    record_consensus = _record_consensus(runs, eligible_record_ids=eligible_record_ids)
     unstable_record_count = sum(not item.stable for item in record_consensus)
     decision_counts = _decision_counts(
-        decision.decision for run in runs for decision in run.record_decisions
+        decision.decision
+        for run in runs
+        for decision in run.record_decisions
+        if decision.record_id in eligible_record_ids
     )
     telemetry_complete = all(run.telemetry.ledger.status == "available" for run in runs)
-    invalid_agent_count = sum(run.score.micro.invalid_agent_count for run in runs)
-    all_canaries_passed = all(run.canary_passed for run in runs)
+    invalid_agent_count = sum(
+        metrics.invalid_agent_count for metrics in available_metrics
+    )
+    canary_statuses = {run.adoption_score.canary_gate_status for run in runs}
+    canary_gate_status = (
+        next(iter(canary_statuses)) if len(canary_statuses) == 1 else "failed"
+    )
+    model_attempts = tuple(
+        attempt
+        for run in runs
+        for attempt in run.telemetry.ledger.model_attempts
+    )
     thresholds = protocol.thresholds
+    failed_attempt_count = sum(
+        attempt.status == "failed" for attempt in model_attempts
+    )
+    rejected_attempt_count = sum(
+        attempt.status == "rejected" for attempt in model_attempts
+    )
+    abandoned_attempt_count = sum(
+        attempt.status == "abandoned" for attempt in model_attempts
+    )
+    telemetry_unavailable_attempt_count = sum(
+        attempt.status == "telemetry_unavailable" for attempt in model_attempts
+    )
+    attempt_reliability_passed = (
+        failed_attempt_count <= thresholds.maximum_adoption_failed_attempts
+        and rejected_attempt_count <= thresholds.maximum_adoption_rejected_attempts
+        and abandoned_attempt_count <= thresholds.maximum_adoption_abandoned_attempts
+        and telemetry_unavailable_attempt_count
+        <= thresholds.maximum_adoption_telemetry_unavailable_attempts
+    )
     quality_gate_passed = (
         len(runs) >= thresholds.minimum_runs_per_model
+        and metrics_available
+        and bool(precision_values)
         and min(precision_values) >= thresholds.minimum_worst_precision
         and min(recall_values) >= thresholds.minimum_worst_recall
+        and minimum_case_precision is not None
         and minimum_case_precision >= thresholds.minimum_case_precision
+        and minimum_case_recall is not None
         and minimum_case_recall >= thresholds.minimum_case_recall
         and min(coverage_values) >= thresholds.minimum_worst_decision_coverage
+        and minimum_case_decision_coverage is not None
         and minimum_case_decision_coverage >= thresholds.minimum_case_decision_coverage
         and unstable_record_count == 0
         and invalid_agent_count == 0
-        and all_canaries_passed
+        and canary_gate_status == "passed"
         and all(run.deterministic_fallback_count == 0 for run in runs)
     )
     return SemanticModelRunSummary(
         model_id=runs[0].model_id,
         run_count=len(runs),
         quality_gate_passed=quality_gate_passed,
-        worst_precision=min(precision_values),
-        worst_recall=min(recall_values),
+        adoption_metrics_status="available" if metrics_available else "unavailable",
+        canary_gate_status=canary_gate_status,
+        worst_precision=min(precision_values) if precision_values else None,
+        worst_recall=min(recall_values) if recall_values else None,
         minimum_case_precision=minimum_case_precision,
         minimum_case_recall=minimum_case_recall,
         minimum_case_decision_coverage=minimum_case_decision_coverage,
-        mean_precision=fmean(precision_values),
-        mean_recall=fmean(recall_values),
-        precision_variance=pvariance(precision_values),
-        recall_variance=pvariance(recall_values),
-        worst_decision_coverage=min(coverage_values),
-        mean_abstention_rate=fmean(abstention_values),
+        mean_precision=fmean(precision_values) if precision_values else None,
+        mean_recall=fmean(recall_values) if recall_values else None,
+        precision_variance=pvariance(precision_values) if precision_values else None,
+        recall_variance=pvariance(recall_values) if recall_values else None,
+        worst_decision_coverage=min(coverage_values) if coverage_values else None,
+        mean_abstention_rate=fmean(abstention_values) if abstention_values else None,
         invalid_agent_count=invalid_agent_count,
         deterministic_fallback_count=0,
-        all_canaries_passed=all_canaries_passed,
         decision_counts=decision_counts,
         unstable_record_count=unstable_record_count,
         record_consensus=record_consensus,
+        model_attempt_count=len(model_attempts),
+        failed_attempt_count=failed_attempt_count,
+        rejected_attempt_count=rejected_attempt_count,
+        abandoned_attempt_count=abandoned_attempt_count,
+        telemetry_unavailable_attempt_count=telemetry_unavailable_attempt_count,
+        schema_validation_failure_count=sum(
+            attempt.failure_stage == "output_schema_validation"
+            for attempt in model_attempts
+        ),
+        usage_unavailable_attempt_count=sum(
+            attempt.token_usage_provenance == "unavailable"
+            or attempt.cost_usage_provenance == "unavailable"
+            for attempt in model_attempts
+        ),
         telemetry_complete=telemetry_complete,
+        attempt_reliability_passed=attempt_reliability_passed,
         total_prompt_tokens=_sum_complete_ledger_int(runs, "prompt_tokens"),
         total_completion_tokens=_sum_complete_ledger_int(runs, "completion_tokens"),
         total_tokens=_sum_complete_ledger_int(runs, "total_tokens"),
@@ -124,10 +201,14 @@ def cross_model_disagreement_count(
 
 def _record_consensus(
     runs: tuple[SemanticModelEvaluationRun, ...],
+    *,
+    eligible_record_ids: set[str],
 ) -> tuple[SemanticRecordConsensus, ...]:
     decisions_by_key: dict[tuple[str, str], list[SemanticDecision]] = {}
     for run in runs:
         for record_decision in run.record_decisions:
+            if record_decision.record_id not in eligible_record_ids:
+                continue
             decisions_by_key.setdefault(
                 (record_decision.case_id, record_decision.record_id),
                 [],
@@ -150,6 +231,16 @@ def _record_consensus(
             ),
         )
     return tuple(results)
+
+
+def _eligible_primary_outcomes_by_case(
+    run: SemanticModelEvaluationRun,
+) -> dict[str, tuple[EvidenceSelectionBenchmarkRecordOutcome, ...]]:
+    grouped: dict[str, list[EvidenceSelectionBenchmarkRecordOutcome]] = {}
+    for outcome in run.adoption_score.record_outcomes:
+        if outcome.score_eligible and outcome.evaluation_role == "primary":
+            grouped.setdefault(outcome.case_id, []).append(outcome)
+    return {case_id: tuple(outcomes) for case_id, outcomes in grouped.items()}
 
 
 def _decision_counts(

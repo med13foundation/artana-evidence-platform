@@ -7,6 +7,12 @@ from dataclasses import dataclass
 from typing import Protocol
 from uuid import uuid4
 
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticAttemptRecorder,
+    SemanticLocalValidationFailure,
+    SemanticModelAttemptContext,
+    semantic_governed_context_sha256,
+)
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
 )
@@ -94,11 +100,6 @@ class EvidenceSelectionSemanticModelRunner(Protocol):
         """Return the configured model identity when available."""
         ...
 
-    def execution_ids(self) -> tuple[str, ...]:
-        """Return every attempted service run identity in execution order."""
-        ...
-
-
 class ArtanaEvidenceSelectionSemanticModelRunner:
     """Run semantic selection through the governed Artana model path."""
 
@@ -107,7 +108,9 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
         self._governance = GovernanceConfig.from_environment()
         self._runtime_policy = load_runtime_policy()
         self._registry = get_model_registry()
-        self._execution_ids: list[str] = []
+        self._attempt_recorder = SemanticAttemptRecorder(
+            step_key=_SEMANTIC_SELECTION_STEP_KEY,
+        )
 
     async def assess(
         self,
@@ -131,7 +134,26 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
         )
         budget_limit = self._governance.usage_limits.total_cost_usd or 1.0
         run_id = f"evidence-selection-semantic-selector:{uuid4()}"
-        self._execution_ids.append(run_id)
+        governed_context_sha256 = semantic_governed_context_sha256(
+            goal=context.goal,
+            instructions=context.instructions,
+            inclusion_criteria=context.inclusion_criteria,
+            exclusion_criteria=context.exclusion_criteria,
+            population_context=context.population_context,
+            evidence_types=context.evidence_types,
+            priority_outcomes=context.priority_outcomes,
+            source_key=context.source_key,
+            search_id=context.search_id,
+            records=context.records,
+            record_indices=context.record_indices,
+        )
+        self._attempt_recorder.start_attempt(
+            execution_id=run_id,
+            source_key=context.source_key,
+            search_id=context.search_id,
+            record_references=context.record_references,
+            governed_context_sha256=governed_context_sha256,
+        )
         store = create_artana_postgres_store()
         kernel = ArtanaKernel(
             store=store,
@@ -174,10 +196,18 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
         except (KeyError, ValueError):
             return None
 
-    def execution_ids(self) -> tuple[str, ...]:
-        """Return all run IDs, including attempts whose output failed validation."""
+    def model_attempts(self) -> tuple[SemanticModelAttemptContext, ...]:
+        """Return every attempt with its deterministic semantic batch identity."""
 
-        return tuple(self._execution_ids)
+        return self._attempt_recorder.attempts()
+
+    def record_local_validation_failure(
+        self,
+        failure: SemanticLocalValidationFailure,
+    ) -> None:
+        """Record why service-owned validation rejected the latest response."""
+
+        self._attempt_recorder.record_local_validation_failure(failure)
 
     def _resolve_model_id(self) -> str:
         if (

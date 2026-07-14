@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticLocalFailureCause,
+    SemanticLocalFailureRecorder,
+    SemanticLocalFailureStage,
+    SemanticLocalValidationFailure,
+)
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
     EvidenceSelectionSemanticCandidateAssessment,
@@ -19,6 +25,20 @@ from artana_evidence_api.evidence_selection.semantic.model import (
 )
 
 _MAX_AGENT_ATTEMPTS = 2
+
+
+class SemanticLocalValidationError(ValueError):
+    """Typed service-local rejection of an otherwise completed model response."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        stage: SemanticLocalFailureStage,
+        cause: SemanticLocalFailureCause,
+    ) -> None:
+        super().__init__(message)
+        self.failure = SemanticLocalValidationFailure(stage=stage, cause=cause)
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,22 +63,44 @@ async def assess_validated_semantic_batch(
     for attempt_count in range(1, _MAX_AGENT_ATTEMPTS + 1):
         try:
             contract = await runner.assess(context=context)
-            assessments = validate_semantic_assessment_batch(
-                contract=contract,
-                context=context,
-            )
-            agent_run_id = _require_agent_run_id(contract)
-            records_by_index = dict(
-                zip(context.record_indices, context.records, strict=True),
-            )
-            evidence_options = {
-                index: resolve_semantic_evidence_references(
-                    record_ref=assessment.record_ref,
-                    record=records_by_index[index],
-                    references=assessment.evidence_references,
+            try:
+                assessments = validate_semantic_assessment_batch(
+                    contract=contract,
+                    context=context,
                 )
-                for index, assessment in assessments.items()
-            }
+                agent_run_id = _require_agent_run_id(contract)
+                records_by_index = dict(
+                    zip(context.record_indices, context.records, strict=True),
+                )
+                try:
+                    evidence_options = {
+                        index: resolve_semantic_evidence_references(
+                            record_ref=assessment.record_ref,
+                            record=records_by_index[index],
+                            references=assessment.evidence_references,
+                        )
+                        for index, assessment in assessments.items()
+                    }
+                except Exception as exc:
+                    raise SemanticLocalValidationError(
+                        str(exc),
+                        stage="evidence_reference_validation",
+                        cause="evidence_reference_invalid",
+                    ) from exc
+            except SemanticLocalValidationError as exc:
+                _record_local_validation_failure(runner=runner, failure=exc.failure)
+                raise
+            except Exception as exc:
+                failure = SemanticLocalValidationFailure(
+                    stage="semantic_batch_validation",
+                    cause="unexpected_local_validation_error",
+                )
+                _record_local_validation_failure(runner=runner, failure=failure)
+                raise SemanticLocalValidationError(
+                    str(exc),
+                    stage=failure.stage,
+                    cause=failure.cause,
+                ) from exc
         except SemanticSelectionAgentUnavailableError:
             raise
         except Exception as exc:  # noqa: BLE001 - Agent retries are bounded.
@@ -94,7 +136,11 @@ def validate_semantic_assessment_batch(
             "semantic agent assessment coverage mismatch: "
             f"missing={missing}, unexpected={unexpected}"
         )
-        raise ValueError(msg)
+        raise SemanticLocalValidationError(
+            msg,
+            stage="semantic_batch_validation",
+            cause="record_coverage_mismatch",
+        )
     return {
         index: by_reference[record_ref]
         for index, record_ref in zip(
@@ -109,12 +155,26 @@ def _require_agent_run_id(
     contract: EvidenceSelectionSemanticBatchContract,
 ) -> str:
     if contract.agent_run_id is None:
-        raise ValueError("semantic agent contract is missing service run identity")
+        raise SemanticLocalValidationError(
+            "semantic agent contract is missing service run identity",
+            stage="service_run_identity_validation",
+            cause="agent_run_identity_missing",
+        )
     return contract.agent_run_id
+
+
+def _record_local_validation_failure(
+    *,
+    runner: EvidenceSelectionSemanticModelRunner,
+    failure: SemanticLocalValidationFailure,
+) -> None:
+    if isinstance(runner, SemanticLocalFailureRecorder):
+        runner.record_local_validation_failure(failure)
 
 
 __all__ = [
     "ValidatedSemanticAssessmentBatch",
+    "SemanticLocalValidationError",
     "assess_validated_semantic_batch",
     "validate_semantic_assessment_batch",
 ]

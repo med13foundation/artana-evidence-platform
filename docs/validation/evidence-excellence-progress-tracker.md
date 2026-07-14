@@ -3271,14 +3271,133 @@ Remaining proof boundary:
 - The source-complete v3 artifact is published and verified. The next run must
   wait for independent correction of the defective AI-adjudicated gold rather
   than repeat the same invalid benchmark.
-- Failed local output-validation attempts need runtime usage retention so a
-  future resource comparison can deterministically account for every attempt.
+- Failed local output-validation attempts are now retained with typed failure
+  and explicit unavailable-usage provenance. Artana still does not expose
+  provider usage on its bare schema-validation exception path, so those values
+  cannot be recovered or estimated by this service.
 - The frozen fixture remains AI-adjudicated diagnostic evidence, not expert
   gold.
 - Calibration remains unavailable until the real disjoint expert training and
   held-out partitions are collected.
 - Model repeatability does not prove end-to-end trusted relation quality or
   trusted-graph readiness.
+
+### 2026-07-13 - Semantic Benchmark V2 Integrity
+
+Branch: `alvaro/evidence-pr151-expert-benchmark-v2`
+
+Evidence reports:
+
+- `docs/validation/reports/2026-07-13-pr151-semantic-benchmark-v2.md`
+- `docs/validation/reports/2026-07-13-pr151-semantic-benchmark-v2-summary.md`
+
+Progress:
+
+- The v1 fixture and four source snapshots remain immutable historical AI
+  diagnostic evidence, bound by their existing SHA-256 digests.
+- A separate content-addressed packet manifest establishes the bounded input
+  inventory for benchmark v2 without rewriting v1 and explicitly inventories
+  each record as `unverified` or `known_insufficient`.
+- AI adjudication has a strict categorical contract with rationale and literal
+  packet spans. It cannot claim human/expert provenance or include numeric
+  confidence/self-scores.
+- The defective `brca1:pmid:30191368` label and source-incomplete
+  `canary:pmid:27959700` and `canary:pmid:27393503` records are explicitly
+  ambiguous pending expert review.
+- Score eligibility is deterministic and reuses the existing expert-study
+  bundle/provenance gate. The benchmark adds no parallel reviewer certification
+  system.
+- A passed existing study is necessary but insufficient. The benchmark resolves
+  and hash-verifies declared source exports and verifies exact review, reviewer
+  roster, run ID, export identity, and packet-manifest bindings. It then remains
+  pending because the current provenance contract does not authenticate human
+  identity or independently attest per-record packet sufficiency.
+- The actual repeated model-comparison protocol now freezes benchmark v2 and
+  recomputes an eligibility-aware adoption score from categorical outcomes.
+  Pending evidence makes adoption and canary gates unavailable and forces an
+  inconclusive decision with no selected model. V1 metrics remain diagnostic.
+- The standalone benchmark report builder has no independently supplied score
+  input. It loads the exact content-addressed prediction artifact and
+  deterministically recomputes the report score against the report evaluation.
+- All pending, ambiguous, and uncited records stay visible but are excluded from
+  adoption metrics and canary gates. Empty eligible sets produce `unavailable`,
+  not zero or pass.
+- The initial integrity report is honest: 33 records visible, 0 score-eligible,
+  30 pending expert, 3 ambiguous pending expert, adoption metrics unavailable,
+  canary gate unavailable, and no production-readiness claim.
+- Final focused, Ruff, mypy, and Postgres-backed service-check results are
+  recorded in the PR151 validation summary.
+
+Remaining proof boundary:
+
+- A trusted external process must authenticate reviewer identity and bind that
+  attestation to the existing reviewer roster, review run IDs, source-export
+  digest, packet-manifest digest, and independent per-record sufficiency
+  decisions. No AI adjudication in this PR satisfies that blocker.
+- The three known-insufficient records need source-complete v2 packets before
+  they can be independently attested and become eligible.
+- The PR150 live model comparison remains historical diagnostic evidence and
+  must not be reinterpreted with benchmark v2 metrics.
+
+### 2026-07-13 - PR152 Failed Model-Attempt Telemetry
+
+Branch: `alvaro/evidence-pr152-failed-attempt-telemetry`
+
+Evidence report:
+`docs/validation/reports/2026-07-13-pr152-failed-attempt-telemetry.md`
+
+Progress:
+
+- Every semantic model execution is registered before runtime setup and bound
+  to a deterministic semantic batch digest, execution order, per-batch attempt
+  number, source/search identity, record references, and governed step key.
+- Artana terminal events are joined only when run ID, step key, frozen model,
+  event ID, sequence, and event hash are present and consistent.
+- Failed Pydantic output-schema events are normalized to the categorical pair
+  `output_schema_validation` / `schema_contract_rejected`.
+- Completed Artana responses rejected by service-local coverage, evidence
+  reference, or run-identity validation remain queryable as rejected attempts
+  and keep their original terminal outcome.
+- Provider token and cost values are copied only when present on the Artana
+  terminal event. Missing values are never priced or estimated and carry typed
+  unavailable reasons.
+- The complete normalized attempt snapshot, including failure association and
+  usage provenance, is SHA-256 locked and all aggregates are recomputed from it.
+- Every run now publishes a separately hashed attempted-execution manifest.
+  Replay requires exact manifest/ledger equality plus unique contiguous global
+  sequence and contiguous per-batch attempt numbers, so recomputing an inner
+  telemetry digest cannot conceal omission or insertion.
+- Batch identity fingerprints the complete governed semantic context, including
+  objective, instructions, criteria, population, evidence types, outcomes,
+  record indices, and record content.
+- Each terminal is joined to its exact `MODEL_REQUESTED` event and validated for
+  request ID/hash/sequence, run, cycle, model, step, and event ordering. Extra
+  request events are rejected rather than ignored as orphan cycles.
+- Adoption policy `1.3.0` permits zero failed, locally rejected, abandoned, or
+  telemetry-unavailable candidate attempts. Material quality gains cannot
+  override attempt unreliability.
+- Confirmed failures, local rejections, abandonment, and telemetry-unavailable
+  attempts have separate summary counts and report rows.
+- Telemetry completeness precedes retry reliability in adoption, and mixed
+  token/cost availability uses dimension-specific unavailable reasons.
+- Attempt-manifest and runtime-ledger ordering use one shared typed validator.
+- Agent outputs remain categorical and deterministic scoring is unchanged.
+- Focused unit/regression coverage, isolated-Postgres Artana failure-path
+  coverage, Ruff, mypy, and service gates are recorded in the PR152 report.
+
+Remaining proof boundary:
+
+- Artana's current LiteLLM adapter extracts usage before Pydantic validation
+  but re-raises a bare `ValidationError`; the kernel therefore cannot persist
+  usage for that failed response. The service records
+  dimension-specific token/cost usage-loss reasons and does not invent the
+  missing values.
+- Provider sub-attempts performed inside Artana/LiteLLM retry handling are not
+  separately exposed as terminal events. PR152 preserves every service-owned
+  semantic execution and reports this upstream granularity limit honestly.
+- This observability work does not change the PR150 model-comparison outcome,
+  repair the AI-adjudicated fixture, or establish production/trusted-graph
+  readiness.
 
 ## PR Update Template
 

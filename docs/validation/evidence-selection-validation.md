@@ -371,6 +371,35 @@ explicitly unavailable until the independent expert training and held-out
 partitions exist, and the comparison never makes a production-readiness or
 trusted-graph claim.
 
+## Semantic Benchmark V2 Integrity
+
+Benchmark v2 preserves the v1 fixture and source snapshots byte-for-byte as
+historical AI diagnostic evidence. A separate content-addressed packet manifest
+binds those bounded snapshots. The v2 fixture may add categorical AI diagnostic
+overrides with rationale and literal packet spans, but its schema cannot express
+human/expert provenance or agent-authored numeric scores.
+
+Run the deterministic validator with:
+
+```bash
+make evidence-selection-semantic-benchmark-v2-check
+```
+
+Score eligibility is derived rather than asserted. A future label is eligible
+only when the fixture links a `real_shadow_review` bundle that passes the
+existing evidence-selection expert-study/provenance gate, that bundle's source
+manifest binds the benchmark packet manifest as its adjudication log, its review
+run covers the exact case inventory, and a record-level citation resolves to the
+bounded packet. The expert-selected set then supplies the categorical expected
+label; benchmark code computes all metrics.
+
+AI-only, ambiguous, uncited, or pending-expert records remain visible in JSON
+and Markdown but are excluded from adoption metrics. Canary status is
+`unavailable` when there are no eligible canary labels; it is never inferred as
+passing from AI diagnostic canaries. The initial v2 fixture deliberately has no
+linked real-shadow-review bundle, so all 33 records are excluded, including the
+defective BRCA1 label and two source-incomplete canaries identified by PR150.
+
 ## Expert-Review Study
 
 Use a small expert-review study before production rollout.

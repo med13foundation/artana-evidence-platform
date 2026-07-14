@@ -80,6 +80,10 @@ def render_protocol_markdown(protocol: SemanticModelComparisonProtocol) -> str:
         f"- Minimum per-case coverage: `{thresholds.minimum_case_decision_coverage:.4f}`",
         "- Variance-only model adoption: **FORBIDDEN**",
         "- Record-level instability allowed: `0`",
+        f"- Failed attempts allowed for adoption: `{thresholds.maximum_adoption_failed_attempts}`",
+        f"- Locally rejected attempts allowed for adoption: `{thresholds.maximum_adoption_rejected_attempts}`",
+        f"- Abandoned attempts allowed for adoption: `{thresholds.maximum_adoption_abandoned_attempts}`",
+        f"- Telemetry-unavailable attempts allowed for adoption: `{thresholds.maximum_adoption_telemetry_unavailable_attempts}`",
         "- Agent-authored confidence or numeric model preference: **FORBIDDEN**",
         f"- Absolute maximum candidate resource ratio: `{thresholds.maximum_candidate_resource_ratio:.2f}`",
         "",
@@ -113,17 +117,19 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         "| --- | ---: | ---: |",
         f"| Runs | {current.run_count} | {candidate.run_count} |",
         f"| Quality gate | {'PASS' if current.quality_gate_passed else 'FAIL'} | {'PASS' if candidate.quality_gate_passed else 'FAIL'} |",
-        f"| Worst precision | {current.worst_precision:.4f} | {candidate.worst_precision:.4f} |",
-        f"| Worst recall | {current.worst_recall:.4f} | {candidate.worst_recall:.4f} |",
-        f"| Minimum case precision | {current.minimum_case_precision:.4f} | {candidate.minimum_case_precision:.4f} |",
-        f"| Minimum case recall | {current.minimum_case_recall:.4f} | {candidate.minimum_case_recall:.4f} |",
-        f"| Worst decision coverage | {current.worst_decision_coverage:.4f} | {candidate.worst_decision_coverage:.4f} |",
-        f"| Minimum case coverage | {current.minimum_case_decision_coverage:.4f} | {candidate.minimum_case_decision_coverage:.4f} |",
-        f"| Mean abstention rate | {current.mean_abstention_rate:.4f} | {candidate.mean_abstention_rate:.4f} |",
-        f"| Mean precision | {current.mean_precision:.4f} | {candidate.mean_precision:.4f} |",
-        f"| Mean recall | {current.mean_recall:.4f} | {candidate.mean_recall:.4f} |",
-        f"| Precision variance | {current.precision_variance:.6f} | {candidate.precision_variance:.6f} |",
-        f"| Recall variance | {current.recall_variance:.6f} | {candidate.recall_variance:.6f} |",
+        f"| Adoption metrics | {current.adoption_metrics_status} | {candidate.adoption_metrics_status} |",
+        f"| Canary gate | {current.canary_gate_status} | {candidate.canary_gate_status} |",
+        f"| Worst precision | {_format_metric(current.worst_precision)} | {_format_metric(candidate.worst_precision)} |",
+        f"| Worst recall | {_format_metric(current.worst_recall)} | {_format_metric(candidate.worst_recall)} |",
+        f"| Minimum case precision | {_format_metric(current.minimum_case_precision)} | {_format_metric(candidate.minimum_case_precision)} |",
+        f"| Minimum case recall | {_format_metric(current.minimum_case_recall)} | {_format_metric(candidate.minimum_case_recall)} |",
+        f"| Worst decision coverage | {_format_metric(current.worst_decision_coverage)} | {_format_metric(candidate.worst_decision_coverage)} |",
+        f"| Minimum case coverage | {_format_metric(current.minimum_case_decision_coverage)} | {_format_metric(candidate.minimum_case_decision_coverage)} |",
+        f"| Mean abstention rate | {_format_metric(current.mean_abstention_rate)} | {_format_metric(candidate.mean_abstention_rate)} |",
+        f"| Mean precision | {_format_metric(current.mean_precision)} | {_format_metric(candidate.mean_precision)} |",
+        f"| Mean recall | {_format_metric(current.mean_recall)} | {_format_metric(candidate.mean_recall)} |",
+        f"| Precision variance | {_format_metric(current.precision_variance, 6)} | {_format_metric(candidate.precision_variance, 6)} |",
+        f"| Recall variance | {_format_metric(current.recall_variance, 6)} | {_format_metric(candidate.recall_variance, 6)} |",
         f"| Unstable records | {current.unstable_record_count} | {candidate.unstable_record_count} |",
         f"| Invalid-agent decisions | {current.invalid_agent_count} | {candidate.invalid_agent_count} |",
         "| Deterministic fallback | 0 | 0 |",
@@ -133,10 +139,24 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         "| Metric | Current | Candidate |",
         "| --- | ---: | ---: |",
         f"| Telemetry complete | {'yes' if current.telemetry_complete else 'no'} | {'yes' if candidate.telemetry_complete else 'no'} |",
+        f"| Attempt reliability policy | {'PASS' if current.attempt_reliability_passed else 'FAIL'} | {'PASS' if candidate.attempt_reliability_passed else 'FAIL'} |",
+        f"| Model attempts | {current.model_attempt_count} | {candidate.model_attempt_count} |",
+        f"| Failed attempts | {current.failed_attempt_count} | {candidate.failed_attempt_count} |",
+        f"| Locally rejected attempts | {current.rejected_attempt_count} | {candidate.rejected_attempt_count} |",
+        f"| Abandoned attempts | {current.abandoned_attempt_count} | {candidate.abandoned_attempt_count} |",
+        f"| Telemetry-unavailable attempts | {current.telemetry_unavailable_attempt_count} | {candidate.telemetry_unavailable_attempt_count} |",
+        f"| Output-schema failures | {current.schema_validation_failure_count} | {candidate.schema_validation_failure_count} |",
+        f"| Attempts with unavailable usage | {current.usage_unavailable_attempt_count} | {candidate.usage_unavailable_attempt_count} |",
         f"| Total tokens | {_optional_int(current.total_tokens)} | {_optional_int(candidate.total_tokens)} |",
         f"| Total cost USD | {_optional_float(current.total_cost_usd, 8)} | {_optional_float(candidate.total_cost_usd, 8)} |",
         f"| Model latency seconds | {_optional_float(current.total_model_latency_seconds, 6)} | {_optional_float(candidate.total_model_latency_seconds, 6)} |",
         f"| Wall latency seconds | {current.total_wall_latency_seconds:.6f} | {candidate.total_wall_latency_seconds:.6f} |",
+        "",
+        "## Non-Completed Attempt Telemetry",
+        "",
+        "| Model role | Run | Execution | Batch | Status | Stage | Cause | Token usage | Cost usage |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |",
+        *_failed_attempt_rows(report),
         "",
         "## Decision Evidence",
         "",
@@ -146,9 +166,9 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         lines.extend(f"- {reason}" for reason in decision.blocking_reasons)
     lines.extend(
         [
-            f"- Worst precision delta: `{decision.metric_deltas.worst_precision:.4f}`",
-            f"- Worst recall delta: `{decision.metric_deltas.worst_recall:.4f}`",
-            f"- Combined variance delta: `{decision.metric_deltas.combined_variance:.6f}`",
+            f"- Worst precision delta: `{_format_metric(decision.metric_deltas.worst_precision)}`",
+            f"- Worst recall delta: `{_format_metric(decision.metric_deltas.worst_recall)}`",
+            f"- Combined variance delta: `{_format_metric(decision.metric_deltas.combined_variance, 6)}`",
             f"- Cost ratio: `{_optional_float(decision.metric_deltas.cost_ratio, 4)}`",
             f"- Model latency ratio: `{_optional_float(decision.metric_deltas.model_latency_ratio, 4)}`",
             f"- Cross-model categorical disagreements: `{report.cross_model_disagreement_count}`",
@@ -162,6 +182,10 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         ],
     )
     return "\n".join(lines)
+
+
+def _format_metric(value: float | None, digits: int = 4) -> str:
+    return "unavailable" if value is None else f"{value:.{digits}f}"
 
 
 def _write_atomic(*, path: Path, content: str) -> None:
@@ -180,6 +204,33 @@ def _optional_int(value: int | None) -> str:
 
 def _optional_float(value: float | None, precision: int) -> str:
     return "unavailable" if value is None else f"{value:.{precision}f}"
+
+
+def _failed_attempt_rows(report: SemanticModelComparisonReport) -> list[str]:
+    rows: list[str] = []
+    for run in (*report.current_runs, *report.candidate_runs):
+        for attempt in run.telemetry.ledger.model_attempts:
+            if attempt.status == "completed":
+                continue
+            token_usage = (
+                str((attempt.prompt_tokens or 0) + (attempt.completion_tokens or 0))
+                if attempt.token_usage_provenance == "artana_model_terminal"
+                else f"unavailable ({attempt.token_usage_unavailable_reason})"
+            )
+            cost_usage = (
+                f"{attempt.cost_usd:.8f}"
+                if attempt.cost_usage_provenance == "artana_model_terminal"
+                and attempt.cost_usd is not None
+                else f"unavailable ({attempt.cost_usage_unavailable_reason})"
+            )
+            rows.append(
+                "| "
+                f"{run.model_role} | {run.run_index} | `{attempt.execution_id}` | "
+                f"`{attempt.batch_id}` | {attempt.status} | "
+                f"{attempt.failure_stage} | {attempt.failure_cause} | "
+                f"{token_usage} | {cost_usage} |",
+            )
+    return rows or ["| none | - | - | - | - | - | - | - | - |"]
 
 
 __all__ = [
