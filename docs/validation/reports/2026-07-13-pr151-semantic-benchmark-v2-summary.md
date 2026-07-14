@@ -30,6 +30,9 @@ fit. Prompt pressure would only encourage models to reproduce defective labels.
 - Enumerate packet sufficiency for every record. The three PR150 defects are
   `known_insufficient`; all other immutable v1 snapshots are `unverified`.
 - Compute adoption metrics and canary status only from eligible expert labels.
+- Make the standalone report builder load the bound prediction artifact and
+  recompute its score from the exact evaluation; callers cannot inject a score
+  produced from a different or forged evaluation.
 - Make benchmark-v2 scoring authoritative in the actual repeated model
   comparison path; v1 scoring remains historical diagnostic output only.
 - Keep every excluded record visible and represent no eligible evidence as
@@ -48,7 +51,7 @@ claim.
 
 ```text
 ```text
-Focused benchmark/comparison/provenance suite: 72 passed
+Focused benchmark/comparison/provenance suite: 73 passed
 make evidence-selection-semantic-benchmark-v2-check: passed
 make artana-evidence-api-lint: passed
 make artana-evidence-api-type-check: passed (557 service sources plus strict-import CLIs)
@@ -57,7 +60,8 @@ make artana-evidence-api-service-checks: passed
 ```
 ```
 
-Regression coverage includes forged and nonexistent real-shadow source exports,
+Regression coverage includes mismatched pending-evaluation/forged-eligible
+report scores, forged and nonexistent real-shadow source exports,
 reviewer/source binding drift, model-authored numeric fields, pending-record
 score leakage through the real model-comparison path, ambiguous-canary gate
 leakage, packet digest drift, explicit known-insufficiency, cross-object metric

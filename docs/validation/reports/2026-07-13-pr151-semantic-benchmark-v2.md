@@ -1,6 +1,7 @@
 # Evidence Selection Semantic Benchmark V2 Integrity Report
 
 - Fixture provenance: **AI-adjudicated diagnostic**
+- Score derivation: **DETERMINISTIC FROM BOUND PREDICTION ARTIFACT**
 - Existing expert-study gate status: **PENDING**
 - Human/expert approval claim: **NO**
 - Production readiness claim: **NO**

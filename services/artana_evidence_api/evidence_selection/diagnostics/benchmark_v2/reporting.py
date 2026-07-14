@@ -6,11 +6,15 @@ import hashlib
 from datetime import datetime
 from pathlib import Path
 
+from artana_evidence_api.evidence_selection.diagnostics.predictions import (
+    EvidenceSelectionSemanticPredictionArtifact,
+)
+
 from .contracts import (
     EvidenceSelectionBenchmarkEvaluation,
     EvidenceSelectionBenchmarkV2Report,
-    EvidenceSelectionBenchmarkV2Score,
 )
+from .scoring import score_benchmark_v2
 
 
 def build_benchmark_v2_report(
@@ -18,22 +22,32 @@ def build_benchmark_v2_report(
     fixture_path: Path,
     prediction_path: Path,
     evaluation: EvidenceSelectionBenchmarkEvaluation,
-    score: EvidenceSelectionBenchmarkV2Score,
     generated_at: datetime,
 ) -> EvidenceSelectionBenchmarkV2Report:
-    """Build a report whose claims cannot outrun the verified evidence."""
+    """Load categorical predictions and recompute the exact reported score."""
 
     fixture_sha256 = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
     if fixture_sha256 != evaluation.fixture_sha256:
         raise ValueError("report fixture bytes do not match evaluated fixture")
+    prediction_bytes = prediction_path.read_bytes()
+    prediction_artifact = (
+        EvidenceSelectionSemanticPredictionArtifact.model_validate_json(
+            prediction_bytes,
+        )
+    )
+    score = score_benchmark_v2(
+        evaluation=evaluation,
+        predictions=prediction_artifact.predictions,
+    )
     return EvidenceSelectionBenchmarkV2Report(
-        schema_version="evidence_selection_semantic_benchmark_report.v2",
+        schema_version="evidence_selection_semantic_benchmark_report.v3",
         generated_at=generated_at,
         fixture_path=str(fixture_path),
         fixture_sha256=fixture_sha256,
         prediction_path=str(prediction_path),
-        prediction_sha256=hashlib.sha256(prediction_path.read_bytes()).hexdigest(),
+        prediction_sha256=hashlib.sha256(prediction_bytes).hexdigest(),
         fixture_provenance="ai_adjudicated_diagnostic",
+        score_derivation="deterministic_from_bound_prediction_artifact",
         expert_study_status=evaluation.expert_study_status,
         production_readiness_claim=False,
         score=score,
@@ -48,6 +62,7 @@ def render_benchmark_v2_markdown(report: EvidenceSelectionBenchmarkV2Report) -> 
         "# Evidence Selection Semantic Benchmark V2 Integrity Report",
         "",
         "- Fixture provenance: **AI-adjudicated diagnostic**",
+        "- Score derivation: **DETERMINISTIC FROM BOUND PREDICTION ARTIFACT**",
         f"- Existing expert-study gate status: **{report.expert_study_status.upper()}**",
         "- Human/expert approval claim: **NO**",
         "- Production readiness claim: **NO**",

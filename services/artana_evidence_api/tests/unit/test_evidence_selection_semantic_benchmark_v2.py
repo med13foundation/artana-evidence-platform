@@ -167,6 +167,51 @@ def test_zero_eligible_score_cannot_carry_metrics_or_canary_pass() -> None:
         EvidenceSelectionBenchmarkV2Score.model_validate(payload)
 
 
+def test_report_builder_rejects_forged_score_for_pending_evaluation() -> None:
+    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
+    pending_evaluation = evaluate_benchmark_v2(loaded)
+    predictions = load_semantic_prediction_artifact(PREDICTION_PATH).predictions
+    first_record = pending_evaluation.records[0].model_copy(
+        update={
+            "eligibility_status": "score_eligible",
+            "score_eligible": True,
+            "expert_label": "select",
+            "exclusion_reasons": (),
+        },
+    )
+    forged_evaluation = pending_evaluation.model_copy(
+        update={
+            "expert_study_status": "externally_attested",
+            "records": (first_record, *pending_evaluation.records[1:]),
+        },
+    )
+    forged_score = score_benchmark_v2(
+        evaluation=forged_evaluation,
+        predictions=predictions,
+    )
+    assert forged_score.score_eligible_record_count == 1
+    assert forged_score.adoption_metrics is not None
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'score'"):
+        build_benchmark_v2_report(
+            fixture_path=FIXTURE_PATH,
+            prediction_path=PREDICTION_PATH,
+            evaluation=pending_evaluation,
+            score=forged_score,  # type: ignore[call-arg]
+            generated_at=datetime(2026, 7, 13, tzinfo=UTC),
+        )
+
+    report = build_benchmark_v2_report(
+        fixture_path=FIXTURE_PATH,
+        prediction_path=PREDICTION_PATH,
+        evaluation=pending_evaluation,
+        generated_at=datetime(2026, 7, 13, tzinfo=UTC),
+    )
+    assert report.score.score_eligible_record_count == 0
+    assert report.score.adoption_metrics is None
+    assert report.score.canary_gate_status == "unavailable"
+
+
 def test_forged_numeric_metric_envelope_is_rejected() -> None:
     with pytest.raises(ValidationError, match="precision is inconsistent"):
         EvidenceSelectionBenchmarkMetrics(
@@ -274,13 +319,10 @@ def test_verified_source_exports_still_require_external_reviewer_attestation(
 def test_report_wording_is_honest_and_keeps_excluded_records_visible() -> None:
     loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
     evaluation = evaluate_benchmark_v2(loaded)
-    predictions = load_semantic_prediction_artifact(PREDICTION_PATH).predictions
-    score = score_benchmark_v2(evaluation=evaluation, predictions=predictions)
     report = build_benchmark_v2_report(
         fixture_path=FIXTURE_PATH,
         prediction_path=PREDICTION_PATH,
         evaluation=evaluation,
-        score=score,
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
     )
 

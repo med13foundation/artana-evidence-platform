@@ -1,11 +1,12 @@
 {
-  "schema_version": "evidence_selection_semantic_benchmark_report.v2",
+  "schema_version": "evidence_selection_semantic_benchmark_report.v3",
   "generated_at": "2026-07-13T00:00:00Z",
   "fixture_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_benchmark_v2.json",
   "fixture_sha256": "e6a17d2c94a4045da785942ac541d9fc1e45516b8b1f931de38a3f5ca88e9640",
   "prediction_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_live_baseline_predictions_v1.json",
   "prediction_sha256": "93844ba87ca9985da90b635de831cd0c5fc86c801cd63544bf9a5835de7f1b2f",
   "fixture_provenance": "ai_adjudicated_diagnostic",
+  "score_derivation": "deterministic_from_bound_prediction_artifact",
   "expert_study_status": "pending",
   "production_readiness_claim": false,
   "score": {

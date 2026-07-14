@@ -14,7 +14,6 @@ from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2 import (
     evaluate_benchmark_v2,
     load_benchmark_v2,
     render_benchmark_v2_markdown,
-    score_benchmark_v2,
 )
 from artana_evidence_api.evidence_selection.diagnostics.predictions import (
     load_semantic_prediction_artifact,
@@ -53,19 +52,15 @@ def main(argv: tuple[str, ...] | None = None) -> int:
             repository_root=Path.cwd(),
         )
         evaluation = evaluate_benchmark_v2(loaded)
-        score = score_benchmark_v2(
-            evaluation=evaluation,
-            predictions=prediction_artifact.predictions,
-        )
         report = build_benchmark_v2_report(
             fixture_path=args.fixture,
             prediction_path=args.predictions,
             evaluation=evaluation,
-            score=score,
             generated_at=_parse_generated_at(args.generated_at),
         )
         content_by_path = {
-            args.json_output: json.dumps(report.model_dump(mode="json"), indent=2) + "\n",
+            args.json_output: json.dumps(report.model_dump(mode="json"), indent=2)
+            + "\n",
             args.markdown_output: render_benchmark_v2_markdown(report),
         }
         if args.check:
@@ -77,9 +72,9 @@ def main(argv: tuple[str, ...] | None = None) -> int:
         return 1
     print(
         "evidence_selection_semantic_benchmark_v2 "
-        f"visible={score.total_record_count} "
-        f"score_eligible={score.score_eligible_record_count} "
-        f"canary_gate={score.canary_gate_status} "
+        f"visible={report.score.total_record_count} "
+        f"score_eligible={report.score.score_eligible_record_count} "
+        f"canary_gate={report.score.canary_gate_status} "
         f"expert_study={evaluation.expert_study_status}",
     )
     action = "Checked" if args.check else "Wrote"

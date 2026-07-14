@@ -3314,6 +3314,9 @@ Progress:
   recomputes an eligibility-aware adoption score from categorical outcomes.
   Pending evidence makes adoption and canary gates unavailable and forces an
   inconclusive decision with no selected model. V1 metrics remain diagnostic.
+- The standalone benchmark report builder has no independently supplied score
+  input. It loads the exact content-addressed prediction artifact and
+  deterministically recomputes the report score against the report evaluation.
 - All pending, ambiguous, and uncited records stay visible but are excluded from
   adoption metrics and canary gates. Empty eligible sets produce `unavailable`,
   not zero or pass.

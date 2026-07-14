@@ -481,13 +481,14 @@ class EvidenceSelectionBenchmarkV2Report(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_benchmark_report.v2"]
+    schema_version: Literal["evidence_selection_semantic_benchmark_report.v3"]
     generated_at: datetime
     fixture_path: str
     fixture_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     prediction_path: str
     prediction_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     fixture_provenance: Literal["ai_adjudicated_diagnostic"]
+    score_derivation: Literal["deterministic_from_bound_prediction_artifact"]
     expert_study_status: Literal[
         "pending",
         "source_verified_external_attestation_pending",
