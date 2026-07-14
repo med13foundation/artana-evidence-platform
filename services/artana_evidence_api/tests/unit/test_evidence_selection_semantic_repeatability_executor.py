@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from artana.events import EventType, ModelTerminalPayload
+from artana.events import EventType, ModelRequestedPayload, ModelTerminalPayload
 from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import (
     EvidenceSelectionSemanticAgentEvaluation,
 )
@@ -32,6 +33,10 @@ from artana_evidence_api.evidence_selection.repeatability.source_provenance impo
 )
 from artana_evidence_api.evidence_selection.repeatability.verifier import (
     verify_semantic_comparison_bundle,
+)
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticLocalValidationFailure,
+    SemanticModelAttemptContext,
 )
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
@@ -61,12 +66,33 @@ class _LedgerStore:
     async def get_events_for_run(self, execution_id: str) -> list[object]:
         return [
             SimpleNamespace(
+                event_type=EventType.MODEL_REQUESTED,
+                event_id=f"request-{execution_id}",
+                run_id=execution_id,
+                seq=1,
+                event_hash=hashlib.sha256(
+                    f"request-{execution_id}".encode(),
+                ).hexdigest(),
+                payload=ModelRequestedPayload(
+                    model=execution_id.split("|", 1)[0],
+                    prompt="governed prompt",
+                    messages=(),
+                    step_key="evidence_selection.semantic_selector.v2",
+                    model_cycle_id=f"cycle-{execution_id}",
+                ),
+            ),
+            SimpleNamespace(
                 event_type=EventType.MODEL_TERMINAL,
+                event_id=f"terminal-{execution_id}",
+                run_id=execution_id,
+                seq=2,
+                event_hash=hashlib.sha256(execution_id.encode()).hexdigest(),
                 payload=ModelTerminalPayload(
                     outcome="completed",
                     model=execution_id.split("|", 1)[0],
                     model_cycle_id=f"cycle-{execution_id}",
                     source_model_requested_event_id=f"request-{execution_id}",
+                    step_key="evidence_selection.semantic_selector.v2",
                     elapsed_ms=100,
                     prompt_tokens=50,
                     completion_tokens=10,
@@ -77,6 +103,13 @@ class _LedgerStore:
 
     async def close(self) -> None:
         return None
+
+
+class _MissingFirstTerminalStore(_LedgerStore):
+    async def get_events_for_run(self, execution_id: str) -> list[object]:
+        if execution_id.endswith("-batch-1"):
+            return []
+        return await super().get_events_for_run(execution_id)
 
 
 class _RetryOnceRunner:
@@ -98,8 +131,14 @@ class _RetryOnceRunner:
     def model_id(self) -> str | None:
         return self._inner.model_id()
 
-    def execution_ids(self) -> tuple[str, ...]:
-        return self._inner.execution_ids()
+    def model_attempts(self) -> tuple[SemanticModelAttemptContext, ...]:
+        return self._inner.model_attempts()
+
+    def record_local_validation_failure(
+        self,
+        failure: SemanticLocalValidationFailure,
+    ) -> None:
+        self._inner.record_local_validation_failure(failure)
 
 
 @pytest.mark.asyncio
@@ -143,14 +182,14 @@ async def test_executor_writes_complete_source_locked_matrix(tmp_path) -> None:
     assert digest_path(output_dir).exists()
     for source in protocol.repository_source_files:
         assert (output_dir / BUNDLED_REPOSITORY_ROOT / source.relative_path).is_file()
-    assert len(tuple(output_dir.glob("current-run-*.json"))) == 3
-    assert len(tuple(output_dir.glob("candidate-run-*.json"))) == 3
+    assert len(tuple(output_dir.glob("current-run-[0-9].json"))) == 3
+    assert len(tuple(output_dir.glob("candidate-run-[0-9].json"))) == 3
     assert [
-        run.agent_run_ids[0].split("|", 1)[0]
+        run.telemetry.ledger.execution_ids[0].split("|", 1)[0]
         for run in (*report.current_runs, *report.candidate_runs)
     ] == [protocol.current_model_id] * 3 + [protocol.candidate_model_id] * 3
     assert [
-        run.agent_run_ids[0].split("|", 1)[1].split("-batch", 1)[0]
+        run.telemetry.ledger.execution_ids[0].split("|", 1)[1].split("-batch", 1)[0]
         for run in report.current_runs
     ] == [
         "execution-1",
@@ -158,7 +197,7 @@ async def test_executor_writes_complete_source_locked_matrix(tmp_path) -> None:
         "execution-5",
     ]
     assert [
-        run.agent_run_ids[0].split("|", 1)[1].split("-batch", 1)[0]
+        run.telemetry.ledger.execution_ids[0].split("|", 1)[1].split("-batch", 1)[0]
         for run in report.candidate_runs
     ] == [
         "execution-2",
@@ -212,14 +251,64 @@ async def test_executor_accounts_for_failed_validation_retry_executions(
         result.agent_run_id
         for result in _evaluation(output_dir / first_run.evaluation_path).record_results
     }
-    assert len(first_run.agent_run_ids) == len(successful_ids) + 1
-    assert successful_ids.issubset(first_run.agent_run_ids)
+    execution_ids = first_run.telemetry.ledger.execution_ids
+    assert len(execution_ids) == len(successful_ids) + 1
+    assert successful_ids.issubset(execution_ids)
     assert first_run.telemetry.ledger.model_terminal_count == len(
-        first_run.agent_run_ids,
+        execution_ids,
     )
     assert first_run.telemetry.ledger.total_tokens == 60 * len(
-        first_run.agent_run_ids,
+        execution_ids,
     )
+    attempts = first_run.telemetry.ledger.model_attempts
+    assert attempts[0].status == "rejected"
+    assert attempts[0].failure_stage == "semantic_batch_validation"
+    assert attempts[0].failure_cause == "record_coverage_mismatch"
+    assert attempts[0].batch_id == attempts[1].batch_id
+    assert attempts[0].batch_attempt_number == 1
+    assert attempts[1].batch_attempt_number == 2
+    assert report.current_summary.failed_attempt_count == 0
+    assert report.current_summary.rejected_attempt_count == 3
+    assert report.current_summary.telemetry_unavailable_attempt_count == 0
+    assert report.current_summary.attempt_reliability_passed is False
+    markdown = (output_dir / "semantic_model_comparison_report.md").read_text()
+    assert "## Non-Completed Attempt Telemetry" in markdown
+    assert "semantic_batch_validation" in markdown
+    assert "record_coverage_mismatch" in markdown
+
+
+@pytest.mark.asyncio
+async def test_report_keeps_unobserved_attempts_separate_from_confirmed_failures(
+    tmp_path,
+) -> None:
+    fixture = load_fixture()
+    factory_calls = 0
+
+    def runner_factory(model_id: str) -> EvidenceSelectionSemanticModelRunner:
+        nonlocal factory_calls
+        factory_calls += 1
+        return ExpectedLabelRunner(
+            fixture=fixture,
+            model_id=model_id,
+            execution_prefix=f"{model_id}|missing-{factory_calls}",
+        )
+
+    output_dir = tmp_path / "comparison"
+    report = await execute_semantic_model_comparison(
+        protocol=comparison_protocol(),
+        output_dir=output_dir,
+        runner_factory=runner_factory,
+        store_factory=_MissingFirstTerminalStore,
+    )
+
+    assert report.current_summary.failed_attempt_count == 0
+    assert report.current_summary.telemetry_unavailable_attempt_count == 3
+    assert report.current_summary.attempt_reliability_passed is False
+    assert report.decision.outcome == "inconclusive"
+    markdown = (output_dir / "semantic_model_comparison_report.md").read_text()
+    assert "| Failed attempts | 0 | 0 |" in markdown
+    assert "| Telemetry-unavailable attempts | 3 | 3 |" in markdown
+    assert "telemetry_unavailable" in markdown
 
 
 @pytest.mark.asyncio

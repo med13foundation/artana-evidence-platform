@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -34,18 +35,29 @@ from artana_evidence_api.evidence_selection.repeatability.contracts import (
     SemanticModelRole,
     SemanticRunTelemetry,
     SemanticRuntimeLedgerObservation,
-    SemanticRuntimeTerminalEvent,
+    SemanticRuntimeModelAttempt,
     SemanticWallClockObservation,
-    aggregate_semantic_terminal_events,
-    semantic_terminal_events_sha256,
 )
 from artana_evidence_api.evidence_selection.repeatability.protocol import (
     build_semantic_model_comparison_protocol,
     build_semantic_model_evaluation_run,
     sha256_path,
 )
+from artana_evidence_api.evidence_selection.repeatability.runtime.attempt_manifest import (
+    SemanticAttemptedExecutionManifest,
+)
+from artana_evidence_api.evidence_selection.repeatability.runtime.ledger import (
+    aggregate_semantic_model_attempts,
+    semantic_model_attempts_sha256,
+)
 from artana_evidence_api.evidence_selection.repeatability.source_provenance import (
     build_repository_source_files,
+)
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticAttemptRecorder,
+    SemanticLocalValidationFailure,
+    SemanticModelAttemptContext,
+    semantic_governed_context_sha256,
 )
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
@@ -102,7 +114,9 @@ class ExpectedLabelRunner:
         self._abstain_record_ids = abstain_record_ids
         self._execution_prefix = execution_prefix
         self._call_count = 0
-        self._execution_ids: list[str] = []
+        self._attempt_recorder = SemanticAttemptRecorder(
+            step_key="evidence_selection.semantic_selector.v2",
+        )
 
     async def assess(
         self,
@@ -110,6 +124,26 @@ class ExpectedLabelRunner:
         context: EvidenceSelectionSemanticContext,
     ) -> EvidenceSelectionSemanticBatchContract:
         self._call_count += 1
+        run_id = f"{self._execution_prefix}-batch-{self._call_count}"
+        self._attempt_recorder.start_attempt(
+            execution_id=run_id,
+            source_key=context.source_key,
+            search_id=context.search_id,
+            record_references=context.record_references,
+            governed_context_sha256=semantic_governed_context_sha256(
+                goal=context.goal,
+                instructions=context.instructions,
+                inclusion_criteria=context.inclusion_criteria,
+                exclusion_criteria=context.exclusion_criteria,
+                population_context=context.population_context,
+                evidence_types=context.evidence_types,
+                priority_outcomes=context.priority_outcomes,
+                source_key=context.source_key,
+                search_id=context.search_id,
+                records=context.records,
+                record_indices=context.record_indices,
+            ),
+        )
         assessments: list[EvidenceSelectionSemanticCandidateAssessment] = []
         for index, record in zip(
             context.record_indices,
@@ -129,8 +163,6 @@ class ExpectedLabelRunner:
                     decision=decision,
                 ),
             )
-        run_id = f"{self._execution_prefix}-batch-{self._call_count}"
-        self._execution_ids.append(run_id)
         return EvidenceSelectionSemanticBatchContract(
             schema_version="evidence_selection_semantic_agent.v2",
             agent_run_id=run_id,
@@ -143,8 +175,14 @@ class ExpectedLabelRunner:
     def model_id(self) -> str | None:
         return self._model_id
 
-    def execution_ids(self) -> tuple[str, ...]:
-        return tuple(self._execution_ids)
+    def model_attempts(self) -> tuple[SemanticModelAttemptContext, ...]:
+        return self._attempt_recorder.attempts()
+
+    def record_local_validation_failure(
+        self,
+        failure: SemanticLocalValidationFailure,
+    ) -> None:
+        self._attempt_recorder.record_local_validation_failure(failure)
 
 
 async def build_model_runs(
@@ -196,17 +234,17 @@ async def build_model_runs(
         )
         path = tmp_path / f"{role}-run-{run_index}.json"
         write_json_model(path=path, model=evaluation)
-        execution_ids = tuple(
-            sorted(
-                {
-                    result.agent_run_id
-                    for result in evaluation.record_results
-                    if result.agent_run_id != "invalid_agent"
-                },
+        attempts = runner.model_attempts()
+        attempt_manifest_path = tmp_path / f"{role}-run-{run_index}-attempts.json"
+        write_json_model(
+            path=attempt_manifest_path,
+            model=SemanticAttemptedExecutionManifest(
+                model_id=model_id,
+                attempts=attempts,
             ),
         )
         telemetry = _telemetry(
-            execution_ids=execution_ids,
+            attempts=attempts,
             model_id=model_id,
             status=telemetry_status,
             cost_usd=cost_per_run,
@@ -217,6 +255,7 @@ async def build_model_runs(
                 role=role,
                 run_index=run_index,
                 evaluation_path=path,
+                attempt_manifest_path=attempt_manifest_path,
                 evaluation=evaluation,
                 benchmark_evaluation=protocol.benchmark_evaluation,
                 telemetry=telemetry,
@@ -349,51 +388,74 @@ def _assessment(
 
 def _telemetry(
     *,
-    execution_ids: tuple[str, ...],
+    attempts: tuple[SemanticModelAttemptContext, ...],
     model_id: str,
     status: str,
     cost_usd: float,
     latency_seconds: float,
 ) -> SemanticRunTelemetry:
-    event_count = len(execution_ids)
+    event_count = len(attempts)
     cost_values = _split_float(cost_usd, event_count)
     elapsed_values = _split_int(round(latency_seconds * 1000), event_count)
-    terminal_events = tuple(
-        SemanticRuntimeTerminalEvent(
-            execution_id=execution_id,
-            outcome="completed",
+    model_attempts = tuple(
+        SemanticRuntimeModelAttempt(
+            execution_id=attempt.execution_id,
+            batch_id=attempt.batch_id,
+            governed_context_sha256=attempt.governed_context_sha256,
+            attempt_sequence=attempt.attempt_sequence,
+            batch_attempt_number=attempt.batch_attempt_number,
+            source_key=attempt.source_key,
+            search_id=attempt.search_id,
+            record_references=attempt.record_references,
+            step_key=attempt.step_key,
+            status="completed",
+            terminal_outcome="completed",
             model_id=model_id,
-            model_cycle_id=f"cycle-{execution_id}",
-            source_model_requested_event_id=f"request-{execution_id}",
+            model_cycle_id=f"cycle-{attempt.execution_id}",
+            source_model_requested_event_id=f"request-{attempt.execution_id}",
+            model_requested_event_seq=index * 2 + 1,
+            model_requested_event_hash=hashlib.sha256(
+                f"request-{attempt.execution_id}".encode(),
+            ).hexdigest(),
+            terminal_event_id=f"terminal-{index + 1}",
+            terminal_event_seq=index * 2 + 2,
+            terminal_event_hash=hashlib.sha256(
+                f"terminal-{attempt.execution_id}".encode(),
+            ).hexdigest(),
             elapsed_ms=elapsed_values[index],
             prompt_tokens=1000,
             completion_tokens=200,
             cost_usd=cost_values[index] if status == "available" else None,
-            cost_derivation=(
-                "provider_reported" if status == "available" else "unavailable"
+            token_usage_provenance="artana_model_terminal",
+            cost_usage_provenance=(
+                "artana_model_terminal" if status == "available" else "unavailable"
+            ),
+            cost_usage_unavailable_reason=(
+                None if status == "available" else "artana_terminal_missing_cost_usage"
             ),
         )
-        for index, execution_id in enumerate(execution_ids)
+        for index, attempt in enumerate(attempts)
     )
-    aggregate = aggregate_semantic_terminal_events(terminal_events)
-    ledger_payload: JSONObject = {
-        "status": status,
-        "expected_model_id": model_id,
-        "execution_ids": execution_ids,
-        "model_terminal_count": len(execution_ids),
-        "terminal_events": tuple(
-            event.model_dump(mode="json") for event in terminal_events
-        ),
-        "terminal_events_sha256": semantic_terminal_events_sha256(terminal_events),
-        "prompt_tokens": aggregate.prompt_tokens,
-        "completion_tokens": aggregate.completion_tokens,
-        "total_tokens": aggregate.total_tokens,
-        "cost_usd": aggregate.cost_usd,
-        "model_latency_seconds": aggregate.model_latency_seconds,
-        "cost_derivation": aggregate.cost_derivation,
-    }
+    execution_ids = tuple(attempt.execution_id for attempt in attempts)
+    aggregate = aggregate_semantic_model_attempts(model_attempts)
     return SemanticRunTelemetry(
-        ledger=SemanticRuntimeLedgerObservation.model_validate(ledger_payload),
+        ledger=SemanticRuntimeLedgerObservation(
+            status=status,
+            expected_model_id=model_id,
+            execution_ids=execution_ids,
+            model_attempt_count=len(execution_ids),
+            model_terminal_count=len(execution_ids),
+            model_attempts=model_attempts,
+            model_attempts_sha256=semantic_model_attempts_sha256(model_attempts),
+            prompt_tokens=aggregate.prompt_tokens,
+            completion_tokens=aggregate.completion_tokens,
+            total_tokens=aggregate.total_tokens,
+            cost_usd=aggregate.cost_usd,
+            model_latency_seconds=aggregate.model_latency_seconds,
+            token_usage_provenance=aggregate.token_usage_provenance,
+            cost_usage_provenance=aggregate.cost_usage_provenance,
+            unavailable_reasons=aggregate.unavailable_reasons,
+        ),
         wall_clock=SemanticWallClockObservation(
             execution_ids=execution_ids,
             elapsed_seconds=latency_seconds + 0.2,

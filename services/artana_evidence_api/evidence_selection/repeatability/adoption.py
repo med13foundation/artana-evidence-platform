@@ -27,6 +27,20 @@ def semantic_model_adoption_decision(
     )
     if availability_decision is not None:
         return availability_decision
+    telemetry_decision = _telemetry_availability_decision(
+        current=current,
+        candidate=candidate,
+        deltas=deltas,
+    )
+    if telemetry_decision is not None:
+        return telemetry_decision
+    reliability_decision = _candidate_reliability_decision(
+        current=current,
+        candidate=candidate,
+        deltas=deltas,
+    )
+    if reliability_decision is not None:
+        return reliability_decision
     precondition_decision = _precondition_decision(
         protocol=protocol,
         current=current,
@@ -68,6 +82,25 @@ def _benchmark_availability_decision(
     return None
 
 
+def _telemetry_availability_decision(
+    *,
+    current: SemanticModelRunSummary,
+    candidate: SemanticModelRunSummary,
+    deltas: SemanticModelMetricDeltas,
+) -> SemanticModelAdoptionDecision | None:
+    if current.telemetry_complete and candidate.telemetry_complete:
+        return None
+    return _decision(
+        outcome="inconclusive",
+        selected_model_id=None,
+        reasons=["runtime_telemetry_incomplete"],
+        blocking=[
+            "Model adoption requires complete token, cost, and latency observations.",
+        ],
+        deltas=deltas,
+    )
+
+
 def _precondition_decision(
     *,
     protocol: SemanticModelComparisonProtocol,
@@ -80,18 +113,6 @@ def _precondition_decision(
     if not current.quality_gate_passed and not candidate.quality_gate_passed:
         reasons.append("current_and_candidate_quality_gates_failed")
         blocking.append("Neither model passed the repeated source-locked quality gate.")
-        return _decision(
-            outcome="inconclusive",
-            selected_model_id=None,
-            reasons=reasons,
-            blocking=blocking,
-            deltas=deltas,
-        )
-    if not current.telemetry_complete or not candidate.telemetry_complete:
-        reasons.append("runtime_telemetry_incomplete")
-        blocking.append(
-            "Model adoption requires complete token, cost, and latency observations.",
-        )
         return _decision(
             outcome="inconclusive",
             selected_model_id=None,
@@ -137,6 +158,29 @@ def _precondition_decision(
             deltas=deltas,
         )
     return None
+
+
+def _candidate_reliability_decision(
+    *,
+    current: SemanticModelRunSummary,
+    candidate: SemanticModelRunSummary,
+    deltas: SemanticModelMetricDeltas,
+) -> SemanticModelAdoptionDecision | None:
+    if candidate.attempt_reliability_passed:
+        return None
+    current_is_selectable = (
+        current.quality_gate_passed and current.attempt_reliability_passed
+    )
+    return _decision(
+        outcome="keep_current" if current_is_selectable else "inconclusive",
+        selected_model_id=current.model_id if current_is_selectable else None,
+        reasons=["candidate_attempt_reliability_failed"],
+        blocking=[
+            "Candidate adoption requires zero failed, locally rejected, abandoned, "
+            "or unobserved attempts under policy 1.3.0.",
+        ],
+        deltas=deltas,
+    )
 
 
 def _current_quality_failure_decision(

@@ -27,6 +27,9 @@ from artana_evidence_api.evidence_selection.diagnostics.fixture import (
 from artana_evidence_api.evidence_selection.diagnostics.report import (
     EvidenceSelectionSemanticDiagnosticReport,
 )
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticAttemptReporter,
+)
 from artana_evidence_api.evidence_selection.semantic.model import (
     ArtanaEvidenceSelectionSemanticModelRunner,
     EvidenceSelectionSemanticModelRunner,
@@ -58,6 +61,7 @@ from .protocol import (
     protocol_sha256,
     sha256_path,
 )
+from .runtime.attempt_manifest import SemanticAttemptedExecutionManifest
 from .source_provenance import (
     BUNDLED_REPOSITORY_ROOT,
     copy_repository_source_files,
@@ -216,14 +220,24 @@ async def _execute_model_run(
         path=output_dir / f"{role}-run-{run_index}.md",
         content=render_semantic_agent_evaluation_markdown(evaluation),
     )
-    execution_ids = runner.execution_ids()
-    if not execution_ids:
+    if not isinstance(runner, SemanticAttemptReporter):
+        raise TypeError("comparison runner did not expose model-attempt telemetry")
+    attempts = runner.model_attempts()
+    if not attempts:
         raise ValueError("comparison runner did not expose its execution trace")
+    attempt_manifest_path = output_dir / f"{role}-run-{run_index}-attempts.json"
+    write_json_model(
+        path=attempt_manifest_path,
+        model=SemanticAttemptedExecutionManifest(
+            model_id=model_id,
+            attempts=attempts,
+        ),
+    )
     store = store_factory()
     try:
         telemetry = await collect_semantic_run_telemetry(
             store=store,
-            execution_ids=execution_ids,
+            attempts=attempts,
             expected_model_id=model_id,
             wall_elapsed_seconds=wall_elapsed,
         )
@@ -234,10 +248,11 @@ async def _execute_model_run(
         run_index=run_index,
         evaluation_path=evaluation_path,
         evaluation_reference=evaluation_path.name,
+        attempt_manifest_path=attempt_manifest_path,
+        attempt_manifest_reference=attempt_manifest_path.name,
         evaluation=evaluation,
         benchmark_evaluation=protocol.benchmark_evaluation,
         telemetry=telemetry,
-        agent_run_ids=execution_ids,
     )
 
 

@@ -91,23 +91,14 @@ def build_semantic_model_evaluation_run(
     run_index: int,
     evaluation_path: Path,
     evaluation_reference: str | None = None,
+    attempt_manifest_path: Path,
+    attempt_manifest_reference: str | None = None,
     evaluation: EvidenceSelectionSemanticAgentEvaluation,
     benchmark_evaluation: EvidenceSelectionBenchmarkEvaluation,
     telemetry: SemanticRunTelemetry,
-    agent_run_ids: tuple[str, ...] | None = None,
 ) -> SemanticModelEvaluationRun:
     """Bind one evaluation artifact to its categorical decisions and telemetry."""
 
-    successful_agent_run_ids = tuple(
-        sorted(
-            {
-                result.agent_run_id
-                for result in evaluation.record_results
-                if result.agent_run_id != "invalid_agent"
-            },
-        ),
-    )
-    bound_agent_run_ids = agent_run_ids or successful_agent_run_ids
     adoption_score = score_benchmark_v2(
         evaluation=benchmark_evaluation,
         predictions=tuple(
@@ -124,6 +115,10 @@ def build_semantic_model_evaluation_run(
         run_index=run_index,
         evaluation_path=evaluation_reference or str(evaluation_path),
         evaluation_sha256=sha256_path(evaluation_path),
+        attempt_manifest_path=(
+            attempt_manifest_reference or str(attempt_manifest_path)
+        ),
+        attempt_manifest_sha256=sha256_path(attempt_manifest_path),
         generated_at=evaluation.generated_at,
         evaluated_commit=evaluation.evaluated_commit,
         model_id=evaluation.model_id,
@@ -135,7 +130,6 @@ def build_semantic_model_evaluation_run(
         canary_passed=evaluation.canary_passed,
         quality_gate_passed=evaluation.quality_gate_passed,
         adoption_score=adoption_score,
-        agent_run_ids=bound_agent_run_ids,
         record_decisions=tuple(
             SemanticRecordDecision(
                 case_id=result.case_id,
