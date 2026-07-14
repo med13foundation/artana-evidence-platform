@@ -1,0 +1,319 @@
+{
+  "schema_version": "evidence_selection_semantic_benchmark_report.v2",
+  "generated_at": "2026-07-13T00:00:00Z",
+  "fixture_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_benchmark_v2.json",
+  "fixture_sha256": "bafb3b0924060603a63a495aaf8f9cb8e532cbc68389717d393b15d2f20fff6c",
+  "prediction_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_live_baseline_predictions_v1.json",
+  "prediction_sha256": "93844ba87ca9985da90b635de831cd0c5fc86c801cd63544bf9a5835de7f1b2f",
+  "fixture_provenance": "ai_adjudicated_diagnostic",
+  "expert_study_status": "pending",
+  "production_readiness_claim": false,
+  "score": {
+    "total_record_count": 33,
+    "score_eligible_record_count": 0,
+    "excluded_record_count": 33,
+    "ambiguous_record_count": 3,
+    "pending_expert_record_count": 30,
+    "adoption_metrics": null,
+    "canary_gate_status": "unavailable",
+    "record_outcomes": [
+      {
+        "record_id": "egfr:pmid:27959700",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "egfr:pmid:25923549",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "egfr:pmid:27393503",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "egfr:pmid:41512290",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "egfr:pmid:30657347",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "egfr:pmid:26314834",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "egfr:pmid:31039766",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "egfr:pmid:23985030",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:40403695",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:22889855",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:26195121",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:30191368",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "ambiguous",
+        "prediction_decision": "select",
+        "eligibility_status": "ambiguous_pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:40288678",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:17018160",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:34237702",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:21356067",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:32658311",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:31206626:selected-duplicate",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:31206626:rejected-duplicate",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:34642874",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:27913932",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:30610487",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "brca1:pmid:26344711",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "cftr:pmid:35816621",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "cftr:pmid:40210412",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "cftr:pmid:41138737",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "cftr:pmid:40209082",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "cftr:pmid:38198345",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "cftr:pmid:35681464",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "cftr:pmid:39227072",
+        "evaluation_role": "primary",
+        "diagnostic_decision": "reject",
+        "prediction_decision": "select",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "canary:pmid:27959700",
+        "evaluation_role": "canary",
+        "diagnostic_decision": "ambiguous",
+        "prediction_decision": "reject",
+        "eligibility_status": "ambiguous_pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "canary:pmid:25923549",
+        "evaluation_role": "canary",
+        "diagnostic_decision": "select",
+        "prediction_decision": "reject",
+        "eligibility_status": "pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      },
+      {
+        "record_id": "canary:pmid:27393503",
+        "evaluation_role": "canary",
+        "diagnostic_decision": "ambiguous",
+        "prediction_decision": "reject",
+        "eligibility_status": "ambiguous_pending_expert",
+        "score_eligible": false,
+        "expert_label": null
+      }
+    ]
+  }
+}

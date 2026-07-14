@@ -3280,6 +3280,55 @@ Remaining proof boundary:
 - Model repeatability does not prove end-to-end trusted relation quality or
   trusted-graph readiness.
 
+### 2026-07-13 - Semantic Benchmark V2 Integrity
+
+Branch: `alvaro/evidence-pr151-expert-benchmark-v2`
+
+Evidence reports:
+
+- `docs/validation/reports/2026-07-13-pr151-semantic-benchmark-v2.md`
+- `docs/validation/reports/2026-07-13-pr151-semantic-benchmark-v2-summary.md`
+
+Progress:
+
+- The v1 fixture and four source snapshots remain immutable historical AI
+  diagnostic evidence, bound by their existing SHA-256 digests.
+- A separate content-addressed packet manifest establishes the bounded input
+  inventory for benchmark v2 without rewriting v1.
+- AI adjudication has a strict categorical contract with rationale and literal
+  packet spans. It cannot claim human/expert provenance or include numeric
+  confidence/self-scores.
+- The defective `brca1:pmid:30191368` label and source-incomplete
+  `canary:pmid:27959700` and `canary:pmid:27393503` records are explicitly
+  ambiguous pending expert review.
+- Score eligibility is deterministic and reuses the existing expert-study
+  bundle/provenance gate. The benchmark adds no parallel reviewer certification
+  system.
+- A passed existing study is still insufficient by itself: its source manifest
+  must bind the benchmark packet manifest, its review inventory must match the
+  case, and each eligible record must have a citation that resolves to bounded
+  packet text.
+- All pending, ambiguous, and uncited records stay visible but are excluded from
+  adoption metrics and canary gates. Empty eligible sets produce `unavailable`,
+  not zero or pass.
+- The initial integrity report is honest: 33 records visible, 0 score-eligible,
+  30 pending expert, 3 ambiguous pending expert, adoption metrics unavailable,
+  canary gate unavailable, and no production-readiness claim.
+- Focused benchmark, diagnostic, replay, repeatability, adversarial, and CLI
+  tests pass (`59 passed`). Focused Ruff and mypy checks pass.
+- The full Postgres-backed `make artana-evidence-api-service-checks` gate passes,
+  including report drift, boundary, contract, architecture, and service tests.
+
+Remaining proof boundary:
+
+- Genuine human reviewers must complete the bounded cases through the existing
+  real-shadow-review study bundle and provenance gate. No AI adjudication in
+  this PR satisfies that blocker.
+- The three ambiguous records need richer bounded source packets before they can
+  be fairly reviewed and become eligible.
+- The PR150 live model comparison remains historical diagnostic evidence and
+  must not be reinterpreted with benchmark v2 metrics.
+
 ## PR Update Template
 
 Copy this block when a PR is opened or merged.

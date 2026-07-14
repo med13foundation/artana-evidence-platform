@@ -1,0 +1,54 @@
+{
+  "schema_version": "evidence_selection_semantic_diagnostic.v2",
+  "benchmark_name": "semantic-relevance-benchmark-v2-integrity",
+  "provenance": "ai_adjudicated_diagnostic",
+  "historical_v1": {
+    "path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json",
+    "sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69"
+  },
+  "source_packet_manifest": {
+    "path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_benchmark_v2_packet_manifest.json",
+    "sha256": "de96786e088062fd259d774af13f5fdca1abc13a173f2206f16787969b25c4b8"
+  },
+  "expert_study_bundle": null,
+  "pending_expert_reason": "No passed real-shadow-review bundle from the existing expert-study provenance gate is linked yet.",
+  "expert_review_bindings": [],
+  "diagnostic_overrides": [
+    {
+      "record_id": "brca1:pmid:30191368",
+      "provenance": "ai_adjudicated_diagnostic",
+      "decision": "ambiguous",
+      "rationale": "PR150 showed that the v1 pathogenic label conflicts with the underlying source interpretation; machine review cannot replace independent expert adjudication.",
+      "evidence_spans": [
+        {
+          "source_locator": "brca1:pmid:30191368:title",
+          "quoted_text": "A tandem duplication of BRCA1 exons 1-19 through DHX8 exon 2 in four families with hereditary breast and ovarian cancer syndrome."
+        }
+      ]
+    },
+    {
+      "record_id": "canary:pmid:27959700",
+      "provenance": "ai_adjudicated_diagnostic",
+      "decision": "ambiguous",
+      "rationale": "The bounded canary excerpt does not state every population and direct-clinical fact required by the case criteria, so select and abstain cannot be adjudicated fairly from this packet.",
+      "evidence_spans": [
+        {
+          "source_locator": "canary:pmid:27959700:evidence_excerpt",
+          "quoted_text": "This primary clinical study provides direct T790M-positive treatment evidence."
+        }
+      ]
+    },
+    {
+      "record_id": "canary:pmid:27393503",
+      "provenance": "ai_adjudicated_diagnostic",
+      "decision": "ambiguous",
+      "rationale": "The bounded canary excerpt omits enough study-population detail that the required direct human clinical fit cannot be decided without a richer source packet and expert review.",
+      "evidence_spans": [
+        {
+          "source_locator": "canary:pmid:27393503:evidence_excerpt",
+          "quoted_text": "Case-level translational evidence follows T790M during AZD9291 treatment."
+        }
+      ]
+    }
+  ]
+}
