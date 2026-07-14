@@ -265,6 +265,24 @@ async def test_missing_candidate_telemetry_precedes_retry_reliability(tmp_path) 
 
 
 @pytest.mark.asyncio
+async def test_unreliable_only_quality_candidate_is_not_adopted(tmp_path) -> None:
+    protocol = comparison_protocol()
+    current, candidate = await _summaries(tmp_path)
+    current = current.model_copy(update={"quality_gate_passed": False})
+    candidate = candidate.model_copy(update={"attempt_reliability_passed": False})
+
+    decision = semantic_model_adoption_decision(
+        protocol=protocol,
+        current=current,
+        candidate=candidate,
+    )
+
+    assert decision.outcome == "inconclusive"
+    assert decision.selected_model_id is None
+    assert decision.reason_codes == ("candidate_attempt_reliability_failed",)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "resource_field",
     ["total_cost_usd", "total_model_latency_seconds"],
