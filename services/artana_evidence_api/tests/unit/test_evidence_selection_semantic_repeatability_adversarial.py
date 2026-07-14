@@ -13,6 +13,7 @@ from artana_evidence_api.evidence_selection.repeatability.comparison import (
 )
 from artana_evidence_api.evidence_selection.repeatability.contracts import (
     SemanticModelEvaluationRun,
+    SemanticRepositorySourceFile,
     SemanticRuntimeTerminalEvent,
     semantic_terminal_events_sha256,
 )
@@ -23,6 +24,16 @@ from .evidence_selection_semantic_repeatability_test_support import (
     comparison_protocol,
     load_fixture,
 )
+
+
+@pytest.mark.parametrize("path", ["/tmp/source.json", "../source.json"])
+def test_repository_source_contract_rejects_path_escape(path: str) -> None:
+    with pytest.raises(ValidationError, match="canonical and relative"):
+        SemanticRepositorySourceFile(
+            role="sanitized_source_snapshot",
+            relative_path=path,
+            sha256="a" * 64,
+        )
 
 
 @pytest.mark.asyncio
@@ -140,9 +151,7 @@ async def test_material_gain_cannot_override_absolute_resource_cap(tmp_path) -> 
         candidate=candidate,
     )
     assert only_passing.outcome == "inconclusive"
-    assert only_passing.reason_codes == (
-        "candidate_exceeds_maximum_resource_ratio",
-    )
+    assert only_passing.reason_codes == ("candidate_exceeds_maximum_resource_ratio",)
 
 
 @pytest.mark.asyncio

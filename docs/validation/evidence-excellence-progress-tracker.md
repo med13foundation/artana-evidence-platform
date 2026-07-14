@@ -3232,12 +3232,45 @@ Progress:
   worktree, and source bytes are checked again before publication.
 - The registered live candidate is `openai:gpt-5.6-luna`; its availability and a
   minimal Responses API inference were verified with the configured account.
+- The branch was rebased onto merged PR `#148` commit `d23b1dea`. The focused
+  post-adversarial suite now has 59 passing tests; package mypy and the full
+  `make service-checks` gate pass with `87.43%` coverage.
+- An initial three-run interleaved live diagnostic completed at evaluated commit
+  `285ad7a`. Its adversarial review found that the bundle did not carry the
+  baseline predictions and four source snapshots needed to audit its gold.
+- The protocol now freezes those five repository source files into the source
+  lock, copies them under repository-relative bundle paths, and replays the
+  existing prediction-to-snapshot provenance checks from bundled bytes.
+- New regressions reject repository path escape, pre-run source drift, and a
+  tampered source snapshot even when the generic manifest is rehashed.
+- The baseline score is recomputed from its bundled categorical predictions,
+  and execution loads its in-memory fixture and baseline only from staged bytes.
+  An adversarial re-review found no remaining blocker in these boundaries.
+- The deterministic result is `INCONCLUSIVE`: neither model passed the repeated
+  quality gate, no model is selected, and production readiness remains false.
+- Both models had two unstable records and no invalid-agent decisions or
+  deterministic fallback. Luna improved worst recall from `0.9231` to `1.0000`
+  but failed all three canary runs; the current model passed all canaries but
+  had incomplete usage telemetry after one failed output-validation attempt.
+- Luna's two recurring canary abstentions expose an ambiguity between the gold
+  labels and the bounded title/excerpt, while its reject/abstain variance on two
+  explicit review records is a genuine model-stability failure. These failure
+  classes remain separate in the evidence report.
+- The apparent Luna recall gain is not admissible evidence because
+  `brca1:pmid:30191368` is labeled pathogenic in the fixture while the underlying
+  abstract describes uncertain significance and possible benign or
+  reduced-penetrance interpretations.
 
 Remaining proof boundary:
 
-- Ranking-calibration PR `#148` is merged. The branch must now be rebased onto
-  integrated `main`, revalidated, and run for three interleaved executions per
-  model before any model recommendation is recorded.
+- No production model switch is justified by this matrix. The ambiguous canary
+  records require independent expert adjudication against a richer bounded
+  source packet before the gold labels are changed or the comparison is rerun.
+- One final v3 diagnostic run is required from the clean committed harness to
+  publish the corrected source-complete artifact format. It will test the
+  harness, not rehabilitate the defective AI-adjudicated gold.
+- Failed local output-validation attempts need runtime usage retention so a
+  future resource comparison can deterministically account for every attempt.
 - The frozen fixture remains AI-adjudicated diagnostic evidence, not expert
   gold.
 - Calibration remains unavailable until the real disjoint expert training and

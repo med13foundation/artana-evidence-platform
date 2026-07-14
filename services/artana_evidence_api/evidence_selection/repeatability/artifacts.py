@@ -57,9 +57,17 @@ def render_protocol_markdown(protocol: SemanticModelComparisonProtocol) -> str:
         f"- Runs per model: `{protocol.runs_per_model}`",
         f"- Fixture SHA-256: `{protocol.fixture_sha256}`",
         f"- Baseline SHA-256: `{protocol.baseline_report_sha256}`",
+        f"- Repository source files: `{len(protocol.repository_source_files)}`",
         f"- Source lock SHA-256: `{protocol.source_lock_sha256}`",
         "- Evidence provenance: **AI-adjudicated diagnostic**",
         "- Production readiness claim: **NO**",
+        "",
+        "## Frozen Repository Sources",
+        "",
+        *(
+            f"- `{source.role}`: `{source.relative_path}` (`{source.sha256}`)"
+            for source in protocol.repository_source_files
+        ),
         "",
         "## Deterministic Adoption Policy",
         "",

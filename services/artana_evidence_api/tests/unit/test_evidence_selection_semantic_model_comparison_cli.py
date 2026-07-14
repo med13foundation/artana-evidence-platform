@@ -44,6 +44,7 @@ def test_cli_freezes_protocol_before_executor(monkeypatch, tmp_path) -> None:
 
     async def fake_execute(**kwargs):
         captured_protocols.append(kwargs["protocol"])
+        assert kwargs["repository_root"] == module._repository_root()
         assert kwargs["runner_factory"] is (
             module.create_trusted_semantic_comparison_runner
         )
@@ -102,6 +103,8 @@ def test_cli_freezes_protocol_before_executor(monkeypatch, tmp_path) -> None:
     assert protocol.trusted_mainline_ref == "origin/main"
     assert protocol.trusted_mainline_commit == "b" * 40
     assert protocol.required_mainline_commit == module._DEFAULT_REQUIRED_MAINLINE_COMMIT
+    assert len(protocol.repository_source_files) == 5
+    assert protocol.repository_source_files[0].role == "baseline_predictions"
     assert protocol.production_readiness_claim is False
 
 

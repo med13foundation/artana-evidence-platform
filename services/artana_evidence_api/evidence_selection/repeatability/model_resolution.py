@@ -22,7 +22,9 @@ def resolve_trusted_semantic_comparison_model_id(
         try:
             return registry.get_default_model(ModelCapability.JUDGE).model_id
         except (KeyError, ValueError) as exc:
-            raise ValueError("default semantic judge model could not be resolved") from exc
+            raise ValueError(
+                "default semantic judge model could not be resolved"
+            ) from exc
 
     try:
         model = registry.get_model(requested_model_id)
@@ -31,7 +33,9 @@ def resolve_trusted_semantic_comparison_model_id(
             f"semantic comparison model '{requested_model_id}' is not registered",
         ) from exc
     if model.model_id != requested_model_id:
-        raise ValueError("semantic comparison model must resolve to its exact registry ID")
+        raise ValueError(
+            "semantic comparison model must resolve to its exact registry ID"
+        )
     if not model.is_enabled:
         raise ValueError(
             f"semantic comparison model '{requested_model_id}' is disabled",
@@ -50,7 +54,9 @@ class TrustedSemanticComparisonModelRunner(
 
     def __init__(self, *, model_id: str) -> None:
         super().__init__()
-        self._comparison_model_id = resolve_trusted_semantic_comparison_model_id(model_id)
+        self._comparison_model_id = resolve_trusted_semantic_comparison_model_id(
+            model_id
+        )
 
     def _resolve_model_id(self) -> str:
         return self._comparison_model_id

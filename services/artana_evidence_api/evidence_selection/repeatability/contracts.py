@@ -6,6 +6,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import PurePosixPath
 from typing import Literal
 
 from artana_evidence_api.evidence_selection.diagnostics.scoring import (
@@ -26,6 +27,31 @@ SemanticCostDerivation = Literal[
     "mixed",
     "unavailable",
 ]
+SemanticRepositorySourceRole = Literal[
+    "baseline_predictions",
+    "sanitized_source_snapshot",
+]
+
+
+class SemanticRepositorySourceFile(BaseModel):
+    """One repository-relative source file frozen into the comparison protocol."""
+
+    model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
+
+    role: SemanticRepositorySourceRole
+    relative_path: str = Field(min_length=1)
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+    @model_validator(mode="after")
+    def _path_must_be_canonical_and_relative(self) -> SemanticRepositorySourceFile:
+        path = PurePosixPath(self.relative_path)
+        if (
+            path.is_absolute()
+            or ".." in path.parts
+            or self.relative_path != path.as_posix()
+        ):
+            raise ValueError("repository source paths must be canonical and relative")
+        return self
 
 
 class SemanticModelComparisonThresholds(BaseModel):
@@ -72,7 +98,7 @@ class SemanticModelComparisonProtocol(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_model_protocol.v2"]
+    schema_version: Literal["evidence_selection_semantic_model_protocol.v3"]
     generated_at: datetime
     evaluated_commit: str = Field(pattern=r"^[a-f0-9]{40}$")
     trusted_mainline_ref: str = Field(min_length=1)
@@ -83,6 +109,9 @@ class SemanticModelComparisonProtocol(BaseModel):
     fixture_provenance: Literal["ai_adjudicated_diagnostic"]
     baseline_report_path: str = Field(min_length=1)
     baseline_report_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    repository_source_files: tuple[SemanticRepositorySourceFile, ...] = Field(
+        min_length=2,
+    )
     current_model_id: str = Field(min_length=1)
     candidate_model_id: str = Field(min_length=1)
     runs_per_model: int = Field(ge=3)
@@ -98,6 +127,21 @@ class SemanticModelComparisonProtocol(BaseModel):
             raise ValueError("model comparison requires distinct model IDs")
         if self.runs_per_model < self.thresholds.minimum_runs_per_model:
             raise ValueError("runs_per_model is below the policy minimum")
+        paths = tuple(source.relative_path for source in self.repository_source_files)
+        if len(set(paths)) != len(paths):
+            raise ValueError("repository source paths must be unique")
+        prediction_count = sum(
+            source.role == "baseline_predictions"
+            for source in self.repository_source_files
+        )
+        snapshot_count = sum(
+            source.role == "sanitized_source_snapshot"
+            for source in self.repository_source_files
+        )
+        if prediction_count != 1 or snapshot_count < 1:
+            raise ValueError(
+                "protocol requires one baseline prediction file and source snapshots",
+            )
         return self
 
 
@@ -277,11 +321,12 @@ class SemanticRuntimeLedgerObservation(BaseModel):
             aggregate.cost_derivation,
         )
         if declared_aggregate != recomputed_aggregate:
-            raise ValueError("runtime telemetry aggregate does not match terminal events")
+            raise ValueError(
+                "runtime telemetry aggregate does not match terminal events"
+            )
         covered_execution_ids = {event.execution_id for event in self.terminal_events}
         if self.status == "available" and (
-            not self.execution_ids
-            or covered_execution_ids != set(self.execution_ids)
+            not self.execution_ids or covered_execution_ids != set(self.execution_ids)
         ):
             raise ValueError("available runtime telemetry must cover every execution")
         if self.prompt_tokens is not None and self.completion_tokens is not None:
@@ -497,7 +542,7 @@ class SemanticModelComparisonReport(BaseModel):
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    schema_version: Literal["evidence_selection_semantic_model_comparison.v2"]
+    schema_version: Literal["evidence_selection_semantic_model_comparison.v3"]
     generated_at: datetime
     protocol: SemanticModelComparisonProtocol
     protocol_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")

@@ -54,9 +54,7 @@ def build_semantic_model_comparison(
         candidate=candidate_summary,
     )
     selected_summary = (
-        candidate_summary
-        if decision.outcome == "adopt_candidate"
-        else current_summary
+        candidate_summary if decision.outcome == "adopt_candidate" else current_summary
     )
     selected_model_repeatability_passed = (
         decision.outcome != "inconclusive"
@@ -64,7 +62,7 @@ def build_semantic_model_comparison(
         and selected_summary.telemetry_complete
     )
     return SemanticModelComparisonReport(
-        schema_version="evidence_selection_semantic_model_comparison.v2",
+        schema_version="evidence_selection_semantic_model_comparison.v3",
         generated_at=generated_at,
         protocol=protocol,
         protocol_sha256=protocol_sha256(protocol),

@@ -40,6 +40,7 @@ def validate_semantic_run_matrix(
     expected_source_lock = source_lock_sha256(
         fixture_sha256=protocol.fixture_sha256,
         baseline_report_sha256=protocol.baseline_report_sha256,
+        repository_source_files=protocol.repository_source_files,
     )
     if protocol.source_lock_sha256 != expected_source_lock:
         raise ValueError("comparison protocol source lock is invalid")
@@ -141,8 +142,7 @@ def _validate_evaluation_artifact(
         and run.fixture_sha256 == evaluation.fixture_sha256
         and run.baseline_report_sha256 == evaluation.baseline_report_sha256
         and run.fixture_provenance == evaluation.fixture_provenance
-        and run.deterministic_fallback_count
-        == evaluation.deterministic_fallback_count
+        and run.deterministic_fallback_count == evaluation.deterministic_fallback_count
         and run.score == evaluation.score
         and run.canary_passed == evaluation.canary_passed
         and run.quality_gate_passed == evaluation.quality_gate_passed
@@ -150,7 +150,9 @@ def _validate_evaluation_artifact(
         and declared_decisions == expected_decisions
     )
     if not bound_values_match:
-        raise ValueError("comparison run envelope does not match its evaluation artifact")
+        raise ValueError(
+            "comparison run envelope does not match its evaluation artifact"
+        )
     _validate_assessment_decisions(evaluation)
 
 
@@ -204,7 +206,9 @@ def _validate_assessment_decisions(
             else result.assessment.decision
         )
         if result.prediction_decision != expected_decision:
-            raise ValueError("evaluation prediction disagrees with its agent assessment")
+            raise ValueError(
+                "evaluation prediction disagrees with its agent assessment"
+            )
 
 
 def _validate_model_group(
@@ -236,8 +240,7 @@ def _validate_model_group(
 def _decision_keys(run: SemanticModelEvaluationRun) -> tuple[tuple[str, str], ...]:
     return tuple(
         sorted(
-            (decision.case_id, decision.record_id)
-            for decision in run.record_decisions
+            (decision.case_id, decision.record_id) for decision in run.record_decisions
         ),
     )
 

@@ -28,6 +28,9 @@ from artana_evidence_api.evidence_selection.repeatability.protocol import (
     build_semantic_model_comparison_protocol,
     sha256_path,
 )
+from artana_evidence_api.evidence_selection.repeatability.source_provenance import (
+    build_repository_source_files,
+)
 
 _GIT_SHA_LENGTH = 40
 _DEFAULT_REQUIRED_MAINLINE_COMMIT = "d23b1dea194d7fc6f116de84738fdf720c536a71"
@@ -67,13 +70,26 @@ def main(argv: tuple[str, ...] | None = None) -> int:
             required_mainline_commit=args.required_mainline_commit,
         )
         _require_clean_worktree()
-        _validate_output_path(
-            output_dir=args.output_dir,
-            source_paths=(args.fixture, args.baseline_report),
-        )
-        load_semantic_diagnostic_fixture(args.fixture)
+        repository_root = _repository_root()
+        fixture = load_semantic_diagnostic_fixture(args.fixture)
         baseline = EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
             args.baseline_report.read_text(encoding="utf-8"),
+        )
+        repository_source_files = build_repository_source_files(
+            fixture=fixture,
+            baseline=baseline,
+            repository_root=repository_root,
+        )
+        _validate_output_path(
+            output_dir=args.output_dir,
+            source_paths=(
+                args.fixture,
+                args.baseline_report,
+                *(
+                    repository_root / source.relative_path
+                    for source in repository_source_files
+                ),
+            ),
         )
         fixture_sha256 = sha256_path(args.fixture)
         _verify_baseline_fixture(
@@ -92,6 +108,7 @@ def main(argv: tuple[str, ...] | None = None) -> int:
             fixture_sha256=fixture_sha256,
             baseline_report_path=args.baseline_report,
             baseline_report_sha256=sha256_path(args.baseline_report),
+            repository_source_files=repository_source_files,
             current_model_id=current_model_id,
             candidate_model_id=candidate_model_id,
             runs_per_model=args.runs_per_model,
@@ -101,6 +118,7 @@ def main(argv: tuple[str, ...] | None = None) -> int:
                 protocol=protocol,
                 output_dir=args.output_dir,
                 runner_factory=create_trusted_semantic_comparison_runner,
+                repository_root=repository_root,
                 finalization_guard=lambda: _require_unchanged_repository_state(
                     expected_commit=args.evaluated_commit,
                     trusted_mainline_ref=args.trusted_mainline_ref,
@@ -213,6 +231,19 @@ def _resolve_git_commit(*, git: str, ref: str) -> str:
     if len(commit) != _GIT_SHA_LENGTH:
         raise ValueError("trusted mainline ref did not resolve to a commit")
     return commit
+
+
+def _repository_root() -> Path:
+    git = shutil.which("git")
+    if git is None:
+        raise RuntimeError("git is required to resolve the repository root")
+    result = subprocess.run(  # noqa: S603 - executable resolved by shutil.which.
+        [git, "rev-parse", "--show-toplevel"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return Path(result.stdout.strip()).resolve()
 
 
 def _require_clean_worktree() -> None:

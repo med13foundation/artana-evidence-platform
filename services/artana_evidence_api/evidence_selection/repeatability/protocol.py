@@ -17,6 +17,7 @@ from .contracts import (
     SemanticModelEvaluationRun,
     SemanticModelRole,
     SemanticRecordDecision,
+    SemanticRepositorySourceFile,
     SemanticRunTelemetry,
 )
 
@@ -32,6 +33,7 @@ def build_semantic_model_comparison_protocol(
     fixture_sha256: str,
     baseline_report_path: Path,
     baseline_report_sha256: str,
+    repository_source_files: tuple[SemanticRepositorySourceFile, ...],
     current_model_id: str,
     candidate_model_id: str,
     runs_per_model: int = 3,
@@ -43,9 +45,10 @@ def build_semantic_model_comparison_protocol(
     source_lock_digest = source_lock_sha256(
         fixture_sha256=fixture_sha256,
         baseline_report_sha256=baseline_report_sha256,
+        repository_source_files=repository_source_files,
     )
     return SemanticModelComparisonProtocol(
-        schema_version="evidence_selection_semantic_model_protocol.v2",
+        schema_version="evidence_selection_semantic_model_protocol.v3",
         generated_at=generated_at,
         evaluated_commit=evaluated_commit,
         trusted_mainline_ref=trusted_mainline_ref,
@@ -56,6 +59,7 @@ def build_semantic_model_comparison_protocol(
         fixture_provenance="ai_adjudicated_diagnostic",
         baseline_report_path=str(baseline_report_path),
         baseline_report_sha256=baseline_report_sha256,
+        repository_source_files=repository_source_files,
         current_model_id=current_model_id,
         candidate_model_id=candidate_model_id,
         runs_per_model=runs_per_model,
@@ -139,11 +143,15 @@ def source_lock_sha256(
     *,
     fixture_sha256: str,
     baseline_report_sha256: str,
+    repository_source_files: tuple[SemanticRepositorySourceFile, ...],
 ) -> str:
     payload = json.dumps(
         {
             "baseline_report_sha256": baseline_report_sha256,
             "fixture_sha256": fixture_sha256,
+            "repository_source_files": [
+                source.model_dump(mode="json") for source in repository_source_files
+            ],
         },
         sort_keys=True,
         separators=(",", ":"),

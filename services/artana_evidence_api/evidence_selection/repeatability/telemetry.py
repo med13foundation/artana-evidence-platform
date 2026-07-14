@@ -74,7 +74,10 @@ async def _collect_ledger_observation(
         for event in events:
             event_type = getattr(event, "event_type", None)
             payload = getattr(event, "payload", None)
-            if event_type not in {EventType.MODEL_TERMINAL, EventType.MODEL_TERMINAL.value}:
+            if event_type not in {
+                EventType.MODEL_TERMINAL,
+                EventType.MODEL_TERMINAL.value,
+            }:
                 continue
             if isinstance(payload, ModelTerminalPayload):
                 normalized_model_id = _normalize_cost_model_id(payload.model)

@@ -12,6 +12,12 @@ from artana.events import EventType, ModelTerminalPayload
 from artana_evidence_api.evidence_selection.diagnostics.agent_evaluation import (
     EvidenceSelectionSemanticAgentEvaluation,
 )
+from artana_evidence_api.evidence_selection.diagnostics.report import (
+    EvidenceSelectionSemanticDiagnosticReport,
+)
+from artana_evidence_api.evidence_selection.repeatability import (
+    executor as repeatability_executor,
+)
 from artana_evidence_api.evidence_selection.repeatability.bundle import (
     digest_path,
     failure_path,
@@ -21,6 +27,9 @@ from artana_evidence_api.evidence_selection.repeatability.executor import (
     execute_semantic_model_comparison,
 )
 from artana_evidence_api.evidence_selection.repeatability.protocol import sha256_path
+from artana_evidence_api.evidence_selection.repeatability.source_provenance import (
+    BUNDLED_REPOSITORY_ROOT,
+)
 from artana_evidence_api.evidence_selection.repeatability.verifier import (
     verify_semantic_comparison_bundle,
 )
@@ -33,6 +42,7 @@ from artana_evidence_api.evidence_selection.semantic.model import (
 )
 
 from .evidence_selection_semantic_repeatability_test_support import (
+    REPOSITORY_ROOT,
     ExpectedLabelRunner,
     comparison_protocol,
     load_fixture,
@@ -122,18 +132,26 @@ async def test_executor_writes_complete_source_locked_matrix(tmp_path) -> None:
     assert (output_dir / "semantic_model_comparison_report.md").exists()
     assert (output_dir / "semantic_model_comparison_manifest.json").exists()
     assert digest_path(output_dir).exists()
+    for source in protocol.repository_source_files:
+        assert (output_dir / BUNDLED_REPOSITORY_ROOT / source.relative_path).is_file()
     assert len(tuple(output_dir.glob("current-run-*.json"))) == 3
     assert len(tuple(output_dir.glob("candidate-run-*.json"))) == 3
     assert [
         run.agent_run_ids[0].split("|", 1)[0]
         for run in (*report.current_runs, *report.candidate_runs)
     ] == [protocol.current_model_id] * 3 + [protocol.candidate_model_id] * 3
-    assert [run.agent_run_ids[0].split("|", 1)[1].split("-batch", 1)[0] for run in report.current_runs] == [
+    assert [
+        run.agent_run_ids[0].split("|", 1)[1].split("-batch", 1)[0]
+        for run in report.current_runs
+    ] == [
         "execution-1",
         "execution-3",
         "execution-5",
     ]
-    assert [run.agent_run_ids[0].split("|", 1)[1].split("-batch", 1)[0] for run in report.candidate_runs] == [
+    assert [
+        run.agent_run_ids[0].split("|", 1)[1].split("-batch", 1)[0]
+        for run in report.candidate_runs
+    ] == [
         "execution-2",
         "execution-4",
         "execution-6",
@@ -275,6 +293,80 @@ async def test_executor_rejects_fixture_label_drift_from_frozen_protocol(
 
 
 @pytest.mark.asyncio
+async def test_executor_rejects_repository_source_drift_before_model_calls(
+    tmp_path,
+) -> None:
+    protocol = comparison_protocol()
+    repository_copy = tmp_path / "repository"
+    for source in protocol.repository_source_files:
+        destination = repository_copy / source.relative_path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(REPOSITORY_ROOT / source.relative_path, destination)
+    source_snapshot = next(
+        source
+        for source in protocol.repository_source_files
+        if source.role == "sanitized_source_snapshot"
+    )
+    (repository_copy / source_snapshot.relative_path).write_text(
+        "{}\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="source artifact digest mismatch"):
+        await execute_semantic_model_comparison(
+            protocol=protocol,
+            output_dir=tmp_path / "comparison",
+            repository_root=repository_copy,
+        )
+
+
+def test_frozen_execution_inputs_are_loaded_from_staged_copies(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    fixture_path = tmp_path / "fixture.json"
+    baseline_path = tmp_path / "baseline.json"
+    protocol = comparison_protocol()
+    shutil.copyfile(protocol.fixture_path, fixture_path)
+    shutil.copyfile(protocol.baseline_report_path, baseline_path)
+    original_fixture = load_fixture()
+    original_baseline = EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
+        baseline_path.read_text(encoding="utf-8"),
+    )
+    copied_protocol = protocol.model_copy(
+        update={
+            "fixture_path": str(fixture_path),
+            "baseline_report_path": str(baseline_path),
+        },
+    )
+    real_copyfile = shutil.copyfile
+
+    def copy_and_corrupt_originals(source, destination):
+        result = real_copyfile(source, destination)
+        if Path(source).resolve() == baseline_path.resolve():
+            fixture_path.write_text("{}\n", encoding="utf-8")
+            baseline_path.write_text("{}\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(
+        repeatability_executor.shutil,
+        "copyfile",
+        copy_and_corrupt_originals,
+    )
+    staging_dir = tmp_path / "staging"
+    staging_dir.mkdir()
+
+    frozen_fixture, frozen_baseline = repeatability_executor._load_and_freeze_sources(
+        protocol=copied_protocol,
+        staging_dir=staging_dir,
+        repository_root=REPOSITORY_ROOT,
+    )
+
+    assert frozen_fixture == original_fixture
+    assert frozen_baseline == original_baseline
+
+
+@pytest.mark.asyncio
 async def test_bundle_verifier_rejects_artifact_tampering(tmp_path) -> None:
     fixture = load_fixture()
     output_dir = tmp_path / "comparison"
@@ -313,6 +405,26 @@ async def test_semantic_verifier_rejects_forged_derived_report(tmp_path) -> None
 
     verify_published_bundle(output_dir)
     with pytest.raises(ValueError, match="does not match recomputation"):
+        verify_semantic_comparison_bundle(output_dir)
+
+
+@pytest.mark.asyncio
+async def test_semantic_verifier_rejects_reanchored_source_snapshot_tampering(
+    tmp_path,
+) -> None:
+    output_dir = await _build_bundle(tmp_path)
+    protocol = comparison_protocol()
+    source_snapshot = next(
+        source
+        for source in protocol.repository_source_files
+        if source.role == "sanitized_source_snapshot"
+    )
+    source_path = output_dir / BUNDLED_REPOSITORY_ROOT / source_snapshot.relative_path
+    source_path.write_text("{}\n", encoding="utf-8")
+    _reanchor_artifact(output_dir=output_dir, artifact=source_path)
+
+    verify_published_bundle(output_dir)
+    with pytest.raises(ValueError, match="source artifact digest mismatch"):
         verify_semantic_comparison_bundle(output_dir)
 
 

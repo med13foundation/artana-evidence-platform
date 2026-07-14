@@ -51,6 +51,11 @@ from .protocol import (
     protocol_sha256,
     sha256_path,
 )
+from .source_provenance import (
+    BUNDLED_REPOSITORY_ROOT,
+    copy_repository_source_files,
+    verify_repository_source_provenance,
+)
 from .telemetry import SemanticTelemetryStore, collect_semantic_run_telemetry
 from .verifier import verify_semantic_comparison_bundle
 
@@ -66,14 +71,17 @@ async def execute_semantic_model_comparison(
     runner_factory: RunnerFactory | None = None,
     store_factory: StoreFactory | None = None,
     finalization_guard: FinalizationGuard | None = None,
+    repository_root: Path | None = None,
 ) -> SemanticModelComparisonReport:
     """Execute every predeclared run and atomically publish verified evidence."""
 
     staging_dir = prepare_staging_directory(output_dir)
+    resolved_repository_root = (repository_root or Path.cwd()).resolve()
     try:
         fixture, baseline_report = _load_and_freeze_sources(
             protocol=protocol,
             staging_dir=staging_dir,
+            repository_root=resolved_repository_root,
         )
         write_json_model(
             path=staging_dir / "semantic_model_comparison_protocol.json",
@@ -90,8 +98,12 @@ async def execute_semantic_model_comparison(
             output_dir=staging_dir,
             runner_factory=runner_factory or _default_runner_factory,
             store_factory=store_factory or _default_store_factory,
+            repository_root=resolved_repository_root,
         )
-        _verify_protocol_source_files(protocol)
+        _verify_protocol_source_files(
+            protocol,
+            repository_root=resolved_repository_root,
+        )
         if finalization_guard is not None:
             finalization_guard()
         generated_at = datetime.now(UTC)
@@ -128,6 +140,7 @@ async def _execute_interleaved_runs(
     output_dir: Path,
     runner_factory: RunnerFactory,
     store_factory: StoreFactory,
+    repository_root: Path,
 ) -> tuple[
     tuple[SemanticModelEvaluationRun, ...],
     tuple[SemanticModelEvaluationRun, ...],
@@ -153,6 +166,7 @@ async def _execute_interleaved_runs(
                     output_dir=output_dir,
                     runner_factory=runner_factory,
                     store_factory=store_factory,
+                    repository_root=repository_root,
                 ),
             )
     return tuple(runs["current"]), tuple(runs["candidate"])
@@ -169,8 +183,9 @@ async def _execute_model_run(
     output_dir: Path,
     runner_factory: RunnerFactory,
     store_factory: StoreFactory,
+    repository_root: Path,
 ) -> SemanticModelEvaluationRun:
-    _verify_protocol_source_files(protocol)
+    _verify_protocol_source_files(protocol, repository_root=repository_root)
     runner = runner_factory(model_id)
     if runner.model_id() != model_id:
         raise ValueError(f"{role} runner did not resolve the frozen model ID")
@@ -222,27 +237,45 @@ def _load_and_freeze_sources(
     *,
     protocol: SemanticModelComparisonProtocol,
     staging_dir: Path,
+    repository_root: Path,
 ) -> tuple[
     EvidenceSelectionSemanticDiagnosticFixture,
     EvidenceSelectionSemanticDiagnosticReport,
 ]:
-    _verify_protocol_source_files(protocol)
+    _verify_protocol_source_files(protocol, repository_root=repository_root)
     fixture_path = Path(protocol.fixture_path)
     baseline_path = Path(protocol.baseline_report_path)
     source_dir = staging_dir / "sources"
     source_dir.mkdir()
-    shutil.copyfile(fixture_path, source_dir / "fixture.json")
-    shutil.copyfile(baseline_path, source_dir / "baseline_report.json")
-    fixture = load_semantic_diagnostic_fixture(fixture_path)
+    bundled_fixture_path = source_dir / "fixture.json"
+    bundled_baseline_path = source_dir / "baseline_report.json"
+    shutil.copyfile(fixture_path, bundled_fixture_path)
+    shutil.copyfile(baseline_path, bundled_baseline_path)
+    fixture = load_semantic_diagnostic_fixture(bundled_fixture_path)
     baseline = EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
-        baseline_path.read_text(encoding="utf-8"),
+        bundled_baseline_path.read_text(encoding="utf-8"),
     )
     if baseline.fixture_sha256 != protocol.fixture_sha256:
         raise ValueError("comparison baseline does not describe the frozen fixture")
+    copy_repository_source_files(
+        source_files=protocol.repository_source_files,
+        repository_root=repository_root,
+        destination_root=staging_dir / BUNDLED_REPOSITORY_ROOT,
+    )
+    verify_repository_source_provenance(
+        expected_files=protocol.repository_source_files,
+        fixture=fixture,
+        baseline=baseline,
+        repository_root=staging_dir / BUNDLED_REPOSITORY_ROOT,
+    )
     return fixture, baseline
 
 
-def _verify_protocol_source_files(protocol: SemanticModelComparisonProtocol) -> None:
+def _verify_protocol_source_files(
+    protocol: SemanticModelComparisonProtocol,
+    *,
+    repository_root: Path,
+) -> None:
     fixture_path = Path(protocol.fixture_path)
     baseline_path = Path(protocol.baseline_report_path)
     if (
@@ -255,6 +288,16 @@ def _verify_protocol_source_files(protocol: SemanticModelComparisonProtocol) -> 
         or sha256_path(baseline_path) != protocol.baseline_report_sha256
     ):
         raise ValueError("comparison baseline bytes do not match the frozen protocol")
+    fixture = load_semantic_diagnostic_fixture(fixture_path)
+    baseline = EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
+        baseline_path.read_text(encoding="utf-8"),
+    )
+    verify_repository_source_provenance(
+        expected_files=protocol.repository_source_files,
+        fixture=fixture,
+        baseline=baseline,
+        repository_root=repository_root,
+    )
 
 
 def _default_runner_factory(model_id: str) -> EvidenceSelectionSemanticModelRunner:

@@ -24,6 +24,10 @@ from .contracts import (
 )
 from .integrity import resolve_comparison_artifact_path
 from .protocol import protocol_sha256, sha256_path
+from .source_provenance import (
+    BUNDLED_REPOSITORY_ROOT,
+    verify_repository_source_provenance,
+)
 
 
 def verify_semantic_comparison_bundle(
@@ -55,6 +59,12 @@ def verify_semantic_comparison_bundle(
     )
     if baseline.fixture_sha256 != protocol.fixture_sha256:
         raise ValueError("bundled baseline does not describe the frozen fixture")
+    verify_repository_source_provenance(
+        expected_files=protocol.repository_source_files,
+        fixture=fixture,
+        baseline=baseline,
+        repository_root=directory / BUNDLED_REPOSITORY_ROOT,
+    )
     recomputed = build_semantic_model_comparison(
         protocol=protocol,
         fixture=fixture,
@@ -68,14 +78,14 @@ def verify_semantic_comparison_bundle(
         raise ValueError("serialized comparison report does not match recomputation")
     _verify_run_markdown(directory=directory, report=report)
     expected_protocol_markdown = render_protocol_markdown(protocol)
-    if (
-        directory / "semantic_model_comparison_protocol.md"
-    ).read_text(encoding="utf-8") != expected_protocol_markdown:
+    if (directory / "semantic_model_comparison_protocol.md").read_text(
+        encoding="utf-8"
+    ) != expected_protocol_markdown:
         raise ValueError("serialized protocol Markdown does not match the protocol")
     expected_report_markdown = render_comparison_markdown(report)
-    if (
-        directory / "semantic_model_comparison_report.md"
-    ).read_text(encoding="utf-8") != expected_report_markdown:
+    if (directory / "semantic_model_comparison_report.md").read_text(
+        encoding="utf-8"
+    ) != expected_report_markdown:
         raise ValueError("serialized report Markdown does not match the report")
     return report
 

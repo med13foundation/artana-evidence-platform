@@ -12,6 +12,9 @@ from artana_evidence_api.evidence_selection.diagnostics.fixture import (
     EvidenceSelectionSemanticDiagnosticFixture,
     load_semantic_diagnostic_fixture,
 )
+from artana_evidence_api.evidence_selection.diagnostics.report import (
+    EvidenceSelectionSemanticDiagnosticReport,
+)
 from artana_evidence_api.evidence_selection.repeatability.artifacts import (
     write_json_model,
 )
@@ -30,6 +33,9 @@ from artana_evidence_api.evidence_selection.repeatability.protocol import (
     build_semantic_model_comparison_protocol,
     build_semantic_model_evaluation_run,
     sha256_path,
+)
+from artana_evidence_api.evidence_selection.repeatability.source_provenance import (
+    build_repository_source_files,
 )
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
@@ -207,6 +213,10 @@ async def build_model_runs(
 def comparison_protocol() -> SemanticModelComparisonProtocol:
     """Return the standard strict protocol used by unit tests."""
 
+    fixture = load_semantic_diagnostic_fixture(FIXTURE_PATH)
+    baseline = EvidenceSelectionSemanticDiagnosticReport.model_validate_json(
+        BASELINE_PATH.read_text(encoding="utf-8"),
+    )
     return build_semantic_model_comparison_protocol(
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
         evaluated_commit="a" * 40,
@@ -217,6 +227,11 @@ def comparison_protocol() -> SemanticModelComparisonProtocol:
         fixture_sha256=sha256_path(FIXTURE_PATH),
         baseline_report_path=BASELINE_PATH,
         baseline_report_sha256=sha256_path(BASELINE_PATH),
+        repository_source_files=build_repository_source_files(
+            fixture=fixture,
+            baseline=baseline,
+            repository_root=REPOSITORY_ROOT,
+        ),
         current_model_id=CURRENT_MODEL,
         candidate_model_id=CANDIDATE_MODEL,
         runs_per_model=3,
@@ -335,9 +350,7 @@ def _split_int(total: int, count: int) -> tuple[int, ...]:
     if count <= 0:
         return ()
     quotient, remainder = divmod(total, count)
-    return tuple(
-        quotient + (1 if index < remainder else 0) for index in range(count)
-    )
+    return tuple(quotient + (1 if index < remainder else 0) for index in range(count))
 
 
 __all__ = [

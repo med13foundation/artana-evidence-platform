@@ -48,17 +48,20 @@ artifact replay, or an unjustified stronger-model choice.
 - Staged all-or-nothing publication, exact bundled source copies, a complete
   file manifest, in-generation manifest digest, and deterministic bundle
   verifier. Publication uses one directory rename.
+- Baseline predictions and every sanitized source snapshot are now frozen into
+  the protocol source-lock digest, copied under repository-relative paths, and
+  revalidated from bundled bytes before publication.
 - Explicit failure receipts with no plausible partial evidence directory.
 - Evidence API CI, lint, type-check, and Makefile wiring.
 
 ## Validation To Date
 
-- Post-adversarial semantic, repeatability, telemetry, executor, CLI,
-  bundle-atomicity, CI-planner, and Makefile contract tests: `154 passed`.
+- Post-adversarial focused semantic, repeatability, telemetry, executor, CLI,
+  source-provenance, and bundle-atomicity tests: `59 passed`.
 - Postgres-backed runtime-ledger integration test: passed against an ephemeral
   migrated database.
 - Focused Ruff checks: passed.
-- Evidence API package mypy: passed over `550` source files.
+- Evidence API package mypy: passed over `551` source files.
 - New comparison CLI mypy: passed.
 - Full `make service-checks`: passed with `87.43%` coverage against the `86%`
   repository floor.
@@ -106,16 +109,93 @@ artifact replay, or an unjustified stronger-model choice.
 16. A clean but stale mainline could satisfy the generic ancestry check. The
     protocol now records and verifies merged PR `#148` commit `d23b1dea` as a
     required predecessor.
+17. The first live bundle omitted baseline predictions and sanitized source
+    snapshots. Protocol v3 now freezes all five repository source files, copies
+    them into the bundle, and replays fixture-to-snapshot provenance validation.
+18. A baseline report could carry a score inconsistent with its categorical
+    predictions. The source verifier now recomputes the baseline score and
+    rejects any mismatch.
+19. Execution copied source inputs into staging but initially loaded the
+    in-memory objects from their original paths. It now loads only staged bytes;
+    a regression corrupts the originals after copying and proves they cannot
+    influence the run.
+20. Independent evidence review found one defective BRCA1 gold label and two
+    canaries whose bounded input omits required population evidence. These are
+    recorded as benchmark defects and cannot count for model adoption.
 
-## Deliberately Pending
+## Initial Live Diagnostic
 
-No live model-comparison result is attached yet. PR `#148` is merged, and the
-roadmap requires PR6 live evidence to run from that integrated mainline. This
-branch must be rebased, fully validated, and then run with current judge
-`openai:gpt-5.4-mini` and registered candidate `openai:gpt-5.6-luna`. The live
-OpenAI catalog and a minimal Responses API request already confirmed Luna is
-available to the configured account.
+The branch was rebased onto merged PR `#148` and evaluated at commit
+`285ad7a27cb934ead41b20d431c186fa85bdd8e2`. The live matrix ran three
+interleaved executions of current judge `openai:gpt-5.4-mini` and candidate
+`openai:gpt-5.6-luna` over the same source-locked fixture.
 
-Even a passing live matrix remains AI-adjudicated diagnostic evidence. It can
+The pre-v3 bundle is deliberately not committed as final comparison evidence.
+Its independent review exposed missing bundled source snapshots, so it is kept
+only as the diagnostic that motivated the stronger provenance contract.
+
+The deterministic decision is **INCONCLUSIVE**. No model is selected, the
+selected-model repeatability proof fails, and no production-readiness claim is
+made. This is the intended fail-closed result because neither model passed the
+repeated quality gate.
+
+| Metric | `gpt-5.4-mini` | `gpt-5.6-luna` |
+| --- | ---: | ---: |
+| Worst precision | 1.0000 | 1.0000 |
+| Worst recall | 0.9231 | 1.0000 |
+| Minimum primary-case recall | 0.8333 | 1.0000 |
+| Worst decision coverage | 0.9667 | 0.9333 |
+| Unstable records | 2 | 2 |
+| Invalid-agent decisions | 0 | 0 |
+| Deterministic fallbacks | 0 | 0 |
+| Canary runs passed | 3 of 3 | 0 of 3 |
+| Telemetry complete | no | yes |
+| Total model latency | 155.161 s | 176.367 s |
+| Total observed cost | unavailable | $0.19780320 |
+
+### Failure Attribution
+
+1. The apparent Luna recall gain is not trustworthy. Gold record
+   `brca1:pmid:30191368` calls the structural variant pathogenic, while the
+   underlying abstract classifies its significance as uncertain and potentially
+   benign or reduced-penetrance. Luna selected it in all runs; the current
+   model's one abstention creates the reported worst-recall delta.
+2. `gpt-5.4-mini` also changed its decision across runs for
+   `egfr:pmid:31039766`. One failed validation attempt lacked token and cost
+   usage, so resource comparison is undefined rather than estimated.
+3. `gpt-5.6-luna` consistently abstained on canary records
+   `canary:pmid:27959700` and `canary:pmid:27393503`. Its explanation was that
+   the bounded title and excerpt did not explicitly establish the NSCLC
+   population. The fixture expects selection, so this is a gold/source-boundary
+   ambiguity that requires richer source evidence or independent adjudication;
+   it must not be fixed by prompt pressure.
+4. `gpt-5.6-luna` also varied between reject and abstain for explicit review
+   records `egfr:pmid:30657347` and `egfr:pmid:41512290`. This is a genuine
+   model-stability failure under the frozen exclusion rule.
+5. The models disagreed categorically on four records. The reported Luna
+   worst-recall delta is `0.0769`, but the defective BRCA1 gold prevents treating
+   it as improvement. The current model had lower measured latency and the cost
+   ratio was unavailable. The quality and telemetry gates therefore block
+   adoption before resource tradeoffs could authorize a switch.
+
+### Honest Conclusion
+
+`openai:gpt-5.6-luna` was tested live and was not proven better. The result does
+not justify changing the production judge. It does prove that the new harness
+can preserve a negative result, expose model instability separately from
+fixture ambiguity and runtime observability, and refuse model adoption without
+complete deterministic evidence.
+
+The immediate harness step is one final v3 run from a clean committed tree so
+the published bundle contains the baseline predictions and all sanitized source
+snapshots. That rerun does not repair the diagnostic gold. Independent expert
+adjudication must still correct the BRCA1 label and ambiguous canaries before a
+later matrix can be treated as a valid head-to-head quality comparison.
+
+The runtime must also retain usage and failure-cause data for failed local
+output-validation attempts. None of these findings should be addressed by
+prompt pressure or by weakening the deterministic gates.
+
+Even a later passing matrix remains AI-adjudicated diagnostic evidence. It can
 support a model configuration choice, but it cannot replace the independent
 expert pilot or establish trusted-graph readiness.
