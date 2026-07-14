@@ -66,6 +66,7 @@ def calibration_protocol_blocking_reasons(
         decision.research_question_id
         for decision in decisions
         if decision.research_question_id in held_out_ids
+        and decision.has_decided_outcome
     }
     if (
         len(observed_held_out_ids)
