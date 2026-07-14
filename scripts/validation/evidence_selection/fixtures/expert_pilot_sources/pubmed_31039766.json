@@ -1,0 +1,28 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "31039766",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/31039766/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "The increase in activating EGFR mutation in plasma is an early biomarker to monitor response to osimertinib: a case report.",
+  "doi": "10.1186/s12885-019-5604-6",
+  "publication_types": [
+    "Case Reports",
+    "Journal Article"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Systemic treatment of advanced non-small cell lung cancer (NSCLC) has changed dramatically since the introduction of targeted therapies. The analysis of circulating tumor DNA (ctDNA) is a valuable approach to monitor the clonal evolution of tumors during treatment with EGFR-tyrosine kinase inhibitors (TKIs) and to detect resistance mutations."
+    },
+    {
+      "section": "CASE PRESENTATION",
+      "text": "A NSCLC patient with exon 19 deletion (ex19del) of EGFR was treated with osimertinib after multiple lines of treatment and obtained a partial response that lasted over 26 months. Blood was collected at each visit and ctDNA was extracted to monitor ex19del by digital droplet PCR. Within a few weeks from the beginning of osimertinib, ex19del disappeared from plasma but appeared again and steadily increased a few months later anticipating tumor progression. Interestingly, the change in ex19del was much more pronounced than other mutations, since T790M appeared 3 months after the increase of ex19del, and C797S was detectable a few weeks before clinical disease progression. Then the patient received cytotoxic chemotherapy, which was associated with a decrease in ex19del and disappearance of T790M and C797S; however, at disease progression, all EGFR mutations increased again in plasma together with MET amplification which was detected by NGS."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "The measurement of ex19del changes in ctDNA is a simple and sensitive approach to monitor clinical outcome to osimertinib and, potentially, to other therapeutic interventions."
+    }
+  ]
+}

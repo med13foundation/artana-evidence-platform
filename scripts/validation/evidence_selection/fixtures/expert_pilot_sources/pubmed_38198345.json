@@ -1,0 +1,33 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "38198345",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/38198345/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Use of elexacaftor+tezacaftor+ivacaftor in individuals with cystic fibrosis and at least one F508del allele: a systematic review and meta-analysis.",
+  "doi": "10.36416/1806-3756/e20230187",
+  "publication_types": [
+    "Meta-Analysis",
+    "Systematic Review",
+    "Journal Article"
+  ],
+  "abstract_sections": [
+    {
+      "section": "OBJECTIVE",
+      "text": "To evaluate the effect of treatment with the combination of three cystic fibrosis transmembrane conductance regulator (CFTR) modulators-elexacaftor+tezacaftor+ivacaftor (ETI)-on important clinical endpoints in individuals with cystic fibrosis."
+    },
+    {
+      "section": "METHODS",
+      "text": "This was a systematic review and meta-analysis of randomized clinical trials that compared the use of ETI in individuals with CF and at least one F508del allele with that of placebo or with an active comparator such as other combinations of CFTR modulators, following the Preferred Reporting Items for Systematic Reviews and Meta-Analyses (PRISMA) recommendations and the Patients of interest, Intervention to be studied, Comparison of interventions, and Outcome of interest (PICO) methodology. We searched the following databases: MEDLINE, EMBASE, Cochrane Central Register of Controlled Trials, and ClinicalTrials.gov from their inception to December 26th, 2022. The risk of bias was assessed using the Cochrane risk-of-bias tool, and the quality of evidence was based on the Grading of Recommendations Assessment, Development and Evaluation (GRADE)."
+    },
+    {
+      "section": "RESULTS",
+      "text": "We retrieved 54 studies in the primary search. Of these, 6 met the inclusion criteria and were analyzed (1,127 patients; 577 and 550 in the intervention and control groups, respectively). The meta-analysis revealed that the use of ETI increased FEV1% [risk difference (RD), +10.47%; 95% CI, 6.88-14.06], reduced the number of acute pulmonary exacerbations (RD, -0.16; 95% CI, -0.28 to -0.04), and improved quality of life (RD, +14.93; 95% CI, 9.98-19.89) and BMI (RD, +1.07 kg/m2; 95% CI, 0.90-1.25). Adverse events did not differ between groups (RD, -0.03; 95% CI, -0.08 to 0.01), and none of the studies reported deaths."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "Our findings demonstrate that ETI treatment substantially improves clinically significant, patient-centered outcomes."
+    }
+  ]
+}

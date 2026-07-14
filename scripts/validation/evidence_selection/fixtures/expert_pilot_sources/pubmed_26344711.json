@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "26344711",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/26344711/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Does familial breast cancer and thymoma suggest a cancer syndrome? A family perspective.",
+  "doi": "10.1016/j.gene.2015.08.069",
+  "publication_types": [
+    "Journal Article",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Concurrence of breast cancer or thymoma with other malignancies in individual families is often observed, but the familial concurrence of breast cancer and thymoma has not yet been reported. Herein we reported a family encompassing five breast/ovarian cancer patients and two thymoma patients. Whole genome linkage analysis detected no haplotype co-segregating with both types of the tumors. In all patients with breast/ovarian cancer, genetic analysis revealed a clinically untested variant c.5141T>G in exon 18 of the BRCA1 gene, which could be a cancer-causing variant based on the functional study of Lee et al. (2010) and our current pedigree analysis. In the two thymoma patients in our family, targeted sequencing of RAD51L1 and BMP2 genes in and near the translocation site of chromosome 14 and 20 previously reported in two thymoma families, did not find any pathogenic mutation. In the present study, we identified a clinically unconfirmed BRCA1 variant segregating with breast/ovarian cancer patients in an individual family, suggesting it to be clinically functional. Our evidence, however, did not support the notion that the concurrent appearance of breast cancer and thymoma in our family represents a familial cancer syndrome caused by the same genetic disorder."
+    }
+  ]
+}

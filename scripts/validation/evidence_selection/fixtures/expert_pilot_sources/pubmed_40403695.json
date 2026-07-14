@@ -1,0 +1,36 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "40403695",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/40403695/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Impact of germline variants on breast and ovarian cancer risk in Japanese women: an original cohort study and meta-analysis.",
+  "doi": "10.1016/j.ebiom.2025.105758",
+  "publication_types": [
+    "Journal Article",
+    "Meta-Analysis"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Pathogenic variants (PVs) of BRCA1 and BRCA2 predispose individuals to a higher risk of breast and ovarian cancer; however, the precise risks posed by other cancer susceptibility genes remain unclear, particularly in Asian populations."
+    },
+    {
+      "section": "METHODS",
+      "text": "We executed a case-control study of 11 and 26 genes associated with breast and ovarian cancer susceptibility, respectively, in 7220 women with breast cancer, 2464 women with ovarian cancer, and 4032 controls from a multicentre, hospital-based registry in Japan. Furthermore, we conducted a meta-analysis of 23,193 patients with breast and/or ovarian cancer and 31,190 controls from six other hospital-based studies."
+    },
+    {
+      "section": "FINDINGS",
+      "text": "Overall, 395 (5.5%) patients with breast cancer and 331 (13.4%) patients with ovarian cancer harboured PVs. Meta-analyses revealed that PVs of BRCA1, BRCA2, CHEK2, PALB2, and TP53 were associated significantly with breast cancer risk (P < 0.001), while PVs of ATM, BRCA1, BRCA2, MSH6, and RAD51D were associated significantly with ovarian cancer risk (P < 0.001). PVs in the BRCA1 DNA-binding domain were associated with a younger age at diagnosis after adjusting for cancer type and family history (\u03b2 = -3.79, 95% CI = -7.16 to -0.41; P = 0.028)."
+    },
+    {
+      "section": "INTERPRETATION",
+      "text": "These results provide information about genes associated with breast and ovarian cancer risk in Asian women, as well as guidance for management of PV carriers."
+    },
+    {
+      "section": "FUNDING",
+      "text": "The study was funded by AMED (JP15ck010609, 19cm0106605h0003, 23ama221520h0001, and JP19kk0305010), by a Health Labour Sciences Research Grant (202108001B), by JSPS KAKENHI (JP18K16292, 20H03668, 23H02955, 17H06162, 20H03695, and 16H06277), and by a Grant-in-Aid for the Genome Research Project from Yamanashi Prefecture."
+    }
+  ]
+}

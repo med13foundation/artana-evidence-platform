@@ -1,0 +1,61 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_protocol.v1",
+  "study_id": "semantic-relevance-expert-pilot-v1",
+  "study_tier": "diagnostic_pilot",
+  "benchmark_fixture": {
+    "path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_benchmark_v2.json",
+    "sha256": "e6a17d2c94a4045da785942ac541d9fc1e45516b8b1f931de38a3f5ca88e9640"
+  },
+  "supplement_manifest": {
+    "path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_expert_pilot_supplement_manifest_v1.json",
+    "sha256": "b30b16acec09ef70ad7b5f78ace5033fbb0e2db031e60714956f58b2e3578ee0"
+  },
+  "expected_case_ids": [
+    "egfr_t790m_primary_evidence",
+    "brca1_risk_penetrance",
+    "cftr_f508del_eti_response",
+    "egfr_exclusion_token_canary"
+  ],
+  "expected_record_count": 33,
+  "diagnostic_pilot_question_count": 3,
+  "production_calibration_minimum_question_count": 20,
+  "production_calibration_minimum_record_count": 200,
+  "production_calibration_training_question_count": 12,
+  "production_calibration_held_out_question_count": 8,
+  "independent_reviewer_slots": [
+    "qualified-reviewer-slot-a",
+    "qualified-reviewer-slot-b"
+  ],
+  "adjudicator_slot": "qualified-adjudicator-slot-c",
+  "reviewer_qualification_requirement": "domain_qualified_human_bound_by_external_attestation",
+  "reviewer_identity_authentication": "external_signed_attestation_required",
+  "minimum_independent_reviewers_per_record": 2,
+  "disagreement_policy": "third_reviewer_adjudication",
+  "reviewer_labels": [
+    "select",
+    "reject",
+    "abstain"
+  ],
+  "packet_sufficiency_labels": [
+    "sufficient",
+    "insufficient"
+  ],
+  "reviewer_numeric_judgments_allowed": false,
+  "production_readiness_claim": false,
+  "production_calibration_claim": false,
+  "calibration_status": "unavailable_insufficient_independent_corpus",
+  "blinding": {
+    "hide_model_identity": true,
+    "hide_model_decisions": true,
+    "hide_ai_diagnostics": true,
+    "hide_ranking_values": true,
+    "candidate_order": "reviewer_specific_deterministic_shuffle"
+  },
+  "acceptance_thresholds": {
+    "metric_origin": "deterministic_from_categorical_human_findings",
+    "minimum_adjudicated_precision": 0.8,
+    "minimum_adjudicated_recall": 0.8,
+    "minimum_first_pass_percent_agreement": 0.8,
+    "maximum_high_severity_overclaim_count": 0
+  }
+}

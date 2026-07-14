@@ -1,0 +1,28 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "30610487",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/30610487/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Clinical implications of germline mutations in breast cancer genes: RECQL.",
+  "doi": "10.1007/s10549-018-05096-6",
+  "publication_types": [
+    "Journal Article",
+    "Review"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "The identification of new hereditary breast cancer genes is an area of highly active research. In 2015, two independent studies provided initial evidence for a novel breast cancer susceptibility gene, RECQL, a DNA helicase which plays an important role in the DNA damage response. Several subsequent studies in independent patient cohorts have provided further data on RECQL variant frequency in additional populations, some of which have brought in to question the increased breast cancer risk associated with RECQL mutations."
+    },
+    {
+      "section": "RESULTS",
+      "text": "The initial reports present findings from whole exome sequencing of high-risk familial breast cancer cases in the French-Canadian, Polish and Han Chinese populations and estimate the carrier frequency of pathogenic RECQL mutations in high-risk breast cancer patients who have previously tested negative for BRCA1 and BRCA2 mutations to be approximately 1-2%. Proposed founder mutations were identified in French-Canadian and Polish populations. Functional studies support loss of function of the helicase activity of RECQL for some of the reported pathogenic mutations. An additional study in a cohort of Southern Chinese high-risk breast cancer patients estimated the frequency of pathogenic RECQL mutations to be 0.54%. A possible Chinese founder mutation was identified, but only a small number of controls were sequenced. Subsequent case-control studies screening for the Polish founder mutation in patients from Germany and Belarus did not find any evidence for increased breast cancer risk for this variant. An Australian case-control study also failed to identify an increased risk of breast cancer associated with RECQL loss of function variants."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "RECQL plays an important role in DNA repair, and is a plausible candidate breast cancer susceptibility gene. Initial studies showed evidence of an association between variants in this gene and an increased breast cancer risk in three separate populations, and identified founder mutations with significantly increased odds ratios. However, several subsequent studies have failed to support the association. With the limited and conflicting evidence available, there remains debate as to whether there is an increased breast cancer risk in individuals carrying RECQL loss of function variants. Further studies are required to better quantify the risks associated with RECQL variants and the current evidence base is not sufficient to justify routine inclusion of RECQL on breast cancer gene panels in clinical use. Management of patients in whom RECQL variants have been identified should be based on clinician assessment, in the context of the family history. Further studies are required to better quantify the risks to RECQL mutation carriers and may also guide management and potential therapeutic targeting for patients."
+    }
+  ]
+}

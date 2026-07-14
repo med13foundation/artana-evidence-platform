@@ -1,0 +1,22 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "40209082",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/40209082/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Long-Term Safety and Efficacy of Elexacaftor/Tezacaftor/Ivacaftor in Adults and Adolescents with Cystic Fibrosis and at Least One F508del Allele: A Phase 3 Open-Label Extension Study.",
+  "doi": "10.1164/rccm.202411-2231OC",
+  "publication_types": [
+    "Journal Article",
+    "Clinical Trial, Phase III",
+    "Multicenter Study",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Rationale: Clinical and real-world studies show that elexacaftor/tezacaftor/ivacaftor (ELX/TEZ/IVA) is efficacious and safe in people with cystic fibrosis (CF) \u2a7e12 years of age with at least one F508del allele. Objectives: Given the potential for lifelong ELX/TEZ/IVA use, the long-term safety and efficacy of ELX/TEZ/IVA was assessed. Methods: In this phase 3, open-label, single-arm extension study, participants with F508del-minimal function genotypes (from 24-wk parent study 445-102 [n = 399]) or with the F508del-F508del genotype (from 4-wk parent study 445-103 [n = 107]) received ELX/TEZ/IVA (ELX 200 mg once daily, TEZ 100 mg once daily, and IVA 150 mg every 12 h) over 192 weeks. Measurements and Main Results: The primary endpoint was safety and tolerability. Mean exposure to ELX/TEZ/IVA was 172.6 weeks. Most participants had adverse events classified as mild (12.8%) or moderate (60.7%) in severity. Eighteen participants (3.6%) had adverse events that led to treatment discontinuation. After starting ELX/TEZ/IVA, participants had consistent increases in percent predicted FEV1 (ppFEV1), Cystic Fibrosis Questionnaire-Revised respiratory domain score, and body mass index, with decreases in sweat chloride concentration and pulmonary exacerbation rates; these improvements were maintained through 192 weeks. The mean annualized rate of change in ppFEV1 was 0.02 percentage points (95% confidence interval, -0.14 to 0.19) after initiation of ELX/TEZ/IVA. Conclusions: During this 192-week open-label extension study, the longest clinical study of a CFTR (cystic fibrosis transmembrane conductance regulator) modulator to date, ELX/TEZ/IVA remained generally safe and well tolerated. Participants had sustained improvements in lung function, respiratory symptoms, CFTR function, pulmonary exacerbation rates, and nutritional status. The estimated annualized rate of change in ppFEV1 suggests no evidence of pulmonary function loss across the study population over the 4-year treatment period. These results confirm the favorable long-term safety profile and durable disease-modifying clinical benefits of ELX/TEZ/IVA in adolescents and adults with CF. Clinical trial registered with www.clinicaltrials.gov (NCT03525574)."
+    }
+  ]
+}

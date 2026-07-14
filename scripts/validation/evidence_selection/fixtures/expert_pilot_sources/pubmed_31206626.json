@@ -1,0 +1,33 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "31206626",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/31206626/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Pathogenic and likely pathogenic variants in PALB2, CHEK2, and other known breast cancer susceptibility genes among 1054 BRCA-negative Hispanics with breast cancer.",
+  "doi": "10.1002/cncr.32083",
+  "publication_types": [
+    "Journal Article",
+    "Research Support, N.I.H., Extramural",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Breast cancer (BC) is the most common cancer and related cause of mortality among Hispanics, yet susceptibility has been understudied. BRCA1 and BRCA2 (BRCA) mutations explain less than one-half of hereditary BC, and the proportion associated with other BC susceptibility genes is unknown."
+    },
+    {
+      "section": "METHODS",
+      "text": "Germline DNA from 1054 BRCA-mutation-negative Hispanic women with hereditary BC (BC diagnosed at age <51 years, bilateral BC, breast and ovarian cancer, or BC diagnosed at ages 51-70 years with \u22652 first-degree or second-degree relatives who had BC diagnosed at age <70 years), 312 local controls, and 887 multiethnic cohort controls was sequenced and analyzed for 12 known and suspected, high-penetrance and moderate-penetrance cancer susceptibility genes (ataxia telangiectasia mutated [ATM], breast cancer 1 interacting protein C-terminal helicase 1 [BRIP1], cadherin 1 [CDH1], checkpoint kinase 2 [CHEK2], nibrin [NBN], neurofibromatosis type 1 [NF1], partner and localizer of BRCA2 [PALB2], phosphatase and tensin homolog [PTEN], RAD51 paralog 3 [RAD51C], RAD51D, serine/threonine kinase 11 [STK11], and TP53)."
+    },
+    {
+      "section": "RESULTS",
+      "text": "Forty-nine (4.6%) pathogenic or likely pathogenic variants (PVs) in 47 of 1054 participants (4.5%), including 21 truncating frameshift, 20 missense, 5 nonsense, and 4 splice variants, were identified in CHEK2 (n = 20), PALB2 (n = 18), ATM (n = 5), TP53 (n = 3), BRIP1 (n = 2), and CDH1 and NF1 (both n = 1) and none were identified in NBN, PTEN, STK11, RAD51C, or RAD51D. Nine participants carried the PALB2 c.2167_2168del PV (0.85%), and 14 carried the CHEK2 c.707T>C PV (1.32%)."
+    },
+    {
+      "section": "CONCLUSIONS",
+      "text": "Of 1054 BRCA-negative, high-risk Hispanic women, 4.5% carried a PV in a cancer susceptibility gene, increasing understanding of hereditary BC in this population. Recurrent PVs in PALB2 and CHEK2 represented 47% (23 of 49) of the total, suggesting a founder effect. Accurate classification of variants was enabled by carefully controlling for ancestry and the increased identification of at-risk Hispanics for screening and prevention."
+    }
+  ]
+}

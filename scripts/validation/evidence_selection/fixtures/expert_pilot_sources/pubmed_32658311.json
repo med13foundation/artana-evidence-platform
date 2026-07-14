@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "32658311",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/32658311/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Germline pathogenic variant spectrum in 25 cancer susceptibility genes in Turkish breast and colorectal cancer patients and elderly controls.",
+  "doi": "10.1002/ijc.33199",
+  "publication_types": [
+    "Journal Article",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Inherited pathogenic variants account for 5% to 10% of all breast cancer (BC) and colorectal cancer (CRC) cases. Here, we sought to profile the pathogenic variants in 25 cancer susceptibility genes in Turkish population. Germline pathogenic variants were screened in 732 BC patients, 189 CRC patients and 490 cancer-free elderly controls, using next-generation sequencing-based multigene panel testing and multiplex ligation-dependent probe amplification testing. Pathogenic variants were detected in 17.2% of high-risk BC patients and 26.4% of high-risk CRC patients. More than 95% of these variants were clinically actionable. BRCA1/2 and mismatch repair genes (MLH1, MSH2 and MSH6) accounted for two-thirds of all pathogenic variants detected in high-risk BC and CRC patients, respectively. Pathogenic variants in PALB2, CHEK2, ATM and TP53 were also prevalent in high-risk BC patients (4.5%). BRCA1 exons 17-18 deletion and CHEK2 c.592+3A>T were the most common variants predisposing to BC, and they are likely to be founder variants. Three frequent MUTYH pathogenic variants (c.884C>T, c.1437_1439delGGA and c.1187G>A) were responsible for all MUTYH biallelic cases (4.4% of high-risk CRC patients). The total pathogenic variant frequency was very low in controls (2.4%) and in low-risk BC (3.9%) and CRC (6.1%) patients. Our study depicts the pathogenic variant spectrum and prevalence in Turkish BC and CRC patients, guiding clinicians and health authorities for genetic testing applications and variant classification in Turkish population."
+    }
+  ]
+}

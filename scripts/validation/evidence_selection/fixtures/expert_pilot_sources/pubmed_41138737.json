@@ -1,0 +1,37 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "41138737",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/41138737/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Effect of elexacaftor-tezacaftor-ivacaftor on bronchial dilatations in adolescents with cystic fibrosis: a multicentre prospective observational study.",
+  "doi": "10.1016/S2213-2600(25)00248-6",
+  "publication_types": [
+    "Journal Article",
+    "Multicenter Study",
+    "Observational Study"
+  ],
+  "abstract_sections": [
+    {
+      "section": "BACKGROUND",
+      "text": "Elexacaftor-tezacaftor-ivacaftor (ETI) is a cystic fibrosis transmembrane conductance regulator (CFTR) modulator that improves clinical outcomes in adolescents with cystic fibrosis. We aimed to investigate the effect of ETI on lung structural damage."
+    },
+    {
+      "section": "METHODS",
+      "text": "The Modul-CF prospective observational study is based at 33 paediatric cystic fibrosis reference centres in France. In the present analysis, we assessed the adolescent cohort of individuals with cystic fibrosis (aged 12-18 years) from the Modul-CF study who initiated treatment with ETI as part of routine care. These individuals were either homozygous for F508del and previously treated with lumacaftor-ivacaftor (LI), or F508del homozygous or compound heterozygous for F508del with a minimal function or residual function variant and naive to CFTR modulator treatment. The primary outcome measure was chest CT to investigate the effect of CFTR restoration on the natural history of cystic fibrosis lung disease. Secondary outcomes were sweat chloride, weight and height Z scores, quality of life, pulmonary function tests, lung clearance index at 2\u00b75% of starting concentration (LCI2\u00b75) from nitrogen multiple breath washout, and proinflammatory biomarkers in sputum (calprotectin, neutrophil elastase, IL-1\u03b2, IL-6, IL-8, and TNF-\u03b1) and blood (C-reactive protein and polymorphonuclear neutrophils). Outcome data were collected from baseline (in the 4 weeks before commencement of ETI [denoted month 0]) up to 1 year of ETI treatment (denoted month 12), with low-dose inspiratory-controlled chest CT done at month 0 and month 12. Changes in outcome measures from month 0 to month 12 were assessed with non-parametric Wilcoxon tests. Modul-CF was registered with ClinicalTrials.gov, NCT04301856, and is ongoing and open to recruitment. The data cutoff for the present analysis was July 28, 2023."
+    },
+    {
+      "section": "FINDINGS",
+      "text": "Between March 22, 2021, and May 25, 2022, a total of 330 adolescents with cystic fibrosis were enrolled in the study, of whom 320 were treated with ETI for 12 months and included in analyses (mean age at ETI initiation 14\u00b71 years [SD 1\u00b75]; 162 [51%] female and 158 [49%] male participants). Of the 320 participants, 112 (35%) were switched from LI to ETI, and 208 (65%) were CFTR modulator-naive. In the overall population, improvement in percent predicted FEV1 (ppFEV1) was observed from the first month of ETI treatment and was sustained at 12 months (mean absolute ppFEV1 change from month 0 to month 12, 14\u00b70% [95% CI 12\u00b74-15\u00b77], p<0\u00b70001, n=306). From month 0 to month 12, there were significant reductions in lung hyperinflation on plethysmography, and in mucus plugs, bronchial wall thickening, and bronchial dilatation on chest CT. Significant improvements were also observed in sweat chloride, weight Z score, LCI2.5, quality of life, and sputum and blood proinflammatory biomarkers. In 188 participants with available imaging analysis at both month 0 and month 12, the mean percentage of severely dilated bronchi (based on a bronchial outer diameter to adjacent artery diameter ratio [Bout/A] of \u22651\u00b75) in bronchial generations G1-6 decreased by 10\u00b77%, from 40\u00b73% (SD 18\u00b79) at month 0 to 29\u00b76% (16\u00b78) at month 12 (p<0\u00b70001). Based on median Bout/A values of bronchus-artery pairs in the G1-6 region, 32 (17%) of 188 participants improved from severe to moderate dilatation (Bout/A \u22651\u00b71 and <1\u00b75) and 19 (10%) from moderate to normal dilatation (Bout/A <1\u00b71) between month 0 and month 12. 14 (7%) participants progressed to a worse dilatation category. The changes in lung imaging metrics were correlated with the changes in sputum proinflammatory biomarkers."
+    },
+    {
+      "section": "INTERPRETATION",
+      "text": "Bronchial dilatations can reverse in adolescents with cystic fibrosis treated with ETI. The correlation with reduced airway inflammation provides insight into the effect of ETI on cystic fibrosis lung disease."
+    },
+    {
+      "section": "FUNDING",
+      "text": "Vaincre La Mucoviscidose, Mucoviscidose ABCF2, and the Cystic Fibrosis Foundation."
+    }
+  ]
+}

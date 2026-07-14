@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "26314834",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/26314834/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Afatinib: a second-generation EGF receptor and ErbB tyrosine kinase inhibitor for the treatment of advanced non-small-cell lung cancer.",
+  "doi": "10.2217/fon.15.183",
+  "publication_types": [
+    "Journal Article",
+    "Review"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "First-generation reversible EGF receptor (EGFR) tyrosine kinase inhibitors (TKIs) changed our understanding of advanced non-small-cell lung cancer biology and behavior. The presence of sensitizing EGFR mutations in advanced non-small-cell lung cancer defines a subset of patients with a better prognosis and sensitivity to EGFR-TKIs with a better response rate, progression-free survival, quality of life and symptom control than with chemotherapy in the first-line therapy setting. However, current EGFR-TKIs show minimal responses in EGFR wild-type patients or with acquired TKI resistance mediated through the EGFR T790M allele. Afatinib is an irreversible pan-ErbB-TKI, active against wild-type EGFR, sensitizing and T970M-mutant EGFR, ErbB2 and ErbB4 receptors, and represents a step change between reversible first-generation and future irreversible highly specific third-generation EGFR-TKIs. Here, we review the clinical development of afatinib through the LUX-Lung trials portfolio highlighting benefits and toxicities."
+    }
+  ]
+}

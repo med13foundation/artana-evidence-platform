@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "30657347",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/30657347/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Role of osimertinib in the treatment of EGFR-mutation positive non-small-cell lung cancer.",
+  "doi": "10.2217/fon-2018-0626",
+  "publication_types": [
+    "Journal Article",
+    "Review"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Mutations in the EGFR occur in approximately 10-35% of non-small-cell lung cancer (NSCLC) patients. Osimertinib is a third-generation oral small molecule inhibitor of EGFR, active against the common targetable activating EGFR mutations in L858R and exon 19 deletion; it also inhibits the T790M mutation. It was initially developed and approved for the treatment of acquired resistance to EGFR inhibition mediated by the T790M pathway activation. Recently, the FLAURA trial showed significantly improved progression-free survival with osimertinib compared with the first generation EGFR tyrosine kinase inhibitors gefitinib or erlotinib; this has led to its approval by US FDA and European Medicines Agency (EMA) as frontline therapy. Ongoing studies will define the resistance mechanisms to osimertinib, novel combination approaches and role in earlier stages of NSCLC."
+    }
+  ]
+}

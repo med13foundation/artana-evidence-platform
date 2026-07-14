@@ -1,0 +1,20 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "35681464",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/35681464/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "CFTR Modulators in People with Cystic Fibrosis: Real-World Evidence in France.",
+  "doi": "10.3390/cells11111769",
+  "publication_types": [
+    "Journal Article",
+    "Review"
+  ],
+  "abstract_sections": [
+    {
+      "section": "ABSTRACT",
+      "text": "Cystic fibrosis (CF) is a rare genetic multisystemic disease, the manifestations of which are due to mutations in the gene encoding the CF transmembrane conductance regulator (CFTR) protein and can lead to respiratory insufficiency and premature death. CFTR modulators, which were developed in the past decade, partially restore CFTR protein function. Their clinical efficacy has been demonstrated in phase 3 clinical trials, particularly in terms of lung function and pulmonary exacerbations, nutritional status, and quality of life in people with gating mutations (ivacaftor), homozygous for the F508del mutation (lumacaftor/ivacaftor and tezacaftor/ivacaftor), and in those with at least one F508del mutation (elexacaftor/tezacaftor/ivacaftor). However, many questions remain regarding their long-term safety and effectiveness, particularly in patients with advanced lung disease, liver disease, renal insufficiency, or problematic bacterial colonization. The impact of CFTR modulators on other important outcomes such as concurrent treatments, lung transplantation, chest imaging, or pregnancies also warrants further investigation. The French CF Reference Network includes 47 CF centers that contribute patient data to the comprehensive French CF Registry and have conducted nationwide real-world studies on CFTR modulators. This review seeks to summarize the results of these real-world studies and examine their findings against those of randomized control trials."
+    }
+  ]
+}

@@ -41,6 +41,7 @@ EVIDENCE_API_FILES = (
     "docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.json",
     "docs/validation/reports/pr-semantic-pr2-agent-selector-evaluation.md",
     "scripts/build_evidence_selection_shadow_review_packet.py",
+    "scripts/build_evidence_selection_expert_pilot_packets.py",
     "scripts/build_evidence_selection_shadow_review_source_inputs.py",
     "scripts/build_evidence_selection_shadow_review_study_batch_manifest.py",
     "scripts/build_evidence_selection_shadow_review_study_batch.py",

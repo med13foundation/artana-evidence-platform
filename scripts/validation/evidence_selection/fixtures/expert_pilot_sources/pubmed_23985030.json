@@ -1,0 +1,29 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "23985030",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/23985030/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "The role of afatinib in the management of non-small cell lung carcinoma.",
+  "doi": "10.1517/17425255.2013.832755",
+  "publication_types": [
+    "Journal Article",
+    "Research Support, Non-U.S. Gov't",
+    "Review"
+  ],
+  "abstract_sections": [
+    {
+      "section": "INTRODUCTION",
+      "text": "Despite initial patient benefit, drug resistance to first-generation EGFR tyrosine kinase inhibitors (TKIs) is inevitable. One of the key mechanisms responsible for the development of acquired drug resistance is the secondary T790M missense mutation in exon 20 of the EGFR kinase domain. Afatinib is an ATP-competitive small molecule inhibitor that potently and irreversibly inhibits EGFR and mutated EGFR including the T790M variant, as well as other members of the ErbB family in preclinical studies."
+    },
+    {
+      "section": "AREAS COVERED",
+      "text": "The authors describe the rationale and provide the preclinical background to afatinib and its potential as a NSCLC therapy. Specifically, the authors detail the drug's pharmaco-kinetic profile and review its clinical efficacy and toxicity profile."
+    },
+    {
+      "section": "EXPERT OPINION",
+      "text": "Afatinib is an effective treatment option for therapy-naive advanced NSCLC harboring an activating EGFR mutation. Furthermore, it is also of potential benefit to patients with acquired resistance to EGFR kinase inhibitors. In the future, the authors envision the clinical development of third-generation EGFR mutation-specific inhibitors in NSCLC, which may potentially spare normal tissue toxicity. Nevertheless, afatinib currently represents a bona fide treatment option in the NSCLC therapeutic armamentarium."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_source.v1",
+  "source_key": "pubmed",
+  "source_record_id": "27913932",
+  "source_url": "https://pubmed.ncbi.nlm.nih.gov/27913932/",
+  "retrieval_method": "ncbi_pubmed_efetch",
+  "retrieved_at": "2026-07-14T22:02:01Z",
+  "title": "Almost 2% of Spanish breast cancer families are associated to germline pathogenic mutations in the ATM gene.",
+  "doi": "10.1007/s10549-016-4058-7",
+  "publication_types": [
+    "Journal Article",
+    "Research Support, Non-U.S. Gov't"
+  ],
+  "abstract_sections": [
+    {
+      "section": "PURPOSE",
+      "text": "There is still a considerable percentage of hereditary breast and ovarian cancer (HBOC) cases not explained by BRCA1 and BRCA2 genes. In this report, next-generation sequencing (NGS) techniques were applied to identify novel variants and/or genes involved in HBOC susceptibility."
+    },
+    {
+      "section": "METHODS",
+      "text": "Using whole exome sequencing, we identified a novel germline mutation in the moderate-risk gene ATM (c.5441delT; p.Leu1814Trpfs*14) in a family negative for mutations in BRCA1/2 (BRCAX). A case-control association study was performed to establish its prevalence in Spanish population, in a series of 1477 BRCAX families and 589 controls further screened, and NGS panels were used for ATM mutational screening in a cohort of 392 HBOC Spanish BRCAX families and 350 patients affected with diseases not related to breast cancer."
+    },
+    {
+      "section": "RESULTS",
+      "text": "Although the interrogated mutation was not prevalent in case-control association study, a comprehensive mutational analysis of the ATM gene revealed 1.78% prevalence of mutations in the ATM gene in HBOC and 1.94% in breast cancer-only BRCAX families in Spanish population, where data about ATM mutations were very limited."
+    },
+    {
+      "section": "CONCLUSION",
+      "text": "ATM mutation prevalence in Spanish population highlights the importance of considering ATM pathogenic variants linked to breast cancer susceptibility."
+    }
+  ]
+}
