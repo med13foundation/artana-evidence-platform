@@ -1,0 +1,71 @@
+{
+  "schema_version": "evidence_selection_semantic_source_snapshot.v1",
+  "source_kind": "sanitized_live_shadow_result_snapshot",
+  "case": {
+    "case_id": "cftr_f508del_eti_response",
+    "evaluation_role": "primary",
+    "source_run_id": "ea0ae3b8-df5e-4875-81b7-83a9cfe77328",
+    "upstream_source_artifact_sha256": "0b6901128ee361c6e67ec5e5631cef6e537a8ae41d818d3979e60a784ef128b9",
+    "goal": "Identify primary clinical evidence that elexacaftor-tezacaftor-ivacaftor improves lung function in people with cystic fibrosis carrying at least one CFTR F508del allele.",
+    "instructions": "Prioritize randomized trials and prospective clinical studies reporting lung-function outcomes for people with at least one F508del allele.",
+    "inclusion_criteria": [
+      "Clinical study in people with cystic fibrosis",
+      "At least one CFTR F508del allele",
+      "Reports lung-function outcome after elexacaftor-tezacaftor-ivacaftor"
+    ],
+    "exclusion_criteria": [
+      "Non-human study"
+    ],
+    "records": [
+      {
+        "record_id": "cftr:pmid:35816621",
+        "source_key": "pubmed",
+        "source_record_id": "35816621",
+        "title": "Efficacy and Safety of Elexacaftor/Tezacaftor/Ivacaftor in Children 6 Through 11 Years of Age with Cystic Fibrosis Heterozygous for F508del and a Minimal Function Mutation: A Phase 3b, Randomized, Placebo-controlled Study.",
+        "evidence_excerpt": "A randomized placebo-controlled phase 3b trial in children with F508del showed an 11-point between-group improvement in percent predicted FEV1."
+      },
+      {
+        "record_id": "cftr:pmid:40210412",
+        "source_key": "pubmed",
+        "source_record_id": "40210412",
+        "title": "Elexacaftor/tezacaftor/ivacaftor in children aged 6 years or older with cystic fibrosis heterozygous for F508del and a minimal function mutation: results from a 96-week open-label extension study.",
+        "evidence_excerpt": "A 96-week extension in children with F508del reported sustained lung-function benefits after ETI."
+      },
+      {
+        "record_id": "cftr:pmid:41138737",
+        "source_key": "pubmed",
+        "source_record_id": "41138737",
+        "title": "Effect of elexacaftor-tezacaftor-ivacaftor on bronchial dilatations in adolescents with cystic fibrosis: a multicentre prospective observational study.",
+        "evidence_excerpt": "A prospective F508del adolescent cohort showed a sustained 14-point improvement in percent predicted FEV1 after ETI."
+      },
+      {
+        "record_id": "cftr:pmid:40209082",
+        "source_key": "pubmed",
+        "source_record_id": "40209082",
+        "title": "Long-Term Safety and Efficacy of Elexacaftor/Tezacaftor/Ivacaftor in Adults and Adolescents with Cystic Fibrosis and at Least One F508del Allele: A Phase 3 Open-Label Extension Study.",
+        "evidence_excerpt": "A 192-week phase 3 extension in people with at least one F508del allele reported sustained improvements in lung function after ETI."
+      },
+      {
+        "record_id": "cftr:pmid:38198345",
+        "source_key": "pubmed",
+        "source_record_id": "38198345",
+        "title": "Use of elexacaftor plus tezacaftor plus ivacaftor in individuals with cystic fibrosis and at least one F508del allele: a systematic review and meta-analysis.",
+        "evidence_excerpt": "A systematic review combines prior randomized evidence rather than reporting a new primary clinical cohort."
+      },
+      {
+        "record_id": "cftr:pmid:35681464",
+        "source_key": "pubmed",
+        "source_record_id": "35681464",
+        "title": "CFTR Modulators in People with Cystic Fibrosis: Real-World Evidence in France.",
+        "evidence_excerpt": "A narrative review summarizes French registry projects and prior CFTR modulator trials."
+      },
+      {
+        "record_id": "cftr:pmid:39227072",
+        "source_key": "pubmed",
+        "source_record_id": "39227072",
+        "title": "Impact of the expanded label for elexacaftor/tezacaftor/ivacaftor in people with cystic fibrosis with no F508del variant in the USA.",
+        "evidence_excerpt": "The registry population explicitly carried no F508del variant."
+      }
+    ]
+  }
+}

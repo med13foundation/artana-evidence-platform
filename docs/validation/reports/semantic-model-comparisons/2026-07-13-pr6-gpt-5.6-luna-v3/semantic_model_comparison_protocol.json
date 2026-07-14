@@ -1,0 +1,61 @@
+{
+  "schema_version": "evidence_selection_semantic_model_protocol.v3",
+  "generated_at": "2026-07-14T01:25:07.674688Z",
+  "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+  "trusted_mainline_ref": "origin/main",
+  "trusted_mainline_commit": "d23b1dea194d7fc6f116de84738fdf720c536a71",
+  "required_mainline_commit": "d23b1dea194d7fc6f116de84738fdf720c536a71",
+  "fixture_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json",
+  "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+  "fixture_provenance": "ai_adjudicated_diagnostic",
+  "baseline_report_path": "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json",
+  "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+  "repository_source_files": [
+    {
+      "role": "baseline_predictions",
+      "relative_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_live_baseline_predictions_v1.json",
+      "sha256": "93844ba87ca9985da90b635de831cd0c5fc86c801cd63544bf9a5835de7f1b2f"
+    },
+    {
+      "role": "sanitized_source_snapshot",
+      "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/brca1_risk_penetrance.json",
+      "sha256": "7254d4cd0f74fb92e67d1caf1f545c2ff6bf471774047212ab1de344808baeb7"
+    },
+    {
+      "role": "sanitized_source_snapshot",
+      "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/cftr_f508del_eti_response.json",
+      "sha256": "b8fdf86290b33f4d7b9ae29cada157952f43d6eb0d1ec6527d84ca82c3f33477"
+    },
+    {
+      "role": "sanitized_source_snapshot",
+      "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_exclusion_token_canary.json",
+      "sha256": "a935301454764c1c54b8ccb2cb857ffd73d24d6f206f6ef5fb914ca57d354d32"
+    },
+    {
+      "role": "sanitized_source_snapshot",
+      "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_t790m_primary_evidence.json",
+      "sha256": "eb757ece0f13815d41e9dc0d0122de0293971f0309d423d1a23d3f14c26b4abe"
+    }
+  ],
+  "current_model_id": "openai:gpt-5.4-mini",
+  "candidate_model_id": "openai:gpt-5.6-luna",
+  "runs_per_model": 3,
+  "thresholds": {
+    "policy_id": "evidence_selection.semantic_model_adoption",
+    "policy_version": "1.2.0",
+    "minimum_runs_per_model": 3,
+    "minimum_worst_precision": 0.8,
+    "minimum_worst_recall": 0.8,
+    "minimum_case_precision": 0.7,
+    "minimum_case_recall": 0.7,
+    "minimum_worst_decision_coverage": 0.8,
+    "minimum_case_decision_coverage": 0.7,
+    "material_worst_metric_improvement": 0.02,
+    "maximum_worst_metric_regression": 0.0,
+    "expensive_candidate_ratio": 2.0,
+    "expensive_candidate_minimum_improvement": 0.05,
+    "maximum_candidate_resource_ratio": 10.0
+  },
+  "source_lock_sha256": "c1c6a65c05570c44e6a4cd8a3abf27b36e7d28223e29c4a2f6036596635282f6",
+  "production_readiness_claim": false
+}

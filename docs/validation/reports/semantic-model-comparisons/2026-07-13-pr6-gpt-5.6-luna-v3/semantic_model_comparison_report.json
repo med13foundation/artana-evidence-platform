@@ -1,0 +1,4126 @@
+{
+  "schema_version": "evidence_selection_semantic_model_comparison.v3",
+  "generated_at": "2026-07-14T01:30:56.942703Z",
+  "protocol": {
+    "schema_version": "evidence_selection_semantic_model_protocol.v3",
+    "generated_at": "2026-07-14T01:25:07.674688Z",
+    "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+    "trusted_mainline_ref": "origin/main",
+    "trusted_mainline_commit": "d23b1dea194d7fc6f116de84738fdf720c536a71",
+    "required_mainline_commit": "d23b1dea194d7fc6f116de84738fdf720c536a71",
+    "fixture_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_failure_corpus_v1.json",
+    "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+    "fixture_provenance": "ai_adjudicated_diagnostic",
+    "baseline_report_path": "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json",
+    "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+    "repository_source_files": [
+      {
+        "role": "baseline_predictions",
+        "relative_path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_live_baseline_predictions_v1.json",
+        "sha256": "93844ba87ca9985da90b635de831cd0c5fc86c801cd63544bf9a5835de7f1b2f"
+      },
+      {
+        "role": "sanitized_source_snapshot",
+        "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/brca1_risk_penetrance.json",
+        "sha256": "7254d4cd0f74fb92e67d1caf1f545c2ff6bf471774047212ab1de344808baeb7"
+      },
+      {
+        "role": "sanitized_source_snapshot",
+        "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/cftr_f508del_eti_response.json",
+        "sha256": "b8fdf86290b33f4d7b9ae29cada157952f43d6eb0d1ec6527d84ca82c3f33477"
+      },
+      {
+        "role": "sanitized_source_snapshot",
+        "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_exclusion_token_canary.json",
+        "sha256": "a935301454764c1c54b8ccb2cb857ffd73d24d6f206f6ef5fb914ca57d354d32"
+      },
+      {
+        "role": "sanitized_source_snapshot",
+        "relative_path": "scripts/validation/evidence_selection/fixtures/source_artifacts/egfr_t790m_primary_evidence.json",
+        "sha256": "eb757ece0f13815d41e9dc0d0122de0293971f0309d423d1a23d3f14c26b4abe"
+      }
+    ],
+    "current_model_id": "openai:gpt-5.4-mini",
+    "candidate_model_id": "openai:gpt-5.6-luna",
+    "runs_per_model": 3,
+    "thresholds": {
+      "policy_id": "evidence_selection.semantic_model_adoption",
+      "policy_version": "1.2.0",
+      "minimum_runs_per_model": 3,
+      "minimum_worst_precision": 0.8,
+      "minimum_worst_recall": 0.8,
+      "minimum_case_precision": 0.7,
+      "minimum_case_recall": 0.7,
+      "minimum_worst_decision_coverage": 0.8,
+      "minimum_case_decision_coverage": 0.7,
+      "material_worst_metric_improvement": 0.02,
+      "maximum_worst_metric_regression": 0.0,
+      "expensive_candidate_ratio": 2.0,
+      "expensive_candidate_minimum_improvement": 0.05,
+      "maximum_candidate_resource_ratio": 10.0
+    },
+    "source_lock_sha256": "c1c6a65c05570c44e6a4cd8a3abf27b36e7d28223e29c4a2f6036596635282f6",
+    "production_readiness_claim": false
+  },
+  "protocol_sha256": "12835761c37cb4514f84c6abd813ca47bdca09a39c754ed9516f30393fe82cf4",
+  "current_runs": [
+    {
+      "model_role": "current",
+      "run_index": 1,
+      "evaluation_path": "current-run-1.json",
+      "evaluation_sha256": "f28c89e559adb587433d743346bb98562eaeea3a648316c39e860f7ebe993c82",
+      "generated_at": "2026-07-14T01:25:07.749349Z",
+      "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+      "model_id": "openai:gpt-5.4-mini",
+      "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+      "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+      "fixture_provenance": "ai_adjudicated_diagnostic",
+      "deterministic_fallback_count": 0,
+      "score": {
+        "scored_case_count": 3,
+        "canary_case_count": 1,
+        "case_results": [
+          {
+            "record_count": 8,
+            "expected_positive_count": 3,
+            "expected_negative_count": 5,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 4,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 4,
+            "abstention_count": 1,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 0.875,
+            "decision_coverage": 0.875,
+            "abstention_rate": 0.125,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_t790m_primary_evidence",
+            "display_name": "EGFR T790M primary evidence",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 15,
+            "expected_positive_count": 6,
+            "expected_negative_count": 9,
+            "predicted_select_count": 5,
+            "predicted_reject_count": 8,
+            "true_positive_count": 5,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 8,
+            "abstention_count": 2,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.8333333333333334,
+            "decision_accuracy": 0.8666666666666667,
+            "decision_coverage": 0.8666666666666667,
+            "abstention_rate": 0.13333333333333333,
+            "invalid_agent_rate": 0.0,
+            "case_id": "brca1_risk_penetrance",
+            "display_name": "BRCA1 risk and penetrance",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 7,
+            "expected_positive_count": 4,
+            "expected_negative_count": 3,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 3,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 3,
+            "abstention_count": 1,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.75,
+            "decision_accuracy": 0.8571428571428571,
+            "decision_coverage": 0.8571428571428571,
+            "abstention_rate": 0.14285714285714285,
+            "invalid_agent_rate": 0.0,
+            "case_id": "cftr_f508del_eti_response",
+            "display_name": "CFTR F508del ETI response",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 3,
+            "expected_positive_count": 3,
+            "expected_negative_count": 0,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 0,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 0,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_exclusion_token_canary",
+            "display_name": "EGFR exclusion-token canary",
+            "evaluation_role": "canary"
+          }
+        ],
+        "micro": {
+          "record_count": 30,
+          "expected_positive_count": 13,
+          "expected_negative_count": 17,
+          "predicted_select_count": 11,
+          "predicted_reject_count": 15,
+          "true_positive_count": 11,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "true_negative_count": 15,
+          "abstention_count": 4,
+          "invalid_agent_count": 0,
+          "precision": 1.0,
+          "end_to_end_recall": 0.8461538461538461,
+          "decision_accuracy": 0.8666666666666667,
+          "decision_coverage": 0.8666666666666667,
+          "abstention_rate": 0.13333333333333333,
+          "invalid_agent_rate": 0.0
+        },
+        "macro": {
+          "precision": 1.0,
+          "end_to_end_recall": 0.8611111111111112,
+          "decision_accuracy": 0.8662698412698413,
+          "decision_coverage": 0.8662698412698413,
+          "abstention_rate": 0.13373015873015873,
+          "invalid_agent_rate": 0.0
+        }
+      },
+      "canary_passed": true,
+      "quality_gate_passed": true,
+      "agent_run_ids": [
+        "evidence-selection-semantic-selector:7b3ee665-e4ff-47eb-a01e-3cfb58f3c2b9",
+        "evidence-selection-semantic-selector:49b65afb-e154-4e7c-bd7b-ad67a9e8dacd",
+        "evidence-selection-semantic-selector:f4ce004f-8b31-42f3-835d-18be39bad6f7",
+        "evidence-selection-semantic-selector:eded280f-0471-4e03-9de9-e561541fa635",
+        "evidence-selection-semantic-selector:12f333d2-785d-409c-a0ee-1d81143634ce",
+        "evidence-selection-semantic-selector:bb4f1ebb-18bb-49e5-9963-3437e5c2e058",
+        "evidence-selection-semantic-selector:bf0d5fee-d380-4053-aa78-21f63c6ea002",
+        "evidence-selection-semantic-selector:9e1a3963-4f56-4e4c-bc14-b0041e04b1b4",
+        "evidence-selection-semantic-selector:39e702fc-1e86-4c98-a7d0-86c1953040e9",
+        "evidence-selection-semantic-selector:4635a2f7-0dba-4063-be4c-579f3e3bc510",
+        "evidence-selection-semantic-selector:6049eb50-1fba-4550-93bd-d0a2f640bbb4",
+        "evidence-selection-semantic-selector:523287f0-9d90-4921-bb1a-ba5cb77026a0",
+        "evidence-selection-semantic-selector:c9697105-4df3-4a0f-9a64-7729d708e426"
+      ],
+      "record_decisions": [
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27393503",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:41512290",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:30657347",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:26314834",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:31039766",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:23985030",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40403695",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:22889855",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26195121",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30191368",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40288678",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:17018160",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34237702",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:21356067",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:32658311",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:selected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:rejected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34642874",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:27913932",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30610487",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26344711",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35816621",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40210412",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:41138737",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40209082",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:38198345",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35681464",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:39227072",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27393503",
+          "decision": "select"
+        }
+      ],
+      "telemetry": {
+        "ledger": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "artana_event_ledger",
+          "collection_method": "model_terminal_event_aggregation",
+          "status": "partial",
+          "expected_model_id": "openai:gpt-5.4-mini",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:7b3ee665-e4ff-47eb-a01e-3cfb58f3c2b9",
+            "evidence-selection-semantic-selector:49b65afb-e154-4e7c-bd7b-ad67a9e8dacd",
+            "evidence-selection-semantic-selector:f4ce004f-8b31-42f3-835d-18be39bad6f7",
+            "evidence-selection-semantic-selector:eded280f-0471-4e03-9de9-e561541fa635",
+            "evidence-selection-semantic-selector:12f333d2-785d-409c-a0ee-1d81143634ce",
+            "evidence-selection-semantic-selector:bb4f1ebb-18bb-49e5-9963-3437e5c2e058",
+            "evidence-selection-semantic-selector:bf0d5fee-d380-4053-aa78-21f63c6ea002",
+            "evidence-selection-semantic-selector:9e1a3963-4f56-4e4c-bc14-b0041e04b1b4",
+            "evidence-selection-semantic-selector:39e702fc-1e86-4c98-a7d0-86c1953040e9",
+            "evidence-selection-semantic-selector:4635a2f7-0dba-4063-be4c-579f3e3bc510",
+            "evidence-selection-semantic-selector:6049eb50-1fba-4550-93bd-d0a2f640bbb4",
+            "evidence-selection-semantic-selector:523287f0-9d90-4921-bb1a-ba5cb77026a0",
+            "evidence-selection-semantic-selector:c9697105-4df3-4a0f-9a64-7729d708e426"
+          ],
+          "model_terminal_count": 13,
+          "terminal_events": [
+            {
+              "execution_id": "evidence-selection-semantic-selector:7b3ee665-e4ff-47eb-a01e-3cfb58f3c2b9",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "2dc112014e1244bf8e6f9e41c72e12d1",
+              "source_model_requested_event_id": "8c556a75863742c9a83b54a8e377be92",
+              "elapsed_ms": 5920,
+              "prompt_tokens": 1553,
+              "completion_tokens": 679,
+              "cost_usd": 0.00422025,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:49b65afb-e154-4e7c-bd7b-ad67a9e8dacd",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "7cde3e88200d40c39d1ad0836df92e69",
+              "source_model_requested_event_id": "54acc29fc64847c6ba89be0361cff94c",
+              "elapsed_ms": 4119,
+              "prompt_tokens": 1552,
+              "completion_tokens": 684,
+              "cost_usd": 0.004242,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:f4ce004f-8b31-42f3-835d-18be39bad6f7",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "5b0a9a9cd4974b5cb80c561007033e88",
+              "source_model_requested_event_id": "fcdda3e3abc44eaf99b8a8cda41ac786",
+              "elapsed_ms": 4352,
+              "prompt_tokens": 1346,
+              "completion_tokens": 555,
+              "cost_usd": 0.003507,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:eded280f-0471-4e03-9de9-e561541fa635",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "e84c4c65b6dd4cdca2a449ac6c21627a",
+              "source_model_requested_event_id": "2e5672bd16164015bbf8577661f39bd6",
+              "elapsed_ms": 4817,
+              "prompt_tokens": 1511,
+              "completion_tokens": 727,
+              "cost_usd": 0.00440475,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:12f333d2-785d-409c-a0ee-1d81143634ce",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "35ae0523a9da4852a880c4ee2b6b51c8",
+              "source_model_requested_event_id": "cff2349c5e9a424281533b966406be05",
+              "elapsed_ms": 4861,
+              "prompt_tokens": 1516,
+              "completion_tokens": 712,
+              "cost_usd": 0.004341,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:bb4f1ebb-18bb-49e5-9963-3437e5c2e058",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "4d574c5e14d743988d844edca0917bf2",
+              "source_model_requested_event_id": "87a31d5fb405482f8fd190c21bf0e86e",
+              "elapsed_ms": 4167,
+              "prompt_tokens": 1551,
+              "completion_tokens": 708,
+              "cost_usd": 0.00434925,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:bf0d5fee-d380-4053-aa78-21f63c6ea002",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "d0e958b7242c426287fc4f5d5a14beef",
+              "source_model_requested_event_id": "fe0fed37e928410884fa3dc1cfc82e54",
+              "elapsed_ms": 5949,
+              "prompt_tokens": 1541,
+              "completion_tokens": 694,
+              "cost_usd": 0.00427875,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:9e1a3963-4f56-4e4c-bc14-b0041e04b1b4",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "5f691d4154ab4709b0dbad81ac29c776",
+              "source_model_requested_event_id": "07eca5d0fdbf4b3fbb8949aa4ccfa4d1",
+              "elapsed_ms": 4597,
+              "prompt_tokens": 1535,
+              "completion_tokens": 691,
+              "cost_usd": 0.00426075,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:39e702fc-1e86-4c98-a7d0-86c1953040e9",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "4525e6b282594f569359f08bdadd9c04",
+              "source_model_requested_event_id": "4fcab83792aa42108447fbac95e9a350",
+              "elapsed_ms": 4188,
+              "prompt_tokens": 1672,
+              "completion_tokens": 706,
+              "cost_usd": 0.004431,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:4635a2f7-0dba-4063-be4c-579f3e3bc510",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "bd64214b84e74d7796af4897efa2a01f",
+              "source_model_requested_event_id": "5de1169a34a04c2bb1715dcf8d2789e4",
+              "elapsed_ms": 4052,
+              "prompt_tokens": 1594,
+              "completion_tokens": 673,
+              "cost_usd": 0.004224,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:6049eb50-1fba-4550-93bd-d0a2f640bbb4",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "fa13095aa2cd40819bf40df78a5fc5fa",
+              "source_model_requested_event_id": "aa398475026141d2a952f1dfcb3615be",
+              "elapsed_ms": 2857,
+              "prompt_tokens": 1171,
+              "completion_tokens": 326,
+              "cost_usd": 0.00234525,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:523287f0-9d90-4921-bb1a-ba5cb77026a0",
+              "outcome": "failed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "549563f1dc4c4b7b9d5df7f7199065b6",
+              "source_model_requested_event_id": "d9f03ec7658940fb83d3ee434b12f627",
+              "elapsed_ms": 4260,
+              "prompt_tokens": null,
+              "completion_tokens": null,
+              "cost_usd": null,
+              "cost_derivation": "unavailable"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:c9697105-4df3-4a0f-9a64-7729d708e426",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "e9980be3c91f46bbb432aad905ea21fc",
+              "source_model_requested_event_id": "4d46205dfde24fdfb7c40743921592f6",
+              "elapsed_ms": 4952,
+              "prompt_tokens": 1475,
+              "completion_tokens": 660,
+              "cost_usd": 0.00321225,
+              "cost_derivation": "provider_reported"
+            }
+          ],
+          "terminal_events_sha256": "a59075d0b9fd2cc530bb7cda1e45a225f973b832426e03775eacd50f13095cd8",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "total_tokens": null,
+          "cost_usd": null,
+          "model_latency_seconds": 59.091,
+          "token_unit": "tokens",
+          "cost_unit": "USD",
+          "latency_unit": "seconds",
+          "cost_derivation": "unavailable"
+        },
+        "wall_clock": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "process_monotonic_clock",
+          "collection_method": "perf_counter_elapsed",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:7b3ee665-e4ff-47eb-a01e-3cfb58f3c2b9",
+            "evidence-selection-semantic-selector:49b65afb-e154-4e7c-bd7b-ad67a9e8dacd",
+            "evidence-selection-semantic-selector:f4ce004f-8b31-42f3-835d-18be39bad6f7",
+            "evidence-selection-semantic-selector:eded280f-0471-4e03-9de9-e561541fa635",
+            "evidence-selection-semantic-selector:12f333d2-785d-409c-a0ee-1d81143634ce",
+            "evidence-selection-semantic-selector:bb4f1ebb-18bb-49e5-9963-3437e5c2e058",
+            "evidence-selection-semantic-selector:bf0d5fee-d380-4053-aa78-21f63c6ea002",
+            "evidence-selection-semantic-selector:9e1a3963-4f56-4e4c-bc14-b0041e04b1b4",
+            "evidence-selection-semantic-selector:39e702fc-1e86-4c98-a7d0-86c1953040e9",
+            "evidence-selection-semantic-selector:4635a2f7-0dba-4063-be4c-579f3e3bc510",
+            "evidence-selection-semantic-selector:6049eb50-1fba-4550-93bd-d0a2f640bbb4",
+            "evidence-selection-semantic-selector:523287f0-9d90-4921-bb1a-ba5cb77026a0",
+            "evidence-selection-semantic-selector:c9697105-4df3-4a0f-9a64-7729d708e426"
+          ],
+          "elapsed_seconds": 60.02112504199613,
+          "unit": "seconds"
+        }
+      },
+      "calibration_status": "unavailable",
+      "calibration_ece": null,
+      "production_readiness_claim": false
+    },
+    {
+      "model_role": "current",
+      "run_index": 2,
+      "evaluation_path": "current-run-2.json",
+      "evaluation_sha256": "36f071bb5c500ac2d2039b9d73a2a9dc1e4f82343017511d2d2744660354fc10",
+      "generated_at": "2026-07-14T01:27:00.256933Z",
+      "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+      "model_id": "openai:gpt-5.4-mini",
+      "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+      "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+      "fixture_provenance": "ai_adjudicated_diagnostic",
+      "deterministic_fallback_count": 0,
+      "score": {
+        "scored_case_count": 3,
+        "canary_case_count": 1,
+        "case_results": [
+          {
+            "record_count": 8,
+            "expected_positive_count": 3,
+            "expected_negative_count": 5,
+            "predicted_select_count": 1,
+            "predicted_reject_count": 4,
+            "true_positive_count": 1,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 4,
+            "abstention_count": 3,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.3333333333333333,
+            "decision_accuracy": 0.625,
+            "decision_coverage": 0.625,
+            "abstention_rate": 0.375,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_t790m_primary_evidence",
+            "display_name": "EGFR T790M primary evidence",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 15,
+            "expected_positive_count": 6,
+            "expected_negative_count": 9,
+            "predicted_select_count": 5,
+            "predicted_reject_count": 9,
+            "true_positive_count": 5,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 9,
+            "abstention_count": 1,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.8333333333333334,
+            "decision_accuracy": 0.9333333333333333,
+            "decision_coverage": 0.9333333333333333,
+            "abstention_rate": 0.06666666666666667,
+            "invalid_agent_rate": 0.0,
+            "case_id": "brca1_risk_penetrance",
+            "display_name": "BRCA1 risk and penetrance",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 7,
+            "expected_positive_count": 4,
+            "expected_negative_count": 3,
+            "predicted_select_count": 4,
+            "predicted_reject_count": 3,
+            "true_positive_count": 4,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 3,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "cftr_f508del_eti_response",
+            "display_name": "CFTR F508del ETI response",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 3,
+            "expected_positive_count": 3,
+            "expected_negative_count": 0,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 0,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 0,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_exclusion_token_canary",
+            "display_name": "EGFR exclusion-token canary",
+            "evaluation_role": "canary"
+          }
+        ],
+        "micro": {
+          "record_count": 30,
+          "expected_positive_count": 13,
+          "expected_negative_count": 17,
+          "predicted_select_count": 10,
+          "predicted_reject_count": 16,
+          "true_positive_count": 10,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "true_negative_count": 16,
+          "abstention_count": 4,
+          "invalid_agent_count": 0,
+          "precision": 1.0,
+          "end_to_end_recall": 0.7692307692307693,
+          "decision_accuracy": 0.8666666666666667,
+          "decision_coverage": 0.8666666666666667,
+          "abstention_rate": 0.13333333333333333,
+          "invalid_agent_rate": 0.0
+        },
+        "macro": {
+          "precision": 1.0,
+          "end_to_end_recall": 0.7222222222222222,
+          "decision_accuracy": 0.8527777777777779,
+          "decision_coverage": 0.8527777777777779,
+          "abstention_rate": 0.14722222222222223,
+          "invalid_agent_rate": 0.0
+        }
+      },
+      "canary_passed": true,
+      "quality_gate_passed": false,
+      "agent_run_ids": [
+        "evidence-selection-semantic-selector:1db30dbc-cd3b-4a5d-8b0d-d455992e9224",
+        "evidence-selection-semantic-selector:fb454650-5e46-4de8-b03c-d1fa11dd7caa",
+        "evidence-selection-semantic-selector:37cb2a8c-d26b-408a-989a-38f127822ad1",
+        "evidence-selection-semantic-selector:7883e3f4-bd7b-4466-ae15-e0090e4aa06f",
+        "evidence-selection-semantic-selector:a0b88247-de24-4cd2-9d90-2330958e06a7",
+        "evidence-selection-semantic-selector:c1ade68d-8386-4b2b-ade6-eb8d0385591e",
+        "evidence-selection-semantic-selector:dd2aafec-fd0a-4c59-91ce-02878ef9ce0b",
+        "evidence-selection-semantic-selector:d16aac9c-5d00-45bd-8b38-79fb91d40132",
+        "evidence-selection-semantic-selector:19328e1b-6b68-431e-8b32-2dc4116eea96",
+        "evidence-selection-semantic-selector:b05f253c-2d47-4e76-b0ac-bc1987a5bca0",
+        "evidence-selection-semantic-selector:5c4944ae-ff51-4227-86d3-77088bb9726f",
+        "evidence-selection-semantic-selector:d59ce0f1-c75c-48a8-8a13-f0f78981257c",
+        "evidence-selection-semantic-selector:a6a39434-8726-4f78-a173-e1fd462ee303"
+      ],
+      "record_decisions": [
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:25923549",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27393503",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:41512290",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:30657347",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:26314834",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:31039766",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:23985030",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40403695",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:22889855",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26195121",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30191368",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40288678",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:17018160",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34237702",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:21356067",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:32658311",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:selected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:rejected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34642874",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:27913932",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30610487",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26344711",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35816621",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40210412",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:41138737",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40209082",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:38198345",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35681464",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:39227072",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27393503",
+          "decision": "select"
+        }
+      ],
+      "telemetry": {
+        "ledger": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "artana_event_ledger",
+          "collection_method": "model_terminal_event_aggregation",
+          "status": "partial",
+          "expected_model_id": "openai:gpt-5.4-mini",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:1db30dbc-cd3b-4a5d-8b0d-d455992e9224",
+            "evidence-selection-semantic-selector:fb454650-5e46-4de8-b03c-d1fa11dd7caa",
+            "evidence-selection-semantic-selector:37cb2a8c-d26b-408a-989a-38f127822ad1",
+            "evidence-selection-semantic-selector:7883e3f4-bd7b-4466-ae15-e0090e4aa06f",
+            "evidence-selection-semantic-selector:a0b88247-de24-4cd2-9d90-2330958e06a7",
+            "evidence-selection-semantic-selector:c1ade68d-8386-4b2b-ade6-eb8d0385591e",
+            "evidence-selection-semantic-selector:dd2aafec-fd0a-4c59-91ce-02878ef9ce0b",
+            "evidence-selection-semantic-selector:d16aac9c-5d00-45bd-8b38-79fb91d40132",
+            "evidence-selection-semantic-selector:19328e1b-6b68-431e-8b32-2dc4116eea96",
+            "evidence-selection-semantic-selector:b05f253c-2d47-4e76-b0ac-bc1987a5bca0",
+            "evidence-selection-semantic-selector:5c4944ae-ff51-4227-86d3-77088bb9726f",
+            "evidence-selection-semantic-selector:d59ce0f1-c75c-48a8-8a13-f0f78981257c",
+            "evidence-selection-semantic-selector:a6a39434-8726-4f78-a173-e1fd462ee303"
+          ],
+          "model_terminal_count": 13,
+          "terminal_events": [
+            {
+              "execution_id": "evidence-selection-semantic-selector:1db30dbc-cd3b-4a5d-8b0d-d455992e9224",
+              "outcome": "failed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "6f30c55842724b538f660edf0abef2f4",
+              "source_model_requested_event_id": "e058509645f44755bcd866f50783ac0f",
+              "elapsed_ms": 4898,
+              "prompt_tokens": null,
+              "completion_tokens": null,
+              "cost_usd": null,
+              "cost_derivation": "unavailable"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:fb454650-5e46-4de8-b03c-d1fa11dd7caa",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "0ab4d2e5a7bc4fdead3068d00f775acb",
+              "source_model_requested_event_id": "306436f1432f4b7ca8d0a1de37491bed",
+              "elapsed_ms": 4889,
+              "prompt_tokens": 1553,
+              "completion_tokens": 704,
+              "cost_usd": 0.00346875,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:37cb2a8c-d26b-408a-989a-38f127822ad1",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "571ab7eb526b4567be2cd0a0a91586f9",
+              "source_model_requested_event_id": "879602aadf4b4fb7a68197ae208acb3c",
+              "elapsed_ms": 4115,
+              "prompt_tokens": 1552,
+              "completion_tokens": 725,
+              "cost_usd": 0.0035625,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:7883e3f4-bd7b-4466-ae15-e0090e4aa06f",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "61b07e106a054950afa28a93c341a0a0",
+              "source_model_requested_event_id": "235d905317fc48369d6539724cd8175a",
+              "elapsed_ms": 3574,
+              "prompt_tokens": 1346,
+              "completion_tokens": 517,
+              "cost_usd": 0.003336,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:a0b88247-de24-4cd2-9d90-2330958e06a7",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "dde2907f08704e5498eaaa87dfa74ba1",
+              "source_model_requested_event_id": "527222e5a5074d0084c0fa1a552af61b",
+              "elapsed_ms": 5051,
+              "prompt_tokens": 1511,
+              "completion_tokens": 801,
+              "cost_usd": 0.00387375,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:c1ade68d-8386-4b2b-ade6-eb8d0385591e",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "c48cace69a0f47d4bd93886ef4f7ad5a",
+              "source_model_requested_event_id": "ad54268d76d64cb192a9fca7368d7a65",
+              "elapsed_ms": 4150,
+              "prompt_tokens": 1516,
+              "completion_tokens": 610,
+              "cost_usd": 0.003018,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:dd2aafec-fd0a-4c59-91ce-02878ef9ce0b",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "1f2e388f3a3443618b12214f5ff3ad93",
+              "source_model_requested_event_id": "7a9076eb67604f0baf414d8ff521d1b9",
+              "elapsed_ms": 5726,
+              "prompt_tokens": 1551,
+              "completion_tokens": 731,
+              "cost_usd": 0.00358875,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:d16aac9c-5d00-45bd-8b38-79fb91d40132",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "c0bf6ad8545b4fcd83e99173cb80f357",
+              "source_model_requested_event_id": "87ac8cce341544bfb7343835b21bc0ba",
+              "elapsed_ms": 4471,
+              "prompt_tokens": 1541,
+              "completion_tokens": 701,
+              "cost_usd": 0.00344625,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:19328e1b-6b68-431e-8b32-2dc4116eea96",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "fe9a497969b344c3ae2a7573340ea171",
+              "source_model_requested_event_id": "70bdca1d51b241f9993c8a330e14e2b5",
+              "elapsed_ms": 4938,
+              "prompt_tokens": 1535,
+              "completion_tokens": 697,
+              "cost_usd": 0.00342375,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:b05f253c-2d47-4e76-b0ac-bc1987a5bca0",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "2aa8a7d265d24b56bd0fc9016d6d8169",
+              "source_model_requested_event_id": "f8eeaa5dbfad47f1885d921473d32494",
+              "elapsed_ms": 5567,
+              "prompt_tokens": 1672,
+              "completion_tokens": 682,
+              "cost_usd": 0.003459,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:5c4944ae-ff51-4227-86d3-77088bb9726f",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "be10cc6c87e343c1a554502dfd6631fd",
+              "source_model_requested_event_id": "5b70b3a5ed494eaeb0452bb40ec65141",
+              "elapsed_ms": 6642,
+              "prompt_tokens": 1594,
+              "completion_tokens": 698,
+              "cost_usd": 0.0034725,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:d59ce0f1-c75c-48a8-8a13-f0f78981257c",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "3149d3a57b834f28a86de7905acbdc52",
+              "source_model_requested_event_id": "df882ab1b996411ebc2cb18f0e4a934d",
+              "elapsed_ms": 2694,
+              "prompt_tokens": 1171,
+              "completion_tokens": 341,
+              "cost_usd": 0.00241275,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:a6a39434-8726-4f78-a173-e1fd462ee303",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "420f7586c15640289cb38254e0c027ff",
+              "source_model_requested_event_id": "36932de4673c44a993cdf44a88003cac",
+              "elapsed_ms": 4060,
+              "prompt_tokens": 1475,
+              "completion_tokens": 624,
+              "cost_usd": 0.00305025,
+              "cost_derivation": "provider_reported"
+            }
+          ],
+          "terminal_events_sha256": "32382b1cc6d635d450b1c63834e25613ae77d6a55a53b13f080712ca4369b5ce",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "total_tokens": null,
+          "cost_usd": null,
+          "model_latency_seconds": 60.775,
+          "token_unit": "tokens",
+          "cost_unit": "USD",
+          "latency_unit": "seconds",
+          "cost_derivation": "unavailable"
+        },
+        "wall_clock": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "process_monotonic_clock",
+          "collection_method": "perf_counter_elapsed",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:1db30dbc-cd3b-4a5d-8b0d-d455992e9224",
+            "evidence-selection-semantic-selector:fb454650-5e46-4de8-b03c-d1fa11dd7caa",
+            "evidence-selection-semantic-selector:37cb2a8c-d26b-408a-989a-38f127822ad1",
+            "evidence-selection-semantic-selector:7883e3f4-bd7b-4466-ae15-e0090e4aa06f",
+            "evidence-selection-semantic-selector:a0b88247-de24-4cd2-9d90-2330958e06a7",
+            "evidence-selection-semantic-selector:c1ade68d-8386-4b2b-ade6-eb8d0385591e",
+            "evidence-selection-semantic-selector:dd2aafec-fd0a-4c59-91ce-02878ef9ce0b",
+            "evidence-selection-semantic-selector:d16aac9c-5d00-45bd-8b38-79fb91d40132",
+            "evidence-selection-semantic-selector:19328e1b-6b68-431e-8b32-2dc4116eea96",
+            "evidence-selection-semantic-selector:b05f253c-2d47-4e76-b0ac-bc1987a5bca0",
+            "evidence-selection-semantic-selector:5c4944ae-ff51-4227-86d3-77088bb9726f",
+            "evidence-selection-semantic-selector:d59ce0f1-c75c-48a8-8a13-f0f78981257c",
+            "evidence-selection-semantic-selector:a6a39434-8726-4f78-a173-e1fd462ee303"
+          ],
+          "elapsed_seconds": 61.71498516702559,
+          "unit": "seconds"
+        }
+      },
+      "calibration_status": "unavailable",
+      "calibration_ece": null,
+      "production_readiness_claim": false
+    },
+    {
+      "model_role": "current",
+      "run_index": 3,
+      "evaluation_path": "current-run-3.json",
+      "evaluation_sha256": "df26eec63c147152fec256b2b42777359c0539c147bf80bebdbec523b2328b2f",
+      "generated_at": "2026-07-14T01:29:03.004153Z",
+      "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+      "model_id": "openai:gpt-5.4-mini",
+      "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+      "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+      "fixture_provenance": "ai_adjudicated_diagnostic",
+      "deterministic_fallback_count": 0,
+      "score": {
+        "scored_case_count": 3,
+        "canary_case_count": 1,
+        "case_results": [
+          {
+            "record_count": 8,
+            "expected_positive_count": 3,
+            "expected_negative_count": 5,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 5,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 5,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_t790m_primary_evidence",
+            "display_name": "EGFR T790M primary evidence",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 15,
+            "expected_positive_count": 6,
+            "expected_negative_count": 9,
+            "predicted_select_count": 5,
+            "predicted_reject_count": 9,
+            "true_positive_count": 5,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 9,
+            "abstention_count": 1,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.8333333333333334,
+            "decision_accuracy": 0.9333333333333333,
+            "decision_coverage": 0.9333333333333333,
+            "abstention_rate": 0.06666666666666667,
+            "invalid_agent_rate": 0.0,
+            "case_id": "brca1_risk_penetrance",
+            "display_name": "BRCA1 risk and penetrance",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 7,
+            "expected_positive_count": 4,
+            "expected_negative_count": 3,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 3,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 3,
+            "abstention_count": 1,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.75,
+            "decision_accuracy": 0.8571428571428571,
+            "decision_coverage": 0.8571428571428571,
+            "abstention_rate": 0.14285714285714285,
+            "invalid_agent_rate": 0.0,
+            "case_id": "cftr_f508del_eti_response",
+            "display_name": "CFTR F508del ETI response",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 3,
+            "expected_positive_count": 3,
+            "expected_negative_count": 0,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 0,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 0,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_exclusion_token_canary",
+            "display_name": "EGFR exclusion-token canary",
+            "evaluation_role": "canary"
+          }
+        ],
+        "micro": {
+          "record_count": 30,
+          "expected_positive_count": 13,
+          "expected_negative_count": 17,
+          "predicted_select_count": 11,
+          "predicted_reject_count": 17,
+          "true_positive_count": 11,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "true_negative_count": 17,
+          "abstention_count": 2,
+          "invalid_agent_count": 0,
+          "precision": 1.0,
+          "end_to_end_recall": 0.8461538461538461,
+          "decision_accuracy": 0.9333333333333333,
+          "decision_coverage": 0.9333333333333333,
+          "abstention_rate": 0.06666666666666667,
+          "invalid_agent_rate": 0.0
+        },
+        "macro": {
+          "precision": 1.0,
+          "end_to_end_recall": 0.8611111111111112,
+          "decision_accuracy": 0.9301587301587301,
+          "decision_coverage": 0.9301587301587301,
+          "abstention_rate": 0.06984126984126983,
+          "invalid_agent_rate": 0.0
+        }
+      },
+      "canary_passed": true,
+      "quality_gate_passed": true,
+      "agent_run_ids": [
+        "evidence-selection-semantic-selector:d781ed26-ce45-4ee1-9635-32e71b3553dd",
+        "evidence-selection-semantic-selector:a5d0ba11-7e90-46a3-9683-9cedf01b35aa",
+        "evidence-selection-semantic-selector:1fea05d1-490b-43c7-9d8f-2993e508d51f",
+        "evidence-selection-semantic-selector:4fb3a149-7f4a-435f-a1e5-0b5f12361132",
+        "evidence-selection-semantic-selector:599c84d4-44de-4bef-91ff-37e2f79341db",
+        "evidence-selection-semantic-selector:f35ca926-9269-4736-9531-729a312ccf67",
+        "evidence-selection-semantic-selector:bac57a87-c76b-4b3f-b105-644c5ee6fdef",
+        "evidence-selection-semantic-selector:3b3bb814-39c3-42b8-9cee-cec423ebe0fb",
+        "evidence-selection-semantic-selector:3bd0d661-2026-48f0-b687-4fadd9325d16",
+        "evidence-selection-semantic-selector:b6b23852-b153-44c9-9c5e-23d5d129af21",
+        "evidence-selection-semantic-selector:78553ac7-555d-4568-be67-fc5bfeb6106b",
+        "evidence-selection-semantic-selector:f0b288cf-0821-4fe5-9954-850043e62def",
+        "evidence-selection-semantic-selector:28454d09-1b18-44ae-8a0c-13433c1ffc90"
+      ],
+      "record_decisions": [
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27393503",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:41512290",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:30657347",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:26314834",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:31039766",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:23985030",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40403695",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:22889855",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26195121",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30191368",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40288678",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:17018160",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34237702",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:21356067",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:32658311",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:selected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:rejected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34642874",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:27913932",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30610487",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26344711",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35816621",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40210412",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:41138737",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40209082",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:38198345",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35681464",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:39227072",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27393503",
+          "decision": "select"
+        }
+      ],
+      "telemetry": {
+        "ledger": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "artana_event_ledger",
+          "collection_method": "model_terminal_event_aggregation",
+          "status": "partial",
+          "expected_model_id": "openai:gpt-5.4-mini",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:d781ed26-ce45-4ee1-9635-32e71b3553dd",
+            "evidence-selection-semantic-selector:a5d0ba11-7e90-46a3-9683-9cedf01b35aa",
+            "evidence-selection-semantic-selector:1fea05d1-490b-43c7-9d8f-2993e508d51f",
+            "evidence-selection-semantic-selector:4fb3a149-7f4a-435f-a1e5-0b5f12361132",
+            "evidence-selection-semantic-selector:599c84d4-44de-4bef-91ff-37e2f79341db",
+            "evidence-selection-semantic-selector:f35ca926-9269-4736-9531-729a312ccf67",
+            "evidence-selection-semantic-selector:bac57a87-c76b-4b3f-b105-644c5ee6fdef",
+            "evidence-selection-semantic-selector:3b3bb814-39c3-42b8-9cee-cec423ebe0fb",
+            "evidence-selection-semantic-selector:3bd0d661-2026-48f0-b687-4fadd9325d16",
+            "evidence-selection-semantic-selector:b6b23852-b153-44c9-9c5e-23d5d129af21",
+            "evidence-selection-semantic-selector:78553ac7-555d-4568-be67-fc5bfeb6106b",
+            "evidence-selection-semantic-selector:f0b288cf-0821-4fe5-9954-850043e62def",
+            "evidence-selection-semantic-selector:28454d09-1b18-44ae-8a0c-13433c1ffc90"
+          ],
+          "model_terminal_count": 13,
+          "terminal_events": [
+            {
+              "execution_id": "evidence-selection-semantic-selector:d781ed26-ce45-4ee1-9635-32e71b3553dd",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "4e3ce1ec33e447bda2eb3d3104f42ea9",
+              "source_model_requested_event_id": "1a33456e0cc342a08ed85452446597a5",
+              "elapsed_ms": 4179,
+              "prompt_tokens": 1553,
+              "completion_tokens": 643,
+              "cost_usd": 0.00319425,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:a5d0ba11-7e90-46a3-9683-9cedf01b35aa",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "40d837f7fe784fc7a32121f36146246d",
+              "source_model_requested_event_id": "0f81633461e8415980443789045372f1",
+              "elapsed_ms": 4584,
+              "prompt_tokens": 1552,
+              "completion_tokens": 669,
+              "cost_usd": 0.0033105,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:1fea05d1-490b-43c7-9d8f-2993e508d51f",
+              "outcome": "failed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "8031e2840be84bd8b9608dfb57cf2d05",
+              "source_model_requested_event_id": "7daca1d95c7647d6af3202ea38f3396e",
+              "elapsed_ms": 3263,
+              "prompt_tokens": null,
+              "completion_tokens": null,
+              "cost_usd": null,
+              "cost_derivation": "unavailable"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:4fb3a149-7f4a-435f-a1e5-0b5f12361132",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "a8ea326de29d49a9a3839dac5eaee197",
+              "source_model_requested_event_id": "4a94d8bf377a47ef9bd8e6ddb6f0eae1",
+              "elapsed_ms": 3488,
+              "prompt_tokens": 1346,
+              "completion_tokens": 516,
+              "cost_usd": 0.0033315,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:599c84d4-44de-4bef-91ff-37e2f79341db",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "e0924b9ea04b4e1b81e8822b604698a9",
+              "source_model_requested_event_id": "c010a96c34564f1d859decb7c72bd138",
+              "elapsed_ms": 4269,
+              "prompt_tokens": 1511,
+              "completion_tokens": 608,
+              "cost_usd": 0.00300525,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:f35ca926-9269-4736-9531-729a312ccf67",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "93089f44dfc64f7caea238ccd5f90a06",
+              "source_model_requested_event_id": "caa0279b9fc743feb4375f43fba7002d",
+              "elapsed_ms": 5061,
+              "prompt_tokens": 1516,
+              "completion_tokens": 661,
+              "cost_usd": 0.0032475,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:bac57a87-c76b-4b3f-b105-644c5ee6fdef",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "1141d5ba9c1d43deaa65dd86bb52253b",
+              "source_model_requested_event_id": "b5476cb433e44b81bfb76208a372f3d6",
+              "elapsed_ms": 4500,
+              "prompt_tokens": 1551,
+              "completion_tokens": 685,
+              "cost_usd": 0.00338175,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:3b3bb814-39c3-42b8-9cee-cec423ebe0fb",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "a95f459169d6433581e68f2ed5eacaad",
+              "source_model_requested_event_id": "257f0e20f2054495a88ca10f0b08684f",
+              "elapsed_ms": 4103,
+              "prompt_tokens": 1541,
+              "completion_tokens": 725,
+              "cost_usd": 0.00355425,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:3bd0d661-2026-48f0-b687-4fadd9325d16",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "0857abf2d6d945f0919b0ed5e100d7aa",
+              "source_model_requested_event_id": "d0760641f98e4a6cbaa81aa1c62d888e",
+              "elapsed_ms": 4639,
+              "prompt_tokens": 1535,
+              "completion_tokens": 697,
+              "cost_usd": 0.00342375,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:b6b23852-b153-44c9-9c5e-23d5d129af21",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "d4e41b738e444d57b4470502b50e972e",
+              "source_model_requested_event_id": "fe41caae168c465ca3c1a269434808a8",
+              "elapsed_ms": 5278,
+              "prompt_tokens": 1672,
+              "completion_tokens": 800,
+              "cost_usd": 0.00399,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:78553ac7-555d-4568-be67-fc5bfeb6106b",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "fedbfa1975834f68ad3d8b871502e24d",
+              "source_model_requested_event_id": "b2c224db4c464756aeaaece151292666",
+              "elapsed_ms": 4556,
+              "prompt_tokens": 1594,
+              "completion_tokens": 731,
+              "cost_usd": 0.003621,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:f0b288cf-0821-4fe5-9954-850043e62def",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "344e30967fc54fc5b1d1f065ee11f336",
+              "source_model_requested_event_id": "d2bd139b48e342309874bf98a1a62b4c",
+              "elapsed_ms": 3020,
+              "prompt_tokens": 1171,
+              "completion_tokens": 334,
+              "cost_usd": 0.00238125,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:28454d09-1b18-44ae-8a0c-13433c1ffc90",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.4-mini",
+              "model_cycle_id": "e62f255fe9164772a8be98060288227c",
+              "source_model_requested_event_id": "0f62e296ee5e4eaf90e44ecb70cca371",
+              "elapsed_ms": 4891,
+              "prompt_tokens": 1475,
+              "completion_tokens": 716,
+              "cost_usd": 0.00346425,
+              "cost_derivation": "provider_reported"
+            }
+          ],
+          "terminal_events_sha256": "096d93f4eaa0985399ba265abee0e8410ec35404a7a44792990e35565e3dc542",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "total_tokens": null,
+          "cost_usd": null,
+          "model_latency_seconds": 55.831,
+          "token_unit": "tokens",
+          "cost_unit": "USD",
+          "latency_unit": "seconds",
+          "cost_derivation": "unavailable"
+        },
+        "wall_clock": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "process_monotonic_clock",
+          "collection_method": "perf_counter_elapsed",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:d781ed26-ce45-4ee1-9635-32e71b3553dd",
+            "evidence-selection-semantic-selector:a5d0ba11-7e90-46a3-9683-9cedf01b35aa",
+            "evidence-selection-semantic-selector:1fea05d1-490b-43c7-9d8f-2993e508d51f",
+            "evidence-selection-semantic-selector:4fb3a149-7f4a-435f-a1e5-0b5f12361132",
+            "evidence-selection-semantic-selector:599c84d4-44de-4bef-91ff-37e2f79341db",
+            "evidence-selection-semantic-selector:f35ca926-9269-4736-9531-729a312ccf67",
+            "evidence-selection-semantic-selector:bac57a87-c76b-4b3f-b105-644c5ee6fdef",
+            "evidence-selection-semantic-selector:3b3bb814-39c3-42b8-9cee-cec423ebe0fb",
+            "evidence-selection-semantic-selector:3bd0d661-2026-48f0-b687-4fadd9325d16",
+            "evidence-selection-semantic-selector:b6b23852-b153-44c9-9c5e-23d5d129af21",
+            "evidence-selection-semantic-selector:78553ac7-555d-4568-be67-fc5bfeb6106b",
+            "evidence-selection-semantic-selector:f0b288cf-0821-4fe5-9954-850043e62def",
+            "evidence-selection-semantic-selector:28454d09-1b18-44ae-8a0c-13433c1ffc90"
+          ],
+          "elapsed_seconds": 56.76955129095586,
+          "unit": "seconds"
+        }
+      },
+      "calibration_status": "unavailable",
+      "calibration_ece": null,
+      "production_readiness_claim": false
+    }
+  ],
+  "candidate_runs": [
+    {
+      "model_role": "candidate",
+      "run_index": 1,
+      "evaluation_path": "candidate-run-1.json",
+      "evaluation_sha256": "f62a9a56f42c374debd0b9a59be2de5a71e14176478d20d07b4e0eb66bdc47bd",
+      "generated_at": "2026-07-14T01:26:07.830821Z",
+      "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+      "model_id": "openai:gpt-5.6-luna",
+      "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+      "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+      "fixture_provenance": "ai_adjudicated_diagnostic",
+      "deterministic_fallback_count": 0,
+      "score": {
+        "scored_case_count": 3,
+        "canary_case_count": 1,
+        "case_results": [
+          {
+            "record_count": 8,
+            "expected_positive_count": 3,
+            "expected_negative_count": 5,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 5,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 5,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_t790m_primary_evidence",
+            "display_name": "EGFR T790M primary evidence",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 15,
+            "expected_positive_count": 6,
+            "expected_negative_count": 9,
+            "predicted_select_count": 6,
+            "predicted_reject_count": 9,
+            "true_positive_count": 6,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 9,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "brca1_risk_penetrance",
+            "display_name": "BRCA1 risk and penetrance",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 7,
+            "expected_positive_count": 4,
+            "expected_negative_count": 3,
+            "predicted_select_count": 4,
+            "predicted_reject_count": 3,
+            "true_positive_count": 4,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 3,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "cftr_f508del_eti_response",
+            "display_name": "CFTR F508del ETI response",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 3,
+            "expected_positive_count": 3,
+            "expected_negative_count": 0,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 0,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 0,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_exclusion_token_canary",
+            "display_name": "EGFR exclusion-token canary",
+            "evaluation_role": "canary"
+          }
+        ],
+        "micro": {
+          "record_count": 30,
+          "expected_positive_count": 13,
+          "expected_negative_count": 17,
+          "predicted_select_count": 13,
+          "predicted_reject_count": 17,
+          "true_positive_count": 13,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "true_negative_count": 17,
+          "abstention_count": 0,
+          "invalid_agent_count": 0,
+          "precision": 1.0,
+          "end_to_end_recall": 1.0,
+          "decision_accuracy": 1.0,
+          "decision_coverage": 1.0,
+          "abstention_rate": 0.0,
+          "invalid_agent_rate": 0.0
+        },
+        "macro": {
+          "precision": 1.0,
+          "end_to_end_recall": 1.0,
+          "decision_accuracy": 1.0,
+          "decision_coverage": 1.0,
+          "abstention_rate": 0.0,
+          "invalid_agent_rate": 0.0
+        }
+      },
+      "canary_passed": true,
+      "quality_gate_passed": true,
+      "agent_run_ids": [
+        "evidence-selection-semantic-selector:cce6ff3c-898e-4703-a116-62ce50b4d952",
+        "evidence-selection-semantic-selector:508a6fde-bf06-45d9-876a-fcebad276ceb",
+        "evidence-selection-semantic-selector:19cf1d0c-e53a-450e-8016-99df1f2ad434",
+        "evidence-selection-semantic-selector:684efcf1-8439-4b0a-9b9f-318ef275b6e1",
+        "evidence-selection-semantic-selector:8b7edd81-1761-40e9-a4f7-07526dd18c21",
+        "evidence-selection-semantic-selector:33f10e5f-c5ce-40b8-aad2-9e103dbcd096",
+        "evidence-selection-semantic-selector:7cc62068-8e75-476a-a659-b87e6dc04e88",
+        "evidence-selection-semantic-selector:ca02f80c-e233-46fb-a6f7-b25c0fb1e8aa",
+        "evidence-selection-semantic-selector:cebc7d0e-ece9-49c4-b23a-ce12d3bbaf4e",
+        "evidence-selection-semantic-selector:ac1dba98-fc23-4051-8e04-44c805cf8998",
+        "evidence-selection-semantic-selector:70e254ef-a166-4cc5-9729-89a8487cc69f",
+        "evidence-selection-semantic-selector:8d418f44-27be-4be1-b563-503a21254b49"
+      ],
+      "record_decisions": [
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27393503",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:41512290",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:30657347",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:26314834",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:31039766",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:23985030",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40403695",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:22889855",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26195121",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30191368",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40288678",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:17018160",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34237702",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:21356067",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:32658311",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:selected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:rejected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34642874",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:27913932",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30610487",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26344711",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35816621",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40210412",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:41138737",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40209082",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:38198345",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35681464",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:39227072",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27393503",
+          "decision": "select"
+        }
+      ],
+      "telemetry": {
+        "ledger": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "artana_event_ledger",
+          "collection_method": "model_terminal_event_aggregation",
+          "status": "available",
+          "expected_model_id": "openai:gpt-5.6-luna",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:cce6ff3c-898e-4703-a116-62ce50b4d952",
+            "evidence-selection-semantic-selector:508a6fde-bf06-45d9-876a-fcebad276ceb",
+            "evidence-selection-semantic-selector:19cf1d0c-e53a-450e-8016-99df1f2ad434",
+            "evidence-selection-semantic-selector:684efcf1-8439-4b0a-9b9f-318ef275b6e1",
+            "evidence-selection-semantic-selector:8b7edd81-1761-40e9-a4f7-07526dd18c21",
+            "evidence-selection-semantic-selector:33f10e5f-c5ce-40b8-aad2-9e103dbcd096",
+            "evidence-selection-semantic-selector:7cc62068-8e75-476a-a659-b87e6dc04e88",
+            "evidence-selection-semantic-selector:ca02f80c-e233-46fb-a6f7-b25c0fb1e8aa",
+            "evidence-selection-semantic-selector:cebc7d0e-ece9-49c4-b23a-ce12d3bbaf4e",
+            "evidence-selection-semantic-selector:ac1dba98-fc23-4051-8e04-44c805cf8998",
+            "evidence-selection-semantic-selector:70e254ef-a166-4cc5-9729-89a8487cc69f",
+            "evidence-selection-semantic-selector:8d418f44-27be-4be1-b563-503a21254b49"
+          ],
+          "model_terminal_count": 12,
+          "terminal_events": [
+            {
+              "execution_id": "evidence-selection-semantic-selector:cce6ff3c-898e-4703-a116-62ce50b4d952",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "5294e9450e5442119b0990cf6d726716",
+              "source_model_requested_event_id": "8a787652ec2c4b1098a823d23db4bf8f",
+              "elapsed_ms": 3509,
+              "prompt_tokens": 1553,
+              "completion_tokens": 718,
+              "cost_usd": 0.005861,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:508a6fde-bf06-45d9-876a-fcebad276ceb",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "7462b77474b84cde8d1f2ea89408c093",
+              "source_model_requested_event_id": "bbfef208cbb3491895dbb77f2f9214fc",
+              "elapsed_ms": 4154,
+              "prompt_tokens": 1552,
+              "completion_tokens": 815,
+              "cost_usd": 0.006442,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:19cf1d0c-e53a-450e-8016-99df1f2ad434",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "8aab8dc8860d46a6a996730b9fd50574",
+              "source_model_requested_event_id": "5c1d9787ccb843cab397a3e27d62890d",
+              "elapsed_ms": 4184,
+              "prompt_tokens": 1346,
+              "completion_tokens": 694,
+              "cost_usd": 0.00551,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:684efcf1-8439-4b0a-9b9f-318ef275b6e1",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "61266881258846ca8e5d21dbb680d249",
+              "source_model_requested_event_id": "6d779803b39d48ec87840db4e06d3407",
+              "elapsed_ms": 4522,
+              "prompt_tokens": 1511,
+              "completion_tokens": 837,
+              "cost_usd": 0.006533,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:8b7edd81-1761-40e9-a4f7-07526dd18c21",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "0df16b70347f4b349799be1425fed933",
+              "source_model_requested_event_id": "9131155545e54593a71777540185364b",
+              "elapsed_ms": 4369,
+              "prompt_tokens": 1516,
+              "completion_tokens": 826,
+              "cost_usd": 0.006472,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:33f10e5f-c5ce-40b8-aad2-9e103dbcd096",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "395f92054cd84b7992f2e715ad833ff1",
+              "source_model_requested_event_id": "010b2969af8c45f9b855201431c341fb",
+              "elapsed_ms": 4866,
+              "prompt_tokens": 1551,
+              "completion_tokens": 858,
+              "cost_usd": 0.006699,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:7cc62068-8e75-476a-a659-b87e6dc04e88",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "46eddc615a9a435d8549d6593b2c46f9",
+              "source_model_requested_event_id": "4cfa36ffb80343528fe851e731fa4be6",
+              "elapsed_ms": 4075,
+              "prompt_tokens": 1541,
+              "completion_tokens": 749,
+              "cost_usd": 0.006035,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:ca02f80c-e233-46fb-a6f7-b25c0fb1e8aa",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "56fcb823dbfd4ac093679d1edd1f062f",
+              "source_model_requested_event_id": "0ef4e48cfed04741a6939d98ce6ee546",
+              "elapsed_ms": 3714,
+              "prompt_tokens": 1535,
+              "completion_tokens": 727,
+              "cost_usd": 0.005897,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:cebc7d0e-ece9-49c4-b23a-ce12d3bbaf4e",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "82a153312ef84227ba090032c4acb469",
+              "source_model_requested_event_id": "22a9fbdf88d84804b3f04c939cf88f20",
+              "elapsed_ms": 4176,
+              "prompt_tokens": 1672,
+              "completion_tokens": 789,
+              "cost_usd": 0.006406,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:ac1dba98-fc23-4051-8e04-44c805cf8998",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "fe99ba210b744ab7ae8b1bef88d8c295",
+              "source_model_requested_event_id": "2a10be865b064c33b1c8b48b59f7bdbf",
+              "elapsed_ms": 6432,
+              "prompt_tokens": 1594,
+              "completion_tokens": 1064,
+              "cost_usd": 0.007978,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:70e254ef-a166-4cc5-9729-89a8487cc69f",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "99b909dbff784dcf950587aca2fa6691",
+              "source_model_requested_event_id": "09ddd78f836a46118570cbd172d5f580",
+              "elapsed_ms": 2906,
+              "prompt_tokens": 1171,
+              "completion_tokens": 431,
+              "cost_usd": 0.003757,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:8d418f44-27be-4be1-b563-503a21254b49",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "a2e7886ac9514841b9c71dec76eb183d",
+              "source_model_requested_event_id": "fa9e6b4be9bd4df38535177f268da641",
+              "elapsed_ms": 4630,
+              "prompt_tokens": 1475,
+              "completion_tokens": 907,
+              "cost_usd": 0.006917,
+              "cost_derivation": "provider_reported"
+            }
+          ],
+          "terminal_events_sha256": "6f7bb576f2e2341703bb483aad2eecedf736e4780570963e332661869784f429",
+          "prompt_tokens": 18017,
+          "completion_tokens": 9415,
+          "total_tokens": 27432,
+          "cost_usd": 0.074507,
+          "model_latency_seconds": 51.537,
+          "token_unit": "tokens",
+          "cost_unit": "USD",
+          "latency_unit": "seconds",
+          "cost_derivation": "provider_reported"
+        },
+        "wall_clock": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "process_monotonic_clock",
+          "collection_method": "perf_counter_elapsed",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:cce6ff3c-898e-4703-a116-62ce50b4d952",
+            "evidence-selection-semantic-selector:508a6fde-bf06-45d9-876a-fcebad276ceb",
+            "evidence-selection-semantic-selector:19cf1d0c-e53a-450e-8016-99df1f2ad434",
+            "evidence-selection-semantic-selector:684efcf1-8439-4b0a-9b9f-318ef275b6e1",
+            "evidence-selection-semantic-selector:8b7edd81-1761-40e9-a4f7-07526dd18c21",
+            "evidence-selection-semantic-selector:33f10e5f-c5ce-40b8-aad2-9e103dbcd096",
+            "evidence-selection-semantic-selector:7cc62068-8e75-476a-a659-b87e6dc04e88",
+            "evidence-selection-semantic-selector:ca02f80c-e233-46fb-a6f7-b25c0fb1e8aa",
+            "evidence-selection-semantic-selector:cebc7d0e-ece9-49c4-b23a-ce12d3bbaf4e",
+            "evidence-selection-semantic-selector:ac1dba98-fc23-4051-8e04-44c805cf8998",
+            "evidence-selection-semantic-selector:70e254ef-a166-4cc5-9729-89a8487cc69f",
+            "evidence-selection-semantic-selector:8d418f44-27be-4be1-b563-503a21254b49"
+          ],
+          "elapsed_seconds": 52.366774791968055,
+          "unit": "seconds"
+        }
+      },
+      "calibration_status": "unavailable",
+      "calibration_ece": null,
+      "production_readiness_claim": false
+    },
+    {
+      "model_role": "candidate",
+      "run_index": 2,
+      "evaluation_path": "candidate-run-2.json",
+      "evaluation_sha256": "06801de9d934cb9b23c9ca139f3e2583aacbe3589c01c903b9794ee4046f64c1",
+      "generated_at": "2026-07-14T01:28:02.039032Z",
+      "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+      "model_id": "openai:gpt-5.6-luna",
+      "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+      "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+      "fixture_provenance": "ai_adjudicated_diagnostic",
+      "deterministic_fallback_count": 0,
+      "score": {
+        "scored_case_count": 3,
+        "canary_case_count": 1,
+        "case_results": [
+          {
+            "record_count": 8,
+            "expected_positive_count": 3,
+            "expected_negative_count": 5,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 5,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 5,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_t790m_primary_evidence",
+            "display_name": "EGFR T790M primary evidence",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 15,
+            "expected_positive_count": 6,
+            "expected_negative_count": 9,
+            "predicted_select_count": 6,
+            "predicted_reject_count": 9,
+            "true_positive_count": 6,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 9,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "brca1_risk_penetrance",
+            "display_name": "BRCA1 risk and penetrance",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 7,
+            "expected_positive_count": 4,
+            "expected_negative_count": 3,
+            "predicted_select_count": 4,
+            "predicted_reject_count": 3,
+            "true_positive_count": 4,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 3,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "cftr_f508del_eti_response",
+            "display_name": "CFTR F508del ETI response",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 3,
+            "expected_positive_count": 3,
+            "expected_negative_count": 0,
+            "predicted_select_count": 1,
+            "predicted_reject_count": 0,
+            "true_positive_count": 1,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 0,
+            "abstention_count": 2,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.3333333333333333,
+            "decision_accuracy": 0.3333333333333333,
+            "decision_coverage": 0.3333333333333333,
+            "abstention_rate": 0.6666666666666666,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_exclusion_token_canary",
+            "display_name": "EGFR exclusion-token canary",
+            "evaluation_role": "canary"
+          }
+        ],
+        "micro": {
+          "record_count": 30,
+          "expected_positive_count": 13,
+          "expected_negative_count": 17,
+          "predicted_select_count": 13,
+          "predicted_reject_count": 17,
+          "true_positive_count": 13,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "true_negative_count": 17,
+          "abstention_count": 0,
+          "invalid_agent_count": 0,
+          "precision": 1.0,
+          "end_to_end_recall": 1.0,
+          "decision_accuracy": 1.0,
+          "decision_coverage": 1.0,
+          "abstention_rate": 0.0,
+          "invalid_agent_rate": 0.0
+        },
+        "macro": {
+          "precision": 1.0,
+          "end_to_end_recall": 1.0,
+          "decision_accuracy": 1.0,
+          "decision_coverage": 1.0,
+          "abstention_rate": 0.0,
+          "invalid_agent_rate": 0.0
+        }
+      },
+      "canary_passed": false,
+      "quality_gate_passed": false,
+      "agent_run_ids": [
+        "evidence-selection-semantic-selector:ec658122-3a3f-4c1f-b007-cf004cd65ec0",
+        "evidence-selection-semantic-selector:da7cb745-339f-41a6-9668-cf686e0b440e",
+        "evidence-selection-semantic-selector:cc004817-8215-4fc5-9119-300c298a67a4",
+        "evidence-selection-semantic-selector:da44dfc8-7ba9-4f0e-8b98-1fed4ec40a10",
+        "evidence-selection-semantic-selector:bcad6294-cde4-4f2e-a028-ca9336e2e1bc",
+        "evidence-selection-semantic-selector:f8b6f78a-9a2a-4860-8335-90244239cc0b",
+        "evidence-selection-semantic-selector:aa2ae182-2793-489d-a6d2-43ce6e16b61e",
+        "evidence-selection-semantic-selector:ae682349-ae81-4c37-875a-794f9d9c8172",
+        "evidence-selection-semantic-selector:f8c9a2f3-b800-40c3-a90c-b412b5107f29",
+        "evidence-selection-semantic-selector:f98f9c3b-6d9c-427f-a06b-c294cdba83f6",
+        "evidence-selection-semantic-selector:fe174a7d-d34d-47fc-811d-4732f0f8ec9d",
+        "evidence-selection-semantic-selector:2d270d13-e9ee-4d07-9417-f17afda52a94"
+      ],
+      "record_decisions": [
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27393503",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:41512290",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:30657347",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:26314834",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:31039766",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:23985030",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40403695",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:22889855",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26195121",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30191368",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40288678",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:17018160",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34237702",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:21356067",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:32658311",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:selected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:rejected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34642874",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:27913932",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30610487",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26344711",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35816621",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40210412",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:41138737",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40209082",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:38198345",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35681464",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:39227072",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27959700",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27393503",
+          "decision": "abstain"
+        }
+      ],
+      "telemetry": {
+        "ledger": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "artana_event_ledger",
+          "collection_method": "model_terminal_event_aggregation",
+          "status": "available",
+          "expected_model_id": "openai:gpt-5.6-luna",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:ec658122-3a3f-4c1f-b007-cf004cd65ec0",
+            "evidence-selection-semantic-selector:da7cb745-339f-41a6-9668-cf686e0b440e",
+            "evidence-selection-semantic-selector:cc004817-8215-4fc5-9119-300c298a67a4",
+            "evidence-selection-semantic-selector:da44dfc8-7ba9-4f0e-8b98-1fed4ec40a10",
+            "evidence-selection-semantic-selector:bcad6294-cde4-4f2e-a028-ca9336e2e1bc",
+            "evidence-selection-semantic-selector:f8b6f78a-9a2a-4860-8335-90244239cc0b",
+            "evidence-selection-semantic-selector:aa2ae182-2793-489d-a6d2-43ce6e16b61e",
+            "evidence-selection-semantic-selector:ae682349-ae81-4c37-875a-794f9d9c8172",
+            "evidence-selection-semantic-selector:f8c9a2f3-b800-40c3-a90c-b412b5107f29",
+            "evidence-selection-semantic-selector:f98f9c3b-6d9c-427f-a06b-c294cdba83f6",
+            "evidence-selection-semantic-selector:fe174a7d-d34d-47fc-811d-4732f0f8ec9d",
+            "evidence-selection-semantic-selector:2d270d13-e9ee-4d07-9417-f17afda52a94"
+          ],
+          "model_terminal_count": 12,
+          "terminal_events": [
+            {
+              "execution_id": "evidence-selection-semantic-selector:ec658122-3a3f-4c1f-b007-cf004cd65ec0",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "71f989b3d4404fd2a3eacf07a1559728",
+              "source_model_requested_event_id": "e4a9139c5a2446278958f39f31bdb056",
+              "elapsed_ms": 5643,
+              "prompt_tokens": 1553,
+              "completion_tokens": 733,
+              "cost_usd": 0.004556,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:da7cb745-339f-41a6-9668-cf686e0b440e",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "84ff8019404344dfa8666e90be14f392",
+              "source_model_requested_event_id": "72a1da23b6674bdfb74d86ff192d152d",
+              "elapsed_ms": 7946,
+              "prompt_tokens": 1552,
+              "completion_tokens": 1054,
+              "cost_usd": 0.0064819,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:cc004817-8215-4fc5-9119-300c298a67a4",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "1fcc44cf1a2844f1a7828a32aae75d9d",
+              "source_model_requested_event_id": "b18b9d111ba0417eb0c1a3ad6c51f78c",
+              "elapsed_ms": 3957,
+              "prompt_tokens": 1346,
+              "completion_tokens": 611,
+              "cost_usd": 0.0038033,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:da44dfc8-7ba9-4f0e-8b98-1fed4ec40a10",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "0d85f873766848dd98951e8a7fcfb790",
+              "source_model_requested_event_id": "968e4e3bd2f6479884935710dc0028c7",
+              "elapsed_ms": 4002,
+              "prompt_tokens": 1511,
+              "completion_tokens": 724,
+              "cost_usd": 0.0044978,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:bcad6294-cde4-4f2e-a028-ca9336e2e1bc",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "5659f7a23bf748cc8131866db0b644c7",
+              "source_model_requested_event_id": "20a0b8087cd14462bc48bbb7199a04c2",
+              "elapsed_ms": 5044,
+              "prompt_tokens": 1516,
+              "completion_tokens": 889,
+              "cost_usd": 0.0054883,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:f8b6f78a-9a2a-4860-8335-90244239cc0b",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "faf5e03e45224bd99c4c45efe944793c",
+              "source_model_requested_event_id": "b750d02f21e4484bba9d3140ae0913c4",
+              "elapsed_ms": 4812,
+              "prompt_tokens": 1551,
+              "completion_tokens": 812,
+              "cost_usd": 0.0050298,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:aa2ae182-2793-489d-a6d2-43ce6e16b61e",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "c6c466d9a22149d2a63252b93b7c6c78",
+              "source_model_requested_event_id": "42095cfe88dd47ee8799c58062e9b979",
+              "elapsed_ms": 4050,
+              "prompt_tokens": 1541,
+              "completion_tokens": 748,
+              "cost_usd": 0.0046448,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:ae682349-ae81-4c37-875a-794f9d9c8172",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "2f65689fa1b446dd8efc092fe6c7a936",
+              "source_model_requested_event_id": "f2bedd457a6544e79b1e6922ff9cab7f",
+              "elapsed_ms": 3887,
+              "prompt_tokens": 1535,
+              "completion_tokens": 721,
+              "cost_usd": 0.0044822,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:f8c9a2f3-b800-40c3-a90c-b412b5107f29",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "7615d24f25144581b30b8b7346d119ae",
+              "source_model_requested_event_id": "bf564e19ce2044b6a57a9aa60c1c98ed",
+              "elapsed_ms": 4544,
+              "prompt_tokens": 1672,
+              "completion_tokens": 766,
+              "cost_usd": 0.0047659,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:f98f9c3b-6d9c-427f-a06b-c294cdba83f6",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "1c1cfc4a558d46468096b452f2678bc2",
+              "source_model_requested_event_id": "270bde58512c4f4eaf5092c686bbec8a",
+              "elapsed_ms": 4285,
+              "prompt_tokens": 1594,
+              "completion_tokens": 786,
+              "cost_usd": 0.0048781,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:fe174a7d-d34d-47fc-811d-4732f0f8ec9d",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "a9f082e471714db89858022ed37ea6ee",
+              "source_model_requested_event_id": "a63d687f4dd14f91ab41a0261fb6f3ec",
+              "elapsed_ms": 3046,
+              "prompt_tokens": 1171,
+              "completion_tokens": 407,
+              "cost_usd": 0.0025618,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:2d270d13-e9ee-4d07-9417-f17afda52a94",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "fddf1fe9a10d41bc923e39d8db7a3f92",
+              "source_model_requested_event_id": "0e81c3c50d1b4c30840fbada14d7941e",
+              "elapsed_ms": 8820,
+              "prompt_tokens": 1475,
+              "completion_tokens": 1426,
+              "cost_usd": 0.0087062,
+              "cost_derivation": "provider_reported"
+            }
+          ],
+          "terminal_events_sha256": "f8c6f809cfc62ef6eed01ba97e6d5b3e1f89e0b07b3e9dca65b27230aea6abc1",
+          "prompt_tokens": 18017,
+          "completion_tokens": 9677,
+          "total_tokens": 27694,
+          "cost_usd": 0.0598961,
+          "model_latency_seconds": 60.036,
+          "token_unit": "tokens",
+          "cost_unit": "USD",
+          "latency_unit": "seconds",
+          "cost_derivation": "provider_reported"
+        },
+        "wall_clock": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "process_monotonic_clock",
+          "collection_method": "perf_counter_elapsed",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:ec658122-3a3f-4c1f-b007-cf004cd65ec0",
+            "evidence-selection-semantic-selector:da7cb745-339f-41a6-9668-cf686e0b440e",
+            "evidence-selection-semantic-selector:cc004817-8215-4fc5-9119-300c298a67a4",
+            "evidence-selection-semantic-selector:da44dfc8-7ba9-4f0e-8b98-1fed4ec40a10",
+            "evidence-selection-semantic-selector:bcad6294-cde4-4f2e-a028-ca9336e2e1bc",
+            "evidence-selection-semantic-selector:f8b6f78a-9a2a-4860-8335-90244239cc0b",
+            "evidence-selection-semantic-selector:aa2ae182-2793-489d-a6d2-43ce6e16b61e",
+            "evidence-selection-semantic-selector:ae682349-ae81-4c37-875a-794f9d9c8172",
+            "evidence-selection-semantic-selector:f8c9a2f3-b800-40c3-a90c-b412b5107f29",
+            "evidence-selection-semantic-selector:f98f9c3b-6d9c-427f-a06b-c294cdba83f6",
+            "evidence-selection-semantic-selector:fe174a7d-d34d-47fc-811d-4732f0f8ec9d",
+            "evidence-selection-semantic-selector:2d270d13-e9ee-4d07-9417-f17afda52a94"
+          ],
+          "elapsed_seconds": 60.911049582995474,
+          "unit": "seconds"
+        }
+      },
+      "calibration_status": "unavailable",
+      "calibration_ece": null,
+      "production_readiness_claim": false
+    },
+    {
+      "model_role": "candidate",
+      "run_index": 3,
+      "evaluation_path": "candidate-run-3.json",
+      "evaluation_sha256": "3c688cec981f62e49cb7332cb1a27cd75739b6d6b2aed996a85ab7bcd6a3a5f0",
+      "generated_at": "2026-07-14T01:29:59.838052Z",
+      "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+      "model_id": "openai:gpt-5.6-luna",
+      "fixture_sha256": "a77e9db72d823c9bff8974afe6b2eaa74e423fb1de37ececa519bfa59b146a69",
+      "baseline_report_sha256": "e9867148d9a5ff2eb874ee597b7982147ce76c7684f284cab4c10f0a8f8ba295",
+      "fixture_provenance": "ai_adjudicated_diagnostic",
+      "deterministic_fallback_count": 0,
+      "score": {
+        "scored_case_count": 3,
+        "canary_case_count": 1,
+        "case_results": [
+          {
+            "record_count": 8,
+            "expected_positive_count": 3,
+            "expected_negative_count": 5,
+            "predicted_select_count": 3,
+            "predicted_reject_count": 5,
+            "true_positive_count": 3,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 5,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_t790m_primary_evidence",
+            "display_name": "EGFR T790M primary evidence",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 15,
+            "expected_positive_count": 6,
+            "expected_negative_count": 9,
+            "predicted_select_count": 6,
+            "predicted_reject_count": 9,
+            "true_positive_count": 6,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 9,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "brca1_risk_penetrance",
+            "display_name": "BRCA1 risk and penetrance",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 7,
+            "expected_positive_count": 4,
+            "expected_negative_count": 3,
+            "predicted_select_count": 4,
+            "predicted_reject_count": 3,
+            "true_positive_count": 4,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 3,
+            "abstention_count": 0,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 1.0,
+            "decision_accuracy": 1.0,
+            "decision_coverage": 1.0,
+            "abstention_rate": 0.0,
+            "invalid_agent_rate": 0.0,
+            "case_id": "cftr_f508del_eti_response",
+            "display_name": "CFTR F508del ETI response",
+            "evaluation_role": "primary"
+          },
+          {
+            "record_count": 3,
+            "expected_positive_count": 3,
+            "expected_negative_count": 0,
+            "predicted_select_count": 1,
+            "predicted_reject_count": 0,
+            "true_positive_count": 1,
+            "false_positive_count": 0,
+            "false_negative_count": 0,
+            "true_negative_count": 0,
+            "abstention_count": 2,
+            "invalid_agent_count": 0,
+            "precision": 1.0,
+            "end_to_end_recall": 0.3333333333333333,
+            "decision_accuracy": 0.3333333333333333,
+            "decision_coverage": 0.3333333333333333,
+            "abstention_rate": 0.6666666666666666,
+            "invalid_agent_rate": 0.0,
+            "case_id": "egfr_exclusion_token_canary",
+            "display_name": "EGFR exclusion-token canary",
+            "evaluation_role": "canary"
+          }
+        ],
+        "micro": {
+          "record_count": 30,
+          "expected_positive_count": 13,
+          "expected_negative_count": 17,
+          "predicted_select_count": 13,
+          "predicted_reject_count": 17,
+          "true_positive_count": 13,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "true_negative_count": 17,
+          "abstention_count": 0,
+          "invalid_agent_count": 0,
+          "precision": 1.0,
+          "end_to_end_recall": 1.0,
+          "decision_accuracy": 1.0,
+          "decision_coverage": 1.0,
+          "abstention_rate": 0.0,
+          "invalid_agent_rate": 0.0
+        },
+        "macro": {
+          "precision": 1.0,
+          "end_to_end_recall": 1.0,
+          "decision_accuracy": 1.0,
+          "decision_coverage": 1.0,
+          "abstention_rate": 0.0,
+          "invalid_agent_rate": 0.0
+        }
+      },
+      "canary_passed": false,
+      "quality_gate_passed": false,
+      "agent_run_ids": [
+        "evidence-selection-semantic-selector:176a81f7-88e9-41f1-8095-d782c45cbfe1",
+        "evidence-selection-semantic-selector:fd912f48-4749-43a3-b8b4-5d9fff63b1e5",
+        "evidence-selection-semantic-selector:2d5baa6e-fcf3-443c-aa4d-843aa9e71458",
+        "evidence-selection-semantic-selector:5bf494de-f22d-4aa1-8ccd-5df38f1b0842",
+        "evidence-selection-semantic-selector:7c2a1ca3-b3fb-41d2-8f17-9d4cb9ac02f5",
+        "evidence-selection-semantic-selector:81df7f9e-680b-43a3-8ed3-8fcbd80afb3d",
+        "evidence-selection-semantic-selector:919c125a-df91-4a23-b72a-37413b24dc93",
+        "evidence-selection-semantic-selector:4cb159ff-a88a-4ead-bbf9-8ce0f00620cc",
+        "evidence-selection-semantic-selector:fc8a2151-ce38-4559-be64-1a5d96ac3129",
+        "evidence-selection-semantic-selector:9006da6c-4501-4142-8a35-4eef32d6efb6",
+        "evidence-selection-semantic-selector:e51ad247-182b-4c7c-bda5-435992bc5063",
+        "evidence-selection-semantic-selector:434cb8d2-cc1d-4390-993f-1da674e674e8"
+      ],
+      "record_decisions": [
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27959700",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:27393503",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:41512290",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:30657347",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:26314834",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:31039766",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_t790m_primary_evidence",
+          "record_id": "egfr:pmid:23985030",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40403695",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:22889855",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26195121",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30191368",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:40288678",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:17018160",
+          "decision": "select"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34237702",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:21356067",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:32658311",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:selected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:31206626:rejected-duplicate",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:34642874",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:27913932",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:30610487",
+          "decision": "reject"
+        },
+        {
+          "case_id": "brca1_risk_penetrance",
+          "record_id": "brca1:pmid:26344711",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35816621",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40210412",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:41138737",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:40209082",
+          "decision": "select"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:38198345",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:35681464",
+          "decision": "reject"
+        },
+        {
+          "case_id": "cftr_f508del_eti_response",
+          "record_id": "cftr:pmid:39227072",
+          "decision": "reject"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27959700",
+          "decision": "abstain"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:25923549",
+          "decision": "select"
+        },
+        {
+          "case_id": "egfr_exclusion_token_canary",
+          "record_id": "canary:pmid:27393503",
+          "decision": "abstain"
+        }
+      ],
+      "telemetry": {
+        "ledger": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "artana_event_ledger",
+          "collection_method": "model_terminal_event_aggregation",
+          "status": "available",
+          "expected_model_id": "openai:gpt-5.6-luna",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:176a81f7-88e9-41f1-8095-d782c45cbfe1",
+            "evidence-selection-semantic-selector:fd912f48-4749-43a3-b8b4-5d9fff63b1e5",
+            "evidence-selection-semantic-selector:2d5baa6e-fcf3-443c-aa4d-843aa9e71458",
+            "evidence-selection-semantic-selector:5bf494de-f22d-4aa1-8ccd-5df38f1b0842",
+            "evidence-selection-semantic-selector:7c2a1ca3-b3fb-41d2-8f17-9d4cb9ac02f5",
+            "evidence-selection-semantic-selector:81df7f9e-680b-43a3-8ed3-8fcbd80afb3d",
+            "evidence-selection-semantic-selector:919c125a-df91-4a23-b72a-37413b24dc93",
+            "evidence-selection-semantic-selector:4cb159ff-a88a-4ead-bbf9-8ce0f00620cc",
+            "evidence-selection-semantic-selector:fc8a2151-ce38-4559-be64-1a5d96ac3129",
+            "evidence-selection-semantic-selector:9006da6c-4501-4142-8a35-4eef32d6efb6",
+            "evidence-selection-semantic-selector:e51ad247-182b-4c7c-bda5-435992bc5063",
+            "evidence-selection-semantic-selector:434cb8d2-cc1d-4390-993f-1da674e674e8"
+          ],
+          "model_terminal_count": 12,
+          "terminal_events": [
+            {
+              "execution_id": "evidence-selection-semantic-selector:176a81f7-88e9-41f1-8095-d782c45cbfe1",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "d4d96db83c9d4775afa6460085f75aa3",
+              "source_model_requested_event_id": "e1c28fd9d07142e99d252e992a2920dd",
+              "elapsed_ms": 4510,
+              "prompt_tokens": 1553,
+              "completion_tokens": 785,
+              "cost_usd": 0.004868,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:fd912f48-4749-43a3-b8b4-5d9fff63b1e5",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "c679522426b343e9a94ed2b931a7b92a",
+              "source_model_requested_event_id": "23506085dd8746968ba4eaedb3876fda",
+              "elapsed_ms": 5351,
+              "prompt_tokens": 1552,
+              "completion_tokens": 919,
+              "cost_usd": 0.0056719,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:2d5baa6e-fcf3-443c-aa4d-843aa9e71458",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "8faab47140cf4d93bdc251b0eaba4083",
+              "source_model_requested_event_id": "32578344b7cc47fe814a282057c458e9",
+              "elapsed_ms": 3321,
+              "prompt_tokens": 1346,
+              "completion_tokens": 629,
+              "cost_usd": 0.0039113,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:5bf494de-f22d-4aa1-8ccd-5df38f1b0842",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "8f18b538f8cd4b5582dc3380c7fbae73",
+              "source_model_requested_event_id": "fb5b8dc243d14469aea153bb3c48a16f",
+              "elapsed_ms": 4724,
+              "prompt_tokens": 1511,
+              "completion_tokens": 740,
+              "cost_usd": 0.0045938,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:7c2a1ca3-b3fb-41d2-8f17-9d4cb9ac02f5",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "07a254fc11104429a672a3d8dea70e68",
+              "source_model_requested_event_id": "3b7184587c6b4591b3b35146b8a133bd",
+              "elapsed_ms": 4414,
+              "prompt_tokens": 1516,
+              "completion_tokens": 724,
+              "cost_usd": 0.0044983,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:81df7f9e-680b-43a3-8ed3-8fcbd80afb3d",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "733bb61a00104174abed128d2a4119df",
+              "source_model_requested_event_id": "904e42d0473b4a49af7ea88908d38424",
+              "elapsed_ms": 5630,
+              "prompt_tokens": 1551,
+              "completion_tokens": 938,
+              "cost_usd": 0.0057858,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:919c125a-df91-4a23-b72a-37413b24dc93",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "c133257021be4bd88c3ef68da0945ef8",
+              "source_model_requested_event_id": "3b58398bf9c04c939ddd40ff60027093",
+              "elapsed_ms": 3943,
+              "prompt_tokens": 1541,
+              "completion_tokens": 747,
+              "cost_usd": 0.0046388,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:4cb159ff-a88a-4ead-bbf9-8ce0f00620cc",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "caa86ab174ca4c00aadaa596b5535e0d",
+              "source_model_requested_event_id": "7573d2ae72804b5ea047848887794bc0",
+              "elapsed_ms": 4368,
+              "prompt_tokens": 1535,
+              "completion_tokens": 785,
+              "cost_usd": 0.0048662,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:fc8a2151-ce38-4559-be64-1a5d96ac3129",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "58c6f0bb78534d50b896e8bf7e458032",
+              "source_model_requested_event_id": "a27e17f8ccea4bf686304b59efb00bc0",
+              "elapsed_ms": 3924,
+              "prompt_tokens": 1672,
+              "completion_tokens": 751,
+              "cost_usd": 0.0046759,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:9006da6c-4501-4142-8a35-4eef32d6efb6",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "04c40405d74b4b1ea37a264c1e087dc0",
+              "source_model_requested_event_id": "6ab10b3e36a2418c8f7fa9bb6e4e37bd",
+              "elapsed_ms": 7082,
+              "prompt_tokens": 1594,
+              "completion_tokens": 1072,
+              "cost_usd": 0.0065941,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:e51ad247-182b-4c7c-bda5-435992bc5063",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "b10e7893b88f4b71a2e8c03caabe93dc",
+              "source_model_requested_event_id": "2b865f44064b40558c043426257332a6",
+              "elapsed_ms": 2694,
+              "prompt_tokens": 1171,
+              "completion_tokens": 371,
+              "cost_usd": 0.0023458,
+              "cost_derivation": "provider_reported"
+            },
+            {
+              "execution_id": "evidence-selection-semantic-selector:434cb8d2-cc1d-4390-993f-1da674e674e8",
+              "outcome": "completed",
+              "model_id": "openai:gpt-5.6-luna",
+              "model_cycle_id": "7e41a58e090546d280e60eb883fc4100",
+              "source_model_requested_event_id": "6b165f43f1c34cb4a7111c2a9e143973",
+              "elapsed_ms": 6134,
+              "prompt_tokens": 1475,
+              "completion_tokens": 979,
+              "cost_usd": 0.0060242,
+              "cost_derivation": "provider_reported"
+            }
+          ],
+          "terminal_events_sha256": "5c11cb1d7c7b65a1cffe91e26031e55b7ab2a001f7645c900849358aee35b294",
+          "prompt_tokens": 18017,
+          "completion_tokens": 9440,
+          "total_tokens": 27457,
+          "cost_usd": 0.0584741,
+          "model_latency_seconds": 56.095,
+          "token_unit": "tokens",
+          "cost_unit": "USD",
+          "latency_unit": "seconds",
+          "cost_derivation": "provider_reported"
+        },
+        "wall_clock": {
+          "numeric_origin": "runtime_observation",
+          "runtime_source": "process_monotonic_clock",
+          "collection_method": "perf_counter_elapsed",
+          "execution_ids": [
+            "evidence-selection-semantic-selector:176a81f7-88e9-41f1-8095-d782c45cbfe1",
+            "evidence-selection-semantic-selector:fd912f48-4749-43a3-b8b4-5d9fff63b1e5",
+            "evidence-selection-semantic-selector:2d5baa6e-fcf3-443c-aa4d-843aa9e71458",
+            "evidence-selection-semantic-selector:5bf494de-f22d-4aa1-8ccd-5df38f1b0842",
+            "evidence-selection-semantic-selector:7c2a1ca3-b3fb-41d2-8f17-9d4cb9ac02f5",
+            "evidence-selection-semantic-selector:81df7f9e-680b-43a3-8ed3-8fcbd80afb3d",
+            "evidence-selection-semantic-selector:919c125a-df91-4a23-b72a-37413b24dc93",
+            "evidence-selection-semantic-selector:4cb159ff-a88a-4ead-bbf9-8ce0f00620cc",
+            "evidence-selection-semantic-selector:fc8a2151-ce38-4559-be64-1a5d96ac3129",
+            "evidence-selection-semantic-selector:9006da6c-4501-4142-8a35-4eef32d6efb6",
+            "evidence-selection-semantic-selector:e51ad247-182b-4c7c-bda5-435992bc5063",
+            "evidence-selection-semantic-selector:434cb8d2-cc1d-4390-993f-1da674e674e8"
+          ],
+          "elapsed_seconds": 56.979067166976165,
+          "unit": "seconds"
+        }
+      },
+      "calibration_status": "unavailable",
+      "calibration_ece": null,
+      "production_readiness_claim": false
+    }
+  ],
+  "current_summary": {
+    "model_id": "openai:gpt-5.4-mini",
+    "run_count": 3,
+    "quality_gate_passed": false,
+    "worst_precision": 1.0,
+    "worst_recall": 0.7692307692307693,
+    "minimum_case_precision": 1.0,
+    "minimum_case_recall": 0.3333333333333333,
+    "minimum_case_decision_coverage": 0.625,
+    "mean_precision": 1.0,
+    "mean_recall": 0.8205128205128206,
+    "precision_variance": 0.0,
+    "recall_variance": 0.001314924391847467,
+    "worst_decision_coverage": 0.8666666666666667,
+    "mean_abstention_rate": 0.1111111111111111,
+    "invalid_agent_count": 0,
+    "deterministic_fallback_count": 0,
+    "all_canaries_passed": true,
+    "decision_counts": {
+      "select": 41,
+      "reject": 48,
+      "abstain": 10,
+      "invalid_agent": 0
+    },
+    "unstable_record_count": 7,
+    "record_consensus": [
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:17018160",
+        "counts": {
+          "select": 2,
+          "reject": 0,
+          "abstain": 1,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": false
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:21356067",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:22889855",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:26195121",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:26344711",
+        "counts": {
+          "select": 0,
+          "reject": 2,
+          "abstain": 1,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": false
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:27913932",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:30191368",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:30610487",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:31206626:rejected-duplicate",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:31206626:selected-duplicate",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:32658311",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:34237702",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:34642874",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:40288678",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:40403695",
+        "counts": {
+          "select": 1,
+          "reject": 0,
+          "abstain": 2,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "abstain",
+        "stable": false
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:35681464",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:35816621",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:38198345",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:39227072",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:40209082",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:40210412",
+        "counts": {
+          "select": 1,
+          "reject": 0,
+          "abstain": 2,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "abstain",
+        "stable": false
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:41138737",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_exclusion_token_canary",
+        "record_id": "canary:pmid:25923549",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_exclusion_token_canary",
+        "record_id": "canary:pmid:27393503",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_exclusion_token_canary",
+        "record_id": "canary:pmid:27959700",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:23985030",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:25923549",
+        "counts": {
+          "select": 2,
+          "reject": 0,
+          "abstain": 1,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": false
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:26314834",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:27393503",
+        "counts": {
+          "select": 2,
+          "reject": 0,
+          "abstain": 1,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": false
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:27959700",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:30657347",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:31039766",
+        "counts": {
+          "select": 0,
+          "reject": 1,
+          "abstain": 2,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "abstain",
+        "stable": false
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:41512290",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      }
+    ],
+    "telemetry_complete": false,
+    "total_prompt_tokens": null,
+    "total_completion_tokens": null,
+    "total_tokens": null,
+    "total_cost_usd": null,
+    "total_model_latency_seconds": 175.697,
+    "total_wall_latency_seconds": 178.50566149997758
+  },
+  "candidate_summary": {
+    "model_id": "openai:gpt-5.6-luna",
+    "run_count": 3,
+    "quality_gate_passed": false,
+    "worst_precision": 1.0,
+    "worst_recall": 1.0,
+    "minimum_case_precision": 1.0,
+    "minimum_case_recall": 1.0,
+    "minimum_case_decision_coverage": 0.3333333333333333,
+    "mean_precision": 1.0,
+    "mean_recall": 1.0,
+    "precision_variance": 0.0,
+    "recall_variance": 0.0,
+    "worst_decision_coverage": 1.0,
+    "mean_abstention_rate": 0.0,
+    "invalid_agent_count": 0,
+    "deterministic_fallback_count": 0,
+    "all_canaries_passed": false,
+    "decision_counts": {
+      "select": 44,
+      "reject": 51,
+      "abstain": 4,
+      "invalid_agent": 0
+    },
+    "unstable_record_count": 2,
+    "record_consensus": [
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:17018160",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:21356067",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:22889855",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:26195121",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:26344711",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:27913932",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:30191368",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:30610487",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:31206626:rejected-duplicate",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:31206626:selected-duplicate",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:32658311",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:34237702",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:34642874",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:40288678",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "brca1_risk_penetrance",
+        "record_id": "brca1:pmid:40403695",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:35681464",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:35816621",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:38198345",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:39227072",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:40209082",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:40210412",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "cftr_f508del_eti_response",
+        "record_id": "cftr:pmid:41138737",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_exclusion_token_canary",
+        "record_id": "canary:pmid:25923549",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_exclusion_token_canary",
+        "record_id": "canary:pmid:27393503",
+        "counts": {
+          "select": 1,
+          "reject": 0,
+          "abstain": 2,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "abstain",
+        "stable": false
+      },
+      {
+        "case_id": "egfr_exclusion_token_canary",
+        "record_id": "canary:pmid:27959700",
+        "counts": {
+          "select": 1,
+          "reject": 0,
+          "abstain": 2,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "abstain",
+        "stable": false
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:23985030",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:25923549",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:26314834",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:27393503",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:27959700",
+        "counts": {
+          "select": 3,
+          "reject": 0,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "select",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:30657347",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:31039766",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      },
+      {
+        "case_id": "egfr_t790m_primary_evidence",
+        "record_id": "egfr:pmid:41512290",
+        "counts": {
+          "select": 0,
+          "reject": 3,
+          "abstain": 0,
+          "invalid_agent": 0
+        },
+        "consensus_decision": "reject",
+        "stable": true
+      }
+    ],
+    "telemetry_complete": true,
+    "total_prompt_tokens": 54051,
+    "total_completion_tokens": 28532,
+    "total_tokens": 82583,
+    "total_cost_usd": 0.1928772,
+    "total_model_latency_seconds": 167.668,
+    "total_wall_latency_seconds": 170.2568915419397
+  },
+  "cross_model_disagreement_count": 5,
+  "decision": {
+    "outcome": "inconclusive",
+    "selected_model_id": null,
+    "reason_codes": [
+      "current_and_candidate_quality_gates_failed"
+    ],
+    "blocking_reasons": [
+      "Neither model passed the repeated source-locked quality gate."
+    ],
+    "metric_deltas": {
+      "worst_precision": 0.0,
+      "worst_recall": 0.23076923076923073,
+      "combined_variance": -0.001314924391847467,
+      "cost_ratio": null,
+      "model_latency_ratio": 0.954302008571575
+    }
+  },
+  "selected_model_repeatability_passed": false,
+  "calibration_status": "unavailable",
+  "calibration_ece": null,
+  "evidence_provenance": "ai_adjudicated_diagnostic",
+  "production_readiness_claim": false
+}

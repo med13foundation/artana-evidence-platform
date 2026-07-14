@@ -123,16 +123,19 @@ artifact replay, or an unjustified stronger-model choice.
     canaries whose bounded input omits required population evidence. These are
     recorded as benchmark defects and cannot count for model adoption.
 
-## Initial Live Diagnostic
+## Final Source-Complete Live Diagnostic
 
 The branch was rebased onto merged PR `#148` and evaluated at commit
-`285ad7a27cb934ead41b20d431c186fa85bdd8e2`. The live matrix ran three
+`71460f596b7efa19cf74a5e1d76710a7a75a3ab8`. The live matrix ran three
 interleaved executions of current judge `openai:gpt-5.4-mini` and candidate
 `openai:gpt-5.6-luna` over the same source-locked fixture.
 
-The pre-v3 bundle is deliberately not committed as final comparison evidence.
-Its independent review exposed missing bundled source snapshots, so it is kept
-only as the diagnostic that motivated the stronger provenance contract.
+Verified v3 bundle:
+`docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/`
+
+The bundle has 23 content-addressed entries, including the baseline prediction
+artifact and all four sanitized source snapshots. Both the generic manifest
+verifier and semantic recomputation verifier pass from the committed copy.
 
 The deterministic decision is **INCONCLUSIVE**. No model is selected, the
 selected-model repeatability proof fails, and no production-readiness claim is
@@ -142,16 +145,16 @@ repeated quality gate.
 | Metric | `gpt-5.4-mini` | `gpt-5.6-luna` |
 | --- | ---: | ---: |
 | Worst precision | 1.0000 | 1.0000 |
-| Worst recall | 0.9231 | 1.0000 |
-| Minimum primary-case recall | 0.8333 | 1.0000 |
-| Worst decision coverage | 0.9667 | 0.9333 |
-| Unstable records | 2 | 2 |
+| Worst recall | 0.7692 | 1.0000 |
+| Minimum primary-case recall | 0.3333 | 1.0000 |
+| Worst decision coverage | 0.8667 | 1.0000 |
+| Unstable records | 7 | 2 |
 | Invalid-agent decisions | 0 | 0 |
 | Deterministic fallbacks | 0 | 0 |
-| Canary runs passed | 3 of 3 | 0 of 3 |
+| Canary runs passed | 3 of 3 | 1 of 3 |
 | Telemetry complete | no | yes |
-| Total model latency | 155.161 s | 176.367 s |
-| Total observed cost | unavailable | $0.19780320 |
+| Total model latency | 175.697 s | 167.668 s |
+| Total observed cost | unavailable | $0.19287720 |
 
 ### Failure Attribution
 
@@ -160,23 +163,24 @@ repeated quality gate.
    underlying abstract classifies its significance as uncertain and potentially
    benign or reduced-penetrance. Luna selected it in all runs; the current
    model's one abstention creates the reported worst-recall delta.
-2. `gpt-5.4-mini` also changed its decision across runs for
-   `egfr:pmid:31039766`. One failed validation attempt lacked token and cost
-   usage, so resource comparison is undefined rather than estimated.
-3. `gpt-5.6-luna` consistently abstained on canary records
-   `canary:pmid:27959700` and `canary:pmid:27393503`. Its explanation was that
-   the bounded title and excerpt did not explicitly establish the NSCLC
-   population. The fixture expects selection, so this is a gold/source-boundary
-   ambiguity that requires richer source evidence or independent adjudication;
-   it must not be fixed by prompt pressure.
-4. `gpt-5.6-luna` also varied between reject and abstain for explicit review
-   records `egfr:pmid:30657347` and `egfr:pmid:41512290`. This is a genuine
-   model-stability failure under the frozen exclusion rule.
-5. The models disagreed categorically on four records. The reported Luna
-   worst-recall delta is `0.0769`, but the defective BRCA1 gold prevents treating
-   it as improvement. The current model had lower measured latency and the cost
-   ratio was unavailable. The quality and telemetry gates therefore block
-   adoption before resource tradeoffs could authorize a switch.
+2. `gpt-5.4-mini` had seven unstable records. Every run also required one retry
+   after the live process logged a schema-invalid uncertain finding using a
+   non-review decision. The bundle preserves the three failed terminal outcomes
+   and their latency, but not failure cause, token use, or cost. Resource
+   comparison is therefore undefined rather than estimated.
+3. `gpt-5.6-luna` selected every canary in run 1, then abstained on
+   `canary:pmid:27959700` and `canary:pmid:27393503` in runs 2 and 3. The bounded
+   title and excerpt do not explicitly establish all required population and
+   direct-clinical facts. This is benchmark/source-boundary ambiguity, not clean
+   evidence that either the selection or abstention is correct.
+4. Luna was stable on every primary record in this matrix and had complete
+   telemetry, but its only two unstable records were the malformed canaries.
+   It therefore still failed the frozen quality gate.
+5. The models disagreed categorically on five records. The reported Luna
+   worst-recall delta is `0.2308`, but the defective BRCA1 gold, ambiguous
+   canaries, and current-model failed-attempt telemetry prevent treating that
+   number as a valid model-quality or resource advantage. Luna's measured model
+   latency was about 4.6% lower, but the cost ratio remains unavailable.
 
 ### Honest Conclusion
 
@@ -186,11 +190,10 @@ can preserve a negative result, expose model instability separately from
 fixture ambiguity and runtime observability, and refuse model adoption without
 complete deterministic evidence.
 
-The immediate harness step is one final v3 run from a clean committed tree so
-the published bundle contains the baseline predictions and all sanitized source
-snapshots. That rerun does not repair the diagnostic gold. Independent expert
-adjudication must still correct the BRCA1 label and ambiguous canaries before a
-later matrix can be treated as a valid head-to-head quality comparison.
+The source-complete v3 run proves the harness publication and verification
+boundary. It does not repair the diagnostic gold. Independent expert
+adjudication must correct the BRCA1 label and ambiguous canaries before a later
+matrix can be treated as a valid head-to-head quality comparison.
 
 The runtime must also retain usage and failure-cause data for failed local
 output-validation attempts. None of these findings should be addressed by
