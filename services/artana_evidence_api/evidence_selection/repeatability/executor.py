@@ -27,6 +27,9 @@ from artana_evidence_api.evidence_selection.diagnostics.fixture import (
 from artana_evidence_api.evidence_selection.diagnostics.report import (
     EvidenceSelectionSemanticDiagnosticReport,
 )
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticAttemptReporter,
+)
 from artana_evidence_api.evidence_selection.semantic.model import (
     ArtanaEvidenceSelectionSemanticModelRunner,
     EvidenceSelectionSemanticModelRunner,
@@ -219,11 +222,16 @@ async def _execute_model_run(
     execution_ids = runner.execution_ids()
     if not execution_ids:
         raise ValueError("comparison runner did not expose its execution trace")
+    if not isinstance(runner, SemanticAttemptReporter):
+        raise TypeError("comparison runner did not expose model-attempt telemetry")
+    attempts = runner.model_attempts()
+    if tuple(attempt.execution_id for attempt in attempts) != execution_ids:
+        raise ValueError("comparison runner attempt identities do not match execution IDs")
     store = store_factory()
     try:
         telemetry = await collect_semantic_run_telemetry(
             store=store,
-            execution_ids=execution_ids,
+            attempts=attempts,
             expected_model_id=model_id,
             wall_elapsed_seconds=wall_elapsed,
         )

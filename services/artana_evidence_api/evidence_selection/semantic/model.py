@@ -7,6 +7,11 @@ from dataclasses import dataclass
 from typing import Protocol
 from uuid import uuid4
 
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticAttemptRecorder,
+    SemanticLocalValidationFailure,
+    SemanticModelAttemptContext,
+)
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
 )
@@ -108,6 +113,9 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
         self._runtime_policy = load_runtime_policy()
         self._registry = get_model_registry()
         self._execution_ids: list[str] = []
+        self._attempt_recorder = SemanticAttemptRecorder(
+            step_key=_SEMANTIC_SELECTION_STEP_KEY,
+        )
 
     async def assess(
         self,
@@ -132,6 +140,12 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
         budget_limit = self._governance.usage_limits.total_cost_usd or 1.0
         run_id = f"evidence-selection-semantic-selector:{uuid4()}"
         self._execution_ids.append(run_id)
+        self._attempt_recorder.start_attempt(
+            execution_id=run_id,
+            source_key=context.source_key,
+            search_id=context.search_id,
+            record_references=context.record_references,
+        )
         store = create_artana_postgres_store()
         kernel = ArtanaKernel(
             store=store,
@@ -178,6 +192,19 @@ class ArtanaEvidenceSelectionSemanticModelRunner:
         """Return all run IDs, including attempts whose output failed validation."""
 
         return tuple(self._execution_ids)
+
+    def model_attempts(self) -> tuple[SemanticModelAttemptContext, ...]:
+        """Return every attempt with its deterministic semantic batch identity."""
+
+        return self._attempt_recorder.attempts()
+
+    def record_local_validation_failure(
+        self,
+        failure: SemanticLocalValidationFailure,
+    ) -> None:
+        """Record why service-owned validation rejected the latest response."""
+
+        self._attempt_recorder.record_local_validation_failure(failure)
 
     def _resolve_model_id(self) -> str:
         if (

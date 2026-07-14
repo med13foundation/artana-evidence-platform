@@ -135,10 +135,21 @@ def render_comparison_markdown(report: SemanticModelComparisonReport) -> str:
         "| Metric | Current | Candidate |",
         "| --- | ---: | ---: |",
         f"| Telemetry complete | {'yes' if current.telemetry_complete else 'no'} | {'yes' if candidate.telemetry_complete else 'no'} |",
+        f"| Model attempts | {current.model_attempt_count} | {candidate.model_attempt_count} |",
+        f"| Failed attempts | {current.failed_attempt_count} | {candidate.failed_attempt_count} |",
+        f"| Locally rejected attempts | {current.rejected_attempt_count} | {candidate.rejected_attempt_count} |",
+        f"| Output-schema failures | {current.schema_validation_failure_count} | {candidate.schema_validation_failure_count} |",
+        f"| Attempts with unavailable usage | {current.usage_unavailable_attempt_count} | {candidate.usage_unavailable_attempt_count} |",
         f"| Total tokens | {_optional_int(current.total_tokens)} | {_optional_int(candidate.total_tokens)} |",
         f"| Total cost USD | {_optional_float(current.total_cost_usd, 8)} | {_optional_float(candidate.total_cost_usd, 8)} |",
         f"| Model latency seconds | {_optional_float(current.total_model_latency_seconds, 6)} | {_optional_float(candidate.total_model_latency_seconds, 6)} |",
         f"| Wall latency seconds | {current.total_wall_latency_seconds:.6f} | {candidate.total_wall_latency_seconds:.6f} |",
+        "",
+        "## Failed Attempt Telemetry",
+        "",
+        "| Model role | Run | Execution | Batch | Status | Stage | Cause | Token usage | Cost usage |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |",
+        *_failed_attempt_rows(report),
         "",
         "## Decision Evidence",
         "",
@@ -186,6 +197,33 @@ def _optional_int(value: int | None) -> str:
 
 def _optional_float(value: float | None, precision: int) -> str:
     return "unavailable" if value is None else f"{value:.{precision}f}"
+
+
+def _failed_attempt_rows(report: SemanticModelComparisonReport) -> list[str]:
+    rows: list[str] = []
+    for run in (*report.current_runs, *report.candidate_runs):
+        for attempt in run.telemetry.ledger.model_attempts:
+            if attempt.status == "completed":
+                continue
+            token_usage = (
+                str((attempt.prompt_tokens or 0) + (attempt.completion_tokens or 0))
+                if attempt.token_usage_provenance == "artana_model_terminal"
+                else f"unavailable ({attempt.token_usage_unavailable_reason})"
+            )
+            cost_usage = (
+                f"{attempt.cost_usd:.8f}"
+                if attempt.cost_usage_provenance == "artana_model_terminal"
+                and attempt.cost_usd is not None
+                else f"unavailable ({attempt.cost_usage_unavailable_reason})"
+            )
+            rows.append(
+                "| "
+                f"{run.model_role} | {run.run_index} | `{attempt.execution_id}` | "
+                f"`{attempt.batch_id}` | {attempt.status} | "
+                f"{attempt.failure_stage} | {attempt.failure_cause} | "
+                f"{token_usage} | {cost_usage} |",
+            )
+    return rows or ["| none | - | - | - | - | - | - | - | - |"]
 
 
 __all__ = [

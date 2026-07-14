@@ -14,8 +14,8 @@ from artana_evidence_api.evidence_selection.repeatability.comparison import (
 from artana_evidence_api.evidence_selection.repeatability.contracts import (
     SemanticModelEvaluationRun,
     SemanticRepositorySourceFile,
-    SemanticRuntimeTerminalEvent,
-    semantic_terminal_events_sha256,
+    SemanticRuntimeModelAttempt,
+    semantic_model_attempts_sha256,
 )
 from pydantic import ValidationError
 
@@ -103,14 +103,14 @@ async def test_run_contract_rejects_telemetry_for_another_model(tmp_path) -> Non
     payload = run.model_dump(mode="python")
     ledger = payload["telemetry"]["ledger"]
     ledger["expected_model_id"] = "openai:forged-model"
-    for event in ledger["terminal_events"]:
-        event["model_id"] = "openai:forged-model"
-    normalized_events = tuple(
-        SemanticRuntimeTerminalEvent.model_validate(event)
-        for event in ledger["terminal_events"]
+    for attempt in ledger["model_attempts"]:
+        attempt["model_id"] = "openai:forged-model"
+    normalized_attempts = tuple(
+        SemanticRuntimeModelAttempt.model_validate(attempt)
+        for attempt in ledger["model_attempts"]
     )
-    ledger["terminal_events_sha256"] = semantic_terminal_events_sha256(
-        normalized_events,
+    ledger["model_attempts_sha256"] = semantic_model_attempts_sha256(
+        normalized_attempts,
     )
 
     with pytest.raises(ValidationError, match="telemetry model must match"):

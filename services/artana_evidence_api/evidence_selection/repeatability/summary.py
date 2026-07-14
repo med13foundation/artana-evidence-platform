@@ -83,6 +83,11 @@ def summarize_semantic_model_runs(
     canary_gate_status = (
         next(iter(canary_statuses)) if len(canary_statuses) == 1 else "failed"
     )
+    model_attempts = tuple(
+        attempt
+        for run in runs
+        for attempt in run.telemetry.ledger.model_attempts
+    )
     thresholds = protocol.thresholds
     quality_gate_passed = (
         len(runs) >= thresholds.minimum_runs_per_model
@@ -124,6 +129,23 @@ def summarize_semantic_model_runs(
         decision_counts=decision_counts,
         unstable_record_count=unstable_record_count,
         record_consensus=record_consensus,
+        model_attempt_count=len(model_attempts),
+        failed_attempt_count=sum(
+            attempt.status in {"failed", "telemetry_unavailable"}
+            for attempt in model_attempts
+        ),
+        rejected_attempt_count=sum(
+            attempt.status == "rejected" for attempt in model_attempts
+        ),
+        schema_validation_failure_count=sum(
+            attempt.failure_stage == "output_schema_validation"
+            for attempt in model_attempts
+        ),
+        usage_unavailable_attempt_count=sum(
+            attempt.token_usage_provenance == "unavailable"
+            or attempt.cost_usage_provenance == "unavailable"
+            for attempt in model_attempts
+        ),
         telemetry_complete=telemetry_complete,
         total_prompt_tokens=_sum_complete_ledger_int(runs, "prompt_tokens"),
         total_completion_tokens=_sum_complete_ledger_int(runs, "completion_tokens"),

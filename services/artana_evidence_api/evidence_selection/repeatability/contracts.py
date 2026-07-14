@@ -20,16 +20,57 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 SemanticDecision = Literal["select", "reject", "abstain", "invalid_agent"]
 SemanticModelRole = Literal["current", "candidate"]
-SemanticTerminalCostDerivation = Literal[
-    "provider_reported",
-    "token_pricing",
+SemanticAttemptStatus = Literal[
+    "completed",
+    "failed",
+    "rejected",
+    "telemetry_unavailable",
+]
+SemanticTerminalOutcome = Literal[
+    "completed",
+    "failed",
+    "timeout",
+    "cancelled",
+    "abandoned",
+]
+SemanticFailureStage = Literal[
+    "output_schema_validation",
+    "semantic_batch_validation",
+    "evidence_reference_validation",
+    "service_run_identity_validation",
+    "provider_call",
+    "provider_response",
+    "runtime_execution",
+    "telemetry_collection",
+]
+SemanticFailureCause = Literal[
+    "schema_contract_rejected",
+    "record_coverage_mismatch",
+    "evidence_reference_invalid",
+    "agent_run_identity_missing",
+    "unexpected_local_validation_error",
+    "timeout",
+    "cancelled",
+    "provider_refusal",
+    "provider_client_error",
+    "provider_server_error",
+    "provider_transient_error",
+    "provider_permanent_error",
+    "network_error",
+    "internal_error",
+    "model_terminal_event_missing",
+]
+SemanticUsageProvenance = Literal[
+    "artana_model_terminal",
     "unavailable",
 ]
-SemanticCostDerivation = Literal[
-    "provider_reported",
-    "token_pricing",
-    "mixed",
-    "unavailable",
+SemanticTelemetryUnavailableReason = Literal[
+    "artana_exception_did_not_preserve_provider_usage",
+    "artana_terminal_missing_token_usage",
+    "artana_terminal_partial_token_usage",
+    "artana_terminal_missing_cost_usage",
+    "model_terminal_event_missing",
+    "no_model_attempts",
 ]
 SemanticRepositorySourceRole = Literal[
     "baseline_predictions",
@@ -189,74 +230,149 @@ class SemanticModelComparisonProtocol(BaseModel):
         return self
 
 
-class SemanticRuntimeTerminalEvent(BaseModel):
-    """Normalized immutable facts from one Artana model-terminal event."""
+class SemanticRuntimeModelAttempt(BaseModel):
+    """One semantic attempt joined to its Artana terminal event when present."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     execution_id: str = Field(min_length=1)
-    outcome: str = Field(min_length=1)
+    batch_id: str = Field(pattern=r"^semantic_batch_[a-f0-9]{32}$")
+    attempt_sequence: int = Field(ge=1)
+    batch_attempt_number: int = Field(ge=1)
+    source_key: str = Field(min_length=1)
+    search_id: str = Field(min_length=1)
+    record_references: tuple[str, ...] = Field(min_length=1)
+    step_key: str = Field(min_length=1)
+    status: SemanticAttemptStatus
+    terminal_outcome: SemanticTerminalOutcome | None = None
     model_id: str = Field(min_length=1)
-    model_cycle_id: str = Field(min_length=1)
-    source_model_requested_event_id: str = Field(min_length=1)
-    elapsed_ms: int = Field(ge=0)
+    model_cycle_id: str | None = Field(default=None, min_length=1)
+    source_model_requested_event_id: str | None = Field(default=None, min_length=1)
+    terminal_event_id: str | None = Field(default=None, min_length=1)
+    terminal_event_seq: int | None = Field(default=None, ge=1)
+    terminal_event_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    failure_stage: SemanticFailureStage | None = None
+    failure_cause: SemanticFailureCause | None = None
+    error_category: str | None = None
+    error_class: str | None = None
+    elapsed_ms: int | None = Field(default=None, ge=0)
     prompt_tokens: int | None = Field(default=None, ge=0)
     completion_tokens: int | None = Field(default=None, ge=0)
     cost_usd: float | None = Field(default=None, ge=0.0)
-    cost_derivation: SemanticTerminalCostDerivation
+    token_usage_provenance: SemanticUsageProvenance
+    token_usage_unavailable_reason: SemanticTelemetryUnavailableReason | None = None
+    cost_usage_provenance: SemanticUsageProvenance
+    cost_usage_unavailable_reason: SemanticTelemetryUnavailableReason | None = None
 
     @model_validator(mode="after")
-    def _cost_and_derivation_must_match(self) -> SemanticRuntimeTerminalEvent:
-        if (self.cost_usd is None) != (self.cost_derivation == "unavailable"):
-            raise ValueError("terminal event cost must match its derivation")
+    def _attempt_facts_must_be_consistent(self) -> SemanticRuntimeModelAttempt:
+        terminal_fields = (
+            self.terminal_outcome,
+            self.model_cycle_id,
+            self.source_model_requested_event_id,
+            self.terminal_event_id,
+            self.terminal_event_seq,
+            self.terminal_event_hash,
+            self.elapsed_ms,
+        )
+        has_terminal = self.terminal_outcome is not None
+        if has_terminal != all(value is not None for value in terminal_fields):
+            raise ValueError("attempt terminal identity must be complete or unavailable")
+        if self.status == "completed" and self.terminal_outcome != "completed":
+            raise ValueError("completed attempt requires a completed terminal event")
+        if self.status == "rejected" and self.terminal_outcome != "completed":
+            raise ValueError("locally rejected attempt requires a completed terminal event")
+        if self.status == "failed" and self.terminal_outcome in {None, "completed"}:
+            raise ValueError("failed attempt requires a failed terminal event")
+        if self.status == "telemetry_unavailable" and has_terminal:
+            raise ValueError("telemetry-unavailable attempt cannot contain a terminal event")
+        has_failure = self.failure_stage is not None and self.failure_cause is not None
+        if (self.status != "completed") != has_failure:
+            raise ValueError("non-completed attempt requires typed failure stage and cause")
+        if (self.failure_stage is None) != (self.failure_cause is None):
+            raise ValueError("failure stage and cause must be declared together")
+        if len(set(self.record_references)) != len(self.record_references):
+            raise ValueError("attempt record references must be unique")
+        complete_tokens = (
+            self.prompt_tokens is not None and self.completion_tokens is not None
+        )
+        if complete_tokens != (self.token_usage_provenance == "artana_model_terminal"):
+            raise ValueError("token values must match their Artana provenance")
+        if complete_tokens != (self.token_usage_unavailable_reason is None):
+            raise ValueError("token availability must have explicit provenance")
+        cost_available = self.cost_usd is not None
+        if cost_available != (self.cost_usage_provenance == "artana_model_terminal"):
+            raise ValueError("cost value must match its Artana provenance")
+        if cost_available != (self.cost_usage_unavailable_reason is None):
+            raise ValueError("cost availability must have explicit provenance")
         return self
 
 
 @dataclass(frozen=True)
 class SemanticRuntimeEventAggregate:
-    """Deterministic aggregates recomputed from terminal events."""
+    """Deterministic aggregates recomputed from immutable model attempts."""
 
     prompt_tokens: int | None
     completion_tokens: int | None
     total_tokens: int | None
     cost_usd: float | None
     model_latency_seconds: float | None
-    cost_derivation: SemanticCostDerivation
+    token_usage_provenance: SemanticUsageProvenance
+    cost_usage_provenance: SemanticUsageProvenance
+    unavailable_reasons: tuple[SemanticTelemetryUnavailableReason, ...]
 
 
-def aggregate_semantic_terminal_events(
-    events: tuple[SemanticRuntimeTerminalEvent, ...],
+def aggregate_semantic_model_attempts(
+    attempts: tuple[SemanticRuntimeModelAttempt, ...],
 ) -> SemanticRuntimeEventAggregate:
-    """Derive usage totals solely from the embedded immutable event facts."""
+    """Derive usage totals solely from embedded immutable attempt facts."""
 
-    if not events:
+    if not attempts:
         return SemanticRuntimeEventAggregate(
             prompt_tokens=None,
             completion_tokens=None,
             total_tokens=None,
             cost_usd=None,
             model_latency_seconds=None,
-            cost_derivation="unavailable",
+            token_usage_provenance="unavailable",
+            cost_usage_provenance="unavailable",
+            unavailable_reasons=("no_model_attempts",),
         )
     prompt_tokens = _complete_int_sum(
-        tuple(event.prompt_tokens for event in events),
+        tuple(attempt.prompt_tokens for attempt in attempts),
     )
     completion_tokens = _complete_int_sum(
-        tuple(event.completion_tokens for event in events),
+        tuple(attempt.completion_tokens for attempt in attempts),
     )
     total_tokens = (
         prompt_tokens + completion_tokens
         if prompt_tokens is not None and completion_tokens is not None
         else None
     )
-    cost_values = tuple(event.cost_usd for event in events)
+    cost_values = tuple(attempt.cost_usd for attempt in attempts)
     cost_usd = (
         round(sum(value for value in cost_values if value is not None), 8)
         if all(value is not None for value in cost_values)
         else None
     )
-    cost_derivation = _aggregate_cost_derivation(
-        frozenset(event.cost_derivation for event in events),
+    token_usage_provenance: SemanticUsageProvenance = (
+        "artana_model_terminal" if total_tokens is not None else "unavailable"
+    )
+    cost_usage_provenance: SemanticUsageProvenance = (
+        "artana_model_terminal" if cost_usd is not None else "unavailable"
+    )
+    unavailable_reasons = tuple(
+        sorted(
+            {
+                reason
+                for attempt in attempts
+                for reason in (
+                    attempt.token_usage_unavailable_reason,
+                    attempt.cost_usage_unavailable_reason,
+                )
+                if reason is not None
+            },
+        ),
     )
     return SemanticRuntimeEventAggregate(
         prompt_tokens=prompt_tokens,
@@ -264,10 +380,19 @@ def aggregate_semantic_terminal_events(
         total_tokens=total_tokens,
         cost_usd=cost_usd,
         model_latency_seconds=round(
-            sum(event.elapsed_ms for event in events) / 1000.0,
+            sum(
+                attempt.elapsed_ms
+                for attempt in attempts
+                if attempt.elapsed_ms is not None
+            )
+            / 1000.0,
             6,
-        ),
-        cost_derivation=cost_derivation,
+        )
+        if any(attempt.elapsed_ms is not None for attempt in attempts)
+        else None,
+        token_usage_provenance=token_usage_provenance,
+        cost_usage_provenance=cost_usage_provenance,
+        unavailable_reasons=unavailable_reasons,
     )
 
 
@@ -277,25 +402,13 @@ def _complete_int_sum(values: tuple[int | None, ...]) -> int | None:
     return sum(value for value in values if value is not None)
 
 
-def _aggregate_cost_derivation(
-    methods: frozenset[SemanticTerminalCostDerivation],
-) -> SemanticCostDerivation:
-    if "unavailable" in methods:
-        return "unavailable"
-    if methods == {"provider_reported"}:
-        return "provider_reported"
-    if methods == {"token_pricing"}:
-        return "token_pricing"
-    return "mixed"
-
-
-def semantic_terminal_events_sha256(
-    events: tuple[SemanticRuntimeTerminalEvent, ...],
+def semantic_model_attempts_sha256(
+    attempts: tuple[SemanticRuntimeModelAttempt, ...],
 ) -> str:
-    """Hash the complete normalized runtime-ledger snapshot."""
+    """Hash the complete normalized model-attempt snapshot."""
 
     payload = json.dumps(
-        [event.model_dump(mode="json") for event in events],
+        [attempt.model_dump(mode="json") for attempt in attempts],
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
@@ -303,21 +416,22 @@ def semantic_terminal_events_sha256(
 
 
 class SemanticRuntimeLedgerObservation(BaseModel):
-    """Observed model-terminal usage bound to exact Artana run IDs."""
+    """Observed model attempts bound to semantic batches and Artana events."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     numeric_origin: Literal["runtime_observation"] = "runtime_observation"
     runtime_source: Literal["artana_event_ledger"] = "artana_event_ledger"
-    collection_method: Literal["model_terminal_event_aggregation"] = (
-        "model_terminal_event_aggregation"
+    collection_method: Literal["model_attempt_event_join"] = (
+        "model_attempt_event_join"
     )
     status: Literal["available", "partial", "unavailable"]
     expected_model_id: str = Field(min_length=1)
     execution_ids: tuple[str, ...]
+    model_attempt_count: int = Field(ge=0)
     model_terminal_count: int = Field(ge=0)
-    terminal_events: tuple[SemanticRuntimeTerminalEvent, ...]
-    terminal_events_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    model_attempts: tuple[SemanticRuntimeModelAttempt, ...]
+    model_attempts_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     prompt_tokens: int | None = Field(default=None, ge=0)
     completion_tokens: int | None = Field(default=None, ge=0)
     total_tokens: int | None = Field(default=None, ge=0)
@@ -326,35 +440,43 @@ class SemanticRuntimeLedgerObservation(BaseModel):
     token_unit: Literal["tokens"] = "tokens"
     cost_unit: Literal["USD"] = "USD"
     latency_unit: Literal["seconds"] = "seconds"
-    cost_derivation: SemanticCostDerivation
+    token_usage_provenance: SemanticUsageProvenance
+    cost_usage_provenance: SemanticUsageProvenance
+    unavailable_reasons: tuple[SemanticTelemetryUnavailableReason, ...]
 
     @model_validator(mode="after")
     def _validate_observation(self) -> SemanticRuntimeLedgerObservation:
         if len(set(self.execution_ids)) != len(self.execution_ids):
             raise ValueError("runtime execution IDs must be unique")
-        if self.model_terminal_count != len(self.terminal_events):
-            raise ValueError("model terminal count must match the ledger snapshot")
-        if self.terminal_events_sha256 != semantic_terminal_events_sha256(
-            self.terminal_events,
+        if self.model_attempt_count != len(self.model_attempts):
+            raise ValueError("model attempt count must match the ledger snapshot")
+        if self.model_terminal_count != sum(
+            attempt.terminal_outcome is not None for attempt in self.model_attempts
         ):
-            raise ValueError("runtime ledger snapshot digest does not match")
-        if any(
-            event.execution_id not in self.execution_ids
-            for event in self.terminal_events
+            raise ValueError("model terminal count must match observed attempts")
+        if self.model_attempts_sha256 != semantic_model_attempts_sha256(
+            self.model_attempts,
         ):
-            raise ValueError("runtime ledger snapshot contains an unknown execution")
+            raise ValueError("runtime model-attempt snapshot digest does not match")
+        attempt_execution_ids = tuple(
+            attempt.execution_id for attempt in self.model_attempts
+        )
+        if attempt_execution_ids != self.execution_ids:
+            raise ValueError("runtime attempts must preserve execution order")
         if any(
-            event.model_id != self.expected_model_id for event in self.terminal_events
+            attempt.model_id != self.expected_model_id for attempt in self.model_attempts
         ):
             raise ValueError("runtime ledger snapshot contains the wrong model")
-        aggregate = aggregate_semantic_terminal_events(self.terminal_events)
+        aggregate = aggregate_semantic_model_attempts(self.model_attempts)
         declared_aggregate = (
             self.prompt_tokens,
             self.completion_tokens,
             self.total_tokens,
             self.cost_usd,
             self.model_latency_seconds,
-            self.cost_derivation,
+            self.token_usage_provenance,
+            self.cost_usage_provenance,
+            self.unavailable_reasons,
         )
         recomputed_aggregate = (
             aggregate.prompt_tokens,
@@ -362,17 +484,17 @@ class SemanticRuntimeLedgerObservation(BaseModel):
             aggregate.total_tokens,
             aggregate.cost_usd,
             aggregate.model_latency_seconds,
-            aggregate.cost_derivation,
+            aggregate.token_usage_provenance,
+            aggregate.cost_usage_provenance,
+            aggregate.unavailable_reasons,
         )
         if declared_aggregate != recomputed_aggregate:
             raise ValueError(
                 "runtime telemetry aggregate does not match terminal events"
             )
-        covered_execution_ids = {event.execution_id for event in self.terminal_events}
-        if self.status == "available" and (
-            not self.execution_ids or covered_execution_ids != set(self.execution_ids)
-        ):
-            raise ValueError("available runtime telemetry must cover every execution")
+        expected_status = semantic_ledger_status(self.model_attempts)
+        if self.status != expected_status:
+            raise ValueError("runtime telemetry status does not match model attempts")
         if self.prompt_tokens is not None and self.completion_tokens is not None:
             expected_total = self.prompt_tokens + self.completion_tokens
             if self.total_tokens != expected_total:
@@ -388,20 +510,30 @@ class SemanticRuntimeLedgerObservation(BaseModel):
             )
         ):
             raise ValueError("available runtime telemetry must be complete")
-        if self.status == "unavailable" and any(
-            value is not None
-            for value in (
-                self.prompt_tokens,
-                self.completion_tokens,
-                self.total_tokens,
-                self.cost_usd,
-                self.model_latency_seconds,
-            )
-        ):
-            raise ValueError("unavailable runtime telemetry cannot contain values")
-        if self.status == "unavailable" and self.terminal_events:
-            raise ValueError("unavailable runtime telemetry cannot contain events")
         return self
+
+
+def semantic_ledger_status(
+    attempts: tuple[SemanticRuntimeModelAttempt, ...],
+) -> Literal["available", "partial", "unavailable"]:
+    """Derive availability from attempt coverage and observed provider usage."""
+
+    if not attempts or not any(
+        attempt.terminal_outcome is not None for attempt in attempts
+    ):
+        return "unavailable"
+    aggregate = aggregate_semantic_model_attempts(attempts)
+    complete = all(
+        value is not None
+        for value in (
+            aggregate.prompt_tokens,
+            aggregate.completion_tokens,
+            aggregate.total_tokens,
+            aggregate.cost_usd,
+            aggregate.model_latency_seconds,
+        )
+    ) and all(attempt.terminal_outcome is not None for attempt in attempts)
+    return "available" if complete else "partial"
 
 
 class SemanticWallClockObservation(BaseModel):
@@ -536,6 +668,11 @@ class SemanticModelRunSummary(BaseModel):
     decision_counts: SemanticDecisionCounts
     unstable_record_count: int = Field(ge=0)
     record_consensus: tuple[SemanticRecordConsensus, ...]
+    model_attempt_count: int = Field(ge=0)
+    failed_attempt_count: int = Field(ge=0)
+    rejected_attempt_count: int = Field(ge=0)
+    schema_validation_failure_count: int = Field(ge=0)
+    usage_unavailable_attempt_count: int = Field(ge=0)
     telemetry_complete: bool
     total_prompt_tokens: int | None = Field(default=None, ge=0)
     total_completion_tokens: int | None = Field(default=None, ge=0)
@@ -650,8 +787,11 @@ class SemanticModelComparisonReport(BaseModel):
 
 
 __all__ = [
+    "SemanticAttemptStatus",
     "SemanticDecision",
     "SemanticDecisionCounts",
+    "SemanticFailureCause",
+    "SemanticFailureStage",
     "SemanticModelAdoptionDecision",
     "SemanticModelComparisonProtocol",
     "SemanticModelComparisonReport",
@@ -662,12 +802,14 @@ __all__ = [
     "SemanticRecordConsensus",
     "SemanticRecordDecision",
     "SemanticRunTelemetry",
-    "SemanticCostDerivation",
     "SemanticRuntimeEventAggregate",
     "SemanticRuntimeLedgerObservation",
-    "SemanticRuntimeTerminalEvent",
-    "SemanticTerminalCostDerivation",
+    "SemanticRuntimeModelAttempt",
+    "SemanticTelemetryUnavailableReason",
+    "SemanticTerminalOutcome",
+    "SemanticUsageProvenance",
     "SemanticWallClockObservation",
-    "aggregate_semantic_terminal_events",
-    "semantic_terminal_events_sha256",
+    "aggregate_semantic_model_attempts",
+    "semantic_ledger_status",
+    "semantic_model_attempts_sha256",
 ]

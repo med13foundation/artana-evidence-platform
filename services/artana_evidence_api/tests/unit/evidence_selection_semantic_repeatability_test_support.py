@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -34,10 +35,10 @@ from artana_evidence_api.evidence_selection.repeatability.contracts import (
     SemanticModelRole,
     SemanticRunTelemetry,
     SemanticRuntimeLedgerObservation,
-    SemanticRuntimeTerminalEvent,
+    SemanticRuntimeModelAttempt,
     SemanticWallClockObservation,
-    aggregate_semantic_terminal_events,
-    semantic_terminal_events_sha256,
+    aggregate_semantic_model_attempts,
+    semantic_model_attempts_sha256,
 )
 from artana_evidence_api.evidence_selection.repeatability.protocol import (
     build_semantic_model_comparison_protocol,
@@ -46,6 +47,11 @@ from artana_evidence_api.evidence_selection.repeatability.protocol import (
 )
 from artana_evidence_api.evidence_selection.repeatability.source_provenance import (
     build_repository_source_files,
+)
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticAttemptRecorder,
+    SemanticLocalValidationFailure,
+    SemanticModelAttemptContext,
 )
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
@@ -103,6 +109,9 @@ class ExpectedLabelRunner:
         self._execution_prefix = execution_prefix
         self._call_count = 0
         self._execution_ids: list[str] = []
+        self._attempt_recorder = SemanticAttemptRecorder(
+            step_key="evidence_selection.semantic_selector.v2",
+        )
 
     async def assess(
         self,
@@ -110,6 +119,14 @@ class ExpectedLabelRunner:
         context: EvidenceSelectionSemanticContext,
     ) -> EvidenceSelectionSemanticBatchContract:
         self._call_count += 1
+        run_id = f"{self._execution_prefix}-batch-{self._call_count}"
+        self._execution_ids.append(run_id)
+        self._attempt_recorder.start_attempt(
+            execution_id=run_id,
+            source_key=context.source_key,
+            search_id=context.search_id,
+            record_references=context.record_references,
+        )
         assessments: list[EvidenceSelectionSemanticCandidateAssessment] = []
         for index, record in zip(
             context.record_indices,
@@ -129,8 +146,6 @@ class ExpectedLabelRunner:
                     decision=decision,
                 ),
             )
-        run_id = f"{self._execution_prefix}-batch-{self._call_count}"
-        self._execution_ids.append(run_id)
         return EvidenceSelectionSemanticBatchContract(
             schema_version="evidence_selection_semantic_agent.v2",
             agent_run_id=run_id,
@@ -145,6 +160,15 @@ class ExpectedLabelRunner:
 
     def execution_ids(self) -> tuple[str, ...]:
         return tuple(self._execution_ids)
+
+    def model_attempts(self) -> tuple[SemanticModelAttemptContext, ...]:
+        return self._attempt_recorder.attempts()
+
+    def record_local_validation_failure(
+        self,
+        failure: SemanticLocalValidationFailure,
+    ) -> None:
+        self._attempt_recorder.record_local_validation_failure(failure)
 
 
 async def build_model_runs(
@@ -358,42 +382,61 @@ def _telemetry(
     event_count = len(execution_ids)
     cost_values = _split_float(cost_usd, event_count)
     elapsed_values = _split_int(round(latency_seconds * 1000), event_count)
-    terminal_events = tuple(
-        SemanticRuntimeTerminalEvent(
+    model_attempts = tuple(
+        SemanticRuntimeModelAttempt(
             execution_id=execution_id,
-            outcome="completed",
+            batch_id=f"semantic_batch_{hashlib.sha256(execution_id.encode()).hexdigest()[:32]}",
+            attempt_sequence=index + 1,
+            batch_attempt_number=1,
+            source_key="pubmed",
+            search_id=f"search-{index + 1}",
+            record_references=(
+                f"sr_{hashlib.sha256(execution_id.encode()).hexdigest()[:32]}",
+            ),
+            step_key="evidence_selection.semantic_selector.v2",
+            status="completed",
+            terminal_outcome="completed",
             model_id=model_id,
             model_cycle_id=f"cycle-{execution_id}",
             source_model_requested_event_id=f"request-{execution_id}",
+            terminal_event_id=f"terminal-{index + 1}",
+            terminal_event_seq=index + 1,
+            terminal_event_hash=hashlib.sha256(
+                f"terminal-{execution_id}".encode(),
+            ).hexdigest(),
             elapsed_ms=elapsed_values[index],
             prompt_tokens=1000,
             completion_tokens=200,
             cost_usd=cost_values[index] if status == "available" else None,
-            cost_derivation=(
-                "provider_reported" if status == "available" else "unavailable"
+            token_usage_provenance="artana_model_terminal",
+            cost_usage_provenance=(
+                "artana_model_terminal" if status == "available" else "unavailable"
+            ),
+            cost_usage_unavailable_reason=(
+                None if status == "available" else "artana_terminal_missing_cost_usage"
             ),
         )
         for index, execution_id in enumerate(execution_ids)
     )
-    aggregate = aggregate_semantic_terminal_events(terminal_events)
-    ledger_payload: JSONObject = {
-        "status": status,
-        "expected_model_id": model_id,
-        "execution_ids": execution_ids,
-        "model_terminal_count": len(execution_ids),
-        "terminal_events": tuple(
-            event.model_dump(mode="json") for event in terminal_events
-        ),
-        "terminal_events_sha256": semantic_terminal_events_sha256(terminal_events),
-        "prompt_tokens": aggregate.prompt_tokens,
-        "completion_tokens": aggregate.completion_tokens,
-        "total_tokens": aggregate.total_tokens,
-        "cost_usd": aggregate.cost_usd,
-        "model_latency_seconds": aggregate.model_latency_seconds,
-        "cost_derivation": aggregate.cost_derivation,
-    }
+    aggregate = aggregate_semantic_model_attempts(model_attempts)
     return SemanticRunTelemetry(
-        ledger=SemanticRuntimeLedgerObservation.model_validate(ledger_payload),
+        ledger=SemanticRuntimeLedgerObservation(
+            status=status,
+            expected_model_id=model_id,
+            execution_ids=execution_ids,
+            model_attempt_count=len(execution_ids),
+            model_terminal_count=len(execution_ids),
+            model_attempts=model_attempts,
+            model_attempts_sha256=semantic_model_attempts_sha256(model_attempts),
+            prompt_tokens=aggregate.prompt_tokens,
+            completion_tokens=aggregate.completion_tokens,
+            total_tokens=aggregate.total_tokens,
+            cost_usd=aggregate.cost_usd,
+            model_latency_seconds=aggregate.model_latency_seconds,
+            token_usage_provenance=aggregate.token_usage_provenance,
+            cost_usage_provenance=aggregate.cost_usage_provenance,
+            unavailable_reasons=aggregate.unavailable_reasons,
+        ),
         wall_clock=SemanticWallClockObservation(
             execution_ids=execution_ids,
             elapsed_seconds=latency_seconds + 0.2,

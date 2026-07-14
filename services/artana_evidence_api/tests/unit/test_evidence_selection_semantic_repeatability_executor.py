@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -33,6 +34,10 @@ from artana_evidence_api.evidence_selection.repeatability.source_provenance impo
 from artana_evidence_api.evidence_selection.repeatability.verifier import (
     verify_semantic_comparison_bundle,
 )
+from artana_evidence_api.evidence_selection.semantic.attempts import (
+    SemanticLocalValidationFailure,
+    SemanticModelAttemptContext,
+)
 from artana_evidence_api.evidence_selection.semantic.contracts import (
     EvidenceSelectionSemanticBatchContract,
 )
@@ -62,11 +67,16 @@ class _LedgerStore:
         return [
             SimpleNamespace(
                 event_type=EventType.MODEL_TERMINAL,
+                event_id=f"terminal-{execution_id}",
+                run_id=execution_id,
+                seq=2,
+                event_hash=hashlib.sha256(execution_id.encode()).hexdigest(),
                 payload=ModelTerminalPayload(
                     outcome="completed",
                     model=execution_id.split("|", 1)[0],
                     model_cycle_id=f"cycle-{execution_id}",
                     source_model_requested_event_id=f"request-{execution_id}",
+                    step_key="evidence_selection.semantic_selector.v2",
                     elapsed_ms=100,
                     prompt_tokens=50,
                     completion_tokens=10,
@@ -100,6 +110,15 @@ class _RetryOnceRunner:
 
     def execution_ids(self) -> tuple[str, ...]:
         return self._inner.execution_ids()
+
+    def model_attempts(self) -> tuple[SemanticModelAttemptContext, ...]:
+        return self._inner.model_attempts()
+
+    def record_local_validation_failure(
+        self,
+        failure: SemanticLocalValidationFailure,
+    ) -> None:
+        self._inner.record_local_validation_failure(failure)
 
 
 @pytest.mark.asyncio
@@ -220,6 +239,17 @@ async def test_executor_accounts_for_failed_validation_retry_executions(
     assert first_run.telemetry.ledger.total_tokens == 60 * len(
         first_run.agent_run_ids,
     )
+    attempts = first_run.telemetry.ledger.model_attempts
+    assert attempts[0].status == "rejected"
+    assert attempts[0].failure_stage == "semantic_batch_validation"
+    assert attempts[0].failure_cause == "record_coverage_mismatch"
+    assert attempts[0].batch_id == attempts[1].batch_id
+    assert attempts[0].batch_attempt_number == 1
+    assert attempts[1].batch_attempt_number == 2
+    markdown = (output_dir / "semantic_model_comparison_report.md").read_text()
+    assert "## Failed Attempt Telemetry" in markdown
+    assert "semantic_batch_validation" in markdown
+    assert "record_coverage_mismatch" in markdown
 
 
 @pytest.mark.asyncio
