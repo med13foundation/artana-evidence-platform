@@ -118,6 +118,35 @@ def test_pending_records_and_ambiguous_canaries_never_leak_into_scores() -> None
     assert score.pending_expert_record_count == 30
 
 
+def test_partial_expert_eligibility_keeps_adoption_and_canaries_unavailable() -> None:
+    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
+    evaluation = evaluate_benchmark_v2(loaded)
+    first_record = evaluation.records[0].model_copy(
+        update={
+            "eligibility_status": "score_eligible",
+            "score_eligible": True,
+            "expert_label": "select",
+            "exclusion_reasons": (),
+        },
+    )
+    partial_evaluation = evaluation.model_copy(
+        update={
+            "expert_study_status": "externally_attested",
+            "records": (first_record, *evaluation.records[1:]),
+        },
+    )
+
+    score = score_benchmark_v2(
+        evaluation=partial_evaluation,
+        predictions=load_semantic_prediction_artifact(PREDICTION_PATH).predictions,
+    )
+
+    assert score.score_eligible_record_count == 1
+    assert score.excluded_record_count == 32
+    assert score.adoption_metrics is None
+    assert score.canary_gate_status == "unavailable"
+
+
 def test_packet_manifest_marks_known_defects_insufficient() -> None:
     loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
 
@@ -190,13 +219,15 @@ def test_report_builder_rejects_forged_score_for_pending_evaluation() -> None:
         predictions=predictions,
     )
     assert forged_score.score_eligible_record_count == 1
-    assert forged_score.adoption_metrics is not None
+    assert forged_score.adoption_metrics is None
+    assert forged_score.canary_gate_status == "unavailable"
 
     with pytest.raises(TypeError, match="unexpected keyword argument 'score'"):
         build_benchmark_v2_report(
             fixture_path=FIXTURE_PATH,
             prediction_path=PREDICTION_PATH,
             evaluation=pending_evaluation,
+            repository_root=Path.cwd(),
             score=forged_score,  # type: ignore[call-arg]
             generated_at=datetime(2026, 7, 13, tzinfo=UTC),
         )
@@ -205,11 +236,31 @@ def test_report_builder_rejects_forged_score_for_pending_evaluation() -> None:
         fixture_path=FIXTURE_PATH,
         prediction_path=PREDICTION_PATH,
         evaluation=pending_evaluation,
+        repository_root=Path.cwd(),
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
     )
     assert report.score.score_eligible_record_count == 0
     assert report.score.adoption_metrics is None
     assert report.score.canary_gate_status == "unavailable"
+
+
+def test_report_builder_rejects_prediction_with_wrong_baseline_provenance(
+    tmp_path: Path,
+) -> None:
+    prediction_payload = json.loads(PREDICTION_PATH.read_text(encoding="utf-8"))
+    prediction_payload["baseline_model"] = "openai:different-model"
+    prediction_path = tmp_path / "wrong-baseline-predictions.json"
+    prediction_path.write_text(json.dumps(prediction_payload), encoding="utf-8")
+    loaded = load_benchmark_v2(fixture_path=FIXTURE_PATH, repository_root=Path.cwd())
+
+    with pytest.raises(ValueError, match="baseline identity does not match"):
+        build_benchmark_v2_report(
+            fixture_path=FIXTURE_PATH,
+            prediction_path=prediction_path,
+            evaluation=evaluate_benchmark_v2(loaded),
+            repository_root=Path.cwd(),
+            generated_at=datetime(2026, 7, 13, tzinfo=UTC),
+        )
 
 
 def test_forged_numeric_metric_envelope_is_rejected() -> None:
@@ -323,6 +374,7 @@ def test_report_wording_is_honest_and_keeps_excluded_records_visible() -> None:
         fixture_path=FIXTURE_PATH,
         prediction_path=PREDICTION_PATH,
         evaluation=evaluation,
+        repository_root=Path.cwd(),
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
     )
 

@@ -143,6 +143,10 @@ class SemanticModelComparisonProtocol(BaseModel):
             raise ValueError(
                 "benchmark evaluation must match the frozen benchmark fixture"
             )
+        if self.benchmark_evaluation.historical_v1_sha256 != self.fixture_sha256:
+            raise ValueError(
+                "benchmark evaluation must match the frozen historical fixture"
+            )
         paths = tuple(source.relative_path for source in self.repository_source_files)
         if len(set(paths)) != len(paths):
             raise ValueError("repository source paths must be unique")

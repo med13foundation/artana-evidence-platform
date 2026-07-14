@@ -20,6 +20,7 @@ from artana_evidence_api.evidence_selection.repeatability.comparison import (
     build_semantic_model_comparison,
 )
 from artana_evidence_api.evidence_selection.repeatability.contracts import (
+    SemanticModelComparisonProtocol,
     SemanticModelComparisonThresholds,
     SemanticModelEvaluationRun,
 )
@@ -31,6 +32,15 @@ from .evidence_selection_semantic_repeatability_test_support import (
     comparison_protocol,
     load_fixture,
 )
+
+
+def test_protocol_binds_benchmark_to_exact_historical_fixture() -> None:
+    protocol = comparison_protocol()
+    payload = protocol.model_dump()
+    payload["benchmark_evaluation"]["historical_v1_sha256"] = "f" * 64
+
+    with pytest.raises(ValidationError, match="frozen historical fixture"):
+        SemanticModelComparisonProtocol.model_validate(payload)
 
 
 @pytest.mark.asyncio

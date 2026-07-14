@@ -393,18 +393,21 @@ class EvidenceSelectionBenchmarkV2Score(BaseModel):
             outcome.score_eligible and outcome.evaluation_role == "canary"
             for outcome in self.record_outcomes
         )
-        if (self.canary_gate_status == "unavailable") != (eligible_canary_count == 0):
+        complete_inventory = eligible == self.total_record_count
+        canary_unavailable = not complete_inventory or eligible_canary_count == 0
+        if (self.canary_gate_status == "unavailable") != canary_unavailable:
             raise ValueError(
-                "canary availability must follow eligible canary inventory"
+                "canary availability requires the complete eligible inventory"
             )
         eligible_primary = tuple(
             outcome
             for outcome in self.record_outcomes
             if outcome.score_eligible and outcome.evaluation_role == "primary"
         )
-        if (self.adoption_metrics is None) != (not eligible_primary):
+        metrics_unavailable = not complete_inventory or not eligible_primary
+        if (self.adoption_metrics is None) != metrics_unavailable:
             raise ValueError(
-                "adoption metric availability must follow eligible primary inventory"
+                "adoption metrics require the complete eligible inventory"
             )
         if self.adoption_metrics is not None and (
             self.adoption_metrics.record_count != len(eligible_primary)
@@ -461,7 +464,7 @@ class EvidenceSelectionBenchmarkV2Score(BaseModel):
                     "adoption metrics must be recomputed from eligible outcomes"
                 )
         expected_canary_status = "unavailable"
-        if eligible_canary_count:
+        if complete_inventory and eligible_canary_count:
             expected_canary_status = (
                 "passed"
                 if all(

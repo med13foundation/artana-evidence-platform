@@ -8,12 +8,14 @@ from pathlib import Path
 
 from artana_evidence_api.evidence_selection.diagnostics.predictions import (
     EvidenceSelectionSemanticPredictionArtifact,
+    verify_prediction_provenance,
 )
 
 from .contracts import (
     EvidenceSelectionBenchmarkEvaluation,
     EvidenceSelectionBenchmarkV2Report,
 )
+from .loader import load_benchmark_v2
 from .scoring import score_benchmark_v2
 
 
@@ -22,6 +24,7 @@ def build_benchmark_v2_report(
     fixture_path: Path,
     prediction_path: Path,
     evaluation: EvidenceSelectionBenchmarkEvaluation,
+    repository_root: Path,
     generated_at: datetime,
 ) -> EvidenceSelectionBenchmarkV2Report:
     """Load categorical predictions and recompute the exact reported score."""
@@ -34,6 +37,17 @@ def build_benchmark_v2_report(
         EvidenceSelectionSemanticPredictionArtifact.model_validate_json(
             prediction_bytes,
         )
+    )
+    loaded = load_benchmark_v2(
+        fixture_path=fixture_path,
+        repository_root=repository_root,
+    )
+    if loaded.fixture_sha256 != evaluation.fixture_sha256:
+        raise ValueError("report evaluation does not match the loaded benchmark")
+    verify_prediction_provenance(
+        fixture=loaded.historical_v1,
+        artifact=prediction_artifact,
+        repository_root=repository_root,
     )
     score = score_benchmark_v2(
         evaluation=evaluation,

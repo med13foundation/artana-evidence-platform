@@ -48,6 +48,7 @@ def score_benchmark_v2(
         if outcome.score_eligible and outcome.evaluation_role == "canary"
     )
     eligible_count = sum(outcome.score_eligible for outcome in outcomes)
+    complete_inventory = eligible_count == len(outcomes)
     return EvidenceSelectionBenchmarkV2Score(
         total_record_count=len(outcomes),
         score_eligible_record_count=eligible_count,
@@ -60,9 +61,15 @@ def score_benchmark_v2(
             outcome.eligibility_status == "pending_expert" for outcome in outcomes
         ),
         adoption_metrics=(
-            metrics_for_outcomes(eligible_primary) if eligible_primary else None
+            metrics_for_outcomes(eligible_primary)
+            if complete_inventory and eligible_primary
+            else None
         ),
-        canary_gate_status=_canary_gate_status(eligible_canaries),
+        canary_gate_status=(
+            _canary_gate_status(eligible_canaries)
+            if complete_inventory
+            else "unavailable"
+        ),
         record_outcomes=outcomes,
     )
 

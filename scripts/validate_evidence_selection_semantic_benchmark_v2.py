@@ -56,6 +56,7 @@ def main(argv: tuple[str, ...] | None = None) -> int:
             fixture_path=args.fixture,
             prediction_path=args.predictions,
             evaluation=evaluation,
+            repository_root=Path.cwd(),
             generated_at=_parse_generated_at(args.generated_at),
         )
         content_by_path = {
