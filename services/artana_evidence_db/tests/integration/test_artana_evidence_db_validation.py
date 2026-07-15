@@ -1142,6 +1142,129 @@ def test_ai_cannot_mark_workflow_resolved_without_server_application(
     assert "cannot mark workflows resolved" in action_response.text
 
 
+def test_ai_cannot_approve_conflict_even_when_low_risk_policy_allows_ai(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    principal = "agent:conflict-policy"
+    _enable_ai_workflows(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        ai_principal=principal,
+        batch_auto_apply_low_risk=True,
+    )
+    workflow_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers=admin_headers,
+        json={
+            "kind": "conflict_resolution",
+            "input_payload": {"claim_ids": []},
+            "source_ref": "direct-conflict-policy-check",
+        },
+    )
+    assert workflow_response.status_code == 201, workflow_response.text
+    workflow = workflow_response.json()
+    action_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{workflow['id']}/actions",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": principal,
+        },
+        json={
+            "action": "approve",
+            "input_hash": workflow["workflow_hash"],
+            "risk_tier": "low",
+            "confidence_assessment": _AI_DECISION_CONFIDENCE_ASSESSMENT,
+            "ai_decision": {
+                "ai_principal": principal,
+                "rationale": "Attempt a risk-matched conflict approval.",
+            },
+        },
+    )
+
+    assert action_response.status_code == 400, action_response.text
+    assert "cannot resolve conflict workflows" in action_response.text
+
+
+def test_nested_workflow_risk_is_derived_independently_of_outer_batch(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    principal = "agent:nested-risk"
+    _enable_ai_workflows(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        ai_principal=principal,
+        batch_auto_apply_low_risk=True,
+    )
+    target_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers=admin_headers,
+        json={
+            "kind": "bootstrap_review",
+            "input_payload": {},
+            "source_ref": "nested-risk-target",
+        },
+    )
+    assert target_response.status_code == 201, target_response.text
+    target = target_response.json()
+    batch_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": principal,
+        },
+        json={
+            "kind": "batch_review",
+            "input_payload": {
+                "generated_resources": [
+                    {
+                        "resource_type": "workflow",
+                        "resource_id": target["id"],
+                        "action": "approve",
+                        "input_hash": target["workflow_hash"],
+                    },
+                ],
+            },
+            "source_ref": "nested-risk-batch",
+        },
+    )
+    assert batch_response.status_code == 201, batch_response.text
+    batch = batch_response.json()
+
+    action_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{batch['id']}/actions",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": principal,
+        },
+        json={
+            "action": "approve",
+            "input_hash": batch["workflow_hash"],
+            "risk_tier": "low",
+            "confidence_assessment": _AI_DECISION_CONFIDENCE_ASSESSMENT,
+            "ai_decision": {
+                "ai_principal": principal,
+                "rationale": "Apply only genuinely low-risk nested work.",
+            },
+        },
+    )
+
+    assert action_response.status_code == 200, action_response.text
+    applied_batch = action_response.json()
+    assert applied_batch["status"] == "CHANGES_REQUESTED"
+    failures = applied_batch["generated_resources_payload"]["failed_resource_refs"]
+    assert len(failures) == 1
+    assert "risk_tier" in failures[0]["reason"]
+    target_after = graph_client.get(
+        f"/v1/spaces/{space_id}/workflows/{target['id']}",
+        headers=admin_headers,
+    ).json()
+    assert target_after["status"] == "PLAN_READY"
+
+
 def test_noncanonical_ai_principal_is_rejected_at_authentication(
     graph_client: TestClient,
 ) -> None:

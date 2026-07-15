@@ -41,11 +41,13 @@ ProviderReceiptFailure = Literal[
     "invocation_topology_mismatch",
     "source_binding_mismatch",
     "input_binding_mismatch",
+    "evidence_unit_binding_mismatch",
     "output_missing",
     "output_message_role_mismatch",
     "output_message_status_mismatch",
     "output_hash_mismatch",
     "payload_parse_failed",
+    "payload_expectation_missing",
     "payload_hash_mismatch",
     "input_retrieve_failed",
     "input_topology_mismatch",
@@ -82,12 +84,13 @@ class ProviderReceiptExpectation:
     expected_case_id: str
     expected_model_id: str
     expected_output_sha256: str
-    expected_payload_sha256: str
+    expected_payload_sha256: str | None
     expected_prompt_sha256: str
     expected_invocation_id: str
     expected_kernel_run_id: str
     expected_source_sha256: str
     expected_input_sha256: str
+    expected_evidence_unit_sha256: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,7 +105,7 @@ class ProviderReceiptEvidence:
     retrieved_model_id: str | None
     expected_output_sha256: str
     retrieved_output_sha256: str | None
-    expected_payload_sha256: str
+    expected_payload_sha256: str | None
     retrieved_payload_sha256: str | None
     expected_prompt_sha256: str
     retrieved_prompt_sha256: str | None
@@ -114,6 +117,8 @@ class ProviderReceiptEvidence:
     retrieved_source_sha256: str | None
     expected_input_sha256: str
     retrieved_input_sha256: str | None
+    expected_evidence_unit_sha256: str
+    retrieved_evidence_unit_sha256: str | None
     provider_status: str | None
     response_completed_verified: bool
     incomplete_details_absent: bool
@@ -145,6 +150,8 @@ class ProviderReceiptEvidence:
             "retrieved_source_sha256": self.retrieved_source_sha256,
             "expected_input_sha256": self.expected_input_sha256,
             "retrieved_input_sha256": self.retrieved_input_sha256,
+            "expected_evidence_unit_sha256": self.expected_evidence_unit_sha256,
+            "retrieved_evidence_unit_sha256": self.retrieved_evidence_unit_sha256,
             "provider_status": self.provider_status,
             "response_completed_verified": self.response_completed_verified,
             "incomplete_details_absent": self.incomplete_details_absent,
@@ -209,6 +216,7 @@ class _RetrievedReceiptFields:
     kernel_run_id: str | None = None
     source_sha256: str | None = None
     input_sha256: str | None = None
+    evidence_unit_sha256: str | None = None
     provider_status: str | None = None
     response_completed_verified: bool = False
     incomplete_details_absent: bool = False
@@ -316,6 +324,13 @@ def _verify_response_output(
             expectation,
             status="mismatched",
             failure="output_hash_mismatch",
+            retrieved=fields,
+        )
+    if expectation.expected_payload_sha256 is None:
+        return _receipt_evidence(
+            expectation,
+            status="mismatched",
+            failure="payload_expectation_missing",
             retrieved=fields,
         )
     try:
@@ -514,6 +529,7 @@ def _verify_provider_input(
         kernel_run_id=invocation_binding.kernel_run_id,
         source_sha256=invocation_binding.source_sha256,
         input_sha256=invocation_binding.input_sha256,
+        evidence_unit_sha256=invocation_binding.evidence_unit_sha256,
         input_topology_verified=True,
         invocation_topology_supported=True,
     )
@@ -540,6 +556,16 @@ def _verify_provider_input(
             expectation,
             status="mismatched",
             failure="input_binding_mismatch",
+            retrieved=bound_fields,
+        )
+    if (
+        invocation_binding.evidence_unit_sha256
+        != expectation.expected_evidence_unit_sha256
+    ):
+        return _receipt_evidence(
+            expectation,
+            status="mismatched",
+            failure="evidence_unit_binding_mismatch",
             retrieved=bound_fields,
         )
     if prompt_hash != expectation.expected_prompt_sha256:
@@ -636,6 +662,8 @@ def _receipt_evidence(
         retrieved_source_sha256=fields.source_sha256,
         expected_input_sha256=expectation.expected_input_sha256,
         retrieved_input_sha256=fields.input_sha256,
+        expected_evidence_unit_sha256=(expectation.expected_evidence_unit_sha256),
+        retrieved_evidence_unit_sha256=fields.evidence_unit_sha256,
         provider_status=fields.provider_status,
         response_completed_verified=fields.response_completed_verified,
         incomplete_details_absent=fields.incomplete_details_absent,

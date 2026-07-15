@@ -412,7 +412,12 @@ def _validate_attempt_contract(
     )
     if attempt_provider_model != expected_provider_model:
         raise ValueError("model-attempt model_id does not match the report model")
-    for key in ("prompt_sha256", "source_sha256", "input_sha256"):
+    for key in (
+        "prompt_sha256",
+        "source_sha256",
+        "input_sha256",
+        "evidence_unit_sha256",
+    ):
         _validate_hash(attempt, key)
     _required_string(attempt, "output_schema_identity")
     _validate_payload_hash(attempt)

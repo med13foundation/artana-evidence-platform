@@ -20,6 +20,10 @@ from scripts.validation.claim_frames.inventory_scoring import evaluate_inventory
 from scripts.validation.claim_frames.metrics import build_run_report, evaluate_case
 
 if TYPE_CHECKING:
+    from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+        ModelAttemptAuditRecord,
+    )
+
     from scripts.validation.claim_frames.fixture import BenchmarkFixture
 
 _SPACE_CONTEXT: Final = "TG-03 frozen ClaimFrame qualifier benchmark."
@@ -83,7 +87,7 @@ async def _run_live_benchmark(
     case_results: list[dict[str, object]] = []
     for case in fixture.cases:
         invocation_id = f"tg03-invocation-{uuid4().hex}"
-        audit_session = start_model_attempt_audit()
+        audit_session = start_model_attempt_audit(evidence_unit_id=case.case_id)
         try:
             raw_output: dict[str, object]
             candidates, diagnostics = await discover_relation_candidates_strict(
@@ -104,8 +108,8 @@ async def _run_live_benchmark(
             }
             raw_output = {
                 "attempts": [record.as_json() for record in audit_session.records],
-                "accepted_pass_payloads": list(
-                    getattr(candidates, "raw_agent_outputs", ()),
+                "accepted_pass_payloads": _accepted_pass_payloads(
+                    audit_session.records,
                 ),
             }
             diagnostic_payload: dict[str, object] = {
@@ -140,7 +144,9 @@ async def _run_live_benchmark(
             frame_payloads = ()
             raw_output = {
                 "attempts": [record.as_json() for record in audit_session.records],
-                "accepted_pass_payloads": [],
+                "accepted_pass_payloads": _accepted_pass_payloads(
+                    audit_session.records,
+                ),
                 "strict_error_type": type(exc).__name__,
             }
             postprocessed_output = {"relations": []}
@@ -209,6 +215,20 @@ async def _run_live_benchmark(
         case_results=case_results,
         repository_evidence=configuration.repository_evidence,
     )
+
+
+def _accepted_pass_payloads(
+    records: list[ModelAttemptAuditRecord],
+) -> list[dict[str, object]]:
+    payloads: list[dict[str, object]] = []
+    for record in records:
+        if record.validation_outcome != "accepted":
+            continue
+        payload = record.raw_model_payload
+        if payload is None:
+            raise ValueError("accepted model attempt is missing its raw payload")
+        payloads.append(payload)
+    return payloads
 
 
 def configured_model_id() -> str:

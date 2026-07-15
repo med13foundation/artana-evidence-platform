@@ -91,6 +91,7 @@ class ModelAttemptAuditRecord:
     prompt_sha256: str
     source_sha256: str
     input_sha256: str
+    evidence_unit_sha256: str
     semantic_unit_id: str | None
     output_schema_identity: str
     provider_execution_response_id: str | None
@@ -126,6 +127,7 @@ class ModelAttemptAuditRecord:
                 "prompt_sha256": self.prompt_sha256,
                 "source_sha256": self.source_sha256,
                 "input_sha256": self.input_sha256,
+                "evidence_unit_sha256": self.evidence_unit_sha256,
                 "semantic_unit_id": self.semantic_unit_id,
                 "output_schema_identity": self.output_schema_identity,
                 "provider_execution_response_id": (self.provider_execution_response_id),
@@ -147,6 +149,7 @@ class ModelAttemptAuditSession:
     """Mutable collection scope whose records remain immutable."""
 
     records: list[ModelAttemptAuditRecord] = field(default_factory=list)
+    evidence_unit_sha256: str | None = None
     context_token: Token[ModelAttemptAuditSession | None] | None = field(
         default=None,
         repr=False,
@@ -159,10 +162,19 @@ _MODEL_ATTEMPT_AUDIT_SESSION: ContextVar[ModelAttemptAuditSession | None] = Cont
 )
 
 
-def start_model_attempt_audit() -> ModelAttemptAuditSession:
+def start_model_attempt_audit(
+    *,
+    evidence_unit_id: str | None = None,
+) -> ModelAttemptAuditSession:
     """Start an audit scope inherited by child asyncio tasks."""
 
-    session = ModelAttemptAuditSession()
+    if evidence_unit_id is not None and not evidence_unit_id.strip():
+        raise ValueError("evidence_unit_id must be nonempty when provided")
+    session = ModelAttemptAuditSession(
+        evidence_unit_sha256=(
+            _sha256_text(evidence_unit_id) if evidence_unit_id is not None else None
+        ),
+    )
     session.context_token = _MODEL_ATTEMPT_AUDIT_SESSION.set(session)
     return session
 
@@ -179,6 +191,15 @@ def current_model_attempt_audit() -> ModelAttemptAuditSession | None:
     """Return the active audit session, if one exists."""
 
     return _MODEL_ATTEMPT_AUDIT_SESSION.get()
+
+
+def model_attempt_evidence_unit_sha256(*, default: str) -> str:
+    """Return the active evidence-unit binding or a source-bound default."""
+
+    session = current_model_attempt_audit()
+    if session is None or session.evidence_unit_sha256 is None:
+        return default
+    return session.evidence_unit_sha256
 
 
 def model_attempt_audit_manifest(
@@ -298,6 +319,9 @@ def _build_model_attempt_record(
         prompt_sha256=_sha256_text(prompt),
         source_sha256=audit_context.source_sha256,
         input_sha256=audit_context.input_sha256,
+        evidence_unit_sha256=model_attempt_evidence_unit_sha256(
+            default=audit_context.source_sha256,
+        ),
         semantic_unit_id=audit_context.semantic_unit_id,
         output_schema_identity=(
             f"{output_schema.__module__}.{output_schema.__qualname__}"
@@ -448,6 +472,7 @@ __all__ = [
     "current_model_attempt_audit",
     "freeze_model_boundary_output",
     "model_attempt_audit_manifest",
+    "model_attempt_evidence_unit_sha256",
     "record_model_attempt",
     "record_skipped_model_attempt",
     "start_model_attempt_audit",

@@ -463,6 +463,10 @@ def _model_attempt_evidence(case: Mapping[str, object]) -> list[JsonObject]:
             "prompt_sha256": _required_nonempty_string(attempt, "prompt_sha256"),
             "source_sha256": _required_nonempty_string(attempt, "source_sha256"),
             "input_sha256": _required_nonempty_string(attempt, "input_sha256"),
+            "evidence_unit_sha256": _required_nonempty_string(
+                attempt,
+                "evidence_unit_sha256",
+            ),
             "semantic_unit_id": attempt.get("semantic_unit_id"),
             "output_schema_identity": _required_nonempty_string(
                 attempt,
@@ -521,31 +525,42 @@ def _provider_receipt_expectations_from_cases(
         expected_source_sha256 = hashlib.sha256(
             expected_case.source_text.encode("utf-8"),
         ).hexdigest()
+        expected_evidence_unit_sha256 = hashlib.sha256(
+            case_id.encode("utf-8"),
+        ).hexdigest()
         attempts = validate_model_attempt_records(
             case.get("raw_agent_output"),
             expected_model_id=report_model_id,
         )
         for attempt in attempts:
-            if not all(
-                isinstance(attempt.get(key), str) and bool(attempt.get(key))
-                for key in (
+            outcome = attempt.get("validation_outcome")
+            if outcome == "intentionally_skipped":
+                continue
+            if (
+                outcome == "invocation_failed"
+                and attempt.get(
                     "provider_response_id",
-                    "provider_output_sha256",
-                    "payload_sha256",
-                    "kernel_run_id",
                 )
+                is None
             ):
                 continue
             expectations.append(
                 ProviderReceiptExpectation(
-                    response_id=cast("str", attempt["provider_response_id"]),
+                    response_id=_required_nonempty_string(
+                        attempt,
+                        "provider_response_id",
+                    ),
                     expected_case_id=case_id,
                     expected_model_id=provider_model_id,
-                    expected_output_sha256=cast(
-                        "str",
-                        attempt["provider_output_sha256"],
+                    expected_output_sha256=_required_nonempty_string(
+                        attempt,
+                        "provider_output_sha256",
                     ),
-                    expected_payload_sha256=cast("str", attempt["payload_sha256"]),
+                    expected_payload_sha256=(
+                        cast("str", attempt["payload_sha256"])
+                        if isinstance(attempt.get("payload_sha256"), str)
+                        else None
+                    ),
                     expected_prompt_sha256=_required_nonempty_string(
                         attempt,
                         "prompt_sha256",
@@ -554,12 +569,16 @@ def _provider_receipt_expectations_from_cases(
                         attempt,
                         "invocation_id",
                     ),
-                    expected_kernel_run_id=cast("str", attempt["kernel_run_id"]),
+                    expected_kernel_run_id=_required_nonempty_string(
+                        attempt,
+                        "kernel_run_id",
+                    ),
                     expected_source_sha256=expected_source_sha256,
                     expected_input_sha256=_required_nonempty_string(
                         attempt,
                         "input_sha256",
                     ),
+                    expected_evidence_unit_sha256=(expected_evidence_unit_sha256),
                 ),
             )
     return tuple(expectations)

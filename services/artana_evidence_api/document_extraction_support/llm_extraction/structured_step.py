@@ -16,6 +16,7 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
     ModelAttemptAuditContext,
     ModelAttemptValidationOutcome,
     ModelStepResult,
+    model_attempt_evidence_unit_sha256,
     record_model_attempt,
 )
 from pydantic import BaseModel, ValidationError
@@ -60,6 +61,9 @@ async def run_audited_structured_step(
         invocation_id=invocation_id,
         source_sha256=audit_context.source_sha256,
         input_sha256=audit_context.input_sha256,
+        evidence_unit_sha256=model_attempt_evidence_unit_sha256(
+            default=audit_context.source_sha256,
+        ),
     )
     model_result: ModelStepResult | None = None
     raw_output: object | None = None

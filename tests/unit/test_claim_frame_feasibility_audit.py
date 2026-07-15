@@ -809,6 +809,43 @@ def test_live_receipt_rejects_attempts_relabelled_across_fixture_cases() -> None
     assert comparison["gate_passed"] is False
 
 
+def test_live_receipt_binds_case_identity_when_source_text_is_identical() -> None:
+    fixture = _minimal_fixture()
+    base_case = fixture.cases[0]
+    case_a = replace(base_case, case_id="same-source-a", title="Same source A")
+    case_b = replace(base_case, case_id="same-source-b", title="Same source B")
+    multi_fixture = replace(fixture, cases=(case_a, case_b))
+    frame = _actual_frame(base_case.frames[0])
+    reports = [
+        _build_multi_case_report(
+            multi_fixture,
+            run_id=f"evidence-unit-binding-{index}",
+            case_frames=((case_a, (frame,)), (case_b, (frame,))),
+        )
+        for index in range(3)
+    ]
+    verifier = _receipt_verifier(reports)
+    for report in reports:
+        cases = cast("list[dict[str, object]]", report["cases"])
+        cases[0]["raw_agent_output"], cases[1]["raw_agent_output"] = (
+            cases[1]["raw_agent_output"],
+            cases[0]["raw_agent_output"],
+        )
+        _reseal_report(report)
+
+    comparison = compare_three_reports(
+        tuple(reports),
+        multi_fixture,
+        provider_receipt_verifier=verifier,
+    )
+
+    assert comparison["provider_receipt_status"] == "mismatched"
+    assert "evidence_unit_binding_mismatch" in {
+        receipt["failure"] for receipt in comparison["provider_receipts"]["receipts"]
+    }
+    assert comparison["gate_passed"] is False
+
+
 def test_providerless_invocation_failure_is_reportable_without_receipt_credit() -> None:
     source_sha256 = _sha256_text("Drug treated disease.")
     attempt = _synthetic_model_attempt(
@@ -914,6 +951,54 @@ def test_providerless_invocation_failure_is_reported_and_fails_quality_gate() ->
     assert report["gates"]["model_invocation_failures"]["passed"] is False
     assert report["provider_receipts"]["expected_count"] == 0
     assert report["gate_passed"] is False
+
+
+def test_provider_backed_attempt_without_payload_cannot_escape_receipt_gate() -> None:
+    fixture = _minimal_fixture()
+    reports = list(_three_reports(fixture, prefix="missing-provider-payload"))
+    for report_index, report in enumerate(reports):
+        case = report["cases"][0]
+        source_sha256 = _sha256_text(fixture.cases[0].source_text)
+        attempt = _synthetic_model_attempt(
+            invocation_id=f"missing-provider-payload-{report_index}",
+            attempt_role="schema_retry",
+            pass_role="claim_framing",
+            semantic_unit_id=f"missing-payload-unit-{report_index}",
+            source_sha256=source_sha256,
+            input_sha256="e" * 64,
+            raw_model_payload={"malformed": "provider output"},
+            output_schema_identity="synthetic.SingleClaimFramingResult",
+        )
+        attempt.update(
+            {
+                "validation_outcome": "schema_invalid",
+                "raw_model_payload": None,
+                "payload_sha256": None,
+                "error_type": "ValidationError",
+            },
+        )
+        attempt["provider_output_sha256"] = canonical_provider_output_sha256(
+            _provider_output(
+                cast("str", attempt["provider_response_id"]),
+                cast("dict[str, object]", None),
+            ),
+        )
+        case["raw_agent_output"]["attempts"].append(attempt)
+        _reseal_report(report)
+
+    comparison = compare_three_reports(
+        tuple(reports),
+        fixture,
+        provider_receipt_verifier=_receipt_verifier(reports),
+    )
+
+    assert comparison["provider_receipts"]["expected_count"] > 0
+    assert comparison["provider_receipt_status"] == "mismatched"
+    assert "payload_expectation_missing" in {
+        receipt["failure"] for receipt in comparison["provider_receipts"]["receipts"]
+    }
+    assert comparison["gates"]["provider_execution_receipts"]["passed"] is False
+    assert comparison["gate_passed"] is False
 
 
 @pytest.mark.parametrize(
@@ -1890,6 +1975,7 @@ def _build_report(
         invocation_id=f"{run_id}-model-attempt",
         raw_payload=selected_output,
         source_sha256=_sha256_text(selected_case.source_text),
+        evidence_unit_sha256=_sha256_text(selected_case.case_id),
     )
     case_result = evaluate_case(selected_case, selected_frames)
     case_result.update(evaluate_inventory(selected_case, audited_output))
@@ -1937,6 +2023,7 @@ def _build_multi_case_report(
             invocation_id=f"{run_id}-{case.case_id}-model-attempt",
             raw_payload=raw_payload,
             source_sha256=_sha256_text(case.source_text),
+            evidence_unit_sha256=_sha256_text(case.case_id),
         )
         result = evaluate_case(case, frames)
         result.update(evaluate_inventory(case, raw_output))
@@ -2104,6 +2191,7 @@ def _manifest_for_report(report: dict[str, object]) -> dict[str, object]:
                         "prompt_sha256": attempt["prompt_sha256"],
                         "source_sha256": attempt["source_sha256"],
                         "input_sha256": attempt["input_sha256"],
+                        "evidence_unit_sha256": attempt["evidence_unit_sha256"],
                         "semantic_unit_id": attempt.get("semantic_unit_id"),
                         "output_schema_identity": attempt["output_schema_identity"],
                         "payload_sha256": attempt["payload_sha256"],
@@ -2133,6 +2221,7 @@ def _raw_audit_output(
     invocation_id: str,
     raw_payload: dict[str, object],
     source_sha256: str,
+    evidence_unit_sha256: str,
 ) -> dict[str, object]:
     model_payload = _model_boundary_payload(raw_payload)
     raw_relations = cast("list[dict[str, object]]", model_payload.get("relations", []))
@@ -2148,6 +2237,7 @@ def _raw_audit_output(
             semantic_unit_id=None,
             source_sha256=source_sha256,
             input_sha256="f" * 64,
+            evidence_unit_sha256=evidence_unit_sha256,
             raw_model_payload=inventory_payload,
             output_schema_identity="synthetic.ClaimInventoryBatch",
         ),
@@ -2160,6 +2250,7 @@ def _raw_audit_output(
             input_sha256=_sha256_json(
                 [_sha256_json(item) for item in inventory_items],
             ),
+            evidence_unit_sha256=evidence_unit_sha256,
             raw_model_payload={
                 "decision": "COMPLETE",
                 "missing_claims": [],
@@ -2205,6 +2296,7 @@ def _raw_audit_output(
                         "item": inventory_item,
                     },
                 ),
+                evidence_unit_sha256=evidence_unit_sha256,
                 raw_model_payload=framing_payload,
                 output_schema_identity="synthetic.SingleClaimFramingResult",
             ),
@@ -2240,10 +2332,12 @@ def _synthetic_model_attempt(
     semantic_unit_id: str | None,
     source_sha256: str,
     input_sha256: str,
+    evidence_unit_sha256: str | None = None,
     raw_model_payload: dict[str, object],
     output_schema_identity: str,
 ) -> dict[str, object]:
     provider_response_id = _provider_response_id(invocation_id)
+    bound_evidence_unit_sha256 = evidence_unit_sha256 or _sha256_text("synthetic")
     provider_output = _provider_output(provider_response_id, raw_model_payload)
     return {
         "invocation_id": invocation_id,
@@ -2257,10 +2351,12 @@ def _synthetic_model_attempt(
                 invocation_id,
                 source_sha256=source_sha256,
                 input_sha256=input_sha256,
+                evidence_unit_sha256=bound_evidence_unit_sha256,
             ),
         ),
         "source_sha256": source_sha256,
         "input_sha256": input_sha256,
+        "evidence_unit_sha256": bound_evidence_unit_sha256,
         "semantic_unit_id": semantic_unit_id,
         "output_schema_identity": output_schema_identity,
         "validation_outcome": "accepted",
@@ -2329,12 +2425,14 @@ def _provider_prompt(
     *,
     source_sha256: str,
     input_sha256: str,
+    evidence_unit_sha256: str,
 ) -> str:
     return bind_prompt_to_invocation(
         prompt=f"Synthetic TG-03 prompt for {invocation_id}",
         invocation_id=invocation_id,
         source_sha256=source_sha256,
         input_sha256=input_sha256,
+        evidence_unit_sha256=evidence_unit_sha256,
     )
 
 
@@ -2343,6 +2441,7 @@ def _provider_input_items(
     *,
     source_sha256: str,
     input_sha256: str,
+    evidence_unit_sha256: str,
 ) -> list[dict[str, object]]:
     return [
         {
@@ -2355,6 +2454,7 @@ def _provider_input_items(
                         invocation_id,
                         source_sha256=source_sha256,
                         input_sha256=input_sha256,
+                        evidence_unit_sha256=evidence_unit_sha256,
                     ),
                 },
             ],
@@ -2449,6 +2549,10 @@ def _receipt_verifier(
                     cast("str", attempt["invocation_id"]),
                     source_sha256=cast("str", attempt["source_sha256"]),
                     input_sha256=cast("str", attempt["input_sha256"]),
+                    evidence_unit_sha256=cast(
+                        "str",
+                        attempt["evidence_unit_sha256"],
+                    ),
                 )
 
     first_response_id = next(iter(responses))

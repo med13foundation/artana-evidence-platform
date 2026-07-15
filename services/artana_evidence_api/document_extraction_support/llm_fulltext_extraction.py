@@ -70,6 +70,7 @@ from artana_evidence_api.document_extraction_support.llm_extraction.attempt_audi
     current_model_attempt_audit,
     freeze_model_boundary_output,
     model_attempt_audit_manifest,
+    model_attempt_evidence_unit_sha256,
     record_model_attempt,
     record_skipped_model_attempt,
     start_model_attempt_audit,
@@ -962,7 +963,12 @@ async def run_llm_relation_extraction_pass(
         source_text=source_text,
         source_hash=source_hash,
     )
-    return candidates, unknown_relation_types, len(parsed.relations), immutable_raw_output
+    return (
+        candidates,
+        unknown_relation_types,
+        len(parsed.relations),
+        immutable_raw_output,
+    )
 
 
 def _normalize_text_document_for_key(text: str) -> str:
@@ -995,6 +1001,7 @@ __all__ = [
     "llm_relation_to_candidate",
     "merge_duplicate_relation_candidates",
     "model_attempt_audit_manifest",
+    "model_attempt_evidence_unit_sha256",
     "record_model_attempt",
     "record_skipped_model_attempt",
     "run_llm_relation_extraction_pass",

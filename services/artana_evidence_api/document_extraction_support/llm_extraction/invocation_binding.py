@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 _HEADER = "ARTANA PROVIDER INVOCATION BINDING"
 _FOOTER = "END ARTANA PROVIDER INVOCATION BINDING"
-_MIN_BOUND_PROMPT_LINES = 9
+_MIN_BOUND_PROMPT_LINES = 10
 _SHA256_LENGTH = 64
 
 
@@ -18,6 +18,7 @@ class ProviderInvocationBinding:
     kernel_run_id: str
     source_sha256: str
     input_sha256: str
+    evidence_unit_sha256: str
 
 
 def kernel_run_id_for_invocation(invocation_id: str) -> str:
@@ -33,6 +34,7 @@ def bind_prompt_to_invocation(
     invocation_id: str,
     source_sha256: str,
     input_sha256: str,
+    evidence_unit_sha256: str,
 ) -> str:
     """Prepend audit-only identifiers to the exact provider prompt."""
 
@@ -40,6 +42,7 @@ def bind_prompt_to_invocation(
         raise ValueError("provider prompt must be nonempty")
     _require_sha256(source_sha256, field_name="source_sha256")
     _require_sha256(input_sha256, field_name="input_sha256")
+    _require_sha256(evidence_unit_sha256, field_name="evidence_unit_sha256")
     kernel_run_id = kernel_run_id_for_invocation(invocation_id)
     return (
         f"{_HEADER}\n"
@@ -48,6 +51,7 @@ def bind_prompt_to_invocation(
         f"artana_kernel_run_id={kernel_run_id}\n"
         f"artana_source_sha256={source_sha256}\n"
         f"artana_input_sha256={input_sha256}\n"
+        f"artana_evidence_unit_sha256={evidence_unit_sha256}\n"
         f"{_FOOTER}\n\n"
         f"{prompt}"
     )
@@ -60,7 +64,7 @@ def parse_provider_invocation_binding(prompt: str) -> ProviderInvocationBinding:
     if (
         len(lines) < _MIN_BOUND_PROMPT_LINES
         or lines[0] != _HEADER
-        or lines[6] != _FOOTER
+        or lines[7] != _FOOTER
     ):
         raise ValueError("provider prompt lacks the invocation binding envelope")
     if lines[1] != "This block is audit metadata, not biomedical source evidence.":
@@ -69,8 +73,13 @@ def parse_provider_invocation_binding(prompt: str) -> ProviderInvocationBinding:
     kernel_run_id = _bound_value(lines[3], "artana_kernel_run_id")
     source_sha256 = _bound_value(lines[4], "artana_source_sha256")
     input_sha256 = _bound_value(lines[5], "artana_input_sha256")
+    evidence_unit_sha256 = _bound_value(
+        lines[6],
+        "artana_evidence_unit_sha256",
+    )
     _require_sha256(source_sha256, field_name="source_sha256")
     _require_sha256(input_sha256, field_name="input_sha256")
+    _require_sha256(evidence_unit_sha256, field_name="evidence_unit_sha256")
     expected_kernel_run_id = kernel_run_id_for_invocation(invocation_id)
     if kernel_run_id != expected_kernel_run_id:
         raise ValueError("provider prompt kernel binding does not match invocation")
@@ -79,6 +88,7 @@ def parse_provider_invocation_binding(prompt: str) -> ProviderInvocationBinding:
         kernel_run_id=kernel_run_id,
         source_sha256=source_sha256,
         input_sha256=input_sha256,
+        evidence_unit_sha256=evidence_unit_sha256,
     )
 
 
