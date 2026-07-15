@@ -152,7 +152,7 @@ async def _run_live_benchmark(
                 "quality_filtered_candidate_count": 0,
                 "llm_extraction_chunk_count": 0,
                 "llm_extraction_text_char_count": 0,
-                "claim_extraction_routing_status": "semantic_incomplete",
+                "claim_extraction_routing_status": "not_run",
                 "candidate_overflow_count": 0,
                 "strict_error": "live extraction did not complete",
             }

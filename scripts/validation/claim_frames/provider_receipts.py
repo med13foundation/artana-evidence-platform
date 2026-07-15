@@ -39,6 +39,8 @@ ProviderReceiptFailure = Literal[
     "previous_response_id_present",
     "unsupported_context_present",
     "invocation_topology_mismatch",
+    "source_binding_mismatch",
+    "input_binding_mismatch",
     "output_missing",
     "output_message_role_mismatch",
     "output_message_status_mismatch",
@@ -77,12 +79,15 @@ class ProviderReceiptExpectation:
     """Provider evidence required to bind one response to one scored attempt."""
 
     response_id: str
+    expected_case_id: str
     expected_model_id: str
     expected_output_sha256: str
     expected_payload_sha256: str
     expected_prompt_sha256: str
     expected_invocation_id: str
     expected_kernel_run_id: str
+    expected_source_sha256: str
+    expected_input_sha256: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,6 +95,7 @@ class ProviderReceiptEvidence:
     """Categorical result of retrieving and validating one provider response."""
 
     response_id: str
+    expected_case_id: str
     status: ProviderReceiptStatus
     failure: ProviderReceiptFailure
     expected_model_id: str
@@ -104,6 +110,10 @@ class ProviderReceiptEvidence:
     retrieved_invocation_id: str | None
     expected_kernel_run_id: str
     retrieved_kernel_run_id: str | None
+    expected_source_sha256: str
+    retrieved_source_sha256: str | None
+    expected_input_sha256: str
+    retrieved_input_sha256: str | None
     provider_status: str | None
     response_completed_verified: bool
     incomplete_details_absent: bool
@@ -116,6 +126,7 @@ class ProviderReceiptEvidence:
     def as_json(self) -> JsonObject:
         return {
             "response_id": self.response_id,
+            "expected_case_id": self.expected_case_id,
             "status": self.status,
             "failure": self.failure,
             "expected_model_id": self.expected_model_id,
@@ -130,6 +141,10 @@ class ProviderReceiptEvidence:
             "retrieved_invocation_id": self.retrieved_invocation_id,
             "expected_kernel_run_id": self.expected_kernel_run_id,
             "retrieved_kernel_run_id": self.retrieved_kernel_run_id,
+            "expected_source_sha256": self.expected_source_sha256,
+            "retrieved_source_sha256": self.retrieved_source_sha256,
+            "expected_input_sha256": self.expected_input_sha256,
+            "retrieved_input_sha256": self.retrieved_input_sha256,
             "provider_status": self.provider_status,
             "response_completed_verified": self.response_completed_verified,
             "incomplete_details_absent": self.incomplete_details_absent,
@@ -192,6 +207,8 @@ class _RetrievedReceiptFields:
     prompt_sha256: str | None = None
     invocation_id: str | None = None
     kernel_run_id: str | None = None
+    source_sha256: str | None = None
+    input_sha256: str | None = None
     provider_status: str | None = None
     response_completed_verified: bool = False
     incomplete_details_absent: bool = False
@@ -495,6 +512,8 @@ def _verify_provider_input(
         prompt_sha256=prompt_hash,
         invocation_id=invocation_binding.invocation_id,
         kernel_run_id=invocation_binding.kernel_run_id,
+        source_sha256=invocation_binding.source_sha256,
+        input_sha256=invocation_binding.input_sha256,
         input_topology_verified=True,
         invocation_topology_supported=True,
     )
@@ -509,6 +528,20 @@ def _verify_provider_input(
             retrieved=bound_fields,
         )
     bound_fields = replace(bound_fields, invocation_topology_verified=True)
+    if invocation_binding.source_sha256 != expectation.expected_source_sha256:
+        return _receipt_evidence(
+            expectation,
+            status="mismatched",
+            failure="source_binding_mismatch",
+            retrieved=bound_fields,
+        )
+    if invocation_binding.input_sha256 != expectation.expected_input_sha256:
+        return _receipt_evidence(
+            expectation,
+            status="mismatched",
+            failure="input_binding_mismatch",
+            retrieved=bound_fields,
+        )
     if prompt_hash != expectation.expected_prompt_sha256:
         return _receipt_evidence(
             expectation,
@@ -584,6 +617,7 @@ def _receipt_evidence(
     fields = retrieved or _RetrievedReceiptFields()
     return ProviderReceiptEvidence(
         response_id=expectation.response_id,
+        expected_case_id=expectation.expected_case_id,
         status=status,
         failure=failure,
         expected_model_id=expectation.expected_model_id,
@@ -598,6 +632,10 @@ def _receipt_evidence(
         retrieved_invocation_id=fields.invocation_id,
         expected_kernel_run_id=expectation.expected_kernel_run_id,
         retrieved_kernel_run_id=fields.kernel_run_id,
+        expected_source_sha256=expectation.expected_source_sha256,
+        retrieved_source_sha256=fields.source_sha256,
+        expected_input_sha256=expectation.expected_input_sha256,
+        retrieved_input_sha256=fields.input_sha256,
         provider_status=fields.provider_status,
         response_completed_verified=fields.response_completed_verified,
         incomplete_details_absent=fields.incomplete_details_absent,

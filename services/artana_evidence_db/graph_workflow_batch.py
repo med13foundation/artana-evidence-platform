@@ -1,6 +1,5 @@
 """Batch-review helpers for graph workflows."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -32,6 +31,15 @@ from artana_evidence_db.workflow_persistence_models import (
     GraphWorkflowModel,
 )
 from pydantic import ValidationError
+
+_NESTED_WORKFLOW_RISK_BY_KIND: dict[str, GraphWorkflowRiskTier] = {
+    "evidence_approval": "medium",
+    "batch_review": "medium",
+    "ai_evidence_decision": "high",
+    "conflict_resolution": "high",
+    "continuous_learning_review": "high",
+    "bootstrap_review": "medium",
+}
 
 
 class GraphWorkflowBatchMixin:
@@ -231,10 +239,7 @@ class GraphWorkflowBatchMixin:
             (action == "approve" and proposal.status == "APPLIED")
             or (action == "merge" and proposal.status == "MERGED")
             or (action == "reject" and proposal.status == "REJECTED")
-            or (
-                action == "request_changes"
-                and proposal.status == "CHANGES_REQUESTED"
-            )
+            or (action == "request_changes" and proposal.status == "CHANGES_REQUESTED")
         ):
             return self._batch_result(
                 resource_type="concept_proposal",
@@ -362,10 +367,7 @@ class GraphWorkflowBatchMixin:
         if (
             (action == "apply" and proposal.status == "APPLIED")
             or (action == "reject" and proposal.status == "REJECTED")
-            or (
-                action == "request_changes"
-                and proposal.status == "CHANGES_REQUESTED"
-            )
+            or (action == "request_changes" and proposal.status == "CHANGES_REQUESTED")
         ):
             return self._batch_result(
                 resource_type="graph_change_proposal",
@@ -525,23 +527,31 @@ class GraphWorkflowBatchMixin:
         }
         target_status = terminal_status_by_action[action]
         if target_workflow.status != target_status:
+            nested_risk_tier = _NESTED_WORKFLOW_RISK_BY_KIND.get(
+                target_workflow.kind,
+                "high",
+            )
             nested = self.act_on_workflow(
                 research_space_id=research_space_id,
                 workflow_id=resource_id,
                 action=workflow_action,
                 actor=actor_context.authenticated_user_actor,
                 input_hash=input_hash,
-                risk_tier="low",
+                risk_tier=nested_risk_tier,
                 confidence_assessment=confidence_assessment,
                 reason=reason,
                 decision_payload=decision_payload,
                 generated_resources_payload={},
                 ai_decision_payload=ai_decision_payload,
-                authenticated_ai_principal=(
-                    actor_context.authenticated_ai_principal
-                ),
+                authenticated_ai_principal=(actor_context.authenticated_ai_principal),
             )
             resource_status = nested.status
+            if resource_status != target_status:
+                msg = (
+                    f"Nested workflow '{resource_id}' reached {resource_status}; "
+                    f"batch action requires {target_status}"
+                )
+                raise ValueError(msg)
         else:
             resource_status = target_workflow.status
         return self._batch_result(
@@ -575,8 +585,7 @@ class GraphWorkflowBatchMixin:
         reason: str,
     ) -> JSONObject:
         return {
-            "resource_type": _json_optional_str(item.get("resource_type"))
-            or "unknown",
+            "resource_type": _json_optional_str(item.get("resource_type")) or "unknown",
             "resource_id": _json_optional_str(item.get("resource_id"))
             or f"generated_resources[{index}]",
             "action": _json_optional_str(item.get("action")) or "unknown",

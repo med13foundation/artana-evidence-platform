@@ -27,7 +27,10 @@ from artana_evidence_db.tests.support import (
     build_graph_admin_headers,
     reset_graph_service_database,
 )
-from artana_evidence_db.workflow_persistence_models import GraphWorkflowModel
+from artana_evidence_db.workflow_persistence_models import (
+    GraphWorkflowEventModel,
+    GraphWorkflowModel,
+)
 from fastapi.testclient import TestClient
 
 _SUPPORTED_ASSESSMENT = {
@@ -966,7 +969,7 @@ def test_ai_batch_application_requires_explicit_space_policy(
     assert "batch_auto_apply_low_risk" in action_response.text
 
 
-def test_ai_batch_preserves_nested_identity_and_cannot_impersonate_claim_reviewer(
+def test_ai_batch_fails_closed_for_nested_workflow_and_claim_review(
     graph_client: TestClient,
 ) -> None:
     space_id, admin_headers = _create_space(graph_client)
@@ -1062,17 +1065,33 @@ def test_ai_batch_preserves_nested_identity_and_cannot_impersonate_claim_reviewe
     applied_batch = action_response.json()
     assert applied_batch["status"] == "CHANGES_REQUESTED"
     failures = applied_batch["generated_resources_payload"]["failed_resource_refs"]
-    assert len(failures) == 1
-    assert "distinct AI reviewer identity" in failures[0]["reason"]
+    assert len(failures) == 2
+    assert {failure["resource_type"] for failure in failures} == {
+        "workflow",
+        "claim",
+    }
+    assert any(
+        "distinct AI reviewer identity" in failure["reason"] for failure in failures
+    )
+    assert not applied_batch["generated_resources_payload"]["applied_resource_refs"]
 
     target_after = graph_client.get(
         f"/v1/spaces/{space_id}/workflows/{target['id']}",
         headers=admin_headers,
     ).json()
-    assert target_after["status"] == "APPLIED"
-    assert target_after["updated_by"] == principal
-    assert target_after["decision_payload"]["actor_context"]["actor_type"] == "AI"
+    assert target_after["status"] == "WAITING_REVIEW"
     with graph_database.SessionLocal() as session:
+        nested_event = session.scalars(
+            sa.select(GraphWorkflowEventModel)
+            .where(
+                GraphWorkflowEventModel.workflow_id == UUID(target["id"]),
+                GraphWorkflowEventModel.action == "approve",
+            )
+            .order_by(GraphWorkflowEventModel.created_at.desc()),
+        ).first()
+        assert nested_event is not None
+        assert nested_event.actor == principal
+        assert nested_event.after_status == "WAITING_REVIEW"
         claim = session.get(GraphRelationClaimModel, UUID(claim_id))
         assert claim is not None
         assert claim.claim_status == "OPEN"
@@ -1121,6 +1140,27 @@ def test_ai_cannot_mark_workflow_resolved_without_server_application(
 
     assert action_response.status_code == 400, action_response.text
     assert "cannot mark workflows resolved" in action_response.text
+
+
+def test_noncanonical_ai_principal_is_rejected_at_authentication(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+
+    response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": str(uuid4()),
+        },
+        json={
+            "kind": "conflict_resolution",
+            "input_payload": {"claim_ids": []},
+        },
+    )
+
+    assert response.status_code == 401, response.text
+    assert "canonical agent:<id>" in response.text
 
 
 def test_legacy_agent_claim_cannot_be_resolved_or_materialized(

@@ -146,6 +146,18 @@ class GraphWorkflowPolicyMixin:
                     "application action or human review is required."
                 ),
             )
+        if kind == "conflict_resolution" and action in {"approve", "apply_plan"}:
+            return GraphWorkflowPolicyOutcome(
+                ai_allowed=False,
+                ai_allowed_when_low_risk=False,
+                human_required=True,
+                blocked=False,
+                outcome="human_required",
+                reason=(
+                    "AI principals cannot resolve conflict workflows without a "
+                    "server-bound resolution operation and human review."
+                ),
+            )
         if (
             kind == "batch_review"
             and action in {"approve", "apply_plan"}

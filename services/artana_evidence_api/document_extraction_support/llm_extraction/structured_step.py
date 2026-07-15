@@ -58,6 +58,8 @@ async def run_audited_structured_step(
     provider_prompt = bind_prompt_to_invocation(
         prompt=prompt,
         invocation_id=invocation_id,
+        source_sha256=audit_context.source_sha256,
+        input_sha256=audit_context.input_sha256,
     )
     model_result: ModelStepResult | None = None
     raw_output: object | None = None

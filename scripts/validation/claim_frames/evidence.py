@@ -294,9 +294,7 @@ def validate_diagnostics(value: object) -> JsonObject:
         raise ValueError(
             "candidate_overflow_count requires candidate_overflow routing",
         )
-    if (status == "semantic_incomplete") != (
-        routing_status == "semantic_incomplete"
-    ):
+    if (status == "semantic_incomplete") != (routing_status == "semantic_incomplete"):
         raise ValueError(
             "semantic_incomplete candidate and routing statuses must agree",
         )
@@ -382,6 +380,14 @@ def _validated_attempt_evidence(
             response_id=None,
             kernel_event=None,
         )
+    if outcome == "invocation_failed" and attempt.get("provider_response_id") is None:
+        _validate_failed_attempt_without_response(attempt)
+        return _ValidatedAttemptEvidence(
+            attempt=attempt,
+            executed=True,
+            response_id=None,
+            kernel_event=None,
+        )
     _validate_provider_evidence(attempt)
     return _ValidatedAttemptEvidence(
         attempt=attempt,
@@ -446,6 +452,24 @@ def _validate_skipped_attempt(
         raise ValueError("intentionally skipped attempts cannot be replayed")
 
 
+def _validate_failed_attempt_without_response(
+    attempt: Mapping[str, object],
+) -> None:
+    for key in (
+        "provider_execution_response_id",
+        "provider_response_id",
+        "provider_output_sha256",
+        "kernel_run_id",
+        "kernel_event_seq",
+    ):
+        if attempt.get(key) is not None:
+            raise ValueError(
+                f"provider-less invocation failure cannot contain {key}",
+            )
+    if attempt.get("replayed") not in {None, False}:
+        raise ValueError("provider-less invocation failure cannot be replayed")
+
+
 def derive_execution_state(
     raw_output: object,
     diagnostics: object,
@@ -468,13 +492,15 @@ def derive_execution_state(
     accepted = any(
         attempt.get("validation_outcome") == "accepted" for attempt in attempts
     )
+    invocation_failure_count = sum(
+        attempt.get("validation_outcome") == "invocation_failed" for attempt in attempts
+    )
     if status in {"completed", "llm_empty"} and not accepted:
         raise ValueError(f"{status} diagnostics require an accepted model attempt")
     if _contains_truthy_fallback_marker(raw_output):
         raise ValueError("fallback markers must be represented by diagnostics")
     agent_authored_numeric_value_count = sum(
-        validate_agent_payload(attempt.get("raw_model_payload"))
-        for attempt in attempts
+        validate_agent_payload(attempt.get("raw_model_payload")) for attempt in attempts
     )
     return {
         "agent_invocation_completed": status in {"completed", "llm_empty"} and accepted,
@@ -489,6 +515,7 @@ def derive_execution_state(
             or status in FALLBACK_STATUSES
         ),
         "agent_authored_numeric_value_count": agent_authored_numeric_value_count,
+        "model_invocation_failure_count": invocation_failure_count,
     }
 
 
@@ -813,13 +840,10 @@ def _validate_agent_payload(
                 "numeric lexical value is only allowed in explicit source evidence, "
                 f"qualifier, or source_measurement fields: {parent_key}",
             )
-        if (
-            not _source_assessment_text_allowed(
-                context=context,
-                parent_key=parent_key,
-            )
-            and _contains_numeric_assessment(value)
-        ):
+        if not _source_assessment_text_allowed(
+            context=context,
+            parent_key=parent_key,
+        ) and _contains_numeric_assessment(value):
             raise ValueError(
                 f"agent-authored numeric score language is forbidden at {parent_key}",
             )

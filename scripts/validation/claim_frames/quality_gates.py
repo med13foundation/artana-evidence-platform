@@ -144,6 +144,10 @@ def _quality_readiness_gates(
             passed=_integer(metrics.get("agent_authored_numeric_value_count")) == 0,
             rule=f"agent-authored numeric values are rejected{scope}",
         ),
+        "model_invocation_failures": _gate(
+            passed=_integer(metrics.get("model_invocation_failure_count")) == 0,
+            rule=f"model invocation failures are zero{scope}",
+        ),
         "no_fallback": _gate(
             passed=_integer(metrics.get("fallback_output_count")) == 0,
             rule=f"strict reports contain no fallback output{scope}",

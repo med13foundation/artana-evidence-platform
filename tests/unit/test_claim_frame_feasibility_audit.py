@@ -347,6 +347,7 @@ def test_perfect_legacy_primary_report_cannot_satisfy_tg03_lineage() -> None:
             attempt_role="primary",
             pass_role="primary",
             semantic_unit_id=None,
+            source_sha256=_sha256_text(fixture.cases[0].source_text),
             input_sha256="f" * 64,
             raw_model_payload=legacy_payload,
             output_schema_identity="synthetic.LegacyRelationBatch",
@@ -759,6 +760,160 @@ def test_live_receipt_rejects_scored_payload_not_parsed_from_provider_output() -
         receipt["failure"] for receipt in comparison["provider_receipts"]["receipts"]
     }
     assert comparison["gate_passed"] is False
+
+
+def test_live_receipt_rejects_attempts_relabelled_across_fixture_cases() -> None:
+    fixture = _minimal_fixture()
+    base_case = fixture.cases[0]
+    case_a = replace(
+        base_case,
+        case_id="source-a",
+        title="Source A",
+        source_text="Source A. Drug treated disease.",
+    )
+    case_b = replace(
+        base_case,
+        case_id="source-b",
+        title="Source B",
+        source_text="Source B. Drug treated disease.",
+    )
+    multi_fixture = replace(fixture, cases=(case_a, case_b))
+    frame = _actual_frame(base_case.frames[0])
+    reports = [
+        _build_multi_case_report(
+            multi_fixture,
+            run_id=f"source-binding-{index}",
+            case_frames=((case_a, (frame,)), (case_b, (frame,))),
+        )
+        for index in range(3)
+    ]
+    verifier = _receipt_verifier(reports)
+    for report in reports:
+        cases = cast("list[dict[str, object]]", report["cases"])
+        cases[0]["raw_agent_output"], cases[1]["raw_agent_output"] = (
+            cases[1]["raw_agent_output"],
+            cases[0]["raw_agent_output"],
+        )
+        _reseal_report(report)
+
+    comparison = compare_three_reports(
+        tuple(reports),
+        multi_fixture,
+        provider_receipt_verifier=verifier,
+    )
+
+    assert comparison["provider_receipt_status"] == "mismatched"
+    assert "source_binding_mismatch" in {
+        receipt["failure"] for receipt in comparison["provider_receipts"]["receipts"]
+    }
+    assert comparison["gate_passed"] is False
+
+
+def test_providerless_invocation_failure_is_reportable_without_receipt_credit() -> None:
+    source_sha256 = _sha256_text("Drug treated disease.")
+    attempt = _synthetic_model_attempt(
+        invocation_id="providerless-failure",
+        attempt_role="claim_inventory",
+        pass_role="claim_inventory",
+        semantic_unit_id=None,
+        source_sha256=source_sha256,
+        input_sha256="f" * 64,
+        raw_model_payload={"claims": []},
+        output_schema_identity="synthetic.ClaimInventoryBatch",
+    )
+    attempt.update(
+        {
+            "validation_outcome": "invocation_failed",
+            "raw_model_payload": None,
+            "payload_sha256": None,
+            "error_type": "ModelTimeoutError",
+            "provider_execution_response_id": None,
+            "provider_response_id": None,
+            "provider_output_sha256": None,
+            "kernel_run_id": None,
+            "kernel_event_seq": None,
+            "replayed": None,
+        },
+    )
+
+    validated = claim_frame_evidence.validate_model_attempt_records(
+        {"attempts": [attempt], "accepted_pass_payloads": []},
+        expected_model_id=REQUIRED_MODEL_ID,
+    )
+
+    assert validated[0]["validation_outcome"] == "invocation_failed"
+    assert validated[0]["provider_response_id"] is None
+
+
+def test_providerless_invocation_failure_is_reported_and_fails_quality_gate() -> None:
+    fixture = _minimal_fixture()
+    case = fixture.cases[0]
+    source_sha256 = _sha256_text(case.source_text)
+    failed_attempt = _synthetic_model_attempt(
+        invocation_id="providerless-report-failure",
+        attempt_role="claim_inventory",
+        pass_role="claim_inventory",
+        semantic_unit_id=None,
+        source_sha256=source_sha256,
+        input_sha256="f" * 64,
+        raw_model_payload={"claims": []},
+        output_schema_identity="synthetic.ClaimInventoryBatch",
+    )
+    failed_attempt.update(
+        {
+            "validation_outcome": "invocation_failed",
+            "raw_model_payload": None,
+            "payload_sha256": None,
+            "error_type": "ModelTimeoutError",
+            "provider_execution_response_id": None,
+            "provider_response_id": None,
+            "provider_output_sha256": None,
+            "kernel_run_id": None,
+            "kernel_event_seq": None,
+            "replayed": None,
+        },
+    )
+    raw_output = {
+        "attempts": [failed_attempt],
+        "accepted_pass_payloads": [],
+        "strict_error_type": "ModelTimeoutError",
+    }
+    candidate_output = {"relations": []}
+    case_result = evaluate_case(case, ())
+    case_result.update(evaluate_inventory(case, raw_output))
+    case_result.update(
+        {
+            "invocation_id": "providerless-report-case",
+            "invocation_namespace": "providerless-report-case",
+            "model_attempt_invocation_ids": [failed_attempt["invocation_id"]],
+            "frames": [],
+            "raw_agent_output": raw_output,
+            "postprocessed_candidate_output": candidate_output,
+            "diagnostics": _diagnostics(
+                "unavailable",
+                claim_extraction_routing_status="not_run",
+            ),
+            "agent_invocation_completed": False,
+            "strict_usable_extraction_completed": False,
+            "output_sha256": _sha256_json(raw_output),
+            "postprocessed_output_sha256": _sha256_json(candidate_output),
+        },
+    )
+
+    report = build_run_report(
+        fixture=fixture,
+        run_id="providerless-report",
+        generated_at=_GENERATED_AT,
+        model_id=REQUIRED_MODEL_ID,
+        prompt_version=REQUIRED_PROMPT_VERSION,
+        case_results=[case_result],
+        repository_evidence=_REPOSITORY_EVIDENCE,
+    )
+
+    assert report["metrics"]["model_invocation_failure_count"] == 1
+    assert report["gates"]["model_invocation_failures"]["passed"] is False
+    assert report["provider_receipts"]["expected_count"] == 0
+    assert report["gate_passed"] is False
 
 
 @pytest.mark.parametrize(
@@ -1356,9 +1511,7 @@ def test_relabelled_copy_with_invented_receipt_cannot_pass_live_verification() -
         copied_attempt["invocation_id"] = fresh_attempt_id
         copied_attempt["provider_execution_response_id"] = invented_response_id
         copied_attempt["provider_response_id"] = invented_response_id
-        copied_attempt["kernel_run_id"] = (
-            f"research-init-extraction:{fresh_attempt_id}"
-        )
+        copied_attempt["kernel_run_id"] = f"research-init-extraction:{fresh_attempt_id}"
     copied_case["model_attempt_invocation_ids"] = _executed_attempt_ids(
         copied_case["raw_agent_output"],
     )
@@ -1736,6 +1889,7 @@ def _build_report(
     audited_output = _raw_audit_output(
         invocation_id=f"{run_id}-model-attempt",
         raw_payload=selected_output,
+        source_sha256=_sha256_text(selected_case.source_text),
     )
     case_result = evaluate_case(selected_case, selected_frames)
     case_result.update(evaluate_inventory(selected_case, audited_output))
@@ -1782,6 +1936,7 @@ def _build_multi_case_report(
         raw_output = _raw_audit_output(
             invocation_id=f"{run_id}-{case.case_id}-model-attempt",
             raw_payload=raw_payload,
+            source_sha256=_sha256_text(case.source_text),
         )
         result = evaluate_case(case, frames)
         result.update(evaluate_inventory(case, raw_output))
@@ -1950,9 +2105,7 @@ def _manifest_for_report(report: dict[str, object]) -> dict[str, object]:
                         "source_sha256": attempt["source_sha256"],
                         "input_sha256": attempt["input_sha256"],
                         "semantic_unit_id": attempt.get("semantic_unit_id"),
-                        "output_schema_identity": attempt[
-                            "output_schema_identity"
-                        ],
+                        "output_schema_identity": attempt["output_schema_identity"],
                         "payload_sha256": attempt["payload_sha256"],
                         "provider_execution_response_id": attempt.get(
                             "provider_execution_response_id"
@@ -1979,6 +2132,7 @@ def _raw_audit_output(
     *,
     invocation_id: str,
     raw_payload: dict[str, object],
+    source_sha256: str,
 ) -> dict[str, object]:
     model_payload = _model_boundary_payload(raw_payload)
     raw_relations = cast("list[dict[str, object]]", model_payload.get("relations", []))
@@ -1992,6 +2146,7 @@ def _raw_audit_output(
             attempt_role="claim_inventory",
             pass_role="claim_inventory",
             semantic_unit_id=None,
+            source_sha256=source_sha256,
             input_sha256="f" * 64,
             raw_model_payload=inventory_payload,
             output_schema_identity="synthetic.ClaimInventoryBatch",
@@ -2001,6 +2156,7 @@ def _raw_audit_output(
             attempt_role="claim_inventory_completeness",
             pass_role="claim_inventory_completeness",
             semantic_unit_id=None,
+            source_sha256=source_sha256,
             input_sha256=_sha256_json(
                 [_sha256_json(item) for item in inventory_items],
             ),
@@ -2042,6 +2198,7 @@ def _raw_audit_output(
                 attempt_role="claim_framing",
                 pass_role="claim_framing",
                 semantic_unit_id=semantic_unit_id,
+                source_sha256=source_sha256,
                 input_sha256=_sha256_json(
                     {
                         "inventory_id": semantic_unit_id,
@@ -2081,6 +2238,7 @@ def _synthetic_model_attempt(
     attempt_role: str,
     pass_role: str,
     semantic_unit_id: str | None,
+    source_sha256: str,
     input_sha256: str,
     raw_model_payload: dict[str, object],
     output_schema_identity: str,
@@ -2094,8 +2252,14 @@ def _synthetic_model_attempt(
         "retry_context": None,
         "model_id": EXECUTION_MODEL_ID,
         "step_key": f"tg03.synthetic.{pass_role}",
-        "prompt_sha256": _sha256_text(_provider_prompt(invocation_id)),
-        "source_sha256": "e" * 64,
+        "prompt_sha256": _sha256_text(
+            _provider_prompt(
+                invocation_id,
+                source_sha256=source_sha256,
+                input_sha256=input_sha256,
+            ),
+        ),
+        "source_sha256": source_sha256,
         "input_sha256": input_sha256,
         "semantic_unit_id": semantic_unit_id,
         "output_schema_identity": output_schema_identity,
@@ -2160,20 +2324,39 @@ def _provider_output(
     ]
 
 
-def _provider_prompt(invocation_id: str) -> str:
+def _provider_prompt(
+    invocation_id: str,
+    *,
+    source_sha256: str,
+    input_sha256: str,
+) -> str:
     return bind_prompt_to_invocation(
         prompt=f"Synthetic TG-03 prompt for {invocation_id}",
         invocation_id=invocation_id,
+        source_sha256=source_sha256,
+        input_sha256=input_sha256,
     )
 
 
-def _provider_input_items(invocation_id: str) -> list[dict[str, object]]:
+def _provider_input_items(
+    invocation_id: str,
+    *,
+    source_sha256: str,
+    input_sha256: str,
+) -> list[dict[str, object]]:
     return [
         {
             "type": "message",
             "role": "user",
             "content": [
-                {"type": "input_text", "text": _provider_prompt(invocation_id)},
+                {
+                    "type": "input_text",
+                    "text": _provider_prompt(
+                        invocation_id,
+                        source_sha256=source_sha256,
+                        input_sha256=input_sha256,
+                    ),
+                },
             ],
         },
     ]
@@ -2264,6 +2447,8 @@ def _receipt_verifier(
                 )
                 input_items[response_id] = _provider_input_items(
                     cast("str", attempt["invocation_id"]),
+                    source_sha256=cast("str", attempt["source_sha256"]),
+                    input_sha256=cast("str", attempt["input_sha256"]),
                 )
 
     first_response_id = next(iter(responses))
@@ -2385,6 +2570,7 @@ def _apply_input_failure(
                 ],
             },
         ]
+
 
 def _model_boundary_payload(payload: dict[str, object]) -> dict[str, object]:
     raw_relations = payload.get("relations")

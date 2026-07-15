@@ -176,6 +176,7 @@ def aggregate_case_metrics(
     all_case_fields = (
         "agent_authored_numeric_value_count",
         "fallback_output_count",
+        "model_invocation_failure_count",
     )
     totals.update(
         {

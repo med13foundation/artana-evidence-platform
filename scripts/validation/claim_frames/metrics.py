@@ -106,6 +106,7 @@ def build_run_report(  # noqa: PLR0913
         _provider_receipt_expectations_from_cases(
             normalized_case_results,
             report_model_id=model_id,
+            fixture=fixture,
         ),
         None,
     )
@@ -153,7 +154,7 @@ def compare_three_reports(
     stability = _stability_metrics(reports=reports, fixture=fixture)
     metrics = {**aggregate, **stability}
     provider_receipts = verify_provider_receipts(
-        _provider_receipt_expectations(reports),
+        _provider_receipt_expectations(reports, fixture=fixture),
         provider_receipt_verifier,
     )
     gates = comparison_gates(
@@ -467,24 +468,14 @@ def _model_attempt_evidence(case: Mapping[str, object]) -> list[JsonObject]:
                 attempt,
                 "output_schema_identity",
             ),
-            "payload_sha256": _required_nonempty_string(
-                attempt,
-                "payload_sha256",
-            ),
-            "provider_execution_response_id": _required_nonempty_string(
-                attempt,
+            "payload_sha256": attempt.get("payload_sha256"),
+            "provider_execution_response_id": attempt.get(
                 "provider_execution_response_id",
             ),
-            "provider_response_id": _required_nonempty_string(
-                attempt,
-                "provider_response_id",
-            ),
-            "provider_output_sha256": _required_nonempty_string(
-                attempt,
-                "provider_output_sha256",
-            ),
-            "kernel_run_id": _required_nonempty_string(attempt, "kernel_run_id"),
-            "kernel_event_seq": _positive_integer(attempt, "kernel_event_seq"),
+            "provider_response_id": attempt.get("provider_response_id"),
+            "provider_output_sha256": attempt.get("provider_output_sha256"),
+            "kernel_run_id": attempt.get("kernel_run_id"),
+            "kernel_event_seq": attempt.get("kernel_event_seq"),
             "replayed": attempt.get("replayed"),
         }
         for raw_attempt in raw_attempts
@@ -495,6 +486,8 @@ def _model_attempt_evidence(case: Mapping[str, object]) -> list[JsonObject]:
 
 def _provider_receipt_expectations(
     reports: Sequence[Mapping[str, object]],
+    *,
+    fixture: BenchmarkFixture,
 ) -> tuple[ProviderReceiptExpectation, ...]:
     expectations: list[ProviderReceiptExpectation] = []
     for report in reports:
@@ -505,6 +498,7 @@ def _provider_receipt_expectations(
             _provider_receipt_expectations_from_cases(
                 tuple(_object(case) for case in raw_cases),
                 report_model_id=_required_nonempty_string(report, "model_id"),
+                fixture=fixture,
             ),
         )
     return tuple(expectations)
@@ -514,45 +508,60 @@ def _provider_receipt_expectations_from_cases(
     cases: Sequence[Mapping[str, object]],
     *,
     report_model_id: str,
+    fixture: BenchmarkFixture,
 ) -> tuple[ProviderReceiptExpectation, ...]:
     provider_model_id = canonical_provider_model_id(report_model_id)
+    expected_cases = {case.case_id: case for case in fixture.cases}
     expectations: list[ProviderReceiptExpectation] = []
     for case in cases:
+        case_id = _required_nonempty_string(case, "case_id")
+        expected_case = expected_cases.get(case_id)
+        if expected_case is None:
+            raise ValueError(f"provider receipt case is not in fixture: {case_id}")
+        expected_source_sha256 = hashlib.sha256(
+            expected_case.source_text.encode("utf-8"),
+        ).hexdigest()
         attempts = validate_model_attempt_records(
             case.get("raw_agent_output"),
             expected_model_id=report_model_id,
         )
-        expectations.extend(
-            ProviderReceiptExpectation(
-                response_id=_required_nonempty_string(
-                    attempt,
+        for attempt in attempts:
+            if not all(
+                isinstance(attempt.get(key), str) and bool(attempt.get(key))
+                for key in (
                     "provider_response_id",
-                ),
-                expected_model_id=provider_model_id,
-                expected_output_sha256=_required_nonempty_string(
-                    attempt,
                     "provider_output_sha256",
-                ),
-                expected_payload_sha256=_required_nonempty_string(
-                    attempt,
                     "payload_sha256",
-                ),
-                expected_prompt_sha256=_required_nonempty_string(
-                    attempt,
-                    "prompt_sha256",
-                ),
-                expected_invocation_id=_required_nonempty_string(
-                    attempt,
-                    "invocation_id",
-                ),
-                expected_kernel_run_id=_required_nonempty_string(
-                    attempt,
                     "kernel_run_id",
+                )
+            ):
+                continue
+            expectations.append(
+                ProviderReceiptExpectation(
+                    response_id=cast("str", attempt["provider_response_id"]),
+                    expected_case_id=case_id,
+                    expected_model_id=provider_model_id,
+                    expected_output_sha256=cast(
+                        "str",
+                        attempt["provider_output_sha256"],
+                    ),
+                    expected_payload_sha256=cast("str", attempt["payload_sha256"]),
+                    expected_prompt_sha256=_required_nonempty_string(
+                        attempt,
+                        "prompt_sha256",
+                    ),
+                    expected_invocation_id=_required_nonempty_string(
+                        attempt,
+                        "invocation_id",
+                    ),
+                    expected_kernel_run_id=cast("str", attempt["kernel_run_id"]),
+                    expected_source_sha256=expected_source_sha256,
+                    expected_input_sha256=_required_nonempty_string(
+                        attempt,
+                        "input_sha256",
+                    ),
                 ),
             )
-            for attempt in attempts
-            if attempt.get("validation_outcome") != "intentionally_skipped"
-        )
     return tuple(expectations)
 
 
@@ -661,17 +670,20 @@ def _report_execution_identities(
             for attempt in attempts
             if attempt.get("validation_outcome") != "intentionally_skipped"
         ]
-        provider_response_ids.extend(
-            _required_nonempty_string(attempt, "provider_response_id")
-            for attempt in executed
-        )
-        kernel_events.extend(
-            (
-                _required_nonempty_string(attempt, "kernel_run_id"),
-                _positive_integer(attempt, "kernel_event_seq"),
-            )
-            for attempt in executed
-        )
+        for attempt in executed:
+            response_id = attempt.get("provider_response_id")
+            if isinstance(response_id, str) and response_id:
+                provider_response_ids.append(response_id)
+            kernel_run_id = attempt.get("kernel_run_id")
+            kernel_event_seq = attempt.get("kernel_event_seq")
+            if (
+                isinstance(kernel_run_id, str)
+                and kernel_run_id
+                and isinstance(kernel_event_seq, int)
+                and not isinstance(kernel_event_seq, bool)
+                and kernel_event_seq > 0
+            ):
+                kernel_events.append((kernel_run_id, kernel_event_seq))
     return (
         invocation_ids,
         model_attempt_invocation_ids,
@@ -876,6 +888,15 @@ def _validate_local_invocation_topology(
         if attempt.get("validation_outcome") == "intentionally_skipped":
             continue
         invocation_id = _required_nonempty_string(attempt, "invocation_id")
+        if (
+            attempt.get("validation_outcome") == "invocation_failed"
+            and attempt.get("provider_response_id") is None
+        ):
+            if attempt.get("kernel_run_id") is not None:
+                raise ValueError(
+                    "provider-less invocation failure cannot claim kernel topology",
+                )
+            continue
         kernel_run_id = _required_nonempty_string(attempt, "kernel_run_id")
         expected_kernel_run_id = f"research-init-extraction:{invocation_id}"
         if kernel_run_id != expected_kernel_run_id:
