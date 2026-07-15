@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from artana_evidence_api.document_extraction import (
@@ -58,6 +59,42 @@ class _EntailingAgentSupportVerifier:
 
 
 _AGENT_SUPPORT_VERIFIER = _EntailingAgentSupportVerifier()
+
+
+class _NonEntailingAgentSupportVerifier:
+    model_id = "test:independent-agent-verifier"
+
+    def __init__(self, support: Literal["NEUTRAL", "CONTRADICTS"]) -> None:
+        self._support = support
+
+    def verify(
+        self,
+        *,
+        sentence: str,
+        subject: str,
+        relation_type: str,
+        object_: str,
+    ) -> TripleSupportResult:
+        del sentence, subject, relation_type, object_
+        return TripleSupportResult(
+            support=self._support,
+            rationale="The independent verifier did not entail the candidate.",
+        )
+
+
+class _UnavailableAgentSupportVerifier:
+    model_id = "test:unavailable-agent-verifier"
+
+    def verify(
+        self,
+        *,
+        sentence: str,
+        subject: str,
+        relation_type: str,
+        object_: str,
+    ) -> TripleSupportResult:
+        del sentence, subject, relation_type, object_
+        raise RuntimeError("simulated verifier outage")
 
 
 def _case(
@@ -212,6 +249,89 @@ def test_audit_calibrates_supported_low_value_relation_as_negative() -> None:
     assert assessment.is_valuable is False
     assert report.summary.candidate_score_ece == 1.0
     assert report.summary.trusted_candidate_score_ece == 1.0
+
+
+@pytest.mark.parametrize("support", ["NEUTRAL", "CONTRADICTS"])
+def test_non_entailing_agent_result_cannot_enter_trusted_metrics(
+    support: Literal["NEUTRAL", "CONTRADICTS"],
+) -> None:
+    case = _case(
+        case_id=f"agent_{support.casefold()}",
+        text="MED13 activates cardiac septal development.",
+        gold=(
+            GoldRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                support_sentence="MED13 activates cardiac septal development.",
+                value_level="high",
+                rationale="Specific gene-to-process mechanism.",
+            ),
+        ),
+    )
+
+    report = run_feasibility_audit(
+        cases=(case,),
+        extractor=lambda _: [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence="MED13 activates cardiac septal development.",
+            ),
+        ],
+        support_verifier=_NonEntailingAgentSupportVerifier(support),
+    )
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.support_verification == support
+    assert assessment.support_verification_method == "agent"
+    assert assessment.has_support_verification is True
+    assert assessment.has_entailment_support is False
+    assert assessment.is_trusted_evidence_eligible is False
+    assert report.summary.entailment_checked_rate == 1.0
+    assert report.summary.entailment_supported_rate == 0.0
+    assert report.summary.trusted_candidate_count == 0
+
+
+def test_unavailable_agent_verifier_is_unchecked_and_untrusted() -> None:
+    case = _case(
+        case_id="agent_verifier_unavailable",
+        text="MED13 activates cardiac septal development.",
+        gold=(
+            GoldRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                support_sentence="MED13 activates cardiac septal development.",
+                value_level="high",
+                rationale="Specific gene-to-process mechanism.",
+            ),
+        ),
+    )
+
+    report = run_feasibility_audit(
+        cases=(case,),
+        extractor=lambda _: [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence="MED13 activates cardiac septal development.",
+            ),
+        ],
+        support_verifier=_UnavailableAgentSupportVerifier(),
+    )
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.support_verification == "NEUTRAL"
+    assert assessment.support_verification_method == "unavailable"
+    assert assessment.has_support_verification is False
+    assert assessment.has_entailment_support is False
+    assert assessment.is_trusted_evidence_eligible is False
+    assert "support_not_checked" in assessment.quality_flags
+    assert report.summary.entailment_checked_rate == 0.0
+    assert report.summary.trusted_candidate_count == 0
 
 
 def test_audit_rejects_off_target_support_sentence_for_matching_triple() -> None:
