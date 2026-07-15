@@ -1026,7 +1026,7 @@ def _raw_relation_frame(relation: Mapping[str, object]) -> JsonObject:
     missing = [key for key in required if key not in relation]
     if missing:
         raise ValueError(f"accepted raw relation lacks ClaimFrame fields: {missing}")
-    return {
+    frame: JsonObject = {
         "subject": _required_nonempty_string(relation, "subject").strip(),
         "predicate": _required_nonempty_string(relation, "relation_type"),
         "object": _required_nonempty_string(relation, "object").strip(),
@@ -1049,6 +1049,9 @@ def _raw_relation_frame(relation: Mapping[str, object]) -> JsonObject:
             "extraction_rationale",
         ),
     }
+    if "condition" in relation:
+        frame["condition"] = _object(relation.get("condition"))
+    return frame
 
 
 def _object_list(value: object, *, label: str) -> list[JsonObject]:

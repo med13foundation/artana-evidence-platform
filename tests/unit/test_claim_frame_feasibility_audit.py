@@ -368,6 +368,9 @@ def test_candidate_lineage_allows_only_inventory_bound_argument_enrichment() -> 
         "source_measurements": frame["source_measurements"],
         "extraction_rationale": frame["extraction_rationale"],
     }
+    condition = {"state": "NOT_APPLICABLE", "value": None, "exact_span": None}
+    relation["condition"] = condition
+    frame["condition"] = copy.deepcopy(condition)
     semantic_unit_id = "typed-treatment-assertion"
     attempts = (
         {
