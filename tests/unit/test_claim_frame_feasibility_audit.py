@@ -1227,6 +1227,51 @@ def test_default_cli_fails_when_live_quality_gate_fails(
     )
 
 
+def test_live_cli_selects_one_case_after_loading_complete_fixture(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    fixture = load_fixture(Path(DEFAULT_FIXTURE_PATH))
+    selected_case = fixture.cases[0]
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(claim_frame_cli, "load_fixture", lambda path: fixture)
+    monkeypatch.setattr(
+        claim_frame_cli,
+        "configured_model_id",
+        lambda: REQUIRED_MODEL_ID,
+    )
+
+    def _run_live_benchmark(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return {"gate_passed": False}
+
+    monkeypatch.setattr(
+        claim_frame_cli,
+        "run_live_benchmark",
+        _run_live_benchmark,
+    )
+    monkeypatch.setattr(claim_frame_cli, "write_reports", lambda **kwargs: None)
+
+    result = claim_frame_cli.main(
+        (
+            "--case-id",
+            selected_case.case_id,
+            "--json-output",
+            str(tmp_path / "run.json"),
+            "--markdown-output",
+            str(tmp_path / "run.md"),
+        ),
+    )
+
+    assert result == 1
+    selected_fixture = cast("BenchmarkFixture", captured["fixture"])
+    assert selected_fixture.path == fixture.path
+    assert selected_fixture.sha256 == fixture.sha256
+    assert selected_fixture.methodology_complete is True
+    assert selected_fixture.cases == (selected_case,)
+
+
 def test_compare_cli_uses_environment_provider_receipt_verifier(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
