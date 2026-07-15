@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Literal, Protocol
 
 from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+)
 from artana_evidence_db.read_model_support import (
     GraphReadModelTrigger,
     GraphReadModelUpdate,
@@ -18,8 +21,13 @@ from artana_evidence_db.relation_claim_models import (
     RelationClaimStatus,
     RelationClaimValidationState,
 )
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
+    GraphAIPersistenceQuarantinePolicy,
+)
 
 CertaintyBand = Literal["HIGH", "MEDIUM", "LOW"]
+_AI_PERSISTENCE_QUARANTINE = GraphAIPersistenceQuarantinePolicy()
 
 
 class ReasoningPathInvalidationServiceLike(Protocol):
@@ -269,6 +277,17 @@ class KernelRelationClaimService:
         claim_status: RelationClaimStatus,
         triaged_by: str,
     ) -> KernelRelationClaim:
+        existing = self._claims.get_by_id(claim_id)
+        if existing is None:
+            msg = f"Relation claim {claim_id} not found"
+            raise ValueError(msg)
+        self._ensure_claim_mutation_allowed(claim_id)
+        if claim_status == "RESOLVED" and existing.persistability != "PERSISTABLE":
+            msg = (
+                "Claim cannot be resolved yet because it is NON_PERSISTABLE. "
+                "Use Needs Mapping or Reject."
+            )
+            raise ValueError(msg)
         claim = self._claims.update_triage_status(
             claim_id,
             claim_status=claim_status,
@@ -283,6 +302,7 @@ class KernelRelationClaimService:
         *,
         linked_relation_id: str,
     ) -> KernelRelationClaim:
+        self._ensure_claim_mutation_allowed(claim_id)
         claim = self._claims.link_relation(
             claim_id,
             linked_relation_id=linked_relation_id,
@@ -294,6 +314,7 @@ class KernelRelationClaimService:
         self,
         claim_id: str,
     ) -> KernelRelationClaim:
+        self._ensure_claim_mutation_allowed(claim_id)
         claim = self._claims.clear_relation_link(claim_id)
         self._dispatch_claim_change(claim)
         return claim
@@ -304,6 +325,7 @@ class KernelRelationClaimService:
         *,
         claim_status: RelationClaimStatus,
     ) -> KernelRelationClaim:
+        self._ensure_claim_mutation_allowed(claim_id)
         claim = self._claims.set_system_status(
             claim_id,
             claim_status=claim_status,
@@ -335,7 +357,16 @@ class KernelRelationClaimService:
         source_document_ref: str | None = None,
         source_ref: str | None = None,
         metadata: JSONObject | None = None,
+        authorship: GraphWriteAuthorship = "MANUAL",
     ) -> KernelRelationClaim:
+        normalized_metadata = metadata or {}
+        violation = _AI_PERSISTENCE_QUARANTINE.violation_for_authorship_signals(
+            authorship=authorship,
+            agent_run_id=agent_run_id,
+            metadata=normalized_metadata,
+        )
+        if violation is not None:
+            raise AIPersistenceQuarantineError(violation)
         claim = self._claims.create(
             research_space_id=research_space_id,
             source_document_id=source_document_id,
@@ -357,10 +388,18 @@ class KernelRelationClaimService:
             claim_text=claim_text,
             claim_section=claim_section,
             linked_relation_id=linked_relation_id,
-            metadata=metadata,
+            metadata=normalized_metadata,
         )
         self._dispatch_claim_change(claim)
         return claim
+
+    def _ensure_claim_mutation_allowed(self, claim_id: str) -> None:
+        claim = self._claims.get_by_id(claim_id)
+        if claim is None:
+            return
+        violation = _AI_PERSISTENCE_QUARANTINE.violation_for_claim(claim)
+        if violation is not None:
+            raise AIPersistenceQuarantineError(violation)
 
     def create_hypothesis_claim(  # noqa: PLR0913
         self,
@@ -382,7 +421,16 @@ class KernelRelationClaimService:
         source_ref: str | None = None,
         agent_run_id: str | None = None,
         claim_status: RelationClaimStatus = "OPEN",
+        authorship: GraphWriteAuthorship = "MANUAL",
     ) -> KernelRelationClaim:
+        normalized_metadata = metadata or {}
+        violation = _AI_PERSISTENCE_QUARANTINE.violation_for_authorship_signals(
+            authorship=authorship,
+            agent_run_id=agent_run_id,
+            metadata=normalized_metadata,
+        )
+        if violation is not None:
+            raise AIPersistenceQuarantineError(violation)
         claim = self._claims.create(
             research_space_id=research_space_id,
             source_document_id=source_document_id,
@@ -404,7 +452,7 @@ class KernelRelationClaimService:
             claim_text=claim_text,
             claim_section=None,
             linked_relation_id=None,
-            metadata=metadata,
+            metadata=normalized_metadata,
         )
         self._dispatch_claim_change(claim)
         return claim

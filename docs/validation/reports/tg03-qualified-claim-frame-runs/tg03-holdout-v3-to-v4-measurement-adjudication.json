@@ -1,0 +1,55 @@
+{
+  "schema_version": "tg03.holdout_measurement_adjudication.v2",
+  "transition": "v3_to_v4",
+  "trigger": "The first v3 score exposed that the methodology declared only one numeric measurement even though other source cases contain literal measurements.",
+  "source_cases_changed": false,
+  "model_outputs_consulted_by_adjudicators": false,
+  "adjudication": {
+    "reviewer_count": 2,
+    "review_inputs": [
+      "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v2.json",
+      "services/artana_evidence_api/runtime/agent_output_schema.py"
+    ],
+    "consensus_policy": "Count ASCII numeric source measurements; exclude digits embedded in entity names.",
+    "quarantined_policy_mismatch": [
+      {
+        "case_id": "holdout_intervention_ctdna",
+        "literal_span": "four cycles",
+        "reason": "The numeric contract accepts digit tokens, not written numerals."
+      },
+      {
+        "case_id": "holdout_study_adagrasib",
+        "literal_span": "phase II",
+        "reason": "The numeric contract accepts digit tokens, not Roman numerals."
+      }
+    ]
+  },
+  "from": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v3.json",
+    "sha256": "a5b31c2111a4f2f25017a70c3ce3d33f844e3a939eb918c621ba7e5d9d6d3658"
+  },
+  "to": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v4.json",
+    "sha256": "b09c84fbc76642436a68c34ca9630636de36c78f077504e128a66662dc1b5888",
+    "methodology_status": "complete"
+  },
+  "expected_digit_measurements": [
+    {"case_id": "holdout_null_margin", "value": "15", "literal_span": "15%", "field_name": "THRESHOLD", "unit": "percent"},
+    {"case_id": "holdout_timeframe_milvexian", "value": "16", "literal_span": "week 16", "field_name": "TIMEFRAME", "unit": "week"},
+    {"case_id": "holdout_threshold_cabozantinib", "value": "3.5", "literal_span": "3.5", "field_name": "THRESHOLD", "unit": "dimensionless"},
+    {"case_id": "holdout_multi_clause_ret_ntrk", "frame_id": "holdout_multi_clause_ret_ntrk_01", "value": "24", "literal_span": "24 weeks", "field_name": "TIMEFRAME", "unit": "week", "quality_denominator": "included_adjudicated_frame"},
+    {"case_id": "holdout_source_measurement_repoterctinib", "value": "8.7", "literal_span": "8.7 months", "field_name": "OUTCOME", "unit": "month"}
+  ],
+  "scoring_identity": [
+    "case_and_frame_scope",
+    "source_locator",
+    "exact_value",
+    "literal_span",
+    "closed_field_name",
+    "normalized_unit",
+    "extraction_method"
+  ],
+  "provenance_fields_reported_but_not_used_as_measurement_identity": [
+    "source_hash"
+  ]
+}

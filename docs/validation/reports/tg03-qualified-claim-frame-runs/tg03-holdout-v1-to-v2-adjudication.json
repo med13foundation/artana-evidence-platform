@@ -1,0 +1,58 @@
+{
+  "schema_version": "tg03.holdout_gold_adjudication.v1",
+  "adjudication_kind": "blind_qualifier_review",
+  "production_output_supplied_to_reviewer": false,
+  "prompt_changed": false,
+  "prompt_version": "document_extraction.llm_extraction.v11",
+  "from": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v1.json",
+    "sha256": "8d1dcf01c51d6aa3e1cb02c54d994a7f9e96c5dc63471129f4ec34baa824ee96"
+  },
+  "to": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v2.json",
+    "sha256": "22fbdf50333811d52e26296e9f1ddd561bfe0f29b0ed7d3771017199552ab956"
+  },
+  "prompt": {
+    "version": "document_extraction.llm_extraction.v11",
+    "unchanged": true
+  },
+  "review": {
+    "scope": "blind qualifier adjudication only",
+    "production_output_supplied_to_qualifier_adjudicator": false,
+    "unresolved_core_frame_disagreements": [
+      "holdout_multi_clause_ret_ntrk_02",
+      "holdout_population_futibatinib_01"
+    ]
+  },
+  "v1": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v1.json",
+    "sha256": "8d1dcf01c51d6aa3e1cb02c54d994a7f9e96c5dc63471129f4ec34baa824ee96",
+    "immutable_run": "tg03-holdout-luna-v11-01"
+  },
+  "v2": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v2.json",
+    "sha256": "22fbdf50333811d52e26296e9f1ddd561bfe0f29b0ed7d3771017199552ab956"
+  },
+  "correction_groups": [
+    {
+      "case_id": "holdout_null_margin",
+      "field": "outcome",
+      "change": "Preserve the full endpoint phrase incremental survival advantage."
+    },
+    {
+      "case_id": "holdout_intervention_ctdna",
+      "field": "intervention,treatment_setting,timeframe",
+      "change": "Separate dostarlimab, neoadjuvant, and four cycles into their source-local roles."
+    },
+    {
+      "case_id": "holdout_source_measurement_repoterctinib",
+      "field": "timeframe",
+      "change": "Remove 8.7 months as a timeframe because it is an observed progression-free measurement."
+    }
+  ],
+  "unresolved_core_disagreements": [
+    "holdout_multi_clause_ret_ntrk_02",
+    "holdout_population_futibatinib_01"
+  ],
+  "policy": "Core disagreements remain unchanged in v2 and cannot be used to tune prompt v11."
+}

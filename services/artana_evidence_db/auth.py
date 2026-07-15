@@ -17,6 +17,10 @@ from .graph_access import (
     GraphTenantMembership,
     create_graph_rls_session_context,
 )
+from .graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+    effective_graph_write_authorship,
+)
 from .space_membership import MembershipRole
 from .user_models import User, UserRole, UserStatus
 
@@ -249,6 +253,18 @@ def graph_ai_principal_for_user(current_user: User) -> str | None:
     if not isinstance(current_user, GraphServiceUser):
         return None
     return current_user.graph_ai_principal
+
+
+def graph_write_authorship_for_user(
+    current_user: User,
+    *,
+    requested_authorship: GraphWriteAuthorship,
+) -> GraphWriteAuthorship:
+    """Return effective write authorship owned by authenticated graph identity."""
+    return effective_graph_write_authorship(
+        requested_authorship=requested_authorship,
+        authenticated_ai_principal=graph_ai_principal_for_user(current_user),
+    )
 
 
 def graph_service_capability_for_user(

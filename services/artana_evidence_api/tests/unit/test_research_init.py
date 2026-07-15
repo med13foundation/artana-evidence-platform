@@ -2645,6 +2645,12 @@ async def test_execute_research_init_emits_progress_and_marks_fallback_drafts_un
         and proposal.metadata["trusted_evidence_eligible"] is False
         for proposal in proposals
     )
+    assert all(proposal.source_provenance is not None for proposal in proposals)
+    assert {
+        proposal.source_provenance.reason_code
+        for proposal in proposals
+        if proposal.source_provenance is not None
+    } == {"missing_authoritative_source_identifier"}
 
 
 @pytest.mark.asyncio

@@ -13,6 +13,7 @@ from artana_evidence_db.auth import (
     graph_ai_principal_for_user,
     graph_service_capability_for_user,
     graph_source_attestation_service_for_user,
+    graph_write_authorship_for_user,
     to_graph_rls_session_context,
     to_graph_tenant_membership,
 )
@@ -226,3 +227,24 @@ def test_to_graph_rls_session_context_maps_graph_admin() -> None:
     assert context.has_phi_access is True
     assert context.is_admin is True
     assert context.bypass_rls is True
+
+
+def test_authenticated_ai_principal_overrides_forged_manual_authorship() -> None:
+    current_user = GraphServiceUser(
+        id=UUID("11111111-1111-1111-1111-111111111111"),
+        email="graph-agent@example.com",
+        username="graph-agent",
+        full_name="Graph Agent",
+        role=UserRole.RESEARCHER,
+        status=UserStatus.ACTIVE,
+        hashed_password="hashed",
+        graph_ai_principal="agent:graph-governor",
+    )
+
+    assert (
+        graph_write_authorship_for_user(
+            current_user,
+            requested_authorship="MANUAL",
+        )
+        == "AGENT"
+    )

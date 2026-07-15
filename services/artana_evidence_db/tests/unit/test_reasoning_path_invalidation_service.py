@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import uuid4
 
+import pytest
 from artana_evidence_db.claim_relation_models import (
     ClaimRelationReviewStatus,
     ClaimRelationType,
@@ -30,6 +31,9 @@ from artana_evidence_db.relation_claim_models import (
 from artana_evidence_db.relation_claim_service import (
     CertaintyBand,
     KernelRelationClaimService,
+)
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
 )
 
 
@@ -460,6 +464,11 @@ def test_claim_relation_service_invalidates_reasoning_paths_on_mutations() -> No
     invalidation = RecordingReasoningPathInvalidation()
     service = KernelClaimRelationService(
         ClaimRelationRepoStub(relation),
+        relation_claim_repo=RelationClaimRepoStub(
+            _relation_claim().model_copy(
+                update={"research_space_id": relation.research_space_id},
+            ),
+        ),
         reasoning_path_invalidation_service=invalidation,
     )
 
@@ -488,6 +497,62 @@ def test_claim_relation_service_invalidates_reasoning_paths_on_mutations() -> No
         (str(relation.research_space_id), [str(relation.id)]),
         (str(relation.research_space_id), [str(relation.id)]),
     ]
+
+
+def test_claim_relation_service_rejects_manual_edge_with_legacy_ai_endpoint() -> None:
+    relation = _claim_relation()
+    endpoint_claim = _relation_claim().model_copy(
+        update={
+            "research_space_id": relation.research_space_id,
+            "agent_run_id": "legacy-agent-run",
+        },
+    )
+    invalidation = RecordingReasoningPathInvalidation()
+    service = KernelClaimRelationService(
+        ClaimRelationRepoStub(relation),
+        relation_claim_repo=RelationClaimRepoStub(endpoint_claim),
+        reasoning_path_invalidation_service=invalidation,
+    )
+
+    with pytest.raises(AIPersistenceQuarantineError):
+        service.create_claim_relation(
+            research_space_id=str(relation.research_space_id),
+            source_claim_id=str(relation.source_claim_id),
+            target_claim_id=str(relation.target_claim_id),
+            relation_type="SUPPORTS",
+            agent_run_id=None,
+            source_document_id=None,
+            confidence=0.9,
+            review_status="PROPOSED",
+            evidence_summary="Forged manual edge.",
+            authorship="MANUAL",
+        )
+
+    assert invalidation.claim_calls == []
+    assert invalidation.relation_calls == []
+
+
+def test_claim_relation_service_checks_endpoints_before_acceptance_mutation() -> None:
+    relation = _claim_relation().model_copy(update={"review_status": "PROPOSED"})
+    endpoint_claim = _relation_claim().model_copy(
+        update={
+            "research_space_id": relation.research_space_id,
+            "metadata_payload": {"origin": "document_extraction"},
+        },
+    )
+    invalidation = RecordingReasoningPathInvalidation()
+    service = KernelClaimRelationService(
+        ClaimRelationRepoStub(relation),
+        relation_claim_repo=RelationClaimRepoStub(endpoint_claim),
+        reasoning_path_invalidation_service=invalidation,
+    )
+
+    with pytest.raises(AIPersistenceQuarantineError):
+        service.update_review_status(str(relation.id), review_status="ACCEPTED")
+
+    assert service.get_claim_relation(str(relation.id)).review_status == "PROPOSED"
+    assert invalidation.claim_calls == []
+    assert invalidation.relation_calls == []
 
 
 def test_relation_claim_service_invalidates_reasoning_paths_on_claim_change() -> None:

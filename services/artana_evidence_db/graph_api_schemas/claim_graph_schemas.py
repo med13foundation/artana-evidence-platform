@@ -7,16 +7,18 @@ from datetime import datetime
 from uuid import UUID
 
 from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.fact_assessment import (
+    FactAssessment,
+    assessment_confidence,
+)
+from artana_evidence_db.graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+)
 from artana_evidence_db.kernel_domain_models import (
     KernelClaimParticipant,
     KernelClaimRelation,
 )
 from pydantic import BaseModel, ConfigDict, Field
-
-from artana_evidence_db.fact_assessment import (
-    FactAssessment,
-    assessment_confidence,
-)
 
 
 def _to_uuid(value: str | UUID) -> UUID:
@@ -108,6 +110,7 @@ class ClaimRelationCreateRequest(BaseModel):
     model_config = ConfigDict(strict=True)
 
     source_claim_id: UUID = Field(..., strict=False)
+    authorship: GraphWriteAuthorship = "MANUAL"
     target_claim_id: UUID = Field(..., strict=False)
     relation_type: str = Field(..., min_length=1, max_length=32)
     agent_run_id: str | None = Field(default=None, min_length=1, max_length=255)

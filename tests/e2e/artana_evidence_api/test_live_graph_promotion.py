@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 from collections.abc import Generator
 from dataclasses import replace
@@ -24,7 +23,9 @@ from artana_evidence_api.sqlalchemy_stores import SqlAlchemyHarnessDocumentStore
 from artana_evidence_api.tests.integration.test_runtime_paths import (
     _build_client,
     _build_services,
-    _candidate_claim_payload,
+    _qualified_agent_claim_metadata,
+    _qualified_candidate_claim_payload,
+    _source_bound_positive_claim_frame,
 )
 from artana_evidence_api.tests.support import FakeKernelRuntime, auth_headers
 from artana_evidence_db.tests import support as graph_service_support
@@ -97,12 +98,8 @@ def db_session() -> Generator[Session]:
 
 def _build_live_graph_gateway(*, graph_client: TestClient) -> GraphTransportBundle:
     default_headers = build_graph_admin_headers()
-    default_headers["X-TEST-GRAPH-SERVICE-CAPABILITIES"] = (
-        "source_provenance_submit"
-    )
-    default_headers["X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"] = (
-        "artana_evidence_api"
-    )
+    default_headers["X-TEST-GRAPH-SERVICE-CAPABILITIES"] = "source_provenance_submit"
+    default_headers["X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"] = "artana_evidence_api"
     return GraphTransportBundle(
         config=GraphTransportConfig(
             base_url="http://testserver",
@@ -136,7 +133,7 @@ def _create_live_graph_entity(
     return UUID(response.json()["entity"]["id"])
 
 
-def test_promote_proposal_persists_claim_through_live_graph_service(
+def test_promote_qualified_claim_fails_closed_without_live_graph_writes(
     db_session: Session,
     graph_client: TestClient,
 ) -> None:
@@ -155,13 +152,15 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
     graph_space_fixture = build_seeded_space_fixture(slug_prefix="live-promotion")
     space_id = UUID(str(graph_space_fixture["space_id"]))
     graph_headers = build_graph_admin_headers()
+    source_curie = f"HGNC:{uuid4().int % 100_000:05d}"
+    target_curie = f"HP:{uuid4().int % 10_000_000:07d}"
     source_entity_id = _create_live_graph_entity(
         graph_client=graph_client,
         space_id=space_id,
         headers=graph_headers,
         entity_type="GENE",
         display_label="MED13",
-        identifiers={"hgnc_id": f"HGNC:{uuid4().hex[:8]}"},
+        identifiers={"hgnc_id": source_curie},
     )
     target_entity_id = _create_live_graph_entity(
         graph_client=graph_client,
@@ -169,7 +168,7 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
         headers=graph_headers,
         entity_type="PHENOTYPE",
         display_label="Developmental delay",
-        identifiers={"hpo_id": f"HP:{uuid4().int % 10_000_000:07d}"},
+        identifiers={"hpo_id": target_curie},
     )
     source_run = services.run_registry.create_run(
         space_id=str(space_id),
@@ -180,8 +179,16 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
         graph_service_version="live-graph-test",
     )
     services.artifact_store.seed_for_run(run=source_run)
-    source_text = "MED13 is associated with developmental delay."
+    source_text = "In a pediatric cohort, MED13 is associated with Developmental delay."
     source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    claim_frame = _source_bound_positive_claim_frame(
+        source_text=source_text,
+        source_locator="normalized_extraction_text",
+        subject_label="MED13",
+        relation_type="ASSOCIATED_WITH",
+        object_label="Developmental delay",
+        population="pediatric cohort",
+    )
     source_document = services.document_store.create_document(
         space_id=space_id,
         created_by=uuid4(),
@@ -225,28 +232,18 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
                         "excerpt": source_text,
                     },
                 ],
-                payload=_candidate_claim_payload(
+                payload=_qualified_candidate_claim_payload(
                     source_entity_id=str(source_entity_id),
                     target_entity_id=str(target_entity_id),
                     relation_type="ASSOCIATED_WITH",
+                    frame=claim_frame,
                 ),
-                metadata={
-                    "agent_run_id": "integration-live-graph-promotion",
-                    "evidence_grounding": {
-                        "anchor_start": 0,
-                        "anchor_end": len(source_text),
-                        "match_kind": "exact",
-                        "subject_present": True,
-                        "object_present": True,
-                        "grounded": True,
-                    },
-                    "support_verification": {
-                        "support": "ENTAILS",
-                        "rationale": "The sentence directly supports the relation.",
-                        "model_id": "test-support-verifier",
-                        "verification_method": "agent",
-                    },
-                },
+                metadata=_qualified_agent_claim_metadata(
+                    agent_run_id="integration-live-graph-promotion",
+                    frame=claim_frame,
+                    subject_curie=source_curie,
+                    object_curie=target_curie,
+                ),
             ),
         ),
     )
@@ -261,67 +258,48 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
         headers=auth_headers(),
         json={"reason": "Integration live graph promotion"},
     )
-    assert response.status_code == 200, response.text
+    assert response.status_code == 409, response.text
     payload = response.json()
-    assert payload["status"] == "promoted"
-    graph_relation_id = payload["metadata"].get("graph_relation_id")
-    graph_claim_id = payload["metadata"].get("graph_claim_id")
-    assert isinstance(graph_relation_id, str), json.dumps(
-        payload["metadata"],
-        sort_keys=True,
+    assert payload["reason_code"] == "qualified_claim_persistence_not_ready"
+    assert "cannot yet persist its complete ClaimFrame" in payload["detail"]
+
+    proposal_response = client.get(
+        f"/v1/spaces/{space_id}/proposals/{proposal.id}",
+        headers=auth_headers(),
     )
-    assert graph_relation_id != ""
-    assert payload["metadata"]["graph_claim_status"] == "RESOLVED"
-    assert payload["metadata"]["graph_claim_validation_state"] == "ALLOWED"
-    assert payload["metadata"]["graph_claim_persistability"] == "PERSISTABLE"
+    assert proposal_response.status_code == 200, proposal_response.text
+    proposal_payload = proposal_response.json()
+    assert proposal_payload["status"] == "pending_review"
+    assert proposal_payload["decision_reason"] is None
+    assert proposal_payload["decided_at"] is None
+
+    pending_response = client.get(
+        f"/v1/spaces/{space_id}/proposals",
+        headers=auth_headers(),
+        params={"status": "pending_review"},
+    )
+    assert pending_response.status_code == 200, pending_response.text
+    pending_payload = pending_response.json()
+    assert pending_payload["total"] == 1
+    assert [item["id"] for item in pending_payload["proposals"]] == [proposal.id]
 
     workspace = services.artifact_store.get_workspace(
         space_id=str(space_id),
         run_id=source_run.id,
     )
     assert workspace is not None
-    assert workspace.snapshot["last_promoted_graph_claim_id"] == graph_claim_id
-    assert workspace.snapshot["last_promoted_graph_relation_id"] == graph_relation_id
+    assert workspace.snapshot.get("last_promoted_graph_claim_id") is None
+    assert workspace.snapshot.get("last_promoted_graph_relation_id") is None
 
-    # The promotion created a RESOLVED claim AND materialized a canonical relation.
-    # Verify the claim exists and is properly linked.
+    # TG03 must not leave either graph ledger behind while ClaimFrame persistence is absent.
     claims = live_graph_gateway.list_claims(space_id=space_id)
-    assert claims.total == 1
-    persisted_claim = claims.claims[0]
-    assert str(persisted_claim.research_space_id) == str(space_id)
-    assert persisted_claim.relation_type == "ASSOCIATED_WITH"
-    assert persisted_claim.validation_state == "ALLOWED"
-    assert persisted_claim.persistability == "PERSISTABLE"
-    assert persisted_claim.claim_status == "RESOLVED"
-    assert persisted_claim.source_label == "MED13"
-    assert persisted_claim.target_label == "Developmental delay"
-    assert persisted_claim.source_document_ref == "PMID:12345678"
+    assert claims.total == 0
 
-    participants = live_graph_gateway.list_claim_participants(
-        space_id=space_id,
-        claim_id=str(persisted_claim.id),
+    relations_response = graph_client.get(
+        f"/v1/spaces/{space_id}/relations",
+        headers=graph_headers,
     )
-    assert participants.total == 2
-    participant_entity_ids = {
-        participant.role: str(participant.entity_id)
-        for participant in participants.participants
-    }
-    assert participant_entity_ids == {
-        "SUBJECT": str(source_entity_id),
-        "OBJECT": str(target_entity_id),
-    }
-
-    evidence = live_graph_gateway.list_claim_evidence(
-        space_id=space_id,
-        claim_id=str(persisted_claim.id),
-    )
-    assert evidence.total == 1
-    persisted_evidence = evidence.evidence[0]
-    assert persisted_evidence.source_document_ref == "PMID:12345678"
-    assert persisted_evidence.provenance_status == "VERIFIED"
-    assert persisted_evidence.source_snapshot_id is not None
-    assert persisted_evidence.source_identity is not None
-    assert persisted_evidence.source_identity.authoritative_identifier == "PMID:12345678"
-    assert persisted_evidence.evidence_locator is not None
-    assert persisted_evidence.evidence_locator.exact_quote == source_text
-    assert persisted_evidence.metadata["origin"] == "manual_relation_api"
+    assert relations_response.status_code == 200, relations_response.text
+    relations_payload = relations_response.json()
+    assert relations_payload["total"] == 0
+    assert relations_payload["relations"] == []

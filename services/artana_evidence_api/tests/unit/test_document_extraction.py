@@ -32,12 +32,15 @@ from artana_evidence_api.document_extraction import (
 )
 from artana_evidence_api.document_extraction_prompting import (
     LLM_EXTRACTION_SYSTEM_PROMPT,
+    _build_llm_extraction_output_schema,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     LLM_EXTRACTION_PROMPT_VERSION,
     LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION,
     ModelStepRunner,
     llm_extraction_step_key,
+    start_model_attempt_audit,
+    stop_model_attempt_audit,
 )
 from artana_evidence_api.document_extraction_support.strict_relation_discovery import (
     discover_relation_candidates_strict,
@@ -49,6 +52,38 @@ from artana_evidence_api.types.graph_contracts import (
     KernelEntityResponse,
 )
 from pydantic import ValidationError
+
+from .legacy_relation_extraction_test_support import (
+    run_legacy_relation_extraction_for_tests,
+)
+
+
+@pytest.fixture(autouse=True)
+def _legacy_mock_relation_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep pre-TG-03 model mocks scoped to their original retry concerns."""
+
+    def _schema(max_relations: int):
+        return _build_llm_extraction_output_schema(
+            max_relations=max_relations,
+            strict_relation_type=False,
+            require_claim_frame_fields=False,
+        )
+
+    monkeypatch.setattr(
+        document_extraction,
+        "build_llm_guarded_extraction_output_schema",
+        _schema,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "build_llm_weak_review_extraction_output_schema",
+        _schema,
+    )
+    monkeypatch.setattr(
+        document_extraction,
+        "run_llm_relation_extraction_with_zero_retry",
+        run_legacy_relation_extraction_for_tests,
+    )
 
 
 def _proposal_review_ref_from_prompt(prompt: str) -> str:
@@ -185,7 +220,7 @@ def _configure_llm_extraction_test_runtime(
 
 
 def test_llm_extraction_prompt_covers_rare_disease_gene_variant_associations() -> None:
-    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v7"
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v12"
     assert (
         "FBN1 loss-of-function variants ASSOCIATED_WITH Marfan syndrome"
         in LLM_EXTRACTION_SYSTEM_PROMPT
@@ -954,14 +989,12 @@ async def test_extract_relation_candidates_with_llm_retries_zero_candidate_agent
             text=text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
-            prompt_version=(
-                f"{LLM_EXTRACTION_PROMPT_VERSION}."
-                "zero_candidate_retry.v1"
-            ),
+            prompt_version=(f"{LLM_EXTRACTION_PROMPT_VERSION}.zero_candidate_retry.v1"),
         ),
     ]
-    assert "A prior relation extraction attempt returned zero usable relations" in (
-        captured_prompts[2]
+    assert (
+        "A prior relation extraction attempt returned zero usable relations"
+        in (captured_prompts[2])
     )
     assert "WEAK REVIEW-ONLY EXTRACTION PASS" not in captured_prompts[2]
 
@@ -1103,10 +1136,7 @@ async def test_extract_relation_candidates_with_llm_retries_zero_causes_candidat
             text=text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
-            prompt_version=(
-                f"{LLM_EXTRACTION_PROMPT_VERSION}."
-                "zero_candidate_retry.v1"
-            ),
+            prompt_version=(f"{LLM_EXTRACTION_PROMPT_VERSION}.zero_candidate_retry.v1"),
         ),
     ]
 
@@ -1195,8 +1225,7 @@ async def test_extract_relation_candidates_with_llm_retries_schema_validation_fa
     assert len(captured_step_keys) == 2
     assert captured_step_keys[1] == llm_extraction_step_key(
         text=(
-            "MSI-high status is a biomarker for immune checkpoint inhibitor "
-            "response."
+            "MSI-high status is a biomarker for immune checkpoint inhibitor response."
         ),
         max_relations=10,
         model_id="openai:gpt-5.4-mini",
@@ -1295,10 +1324,7 @@ async def test_extract_relation_candidates_with_llm_chains_schema_retry_to_zero_
             text=text,
             max_relations=10,
             model_id="openai:gpt-5.4-mini",
-            prompt_version=(
-                f"{LLM_EXTRACTION_PROMPT_VERSION}."
-                "zero_candidate_retry.v1"
-            ),
+            prompt_version=(f"{LLM_EXTRACTION_PROMPT_VERSION}.zero_candidate_retry.v1"),
         ),
     ]
 
@@ -1328,7 +1354,9 @@ async def test_extract_relation_candidates_with_llm_skips_weak_pass_after_usable
                     ],
                 },
             )
-        raise AssertionError("weak review pass must not run after a usable primary result")
+        raise AssertionError(
+            "weak review pass must not run after a usable primary result"
+        )
 
     _configure_llm_extraction_test_runtime(
         monkeypatch,
@@ -1668,7 +1696,7 @@ async def test_extract_relation_candidates_with_llm_does_not_downgrade_strong_cl
     assert len(candidates) == 1
     assert candidates[0].review_status == "candidate"
     assert candidates[0].review_reason_codes == ()
-    assert candidates[0].trusted_evidence_eligible is True
+    assert candidates[0].trusted_evidence_eligible is False
 
 
 @pytest.mark.asyncio
@@ -1676,8 +1704,7 @@ async def test_weak_pass_does_not_poison_strong_claim_in_mixed_sentence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     sentence = (
-        "BRCA1 activates EGFR, while MED13 may be linked to congenital heart "
-        "disease."
+        "BRCA1 activates EGFR, while MED13 may be linked to congenital heart disease."
     )
 
     async def _fake_run_single_step_with_policy(*_args, **kwargs):
@@ -1739,7 +1766,7 @@ async def test_weak_pass_does_not_poison_strong_claim_in_mixed_sentence(
     assert len(candidates) == 1
     assert candidates[0].review_status == "candidate"
     assert candidates[0].review_reason_codes == ()
-    assert candidates[0].trusted_evidence_eligible is True
+    assert candidates[0].trusted_evidence_eligible is False
 
 
 @pytest.mark.asyncio
@@ -2215,6 +2242,20 @@ def test_llm_extraction_step_key_uses_full_text_beyond_prefix() -> None:
     )
 
 
+def test_llm_extraction_step_key_changes_with_execution_namespace() -> None:
+    assert llm_extraction_step_key(
+        text="BRCA1 activates EGFR.",
+        max_relations=3,
+        model_id="openai:gpt-5.6-luna",
+        execution_namespace="tg03-run-01",
+    ) != llm_extraction_step_key(
+        text="BRCA1 activates EGFR.",
+        max_relations=3,
+        model_id="openai:gpt-5.6-luna",
+        execution_namespace="tg03-run-02",
+    )
+
+
 @pytest.mark.asyncio
 async def test_extract_relation_candidates_with_llm_reads_beyond_first_chunk(
     monkeypatch: pytest.MonkeyPatch,
@@ -2268,9 +2309,8 @@ async def test_extract_relation_candidates_with_llm_reads_beyond_first_chunk(
     )
 
     long_text = (
-        ("Background sentence without extractable relations. " * 120)
-        + "MED13 causes developmental delay."
-    )
+        "Background sentence without extractable relations. " * 120
+    ) + "MED13 causes developmental delay."
 
     candidates, diagnostics = await extract_relation_candidates_with_diagnostics(
         long_text,
@@ -2507,8 +2547,12 @@ async def test_review_document_extraction_drafts_with_diagnostics_closes_store(
         document_id=document.id,
     )
 
-    reviewed_drafts, diagnostics = (
-        await review_document_extraction_drafts_with_diagnostics(
+    audit_session = start_model_attempt_audit()
+    try:
+        (
+            reviewed_drafts,
+            diagnostics,
+        ) = await review_document_extraction_drafts_with_diagnostics(
             document=document,
             candidates=[candidate],
             drafts=(draft,),
@@ -2516,7 +2560,8 @@ async def test_review_document_extraction_drafts_with_diagnostics_closes_store(
                 objective="Study MED13 signaling.",
             ),
         )
-    )
+    finally:
+        stop_model_attempt_audit(audit_session)
 
     assert diagnostics == DocumentProposalReviewDiagnostics(
         llm_review_status="completed",
@@ -2526,6 +2571,16 @@ async def test_review_document_extraction_drafts_with_diagnostics_closes_store(
     assert created_stores[0].closed is True
     assert created_stores[0].kernel is not None
     assert created_stores[0].kernel.closed is True
+    assert len(audit_session.records) == 1
+    attempt = audit_session.records[0]
+    assert attempt.attempt_role == "proposal_review"
+    assert attempt.validation_outcome == "accepted"
+    assert attempt.error_type is None
+    raw_payload = attempt.raw_model_payload
+    assert raw_payload is not None
+    reviews = raw_payload["reviews"]
+    assert isinstance(reviews, list)
+    assert reviews[0]["factual_support"] == "moderate"
 
 
 @pytest.mark.asyncio
@@ -2755,8 +2810,12 @@ async def test_review_document_extraction_drafts_with_diagnostics_times_out(
         document_id=document.id,
     )
 
-    reviewed_drafts, diagnostics = (
-        await review_document_extraction_drafts_with_diagnostics(
+    audit_session = start_model_attempt_audit()
+    try:
+        (
+            reviewed_drafts,
+            diagnostics,
+        ) = await review_document_extraction_drafts_with_diagnostics(
             document=document,
             candidates=[candidate],
             drafts=(draft,),
@@ -2764,7 +2823,8 @@ async def test_review_document_extraction_drafts_with_diagnostics_times_out(
                 objective="Study MED13 signaling.",
             ),
         )
-    )
+    finally:
+        stop_model_attempt_audit(audit_session)
 
     assert diagnostics == DocumentProposalReviewDiagnostics(
         llm_review_status="fallback_error",
@@ -2777,6 +2837,11 @@ async def test_review_document_extraction_drafts_with_diagnostics_times_out(
     assert created_stores[0].closed is True
     assert created_stores[0].kernel is not None
     assert created_stores[0].kernel.closed is True
+    assert len(audit_session.records) == 1
+    attempt = audit_session.records[0]
+    assert attempt.attempt_role == "proposal_review"
+    assert attempt.validation_outcome == "invocation_failed"
+    assert attempt.error_type == "TimeoutError"
 
 
 @pytest.mark.asyncio
@@ -3039,10 +3104,9 @@ def test_build_document_extraction_drafts_keeps_candidates_on_empty_graph() -> N
         "direct",
         "supporting",
     }
-    assert drafts[0].metadata["proposal_review"]["priority"] in {
-        "prioritize",
-        "review",
-    }
+    assert drafts[0].metadata["proposal_review"]["factual_support"] == "tentative"
+    assert drafts[0].metadata["proposal_review"]["priority"] == "background"
+    assert drafts[0].metadata["proposal_review"]["method"] == "heuristic_fallback_v1"
     assert drafts[0].claim_fingerprint == compute_claim_fingerprint(
         "MED13",
         "ASSOCIATED_WITH",
@@ -3088,8 +3152,7 @@ def test_build_document_extraction_drafts_splits_compound_object_labels() -> Non
             subject_label="MED13",
             relation_type="CAUSES",
             object_label=(
-                "FG syndrome (Opitz-Kaveggia), "
-                "Lujan-Fryns syndrome, and Ohdo syndrome"
+                "FG syndrome (Opitz-Kaveggia), Lujan-Fryns syndrome, and Ohdo syndrome"
             ),
             sentence=(
                 "MED13 causes FG syndrome (Opitz-Kaveggia), "

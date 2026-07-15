@@ -175,14 +175,10 @@ class _StubGraphApiGateway:
             subject_id=request.subject_id,
             variable_id=request.variable_id,
             value_numeric=None,
-            value_text=(
-                request.value if isinstance(request.value, str) else None
-            ),
+            value_text=(request.value if isinstance(request.value, str) else None),
             value_date=None,
             value_coded=None,
-            value_boolean=(
-                request.value if isinstance(request.value, bool) else None
-            ),
+            value_boolean=(request.value if isinstance(request.value, bool) else None),
             value_json=request.value if not isinstance(request.value, str) else None,
             unit=request.unit,
             observed_at=None,
@@ -211,7 +207,8 @@ class _StubGraphApiGateway:
                 for entity in entities
                 if (
                     (entity.display_label or "").casefold() == normalized_query
-                    or normalized_query in {alias.casefold() for alias in entity.aliases}
+                    or normalized_query
+                    in {alias.casefold() for alias in entity.aliases}
                 )
             ]
         return KernelEntityListResponse(
@@ -450,7 +447,9 @@ def _create_observation_candidate_proposal(
 
 
 def test_proposals_route_surfaces_and_filters_evidence_grade() -> None:
-    client, proposal_store, research_space_store, run_registry, _gateway = _build_client()
+    client, proposal_store, research_space_store, run_registry, _gateway = (
+        _build_client()
+    )
     space = research_space_store.create_space(
         owner_id=_TEST_USER_ID,
         name="Evidence grade proposal space",
@@ -517,7 +516,7 @@ def test_proposals_route_surfaces_and_filters_evidence_grade() -> None:
     assert detail_response.json()["evidence_grade"] == "High"
 
 
-def test_promote_proposal_accepts_omitted_body_and_preserves_explicit_body() -> None:
+def test_promote_unqualified_proposal_rejects_omitted_and_explicit_body() -> None:
     client, proposal_store, research_space_store, run_registry, graph_api_gateway = (
         _build_client()
     )
@@ -553,14 +552,12 @@ def test_promote_proposal_accepts_omitted_body_and_preserves_explicit_body() -> 
         json={"reason": "Promote this proposal", "metadata": {"source": "unit-test"}},
     )
 
-    assert no_body_response.status_code == 200
-    assert no_body_response.json()["status"] == "promoted"
-    assert no_body_response.json()["decision_reason"] is None
-    assert body_response.status_code == 200
-    assert body_response.json()["status"] == "promoted"
-    assert body_response.json()["decision_reason"] == "Promote this proposal"
+    assert no_body_response.status_code == 409
+    assert no_body_response.json()["reason_code"] == "missing_qualified_claim_frame"
+    assert body_response.status_code == 409
+    assert body_response.json()["reason_code"] == "missing_qualified_claim_frame"
     assert len(graph_api_gateway.created_relation_requests) == 0
-    assert len(graph_api_gateway.created_claim_requests) == 2
+    assert len(graph_api_gateway.created_claim_requests) == 0
 
 
 def test_reject_proposal_accepts_omitted_body_and_preserves_explicit_body() -> None:

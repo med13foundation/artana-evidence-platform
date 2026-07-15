@@ -35,6 +35,8 @@ GRAPH_SERVICE_LINT_PATHS := \
  services/artana_evidence_db/workflow_models.py \
  services/artana_evidence_db/workflow_persistence_models.py \
 	 services/artana_evidence_db/graph_workflow_service.py \
+	 services/artana_evidence_db/graph_workflow/actor_context.py \
+	 services/artana_evidence_db/graph_workflow/policy.py \
 	 services/artana_evidence_db/kernel_entity_errors.py \
 	 services/artana_evidence_db/entity_service.py \
 	 services/artana_evidence_db/kernel_entity_models.py \

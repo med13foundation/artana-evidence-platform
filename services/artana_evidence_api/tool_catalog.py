@@ -173,7 +173,7 @@ class CreateGraphClaimToolArgs(BaseModel):
 
 
 class CreateManualHypothesisToolArgs(BaseModel):
-    """Arguments for manual hypothesis creation."""
+    """Arguments for a non-persisted agent hypothesis review candidate."""
 
     model_config = ConfigDict(strict=True)
 
@@ -546,12 +546,12 @@ _TOOL_SPECS: tuple[GraphHarnessToolSpec, ...] = (
     ),
     GraphHarnessToolSpec(
         name="create_manual_hypothesis",
-        display_name="Create Manual Hypothesis",
-        description="Create one manual graph hypothesis through the graph service.",
+        display_name="Submit Hypothesis For Review",
+        description="Return one agent hypothesis as a non-persisted review candidate.",
         tool_groups=("graph-write", "approval-gated-write"),
         harness_ids=("claim-curation", "mechanism-discovery", "supervisor"),
         input_model=CreateManualHypothesisToolArgs,
-        output_summary="Created manual hypothesis payload.",
+        output_summary="Non-persisted hypothesis review candidate.",
         side_effect=True,
         risk_level="high",
         approval_mode="approval_gated",

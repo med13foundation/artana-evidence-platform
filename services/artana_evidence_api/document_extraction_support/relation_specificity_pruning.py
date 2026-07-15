@@ -7,6 +7,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from artana_evidence_api.document_extraction_contracts import (
+    ClaimExtractionLineage,
+    ClaimExtractionRoutingStatus,
     ExtractedRelationCandidate,
 )
 from artana_evidence_api.document_extraction_relation_taxonomy import (
@@ -210,12 +212,32 @@ class SpecificityFilteredCandidateList(list[ExtractedRelationCandidate]):
         quality_filtered_candidate_count: int = 0,
         llm_extraction_chunk_count: int = 0,
         llm_extraction_text_char_count: int = 0,
+        raw_agent_outputs: tuple[dict[str, object], ...] = (),
+        model_attempt_records: tuple[dict[str, object], ...] = (),
+        claim_extraction_routing_status: ClaimExtractionRoutingStatus = "not_run",
+        overflow_candidates: tuple[ExtractedRelationCandidate, ...] = (),
+        all_framed_candidates: tuple[ExtractedRelationCandidate, ...] = (),
+        claim_lineage: tuple[ClaimExtractionLineage, ...] = (),
+        inventory_incompleteness: tuple[dict[str, object], ...] = (),
     ) -> None:
         super().__init__(candidates)
         self.pruned_generic_relation_count = pruned_generic_relation_count
         self.quality_filtered_candidate_count = quality_filtered_candidate_count
         self.llm_extraction_chunk_count = llm_extraction_chunk_count
         self.llm_extraction_text_char_count = llm_extraction_text_char_count
+        self.raw_agent_outputs = raw_agent_outputs
+        self.model_attempt_records = model_attempt_records
+        self.claim_extraction_routing_status = claim_extraction_routing_status
+        self.overflow_candidates = overflow_candidates
+        self.all_framed_candidates = all_framed_candidates
+        self.claim_lineage = claim_lineage
+        self.inventory_incompleteness = inventory_incompleteness
+
+    @property
+    def candidate_overflow_count(self) -> int:
+        """Return claims routed outside the bounded compatibility list."""
+
+        return len(self.overflow_candidates)
 
 
 def prune_redundant_generic_relation_candidates(
@@ -265,10 +287,8 @@ def prune_redundant_generic_relation_candidates(
             _candidate_entity_pair_and_sentence(candidate),
         )
         if suppressing_relation_type is None and _is_generic_tail_clause(candidate):
-            suppressing_relation_type = (
-                specific_relation_by_subject_and_sentence.get(
-                    _candidate_subject_and_sentence(candidate),
-                )
+            suppressing_relation_type = specific_relation_by_subject_and_sentence.get(
+                _candidate_subject_and_sentence(candidate),
             )
         if (
             canonical_relation in _GENERIC_RELATION_TYPES
@@ -349,9 +369,7 @@ def has_broadened_entity_label(
     normalized_label = _normalize_entity_label(label)
     if not normalized_label:
         return False
-    label_pattern = r"\s+".join(
-        re.escape(token) for token in normalized_label.split()
-    )
+    label_pattern = r"\s+".join(re.escape(token) for token in normalized_label.split())
     normalized_sentence = _normalize_sentence(sentence)
     if re.search(rf"\b{label_pattern}\b", normalized_sentence) is None:
         return False
@@ -459,12 +477,9 @@ def _has_subtype_tail_modifier(*, label_pattern: str, sentence: str) -> bool:
         tail_tokens = _bounded_tail_tokens(match.group("tail"))
         if not tail_tokens:
             continue
-        if (
-            _SUBTYPE_TAIL_CUE_TOKENS.intersection(tail_tokens)
-            and (
-                label_has_disease_class
-                or _SUBTYPE_TAIL_DISEASE_TOKENS.intersection(tail_tokens)
-            )
+        if _SUBTYPE_TAIL_CUE_TOKENS.intersection(tail_tokens) and (
+            label_has_disease_class
+            or _SUBTYPE_TAIL_DISEASE_TOKENS.intersection(tail_tokens)
         ):
             return True
     return False
@@ -501,9 +516,7 @@ def has_context_tail_entity_label(
     if not normalized_label or not normalized_counterpart:
         return False
     normalized_sentence = _normalize_sentence(sentence)
-    label_pattern = r"\s+".join(
-        re.escape(token) for token in normalized_label.split()
-    )
+    label_pattern = r"\s+".join(re.escape(token) for token in normalized_label.split())
     counterpart_pattern = r"\s+".join(
         re.escape(token) for token in normalized_counterpart.split()
     )

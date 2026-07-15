@@ -631,6 +631,15 @@
           "assessment": {
             "$ref": "#/components/schemas/FactAssessment"
           },
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
+          },
           "evidence_summary": {
             "anyOf": [
               {
@@ -2635,6 +2644,15 @@
       "CreateManualHypothesisRequest": {
         "description": "Request payload for manually logging one hypothesis.",
         "properties": {
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
+          },
           "rationale": {
             "maxLength": 4000,
             "minLength": 1,
@@ -10318,6 +10336,15 @@
           "assessment": {
             "$ref": "#/components/schemas/FactAssessment"
           },
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
+          },
           "claim_text": {
             "anyOf": [
               {
@@ -10849,6 +10876,15 @@
         "properties": {
           "assessment": {
             "$ref": "#/components/schemas/FactAssessment"
+          },
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
           },
           "evidence_sentence": {
             "anyOf": [

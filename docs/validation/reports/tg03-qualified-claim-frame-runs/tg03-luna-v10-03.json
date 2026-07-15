@@ -1,0 +1,2409 @@
+{
+  "cases": [
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "variant_egfr_t790m",
+      "category": "variant_state",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "EGFR T790M mutation",
+            "state": "PRESENT",
+            "value": "T790M mutation"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that the EGFR T790M mutation conferred resistance to gefitinib in the lung cancer population.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "gefitinib",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "lung cancer",
+            "state": "PRESENT",
+            "value": "lung cancer"
+          },
+          "predicate": "CONFERS_RESISTANCE_TO",
+          "source_evidence": {
+            "exact_span": "The EGFR T790M mutation conferred resistance to gefitinib in lung cancer.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "EGFR T790M mutation",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "variant_egfr_t790m_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "37b8a75263ad600ba963a748a86124cb560e1ac090069b16d4704e2e472755ae"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "6268276ed7efee039f09cd0274fcbc1cb5eeb61d0523ba71d9def7a83383b1f8",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "EGFR T790M mutation",
+                "state": "PRESENT",
+                "value": "T790M mutation"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that the EGFR T790M mutation conferred resistance to gefitinib in the lung cancer population.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "gefitinib",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "lung cancer",
+                "state": "PRESENT",
+                "value": "lung cancer"
+              },
+              "predicate": "CONFERS_RESISTANCE_TO",
+              "source_evidence": {
+                "exact_span": "The EGFR T790M mutation conferred resistance to gefitinib in lung cancer.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "EGFR T790M mutation",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "gefitinib",
+            "relation_type": "CONFERS_RESISTANCE_TO",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "The EGFR T790M mutation conferred resistance to gefitinib in lung cancer.",
+            "subject": "EGFR T790M mutation"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "EGFR T790M variant state"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "variant_brca1_zygosity",
+      "category": "variant_state",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "Biallelic BRCA1 loss",
+            "state": "PRESENT",
+            "value": "Biallelic BRCA1 loss"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that biallelic BRCA1 loss sensitized triple-negative breast cancer to cisplatin, supporting a SENSITIZES_TO relation from BRCA1 loss to cisplatin with the cancer subtype as the population.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "cisplatin",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "triple-negative breast cancer",
+            "state": "PRESENT",
+            "value": "triple-negative breast cancer"
+          },
+          "predicate": "SENSITIZES_TO",
+          "source_evidence": {
+            "exact_span": "Biallelic BRCA1 loss sensitized triple-negative breast cancer to cisplatin.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "BRCA1 loss",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "variant_brca1_zygosity_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "74d338d9ae31dfb9b22bb710b2197086788a51c553e628e5aa2580bc53e8c941",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "Biallelic BRCA1 loss",
+                "state": "PRESENT",
+                "value": "Biallelic BRCA1 loss"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that biallelic BRCA1 loss sensitized triple-negative breast cancer to cisplatin, supporting a SENSITIZES_TO relation from BRCA1 loss to cisplatin with the cancer subtype as the population.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "cisplatin",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "triple-negative breast cancer",
+                "state": "PRESENT",
+                "value": "triple-negative breast cancer"
+              },
+              "predicate": "SENSITIZES_TO",
+              "source_evidence": {
+                "exact_span": "Biallelic BRCA1 loss sensitized triple-negative breast cancer to cisplatin.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "BRCA1 loss",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "cisplatin",
+            "relation_type": "SENSITIZES_TO",
+            "review_reason_codes": [
+              "review_only_subject_grounding",
+              "subject_grounding_gene_state_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Biallelic BRCA1 loss sensitized triple-negative breast cancer to cisplatin.",
+            "subject": "BRCA1 loss"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "BRCA1 loss and zygosity"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "disease_subtype",
+      "category": "disease_subtype",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "HER2-low",
+            "state": "PRESENT",
+            "value": "HER2-low"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that pembrolizumab treated HER2-low metastatic breast cancer in a cohort. HER2-low is the explicit biological state, metastatic is the treatment setting, and cohort identifies the study design and observed population.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "HER2-low metastatic breast cancer",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "the cohort",
+            "state": "PRESENT",
+            "value": "cohort"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Pembrolizumab treated HER2-low metastatic breast cancer in the cohort.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": "cohort",
+            "state": "PRESENT",
+            "value": "cohort"
+          },
+          "subject": "pembrolizumab",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "metastatic",
+            "state": "PRESENT",
+            "value": "metastatic"
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "disease_subtype_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "acffdbc0f6ccc00a1ecbf407e7f3d1abb9eb38d0bcd9b3081a32a2e436cc6d11"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "fcbe76c1d6e8c1bf38f236fec87bac4b71049138fccb796d0c5bd564a11db6c5",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "HER2-low",
+                "state": "PRESENT",
+                "value": "HER2-low"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that pembrolizumab treated HER2-low metastatic breast cancer in a cohort. HER2-low is the explicit biological state, metastatic is the treatment setting, and cohort identifies the study design and observed population.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "HER2-low metastatic breast cancer",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "the cohort",
+                "state": "PRESENT",
+                "value": "cohort"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Pembrolizumab treated HER2-low metastatic breast cancer in the cohort.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": "cohort",
+                "state": "PRESENT",
+                "value": "cohort"
+              },
+              "subject": "pembrolizumab",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "metastatic",
+                "state": "PRESENT",
+                "value": "metastatic"
+              }
+            },
+            "object": "HER2-low metastatic breast cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [],
+            "review_status": "candidate",
+            "sentence": "Pembrolizumab treated HER2-low metastatic breast cancer in the cohort.",
+            "subject": "pembrolizumab"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Disease subtype preservation"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "population",
+      "category": "population",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "metastatic",
+            "state": "PRESENT",
+            "value": "metastatic"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that nivolumab improved survival among adults with metastatic melanoma, supporting a therapeutic relationship with survival as the measured outcome.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "metastatic melanoma",
+          "outcome": {
+            "exact_span": "survival",
+            "state": "PRESENT",
+            "value": "survival"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "Among adults with metastatic melanoma",
+            "state": "PRESENT",
+            "value": "adults with metastatic melanoma"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Among adults with metastatic melanoma, nivolumab improved survival.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "nivolumab",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "metastatic",
+            "state": "PRESENT",
+            "value": "metastatic"
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "population_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "a43d0f7bdfe08e9664e84dff2a27861332a058703e9f2e9d3a0e5ae914ad9b20"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "ed1dac9e3ffcc51893efa0a798fd812cfe77622d00caa1aca58b623606620e27",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "metastatic",
+                "state": "PRESENT",
+                "value": "metastatic"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that nivolumab improved survival among adults with metastatic melanoma, supporting a therapeutic relationship with survival as the measured outcome.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "metastatic melanoma",
+              "outcome": {
+                "exact_span": "survival",
+                "state": "PRESENT",
+                "value": "survival"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "Among adults with metastatic melanoma",
+                "state": "PRESENT",
+                "value": "adults with metastatic melanoma"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Among adults with metastatic melanoma, nivolumab improved survival.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "nivolumab",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "metastatic",
+                "state": "PRESENT",
+                "value": "metastatic"
+              }
+            },
+            "object": "metastatic melanoma",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Among adults with metastatic melanoma, nivolumab improved survival.",
+            "subject": "nivolumab"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Population qualifier"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "treatment_line",
+      "category": "treatment_setting",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "HER2-positive",
+            "state": "PRESENT",
+            "value": "HER2-positive"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The clause directly states that trastuzumab treated HER2-positive gastric cancer in a second-line setting. The HER2-positive molecular state and treatment setting are explicitly present.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "HER2-positive gastric cancer",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "In the second-line setting, trastuzumab treated HER2-positive gastric cancer.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "trastuzumab",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "second-line setting",
+            "state": "PRESENT",
+            "value": "second-line"
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "treatment_line_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "cf5bb331d8c0699c3ea21a9a6ce7175cef17e630ed02b919c3bbeff4d176a35e"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "48e9dcd32897e167e2179f5b8c1d280515e6a25fb7cfd6de4be7627b1c7cd390",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "HER2-positive",
+                "state": "PRESENT",
+                "value": "HER2-positive"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The clause directly states that trastuzumab treated HER2-positive gastric cancer in a second-line setting. The HER2-positive molecular state and treatment setting are explicitly present.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "HER2-positive gastric cancer",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "In the second-line setting, trastuzumab treated HER2-positive gastric cancer.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "trastuzumab",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "second-line setting",
+                "state": "PRESENT",
+                "value": "second-line"
+              }
+            },
+            "object": "HER2-positive gastric cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding"
+            ],
+            "review_status": "review_only",
+            "sentence": "In the second-line setting, trastuzumab treated HER2-positive gastric cancer.",
+            "subject": "trastuzumab"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Treatment line qualifier"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "assay_cutoff",
+      "category": "threshold",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 0,
+        "llm_candidate_status": "llm_empty",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "assay_cutoff_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 0,
+      "output_sha256": "096ac3df03946e078dbe269a92a8543208cd3a306619c8121a6cf651f2586842",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "relations": []
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": false,
+      "title": "Assay cutoff and source measurement"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "comparator",
+      "category": "comparator",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "EGFR-mutant",
+            "state": "PRESENT",
+            "value": "EGFR-mutant"
+          },
+          "comparator": {
+            "exact_span": "docetaxel",
+            "state": "PRESENT",
+            "value": "docetaxel"
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that osimertinib improved response relative to docetaxel in EGFR-mutant lung cancer, supporting a therapeutic relationship with docetaxel as the comparator and response as the outcome.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "EGFR-mutant lung cancer",
+          "outcome": {
+            "exact_span": "response",
+            "state": "PRESENT",
+            "value": "response"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Osimertinib improved response compared with docetaxel in EGFR-mutant lung cancer.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "osimertinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "comparator_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "efd01e54859f713db84c26140df3fa32f6e759e40d07a88a5659fd0cd79a5e92"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "4eea7bbd8e892f5816b010e76223fcaf2774db76fd48864259cc5aa48091bf88",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "EGFR-mutant",
+                "state": "PRESENT",
+                "value": "EGFR-mutant"
+              },
+              "comparator": {
+                "exact_span": "docetaxel",
+                "state": "PRESENT",
+                "value": "docetaxel"
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that osimertinib improved response relative to docetaxel in EGFR-mutant lung cancer, supporting a therapeutic relationship with docetaxel as the comparator and response as the outcome.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "EGFR-mutant lung cancer",
+              "outcome": {
+                "exact_span": "response",
+                "state": "PRESENT",
+                "value": "response"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Osimertinib improved response compared with docetaxel in EGFR-mutant lung cancer.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "osimertinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "EGFR-mutant lung cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Osimertinib improved response compared with docetaxel in EGFR-mutant lung cancer.",
+            "subject": "osimertinib"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Comparator preservation"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "endpoint",
+      "category": "endpoint",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that olaparib increased the objective response rate in recurrent ovarian cancer, supporting a therapeutic relationship with the disease and specifying the response-rate outcome and recurrent treatment setting.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "recurrent ovarian cancer",
+          "outcome": {
+            "exact_span": "objective response rate",
+            "state": "PRESENT",
+            "value": "objective response rate"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Olaparib increased objective response rate in recurrent ovarian cancer.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "olaparib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "recurrent",
+            "state": "PRESENT",
+            "value": "recurrent"
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "endpoint_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "18fbd69dbf5b9487c47c7c70f965915406f69ff3df5da57b19e8be07276e0e55"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "eb266a7320e317bc401c67f219f8369ebb6fcc2c68900b1f8d04550258af5cf6",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that olaparib increased the objective response rate in recurrent ovarian cancer, supporting a therapeutic relationship with the disease and specifying the response-rate outcome and recurrent treatment setting.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "recurrent ovarian cancer",
+              "outcome": {
+                "exact_span": "objective response rate",
+                "state": "PRESENT",
+                "value": "objective response rate"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Olaparib increased objective response rate in recurrent ovarian cancer.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "olaparib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "recurrent",
+                "state": "PRESENT",
+                "value": "recurrent"
+              }
+            },
+            "object": "recurrent ovarian cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Olaparib increased objective response rate in recurrent ovarian cancer.",
+            "subject": "olaparib"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Endpoint qualifier"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "timeframe",
+      "category": "timeframe",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "PIK3CA-mutant",
+            "state": "PRESENT",
+            "value": "PIK3CA-mutant"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that alpelisib was associated with sustained response in PIK3CA-mutant breast cancer at 12 months; the molecular state, population, and timeframe are explicitly provided.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "sustained response",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "PIK3CA-mutant breast cancer",
+            "state": "PRESENT",
+            "value": "PIK3CA-mutant breast cancer"
+          },
+          "predicate": "ASSOCIATED_WITH",
+          "source_evidence": {
+            "exact_span": "At 12 months, alpelisib was associated with sustained response in PIK3CA-mutant breast cancer.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "alpelisib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": "At 12 months",
+            "state": "PRESENT",
+            "value": "12 months"
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "timeframe_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "e9b516e0313330093402f85e14fe141faead0e9338dff43328a5ba1d1ccc6ef5"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "534fe6e8018f9a201a1d6ebcc3731e91c4196da09fd84afea53eb9d4589b9206",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "PIK3CA-mutant",
+                "state": "PRESENT",
+                "value": "PIK3CA-mutant"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that alpelisib was associated with sustained response in PIK3CA-mutant breast cancer at 12 months; the molecular state, population, and timeframe are explicitly provided.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "sustained response",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "PIK3CA-mutant breast cancer",
+                "state": "PRESENT",
+                "value": "PIK3CA-mutant breast cancer"
+              },
+              "predicate": "ASSOCIATED_WITH",
+              "source_evidence": {
+                "exact_span": "At 12 months, alpelisib was associated with sustained response in PIK3CA-mutant breast cancer.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "alpelisib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": "At 12 months",
+                "state": "PRESENT",
+                "value": "12 months"
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "sustained response",
+            "relation_type": "ASSOCIATED_WITH",
+            "review_reason_codes": [],
+            "review_status": "candidate",
+            "sentence": "At 12 months, alpelisib was associated with sustained response in PIK3CA-mutant breast cancer.",
+            "subject": "alpelisib"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Timeframe qualifier"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "explicit_negation",
+      "category": "negation",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "BRCA1 expression",
+            "state": "PRESENT",
+            "value": "expression"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The replication study explicitly refuted the claim that BRCA1 expression serves as a biomarker for platinum response; the claim is therefore represented with BIOMARKER_FOR polarity REFUTE, and the explicit replication study design is retained.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "platinum response",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "REFUTE",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "BIOMARKER_FOR",
+          "source_evidence": {
+            "exact_span": "The replication study refuted the claim that BRCA1 expression is a biomarker for platinum response.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": "replication study",
+            "state": "PRESENT",
+            "value": "replication study"
+          },
+          "subject": "BRCA1 expression",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "REFUTE",
+          "epistemic_status_correct": true,
+          "frame_id": "explicit_negation_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "d97fe34d11286d7ae5045b0af2e1cf2b1ff89ea0f70104fd4dbd71bb9228d79b"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "c8ee8a26243bd2cb63645b28f0a845ad9eb7be111adb12669bfc0d1f66db3f29",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "BRCA1 expression",
+                "state": "PRESENT",
+                "value": "expression"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The replication study explicitly refuted the claim that BRCA1 expression serves as a biomarker for platinum response; the claim is therefore represented with BIOMARKER_FOR polarity REFUTE, and the explicit replication study design is retained.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "platinum response",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "REFUTE",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "BIOMARKER_FOR",
+              "source_evidence": {
+                "exact_span": "The replication study refuted the claim that BRCA1 expression is a biomarker for platinum response.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": "replication study",
+                "state": "PRESENT",
+                "value": "replication study"
+              },
+              "subject": "BRCA1 expression",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "platinum response",
+            "relation_type": "BIOMARKER_FOR",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "refuted_claim",
+              "composite_treatment_response_label"
+            ],
+            "review_status": "review_only",
+            "sentence": "The replication study refuted the claim that BRCA1 expression is a biomarker for platinum response.",
+            "subject": "BRCA1 expression"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Explicit negative association"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "failed_threshold_null",
+      "category": "null_result",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "EGFR-mutant",
+            "state": "PRESENT",
+            "value": "EGFR-mutant"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "NULL_RESULT",
+          "extraction_rationale": "The sentence states that erlotinib failed to meet a prespecified 30% response threshold in EGFR-mutant lung cancer, supporting a TREATS relation with a null result rather than a positive treatment claim.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "EGFR-mutant lung cancer",
+          "outcome": {
+            "exact_span": "response",
+            "state": "PRESENT",
+            "value": "response"
+          },
+          "polarity": "NULL_RESULT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Erlotinib did not meet the prespecified 30% response threshold in EGFR-mutant lung cancer.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [
+            {
+              "extraction_method": "lexical extraction",
+              "field_name": "response threshold",
+              "literal_span": "30%",
+              "origin": "source_measurement",
+              "source_hash": "b7d0e162631f63b6a663fa8084e626ee808d19e29cda9b0e1aa2b1e125bc27b9",
+              "source_locator": "raw_record.text_content",
+              "unit": "%",
+              "value": "30"
+            }
+          ],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "erlotinib",
+          "threshold": {
+            "exact_span": "30% response threshold",
+            "state": "PRESENT",
+            "value": "30% response"
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "NULL_RESULT",
+          "actual_polarity": "NULL_RESULT",
+          "epistemic_status_correct": true,
+          "frame_id": "failed_threshold_null_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "c767eee3572a75a523dc84cf211d263d4136529ea5850868b7afa1e272faa1eb"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "326bb0d3cf1b4a918d5eefd781fda956a6778e274273a62f17d123e56ccfa22a",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "EGFR-mutant",
+                "state": "PRESENT",
+                "value": "EGFR-mutant"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "NULL_RESULT",
+              "extraction_rationale": "The sentence states that erlotinib failed to meet a prespecified 30% response threshold in EGFR-mutant lung cancer, supporting a TREATS relation with a null result rather than a positive treatment claim.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "EGFR-mutant lung cancer",
+              "outcome": {
+                "exact_span": "response",
+                "state": "PRESENT",
+                "value": "response"
+              },
+              "polarity": "NULL_RESULT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Erlotinib did not meet the prespecified 30% response threshold in EGFR-mutant lung cancer.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [
+                {
+                  "extraction_method": "lexical extraction",
+                  "field_name": "response threshold",
+                  "literal_span": "30%",
+                  "origin": "source_measurement",
+                  "source_hash": "b7d0e162631f63b6a663fa8084e626ee808d19e29cda9b0e1aa2b1e125bc27b9",
+                  "source_locator": "raw_record.text_content",
+                  "unit": "%",
+                  "value": "30"
+                }
+              ],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "erlotinib",
+              "threshold": {
+                "exact_span": "30% response threshold",
+                "state": "PRESENT",
+                "value": "30% response"
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "EGFR-mutant lung cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "null_result",
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Erlotinib did not meet the prespecified 30% response threshold in EGFR-mutant lung cancer.",
+            "subject": "erlotinib"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Failed threshold and null result"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "provisional_claim",
+      "category": "epistemic_status",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "BRAF V600E",
+            "state": "PRESENT",
+            "value": "BRAF V600E"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "PROVISIONAL",
+          "extraction_rationale": "The sentence provisionally reports that vemurafenib improves outcomes in melanoma defined by the BRAF V600E variant, supporting a treatment relationship while retaining the preliminary and suggestive wording.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "BRAF V600E melanoma",
+          "outcome": {
+            "exact_span": "outcomes",
+            "state": "PRESENT",
+            "value": "outcomes"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Preliminary data suggest that vemurafenib improves outcomes in BRAF V600E melanoma.",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "vemurafenib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "PROVISIONAL",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "provisional_claim_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "de964048d97a3fe9f780d0d5565601aa9e20dfa190194ffee19e81fbe61ca8f9"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "e70ec4fa181773067b073525f7dba32abd2c3ae5b09da3e647d1a601b8638833",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "BRAF V600E",
+                "state": "PRESENT",
+                "value": "BRAF V600E"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "PROVISIONAL",
+              "extraction_rationale": "The sentence provisionally reports that vemurafenib improves outcomes in melanoma defined by the BRAF V600E variant, supporting a treatment relationship while retaining the preliminary and suggestive wording.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "BRAF V600E melanoma",
+              "outcome": {
+                "exact_span": "outcomes",
+                "state": "PRESENT",
+                "value": "outcomes"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Preliminary data suggest that vemurafenib improves outcomes in BRAF V600E melanoma.",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "vemurafenib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "BRAF V600E melanoma",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "preliminary_evidence",
+              "hedged_language",
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Preliminary data suggest that vemurafenib improves outcomes in BRAF V600E melanoma.",
+            "subject": "vemurafenib"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Provisional claim"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "novel_hypothesis",
+      "category": "hypothesis",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 0,
+        "llm_candidate_status": "llm_empty",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "novel_hypothesis_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 0,
+      "output_sha256": "096ac3df03946e078dbe269a92a8543208cd3a306619c8121a6cf651f2586842",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "relations": []
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": false,
+      "title": "Novel hypothesis"
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "multi_clause_binding",
+      "category": "multi_clause",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 2,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 2,
+      "expected_frame_count": 2,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "BRAF V600E",
+            "state": "PRESENT",
+            "value": "BRAF V600E"
+          },
+          "comparator": {
+            "exact_span": "dacarbazine",
+            "state": "PRESENT",
+            "value": "dacarbazine"
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The clause directly states that dabrafenib treated BRAF-positive disease in adolescents with BRAF V600E melanoma compared with dacarbazine, with progression-free survival assessed at 12 months.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "BRAF-positive disease",
+          "outcome": {
+            "exact_span": "progression-free survival",
+            "state": "PRESENT",
+            "value": "progression-free survival"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "Among adolescents with BRAF V600E melanoma",
+            "state": "PRESENT",
+            "value": "adolescents with BRAF V600E melanoma"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Among adolescents with BRAF V600E melanoma, dabrafenib treated BRAF-positive disease versus dacarbazine and improved progression-free survival at 12 months",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [
+            {
+              "extraction_method": "literal_span_copy",
+              "field_name": "timeframe",
+              "literal_span": "12 months",
+              "origin": "source_measurement",
+              "source_hash": "ff9c7afaa2ebf4a9a14b02f2f6b7bf573eec989bd4562e277f70d112e07cfc20",
+              "source_locator": "raw_record.text_content",
+              "unit": "months",
+              "value": "12"
+            }
+          ],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "dabrafenib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": "12 months",
+            "state": "PRESENT",
+            "value": "12 months"
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        },
+        {
+          "biological_or_variant_state": {
+            "exact_span": "NRAS Q61R",
+            "state": "PRESENT",
+            "value": "NRAS Q61R"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "NULL_RESULT",
+          "extraction_rationale": "The clause explicitly states that NRAS Q61R melanoma was not associated with response to dabrafenib, so the association is preserved as a measured null result for review.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "response to dabrafenib",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "NULL_RESULT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "ASSOCIATED_WITH",
+          "source_evidence": {
+            "exact_span": "NRAS Q61R melanoma was not associated with response to dabrafenib",
+            "locator": "raw_record.text_content"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "NRAS Q61R melanoma",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 2,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "multi_clause_binding_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "8137f5596f8a4d63f6ed2c7e2c1a2e0ea807e6f573d72149739f73385cc077b2"
+        },
+        {
+          "actual_epistemic_status": "NULL_RESULT",
+          "actual_polarity": "NULL_RESULT",
+          "epistemic_status_correct": true,
+          "frame_id": "multi_clause_binding_02",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "e9d48780f57590f7344b78147d265e234826d59c0501201cfbb3720af1934034"
+        }
+      ],
+      "output_frame_count": 2,
+      "output_sha256": "217072418f87a6cd96ee1a0837e2c5c29a8072d39fdf257954d6f1933aab84be",
+      "polarity_correct_count": 2,
+      "positive_on_negative_or_null_count": 0,
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 2,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "BRAF V600E",
+                "state": "PRESENT",
+                "value": "BRAF V600E"
+              },
+              "comparator": {
+                "exact_span": "dacarbazine",
+                "state": "PRESENT",
+                "value": "dacarbazine"
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The clause directly states that dabrafenib treated BRAF-positive disease in adolescents with BRAF V600E melanoma compared with dacarbazine, with progression-free survival assessed at 12 months.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "BRAF-positive disease",
+              "outcome": {
+                "exact_span": "progression-free survival",
+                "state": "PRESENT",
+                "value": "progression-free survival"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "Among adolescents with BRAF V600E melanoma",
+                "state": "PRESENT",
+                "value": "adolescents with BRAF V600E melanoma"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Among adolescents with BRAF V600E melanoma, dabrafenib treated BRAF-positive disease versus dacarbazine and improved progression-free survival at 12 months",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [
+                {
+                  "extraction_method": "literal_span_copy",
+                  "field_name": "timeframe",
+                  "literal_span": "12 months",
+                  "origin": "source_measurement",
+                  "source_hash": "ff9c7afaa2ebf4a9a14b02f2f6b7bf573eec989bd4562e277f70d112e07cfc20",
+                  "source_locator": "raw_record.text_content",
+                  "unit": "months",
+                  "value": "12"
+                }
+              ],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "dabrafenib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": "12 months",
+                "state": "PRESENT",
+                "value": "12 months"
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "BRAF-positive disease",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding"
+            ],
+            "review_status": "review_only",
+            "sentence": "Among adolescents with BRAF V600E melanoma, dabrafenib treated BRAF-positive disease versus dacarbazine and improved progression-free survival at 12 months",
+            "subject": "dabrafenib"
+          },
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "NRAS Q61R",
+                "state": "PRESENT",
+                "value": "NRAS Q61R"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "NULL_RESULT",
+              "extraction_rationale": "The clause explicitly states that NRAS Q61R melanoma was not associated with response to dabrafenib, so the association is preserved as a measured null result for review.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "response to dabrafenib",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "NULL_RESULT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "ASSOCIATED_WITH",
+              "source_evidence": {
+                "exact_span": "NRAS Q61R melanoma was not associated with response to dabrafenib",
+                "locator": "raw_record.text_content"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "NRAS Q61R melanoma",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "response to dabrafenib",
+            "relation_type": "ASSOCIATED_WITH",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "explicit_negative",
+              "null_result",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "NRAS Q61R melanoma was not associated with response to dabrafenib",
+            "subject": "NRAS Q61R melanoma"
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Multi-clause qualifier binding"
+    }
+  ],
+  "fixture": {
+    "case_count": 14,
+    "path": "/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform/scripts/validation/claim_frames/fixtures/tg03_qualifier_benchmark_v1.json",
+    "schema_version": "tg03_qualifier_benchmark.v1",
+    "sha256": "607dbf3729038bf1bbb767955cdf222f9b88fece7e02cd7eeaf61cc6eaee6de6"
+  },
+  "gate_passed": false,
+  "gates": {
+    "agent_quality_scores": {
+      "passed": true,
+      "rule": "agent-authored quality scores are absent"
+    },
+    "measurement_spans": {
+      "passed": true,
+      "rule": "source measurements all have exact spans"
+    },
+    "no_fallback": {
+      "passed": true,
+      "rule": "strict reports contain no fallback output"
+    },
+    "polarity": {
+      "passed": false,
+      "rule": "explicit polarity concordance is 100%"
+    },
+    "positive_on_negative_or_null": {
+      "passed": true,
+      "rule": "positive output on negative/null cases is zero"
+    },
+    "qualifier_presence": {
+      "passed": false,
+      "rule": "required qualifier presence is 100%"
+    },
+    "stability": {
+      "passed": false,
+      "status": "not_evaluated"
+    },
+    "strict_completion": {
+      "passed": false,
+      "rule": "all strict live cases completed"
+    }
+  },
+  "generated_at": "2026-07-15T12:04:02.183711+00:00",
+  "hard_safety_gates_passed": false,
+  "metrics": {
+    "agent_authored_quality_score_count": 0,
+    "case_count": 14,
+    "epistemic_status_concordance_rate": 0.8,
+    "epistemic_status_correct_count": 12,
+    "expected_frame_count": 15,
+    "explicit_polarity_concordance_rate": 0.8,
+    "fallback_output_count": 0,
+    "matched_frame_count": 12,
+    "output_frame_count": 13,
+    "polarity_correct_count": 12,
+    "positive_on_negative_or_null_count": 0,
+    "promotion_eligible_expected_count": 10,
+    "qualifier_concordance_rate": 0.6666666666666666,
+    "qualifier_concordant_count": 10,
+    "qualifier_presence_complete_count": 8,
+    "required_qualifier_completeness_rate": 0.8,
+    "source_measurement_without_span_count": 0,
+    "strict_completed_case_count": 12,
+    "strict_completion_rate": 0.8571428571428571
+  },
+  "model_id": "openai:gpt-5.6-luna",
+  "prompt_version": "document_extraction.llm_extraction.v10",
+  "report_type": "claim_frame_feasibility_run",
+  "run_id": "tg03-luna-v10-03",
+  "schema_version": "tg03.claim_frame_feasibility.run.v1",
+  "strict_live_extraction_completed": false,
+  "strict_no_fallback": true
+}

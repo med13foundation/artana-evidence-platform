@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
 
@@ -31,6 +32,10 @@ from artana_evidence_db.relation_projection_materialization_support import (
 )
 from artana_evidence_db.relation_projection_source_model import RelationProjectionOrigin
 from artana_evidence_db.relation_type_support import normalize_relation_type
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
+    GraphAIPersistenceQuarantinePolicy,
+)
 
 
 def _compute_canonicalization_fingerprint(
@@ -66,6 +71,15 @@ if TYPE_CHECKING:
 
 
 _PROMOTABLE_CONSTRAINT_PROFILES = frozenset({"ALLOWED", "EXPECTED"})
+_AI_PERSISTENCE_QUARANTINE = GraphAIPersistenceQuarantinePolicy()
+
+
+@dataclass(frozen=True, slots=True)
+class _MaterializableProjectionLineage:
+    claim_id: str
+    claim: KernelRelationClaim
+    endpoints: ProjectionEndpoints
+    evidence_rows: tuple[KernelClaimEvidence, ...]
 
 
 class ReasoningPathInvalidationServiceLike(Protocol):
@@ -303,6 +317,9 @@ class KernelRelationProjectionMaterializationService:
             claim_id=claim_id,
             research_space_id=research_space_id,
         )
+        quarantine_violation = _AI_PERSISTENCE_QUARANTINE.violation_for_claim(claim)
+        if quarantine_violation is not None:
+            raise AIPersistenceQuarantineError(quarantine_violation)
         self._assert_support_claim_materializable(claim)
         endpoints = self._resolve_projection_endpoints(
             claim=claim,
@@ -452,7 +469,7 @@ class KernelRelationProjectionMaterializationService:
         participants_by_claim_id = self._participants.find_by_claim_ids(
             [str(row.claim_id) for row in projection_rows],
         )
-        valid_sources: list[tuple[str, KernelRelationClaim, ProjectionEndpoints]] = []
+        valid_sources: list[_MaterializableProjectionLineage] = []
         pruned_claim_ids: list[str] = []
         expected_signature: tuple[str, str, str, str, str] | None = None
 
@@ -462,13 +479,27 @@ class KernelRelationProjectionMaterializationService:
             if claim is None:
                 pruned_claim_ids.append(claim_id)
                 continue
+            claim_evidences = self._claim_evidence.find_by_claim_id(claim_id)
+            if (
+                _AI_PERSISTENCE_QUARANTINE.violation_for_projection_claim_lineage(
+                    claim=claim,
+                    projection_source=row,
+                    evidence_rows=claim_evidences,
+                )
+                is not None
+            ):
+                pruned_claim_ids.append(claim_id)
+                continue
             if not is_active_support_claim(claim):
                 pruned_claim_ids.append(claim_id)
                 continue
-            if not self._claim_evidence_eligibility.claim_has_eligible_evidence(
-                claim_id=UUID(claim_id),
-                research_space_id=UUID(research_space_id),
-            ):
+            try:
+                eligible_evidences = self._eligible_claim_evidences(
+                    claim_id=claim_id,
+                    research_space_id=research_space_id,
+                    claim_evidences=claim_evidences,
+                )
+            except RelationProjectionMaterializationError:
                 pruned_claim_ids.append(claim_id)
                 continue
             try:
@@ -478,13 +509,6 @@ class KernelRelationProjectionMaterializationService:
                     participants=participants_by_claim_id.get(claim_id, []),
                 )
             except RelationProjectionMaterializationError:
-                pruned_claim_ids.append(claim_id)
-                continue
-            if not self._claim_satisfies_projection_evidence_policy(
-                endpoints=endpoints,
-                claim_id=claim_id,
-                research_space_id=research_space_id,
-            ):
                 pruned_claim_ids.append(claim_id)
                 continue
             claim_fingerprint = _compute_canonicalization_fingerprint(
@@ -502,14 +526,25 @@ class KernelRelationProjectionMaterializationService:
             if signature != expected_signature:
                 pruned_claim_ids.append(claim_id)
                 continue
-            valid_sources.append((claim_id, claim, endpoints))
+            valid_sources.append(
+                _MaterializableProjectionLineage(
+                    claim_id=claim_id,
+                    claim=claim,
+                    endpoints=endpoints,
+                    evidence_rows=tuple(eligible_evidences),
+                ),
+            )
 
+        pruned_claim_ids = list(dict.fromkeys(pruned_claim_ids))
         for claim_id in pruned_claim_ids:
             self._projection_sources.delete_projection_source(
                 research_space_id=research_space_id,
                 relation_id=relation_id,
                 claim_id=claim_id,
             )
+            claim = claims_by_id.get(claim_id)
+            if claim is not None and str(claim.linked_relation_id) == relation_id:
+                self._claims.clear_relation_link(claim_id)
 
         if not valid_sources:
             if current_relation is not None:
@@ -530,10 +565,17 @@ class KernelRelationProjectionMaterializationService:
                     ),
                 )
                 return result
-            return RelationProjectionMaterializationResult(relation=None)
+            result = RelationProjectionMaterializationResult(relation=None)
+            self._dispatch_projection_change(
+                research_space_id=research_space_id,
+                claim_ids=tuple(pruned_claim_ids),
+                relation_ids=(relation_id,),
+                entity_ids=(),
+            )
+            return result
 
-        endpoints = valid_sources[0][2]
-        first_claim_id = valid_sources[0][0]
+        endpoints = valid_sources[0].endpoints
+        first_claim_id = valid_sources[0].claim_id
         rebuild_participants = participants_by_claim_id.get(first_claim_id, [])
         rebuild_fingerprint = _compute_canonicalization_fingerprint(
             rebuild_participants,
@@ -556,17 +598,20 @@ class KernelRelationProjectionMaterializationService:
                 else None
             ),
         )
-        for claim_id, _claim, _endpoints in valid_sources:
-            self._claims.link_relation(claim_id, linked_relation_id=str(relation.id))
+        for lineage in valid_sources:
+            self._claims.link_relation(
+                lineage.claim_id,
+                linked_relation_id=str(relation.id),
+            )
 
         derived_evidences: list[RelationEvidenceWrite] = []
-        for claim_id, claim, _endpoints in valid_sources:
+        for lineage in valid_sources:
             derived_evidences.extend(
                 [
                     RelationEvidenceWrite(
                         confidence=float(evidence.confidence),
                         evidence_summary=claim_evidence_summary(
-                            claim=claim,
+                            claim=lineage.claim,
                             evidence=evidence,
                         ),
                         evidence_sentence=evidence.sentence,
@@ -578,12 +623,11 @@ class KernelRelationProjectionMaterializationService:
                         source_document_id=evidence.source_document_id,
                         source_document_ref=evidence.source_document_ref,
                         source_snapshot_id=evidence.source_snapshot_id,
-                        agent_run_id=evidence.agent_run_id or claim.agent_run_id,
+                        agent_run_id=(
+                            evidence.agent_run_id or lineage.claim.agent_run_id
+                        ),
                     )
-                    for evidence in self._eligible_claim_evidences(
-                        claim_id=claim_id,
-                        research_space_id=research_space_id,
-                    )
+                    for evidence in lineage.evidence_rows
                 ],
             )
         relation = self._relations.replace_derived_evidence_cache(
@@ -604,7 +648,10 @@ class KernelRelationProjectionMaterializationService:
         )
         self._dispatch_projection_change(
             research_space_id=research_space_id,
-            claim_ids=tuple(claim_id for claim_id, _claim, _endpoints in valid_sources),
+            claim_ids=(
+                *(lineage.claim_id for lineage in valid_sources),
+                *pruned_claim_ids,
+            ),
             relation_ids=(
                 str(relation.id),
                 *deleted_relation_ids,
@@ -612,8 +659,8 @@ class KernelRelationProjectionMaterializationService:
             entity_ids=tuple(
                 dict.fromkeys(
                     entity_id
-                    for _claim_id, _claim, endpoints in valid_sources
-                    for entity_id in endpoints.entity_ids
+                    for lineage in valid_sources
+                    for entity_id in lineage.endpoints.entity_ids
                 ),
             ),
         )
@@ -835,6 +882,7 @@ class KernelRelationProjectionMaterializationService:
         *,
         claim_id: str,
         research_space_id: str,
+        claim_evidences: Sequence[KernelClaimEvidence] | None = None,
     ) -> list[KernelClaimEvidence]:
         eligible_ids = (
             self._claim_evidence_eligibility.eligible_evidence_ids_for_claim(
@@ -848,29 +896,22 @@ class KernelRelationProjectionMaterializationService:
                 "snapshot evidence."
             )
             raise RelationProjectionMaterializationError(msg)
-        return [
+        eligible_evidences = [
             evidence
-            for evidence in self._claim_evidence.find_by_claim_id(claim_id)
+            for evidence in (
+                claim_evidences
+                if claim_evidences is not None
+                else self._claim_evidence.find_by_claim_id(claim_id)
+            )
             if evidence.id in eligible_ids
         ]
-
-    def _claim_satisfies_projection_evidence_policy(
-        self,
-        *,
-        endpoints: ProjectionEndpoints,
-        claim_id: str,
-        research_space_id: str,
-    ) -> bool:
-        constraint = self._get_promotable_relation_constraint(
-            source_type=endpoints.source_type,
-            relation_type=endpoints.relation_type,
-            target_type=endpoints.target_type,
-        )
-        del constraint
-        return self._claim_evidence_eligibility.claim_has_eligible_evidence(
-            claim_id=UUID(claim_id),
-            research_space_id=UUID(research_space_id),
-        )
+        if not eligible_evidences:
+            msg = (
+                "Claim projection requires server-verified immutable source "
+                "snapshot evidence."
+            )
+            raise RelationProjectionMaterializationError(msg)
+        return eligible_evidences
 
     def _dispatch_projection_change(
         self,

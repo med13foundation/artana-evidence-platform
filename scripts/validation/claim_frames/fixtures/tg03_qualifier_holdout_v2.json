@@ -1,0 +1,441 @@
+{
+  "schema_version": "tg03_qualifier_benchmark.v2",
+  "metadata": {
+    "freeze_timestamp": "2026-07-15T00:00:00-07:00",
+    "purpose": "sealed_holdout",
+    "prompt_tuning_prohibition": "No production prompt tuning is permitted after the first holdout run.",
+    "adjudication_status": "post-freeze blind-gold-adjudicated",
+    "prompt_version": "document_extraction.llm_extraction.v11",
+    "prompt_status": "v11 unchanged",
+    "v1_fixture_immutable": true,
+    "v1_first_run_immutable": true,
+    "production_output_supplied_to_qualifier_adjudicator": false,
+    "reviewer_scope": "qualifier corrections only; core frame disagreements remain unresolved"
+  },
+  "curation_notes": [
+    "This holdout uses source-local synthetic biomedical cases that are not quoted in the production prompt or the current development fixture.",
+    "Absent qualifiers use the existing fixture convention of omission, which the loader materializes as NOT_APPLICABLE.",
+    "Cases tagged source_measurement contain literal numeric source evidence; the existing fixture schema has no separate expected source_measurements field."
+  ],
+  "cases": [
+    {
+      "case_id": "holdout_variant_alk_g1202r",
+      "title": "ALK resistance variant and population",
+      "category": "variant_state",
+      "source_text": "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, lorlatinib reduced intracranial lesions.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_variant_alk_g1202r_01",
+          "subject": "lorlatinib",
+          "predicate": "TREATS",
+          "object": "ALK G1202R-positive lung adenocarcinoma",
+          "source_span": "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, lorlatinib reduced intracranial lesions.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "ALK G1202R-positive", "exact_span": "ALK G1202R-positive"},
+            "population": {"state": "PRESENT", "value": "Korean adults", "exact_span": "Korean adults"},
+            "outcome": {"state": "PRESENT", "value": "intracranial lesions", "exact_span": "intracranial lesions"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_explicit_negative_tmb",
+      "title": "Explicit biomarker contradiction",
+      "category": "explicit_negative",
+      "source_text": "An external validation cohort found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_explicit_negative_tmb_01",
+          "subject": "high TMB",
+          "predicate": "BIOMARKER_FOR",
+          "object": "benefit from atezolizumab",
+          "source_span": "An external validation cohort found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer.",
+          "polarity": "REFUTE",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "high", "exact_span": "high TMB"},
+            "population": {"state": "PRESENT", "value": "microsatellite-stable colon cancer", "exact_span": "microsatellite-stable colon cancer"},
+            "study_design": {"state": "PRESENT", "value": "external validation cohort", "exact_span": "external validation cohort"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_null_margin",
+      "title": "Null result beyond a prespecified margin",
+      "category": "null_result",
+      "source_text": "Temozolomide produced no incremental survival advantage beyond the 15% prespecified margin in glioblastoma.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_null_margin_01",
+          "subject": "Temozolomide",
+          "predicate": "TREATS",
+          "object": "glioblastoma",
+          "source_span": "Temozolomide produced no incremental survival advantage beyond the 15% prespecified margin in glioblastoma.",
+          "polarity": "NULL_RESULT",
+          "epistemic_status": "NULL_RESULT",
+          "qualifiers": {
+            "outcome": {"state": "PRESENT", "value": "incremental survival advantage", "exact_span": "incremental survival advantage"},
+            "threshold": {"state": "PRESENT", "value": "15%", "exact_span": "15% prespecified margin"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_provisional_zanubrutinib",
+      "title": "Provisional treatment signal",
+      "category": "provisional",
+      "source_text": "Early readouts indicate that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_provisional_zanubrutinib_01",
+          "subject": "zanubrutinib",
+          "predicate": "TREATS",
+          "object": "relapsed mantle-cell lymphoma",
+          "source_span": "Early readouts indicate that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "PROVISIONAL",
+          "qualifiers": {
+            "outcome": {"state": "PRESENT", "value": "remission", "exact_span": "remission"},
+            "treatment_setting": {"state": "PRESENT", "value": "relapsed", "exact_span": "relapsed"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_uncertain_talazoparib",
+      "title": "Uncertain treatment association",
+      "category": "uncertain",
+      "source_text": "The available evidence is inconclusive about whether talazoparib benefits homologous-recombination-deficient sarcoma.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_uncertain_talazoparib_01",
+          "subject": "talazoparib",
+          "predicate": "TREATS",
+          "object": "homologous-recombination-deficient sarcoma",
+          "source_span": "The available evidence is inconclusive about whether talazoparib benefits homologous-recombination-deficient sarcoma.",
+          "polarity": "UNCERTAIN",
+          "epistemic_status": "UNCERTAIN",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "homologous-recombination-deficient", "exact_span": "homologous-recombination-deficient"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_hypothesis_keap1",
+      "title": "Mechanistic hypothesis",
+      "category": "hypothesis",
+      "source_text": "Mechanistic reasoning predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_hypothesis_keap1_01",
+          "subject": "KEAP1 loss",
+          "predicate": "PREDISPOSES_TO",
+          "object": "susceptibility to oxidative-stress therapy",
+          "source_span": "Mechanistic reasoning predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy.",
+          "polarity": "HYPOTHESIS",
+          "epistemic_status": "HYPOTHESIS",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "KEAP1 loss", "exact_span": "KEAP1 loss"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_intervention_ctdna",
+      "title": "Intervention outside the endpoints",
+      "category": "intervention",
+      "source_text": "After four cycles of neoadjuvant dostarlimab, ctDNA clearance tracked pathologic response in locally advanced rectal cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_intervention_ctdna_01",
+          "subject": "ctDNA clearance",
+          "predicate": "ASSOCIATED_WITH",
+          "object": "pathologic response",
+          "source_span": "After four cycles of neoadjuvant dostarlimab, ctDNA clearance tracked pathologic response in locally advanced rectal cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "population": {"state": "PRESENT", "value": "locally advanced rectal cancer", "exact_span": "locally advanced rectal cancer"},
+            "intervention": {"state": "PRESENT", "value": "dostarlimab", "exact_span": "dostarlimab"},
+            "treatment_setting": {"state": "PRESENT", "value": "neoadjuvant", "exact_span": "neoadjuvant"},
+            "timeframe": {"state": "PRESENT", "value": "four cycles", "exact_span": "After four cycles"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_comparator_amivantamab",
+      "title": "Active comparator",
+      "category": "comparator",
+      "source_text": "Patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_comparator_amivantamab_01",
+          "subject": "amivantamab",
+          "predicate": "TREATS",
+          "object": "EGFR exon 20 insertion disease",
+          "source_span": "Patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "EGFR exon 20 insertion", "exact_span": "EGFR exon 20 insertion"},
+            "comparator": {"state": "PRESENT", "value": "platinum chemotherapy", "exact_span": "platinum chemotherapy"},
+            "outcome": {"state": "PRESENT", "value": "response duration", "exact_span": "response duration"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_outcome_enfortumab",
+      "title": "Measured clinical endpoint",
+      "category": "outcome",
+      "source_text": "Enfortumab vedotin increased complete response rate in previously untreated urothelial carcinoma.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_outcome_enfortumab_01",
+          "subject": "Enfortumab vedotin",
+          "predicate": "TREATS",
+          "object": "previously untreated urothelial carcinoma",
+          "source_span": "Enfortumab vedotin increased complete response rate in previously untreated urothelial carcinoma.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "outcome": {"state": "PRESENT", "value": "complete response rate", "exact_span": "complete response rate"},
+            "treatment_setting": {"state": "PRESENT", "value": "previously untreated", "exact_span": "previously untreated"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_study_adagrasib",
+      "title": "Study design qualifier",
+      "category": "study_design",
+      "source_text": "An adaptive phase II trial linked adagrasib exposure to disease control in KRAS G12C colorectal cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_study_adagrasib_01",
+          "subject": "adagrasib exposure",
+          "predicate": "ASSOCIATED_WITH",
+          "object": "disease control",
+          "source_span": "An adaptive phase II trial linked adagrasib exposure to disease control in KRAS G12C colorectal cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "KRAS G12C", "exact_span": "KRAS G12C"},
+            "study_design": {"state": "PRESENT", "value": "adaptive phase II trial", "exact_span": "adaptive phase II trial"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_setting_ibrutinib",
+      "title": "Treatment setting qualifier",
+      "category": "treatment_setting",
+      "source_text": "In the post-transplant maintenance setting, ibrutinib delayed relapse of mantle-cell lymphoma.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_setting_ibrutinib_01",
+          "subject": "ibrutinib",
+          "predicate": "TREATS",
+          "object": "mantle-cell lymphoma",
+          "source_span": "In the post-transplant maintenance setting, ibrutinib delayed relapse of mantle-cell lymphoma.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "outcome": {"state": "PRESENT", "value": "relapse", "exact_span": "relapse"},
+            "treatment_setting": {"state": "PRESENT", "value": "post-transplant maintenance", "exact_span": "post-transplant maintenance setting"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_timeframe_milvexian",
+      "title": "Timeframe and population qualifier",
+      "category": "timeframe",
+      "source_text": "By week 16, milvexian lowered recurrent events among adults with atrial fibrillation.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_timeframe_milvexian_01",
+          "subject": "milvexian",
+          "predicate": "TREATS",
+          "object": "atrial fibrillation",
+          "source_span": "By week 16, milvexian lowered recurrent events among adults with atrial fibrillation.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "population": {"state": "PRESENT", "value": "adults", "exact_span": "adults"},
+            "outcome": {"state": "PRESENT", "value": "recurrent events", "exact_span": "recurrent events"},
+            "timeframe": {"state": "PRESENT", "value": "week 16", "exact_span": "week 16"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_threshold_cabozantinib",
+      "title": "Numeric threshold qualifier",
+      "category": "threshold",
+      "source_text": "Patients with a baseline neutrophil-to-lymphocyte ratio below 3.5 experienced disease control on cabozantinib in renal-cell carcinoma.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_threshold_cabozantinib_01",
+          "subject": "cabozantinib",
+          "predicate": "TREATS",
+          "object": "renal-cell carcinoma",
+          "source_span": "Patients with a baseline neutrophil-to-lymphocyte ratio below 3.5 experienced disease control on cabozantinib in renal-cell carcinoma.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "population": {"state": "PRESENT", "value": "Patients", "exact_span": "Patients"},
+            "outcome": {"state": "PRESENT", "value": "disease control", "exact_span": "disease control"},
+            "threshold": {"state": "PRESENT", "value": "3.5", "exact_span": "below 3.5"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_multi_clause_ret_ntrk",
+      "title": "Clause-local sibling claims",
+      "category": "multi_clause_binding",
+      "source_text": "Among children with RET fusion-positive thyroid cancer, selpercatinib improved biochemical response versus vandetanib at 24 weeks, whereas patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_multi_clause_ret_ntrk_01",
+          "subject": "selpercatinib",
+          "predicate": "TREATS",
+          "object": "RET fusion-positive thyroid cancer",
+          "source_span": "Among children with RET fusion-positive thyroid cancer, selpercatinib improved biochemical response versus vandetanib at 24 weeks",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "RET fusion-positive", "exact_span": "RET fusion-positive"},
+            "population": {"state": "PRESENT", "value": "children", "exact_span": "children"},
+            "comparator": {"state": "PRESENT", "value": "vandetanib", "exact_span": "vandetanib"},
+            "outcome": {"state": "PRESENT", "value": "biochemical response", "exact_span": "biochemical response"},
+            "timeframe": {"state": "PRESENT", "value": "24 weeks", "exact_span": "24 weeks"}
+          }
+        },
+        {
+          "frame_id": "holdout_multi_clause_ret_ntrk_02",
+          "subject": "NTRK fusion thyroid cancer",
+          "predicate": "ASSOCIATED_WITH",
+          "object": "benefit from selpercatinib",
+          "source_span": "patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib.",
+          "polarity": "NULL_RESULT",
+          "epistemic_status": "NULL_RESULT",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "NTRK fusion", "exact_span": "NTRK fusion"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_extra_output_capivasertib",
+      "title": "Methods and funding output trap",
+      "category": "extra_output_trap",
+      "source_text": "The Northlake center collected samples at baseline; an institutional award supported the project. The analysis showed that capivasertib benefited PIK3CA-mutant breast cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_extra_output_capivasertib_01",
+          "subject": "capivasertib",
+          "predicate": "TREATS",
+          "object": "PIK3CA-mutant breast cancer",
+          "source_span": "The analysis showed that capivasertib benefited PIK3CA-mutant breast cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "PIK3CA-mutant", "exact_span": "PIK3CA-mutant"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_unresolved_population",
+      "title": "Explicitly missing subgroup",
+      "category": "unresolved_qualifier",
+      "source_text": "The report associated savolitinib with response in advanced kidney cancer, but the patient subgroup was not specified.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_unresolved_population_01",
+          "subject": "savolitinib",
+          "predicate": "ASSOCIATED_WITH",
+          "object": "response",
+          "source_span": "The report associated savolitinib with response in advanced kidney cancer, but the patient subgroup was not specified.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "population": {"state": "UNRESOLVED"},
+            "treatment_setting": {"state": "PRESENT", "value": "advanced", "exact_span": "advanced"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_source_measurement_repoterctinib",
+      "title": "Literal source measurement",
+      "category": "source_measurement",
+      "source_text": "The median progression-free interval reached 8.7 months with repotrectinib in ROS1 fusion lung cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_source_measurement_repoterctinib_01",
+          "subject": "repotrectinib",
+          "predicate": "TREATS",
+          "object": "ROS1 fusion lung cancer",
+          "source_span": "The median progression-free interval reached 8.7 months with repotrectinib in ROS1 fusion lung cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "ROS1 fusion", "exact_span": "ROS1 fusion"},
+            "outcome": {"state": "PRESENT", "value": "progression-free interval", "exact_span": "progression-free interval"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_positive_sotorasib",
+      "title": "Positive asserted relation",
+      "category": "positive_asserted",
+      "source_text": "Sotorasib treated KRAS G12C-positive lung cancer with durable disease control.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_positive_sotorasib_01",
+          "subject": "Sotorasib",
+          "predicate": "TREATS",
+          "object": "KRAS G12C-positive lung cancer",
+          "source_span": "Sotorasib treated KRAS G12C-positive lung cancer with durable disease control.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "KRAS G12C-positive", "exact_span": "KRAS G12C-positive"},
+            "outcome": {"state": "PRESENT", "value": "durable disease control", "exact_span": "durable disease control"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "holdout_population_futibatinib",
+      "title": "Population subgroup qualifier",
+      "category": "population",
+      "source_text": "Within rural adults with relapsed cholangiocarcinoma, futibatinib was associated with tumor shrinkage.",
+      "expected_frames": [
+        {
+          "frame_id": "holdout_population_futibatinib_01",
+          "subject": "futibatinib",
+          "predicate": "ASSOCIATED_WITH",
+          "object": "relapsed cholangiocarcinoma",
+          "source_span": "Within rural adults with relapsed cholangiocarcinoma, futibatinib was associated with tumor shrinkage.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "population": {"state": "PRESENT", "value": "rural adults", "exact_span": "rural adults"},
+            "outcome": {"state": "PRESENT", "value": "tumor shrinkage", "exact_span": "tumor shrinkage"},
+            "treatment_setting": {"state": "PRESENT", "value": "relapsed", "exact_span": "relapsed"}
+          }
+        }
+      ]
+    }
+  ]
+}

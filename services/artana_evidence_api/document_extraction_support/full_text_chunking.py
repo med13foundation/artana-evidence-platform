@@ -8,7 +8,33 @@ from dataclasses import dataclass
 
 DEFAULT_RELATION_EXTRACTION_CHUNK_CHARS = 4000
 MIN_RELATION_EXTRACTION_CHUNK_CHARS = 500
-_SENTENCE_BOUNDARY_RE = re.compile(r"(?<=[.!?])\s+")
+_SENTENCE_TERMINATORS = frozenset(".!?")
+_SENTENCE_CLOSERS = frozenset("\"')]}\N{RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK}\N{RIGHT DOUBLE QUOTATION MARK}\N{RIGHT SINGLE QUOTATION MARK}")
+_TOKEN_OPENERS = frozenset("\"'([{\N{LEFT-POINTING DOUBLE ANGLE QUOTATION MARK}\N{LEFT DOUBLE QUOTATION MARK}\N{LEFT SINGLE QUOTATION MARK}")
+_NONTERMINAL_ABBREVIATIONS = frozenset(
+    {
+        "approx",
+        "cf",
+        "dr",
+        "e.g",
+        "eq",
+        "eqs",
+        "fig",
+        "figs",
+        "i.e",
+        "mr",
+        "mrs",
+        "ms",
+        "no",
+        "nos",
+        "prof",
+        "ref",
+        "refs",
+        "vs",
+    },
+)
+_CONTEXTUAL_ABBREVIATIONS = frozenset({"al", "etc"})
+_INITIALISM_RE = re.compile(r"(?:[^\W\d_]\.)+[^\W\d_]$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,14 +134,96 @@ def build_relation_extraction_text_chunks(
     )
 
 
+def sentence_boundary_end_offsets(text: str) -> tuple[int, ...]:
+    """Return source offsets immediately after genuine sentence endings."""
+
+    boundaries: list[int] = []
+    cursor = 0
+    while cursor < len(text):
+        if text[cursor] not in _SENTENCE_TERMINATORS:
+            cursor += 1
+            continue
+
+        punctuation_start = cursor
+        while (
+            cursor + 1 < len(text)
+            and text[cursor + 1] in _SENTENCE_TERMINATORS
+        ):
+            cursor += 1
+        punctuation_end = cursor + 1
+        boundary_end = punctuation_end
+        while boundary_end < len(text) and text[boundary_end] in _SENTENCE_CLOSERS:
+            boundary_end += 1
+
+        if boundary_end < len(text) and not text[boundary_end].isspace():
+            cursor = punctuation_end
+            continue
+        if _is_nonterminal_period(
+            text,
+            punctuation_start=punctuation_start,
+            punctuation_end=punctuation_end,
+            next_text_start=_next_token_offset(text, boundary_end),
+        ):
+            cursor = boundary_end
+            continue
+
+        boundaries.append(boundary_end)
+        cursor = boundary_end
+    return tuple(boundaries)
+
+
 def _sentence_spans(text: str) -> tuple[tuple[int, int], ...]:
     spans: list[tuple[int, int]] = []
     start = 0
-    for match in _SENTENCE_BOUNDARY_RE.finditer(text):
-        spans.append((start, match.start()))
-        start = match.end()
-    spans.append((start, len(text)))
+    for boundary_end in sentence_boundary_end_offsets(text):
+        spans.append((start, boundary_end))
+        start = _next_nonspace_offset(text, boundary_end)
+    if start < len(text) or not spans:
+        spans.append((start, len(text)))
     return tuple(spans)
+
+
+def _is_nonterminal_period(
+    text: str,
+    *,
+    punctuation_start: int,
+    punctuation_end: int,
+    next_text_start: int,
+) -> bool:
+    if text[punctuation_start] != "." or punctuation_end - punctuation_start > 1:
+        return False
+    if next_text_start >= len(text):
+        return False
+
+    token = _token_before(text, punctuation_start).casefold()
+    if token in _NONTERMINAL_ABBREVIATIONS:
+        return True
+    next_character = text[next_text_start]
+    if token in _CONTEXTUAL_ABBREVIATIONS:
+        return next_character.islower() or next_character.isdigit()
+    if _INITIALISM_RE.fullmatch(token) is not None:
+        return next_character.islower() or next_character.isdigit()
+    return False
+
+
+def _token_before(text: str, offset: int) -> str:
+    start = offset
+    while start > 0 and (text[start - 1].isalnum() or text[start - 1] == "."):
+        start -= 1
+    return text[start:offset]
+
+
+def _next_nonspace_offset(text: str, offset: int) -> int:
+    while offset < len(text) and text[offset].isspace():
+        offset += 1
+    return offset
+
+
+def _next_token_offset(text: str, offset: int) -> int:
+    offset = _next_nonspace_offset(text, offset)
+    while offset < len(text) and text[offset] in _TOKEN_OPENERS:
+        offset = _next_nonspace_offset(text, offset + 1)
+    return offset
 
 
 def _long_segment_chunks(
@@ -155,4 +263,5 @@ __all__ = [
     "MIN_RELATION_EXTRACTION_CHUNK_CHARS",
     "RelationExtractionTextChunk",
     "build_relation_extraction_text_chunks",
+    "sentence_boundary_end_offsets",
 ]

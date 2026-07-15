@@ -30,6 +30,7 @@ from artana_evidence_api.types.graph_contracts import (
     AIDecisionSubmitRequest,
     ConceptProposalResponse,
     ConnectorProposalResponse,
+    CreateManualHypothesisRequest,
     DecisionConfidenceAssessment,
     GraphChangeProposalResponse,
     KernelGraphDocumentCounts,
@@ -78,6 +79,123 @@ def test_scoped_graph_gateway_uses_explicit_service_admin_context() -> None:
         assert gateway.call_context.role == "researcher"
     finally:
         gateway.close()
+
+
+def test_create_graph_claim_fails_closed_before_graph_side_effects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    factory_calls: list[str] = []
+
+    def _unexpected_factory_call(factory_name: str) -> object:
+        factory_calls.append(factory_name)
+        pytest.fail(f"create_graph_claim called {factory_name}")
+
+    monkeypatch.setattr(
+        tool_registry,
+        "_scoped_graph_gateway",
+        lambda **kwargs: _unexpected_factory_call("graph gateway"),
+    )
+    monkeypatch.setattr(
+        tool_registry,
+        "_graph_preflight_service",
+        lambda: _unexpected_factory_call("graph preflight service"),
+    )
+    monkeypatch.setattr(
+        tool_registry,
+        "_graph_submission_service",
+        lambda: _unexpected_factory_call("graph submission service"),
+    )
+    context = ToolExecutionContext(
+        run_id="run-qualified-claim-gate",
+        tenant_id=str(uuid4()),
+        idempotency_key="qualified-claim-gate",
+        request_event_id=None,
+        tool_version="1.0.0",
+        schema_version="1",
+    )
+    arguments = {
+        "space_id": context.tenant_id,
+        "source_entity_id": str(uuid4()),
+        "target_entity_id": str(uuid4()),
+        "relation_type": "REGULATES",
+        "claim_text": "MED13 regulates CDK8 in a pediatric cohort.",
+        "source_document_ref": "pmid:12345678",
+        "assessment": _SUPPORTED_ASSESSMENT,
+        "evidence_summary": "The cited cohort directly supports the claim.",
+    }
+
+    result = asyncio.run(
+        build_graph_harness_tool_registry().call(
+            "create_graph_claim",
+            json.dumps(arguments),
+            context=context,
+        ),
+    )
+
+    assert result.outcome == "permanent_error"
+    assert result.received_idempotency_key == context.idempotency_key
+    assert result.error_message is not None
+    assert "complete ClaimFrame without loss" in result.error_message
+    assert json.loads(result.result_json) == {
+        "message": result.error_message,
+        "reason_code": "qualified_claim_persistence_not_ready",
+    }
+    assert factory_calls == []
+
+
+def test_agent_hypothesis_tool_returns_visible_nonpersisted_review_candidate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _unexpected_gateway(**_kwargs: object) -> object:
+        pytest.fail("create_manual_hypothesis reached the graph gateway")
+
+    monkeypatch.setattr(tool_registry, "_scoped_graph_gateway", _unexpected_gateway)
+    context = ToolExecutionContext(
+        run_id="run-agent-hypothesis",
+        tenant_id=str(uuid4()),
+        idempotency_key="agent-hypothesis-1",
+        request_event_id=None,
+        tool_version="1.0.0",
+        schema_version="1",
+    )
+    statement = "MED13 may regulate CDK8 during development."
+
+    result = asyncio.run(
+        build_graph_harness_tool_registry().call(
+            "create_manual_hypothesis",
+            json.dumps(
+                {
+                    "space_id": context.tenant_id,
+                    "statement": statement,
+                    "rationale": "Converging literature suggests this mechanism.",
+                    "seed_entity_ids": [str(uuid4())],
+                    "source_type": "mechanism_discovery",
+                },
+            ),
+            context=context,
+        ),
+    )
+
+    assert result.outcome == "permanent_error"
+    payload = json.loads(result.result_json)
+    assert payload["reason_code"] == "qualified_claim_persistence_not_ready"
+    assert payload["review_candidate"]["authorship"] == "AGENT"
+    assert payload["review_candidate"]["persistability"] == "NON_PERSISTABLE"
+    assert payload["review_candidate"]["review_status"] == "PENDING_REVIEW"
+    assert payload["review_candidate"]["statement"] == statement
+    assert payload["review_ref"].endswith(":agent-hypothesis-1")
+
+
+def test_evidence_api_hypothesis_contract_marks_mechanism_work_as_agent_authored() -> None:
+    request = CreateManualHypothesisRequest(
+        statement="MED13 may regulate CDK8 during development.",
+        rationale="Converging literature suggests this mechanism.",
+        seed_entity_ids=[str(uuid4())],
+        source_type="mechanism_discovery",
+    )
+
+    assert request.authorship == "AGENT"
+    assert request.model_dump(mode="json")["authorship"] == "AGENT"
 
 
 def test_ai_full_mode_tools_visible_for_ai_harnesses() -> None:

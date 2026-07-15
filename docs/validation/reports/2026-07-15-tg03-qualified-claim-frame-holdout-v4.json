@@ -1,0 +1,1261 @@
+{
+  "cases": [
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_variant_alk_g1202r",
+      "category": "variant_state",
+      "endpoint_source_match_count": 0,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 0,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-f749d36fa8bc41b5ab476bb365c6548e",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-0abea26fdb18403d960186408dea4c80",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-d01744ee02f94059bb6664e1374cc508",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "ALK resistance variant and population",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_explicit_negative_tmb",
+      "category": "explicit_negative",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 0,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-af44918032034093af6060661e6b0ea9",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-df00c29567c04ec6a5b82210467d50c2",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-58c332dcba364c70abfd22eacffe9bce",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Explicit biomarker contradiction",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_null_margin",
+      "category": "null_result",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 1,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 1,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-42019852183e4a3fb83f7bbcae33bb5a",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-4040156e24ca46caa858e34fa800a819",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-1639614249844c0cb48f222b1955ec76",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Null result beyond a prespecified margin",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_provisional_zanubrutinib",
+      "category": "provisional",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 3,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 3,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-707143ffe5764de28175ae590f5141a2",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-f0adc7ae63f540ff94990d45301e11fc",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-a25132c78eb849649157ca50a86a3f10",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Provisional treatment signal",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_uncertain_talazoparib",
+      "category": "uncertain",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 3,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 3,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-122e419da2034182b119a635a9e3df24",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-8f1dd937adff48d9a4a56f6a76bfa1b3",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-8269458a3e9d490fbca6c4d2a93997ee",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Uncertain treatment association",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_hypothesis_keap1",
+      "category": "hypothesis",
+      "endpoint_source_match_count": 0,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 0,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-cac639c5061b4505a77c769af302e605",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-1c545da2d05342e2925e22e517c1aecd",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-52e5d435d44a4226b97cf986207f3105",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Mechanistic hypothesis",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_intervention_ctdna",
+      "category": "intervention",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 2,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 2,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-07ecc9ce78b6450f98f1640c0ead7bcd",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-0493b7d7d4db4a1b8f73413719a46e58",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-4cf815b468ec41b9a5a168487f0f88e7",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Intervention outside the endpoints",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_comparator_amivantamab",
+      "category": "comparator",
+      "endpoint_source_match_count": 2,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 2,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-b2fe69dee8a548598a09c1567c3e1546",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-477b3b83415245a9a8b6a28e42491fb1",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-4d5bbddc58f6401cb1d7803f48861ae7",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Active comparator",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_outcome_enfortumab",
+      "category": "outcome",
+      "endpoint_source_match_count": 0,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 0,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-cc096af7cbe04e3ab69978864c85cd1c",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-9ca12cbf12e54708b88c7781d29d24fa",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-4491509f447e48568d5622b426b74352",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Measured clinical endpoint",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_study_adagrasib",
+      "category": "study_design",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-192cc913d4fb4979b90fef39c3c79054",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-d21844dd10574b4fa8095615329a242c",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-423cf1b748b748d7b0432ff4755793eb",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Study design qualifier",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_setting_ibrutinib",
+      "category": "treatment_setting",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 3,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 3,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-b208383ba73246c88d8feddc02e179c1",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-31b5c60ab430480a8d8a8a8ca16c962b",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-ee6801ddac3d4471929c38334d41886e",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Treatment setting qualifier",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_timeframe_milvexian",
+      "category": "timeframe",
+      "endpoint_source_match_count": 0,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 2,
+      "polarity_correct_count": 0,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-26ba46d043494c0f880328a83d6e1112",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-95d8dfbeed8a4fbb971197924d1834fa",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-eb0932e7e13d4ba68adffb91fa94193f",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 0,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": false
+        }
+      ],
+      "strict_usable_extraction_completed": false,
+      "title": "Timeframe and population qualifier",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_threshold_cabozantinib",
+      "category": "threshold",
+      "endpoint_source_match_count": 0,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 0,
+      "polarity_correct_count": 0,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-5f7c93619572427998d702c27dbea5bf",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 0,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": false
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-5b091dbdd44840789ad55ad98be9e769",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 0,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": false
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-82078413091443e89c9b4ccf50884218",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 0,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": false
+        }
+      ],
+      "strict_usable_extraction_completed": false,
+      "title": "Numeric threshold qualifier",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "unresolved",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_multi_clause_ret_ntrk",
+      "category": "multi_clause_binding",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 2,
+      "full_frame_correct_count": 3,
+      "included_in_quality_metrics": false,
+      "output_frame_count": 6,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 3,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-838d33ed00854ab1ad2b8e124b050028",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 2,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-1d539e92cec34c33b827964733236a4e",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 2,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-48f09eaabb1e48f3a7d225545da1acfd",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 2,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Clause-local sibling claims",
+      "unresolved_frame_ids": [
+        "holdout_multi_clause_ret_ntrk_02"
+      ]
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_extra_output_capivasertib",
+      "category": "extra_output_trap",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 3,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 3,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-9b245b2d31df4401bdc1c424e97f7821",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-d87938cd2d10427b8b6931a05e41344e",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-1681ff066f5a458d9109f33b8cfea5c9",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Methods and funding output trap",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_unresolved_population",
+      "category": "unresolved_qualifier",
+      "endpoint_source_match_count": 2,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 2,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 2,
+      "qualifier_concordant_count": 2,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-317e99ca24e04166a33a099d412646ba",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-18dcf88b866346c89e44b568ce27e5dc",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-d3ca2f59d4d14c9188ab8999c316590e",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Explicitly missing subgroup",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_source_measurement_repoterctinib",
+      "category": "source_measurement",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 3,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 3,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-5c8c205098564bbaa31b346e199b7e89",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-6d25178318544249994b0a9a2888a03b",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-f4cb70487ccf491998e4f2acadfb34bf",
+          "matched_source_measurement_count": 1,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Literal source measurement",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "adjudicated",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_positive_sotorasib",
+      "category": "positive_asserted",
+      "endpoint_source_match_count": 3,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 2,
+      "included_in_quality_metrics": true,
+      "output_frame_count": 3,
+      "polarity_correct_count": 3,
+      "qualifier_concordant_count": 2,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-7a497aa157104e6a8a0de24d05401906",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 1,
+          "invocation_id": "tg03-invocation-bca04e8feef04e3a937d7862224e5757",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 1,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 1,
+          "epistemic_status_correct_count": 1,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-fa6836618a33488c80d360308be3b07b",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 1,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Positive asserted relation",
+      "unresolved_frame_ids": []
+    },
+    {
+      "adjudication_status": "unresolved",
+      "agent_invocation_completed": true,
+      "case_id": "holdout_population_futibatinib",
+      "category": "population",
+      "endpoint_source_match_count": 0,
+      "expected_frame_count_per_run": 1,
+      "full_frame_correct_count": 0,
+      "included_in_quality_metrics": false,
+      "output_frame_count": 3,
+      "polarity_correct_count": 0,
+      "qualifier_concordant_count": 0,
+      "run_results": [
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-7968f66195c04a79a3c4580223970af5",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-01",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-2fbdd1fe6aed45b9a8428e4b297d4b87",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-02",
+          "strict_usable_extraction_completed": true
+        },
+        {
+          "agent_invocation_completed": true,
+          "endpoint_source_match_count": 0,
+          "epistemic_status_correct_count": 0,
+          "full_frame_correct_count": 0,
+          "invocation_id": "tg03-invocation-d18cbbe7e1094f60ae53f05dc75735e6",
+          "matched_source_measurement_count": 0,
+          "output_frame_count": 1,
+          "polarity_correct_count": 0,
+          "qualifier_concordant_count": 0,
+          "run_id": "tg03-holdout-v4-luna-v12-03",
+          "strict_usable_extraction_completed": true
+        }
+      ],
+      "strict_usable_extraction_completed": true,
+      "title": "Population subgroup qualifier",
+      "unresolved_frame_ids": [
+        "holdout_population_futibatinib_01"
+      ]
+    }
+  ],
+  "execution_manifest_hashes": [
+    "56f749b3e3a3cfdda6e7299fa1f8dc99b41661e2b5f4ee414009d56292645463",
+    "ccbfd1007188bb4450555338a319c58d78e694960d674ccf75d26586fe2f3899",
+    "536e6121404e7889cb8b91ddef1156f3e5a3236f7dfd87a9eae9ac81892a8eaf"
+  ],
+  "fixture": {
+    "base_fixture_sha256": "22fbdf50333811d52e26296e9f1ddd561bfe0f29b0ed7d3771017199552ab956",
+    "case_count": 19,
+    "methodology_complete": true,
+    "path": "/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform/scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v4.json",
+    "schema_version": "tg03_qualifier_benchmark.v4",
+    "sha256": "4dc0c34b8572e879cab1c54d53b8117f9dc296b0522fd7b35ea371f169c8f413"
+  },
+  "gate_passed": false,
+  "gates": {
+    "agent_invocation_completion": {
+      "passed": true,
+      "rule": "all strict cases completed a real agent invocation across all runs"
+    },
+    "agent_quality_scores": {
+      "passed": true,
+      "rule": "agent-authored quality scores are absent across all runs"
+    },
+    "endpoint_source_match_precision": {
+      "passed": false,
+      "rule": "endpoint/source match precision is 100% across all runs"
+    },
+    "epistemic_status": {
+      "passed": false,
+      "rule": "explicit epistemic-status concordance is 100% across all runs"
+    },
+    "full_frame_precision": {
+      "passed": false,
+      "rule": "full-frame precision is 100% across all runs"
+    },
+    "measurement_spans": {
+      "passed": true,
+      "rule": "source measurements all have exact spans across all runs"
+    },
+    "no_fallback": {
+      "passed": true,
+      "rule": "strict reports contain no fallback output across all runs"
+    },
+    "polarity": {
+      "passed": false,
+      "rule": "explicit polarity concordance is 100% across all runs"
+    },
+    "positive_on_negative_or_null": {
+      "passed": true,
+      "rule": "positive output on negative/null cases is zero across all runs"
+    },
+    "qualifier_concordance": {
+      "passed": false,
+      "rule": "all qualifier categories are gold-concordant across all runs"
+    },
+    "qualifier_presence": {
+      "passed": false,
+      "rule": "required qualifier presence is 100% across all runs"
+    },
+    "source_measurement_precision": {
+      "passed": false,
+      "rule": "source-measurement precision is 100% across all runs"
+    },
+    "source_measurement_recall": {
+      "passed": false,
+      "rule": "source-measurement recall is 100% across all runs"
+    },
+    "stability": {
+      "passed": false,
+      "rule": "canonical semantic-frame stability is at least 95%"
+    },
+    "strict_usable_extraction_completion": {
+      "passed": false,
+      "rule": "all strict live cases produced usable extraction across all runs"
+    },
+    "unmatched_outputs": {
+      "passed": false,
+      "rule": "unmatched output frames are zero across all runs"
+    },
+    "unsafe_assertive_upgrades": {
+      "passed": true,
+      "rule": "non-assertive gold claims are never upgraded to ASSERTED across all runs"
+    },
+    "unsupported_positive_outputs": {
+      "passed": false,
+      "rule": "unsupported positive output frames are zero across all runs"
+    }
+  },
+  "generated_at": "2026-07-15T08:08:01.856946-07:00",
+  "metrics": {
+    "agent_authored_quality_score_count": 0,
+    "agent_invocation_completed_case_count": 57,
+    "agent_invocation_completion_rate": 1.0,
+    "canonical_semantic_frame_stability_count": 5,
+    "canonical_semantic_frame_stability_denominator": 17,
+    "canonical_semantic_frame_stability_rate": 0.29411764705882354,
+    "case_count": 57,
+    "endpoint_source_match_count": 34,
+    "endpoint_source_match_precision": 0.723404255319149,
+    "epistemic_status_concordance_rate": 0.6078431372549019,
+    "epistemic_status_correct_count": 31,
+    "exact_semantic_frame_stability_count": 3,
+    "exact_semantic_frame_stability_denominator": 17,
+    "exact_semantic_frame_stability_rate": 0.17647058823529413,
+    "expected_frame_count": 51,
+    "expected_source_measurement_count": 12,
+    "explicit_polarity_concordance_rate": 0.6078431372549019,
+    "fallback_output_count": 0,
+    "full_frame_correct_count": 22,
+    "full_frame_precision": 0.46808510638297873,
+    "matched_source_measurement_count": 6,
+    "output_frame_count": 47,
+    "output_source_measurement_count": 8,
+    "polarity_correct_count": 31,
+    "positive_on_negative_or_null_count": 0,
+    "promotion_eligible_expected_count": 33,
+    "qualifier_concordance_rate": 0.43137254901960786,
+    "qualifier_concordant_count": 22,
+    "qualifier_presence_complete_count": 20,
+    "quality_case_count": 51,
+    "required_qualifier_completeness_rate": 0.6060606060606061,
+    "source_measurement_precision": 0.75,
+    "source_measurement_recall": 0.5,
+    "source_measurement_without_span_count": 0,
+    "strict_usable_extraction_completed_case_count": 53,
+    "strict_usable_extraction_completion_rate": 0.9298245614035088,
+    "unmatched_output_count": 13,
+    "unresolved_case_count": 6,
+    "unresolved_expected_frame_count": 9,
+    "unsafe_assertive_upgrade_count": 0,
+    "unsupported_positive_output_count": 10
+  },
+  "model_ids": [
+    "openai:gpt-5.6-luna",
+    "openai:gpt-5.6-luna",
+    "openai:gpt-5.6-luna"
+  ],
+  "prompt_versions": [
+    "document_extraction.llm_extraction.v12",
+    "document_extraction.llm_extraction.v12",
+    "document_extraction.llm_extraction.v12"
+  ],
+  "report_type": "claim_frame_feasibility_comparison",
+  "run_ids": [
+    "tg03-holdout-v4-luna-v12-01",
+    "tg03-holdout-v4-luna-v12-02",
+    "tg03-holdout-v4-luna-v12-03"
+  ],
+  "run_output_hashes": [
+    "b7f48b9542f040e6b2f98018f3a2dc2f175f8a181329b1a95e7746cf899a5556",
+    "eddabd9be6f7dee5e358bd17c95e3a172277e63663d2e49d65ffd3251ae3a977",
+    "c3dad3771add50a672bcec0ad5f2a2de46d3436e0bce897eaff9f65ef24ae749"
+  ],
+  "schema_version": "tg03.claim_frame_feasibility.comparison.v2",
+  "unresolved_cases": [
+    {
+      "case_id": "holdout_multi_clause_ret_ntrk",
+      "excluded_from_quality_denominators": true,
+      "unresolved_frame_ids": [
+        "holdout_multi_clause_ret_ntrk_02"
+      ]
+    },
+    {
+      "case_id": "holdout_population_futibatinib",
+      "excluded_from_quality_denominators": true,
+      "unresolved_frame_ids": [
+        "holdout_population_futibatinib_01"
+      ]
+    }
+  ]
+}

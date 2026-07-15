@@ -22,6 +22,10 @@ from artana_evidence_api.graph_search_runtime import (
     HarnessGraphSearchRunner,
 )
 
+from .legacy_relation_extraction_test_support import (
+    run_legacy_relation_extraction_for_tests,
+)
+
 
 class _FakeModelRegistry:
     def allow_runtime_model_overrides(self) -> bool:
@@ -342,6 +346,11 @@ def _patch_document_extraction_runtime(
         "run_single_step_with_policy",
         _fake_run_single_step_with_policy,
     )
+    monkeypatch.setattr(
+        document_extraction,
+        "run_llm_relation_extraction_with_zero_retry",
+        run_legacy_relation_extraction_for_tests,
+    )
 
 
 @pytest.mark.asyncio
@@ -656,6 +665,27 @@ async def test_llm_extraction_logs_debug_for_filtered_candidates(
                     "relation_type": "ASSOCIATED_WITH",
                     "object": "B",
                     "sentence": "A is associated with B.",
+                    "polarity": "SUPPORT",
+                    "epistemic_status": "ASSERTED",
+                    **{
+                        field: {
+                            "state": "NOT_APPLICABLE",
+                            "value": None,
+                            "exact_span": None,
+                        }
+                        for field in (
+                            "biological_or_variant_state",
+                            "population",
+                            "intervention",
+                            "comparator",
+                            "outcome",
+                            "study_design",
+                            "treatment_setting",
+                            "timeframe",
+                            "threshold",
+                        )
+                    },
+                    "extraction_rationale": "The sentence states the relation.",
                 },
             ],
         },
@@ -702,16 +732,14 @@ def test_graph_connection_run_id_is_versioned_away_from_legacy_hash() -> None:
         "source-1|pipeline-1|seed-1"
     )
     v2_run_id = (
-        "graph_connection:pubmed:"
-        f"{sha256(v2_payload.encode('utf-8')).hexdigest()[:24]}"
+        f"graph_connection:pubmed:{sha256(v2_payload.encode('utf-8')).hexdigest()[:24]}"
     )
     v3_payload = (
         "v3|research-bootstrap|pubmed|openai:gpt-5.4-mini|space-1|"
         "source-1|pipeline-1|seed-1"
     )
     v3_run_id = (
-        "graph_connection:pubmed:"
-        f"{sha256(v3_payload.encode('utf-8')).hexdigest()[:24]}"
+        f"graph_connection:pubmed:{sha256(v3_payload.encode('utf-8')).hexdigest()[:24]}"
     )
 
     assert run_id.startswith("graph_connection:pubmed:")

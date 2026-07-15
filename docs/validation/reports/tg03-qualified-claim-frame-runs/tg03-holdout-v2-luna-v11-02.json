@@ -1,0 +1,4789 @@
+{
+  "agent_output_audit_stage": "exact_model_boundary_plus_postprocessed_candidate_boundary",
+  "cases": [
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_variant_alk_g1202r",
+      "category": "variant_state",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "ALK G1202R-positive",
+            "state": "PRESENT",
+            "value": "ALK G1202R-positive"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that lorlatinib reduced intracranial lesions in Korean adults with ALK G1202R-positive lung adenocarcinoma, supporting a treatment relationship with the stated population and molecular disease context.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "intracranial lesions",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "Korean adults",
+            "state": "PRESENT",
+            "value": "Korean adults"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, lorlatinib reduced intracranial lesions.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "lorlatinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+            "state": "PRESENT",
+            "value": "ALK G1202R-positive lung adenocarcinoma"
+          }
+        }
+      ],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_variant_alk_g1202r_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "bce37d93d0c2aca52906003d18886eea388f7e67b45e0e2ed61193e9745272d9",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "ALK G1202R-positive",
+                "state": "PRESENT",
+                "value": "ALK G1202R-positive"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that lorlatinib reduced intracranial lesions in Korean adults with ALK G1202R-positive lung adenocarcinoma, supporting a treatment relationship with the stated population and molecular disease context.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "intracranial lesions",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "Korean adults",
+                "state": "PRESENT",
+                "value": "Korean adults"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, lorlatinib reduced intracranial lesions.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "lorlatinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+                "state": "PRESENT",
+                "value": "ALK G1202R-positive lung adenocarcinoma"
+              }
+            },
+            "object": "intracranial lesions",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, lorlatinib reduced intracranial lesions.",
+            "subject": "lorlatinib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "89ba001833fa7a5e873cf051a331760b0d0c511af2730d502bf4817a24ce6d5c",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "ALK G1202R-positive",
+                  "state": "PRESENT",
+                  "value": "ALK G1202R-positive"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence directly states that lorlatinib reduced intracranial lesions in Korean adults with ALK G1202R-positive lung adenocarcinoma, supporting a treatment relationship with the stated population and molecular disease context.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "intracranial lesions",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": "Korean adults",
+                  "state": "PRESENT",
+                  "value": "Korean adults"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, lorlatinib reduced intracranial lesions.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "lorlatinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+                  "state": "PRESENT",
+                  "value": "ALK G1202R-positive lung adenocarcinoma"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "ALK resistance variant and population",
+      "unmatched_output_count": 1,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 1
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_explicit_negative_tmb",
+      "category": "explicit_negative",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "high TMB",
+            "state": "PRESENT",
+            "value": "high TMB"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "NULL_RESULT",
+          "extraction_rationale": "The external validation cohort explicitly found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer, supporting a null biomarker-for-treatment-benefit result.",
+          "intervention": {
+            "exact_span": "atezolizumab",
+            "state": "PRESENT",
+            "value": "atezolizumab"
+          },
+          "object": "benefit from atezolizumab",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "NULL_RESULT",
+          "population": {
+            "exact_span": "microsatellite-stable colon cancer",
+            "state": "PRESENT",
+            "value": "microsatellite-stable colon cancer"
+          },
+          "predicate": "BIOMARKER_FOR",
+          "source_evidence": {
+            "exact_span": "An external validation cohort found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": "external validation cohort",
+            "state": "PRESENT",
+            "value": "external validation cohort"
+          },
+          "subject": "high TMB",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "NULL_RESULT",
+          "actual_polarity": "NULL_RESULT",
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_explicit_negative_tmb_01",
+          "matched": true,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "a023a0417b5e3b4418eb76046f725387e7cf568380786435dfeb1f1e4d7ca325"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "85f10537b5f3af7c014ec54f5f9939d78ae48144b5434c143bac15e5f84ce8e3",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "high TMB",
+                "state": "PRESENT",
+                "value": "high TMB"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "NULL_RESULT",
+              "extraction_rationale": "The external validation cohort explicitly found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer, supporting a null biomarker-for-treatment-benefit result.",
+              "intervention": {
+                "exact_span": "atezolizumab",
+                "state": "PRESENT",
+                "value": "atezolizumab"
+              },
+              "object": "benefit from atezolizumab",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "NULL_RESULT",
+              "population": {
+                "exact_span": "microsatellite-stable colon cancer",
+                "state": "PRESENT",
+                "value": "microsatellite-stable colon cancer"
+              },
+              "predicate": "BIOMARKER_FOR",
+              "source_evidence": {
+                "exact_span": "An external validation cohort found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": "external validation cohort",
+                "state": "PRESENT",
+                "value": "external validation cohort"
+              },
+              "subject": "high TMB",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "benefit from atezolizumab",
+            "relation_type": "BIOMARKER_FOR",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "null_result",
+              "failed_prediction",
+              "composite_treatment_response_label",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "An external validation cohort found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer.",
+            "subject": "high TMB"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "22c7a37527ac9d0c0c576de36f92a39be3517c6279224365ed847868a6199fc9",
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "high TMB",
+                  "state": "PRESENT",
+                  "value": "high TMB"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "NULL_RESULT",
+                "extraction_rationale": "The external validation cohort explicitly found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer, supporting a null biomarker-for-treatment-benefit result.",
+                "intervention": {
+                  "exact_span": "atezolizumab",
+                  "state": "PRESENT",
+                  "value": "atezolizumab"
+                },
+                "new_relation_type_rationale": null,
+                "object": "benefit from atezolizumab",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "NULL_RESULT",
+                "population": {
+                  "exact_span": "microsatellite-stable colon cancer",
+                  "state": "PRESENT",
+                  "value": "microsatellite-stable colon cancer"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "BIOMARKER_FOR",
+                "review_reason_codes": [
+                  "null_result",
+                  "failed_prediction"
+                ],
+                "review_status": "review_only",
+                "sentence": "An external validation cohort found that high TMB failed to predict benefit from atezolizumab in microsatellite-stable colon cancer.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": "external validation cohort",
+                  "state": "PRESENT",
+                  "value": "external validation cohort"
+                },
+                "subject": "high TMB",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Explicit biomarker contradiction",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_null_margin",
+      "category": "null_result",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "NULL_RESULT",
+          "extraction_rationale": "The sentence reports that Temozolomide produced no incremental survival advantage beyond a prespecified 15% margin in glioblastoma, supporting a null therapeutic outcome for Temozolomide in glioblastoma.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "glioblastoma",
+          "outcome": {
+            "exact_span": "incremental survival advantage",
+            "state": "PRESENT",
+            "value": "incremental survival advantage"
+          },
+          "polarity": "NULL_RESULT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Temozolomide produced no incremental survival advantage beyond the 15% prespecified margin in glioblastoma.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [
+            {
+              "extraction_method": "lexical_copy",
+              "field_name": "threshold",
+              "literal_span": "15%",
+              "origin": "source_measurement",
+              "source_hash": "a57feb9449a945069903fcf0a61166ccabc6cdbbfbed691579df0f7496b8ccf2",
+              "source_locator": "normalized_extraction_text",
+              "unit": "%",
+              "value": "15"
+            }
+          ],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "Temozolomide",
+          "threshold": {
+            "exact_span": "15% prespecified margin",
+            "state": "PRESENT",
+            "value": "15% prespecified margin"
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "NULL_RESULT",
+          "actual_polarity": "NULL_RESULT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_null_margin_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "cdd48a9f2c87819a6e5fae9223dd7176ef999a487a3c2b1e9c0c9a8db3934432"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "84423a673b083fcb28efb1acf96b4ecab5df798a094e0f4f19bd2a955f746748",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "NULL_RESULT",
+              "extraction_rationale": "The sentence reports that Temozolomide produced no incremental survival advantage beyond a prespecified 15% margin in glioblastoma, supporting a null therapeutic outcome for Temozolomide in glioblastoma.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "glioblastoma",
+              "outcome": {
+                "exact_span": "incremental survival advantage",
+                "state": "PRESENT",
+                "value": "incremental survival advantage"
+              },
+              "polarity": "NULL_RESULT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Temozolomide produced no incremental survival advantage beyond the 15% prespecified margin in glioblastoma.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [
+                {
+                  "extraction_method": "lexical_copy",
+                  "field_name": "threshold",
+                  "literal_span": "15%",
+                  "origin": "source_measurement",
+                  "source_hash": "a57feb9449a945069903fcf0a61166ccabc6cdbbfbed691579df0f7496b8ccf2",
+                  "source_locator": "normalized_extraction_text",
+                  "unit": "%",
+                  "value": "15"
+                }
+              ],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "Temozolomide",
+              "threshold": {
+                "exact_span": "15% prespecified margin",
+                "state": "PRESENT",
+                "value": "15% prespecified margin"
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "glioblastoma",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "null_outcome",
+              "failed_threshold",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Temozolomide produced no incremental survival advantage beyond the 15% prespecified margin in glioblastoma.",
+            "subject": "Temozolomide"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "4a1acdcbb708fd64e90625ae98319dbed79561915d3750a6a9ac1bd378386ddd",
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "NULL_RESULT",
+                "extraction_rationale": "The sentence reports that Temozolomide produced no incremental survival advantage beyond a prespecified 15% margin in glioblastoma, supporting a null therapeutic outcome for Temozolomide in glioblastoma.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "glioblastoma",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "incremental survival advantage",
+                  "state": "PRESENT",
+                  "value": "incremental survival advantage"
+                },
+                "polarity": "NULL_RESULT",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [
+                  "null_outcome",
+                  "failed_threshold"
+                ],
+                "review_status": "review_only",
+                "sentence": "Temozolomide produced no incremental survival advantage beyond the 15% prespecified margin in glioblastoma.",
+                "source_measurements": [
+                  {
+                    "extraction_method": "lexical_copy",
+                    "field_name": "threshold",
+                    "literal_span": "15%",
+                    "origin": "source_measurement",
+                    "source_hash": "a57feb9449a945069903fcf0a61166ccabc6cdbbfbed691579df0f7496b8ccf2",
+                    "source_locator": "normalized_extraction_text",
+                    "unit": "%",
+                    "value": "15"
+                  }
+                ],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "Temozolomide",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": "15% prespecified margin",
+                  "state": "PRESENT",
+                  "value": "15% prespecified margin"
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Null result beyond a prespecified margin",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_provisional_zanubrutinib",
+      "category": "provisional",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "PROVISIONAL",
+          "extraction_rationale": "The sentence provisionally indicates that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma; the hedged wording supports a review-only TREATS relation.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "relapsed mantle-cell lymphoma",
+          "outcome": {
+            "exact_span": "remission",
+            "state": "PRESENT",
+            "value": "remission"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Early readouts indicate that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "zanubrutinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": "Early readouts",
+            "state": "PRESENT",
+            "value": "Early"
+          },
+          "treatment_setting": {
+            "exact_span": "relapsed",
+            "state": "PRESENT",
+            "value": "relapsed"
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "PROVISIONAL",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_provisional_zanubrutinib_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "ad07eba3fb21594298633213b589bd85900eebbbb73d48a1c5a758e769c7be4f"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "babe98449718a3590a212ed75b014a398ee8be000efe909b33cc334012735e9f",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "PROVISIONAL",
+              "extraction_rationale": "The sentence provisionally indicates that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma; the hedged wording supports a review-only TREATS relation.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "relapsed mantle-cell lymphoma",
+              "outcome": {
+                "exact_span": "remission",
+                "state": "PRESENT",
+                "value": "remission"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Early readouts indicate that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "zanubrutinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": "Early readouts",
+                "state": "PRESENT",
+                "value": "Early"
+              },
+              "treatment_setting": {
+                "exact_span": "relapsed",
+                "state": "PRESENT",
+                "value": "relapsed"
+              }
+            },
+            "object": "relapsed mantle-cell lymphoma",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "hedged_language",
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "uncertain_relation_claim"
+            ],
+            "review_status": "review_only",
+            "sentence": "Early readouts indicate that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma.",
+            "subject": "zanubrutinib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "e65dd81534704f46a7f79227240b02a8f3c590ccc51ff2f121cc5490898b0afd",
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "PROVISIONAL",
+                "extraction_rationale": "The sentence provisionally indicates that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma; the hedged wording supports a review-only TREATS relation.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "relapsed mantle-cell lymphoma",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "remission",
+                  "state": "PRESENT",
+                  "value": "remission"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [
+                  "hedged_language"
+                ],
+                "review_status": "review_only",
+                "sentence": "Early readouts indicate that zanubrutinib may prolong remission in relapsed mantle-cell lymphoma.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "zanubrutinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": "Early readouts",
+                  "state": "PRESENT",
+                  "value": "Early"
+                },
+                "treatment_setting": {
+                  "exact_span": "relapsed",
+                  "state": "PRESENT",
+                  "value": "relapsed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Provisional treatment signal",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_uncertain_talazoparib",
+      "category": "uncertain",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "homologous-recombination-deficient",
+            "state": "PRESENT",
+            "value": "homologous-recombination-deficient"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "UNCERTAIN",
+          "extraction_rationale": "The sentence states that evidence is inconclusive regarding whether talazoparib benefits homologous-recombination-deficient sarcoma, supporting a review-only, uncertain TREATS relation while preserving the explicit homologous-recombination-deficient biological state.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "homologous-recombination-deficient sarcoma",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "UNCERTAIN",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "The available evidence is inconclusive about whether talazoparib benefits homologous-recombination-deficient sarcoma.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "talazoparib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "UNCERTAIN",
+          "actual_polarity": "UNCERTAIN",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_uncertain_talazoparib_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "27f9ec0847b5d8fe3766cc04527fda62849afd52a1836c649cad709a876115a1"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "c147eb93f8ced01b2a866a8d79f8f740964da08c4b1152c8b4a0ecfc736ae579",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "homologous-recombination-deficient",
+                "state": "PRESENT",
+                "value": "homologous-recombination-deficient"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "UNCERTAIN",
+              "extraction_rationale": "The sentence states that evidence is inconclusive regarding whether talazoparib benefits homologous-recombination-deficient sarcoma, supporting a review-only, uncertain TREATS relation while preserving the explicit homologous-recombination-deficient biological state.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "homologous-recombination-deficient sarcoma",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "UNCERTAIN",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "The available evidence is inconclusive about whether talazoparib benefits homologous-recombination-deficient sarcoma.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "talazoparib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "homologous-recombination-deficient sarcoma",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "inconclusive_language",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "The available evidence is inconclusive about whether talazoparib benefits homologous-recombination-deficient sarcoma.",
+            "subject": "talazoparib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "924327f7cd2d25ccb6b8495854b22cd7dead69542a0c69ec90f7c91ea906aeda",
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "homologous-recombination-deficient",
+                  "state": "PRESENT",
+                  "value": "homologous-recombination-deficient"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "UNCERTAIN",
+                "extraction_rationale": "The sentence states that evidence is inconclusive regarding whether talazoparib benefits homologous-recombination-deficient sarcoma, supporting a review-only, uncertain TREATS relation while preserving the explicit homologous-recombination-deficient biological state.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "homologous-recombination-deficient sarcoma",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "UNCERTAIN",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [
+                  "inconclusive_language"
+                ],
+                "review_status": "review_only",
+                "sentence": "The available evidence is inconclusive about whether talazoparib benefits homologous-recombination-deficient sarcoma.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "talazoparib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Uncertain treatment association",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_hypothesis_keap1",
+      "category": "hypothesis",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "KEAP1 loss",
+            "state": "PRESENT",
+            "value": "loss"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "HYPOTHESIS",
+          "extraction_rationale": "The sentence predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy, directly supporting a hypothesized SENSITIZES_TO relation while preserving the hedged language.",
+          "intervention": {
+            "exact_span": "oxidative-stress therapy",
+            "state": "PRESENT",
+            "value": "oxidative-stress therapy"
+          },
+          "object": "oxidative-stress therapy",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "HYPOTHESIS",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "SENSITIZES_TO",
+          "source_evidence": {
+            "exact_span": "Mechanistic reasoning predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "KEAP1 loss",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_hypothesis_keap1_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "bba2d9608028d328440859719bed283ea7e8cf507e5b153ada12d91ac95236dc",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "KEAP1 loss",
+                "state": "PRESENT",
+                "value": "loss"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "HYPOTHESIS",
+              "extraction_rationale": "The sentence predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy, directly supporting a hypothesized SENSITIZES_TO relation while preserving the hedged language.",
+              "intervention": {
+                "exact_span": "oxidative-stress therapy",
+                "state": "PRESENT",
+                "value": "oxidative-stress therapy"
+              },
+              "object": "oxidative-stress therapy",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "HYPOTHESIS",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "SENSITIZES_TO",
+              "source_evidence": {
+                "exact_span": "Mechanistic reasoning predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "KEAP1 loss",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "oxidative-stress therapy",
+            "relation_type": "SENSITIZES_TO",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "hedged_language",
+              "hypothesis",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Mechanistic reasoning predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy.",
+            "subject": "KEAP1 loss"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "c51ce4d1a5e632fa49b52578ad430cc61eac767f149d910807434b036c91ccfe",
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "KEAP1 loss",
+                  "state": "PRESENT",
+                  "value": "loss"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "HYPOTHESIS",
+                "extraction_rationale": "The sentence predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy, directly supporting a hypothesized SENSITIZES_TO relation while preserving the hedged language.",
+                "intervention": {
+                  "exact_span": "oxidative-stress therapy",
+                  "state": "PRESENT",
+                  "value": "oxidative-stress therapy"
+                },
+                "new_relation_type_rationale": null,
+                "object": "oxidative-stress therapy",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "HYPOTHESIS",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "SENSITIZES_TO",
+                "review_reason_codes": [
+                  "hedged_language",
+                  "hypothesis"
+                ],
+                "review_status": "review_only",
+                "sentence": "Mechanistic reasoning predicts that KEAP1 loss could increase susceptibility to oxidative-stress therapy.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "KEAP1 loss",
+                "subject_curie": "HGNC:23177",
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Mechanistic hypothesis",
+      "unmatched_output_count": 1,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_intervention_ctdna",
+      "category": "intervention",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 0,
+        "llm_candidate_status": "llm_empty",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_intervention_ctdna_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 0,
+      "output_sha256": "93120b1837679b46c9e61d17d3b2e900cf91d45ccd98dd49db05663be1ff6605",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": []
+      },
+      "postprocessed_output_sha256": "096ac3df03946e078dbe269a92a8543208cd3a306619c8121a6cf651f2586842",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": []
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": false,
+      "title": "Intervention outside the endpoints",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_comparator_amivantamab",
+      "category": "comparator",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "EGFR exon 20 insertion",
+            "state": "PRESENT",
+            "value": "EGFR exon 20 insertion"
+          },
+          "comparator": {
+            "exact_span": "platinum chemotherapy",
+            "state": "PRESENT",
+            "value": "platinum chemotherapy"
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly reports that patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease, supporting a treatment relationship with an explicit comparator and outcome.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "EGFR exon 20 insertion disease",
+          "outcome": {
+            "exact_span": "longer response duration",
+            "state": "PRESENT",
+            "value": "longer response duration"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "Patients",
+            "state": "PRESENT",
+            "value": "Patients"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "amivantamab",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_comparator_amivantamab_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "7007f3fbab2bf5ece07ea97b01e72404ad9fb5f8da6859c3db3ac75623260ab0"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "304dda96d24fcd5c361b12083037102c86150d51af6115bdf4aab00ca56c6049",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "EGFR exon 20 insertion",
+                "state": "PRESENT",
+                "value": "EGFR exon 20 insertion"
+              },
+              "comparator": {
+                "exact_span": "platinum chemotherapy",
+                "state": "PRESENT",
+                "value": "platinum chemotherapy"
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly reports that patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease, supporting a treatment relationship with an explicit comparator and outcome.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "EGFR exon 20 insertion disease",
+              "outcome": {
+                "exact_span": "longer response duration",
+                "state": "PRESENT",
+                "value": "longer response duration"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "Patients",
+                "state": "PRESENT",
+                "value": "Patients"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "amivantamab",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "EGFR exon 20 insertion disease",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease.",
+            "subject": "amivantamab"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "f6bf1d6f72cb7c92f0f30ee02df1ea03ed04f2dfe0bf4d87c771cb08ac9f2ef1",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "EGFR exon 20 insertion",
+                  "state": "PRESENT",
+                  "value": "EGFR exon 20 insertion"
+                },
+                "comparator": {
+                  "exact_span": "platinum chemotherapy",
+                  "state": "PRESENT",
+                  "value": "platinum chemotherapy"
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence directly states that patients receiving amivantamab had longer response duration than patients receiving platinum chemotherapy in EGFR exon 20 insertion disease, supporting an association between amivantamab and longer response duration with platinum chemotherapy as the comparator.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "longer response duration",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "longer response duration",
+                  "state": "PRESENT",
+                  "value": "longer response duration"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": "EGFR exon 20 insertion disease",
+                  "state": "PRESENT",
+                  "value": "EGFR exon 20 insertion disease"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "ASSOCIATED_WITH",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "Patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "amivantamab",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          },
+          {
+            "relations": []
+          },
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "EGFR exon 20 insertion",
+                  "state": "PRESENT",
+                  "value": "EGFR exon 20 insertion"
+                },
+                "comparator": {
+                  "exact_span": "platinum chemotherapy",
+                  "state": "PRESENT",
+                  "value": "platinum chemotherapy"
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence directly reports that patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease, supporting a treatment relationship with an explicit comparator and outcome.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "EGFR exon 20 insertion disease",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "longer response duration",
+                  "state": "PRESENT",
+                  "value": "longer response duration"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": "Patients",
+                  "state": "PRESENT",
+                  "value": "Patients"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "Patients receiving amivantamab had longer response duration than those receiving platinum chemotherapy in EGFR exon 20 insertion disease.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "amivantamab",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Active comparator",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_outcome_enfortumab",
+      "category": "outcome",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence states that Enfortumab vedotin increased the complete response rate in previously untreated urothelial carcinoma, directly supporting a treatment relationship with the response-rate outcome and treatment setting.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "urothelial carcinoma",
+          "outcome": {
+            "exact_span": "complete response rate",
+            "state": "PRESENT",
+            "value": "complete response rate"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Enfortumab vedotin increased complete response rate in previously untreated urothelial carcinoma.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "Enfortumab vedotin",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "previously untreated",
+            "state": "PRESENT",
+            "value": "previously untreated"
+          }
+        }
+      ],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_outcome_enfortumab_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "435f65015dfdd4b21981a240c1d7e6b7f4221fb5db6a13c18bdadae5f2ddac6b",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence states that Enfortumab vedotin increased the complete response rate in previously untreated urothelial carcinoma, directly supporting a treatment relationship with the response-rate outcome and treatment setting.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "urothelial carcinoma",
+              "outcome": {
+                "exact_span": "complete response rate",
+                "state": "PRESENT",
+                "value": "complete response rate"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Enfortumab vedotin increased complete response rate in previously untreated urothelial carcinoma.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "Enfortumab vedotin",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "previously untreated",
+                "state": "PRESENT",
+                "value": "previously untreated"
+              }
+            },
+            "object": "urothelial carcinoma",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Enfortumab vedotin increased complete response rate in previously untreated urothelial carcinoma.",
+            "subject": "Enfortumab vedotin"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "f43d82c8295741795fe4809fed0ba697d6e5b21f07f0f6908bf1de90dfaef1d8",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence states that Enfortumab vedotin increased the complete response rate in previously untreated urothelial carcinoma, directly supporting a treatment relationship with the response-rate outcome and treatment setting.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "urothelial carcinoma",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "complete response rate",
+                  "state": "PRESENT",
+                  "value": "complete response rate"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "Enfortumab vedotin increased complete response rate in previously untreated urothelial carcinoma.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "Enfortumab vedotin",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": "previously untreated",
+                  "state": "PRESENT",
+                  "value": "previously untreated"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Measured clinical endpoint",
+      "unmatched_output_count": 1,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 1
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_study_adagrasib",
+      "category": "study_design",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "KRAS G12C",
+            "state": "PRESENT",
+            "value": "KRAS G12C"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence explicitly states that an adaptive phase II trial linked adagrasib exposure with disease control in patients with KRAS G12C colorectal cancer.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "disease control",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "KRAS G12C colorectal cancer",
+            "state": "PRESENT",
+            "value": "KRAS G12C colorectal cancer"
+          },
+          "predicate": "ASSOCIATED_WITH",
+          "source_evidence": {
+            "exact_span": "An adaptive phase II trial linked adagrasib exposure to disease control in KRAS G12C colorectal cancer.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": "adaptive phase II trial",
+            "state": "PRESENT",
+            "value": "adaptive phase II trial"
+          },
+          "subject": "adagrasib exposure",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_study_adagrasib_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "31c9c7a9ec398b0deb4185161d4cdbcf45cda0c47171f33ce21c96d70f2fc5aa"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "c4828d8c5285cdd460e4b735bb1b9990a2dbb9a90d1f2a04924c6083aa0377d9",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "KRAS G12C",
+                "state": "PRESENT",
+                "value": "KRAS G12C"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence explicitly states that an adaptive phase II trial linked adagrasib exposure with disease control in patients with KRAS G12C colorectal cancer.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "disease control",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "KRAS G12C colorectal cancer",
+                "state": "PRESENT",
+                "value": "KRAS G12C colorectal cancer"
+              },
+              "predicate": "ASSOCIATED_WITH",
+              "source_evidence": {
+                "exact_span": "An adaptive phase II trial linked adagrasib exposure to disease control in KRAS G12C colorectal cancer.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": "adaptive phase II trial",
+                "state": "PRESENT",
+                "value": "adaptive phase II trial"
+              },
+              "subject": "adagrasib exposure",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "disease control",
+            "relation_type": "ASSOCIATED_WITH",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "An adaptive phase II trial linked adagrasib exposure to disease control in KRAS G12C colorectal cancer.",
+            "subject": "adagrasib exposure"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "7b49e135f8b7da46552c562741db527a26d6530469f5a8961381e3fdd7e941e1",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "KRAS G12C",
+                  "state": "PRESENT",
+                  "value": "KRAS G12C"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence explicitly states that an adaptive phase II trial linked adagrasib exposure with disease control in patients with KRAS G12C colorectal cancer.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "disease control",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": "KRAS G12C colorectal cancer",
+                  "state": "PRESENT",
+                  "value": "KRAS G12C colorectal cancer"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "ASSOCIATED_WITH",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "An adaptive phase II trial linked adagrasib exposure to disease control in KRAS G12C colorectal cancer.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": "adaptive phase II trial",
+                  "state": "PRESENT",
+                  "value": "adaptive phase II trial"
+                },
+                "subject": "adagrasib exposure",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Study design qualifier",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_setting_ibrutinib",
+      "category": "treatment_setting",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that ibrutinib delayed relapse of mantle-cell lymphoma in the post-transplant maintenance setting, supporting a treatment relationship with the stated relapse outcome.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "mantle-cell lymphoma",
+          "outcome": {
+            "exact_span": "delayed relapse",
+            "state": "PRESENT",
+            "value": "delayed relapse"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "In the post-transplant maintenance setting, ibrutinib delayed relapse of mantle-cell lymphoma.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "ibrutinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "post-transplant maintenance setting",
+            "state": "PRESENT",
+            "value": "post-transplant maintenance"
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_setting_ibrutinib_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "9c9942dd3ee6e99a38be7aea2d6ec326abe48c408d0ad25b93a6f81ac221d662"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "8d9d4c85a30abb5d3b96f1877fe3c26ba86e8c00b758a57e1a30a04c8e6baa0f",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that ibrutinib delayed relapse of mantle-cell lymphoma in the post-transplant maintenance setting, supporting a treatment relationship with the stated relapse outcome.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "mantle-cell lymphoma",
+              "outcome": {
+                "exact_span": "delayed relapse",
+                "state": "PRESENT",
+                "value": "delayed relapse"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "In the post-transplant maintenance setting, ibrutinib delayed relapse of mantle-cell lymphoma.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "ibrutinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "post-transplant maintenance setting",
+                "state": "PRESENT",
+                "value": "post-transplant maintenance"
+              }
+            },
+            "object": "mantle-cell lymphoma",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "In the post-transplant maintenance setting, ibrutinib delayed relapse of mantle-cell lymphoma.",
+            "subject": "ibrutinib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "9c765bab5b3b084538e951f36a8e0ea3d57bcf6020b537e8ed1a587a6b6a642e",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence directly states that ibrutinib delayed relapse of mantle-cell lymphoma in the post-transplant maintenance setting, supporting a treatment relationship with the stated relapse outcome.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "mantle-cell lymphoma",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "delayed relapse",
+                  "state": "PRESENT",
+                  "value": "delayed relapse"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "In the post-transplant maintenance setting, ibrutinib delayed relapse of mantle-cell lymphoma.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "ibrutinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": "post-transplant maintenance setting",
+                  "state": "PRESENT",
+                  "value": "post-transplant maintenance"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Treatment setting qualifier",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_timeframe_milvexian",
+      "category": "timeframe",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that milvexian lowered recurrent events in adults with atrial fibrillation by week 16, supporting a treatment relationship with atrial fibrillation and preserving the population, outcome, and timeframe qualifiers.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "atrial fibrillation",
+          "outcome": {
+            "exact_span": "recurrent events",
+            "state": "PRESENT",
+            "value": "recurrent events"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "adults with atrial fibrillation",
+            "state": "PRESENT",
+            "value": "adults with atrial fibrillation"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "By week 16, milvexian lowered recurrent events among adults with atrial fibrillation.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [
+            {
+              "extraction_method": "lexical extraction",
+              "field_name": "timeframe",
+              "literal_span": "week 16",
+              "origin": "source_measurement",
+              "source_hash": "fd6033007325e6222feb8dcf331c988f0851ff7ebd7dc0e5e53a8fe21e6f7010",
+              "source_locator": "normalized_extraction_text",
+              "unit": "week",
+              "value": "16"
+            }
+          ],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "milvexian",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": "By week 16",
+            "state": "PRESENT",
+            "value": "week 16"
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_timeframe_milvexian_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "59bcb575cb5228328b6f8423caf09c80861344ac10ab4636f39bbc434530745e"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "b9c357e4ddbfd17ca21df90e2396e100af8c4a5f4f95ab1bd2a8ccd371a42e1e",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that milvexian lowered recurrent events in adults with atrial fibrillation by week 16, supporting a treatment relationship with atrial fibrillation and preserving the population, outcome, and timeframe qualifiers.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "atrial fibrillation",
+              "outcome": {
+                "exact_span": "recurrent events",
+                "state": "PRESENT",
+                "value": "recurrent events"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "adults with atrial fibrillation",
+                "state": "PRESENT",
+                "value": "adults with atrial fibrillation"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "By week 16, milvexian lowered recurrent events among adults with atrial fibrillation.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [
+                {
+                  "extraction_method": "lexical extraction",
+                  "field_name": "timeframe",
+                  "literal_span": "week 16",
+                  "origin": "source_measurement",
+                  "source_hash": "fd6033007325e6222feb8dcf331c988f0851ff7ebd7dc0e5e53a8fe21e6f7010",
+                  "source_locator": "normalized_extraction_text",
+                  "unit": "week",
+                  "value": "16"
+                }
+              ],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "milvexian",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": "By week 16",
+                "state": "PRESENT",
+                "value": "week 16"
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "atrial fibrillation",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "By week 16, milvexian lowered recurrent events among adults with atrial fibrillation.",
+            "subject": "milvexian"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "36e2d8a177d7be2a9d3a9f425a9d56f9c78cf2a9f6fc93ecc4dcc66b3c638392",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence directly states that milvexian lowered recurrent events in adults with atrial fibrillation by week 16, supporting a treatment relationship with atrial fibrillation and preserving the population, outcome, and timeframe qualifiers.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "atrial fibrillation",
+                "object_curie": "MESH:D001281",
+                "outcome": {
+                  "exact_span": "recurrent events",
+                  "state": "PRESENT",
+                  "value": "recurrent events"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": "adults with atrial fibrillation",
+                  "state": "PRESENT",
+                  "value": "adults with atrial fibrillation"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "By week 16, milvexian lowered recurrent events among adults with atrial fibrillation.",
+                "source_measurements": [
+                  {
+                    "extraction_method": "lexical extraction",
+                    "field_name": "timeframe",
+                    "literal_span": "week 16",
+                    "origin": "source_measurement",
+                    "source_hash": "fd6033007325e6222feb8dcf331c988f0851ff7ebd7dc0e5e53a8fe21e6f7010",
+                    "source_locator": "normalized_extraction_text",
+                    "unit": "week",
+                    "value": "16"
+                  }
+                ],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "milvexian",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": "By week 16",
+                  "state": "PRESENT",
+                  "value": "week 16"
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Timeframe and population qualifier",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_threshold_cabozantinib",
+      "category": "threshold",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 0,
+        "llm_candidate_status": "llm_empty",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_threshold_cabozantinib_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 0,
+      "output_sha256": "93120b1837679b46c9e61d17d3b2e900cf91d45ccd98dd49db05663be1ff6605",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": []
+      },
+      "postprocessed_output_sha256": "096ac3df03946e078dbe269a92a8543208cd3a306619c8121a6cf651f2586842",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": []
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": false,
+      "title": "Numeric threshold qualifier",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_multi_clause_ret_ntrk",
+      "category": "multi_clause_binding",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 2,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 2,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "RET fusion-positive",
+            "state": "PRESENT",
+            "value": "RET fusion-positive"
+          },
+          "comparator": {
+            "exact_span": "vandetanib",
+            "state": "PRESENT",
+            "value": "vandetanib"
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The clause states that selpercatinib improved biochemical response in children with RET fusion-positive thyroid cancer compared with vandetanib at 24 weeks, supporting a therapeutic relationship.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "RET fusion-positive thyroid cancer",
+          "outcome": {
+            "exact_span": "biochemical response",
+            "state": "PRESENT",
+            "value": "biochemical response"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "children",
+            "state": "PRESENT",
+            "value": "children"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Among children with RET fusion-positive thyroid cancer, selpercatinib improved biochemical response versus vandetanib at 24 weeks",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [
+            {
+              "extraction_method": "lexical extraction",
+              "field_name": "timeframe",
+              "literal_span": "24 weeks",
+              "origin": "source_measurement",
+              "source_hash": "4ef69cdb82678d64dbc3ff3fcbbcb02e3e5c66dca7bd4bf5eb5c86c4fe0295d3",
+              "source_locator": "normalized_extraction_text",
+              "unit": "weeks",
+              "value": "24"
+            }
+          ],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "selpercatinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": "at 24 weeks",
+            "state": "PRESENT",
+            "value": "24 weeks"
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        },
+        {
+          "biological_or_variant_state": {
+            "exact_span": "NTRK fusion",
+            "state": "PRESENT",
+            "value": "NTRK fusion"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "NULL_RESULT",
+          "extraction_rationale": "The clause states that patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib, supporting a null therapeutic outcome for selpercatinib in this cancer subtype.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "NTRK fusion thyroid cancer",
+          "outcome": {
+            "exact_span": "no documented benefit",
+            "state": "PRESENT",
+            "value": "no documented benefit"
+          },
+          "polarity": "NULL_RESULT",
+          "population": {
+            "exact_span": "patients",
+            "state": "PRESENT",
+            "value": "patients"
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "selpercatinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_multi_clause_ret_ntrk_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "7df6a1a85bf70994ab1032d8e80f36d79b71eaa36f75c88cd27f3ae552e43c10"
+        },
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_multi_clause_ret_ntrk_02",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 2,
+      "output_sha256": "2f8c01e7aabedb5cb8d004d0c39b81bf1280f11ee46f2e9c81cfc6833ddfbb84",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "RET fusion-positive",
+                "state": "PRESENT",
+                "value": "RET fusion-positive"
+              },
+              "comparator": {
+                "exact_span": "vandetanib",
+                "state": "PRESENT",
+                "value": "vandetanib"
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The clause states that selpercatinib improved biochemical response in children with RET fusion-positive thyroid cancer compared with vandetanib at 24 weeks, supporting a therapeutic relationship.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "RET fusion-positive thyroid cancer",
+              "outcome": {
+                "exact_span": "biochemical response",
+                "state": "PRESENT",
+                "value": "biochemical response"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "children",
+                "state": "PRESENT",
+                "value": "children"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Among children with RET fusion-positive thyroid cancer, selpercatinib improved biochemical response versus vandetanib at 24 weeks",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [
+                {
+                  "extraction_method": "lexical extraction",
+                  "field_name": "timeframe",
+                  "literal_span": "24 weeks",
+                  "origin": "source_measurement",
+                  "source_hash": "4ef69cdb82678d64dbc3ff3fcbbcb02e3e5c66dca7bd4bf5eb5c86c4fe0295d3",
+                  "source_locator": "normalized_extraction_text",
+                  "unit": "weeks",
+                  "value": "24"
+                }
+              ],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "selpercatinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": "at 24 weeks",
+                "state": "PRESENT",
+                "value": "24 weeks"
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "RET fusion-positive thyroid cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "Among children with RET fusion-positive thyroid cancer, selpercatinib improved biochemical response versus vandetanib at 24 weeks",
+            "subject": "selpercatinib"
+          },
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "NTRK fusion",
+                "state": "PRESENT",
+                "value": "NTRK fusion"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "NULL_RESULT",
+              "extraction_rationale": "The clause states that patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib, supporting a null therapeutic outcome for selpercatinib in this cancer subtype.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "NTRK fusion thyroid cancer",
+              "outcome": {
+                "exact_span": "no documented benefit",
+                "state": "PRESENT",
+                "value": "no documented benefit"
+              },
+              "polarity": "NULL_RESULT",
+              "population": {
+                "exact_span": "patients",
+                "state": "PRESENT",
+                "value": "patients"
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "selpercatinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "NTRK fusion thyroid cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "non_assertive_claim_semantics",
+              "null_result",
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib",
+            "subject": "selpercatinib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "d2ed7fd19dc194ca6b050b1bd42360874cd51751c05bbd89eb36e1acaa580457",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "RET fusion-positive",
+                  "state": "PRESENT",
+                  "value": "RET fusion-positive"
+                },
+                "comparator": {
+                  "exact_span": "vandetanib",
+                  "state": "PRESENT",
+                  "value": "vandetanib"
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The clause states that selpercatinib improved biochemical response in children with RET fusion-positive thyroid cancer compared with vandetanib at 24 weeks, supporting a therapeutic relationship.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "RET fusion-positive thyroid cancer",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "biochemical response",
+                  "state": "PRESENT",
+                  "value": "biochemical response"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": "children",
+                  "state": "PRESENT",
+                  "value": "children"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "Among children with RET fusion-positive thyroid cancer, selpercatinib improved biochemical response versus vandetanib at 24 weeks",
+                "source_measurements": [
+                  {
+                    "extraction_method": "lexical extraction",
+                    "field_name": "timeframe",
+                    "literal_span": "24 weeks",
+                    "origin": "source_measurement",
+                    "source_hash": "4ef69cdb82678d64dbc3ff3fcbbcb02e3e5c66dca7bd4bf5eb5c86c4fe0295d3",
+                    "source_locator": "normalized_extraction_text",
+                    "unit": "weeks",
+                    "value": "24"
+                  }
+                ],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "selpercatinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": "at 24 weeks",
+                  "state": "PRESENT",
+                  "value": "24 weeks"
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              },
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "NTRK fusion",
+                  "state": "PRESENT",
+                  "value": "NTRK fusion"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "NULL_RESULT",
+                "extraction_rationale": "The clause states that patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib, supporting a null therapeutic outcome for selpercatinib in this cancer subtype.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "NTRK fusion thyroid cancer",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "no documented benefit",
+                  "state": "PRESENT",
+                  "value": "no documented benefit"
+                },
+                "polarity": "NULL_RESULT",
+                "population": {
+                  "exact_span": "patients",
+                  "state": "PRESENT",
+                  "value": "patients"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [
+                  "null_result"
+                ],
+                "review_status": "review_only",
+                "sentence": "patients with NTRK fusion thyroid cancer received no documented benefit from selpercatinib",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "selpercatinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Clause-local sibling claims",
+      "unmatched_output_count": 1,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_extra_output_capivasertib",
+      "category": "extra_output_trap",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "PIK3CA-mutant",
+            "state": "PRESENT",
+            "value": "PIK3CA-mutant"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The analysis explicitly states that capivasertib benefited PIK3CA-mutant breast cancer, supporting a therapeutic TREATS relation. The PIK3CA-mutant molecular state is preserved as a biological qualifier.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "PIK3CA-mutant breast cancer",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "The analysis showed that capivasertib benefited PIK3CA-mutant breast cancer.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "capivasertib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_extra_output_capivasertib_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "172e4ed8bed665b5319f5ef56be0d0d276735f7afa273f9159026daab1c6a5cf"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "ca53daed0ee20bbfc3c4bfaa2a7b9435a9134602cc6c76ff439aecd0c4be19f0",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "PIK3CA-mutant",
+                "state": "PRESENT",
+                "value": "PIK3CA-mutant"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The analysis explicitly states that capivasertib benefited PIK3CA-mutant breast cancer, supporting a therapeutic TREATS relation. The PIK3CA-mutant molecular state is preserved as a biological qualifier.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "PIK3CA-mutant breast cancer",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "The analysis showed that capivasertib benefited PIK3CA-mutant breast cancer.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "capivasertib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "PIK3CA-mutant breast cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "The analysis showed that capivasertib benefited PIK3CA-mutant breast cancer.",
+            "subject": "capivasertib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "65b7b942c256e3a2d64c2e2b2cd1f4baa66454aa04b0d22d6ceb4360b56f0e9e",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "PIK3CA-mutant",
+                  "state": "PRESENT",
+                  "value": "PIK3CA-mutant"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The analysis explicitly states that capivasertib benefited PIK3CA-mutant breast cancer, supporting a therapeutic TREATS relation. The PIK3CA-mutant molecular state is preserved as a biological qualifier.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "PIK3CA-mutant breast cancer",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "The analysis showed that capivasertib benefited PIK3CA-mutant breast cancer.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "capivasertib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Methods and funding output trap",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_unresolved_population",
+      "category": "unresolved_qualifier",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that the report associated savolitinib with response, with advanced kidney cancer providing the treatment-setting context. It explicitly says that the patient subgroup was not specified, so population is unresolved.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "response",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "UNRESOLVED",
+            "value": null
+          },
+          "predicate": "ASSOCIATED_WITH",
+          "source_evidence": {
+            "exact_span": "The report associated savolitinib with response in advanced kidney cancer, but the patient subgroup was not specified.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "savolitinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "advanced kidney cancer",
+            "state": "PRESENT",
+            "value": "advanced kidney cancer"
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_unresolved_population_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "d425ff23fc91894743c0331c5d574c2ef4bdc54409ea717ccd513f74573f8ffb"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "3375949811201be2717c977ccf500529de276db178b2070a00d3dee1c34b2713",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that the report associated savolitinib with response, with advanced kidney cancer providing the treatment-setting context. It explicitly says that the patient subgroup was not specified, so population is unresolved.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "response",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "UNRESOLVED",
+                "value": null
+              },
+              "predicate": "ASSOCIATED_WITH",
+              "source_evidence": {
+                "exact_span": "The report associated savolitinib with response in advanced kidney cancer, but the patient subgroup was not specified.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "savolitinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "advanced kidney cancer",
+                "state": "PRESENT",
+                "value": "advanced kidney cancer"
+              }
+            },
+            "object": "response",
+            "relation_type": "ASSOCIATED_WITH",
+            "review_reason_codes": [
+              "non_positive_claim_frame",
+              "unresolved_claim_qualifier",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "The report associated savolitinib with response in advanced kidney cancer, but the patient subgroup was not specified.",
+            "subject": "savolitinib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "44ff461ceb241d83d68b1b84fd376e3e8fa7e5aff2514a5f3d4a77e1f120126c",
+      "promotion_eligible_expected_count": 0,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence directly states that the report associated savolitinib with response, with advanced kidney cancer providing the treatment-setting context. It explicitly says that the patient subgroup was not specified, so population is unresolved.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "response",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": null,
+                  "state": "UNRESOLVED",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "ASSOCIATED_WITH",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "The report associated savolitinib with response in advanced kidney cancer, but the patient subgroup was not specified.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "savolitinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": "advanced kidney cancer",
+                  "state": "PRESENT",
+                  "value": "advanced kidney cancer"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Explicitly missing subgroup",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_source_measurement_repoterctinib",
+      "category": "source_measurement",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "ROS1 fusion",
+            "state": "PRESENT",
+            "value": "ROS1 fusion"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence reports that repotrectinib was used in ROS1 fusion lung cancer and that the median progression-free interval reached 8.7 months, directly supporting a treatment relationship with the stated outcome.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "ROS1 fusion lung cancer",
+          "outcome": {
+            "exact_span": "median progression-free interval",
+            "state": "PRESENT",
+            "value": "median progression-free interval"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "The median progression-free interval reached 8.7 months with repotrectinib in ROS1 fusion lung cancer.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [
+            {
+              "extraction_method": "lexical extraction from source text",
+              "field_name": "median progression-free interval",
+              "literal_span": "8.7 months",
+              "origin": "source_measurement",
+              "source_hash": "4eecb312c3669eb7e31cde2ba465be910375833622fdf8cc035a3317a57c9114",
+              "source_locator": "normalized_extraction_text",
+              "unit": "months",
+              "value": "8.7"
+            }
+          ],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "repotrectinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": "8.7 months",
+            "state": "PRESENT",
+            "value": "8.7 months"
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_source_measurement_repoterctinib_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "d39ecea71a4f344a6cee87a0de10b26c90ddadac54307ce49392685829dcb155"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "1cd9be233b9e8787ef2af9055a14fb20511cf3cabaa951c7a571b47a6363ae8e",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "ROS1 fusion",
+                "state": "PRESENT",
+                "value": "ROS1 fusion"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence reports that repotrectinib was used in ROS1 fusion lung cancer and that the median progression-free interval reached 8.7 months, directly supporting a treatment relationship with the stated outcome.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "ROS1 fusion lung cancer",
+              "outcome": {
+                "exact_span": "median progression-free interval",
+                "state": "PRESENT",
+                "value": "median progression-free interval"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "The median progression-free interval reached 8.7 months with repotrectinib in ROS1 fusion lung cancer.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [
+                {
+                  "extraction_method": "lexical extraction from source text",
+                  "field_name": "median progression-free interval",
+                  "literal_span": "8.7 months",
+                  "origin": "source_measurement",
+                  "source_hash": "4eecb312c3669eb7e31cde2ba465be910375833622fdf8cc035a3317a57c9114",
+                  "source_locator": "normalized_extraction_text",
+                  "unit": "months",
+                  "value": "8.7"
+                }
+              ],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "repotrectinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": "8.7 months",
+                "state": "PRESENT",
+                "value": "8.7 months"
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "ROS1 fusion lung cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding",
+              "support_not_entailed"
+            ],
+            "review_status": "review_only",
+            "sentence": "The median progression-free interval reached 8.7 months with repotrectinib in ROS1 fusion lung cancer.",
+            "subject": "repotrectinib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "0f1a4bd50cd217717f1eb002d08fad447f39de305512ac8f4c53cabd0479ace7",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "ROS1 fusion",
+                  "state": "PRESENT",
+                  "value": "ROS1 fusion"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence reports that repotrectinib was used in ROS1 fusion lung cancer and that the median progression-free interval reached 8.7 months, directly supporting a treatment relationship with the stated outcome.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "ROS1 fusion lung cancer",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "median progression-free interval",
+                  "state": "PRESENT",
+                  "value": "median progression-free interval"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "The median progression-free interval reached 8.7 months with repotrectinib in ROS1 fusion lung cancer.",
+                "source_measurements": [
+                  {
+                    "extraction_method": "lexical extraction from source text",
+                    "field_name": "median progression-free interval",
+                    "literal_span": "8.7 months",
+                    "origin": "source_measurement",
+                    "source_hash": "4eecb312c3669eb7e31cde2ba465be910375833622fdf8cc035a3317a57c9114",
+                    "source_locator": "normalized_extraction_text",
+                    "unit": "months",
+                    "value": "8.7"
+                  }
+                ],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "repotrectinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": "8.7 months",
+                  "state": "PRESENT",
+                  "value": "8.7 months"
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Literal source measurement",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_positive_sotorasib",
+      "category": "positive_asserted",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 1,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": "KRAS G12C-positive",
+            "state": "PRESENT",
+            "value": "KRAS G12C-positive"
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The sentence directly states that Sotorasib treated KRAS G12C-positive lung cancer and produced durable disease control; the KRAS G12C-positive molecular state and outcome are retained as qualifiers.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "KRAS G12C-positive lung cancer",
+          "outcome": {
+            "exact_span": "durable disease control",
+            "state": "PRESENT",
+            "value": "durable disease control"
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "predicate": "TREATS",
+          "source_evidence": {
+            "exact_span": "Sotorasib treated KRAS G12C-positive lung cancer with durable disease control.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "Sotorasib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          }
+        }
+      ],
+      "matched_frame_count": 1,
+      "matches": [
+        {
+          "actual_epistemic_status": "ASSERTED",
+          "actual_polarity": "SUPPORT",
+          "epistemic_status_correct": true,
+          "frame_id": "holdout_positive_sotorasib_01",
+          "matched": true,
+          "polarity_correct": true,
+          "qualifier_concordant": true,
+          "qualifier_presence_complete": true,
+          "semantic_fingerprint": "dff15d61b3b9179edc404e11f54f0a3be9a015bed391a70d80563fef57c3179b"
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "447d248aee44f992b3a70c860ec2679da552d609bede340bb000d5e8003e8848",
+      "polarity_correct_count": 1,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": "KRAS G12C-positive",
+                "state": "PRESENT",
+                "value": "KRAS G12C-positive"
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The sentence directly states that Sotorasib treated KRAS G12C-positive lung cancer and produced durable disease control; the KRAS G12C-positive molecular state and outcome are retained as qualifiers.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "KRAS G12C-positive lung cancer",
+              "outcome": {
+                "exact_span": "durable disease control",
+                "state": "PRESENT",
+                "value": "durable disease control"
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "predicate": "TREATS",
+              "source_evidence": {
+                "exact_span": "Sotorasib treated KRAS G12C-positive lung cancer with durable disease control.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "Sotorasib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              }
+            },
+            "object": "KRAS G12C-positive lung cancer",
+            "relation_type": "TREATS",
+            "review_reason_codes": [
+              "molecular_subtype_requires_structured_grounding"
+            ],
+            "review_status": "review_only",
+            "sentence": "Sotorasib treated KRAS G12C-positive lung cancer with durable disease control.",
+            "subject": "Sotorasib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "2cd7abbf3c1a727d956076ecf61094baf78c907c98e3690ee7a4330ac1d0f5e0",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 1,
+      "qualifier_presence_complete_count": 1,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": "KRAS G12C-positive",
+                  "state": "PRESENT",
+                  "value": "KRAS G12C-positive"
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The sentence directly states that Sotorasib treated KRAS G12C-positive lung cancer and produced durable disease control; the KRAS G12C-positive molecular state and outcome are retained as qualifiers.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "KRAS G12C-positive lung cancer",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": "durable disease control",
+                  "state": "PRESENT",
+                  "value": "durable disease control"
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "proposed_relation_type": null,
+                "relation_type": "TREATS",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "Sotorasib treated KRAS G12C-positive lung cancer with durable disease control.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "Sotorasib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Positive asserted relation",
+      "unmatched_output_count": 0,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 0
+    },
+    {
+      "agent_authored_quality_score_count": 0,
+      "case_id": "holdout_population_futibatinib",
+      "category": "population",
+      "diagnostics": {
+        "fallback_candidate_count": 0,
+        "llm_candidate_count": 1,
+        "llm_candidate_status": "completed",
+        "pruned_generic_relation_count": 0,
+        "quality_filtered_candidate_count": 0
+      },
+      "epistemic_status_correct_count": 0,
+      "expected_frame_count": 1,
+      "fallback_output_count": 0,
+      "frames": [
+        {
+          "biological_or_variant_state": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "comparator": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "epistemic_status": "ASSERTED",
+          "extraction_rationale": "The clause directly states that futibatinib was associated with tumor shrinkage among rural adults with relapsed cholangiocarcinoma.",
+          "intervention": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "object": "tumor shrinkage",
+          "outcome": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "polarity": "SUPPORT",
+          "population": {
+            "exact_span": "rural adults with relapsed cholangiocarcinoma",
+            "state": "PRESENT",
+            "value": "rural adults with relapsed cholangiocarcinoma"
+          },
+          "predicate": "ASSOCIATED_WITH",
+          "source_evidence": {
+            "exact_span": "Within rural adults with relapsed cholangiocarcinoma, futibatinib was associated with tumor shrinkage.",
+            "locator": "normalized_extraction_text"
+          },
+          "source_measurements": [],
+          "study_design": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "subject": "futibatinib",
+          "threshold": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "timeframe": {
+            "exact_span": null,
+            "state": "NOT_APPLICABLE",
+            "value": null
+          },
+          "treatment_setting": {
+            "exact_span": "relapsed",
+            "state": "PRESENT",
+            "value": "relapsed"
+          }
+        }
+      ],
+      "matched_frame_count": 0,
+      "matches": [
+        {
+          "actual_epistemic_status": null,
+          "actual_polarity": null,
+          "epistemic_status_correct": false,
+          "frame_id": "holdout_population_futibatinib_01",
+          "matched": false,
+          "polarity_correct": false,
+          "qualifier_concordant": false,
+          "qualifier_presence_complete": false,
+          "semantic_fingerprint": null
+        }
+      ],
+      "output_frame_count": 1,
+      "output_sha256": "9033cb5c86a3e4f4a876fb72ac4b7888aef0edc810f5cffb6764516eddf2621f",
+      "polarity_correct_count": 0,
+      "positive_on_negative_or_null_count": 0,
+      "postprocessed_candidate_output": {
+        "relations": [
+          {
+            "claim_frame": {
+              "biological_or_variant_state": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "comparator": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "epistemic_status": "ASSERTED",
+              "extraction_rationale": "The clause directly states that futibatinib was associated with tumor shrinkage among rural adults with relapsed cholangiocarcinoma.",
+              "intervention": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "object": "tumor shrinkage",
+              "outcome": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "polarity": "SUPPORT",
+              "population": {
+                "exact_span": "rural adults with relapsed cholangiocarcinoma",
+                "state": "PRESENT",
+                "value": "rural adults with relapsed cholangiocarcinoma"
+              },
+              "predicate": "ASSOCIATED_WITH",
+              "source_evidence": {
+                "exact_span": "Within rural adults with relapsed cholangiocarcinoma, futibatinib was associated with tumor shrinkage.",
+                "locator": "normalized_extraction_text"
+              },
+              "source_measurements": [],
+              "study_design": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "subject": "futibatinib",
+              "threshold": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "timeframe": {
+                "exact_span": null,
+                "state": "NOT_APPLICABLE",
+                "value": null
+              },
+              "treatment_setting": {
+                "exact_span": "relapsed",
+                "state": "PRESENT",
+                "value": "relapsed"
+              }
+            },
+            "object": "tumor shrinkage",
+            "relation_type": "ASSOCIATED_WITH",
+            "review_reason_codes": [],
+            "review_status": "candidate",
+            "sentence": "Within rural adults with relapsed cholangiocarcinoma, futibatinib was associated with tumor shrinkage.",
+            "subject": "futibatinib"
+          }
+        ]
+      },
+      "postprocessed_output_sha256": "59ef058ebd99a6d4a0b76e84480176d160805259634f306ee9103dee02abd545",
+      "promotion_eligible_expected_count": 1,
+      "qualifier_concordant_count": 0,
+      "qualifier_presence_complete_count": 0,
+      "raw_agent_output": {
+        "passes": [
+          {
+            "relations": [
+              {
+                "biological_or_variant_state": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "comparator": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "epistemic_status": "ASSERTED",
+                "extraction_rationale": "The clause directly states that futibatinib was associated with tumor shrinkage among rural adults with relapsed cholangiocarcinoma.",
+                "intervention": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "new_relation_type_rationale": null,
+                "object": "tumor shrinkage",
+                "object_curie": null,
+                "outcome": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "polarity": "SUPPORT",
+                "population": {
+                  "exact_span": "rural adults with relapsed cholangiocarcinoma",
+                  "state": "PRESENT",
+                  "value": "rural adults with relapsed cholangiocarcinoma"
+                },
+                "proposed_relation_type": null,
+                "relation_type": "ASSOCIATED_WITH",
+                "review_reason_codes": [],
+                "review_status": "candidate",
+                "sentence": "Within rural adults with relapsed cholangiocarcinoma, futibatinib was associated with tumor shrinkage.",
+                "source_measurements": [],
+                "study_design": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "subject": "futibatinib",
+                "subject_curie": null,
+                "threshold": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "timeframe": {
+                  "exact_span": null,
+                  "state": "NOT_APPLICABLE",
+                  "value": null
+                },
+                "treatment_setting": {
+                  "exact_span": "relapsed",
+                  "state": "PRESENT",
+                  "value": "relapsed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "source_measurement_without_span_count": 0,
+      "strict_completed": true,
+      "title": "Population subgroup qualifier",
+      "unmatched_output_count": 1,
+      "unsafe_assertive_upgrade_count": 0,
+      "unsupported_positive_output_count": 1
+    }
+  ],
+  "execution_namespace": "tg03-holdout-v2-luna-v11-02",
+  "fixture": {
+    "case_count": 19,
+    "path": "/Users/alvaro/.codex/worktrees/b8c0/artana-evidence-platform/scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v2.json",
+    "schema_version": "tg03_qualifier_benchmark.v2",
+    "sha256": "22fbdf50333811d52e26296e9f1ddd561bfe0f29b0ed7d3771017199552ab956"
+  },
+  "gate_passed": false,
+  "gates": {
+    "agent_quality_scores": {
+      "passed": true,
+      "rule": "agent-authored quality scores are absent"
+    },
+    "epistemic_status": {
+      "passed": false,
+      "rule": "explicit epistemic-status concordance is 100%"
+    },
+    "measurement_spans": {
+      "passed": true,
+      "rule": "source measurements all have exact spans"
+    },
+    "no_fallback": {
+      "passed": true,
+      "rule": "strict reports contain no fallback output"
+    },
+    "polarity": {
+      "passed": false,
+      "rule": "explicit polarity concordance is 100%"
+    },
+    "positive_on_negative_or_null": {
+      "passed": true,
+      "rule": "positive output on negative/null cases is zero"
+    },
+    "qualifier_concordance": {
+      "passed": false,
+      "rule": "all qualifier categories are gold-concordant"
+    },
+    "qualifier_presence": {
+      "passed": false,
+      "rule": "required qualifier presence is 100%"
+    },
+    "stability": {
+      "passed": false,
+      "status": "not_evaluated"
+    },
+    "strict_completion": {
+      "passed": false,
+      "rule": "all strict live cases completed"
+    },
+    "unmatched_outputs": {
+      "passed": false,
+      "rule": "unmatched output frames are zero"
+    },
+    "unsafe_assertive_upgrades": {
+      "passed": true,
+      "rule": "non-assertive gold claims are never upgraded to ASSERTED"
+    },
+    "unsupported_positive_outputs": {
+      "passed": false,
+      "rule": "unsupported positive output frames are zero"
+    }
+  },
+  "generated_at": "2026-07-15T14:02:22.322634+00:00",
+  "hard_safety_gates_passed": false,
+  "metrics": {
+    "agent_authored_quality_score_count": 0,
+    "case_count": 19,
+    "epistemic_status_concordance_rate": 0.6,
+    "epistemic_status_correct_count": 12,
+    "expected_frame_count": 20,
+    "explicit_polarity_concordance_rate": 0.6,
+    "fallback_output_count": 0,
+    "frame_precision": 0.7222222222222222,
+    "matched_frame_count": 13,
+    "output_frame_count": 18,
+    "polarity_correct_count": 12,
+    "positive_on_negative_or_null_count": 0,
+    "promotion_eligible_expected_count": 13,
+    "qualifier_concordance_rate": 0.4,
+    "qualifier_concordant_count": 8,
+    "qualifier_presence_complete_count": 8,
+    "required_qualifier_completeness_rate": 0.6153846153846154,
+    "source_measurement_without_span_count": 0,
+    "strict_completed_case_count": 17,
+    "strict_completion_rate": 0.8947368421052632,
+    "unmatched_output_count": 5,
+    "unsafe_assertive_upgrade_count": 0,
+    "unsupported_positive_output_count": 3
+  },
+  "model_id": "openai:gpt-5.6-luna",
+  "prompt_version": "document_extraction.llm_extraction.v11",
+  "report_type": "claim_frame_feasibility_run",
+  "run_id": "tg03-holdout-v2-luna-v11-02",
+  "schema_version": "tg03.claim_frame_feasibility.run.v1",
+  "strict_live_extraction_completed": false,
+  "strict_no_fallback": true
+}

@@ -8,6 +8,16 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
+from artana_evidence_api.confidence_assessment import proposal_fact_assessment
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFrame,
+    ClaimFramePromotionError,
+    ClaimQualifier,
+    EpistemicStatus,
+    Polarity,
+    SourceEvidenceSpan,
+    require_canonical_claim_promotion,
+)
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.graph_client import GraphServiceClientError
 from artana_evidence_api.graph_integration.source_provenance import (
@@ -28,6 +38,10 @@ from artana_evidence_api.types.graph_contracts import (
     KernelGraphValidationResponse,
     KernelRelationClaimCreateRequest,
     KernelRelationClaimResponse,
+)
+from artana_evidence_api.types.graph_fact_assessment import (
+    SpeculationLevel,
+    SupportBand,
 )
 from artana_evidence_api.types.source_provenance import (
     ClaimSourceProvenance,
@@ -289,16 +303,19 @@ def test_build_graph_claim_request_preserves_verifier_owned_metadata() -> None:
     )
 
     assert request.metadata["reviewed_by"] == "tester"
-    assert request.metadata["evidence_grounding"] == proposal.metadata[
-        "evidence_grounding"
-    ]
-    assert request.metadata["support_verification"] == proposal.metadata[
-        "support_verification"
-    ]
+    assert (
+        request.metadata["evidence_grounding"]
+        == proposal.metadata["evidence_grounding"]
+    )
+    assert (
+        request.metadata["support_verification"]
+        == proposal.metadata["support_verification"]
+    )
     assert request.metadata["trust_tier"] == proposal.metadata["trust_tier"]
-    assert request.metadata["trust_floor_failures"] == proposal.metadata[
-        "trust_floor_failures"
-    ]
+    assert (
+        request.metadata["trust_floor_failures"]
+        == proposal.metadata["trust_floor_failures"]
+    )
     assert request.metadata["trusted_evidence_eligible"] is False
     assert request.metadata["review_status"] == "review_only"
     assert request.metadata["review_reason_codes"] == ["hedged_language"]
@@ -404,7 +421,9 @@ def test_build_graph_claim_request_uses_embedded_entity_candidate_payload() -> N
     }
 
 
-def test_build_graph_observation_request_resolves_subject_from_candidate_payload() -> None:
+def test_build_graph_observation_request_resolves_subject_from_candidate_payload() -> (
+    None
+):
     now = datetime.now(UTC)
     proposal = HarnessProposalRecord(
         id=str(uuid4()),
@@ -574,14 +593,13 @@ def test_build_graph_observation_request_preserves_source_measurement_provenance
     assert request.observation_origin == "AI_AUTHORED"
     assert request.provenance_id is None
     assert request.provenance is not None
-    assert request.provenance.source_ref == (
-        f"document:{document_id}#raw_record.text"
-    )
+    assert request.provenance.source_ref == (f"document:{document_id}#raw_record.text")
     assert request.provenance.extraction_run_id == run_id
     assert request.provenance.mapping_method == "agent_source_measurement"
     assert request.provenance.raw_input is not None
-    assert request.provenance.raw_input["source_measurement"] == (
-        proposal.payload["source_measurement"]
+    assert (
+        request.provenance.raw_input["source_measurement"]
+        == (proposal.payload["source_measurement"])
     )
 
 
@@ -802,7 +820,7 @@ def _proposal_with_resolved_entities(
     now = datetime.now(UTC)
     sid = subject_id or uuid4()
     oid = object_id or uuid4()
-    quote = "MED13 is associated with cardiomyopathy."
+    quote = "In a cohort study, MED13 is associated with cardiomyopathy."
     quote_hash = hashlib.sha256(quote.encode("utf-8")).hexdigest()
     provenance = ClaimSourceProvenance(
         status="verified",
@@ -822,6 +840,31 @@ def _proposal_with_resolved_entities(
             exact_quote=quote,
             quote_sha256=quote_hash,
         ),
+    )
+    absent = ClaimQualifier.not_applicable()
+    claim_frame = ClaimFrame(
+        subject="MED13",
+        predicate="ASSOCIATED_WITH",
+        object="cardiomyopathy",
+        source_evidence=SourceEvidenceSpan(
+            exact_span=quote,
+            locator="normalized_extraction_text",
+        ),
+        polarity=Polarity.SUPPORT,
+        epistemic_status=EpistemicStatus.ASSERTED,
+        biological_or_variant_state=absent,
+        population=absent,
+        intervention=absent,
+        comparator=absent,
+        outcome=absent,
+        study_design=ClaimQualifier.present(
+            value="cohort study",
+            exact_span="cohort study",
+        ),
+        treatment_setting=absent,
+        timeframe=absent,
+        threshold=absent,
+        extraction_rationale="The source directly asserts the association.",
     )
     return HarnessProposalRecord(
         id=str(uuid4()),
@@ -844,10 +887,27 @@ def _proposal_with_resolved_entities(
             "proposed_claim_type": "ASSOCIATED_WITH",
             "proposed_object": str(oid),
             "proposed_object_label": "cardiomyopathy",
+            "claim_frame": claim_frame.model_dump(mode="json"),
         },
         metadata={
             "subject_label": "MED13",
             "object_label": "cardiomyopathy",
+            "agent_extraction_completed": True,
+            "fallback_output_used": False,
+            "review_status": "candidate",
+            "qualified_claim_frame_present": True,
+            "claim_frame_positive_projection_candidate": True,
+            "claim_frame_positive_projection_eligible": False,
+            "claim_frame_semantic_fingerprint": claim_frame.semantic_fingerprint,
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "verification_method": "agent",
+            },
             "proposal_review": {
                 "factual_support": "strong",
                 "factual_rationale": "The source sentence directly supports the claim.",
@@ -904,6 +964,25 @@ def _source_document_for_proposal(
     )
 
 
+def test_heuristic_review_cannot_claim_strong_agent_support() -> None:
+    proposal = _proposal_with_resolved_entities()
+    fallback_review = {
+        **proposal.metadata["proposal_review"],
+        "method": "heuristic_fallback_v1",
+        "factual_support": "strong",
+    }
+
+    assessment = proposal_fact_assessment(
+        replace(
+            proposal,
+            metadata={**proposal.metadata, "proposal_review": fallback_review},
+        ),
+    )
+
+    assert assessment.support_band == SupportBand.TENTATIVE
+    assert assessment.speculation_level == SpeculationLevel.HEDGED
+
+
 def _resolved_source_provenance(
     proposal: HarnessProposalRecord,
 ) -> ResolvedSourceProvenance:
@@ -939,7 +1018,9 @@ def test_build_graph_relation_request_maps_fields_correctly() -> None:
     assert request.relation_type == "ASSOCIATED_WITH"
     assert request.derived_confidence == 0.9
     assert request.assessment.support_band == "STRONG"
-    assert request.evidence_summary == "MED13 is associated with cardiomyopathy."
+    assert request.evidence_summary == (
+        "In a cohort study, MED13 is associated with cardiomyopathy."
+    )
     assert request.evidence_sentence == proposal.summary
     assert request.evidence_sentence_source == "verbatim_span"
     assert request.source_document_ref == "PMID:12345678"
@@ -1012,16 +1093,19 @@ def test_build_graph_relation_request_preserves_verifier_owned_metadata() -> Non
     )
 
     assert request.metadata["reviewed_by"] == "tester"
-    assert request.metadata["evidence_grounding"] == proposal.metadata[
-        "evidence_grounding"
-    ]
-    assert request.metadata["support_verification"] == proposal.metadata[
-        "support_verification"
-    ]
+    assert (
+        request.metadata["evidence_grounding"]
+        == proposal.metadata["evidence_grounding"]
+    )
+    assert (
+        request.metadata["support_verification"]
+        == proposal.metadata["support_verification"]
+    )
     assert request.metadata["trust_tier"] == proposal.metadata["trust_tier"]
-    assert request.metadata["trust_floor_failures"] == proposal.metadata[
-        "trust_floor_failures"
-    ]
+    assert (
+        request.metadata["trust_floor_failures"]
+        == proposal.metadata["trust_floor_failures"]
+    )
     assert request.metadata["trusted_evidence_eligible"] is False
     assert request.metadata["review_status"] == "review_only"
     assert request.metadata["review_reason_codes"] == ["hedged_language"]
@@ -1205,76 +1289,200 @@ def _allowed_relation_validation(relation_type: str) -> KernelGraphValidationRes
     )
 
 
-def test_promote_to_graph_claim_calls_create_relation() -> None:
+def test_promote_to_graph_claim_blocks_lossy_graph_contract() -> None:
     proposal = _proposal_with_resolved_entities()
     gateway = _MockRelationGateway()
 
-    result = promote_to_graph_claim(
-        space_id=uuid4(),
-        proposal=proposal,
-        request_metadata={},
-        graph_api_gateway=gateway,
-        source_document=_source_document_for_proposal(proposal),
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=uuid4(),
+            proposal=proposal,
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == (
+        "qualified_claim_persistence_not_ready"
     )
-
-    assert len(gateway.calls) == 1
-    assert result["graph_claim_status"] == "RESOLVED"
-    assert result["graph_relation_id"] is not None
-    assert result["graph_relation_curation_status"] == "DRAFT"
-    assert result["graph_claim_id"] is not None
-    assert result["graph_claim_id"] != result["graph_relation_id"]
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
 
 
-def test_promote_to_graph_claim_never_materializes_without_frozen_provenance() -> None:
+def test_promote_to_graph_claim_rejects_unframed_legacy_candidate() -> None:
+    proposal = _proposal_with_resolved_entities()
+    payload = dict(proposal.payload)
+    payload.pop("claim_frame")
+    gateway = _MockRelationGateway()
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=replace(proposal, payload=payload),
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == "missing_qualified_claim_frame"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_promote_to_graph_claim_rejects_non_positive_claim_frame() -> None:
+    proposal = _proposal_with_resolved_entities()
+    frame = ClaimFrame.model_validate(proposal.payload["claim_frame"])
+    payload = {
+        **proposal.payload,
+        "claim_frame": frame.model_copy(
+            update={
+                "polarity": Polarity.NULL_RESULT,
+                "epistemic_status": EpistemicStatus.NULL_RESULT,
+            },
+        ).model_dump(mode="json"),
+    }
+    gateway = _MockRelationGateway()
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=replace(proposal, payload=payload),
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == "non_positive_claim_frame"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_promote_to_graph_claim_rejects_fallback_output() -> None:
+    proposal = _proposal_with_resolved_entities()
+    gateway = _MockRelationGateway()
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=replace(
+                proposal,
+                metadata={**proposal.metadata, "fallback_output_used": True},
+            ),
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == "fallback_output_not_promotable"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_promote_to_graph_claim_requires_agent_entailment_verification() -> None:
+    proposal = _proposal_with_resolved_entities()
+    gateway = _MockRelationGateway()
+    support = {
+        **proposal.metadata["support_verification"],
+        "verification_method": "deterministic",
+    }
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=replace(
+                proposal,
+                metadata={**proposal.metadata, "support_verification": support},
+            ),
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == "agent_support_not_verified"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_source_document_gate_follows_structural_claim_preflight() -> None:
     proposal = replace(
         _proposal_with_resolved_entities(),
         source_provenance=None,
     )
     gateway = _MockRelationGateway()
 
-    result = promote_to_graph_claim(
-        space_id=UUID(proposal.space_id),
-        proposal=proposal,
-        request_metadata={"source_provenance_status": "verified"},
-        graph_api_gateway=gateway,
-        source_document=None,
-    )
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=proposal,
+            request_metadata={"source_provenance_status": "verified"},
+            graph_api_gateway=gateway,
+            source_document=None,
+        )
 
+    assert exc_info.value.detail["reason_code"] == "missing_source_document"
     assert gateway.calls == []
-    assert len(gateway.claim_calls) == 1
-    assert result["graph_promotion_mode"] == "claim"
-    assert result["source_provenance_status"] == "invalid"
-    assert result["source_provenance_reason_code"] == "missing_source_document"
-    request = gateway.claim_calls[0]
-    assert request.source_document_id is None
-    assert request.source_evidence is None
-    assert request.metadata["source_provenance_status"] == "invalid"
+    assert gateway.claim_calls == []
 
 
-def test_promote_to_graph_claim_never_materializes_after_source_mutation() -> None:
+def test_source_provenance_gate_precedes_persistence_quarantine() -> None:
     proposal = _proposal_with_resolved_entities()
     source_document = _source_document_for_proposal(proposal)
     gateway = _MockRelationGateway()
 
-    result = promote_to_graph_claim(
-        space_id=UUID(proposal.space_id),
-        proposal=proposal,
-        request_metadata={},
-        graph_api_gateway=gateway,
-        source_document=replace(
-            source_document,
-            text_content=f"Mutated. {source_document.text_content}",
-        ),
-    )
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=proposal,
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=replace(
+                source_document,
+                text_content=f"Mutated. {source_document.text_content}",
+            ),
+        )
 
+    assert exc_info.value.detail["reason_code"] != (
+        "qualified_claim_persistence_not_ready"
+    )
     assert gateway.calls == []
-    assert len(gateway.claim_calls) == 1
-    assert result["source_provenance_reason_code"] == (
-        "source_identity_snapshot_mismatch"
-    )
+    assert gateway.claim_calls == []
 
 
-def test_promote_to_graph_claim_falls_back_to_open_claim_on_constraint() -> None:
+def test_promotion_rebinds_structurally_valid_frame_to_stored_source() -> None:
+    proposal = _proposal_with_resolved_entities()
+    frame = ClaimFrame.model_validate(proposal.payload["claim_frame"])
+    payload = {
+        **proposal.payload,
+        "claim_frame": frame.model_copy(
+            update={
+                "source_evidence": SourceEvidenceSpan(
+                    exact_span="MED13 is associated with cardiomyopathy.",
+                    locator="normalized_extraction_text",
+                ),
+            },
+        ).model_dump(mode="json"),
+    }
+    source_document = _source_document_for_proposal(proposal)
+
+    with pytest.raises(ClaimFramePromotionError) as exc_info:
+        require_canonical_claim_promotion(
+            payload=payload,
+            metadata=proposal.metadata,
+            source_text=source_document.text_content,
+            source_sha256=hashlib.sha256(
+                source_document.text_content.encode("utf-8"),
+            ).hexdigest(),
+        )
+
+    assert exc_info.value.reason_code == "claim_frame_source_binding_failed"
+
+
+def test_persistence_gate_prevents_constraint_fallback_from_losing_frame() -> None:
     class _ConstraintFailingGateway(_MockRelationGateway):
         def __init__(self) -> None:
             super().__init__()
@@ -1332,23 +1540,25 @@ def test_promote_to_graph_claim_falls_back_to_open_claim_on_constraint() -> None
     proposal = _proposal_with_resolved_entities()
     gateway = _ConstraintFailingGateway()
 
-    result = promote_to_graph_claim(
-        space_id=uuid4(),
-        proposal=proposal,
-        request_metadata={},
-        graph_api_gateway=gateway,
-        source_document=_source_document_for_proposal(proposal),
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=uuid4(),
+            proposal=proposal,
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.detail["reason_code"] == (
+        "qualified_claim_persistence_not_ready"
     )
-
-    assert len(gateway.claim_requests) == 1
-    assert result["graph_claim_status"] == "OPEN"
-    assert result["graph_relation_id"] is None
-    assert result["graph_promotion_mode"] == "claim"
-    claim_request = gateway.claim_requests[0]
-    assert claim_request.metadata["canonical_promotion_blocked"] is True
+    assert gateway.calls == []
+    assert gateway.claim_requests == []
 
 
-def test_promote_to_graph_claim_falls_back_to_open_claim_on_exact_constraint_requirement() -> None:
+def test_persistence_gate_prevents_exact_constraint_fallback_from_losing_frame() -> (
+    None
+):
     class _ExactConstraintGateway(_MockRelationGateway):
         def __init__(self) -> None:
             super().__init__()
@@ -1402,17 +1612,17 @@ def test_promote_to_graph_claim_falls_back_to_open_claim_on_exact_constraint_req
     proposal = _proposal_with_resolved_entities()
     gateway = _ExactConstraintGateway()
 
-    result = promote_to_graph_claim(
-        space_id=uuid4(),
-        proposal=proposal,
-        request_metadata={},
-        graph_api_gateway=gateway,
-        source_document=_source_document_for_proposal(proposal),
-    )
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=uuid4(),
+            proposal=proposal,
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
 
-    assert len(gateway.claim_requests) == 1
-    assert result["graph_claim_status"] == "OPEN"
-    assert result["graph_relation_id"] is None
-    assert result["graph_promotion_mode"] == "claim"
-    claim_request = gateway.claim_requests[0]
-    assert claim_request.metadata["canonical_promotion_blocked"] is True
+    assert exc_info.value.detail["reason_code"] == (
+        "qualified_claim_persistence_not_ready"
+    )
+    assert gateway.calls == []
+    assert gateway.claim_requests == []

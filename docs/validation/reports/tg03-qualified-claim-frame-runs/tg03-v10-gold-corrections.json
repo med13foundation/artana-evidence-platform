@@ -1,0 +1,138 @@
+{
+  "schema_version": "tg03.claim_frame_gold_corrections.v1",
+  "ledger_type": "development_fixture_gold_correction_ledger",
+  "from": {
+    "fixture_path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_development_v10.json",
+    "fixture_sha256": "607dbf3729038bf1bbb767955cdf222f9b88fece7e02cd7eeaf61cc6eaee6de6",
+    "historical_default_source_locator": "raw_record.text_content",
+    "run_ids": [
+      "tg03-luna-v10-01",
+      "tg03-luna-v10-02",
+      "tg03-luna-v10-03"
+    ]
+  },
+  "to": {
+    "fixture_path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_benchmark_v1.json",
+    "fixture_sha256": "c2ad0198a24ad94aff2401fbcea41a284e731b86375bd1aaba0b146b17dbba1e"
+  },
+  "affected_frame_level_outcome_count": 4,
+  "affected_unique_frame_count": 3,
+  "counting_unit": "one source-local gold-label correction outcome; related role removals in one frame are one outcome",
+  "corrections": [
+    {
+      "correction_id": "assay_cutoff_01_biological_state",
+      "case_id": "assay_cutoff",
+      "frame_id": "assay_cutoff_01",
+      "fields": ["qualifiers.biological_or_variant_state"],
+      "v10": {
+        "state": "NOT_APPLICABLE",
+        "value": null,
+        "exact_span": null
+      },
+      "current_dev": {
+        "state": "PRESENT",
+        "value": "expression",
+        "exact_span": "PD-L1 expression"
+      },
+      "reason": "The source explicitly names PD-L1 expression. The v10 gold omitted that biological state even though the frame subject is the expression state; the current development label preserves the source-native qualifier and its wider exact span."
+    },
+    {
+      "correction_id": "explicit_negation_01_biological_state",
+      "case_id": "explicit_negation",
+      "frame_id": "explicit_negation_01",
+      "fields": ["qualifiers.biological_or_variant_state"],
+      "v10": {
+        "state": "NOT_APPLICABLE",
+        "value": null,
+        "exact_span": null
+      },
+      "current_dev": {
+        "state": "PRESENT",
+        "value": "expression",
+        "exact_span": "BRCA1 expression"
+      },
+      "reason": "The refuted claim is specifically about BRCA1 expression. The v10 gold retained the replication-study qualifier but omitted the explicit biological expression state; the current development label records that state without changing REFUTE polarity."
+    },
+    {
+      "correction_id": "novel_hypothesis_01_source_native_biological_state",
+      "case_id": "novel_hypothesis",
+      "frame_id": "novel_hypothesis_01",
+      "fields": ["qualifiers.biological_or_variant_state"],
+      "v10": {
+        "state": "PRESENT",
+        "value": "STK11 loss",
+        "exact_span": "STK11 loss"
+      },
+      "current_dev": {
+        "state": "PRESENT",
+        "value": "loss",
+        "exact_span": "STK11 loss"
+      },
+      "reason": "The relation subject already carries the full STK11 loss endpoint. The qualifier is narrowed to the source-native biological state value loss while retaining the exact evidence span, avoiding endpoint duplication."
+    },
+    {
+      "correction_id": "novel_hypothesis_01_endpoint_qualifier_deduplication",
+      "case_id": "novel_hypothesis",
+      "frame_id": "novel_hypothesis_01",
+      "fields": [
+        "qualifiers.population",
+        "qualifiers.intervention"
+      ],
+      "v10": {
+        "population": {
+          "state": "PRESENT",
+          "value": "tumors",
+          "exact_span": "tumors"
+        },
+        "intervention": {
+          "state": "PRESENT",
+          "value": "immunotherapy",
+          "exact_span": "immunotherapy"
+        }
+      },
+      "current_dev": {
+        "population": {
+          "state": "NOT_APPLICABLE",
+          "value": null,
+          "exact_span": null
+        },
+        "intervention": {
+          "state": "NOT_APPLICABLE",
+          "value": null,
+          "exact_span": null
+        }
+      },
+      "reason": "Tumors and immunotherapy are already represented by the source-local relation arguments in STK11 loss PREDISPOSES_TO resistance to immunotherapy. The current development label prevents those endpoints from being duplicated as population or intervention qualifiers."
+    }
+  ],
+  "immutable_v10_artifacts": [
+    {
+      "run_id": "tg03-luna-v10-01",
+      "json_path": "docs/validation/reports/tg03-qualified-claim-frame-runs/tg03-luna-v10-01.json",
+      "json_sha256": "82d690adced3c291463ce4d94abc1678fe0e5813f101f8eec2924d05ffbb73a0",
+      "markdown_path": "docs/validation/reports/tg03-qualified-claim-frame-runs/tg03-luna-v10-01.md",
+      "markdown_sha256": "73d21fbc5258f8ff035a28543355633c692c7c211469408c3c8b22ebdf971835"
+    },
+    {
+      "run_id": "tg03-luna-v10-02",
+      "json_path": "docs/validation/reports/tg03-qualified-claim-frame-runs/tg03-luna-v10-02.json",
+      "json_sha256": "e9eba7e643c35e75cc64b8b2b7233e6c2d0208ff2f02a7dd328364ede16ff691",
+      "markdown_path": "docs/validation/reports/tg03-qualified-claim-frame-runs/tg03-luna-v10-02.md",
+      "markdown_sha256": "99ae5a8a2f78b2ad4dcab0a7254002d7493ce1fbc670feffde03762985de6139"
+    },
+    {
+      "run_id": "tg03-luna-v10-03",
+      "json_path": "docs/validation/reports/tg03-qualified-claim-frame-runs/tg03-luna-v10-03.json",
+      "json_sha256": "3e45663a74989b40dd4621218979d11b9e302244d8efd179a84269cb759e3962",
+      "markdown_path": "docs/validation/reports/tg03-qualified-claim-frame-runs/tg03-luna-v10-03.md",
+      "markdown_sha256": "9f97c1d8145d8ed4d62bfe98b876d2e64be65d6a242aeb99a39534f8439cd538"
+    }
+  ],
+  "validation": {
+    "v10_fixture_sha256_matches_target": true,
+    "all_v10_run_fixture_hashes_match": true,
+    "copied_artifact_bytes_are_unchanged": true,
+    "json_documents_parse_as_objects": true,
+    "source_artifact_self_hashes_verified": true
+  }
+}

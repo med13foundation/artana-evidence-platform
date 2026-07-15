@@ -6,13 +6,13 @@ import asyncio
 import hashlib
 import io
 import logging
-import re
 from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from artana_evidence_api.document_context_summary import summarize_document_context
 from artana_evidence_api.document_extraction_contracts import (
+    ClaimExtractionRoutingStatus,
     DocumentCandidateExtractionDiagnostics,
     DocumentExtractionReviewContext,
     DocumentProposalReview,
@@ -21,12 +21,14 @@ from artana_evidence_api.document_extraction_contracts import (
     ExtractedRelationCandidate,
     PdfTextExtractionOutcome,
     ProposalReviewResultLike,
+    normalize_claim_extraction_routing_status,
 )
 from artana_evidence_api.document_extraction_diagnostics import (
     candidate_completed,
     candidate_fallback,
     candidate_llm_empty,
     candidate_not_needed,
+    candidate_semantic_incomplete,
     proposal_review_completed,
     proposal_review_fallback_error,
     proposal_review_not_needed,
@@ -39,7 +41,6 @@ from artana_evidence_api.document_extraction_drafts import (
 )
 from artana_evidence_api.document_extraction_entities import (
     canonical_entity_label_rejection_reason,
-    clean_candidate_label,
     resolve_exact_entity_label,
     resolve_graph_entity_label,  # noqa: F401 - compatibility import path
 )
@@ -65,13 +66,19 @@ from artana_evidence_api.document_extraction_review import (
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     build_relation_extraction_text_chunks,
 )
+from artana_evidence_api.document_extraction_support.heuristics.relation_extraction import (
+    extract_relation_candidates,
+)
 from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
+    LLMRelationExtractionAttempt,
     run_llm_relation_extraction_with_zero_retry,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    ModelAttemptAuditContext,
     fingerprinted_step_key,
     llm_extraction_document_fingerprint,
     merge_duplicate_relation_candidates,
+    record_model_attempt,
 )
 from artana_evidence_api.document_extraction_support.relation_candidate_quality_filter import (
     RelationCandidateQualityFilterResult,
@@ -83,7 +90,6 @@ from artana_evidence_api.document_extraction_support.relation_resolution_decisio
 from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
     RelationSpecificityPruningResult,
     SpecificityFilteredCandidateList,
-    is_low_value_generic_relation_candidate,
     prune_redundant_generic_relation_candidates,
 )
 from artana_evidence_api.document_extraction_support.review_policy.proposal_review_mapping import (
@@ -95,6 +101,7 @@ from artana_evidence_api.graph_integration.preflight import GraphAIPreflightServ
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from artana_evidence_api.step_helpers import run_single_step_with_policy
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from pydantic import ValidationError
 
 if TYPE_CHECKING:
     from artana_evidence_api.graph_client import GraphTransportBundle
@@ -109,125 +116,10 @@ _LLM_EXTRACTION_PSEUDO_SPACE_ID = uuid5(
 def _graph_ai_preflight_service() -> GraphAIPreflightService:
     return GraphAIPreflightService()
 
-_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+
 _MAX_AI_ENTITY_PRE_RESOLUTION_LABELS = 4
 _AI_ENTITY_PRE_RESOLUTION_TIMEOUT_SECONDS = 2.0
 _LLM_CANDIDATE_EXTRACTION_TIMEOUT_SECONDS = 5.0
-_RELATION_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
-    (
-        re.compile(
-            r"(?P<subject>[A-Za-z0-9][A-Za-z0-9\- ]{1,80}?)\s+"
-            r"(?P<lemma>regulates|activated|activates|inhibits|interacts with|"
-            r"interact with|associates with|associate with|associated with|"
-            r"is associated with|was associated with|were associated with|"
-            r"has been associated with|have been associated with|linked to|"
-            r"is linked to|was linked to|were linked to|has been linked to|"
-            r"have been linked to|causes|caused|drives|driven|promotes|"
-            r"promoted|supports|supported|results in|resulted in|leads to|"
-            r"led to|contributes to|contributed to|correlates with|"
-            r"correlated with|is correlated with|was correlated with|"
-            r"were correlated with)\s+"
-            r"(?P<object>[A-Za-z0-9][A-Za-z0-9()\-/, ]{1,160})",
-            re.IGNORECASE,
-        ),
-        "",
-    ),
-    (
-        re.compile(
-            r"(?P<object>[A-Za-z0-9][A-Za-z0-9()\-/, ]{1,80}?)\s+"
-            r"(?:is|was|were)\s+regulated by\s+"
-            r"(?P<subject>[A-Za-z0-9][A-Za-z0-9()\-/, ]{1,160})",
-            re.IGNORECASE,
-        ),
-        "REGULATES",
-    ),
-    (
-        re.compile(
-            r"(?P<object>[A-Za-z0-9][A-Za-z0-9()\-/, ]{1,80}?)\s+"
-            r"(?:is|was|were)\s+caused by\s+"
-            r"(?P<subject>[A-Za-z0-9][A-Za-z0-9()\-/, ]{1,160})",
-            re.IGNORECASE,
-        ),
-        "CAUSES",
-    ),
-)
-_LEMMA_RELATION_TYPES = {
-    "activate": "ACTIVATES",
-    "activated": "ACTIVATES",
-    "activates": "ACTIVATES",
-    "associate with": "ASSOCIATED_WITH",
-    "associated with": "ASSOCIATED_WITH",
-    "associates with": "ASSOCIATED_WITH",
-    "caused": "CAUSES",
-    "causes": "CAUSES",
-    "contribute to": "ASSOCIATED_WITH",
-    "contributed to": "ASSOCIATED_WITH",
-    "contributes to": "ASSOCIATED_WITH",
-    "correlated with": "ASSOCIATED_WITH",
-    "drive": "ASSOCIATED_WITH",
-    "driven": "ASSOCIATED_WITH",
-    "drives": "ASSOCIATED_WITH",
-    "has been associated with": "ASSOCIATED_WITH",
-    "has been linked to": "ASSOCIATED_WITH",
-    "have been associated with": "ASSOCIATED_WITH",
-    "have been linked to": "ASSOCIATED_WITH",
-    "interact with": "INTERACTS_WITH",
-    "inhibits": "INHIBITS",
-    "interacts with": "INTERACTS_WITH",
-    "is associated with": "ASSOCIATED_WITH",
-    "is correlated with": "ASSOCIATED_WITH",
-    "is linked to": "ASSOCIATED_WITH",
-    "lead to": "CAUSES",
-    "leads to": "CAUSES",
-    "led to": "CAUSES",
-    "linked to": "ASSOCIATED_WITH",
-    "promote": "ACTIVATES",
-    "promoted": "ACTIVATES",
-    "promotes": "ACTIVATES",
-    "regulate": "REGULATES",
-    "regulates": "REGULATES",
-    "reported": "ASSOCIATED_WITH",
-    "resulted in": "CAUSES",
-    "results in": "CAUSES",
-    "support": "ASSOCIATED_WITH",
-    "supported": "ASSOCIATED_WITH",
-    "supports": "ASSOCIATED_WITH",
-    "was associated with": "ASSOCIATED_WITH",
-    "was correlated with": "ASSOCIATED_WITH",
-    "was linked to": "ASSOCIATED_WITH",
-    "were associated with": "ASSOCIATED_WITH",
-    "were correlated with": "ASSOCIATED_WITH",
-    "were linked to": "ASSOCIATED_WITH",
-}
-_MIN_HEURISTIC_SUBJECT_CHARS = 3
-_SHORT_BIOMEDICAL_SUBJECT_LABELS = frozenset({"Hh"})
-_BAD_STANDALONE_SUBJECT_LABELS = frozenset(
-    {
-        "a",
-        "all",
-        "an",
-        "both",
-        "closely",
-        "drug",
-        "each",
-        "forms",
-        "it",
-        "many",
-        "most",
-        "one",
-        "plays",
-        "rna",
-        "several",
-        "some",
-        "such",
-        "the",
-        "these",
-        "they",
-        "this",
-        "we",
-    },
-)
-_BAD_STANDALONE_SUBJECT_LEMMAS = frozenset({"acts", "binds"})
 
 
 def sha256_hex(payload: bytes) -> str:
@@ -344,84 +236,6 @@ def normalize_text_document(text: str) -> str:
     return "\n".join(normalized_lines).strip()
 
 
-def _is_bad_heuristic_subject_label(label: str) -> bool:
-    """Return whether a regex subject is too fragmentary to stage."""
-
-    normalized_label = " ".join(label.strip(".,;:\"'").split())
-    if normalized_label == "":
-        return True
-    normalized_token = normalized_label.casefold()
-    if (
-        " " not in normalized_label
-        and normalized_token in _BAD_STANDALONE_SUBJECT_LABELS
-    ):
-        return True
-    if normalized_token in _BAD_STANDALONE_SUBJECT_LEMMAS:
-        return True
-    return (
-        len(normalized_label) < _MIN_HEURISTIC_SUBJECT_CHARS
-        and normalized_label not in _SHORT_BIOMEDICAL_SUBJECT_LABELS
-    )
-
-
-def extract_relation_candidates(text: str) -> list[ExtractedRelationCandidate]:
-    """Extract lightweight relation candidates from document text."""
-    normalized_text = normalize_text_document(text)
-    if normalized_text == "":
-        return []
-    candidates: list[ExtractedRelationCandidate] = []
-    seen_keys: set[tuple[str, str, str, str]] = set()
-    for sentence in _SENTENCE_SPLIT_RE.split(normalized_text):
-        cleaned_sentence = " ".join(sentence.split()).strip()
-        if cleaned_sentence == "":
-            continue
-        for pattern, fixed_relation_type in _RELATION_PATTERNS:
-            match = pattern.search(cleaned_sentence)
-            if match is None:
-                continue
-            subject_label = clean_candidate_label(
-                match.group("subject"),
-                prefer_tail=True,
-            )
-            object_label = clean_candidate_label(match.group("object"))
-            lemma = match.groupdict().get("lemma", "").strip().lower()
-            relation_type = fixed_relation_type or _LEMMA_RELATION_TYPES.get(
-                lemma,
-                "ASSOCIATED_WITH",
-            )
-            if subject_label == "" or object_label == "":
-                continue
-            if _is_bad_heuristic_subject_label(subject_label):
-                continue
-            if canonical_entity_label_rejection_reason(subject_label) is not None:
-                continue
-            if is_low_value_generic_relation_candidate(
-                relation_type=relation_type,
-                lemma=lemma,
-                sentence=cleaned_sentence,
-            ):
-                continue
-            candidate_key = (
-                subject_label.casefold(),
-                relation_type,
-                object_label.casefold(),
-                cleaned_sentence.casefold(),
-            )
-            if candidate_key in seen_keys:
-                continue
-            seen_keys.add(candidate_key)
-            candidates.append(
-                ExtractedRelationCandidate(
-                    subject_label=subject_label,
-                    relation_type=relation_type,
-                    object_label=object_label,
-                    sentence=cleaned_sentence,
-                ),
-            )
-            break
-    return candidates
-
-
 def _prune_relation_candidate_specificity(
     candidates: list[ExtractedRelationCandidate],
 ) -> RelationSpecificityPruningResult:
@@ -446,11 +260,56 @@ def _filter_relation_candidate_quality(
     return result
 
 
+def _route_agent_extraction_result(
+    *,
+    extraction_attempt: LLMRelationExtractionAttempt,
+    quality_filter_result: RelationCandidateQualityFilterResult,
+    pruning_result: RelationSpecificityPruningResult,
+    max_relations: int,
+    normalized_text_length: int,
+) -> SpecificityFilteredCandidateList:
+    """Route bounded compatibility output without losing any framed claim."""
+
+    usable_candidates = tuple(quality_filter_result.candidates)
+    routing_status: ClaimExtractionRoutingStatus
+    if not extraction_attempt.semantic_inventory_complete:
+        visible_candidates: tuple[ExtractedRelationCandidate, ...] = ()
+        overflow_candidates = usable_candidates
+        routing_status = "semantic_incomplete"
+    else:
+        visible_candidates = usable_candidates[:max_relations]
+        overflow_candidates = usable_candidates[max_relations:]
+        routing_status = "candidate_overflow" if overflow_candidates else "complete"
+    return SpecificityFilteredCandidateList(
+        visible_candidates,
+        pruned_generic_relation_count=pruning_result.pruned_count,
+        quality_filtered_candidate_count=quality_filter_result.filtered_count,
+        llm_extraction_chunk_count=extraction_attempt.processed_chunk_count,
+        llm_extraction_text_char_count=normalized_text_length,
+        raw_agent_outputs=extraction_attempt.raw_agent_outputs,
+        model_attempt_records=tuple(
+            record.as_json() for record in extraction_attempt.model_attempt_records
+        ),
+        claim_extraction_routing_status=routing_status,
+        overflow_candidates=overflow_candidates,
+        all_framed_candidates=tuple(extraction_attempt.candidates),
+        claim_lineage=extraction_attempt.claim_lineage,
+        inventory_incompleteness=tuple(
+            {
+                "inventory_id": claim.inventory_id,
+                "claim": claim.item.model_dump(mode="json"),
+            }
+            for claim in extraction_attempt.inventory_incompleteness
+        ),
+    )
+
+
 async def extract_relation_candidates_with_llm(
     text: str,
     *,
     max_relations: int = 10,
     space_context: str = "",
+    execution_namespace: str = "",
 ) -> list[ExtractedRelationCandidate]:
     """Extract relation candidates using an LLM via ArtanaKernel.
 
@@ -496,9 +355,11 @@ async def extract_relation_candidates_with_llm(
     )
 
     model_id = normalize_litellm_model_id(
-        get_model_registry().get_default_model(
+        get_model_registry()
+        .get_default_model(
             ModelCapability.EVIDENCE_EXTRACTION,
-        ).model_id,
+        )
+        .model_id,
     )
 
     tenant = TenantContext(
@@ -525,6 +386,7 @@ async def extract_relation_candidates_with_llm(
             tenant=tenant,
             model_id=model_id,
             step_runner=run_single_step_with_policy,
+            execution_namespace=execution_namespace,
         )
         raw_relation_count = extraction_attempt.raw_relation_count
         candidates = extraction_attempt.candidates
@@ -546,14 +408,14 @@ async def extract_relation_candidates_with_llm(
         quality_filter_result = _filter_relation_candidate_quality(
             pruning_result.candidates,
         )
-        filtered_candidates = SpecificityFilteredCandidateList(
-            quality_filter_result.candidates[:max_relations],
-            pruned_generic_relation_count=pruning_result.pruned_count,
-            quality_filtered_candidate_count=quality_filter_result.filtered_count,
-            llm_extraction_chunk_count=len(chunks),
-            llm_extraction_text_char_count=len(normalized_text),
+        filtered_candidates = _route_agent_extraction_result(
+            extraction_attempt=extraction_attempt,
+            quality_filter_result=quality_filter_result,
+            pruning_result=pruning_result,
+            max_relations=max_relations,
+            normalized_text_length=len(normalized_text),
         )
-        candidates = list(filtered_candidates)
+        candidates = filtered_candidates
 
         if not candidates:
             logger.debug(
@@ -561,7 +423,7 @@ async def extract_relation_candidates_with_llm(
                 extra={
                     "model_id": model_id,
                     "text_length": len(normalized_text),
-                    "chunk_count": len(chunks),
+                    "chunk_count": extraction_attempt.processed_chunk_count,
                     "raw_relation_count": raw_relation_count,
                     "usable_candidate_count": 0,
                 },
@@ -714,9 +576,33 @@ async def discover_relation_candidates(  # noqa: PLR0911
     llm_extraction_text_char_count = int(
         getattr(llm_candidates, "llm_extraction_text_char_count", 0),
     )
-    llm_pruning = _prune_relation_candidate_specificity(list(llm_candidates))
-    llm_pruned_generic_relation_count += llm_pruning.pruned_count
-    llm_candidates = list(llm_pruning.candidates)
+    if not hasattr(llm_candidates, "claim_extraction_routing_status"):
+        llm_pruning = _prune_relation_candidate_specificity(llm_candidates)
+        llm_pruned_generic_relation_count += llm_pruning.pruned_count
+        llm_candidates = list(llm_pruning.candidates)
+    routing_status = normalize_claim_extraction_routing_status(
+        getattr(llm_candidates, "claim_extraction_routing_status", "not_run"),
+    )
+    candidate_overflow_count = int(
+        getattr(llm_candidates, "candidate_overflow_count", 0),
+    )
+    claim_lineage = tuple(getattr(llm_candidates, "claim_lineage", ()))
+    raw_agent_outputs = tuple(getattr(llm_candidates, "raw_agent_outputs", ()))
+    model_attempt_records = tuple(
+        getattr(llm_candidates, "model_attempt_records", ()),
+    )
+
+    if routing_status == "semantic_incomplete":
+        return (
+            llm_candidates,
+            candidate_semantic_incomplete(
+                claim_lineage=claim_lineage,
+                raw_agent_outputs=raw_agent_outputs,
+                model_attempt_records=model_attempt_records,
+                llm_extraction_chunk_count=llm_extraction_chunk_count,
+                llm_extraction_text_char_count=llm_extraction_text_char_count,
+            ),
+        )
 
     if llm_candidates:
         return (
@@ -724,11 +610,14 @@ async def discover_relation_candidates(  # noqa: PLR0911
             candidate_completed(
                 candidate_count=len(llm_candidates),
                 pruned_generic_relation_count=llm_pruned_generic_relation_count,
-                quality_filtered_candidate_count=(
-                    llm_quality_filtered_candidate_count
-                ),
+                quality_filtered_candidate_count=(llm_quality_filtered_candidate_count),
                 llm_extraction_chunk_count=llm_extraction_chunk_count,
                 llm_extraction_text_char_count=llm_extraction_text_char_count,
+                claim_extraction_routing_status=routing_status,
+                candidate_overflow_count=candidate_overflow_count,
+                claim_lineage=claim_lineage,
+                raw_agent_outputs=raw_agent_outputs,
+                model_attempt_records=model_attempt_records,
             ),
         )
 
@@ -746,6 +635,10 @@ async def discover_relation_candidates(  # noqa: PLR0911
             quality_filtered_candidate_count=llm_quality_filtered_candidate_count,
             llm_extraction_chunk_count=llm_extraction_chunk_count,
             llm_extraction_text_char_count=llm_extraction_text_char_count,
+            claim_extraction_routing_status=routing_status,
+            claim_lineage=claim_lineage,
+            raw_agent_outputs=raw_agent_outputs,
+            model_attempt_records=model_attempt_records,
         ),
     )
 
@@ -808,8 +701,7 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
                     "candidate-level confidence analysis."
                 ),
                 relevance_rationale=(
-                    "Goal relevance could not be reviewed precisely for this "
-                    "proposal."
+                    "Goal relevance could not be reviewed precisely for this proposal."
                 ),
                 method="heuristic_fallback_v1",
             ),
@@ -899,9 +791,20 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
         goal_context_summary=goal_context,
     )
 
-
     kernel: ArtanaKernel | None = None
     store = None
+    invocation_id = str(uuid4())
+    model_result: object | None = None
+    raw_model_output: object | None = None
+    audit_context = ModelAttemptAuditContext(
+        attempt_role="proposal_review",
+        pass_role="proposal_review",
+        retry_context=None,
+        source_sha256=hashlib.sha256(
+            document.text_content.encode("utf-8"),
+        ).hexdigest(),
+        input_sha256=hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+    )
     tenant = TenantContext(
         tenant_id=f"document-proposal-review:{document.space_id}",
         capabilities=frozenset(),
@@ -919,7 +822,7 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
         result = await asyncio.wait_for(
             run_single_step_with_policy(
                 client,
-                run_id=f"document-proposal-review:{uuid4()}",
+                run_id=f"document-proposal-review:{invocation_id}",
                 tenant=tenant,
                 model=model_id,
                 prompt=prompt,
@@ -930,7 +833,9 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
             ),
             timeout=model_spec.timeout_seconds,
         )
+        model_result = result
         output = result.output
+        raw_model_output = output
         parsed = cast(
             "ProposalReviewResultLike",
             (
@@ -944,15 +849,68 @@ async def review_document_extraction_drafts_with_diagnostics(  # noqa: PLR0912, 
             expected_refs=draft_refs,
             model_id=model_spec.model_id,
         )
-    except TimeoutError:
+    except TimeoutError as exc:
+        record_model_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=audit_context,
+            model_result=model_result,
+            raw_output=raw_model_output,
+            validation_outcome="invocation_failed",
+            error_type=type(exc).__name__,
+        )
         reviews_by_ref = {}
         diagnostics = proposal_review_fallback_error(
             "LLM proposal review timed out",
         )
+    except ValidationError as exc:
+        record_model_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=audit_context,
+            model_result=model_result,
+            raw_output=raw_model_output,
+            validation_outcome="schema_invalid",
+            error_type=type(exc).__name__,
+        )
+        reviews_by_ref = {}
+        diagnostics = proposal_review_fallback_error(str(exc))
     except Exception as exc:  # noqa: BLE001
+        record_model_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=audit_context,
+            model_result=model_result,
+            raw_output=raw_model_output,
+            validation_outcome=(
+                "semantic_invalid" if model_result is not None else "invocation_failed"
+            ),
+            error_type=type(exc).__name__,
+        )
         reviews_by_ref = {}
         diagnostics = proposal_review_fallback_error(str(exc))
     else:
+        record_model_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=audit_context,
+            model_result=model_result,
+            raw_output=raw_model_output,
+            validation_outcome="accepted",
+            error_type=None,
+        )
         diagnostics = proposal_review_completed()
     finally:
         if kernel is not None:

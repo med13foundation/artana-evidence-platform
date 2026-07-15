@@ -2,7 +2,7 @@
 
 Created: 2026-07-14
 
-Status: Active; TG-01 and TG-02 are ready for review
+Status: Active; TG-01 and TG-02 are ready for review; TG-03 implementation and product-quality proof are in progress
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
@@ -74,6 +74,37 @@ do not estimate whole-corpus prevalence.
 
 Current decision: **not ready for automatic trusted-graph promotion**.
 
+## Research-Backed Quality Strategy
+
+The implementation strategy for TG-03 through TG-08 is defined in
+`docs/validation/reports/2026-07-15-trusted-claim-quality-improvement-research.md`.
+Its core conclusion is that unconstrained zero-shot triplet generation is not a
+sufficient architecture for trusted biomedical claims.
+
+The remaining PRs therefore use one shared product-quality method:
+
+1. Luna inventories source-local claims before framing them one at a time.
+2. Authoritative biomedical tools supply typed entity candidates, but never
+   satisfy semantic trust or receive agent credit.
+3. Luna selects a candidate or abstains and emits only closed categories,
+   source spans, explanations, and falsification notes.
+4. A separate Luna call verifies the complete frame against the cited source
+   without extractor rationale or external facts.
+5. Deterministic code verifies authority records and computes every numeric
+   metric from frozen categorical outputs.
+6. Novel findings and hypotheses remain first-class claims in separate
+   epistemic lanes; lack of corroboration does not delete them.
+
+Every semantic change is evaluated by paired case transitions on inputs that
+were untouched when the experiment was predeclared, not only by aggregate
+percentages. A set used to design an intervention becomes a development and
+regression set and cannot provide confirmatory merge credit for that
+intervention. Paired improvements must exceed
+paired regressions, three-run worst-case metrics must improve or meet their
+gate, and no safety invariant may regress. Two consecutive product experiments
+without a positive paired net change trigger a model/task-ablation review
+instead of another prompt-edit loop.
+
 ## Non-Negotiable Rules
 
 These rules apply to every PR in this plan.
@@ -111,6 +142,16 @@ These rules apply to every PR in this plan.
 12. **No infrastructure-only loop:** no new harness work may start unless it is
     required to measure a product field introduced by the same or immediately
     preceding PR.
+13. **Provider-authenticated live evidence:** a strict semantic run receives
+    merge credit only when every executed OpenAI response can be retrieved by
+    its provider response ID and its canonical provider-output hash matches the
+    model-boundary record. Self-consistent local JSON is not execution proof.
+14. **No contaminated-holdout credit:** the historical TG-03 v4/v2 holdout was
+    inspected while designing inventory-first extraction. It remains useful for
+    regression and runtime smoke tests, but it cannot independently prove that
+    TG-03 improved product quality. Confirmatory agent-readiness requires a
+    prospectively frozen external set whose labels and case selection were not
+    derived from production outputs.
 
 ## Progress Tracking
 
@@ -125,7 +166,7 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 |---|---:|---|---|---|---|
 | TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | ready_for_review | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
 | TG-02 | [#159](https://github.com/med13foundation/artana-evidence-platform/pull/159) | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | ready_for_review | Every eligible claim has authoritative source identity and an exact locator. Evidence: `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. |
-| TG-03 | TBD | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | not_started | Agent extraction preserves polarity, state, qualifiers, and evidence. |
+| TG-03 | TBD | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | in_progress | Historical v12 baseline: 72.34% endpoint/source precision, 46.81% full-frame precision, 60.78% polarity/status concordance, 43.14% qualifier concordance, 75%/50% measurement precision/recall, and 29.41% canonical stability. Inventory-first extraction, explicit endpoint direction, graph-owned quarantine, and provider-authenticated evidence are implemented and under final verification. The historical holdout is now development/regression evidence because its failures informed this design; only a strict smoke run may be used here. Confirmatory external proof remains TG-08. Historical evidence: `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. |
 | TG-04 | TBD | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | not_started | Qualified claims round-trip through Evidence API and Graph DB without loss. |
 | TG-05 | TBD | `alvaro/trusted-claims-tg05-agent-verifier` | TG-04 | not_started | Independent agent verification replaces heuristic semantic trust. |
 | TG-06 | TBD | `alvaro/trusted-claims-tg06-authoritative-grounding` | TG-04 | not_started | Every promotion-eligible entity resolves to an authoritative identifier. |
@@ -183,6 +224,8 @@ A PR is not merge-ready until all applicable statements are true:
 - the relevant service gate and `make service-checks` pass;
 - strict agent completion is 100%, credited fallback is 0, and invalid agent
   output is 0 for live-semantic PRs;
+- every executed provider response is independently retrievable and its
+  canonical output hash matches the model-attempt record;
 - no new negative, null-result, contradiction, or hypothesis leakage appears;
 - agent outputs remain categorical and all numeric metrics are deterministic;
 - the evidence summary contains exact commands, commit, model, case hashes,
@@ -394,6 +437,12 @@ or hypothesis.
   `origin=source_measurement`.
 - Emit null, negative, provisional, and novel statements as claims with honest
   semantics instead of assertive edges plus review flags.
+- Inventory every source-local claim before framing and frame one inventory
+  item per model call so sibling predicates cannot compete for one output slot.
+- Require the inventory agent to categorize endpoint direction as
+  `A_SUBJECT_B_OBJECT`, `B_SUBJECT_A_OBJECT`, or `UNRESOLVED`; deterministic
+  validation rejects reversed frames and permits only abstention when direction
+  remains unresolved.
 
 **Required tests:**
 
@@ -407,8 +456,12 @@ or hypothesis.
   absent.
 - Regression: long and multi-clause sentences bind qualifiers to the correct
   subject, predicate, and object.
+- Regression: reversing subject and object is rejected even when both endpoint
+  spans remain source-bound.
 - Schema: unknown categories fail validation rather than becoming free text.
-- Live agent: three Luna runs over a frozen qualifier-focused set.
+- Live agent: one strict Luna smoke run over the historical development set to
+  prove the production path and provider receipt chain. Three-run confirmatory
+  quality proof moves to TG-08 because this set informed the TG-03 design.
 - Adversarial: attempt to strip each qualifier while retaining the broad triple.
 
 **Merge gate:**
@@ -418,7 +471,14 @@ or hypothesis.
 - positive frames emitted from explicit negative/null cases: `0`;
 - agent-authored quality scores: `0`;
 - source measurements without exact source spans: `0`;
-- exact semantic-frame stability across three runs: at least `95%`.
+- provider responses that are incomplete, hidden-context, relabelled, or
+  omitted before scoring receive credit: `0`;
+- reversed directional frames accepted: `0`;
+- canonical semantic-frame stability on the eventual confirmatory three-run
+  set: at least `95%`, with
+  exact serialized-frame stability reported separately. Canonical stability
+  may ignore harmless source-span boundary or case differences only when the
+  frame remains source-bound and every gold categorical semantic field agrees.
 
 **Evidence report:**
 `docs/validation/reports/<date>-tg03-qualified-claim-frame.md`
@@ -806,7 +866,7 @@ single unsafe failure. Track each dimension independently.
 | Agent execution | 300/300, fallback 0 | Preserve 100%, fallback 0 | All | July 14 report | passing |
 | Truthful trust | Heuristic and symbolic-authority gaps found | No non-agent semantic trust or fake authority | TG-01 | `docs/validation/reports/2026-07-14-tg01-truthful-safety.md` | ready_for_review |
 | Source traceability | 2/47 strong provenance | 100% eligible claims strong | TG-02 | `docs/validation/reports/2026-07-15-tg02-source-provenance.md` | ready_for_review |
-| Claim completeness | 13/47 generic/overstated outcomes | Complete polarity/state/qualifiers | TG-03 | Pending | not_started |
+| Claim completeness | 13/47 generic/overstated outcomes | Complete polarity/state/qualifiers | TG-03 | Historical v12 sealed holdout: 72.34% endpoint/source precision, 46.81% full-frame precision, 60.78% polarity/status concordance, 43.14% qualifier concordance, 75%/50% measurement precision/recall, and 29.41% canonical stability; fallback and safety leakage 0. The inventory-first before/after result is pending. See `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. | in_progress |
 | Lossless persistence | Triple-oriented write path | Zero ClaimFrame field loss | TG-04 | Pending | not_started |
 | Semantic verification | Heuristic can return `ENTAILS` | Independent categorical agent verifier | TG-05 | Pending | not_started |
 | Entity grounding | 75.86% worst-run diagnostic rate | At least 95%, wrong links 0 | TG-06 | Pending | not_started |

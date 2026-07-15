@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
+from contextlib import suppress
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from typing import Final
 from uuid import UUID, uuid4
 
@@ -28,6 +31,13 @@ from artana_evidence_api.document_extraction import (
     DocumentProposalReviewDiagnostics,
     DocumentTextExtraction,
     ExtractedRelationCandidate,
+)
+from artana_evidence_api.document_extraction_prompting import (
+    _build_llm_extraction_output_schema,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    ModelAttemptAuditContext,
+    run_llm_relation_extraction_pass,
 )
 from artana_evidence_api.document_ingestion_support import (
     _enrich_pdf_document,
@@ -69,6 +79,7 @@ from artana_evidence_api.variant_extraction_contracts import (
 )
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 _TEST_USER_ID: Final[str] = "11111111-1111-1111-1111-111111111111"
 _TEST_USER_EMAIL: Final[str] = "graph-harness-docs@example.com"
@@ -1137,6 +1148,160 @@ def test_extract_document_use_llm_query_param_forces_llm_first(
     )
     assert stored_document is not None
     assert stored_document.metadata["candidate_discovery"] == candidate_discovery
+
+
+def test_extract_document_persists_model_attempt_audit_artifact(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "artana_evidence_api.runtime_support.has_configured_openai_api_key",
+        lambda: False,
+    )
+    client, _, document_store, _, _, space_id = _build_client(
+        objective="Map MED13 mechanism evidence in cardiomyopathy.",
+    )
+    text = "MED13 associates with cardiomyopathy."
+    raw_payload = {
+        "relations": [
+            {
+                "subject": "MED13",
+                "relation_type": "ASSOCIATED_WITH",
+                "object": "cardiomyopathy",
+                "sentence": text,
+            },
+        ],
+    }
+    invalid_retry_source = {
+        "relations": [{"subject": "MED13", "raw_only": "retry-visible"}],
+    }
+
+    async def _fake_extract_with_diagnostics(
+        source_text: str,
+        *,
+        max_relations: int = 10,
+        space_context: str = "",
+    ) -> tuple[
+        list[ExtractedRelationCandidate],
+        DocumentCandidateExtractionDiagnostics,
+    ]:
+        del max_relations, space_context
+        schema = _build_llm_extraction_output_schema(
+            max_relations=10,
+            strict_relation_type=False,
+            require_claim_frame_fields=False,
+        )
+
+        async def _invalid_step_runner(*_args: object, **_kwargs: object) -> object:
+            return SimpleNamespace(output=invalid_retry_source)
+
+        source_sha256 = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+        with suppress(ValidationError):
+            await run_llm_relation_extraction_pass(
+                step_runner=_invalid_step_runner,
+                client=object(),
+                tenant=object(),
+                model_id="openai/gpt-audit-router-test",
+                prompt="extract MED13 relation",
+                output_schema=schema,
+                step_key="document_extraction.router_test.primary",
+                source_text=source_text,
+                source_hash=source_sha256,
+                audit_context=ModelAttemptAuditContext(
+                    attempt_role="primary",
+                    pass_role="primary",
+                    retry_context=None,
+                    source_sha256=source_sha256,
+                    input_sha256=source_sha256,
+                ),
+            )
+
+        async def _step_runner(*_args: object, **_kwargs: object) -> object:
+            return SimpleNamespace(output=raw_payload)
+
+        candidates, _, _, _ = await run_llm_relation_extraction_pass(
+            step_runner=_step_runner,
+            client=object(),
+            tenant=object(),
+            model_id="openai/gpt-audit-router-test",
+            prompt="repair MED13 relation schema",
+            output_schema=schema,
+            step_key="document_extraction.router_test.schema_retry",
+            source_text=source_text,
+            source_hash=source_sha256,
+            audit_context=ModelAttemptAuditContext(
+                attempt_role="schema_retry",
+                pass_role="primary",
+                retry_context=None,
+                source_sha256=source_sha256,
+                input_sha256=source_sha256,
+            ),
+        )
+        return (
+            candidates,
+            DocumentCandidateExtractionDiagnostics(
+                llm_candidate_status="completed",
+                llm_candidate_count=len(candidates),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "artana_evidence_api.routers.documents.extract_relation_candidates_with_diagnostics",
+        _fake_extract_with_diagnostics,
+    )
+
+    submit_response = client.post(
+        f"/v1/spaces/{space_id}/documents/text",
+        headers=_auth_headers(),
+        json={"title": "MED13 audit note", "text": text, "metadata": {}},
+    )
+    document_id = submit_response.json()["document"]["id"]
+    extract_response = client.post(
+        f"/v1/spaces/{space_id}/documents/{document_id}/extract?use_llm=true",
+        headers=_auth_headers(),
+    )
+
+    assert extract_response.status_code == 201
+    payload = extract_response.json()
+    artifact_store = client.app.dependency_overrides[get_artifact_store]()
+    artifact = artifact_store.get_artifact(
+        space_id=space_id,
+        run_id=payload["run"]["id"],
+        artifact_key="document_extraction_model_attempt_audit",
+    )
+    assert artifact is not None
+    assert artifact.content["attempt_count"] == 2
+    failed_attempt, attempt = artifact.content["attempts"]
+    assert failed_attempt["raw_model_payload"] == invalid_retry_source
+    assert failed_attempt["validation_outcome"] == "schema_invalid"
+    assert failed_attempt["error_type"] == "ValidationError"
+    assert attempt["raw_model_payload"] == raw_payload
+    canonical_payload = json.dumps(
+        raw_payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    assert attempt["payload_sha256"] == hashlib.sha256(canonical_payload).hexdigest()
+    assert attempt["validation_outcome"] == "accepted"
+    assert attempt["attempt_role"] == "schema_retry"
+    assert attempt["error_type"] is None
+    manifest_without_hash = dict(artifact.content)
+    manifest_sha256 = manifest_without_hash.pop("manifest_sha256")
+    canonical_manifest = json.dumps(
+        manifest_without_hash,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    assert manifest_sha256 == hashlib.sha256(canonical_manifest).hexdigest()
+
+    stored_document = document_store.get_document(
+        space_id=space_id,
+        document_id=document_id,
+    )
+    assert stored_document is not None
+    assert "model_attempts" not in stored_document.metadata
+    assert "raw_model_payload" not in stored_document.metadata
 
 
 def test_extract_document_surfaces_llm_review_fallback_in_metadata(
@@ -2374,8 +2539,7 @@ def test_extract_document_marks_variant_fallback_proposals_as_not_trusted(
                         "proposal_draft": {
                             "proposal_type": "candidate_claim",
                             "title": (
-                                "Extracted claim: c.977C>A CAUSES "
-                                "developmental delay"
+                                "Extracted claim: c.977C>A CAUSES developmental delay"
                             ),
                             "summary": "The variant was reported with delay.",
                             "payload": {
@@ -2545,9 +2709,7 @@ def test_extract_document_routes_pubmed_variant_prose_through_bridge(
                         "hgvs_notation": "c.977C>A",
                     },
                     metadata={"hgvs_protein": "p.Thr326Lys"},
-                    evidence_excerpt=(
-                        "c.977C>A, p.Thr326Lys in MED13 was reported"
-                    ),
+                    evidence_excerpt=("c.977C>A, p.Thr326Lys in MED13 was reported"),
                     evidence_locator="text_span:28-65",
                     assessment=_strong_assessment(),
                 ),
