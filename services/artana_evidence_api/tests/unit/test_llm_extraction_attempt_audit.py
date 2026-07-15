@@ -47,13 +47,14 @@ def _litellm_response_id(
     *,
     provider: str = "openai",
     model_id: str = "None",
+    padded: bool = False,
 ) -> str:
     envelope = (
         f"litellm:custom_llm_provider:{provider};model_id:{model_id};"
         f"response_id:{provider_response_id}"
     )
     encoded = base64.urlsafe_b64encode(envelope.encode("utf-8")).decode("ascii")
-    return f"resp_{encoded.rstrip('=')}"
+    return f"resp_{encoded if padded else encoded.rstrip('=')}"
 
 
 @pytest.mark.asyncio
@@ -179,6 +180,12 @@ def test_openai_response_id_accepts_only_direct_or_exact_litellm_envelope() -> N
         canonical_openai_response_id(_litellm_response_id(provider_response_id))
         == provider_response_id
     )
+    assert (
+        canonical_openai_response_id(
+            _litellm_response_id(provider_response_id, padded=True),
+        )
+        == provider_response_id
+    )
 
 
 @pytest.mark.parametrize(
@@ -188,6 +195,7 @@ def test_openai_response_id_accepts_only_direct_or_exact_litellm_envelope() -> N
         "resp_" + ("a" * 60),
         _litellm_response_id("resp_provider_receipt_123", provider="azure"),
         _litellm_response_id("resp_provider_receipt_123", model_id="model-1"),
+        _litellm_response_id("resp_provider_receipt_123", padded=True) + "=",
         "resp_"
         + base64.urlsafe_b64encode(b"arbitrary-wrapper" * 8)
         .decode("ascii")

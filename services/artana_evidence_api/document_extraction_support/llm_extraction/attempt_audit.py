@@ -353,9 +353,14 @@ def canonical_openai_response_id(response_id: str) -> str:
         raise ValueError("response ID is not a recognized OpenAI receipt identity")
 
     encoded_envelope = response_id.removeprefix("resp_")
-    if re.fullmatch(r"[A-Za-z0-9_-]+", encoded_envelope) is None:
+    if re.fullmatch(r"[A-Za-z0-9_-]+={0,2}", encoded_envelope) is None:
         raise ValueError("LiteLLM response envelope is not canonical URL-safe base64")
-    padded = encoded_envelope + ("=" * (-len(encoded_envelope) % 4))
+    unpadded_envelope = encoded_envelope.rstrip("=")
+    supplied_padding = encoded_envelope[len(unpadded_envelope) :]
+    canonical_padding = "=" * (-len(unpadded_envelope) % 4)
+    if supplied_padding not in {"", canonical_padding}:
+        raise ValueError("LiteLLM response envelope has non-canonical padding")
+    padded = unpadded_envelope + canonical_padding
     try:
         decoded_bytes = base64.b64decode(padded, altchars=b"-_", validate=True)
         decoded_envelope = decoded_bytes.decode("utf-8")
@@ -368,7 +373,7 @@ def canonical_openai_response_id(response_id: str) -> str:
             "=",
         )
     )
-    if canonical_encoding != encoded_envelope:
+    if canonical_encoding != unpadded_envelope:
         raise ValueError("LiteLLM response envelope encoding is not canonical")
     match = _LITELLM_OPENAI_RESPONSE_ENVELOPE_RE.fullmatch(decoded_envelope)
     if match is None:
