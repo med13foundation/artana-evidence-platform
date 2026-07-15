@@ -895,8 +895,11 @@ def _validate_candidate_lineage(
         and attempt.get("pass_role") == "claim_framing"
     )
     provider_framing_frames = Counter(
-        _sha256_json(_raw_relation_frame(relation))
-        for relation in accepted_raw_relations(framing_attempts)
+        _sha256_json(frame)
+        for frame in _provider_framing_frames(
+            attempts=attempts,
+            framing_attempts=framing_attempts,
+        )
     )
     scored_frames = Counter(_sha256_json(frame) for frame in candidate_frames)
     if scored_frames == provider_framing_frames:
@@ -911,6 +914,76 @@ def _validate_candidate_lineage(
     raise ValueError(
         f"case {case_id} omits an accepted provider-bound framing output from "
         "postprocessing or scoring",
+    )
+
+
+def _provider_framing_frames(
+    *,
+    attempts: Sequence[Mapping[str, object]],
+    framing_attempts: Sequence[Mapping[str, object]],
+) -> tuple[JsonObject, ...]:
+    inventory_items = _accepted_inventory_items(attempts)
+    frames: list[JsonObject] = []
+    for attempt in framing_attempts:
+        inventory_item = _inventory_item_for_framing_attempt(
+            attempt=attempt,
+            inventory_items=inventory_items,
+        )
+        for relation in accepted_raw_relations((attempt,)):
+            frame = _raw_relation_frame(relation)
+            raw_arguments = (
+                inventory_item.get("arguments")
+                if inventory_item is not None
+                else None
+            )
+            if raw_arguments is not None:
+                frame["assertion_arguments"] = _object_list(
+                    raw_arguments,
+                    label="typed inventory arguments",
+                )
+            frames.append(frame)
+    return tuple(frames)
+
+
+def _accepted_inventory_items(
+    attempts: Sequence[Mapping[str, object]],
+) -> tuple[JsonObject, ...]:
+    items_by_hash: dict[str, JsonObject] = {}
+    for attempt in attempts:
+        if (
+            attempt.get("validation_outcome") != "accepted"
+            or attempt.get("pass_role")
+            not in {"claim_inventory", "claim_inventory_recovery"}
+        ):
+            continue
+        payload = _object(attempt.get("raw_model_payload"))
+        for item in _object_list(
+            payload.get("claims"),
+            label="accepted inventory claims",
+        ):
+            items_by_hash.setdefault(_sha256_json(item), item)
+    return tuple(items_by_hash.values())
+
+
+def _inventory_item_for_framing_attempt(
+    *,
+    attempt: Mapping[str, object],
+    inventory_items: Sequence[Mapping[str, object]],
+) -> Mapping[str, object] | None:
+    semantic_unit_id = _required_nonempty_string(attempt, "semantic_unit_id")
+    input_sha256 = _required_nonempty_string(attempt, "input_sha256")
+    matches = tuple(
+        item
+        for item in inventory_items
+        if _sha256_json({"inventory_id": semantic_unit_id, "item": item})
+        == input_sha256
+    )
+    if len(matches) == 1:
+        return matches[0]
+    if not any("arguments" in item for item in inventory_items):
+        return None
+    raise ValueError(
+        "accepted framing output does not bind to exactly one inventory item",
     )
 
 

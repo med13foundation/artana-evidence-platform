@@ -18,6 +18,7 @@ from artana_evidence_api.document_extraction_support.llm_extraction.invocation_b
 
 import scripts.run_claim_frame_feasibility_audit as claim_frame_cli
 import scripts.validation.claim_frames.evidence as claim_frame_evidence
+import scripts.validation.claim_frames.metrics as claim_frame_metrics
 from scripts.validation.claim_frames.evidence import (
     OFFLINE_JSON_AUTHENTICATION,
     REQUIRED_MODEL_ID,
@@ -329,6 +330,82 @@ def test_postprocessed_candidate_requires_accepted_raw_relation() -> None:
             run_id="raw-lineage",
             frames=(actual,),
             raw_output={"relations": []},
+        )
+
+
+def test_candidate_lineage_allows_only_inventory_bound_argument_enrichment() -> None:
+    fixture = _minimal_fixture()
+    frame = _actual_frame(fixture.cases[0].frames[0])
+    arguments = [
+        {
+            "role": "CHEMICAL_OR_DRUG",
+            "exact_span": "Drug",
+            "role_rationale": "The source names the drug.",
+        },
+        {
+            "role": "CONDITION",
+            "exact_span": "disease",
+            "role_rationale": "The source names the condition.",
+        },
+    ]
+    inventory_item = {
+        "exact_span": "Drug treated disease.",
+        "relation_cue_span": "treated",
+        "arguments": arguments,
+        "source_locator": "normalized_extraction_text",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source states one treatment assertion.",
+    }
+    relation = {
+        "subject": frame["subject"],
+        "relation_type": frame["predicate"],
+        "object": frame["object"],
+        "sentence": frame["source_evidence"]["exact_span"],
+        "polarity": frame["polarity"],
+        "epistemic_status": frame["epistemic_status"],
+        **{field: frame[field] for field in QUALIFIER_FIELDS},
+        "source_measurements": frame["source_measurements"],
+        "extraction_rationale": frame["extraction_rationale"],
+    }
+    semantic_unit_id = "typed-treatment-assertion"
+    attempts = (
+        {
+            "validation_outcome": "accepted",
+            "pass_role": "claim_inventory",
+            "raw_model_payload": {"claims": [inventory_item]},
+        },
+        {
+            "validation_outcome": "accepted",
+            "pass_role": "claim_framing",
+            "semantic_unit_id": semantic_unit_id,
+            "input_sha256": _sha256_json(
+                {"inventory_id": semantic_unit_id, "item": inventory_item},
+            ),
+            "raw_model_payload": {
+                "decision": "SINGLE_FRAME",
+                "relations": [relation],
+            },
+        },
+    )
+    frame["assertion_arguments"] = copy.deepcopy(arguments)
+
+    claim_frame_metrics._validate_candidate_lineage(  # noqa: SLF001
+        candidate_frames=(frame,),
+        attempts=attempts,
+        case_id="synthetic",
+        allow_partial_failure=False,
+    )
+
+    cast("list[dict[str, object]]", frame["assertion_arguments"])[0]["role"] = (
+        "INTERVENTION"
+    )
+    with pytest.raises(ValueError, match="not derived from an accepted raw agent"):
+        claim_frame_metrics._validate_candidate_lineage(  # noqa: SLF001
+            candidate_frames=(frame,),
+            attempts=attempts,
+            case_id="synthetic",
+            allow_partial_failure=False,
         )
 
 
