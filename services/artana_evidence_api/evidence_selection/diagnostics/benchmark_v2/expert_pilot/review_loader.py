@@ -23,6 +23,7 @@ from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.pilot_loade
 )
 from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.pilot_packets import (
     EvidenceSelectionExpertPilotPacketBundle,
+    build_expert_pilot_packet_bundles,
     verify_expert_pilot_packet_bundle,
 )
 from pydantic import BaseModel
@@ -233,6 +234,14 @@ def load_expert_pilot_publication(
     }
     for bundle in bundles.values():
         verify_expert_pilot_packet_bundle(bundle)
+    expected_bundles = {
+        bundle.reviewer_packet.packet_id: bundle
+        for bundle in build_expert_pilot_packet_bundles(loaded_pilot)
+    }
+    if bundles != expected_bundles:
+        raise ValueError(
+            "expert-pilot publication does not exactly match the frozen pilot"
+        )
     expected_slots = set(loaded_pilot.protocol.independent_reviewer_slots)
     actual_slots = {bundle.reviewer_packet.reviewer_slot for bundle in bundles.values()}
     if actual_slots != expected_slots:
@@ -461,6 +470,10 @@ def _verify_literal_spans(
     source_text: tuple[str, ...],
 ) -> None:
     for span in supporting_spans:
+        if not span.strip() or span != span.strip():
+            raise ValueError(
+                "expert-pilot supporting span must be literal, nonblank, and trimmed"
+            )
         if not any(span in source for source in source_text):
             raise ValueError("expert-pilot supporting span is not literal packet text")
 

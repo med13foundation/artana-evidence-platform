@@ -29,6 +29,13 @@ def _literal_nonblank(value: str) -> str:
     return value
 
 
+def _literal_unique_spans(value: tuple[str, ...]) -> tuple[str, ...]:
+    normalized = tuple(_literal_nonblank(span) for span in value)
+    if len(set(normalized)) != len(normalized):
+        raise ValueError("expert-pilot supporting spans must be unique")
+    return normalized
+
+
 def _aware(value: datetime, *, field_name: str) -> datetime:
     if value.tzinfo is None or value.utcoffset() is None:
         raise ValueError(f"{field_name} must include a timezone")
@@ -138,10 +145,7 @@ class EvidenceSelectionExpertPilotReviewFinding(BaseModel):
     @field_validator("supporting_spans")
     @classmethod
     def _validate_spans(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        normalized = tuple(_literal_nonblank(span) for span in value)
-        if len(set(normalized)) != len(normalized):
-            raise ValueError("expert-pilot supporting spans must be unique")
-        return normalized
+        return _literal_unique_spans(value)
 
     @field_validator("reviewer_explanation")
     @classmethod
@@ -290,6 +294,16 @@ class EvidenceSelectionExpertPilotAdjudicationFinding(BaseModel):
     def _accept_json_spans(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
 
+    @field_validator("supporting_spans")
+    @classmethod
+    def _validate_spans(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        return _literal_unique_spans(value)
+
+    @field_validator("reviewer_explanation")
+    @classmethod
+    def _validate_explanation(cls, value: str) -> str:
+        return _literal_nonblank(value)
+
 
 class EvidenceSelectionExpertPilotAdjudicationCompletionPayload(BaseModel):
     """Signed adjudication over the exact generated disagreement request."""
@@ -343,6 +357,16 @@ class EvidenceSelectionExpertPilotSafetyFinding(BaseModel):
     @classmethod
     def _accept_json_spans(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("claim_spans", "source_support_spans")
+    @classmethod
+    def _validate_spans(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        return _literal_unique_spans(value)
+
+    @field_validator("reviewer_explanation")
+    @classmethod
+    def _validate_explanation(cls, value: str) -> str:
+        return _literal_nonblank(value)
 
 
 class EvidenceSelectionExpertPilotSafetyCompletionPayload(BaseModel):

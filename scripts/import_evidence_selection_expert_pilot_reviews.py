@@ -30,6 +30,9 @@ from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.expert_pilo
     load_and_verify_adjudication_completion,
     prepare_expert_pilot_adjudication,
 )
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.expert_pilot.blinding import (  # noqa: E402
+    load_safety_blinding_key,
+)
 from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.expert_pilot.evaluation import (  # noqa: E402
     LoadedExpertPilotModelRun,
     PreparedExpertPilotSafetyAudit,
@@ -99,11 +102,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     prepare_safety = subparsers.add_parser("prepare-safety-audit")
     _add_common_args(prepare_safety)
     prepare_safety.add_argument("--adjudication-completion", type=Path)
+    prepare_safety.add_argument("--safety-blinding-key-file", required=True, type=Path)
     prepare_safety.add_argument("--output-dir", required=True, type=Path)
 
     finalize = subparsers.add_parser("finalize")
     _add_common_args(finalize)
     finalize.add_argument("--adjudication-completion", type=Path)
+    finalize.add_argument("--safety-blinding-key-file", required=True, type=Path)
     finalize.add_argument("--safety-completion", required=True, type=Path)
     finalize.add_argument("--output-dir", required=True, type=Path)
     return parser.parse_args(argv)
@@ -128,11 +133,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             first_pass=first_pass,
             adjudication_path=args.adjudication_completion,
         )
+        safety_blinding_key = load_safety_blinding_key(args.safety_blinding_key_file)
         prepared_safety = prepare_expert_pilot_safety_audit(
             loaded_pilot=first_pass.loaded_pilot,
             evaluation_protocol_sha256=first_pass.evaluation_protocol_sha256,
             gold=gold_context.gold,
             model_runs=gold_context.model_runs,
+            blinding_key=safety_blinding_key,
         )
         if args.command == "prepare-safety-audit":
             _publish_safety(

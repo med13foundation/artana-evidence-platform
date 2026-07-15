@@ -54,8 +54,8 @@ the implementation only and cannot be imported as expert evidence.
 
 Final local branch evidence:
 
-- focused expert-pilot and benchmark regression suite: **44 passed**;
-- strict Evidence API typing, including the importer: **passed across 577
+- focused expert-pilot and benchmark regression suite: **47 passed**;
+- strict Evidence API typing, including the importer: **passed across 578
   package source files and all registered scripts**;
 - architecture size and structure checks: **passed**;
 - complete database-backed Evidence API service gate: **passed against a fresh
@@ -68,7 +68,8 @@ skipped.
 
 Synthetic tests cover forged signatures, packet-publication substitution,
 duplicate run bytes, fixture drift, case remapping, canary-role remapping,
-incomplete adjudication, incomplete gold, not-assessable safety findings,
-repeatability failure, and atomic no-replace publication. Final command results
-are recorded in the PR description and CI; none of these rehearsals count as
-expert evidence.
+producer-signed stale packet bundles, cross-study packet substitution, blank
+literal spans, enumerable safety blinding, incomplete adjudication, incomplete
+gold, not-assessable safety findings, repeatability failure, and atomic
+no-replace publication. Final command results are recorded in the PR
+description and CI; none of these rehearsals count as expert evidence.

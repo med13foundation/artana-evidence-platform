@@ -102,13 +102,20 @@ uv run python scripts/import_evidence_selection_expert_pilot_reviews.py \
 ```
 
 2. After slot C signs the generated adjudication request, freeze gold and
-generate the post-gold safety request:
+generate the post-gold safety request. First generate and retain an owner-only
+random key; do not include this file in the reviewer packet or repository:
+
+```bash
+umask 077
+openssl rand -hex 32 > /secure/path/pilot-v1-safety-blinding.key
+```
 
 ```bash
 uv run python scripts/import_evidence_selection_expert_pilot_reviews.py \
   prepare-safety-audit \
   <the same common arguments> \
   --adjudication-completion /secure/path/adjudication-completion.json \
+  --safety-blinding-key-file /secure/path/pilot-v1-safety-blinding.key \
   --output-dir reports/human-shadow-study/pilot-v1-safety-request
 ```
 
@@ -123,6 +130,7 @@ uv run python scripts/import_evidence_selection_expert_pilot_reviews.py \
   finalize \
   <the same common arguments> \
   --adjudication-completion /secure/path/adjudication-completion.json \
+  --safety-blinding-key-file /secure/path/pilot-v1-safety-blinding.key \
   --safety-completion /secure/path/safety-completion.json \
   --output-dir reports/human-shadow-study/pilot-v1-verified-result
 ```

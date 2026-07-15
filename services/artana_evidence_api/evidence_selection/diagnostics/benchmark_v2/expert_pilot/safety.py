@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +12,7 @@ from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.pilot_loade
 )
 
 from .attestation import canonical_payload_sha256
+from .blinding import keyed_blind_digest
 from .evaluation_contracts import (
     EvidenceSelectionExpertPilotGoldArtifact,
     EvidenceSelectionExpertPilotSafetyAuditItem,
@@ -53,6 +53,7 @@ def prepare_expert_pilot_safety_audit(
     evaluation_protocol_sha256: str,
     gold: EvidenceSelectionExpertPilotGoldArtifact,
     model_runs: tuple[LoadedExpertPilotModelRun, ...],
+    blinding_key: bytes,
 ) -> PreparedExpertPilotSafetyAudit:
     """Expose every selected claim without revealing model identity or gold labels."""
 
@@ -62,10 +63,13 @@ def prepare_expert_pilot_safety_audit(
     for run in model_runs:
         blinded_run_id = (
             "blinded-run-"
-            + _blind_digest(
-                loaded_pilot.protocol.study_id,
-                run.reference.run_id,
-                "safety-run",
+            + keyed_blind_digest(
+                key=blinding_key,
+                namespace="safety-run",
+                parts=(
+                    loaded_pilot.protocol.study_id,
+                    run.reference.run_id,
+                ),
             )[:12]
         )
         for result in run.evaluation.record_results:
@@ -78,11 +82,14 @@ def prepare_expert_pilot_safety_audit(
             supplement = loaded_pilot.supplements_by_record[result.record_id]
             item_id = (
                 "safety-"
-                + _blind_digest(
-                    loaded_pilot.protocol.study_id,
-                    run.reference.run_id,
-                    result.record_id,
-                    "safety-item",
+                + keyed_blind_digest(
+                    key=blinding_key,
+                    namespace="safety-item",
+                    parts=(
+                        loaded_pilot.protocol.study_id,
+                        run.reference.run_id,
+                        result.record_id,
+                    ),
                 )[:16]
             )
             items.append(
@@ -172,10 +179,6 @@ def load_and_verify_safety_completion(
         signed_completion=signed,
         payload_sha256=canonical_payload_sha256(payload),
     )
-
-
-def _blind_digest(*parts: str) -> str:
-    return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
 __all__ = [

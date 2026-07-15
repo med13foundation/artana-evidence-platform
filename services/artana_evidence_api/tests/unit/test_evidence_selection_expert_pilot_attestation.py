@@ -6,7 +6,7 @@ import hashlib
 import importlib.util
 import json
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 from pathlib import Path
 from types import ModuleType
@@ -36,6 +36,9 @@ from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.expert_pilo
 from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.expert_pilot.evaluation_contracts import (
     EvidenceSelectionExpertPilotEvaluationProtocol,
     EvidenceSelectionExpertPilotGoldArtifact,
+)
+from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.expert_pilot.publication import (
+    publish_expert_pilot_stage,
 )
 from artana_evidence_api.evidence_selection.diagnostics.benchmark_v2.expert_pilot.review_contracts import (
     EvidenceSelectionExpertPilotAdjudicationCompletionPayload,
@@ -84,6 +87,7 @@ EVALUATION_PROTOCOL_PATH = Path(
 )
 SIGNING_KEY_ENV = "ARTANA_EVIDENCE_SHADOW_REVIEW_PACKET_SIGNING_KEY"
 IMPORT_SCRIPT_PATH = Path("scripts/import_evidence_selection_expert_pilot_reviews.py")
+SAFETY_BLINDING_KEY = bytes.fromhex("ab" * 32)
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,6 +220,33 @@ def test_signed_human_chain_builds_diagnostic_result_without_adoption_claim(
         evaluation_protocol_sha256=first_pass.evaluation_protocol_sha256,
         gold=gold,
         model_runs=model_runs,
+        blinding_key=SAFETY_BLINDING_KEY,
+    )
+    alternate_safety = prepare_expert_pilot_safety_audit(
+        loaded_pilot=first_pass.loaded_pilot,
+        evaluation_protocol_sha256=first_pass.evaluation_protocol_sha256,
+        gold=gold,
+        model_runs=model_runs,
+        blinding_key=bytes.fromhex("cd" * 32),
+    )
+    assert tuple(
+        (item.blinded_run_id, item.audit_item_id)
+        for item in prepared_safety.request.items
+    ) != tuple(
+        (item.blinded_run_id, item.audit_item_id)
+        for item in alternate_safety.request.items
+    )
+    enumerable_id = (
+        "blinded-run-"
+        + hashlib.sha256(
+            (
+                f"{first_pass.loaded_pilot.protocol.study_id}"
+                "\x1fcurrent-run-1\x1fsafety-run"
+            ).encode()
+        ).hexdigest()[:12]
+    )
+    assert all(
+        item.blinded_run_id != enumerable_id for item in prepared_safety.request.items
     )
     safety = _complete_safety(
         tmp_path=tmp_path,
@@ -281,6 +312,40 @@ def test_registry_must_bind_exact_packet_publication(
         )
 
 
+def test_publication_rejects_producer_signed_stale_bundles(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(SIGNING_KEY_ENV, "synthetic-test-producer-key")
+    loaded_pilot = load_expert_pilot(
+        protocol_path=PILOT_PROTOCOL_PATH,
+        repository_root=Path.cwd(),
+    )
+    stale_pilot = replace(
+        loaded_pilot,
+        protocol=loaded_pilot.protocol.model_copy(
+            update={"study_id": "semantic-relevance-stale-study"}
+        ),
+        protocol_sha256="0" * 64,
+    )
+    publication_dir = tmp_path / "stale-publication"
+    publish_expert_pilot_packets(
+        loaded=stale_pilot,
+        output_dir=publication_dir,
+    )
+    manifest_path = publication_dir / "publication_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["study_id"] = loaded_pilot.protocol.study_id
+    manifest["protocol_sha256"] = loaded_pilot.protocol_sha256
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="exactly match the frozen pilot"):
+        load_expert_pilot_publication(
+            directory=publication_dir,
+            loaded_pilot=loaded_pilot,
+        )
+
+
 def test_reviewer_cannot_supply_numeric_confidence() -> None:
     payload = {
         "candidate_id": "candidate-0123456789abcdef",
@@ -293,6 +358,33 @@ def test_reviewer_cannot_supply_numeric_confidence() -> None:
 
     with pytest.raises(ValidationError, match="confidence"):
         EvidenceSelectionExpertPilotReviewFinding.model_validate(payload)
+
+
+def test_adjudication_and_safety_spans_must_be_nonblank_and_trimmed() -> None:
+    with pytest.raises(ValidationError, match="nonblank"):
+        EvidenceSelectionExpertPilotAdjudicationFinding(
+            adjudication_item_id="adjudication-0123456789abcdef",
+            selection_label="select",
+            packet_sufficiency="sufficient",
+            supporting_spans=("",),
+            reviewer_explanation="Literal evidence is required.",
+        )
+    with pytest.raises(ValidationError, match="nonblank"):
+        EvidenceSelectionExpertPilotSafetyFinding(
+            audit_item_id="safety-0123456789abcdef",
+            assessment="supported",
+            claim_spans=(),
+            source_support_spans=("   ",),
+            reviewer_explanation="Literal source support is required.",
+        )
+
+
+def test_stage_publication_rejects_empty_artifact_name(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="flat and nonempty"):
+        publish_expert_pilot_stage(
+            output_dir=tmp_path / "invalid-stage",
+            content_by_name={"": "content"},
+        )
 
 
 def test_incomplete_adjudication_is_rejected(
@@ -343,6 +435,7 @@ def test_insufficient_gold_makes_all_model_gates_unavailable(
         evaluation_protocol_sha256=study.evaluation_protocol_sha256,
         gold=gold,
         model_runs=model_runs,
+        blinding_key=SAFETY_BLINDING_KEY,
     )
     safety = _complete_safety(
         tmp_path=tmp_path,
@@ -388,6 +481,7 @@ def test_cli_recomputes_and_atomically_publishes_verified_result(
         evaluation_protocol_sha256=study.evaluation_protocol_sha256,
         gold=gold,
         model_runs=model_runs,
+        blinding_key=SAFETY_BLINDING_KEY,
     )
     _complete_safety(
         tmp_path=tmp_path,
@@ -396,6 +490,12 @@ def test_cli_recomputes_and_atomically_publishes_verified_result(
         prepared=prepared_safety,
         adjudication=adjudication,
     )
+    blinding_key_path = tmp_path / "safety-blinding.key"
+    blinding_key_path.write_text(
+        SAFETY_BLINDING_KEY.hex() + "\n",
+        encoding="ascii",
+    )
+    blinding_key_path.chmod(0o600)
     output_dir = tmp_path / "verified-result"
     module = _load_import_script()
 
@@ -418,6 +518,8 @@ def test_cli_recomputes_and_atomically_publishes_verified_result(
             str(study.completion_dir),
             "--adjudication-completion",
             str(tmp_path / "adjudication-completion.json"),
+            "--safety-blinding-key-file",
+            str(blinding_key_path),
             "--safety-completion",
             str(tmp_path / "safety-completion.json"),
             "--output-dir",
@@ -462,6 +564,7 @@ def test_not_assessable_safety_finding_keeps_diagnostic_gate_unavailable(
         evaluation_protocol_sha256=study.evaluation_protocol_sha256,
         gold=gold,
         model_runs=model_runs,
+        blinding_key=SAFETY_BLINDING_KEY,
     )
     safety = _complete_safety(
         tmp_path=tmp_path,

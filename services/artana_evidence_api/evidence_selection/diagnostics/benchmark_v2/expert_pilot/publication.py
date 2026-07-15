@@ -22,7 +22,8 @@ def publish_expert_pilot_stage(
     if resolved_output.exists():
         raise ValueError("expert-pilot stage output directory must not already exist")
     if not content_by_name or any(
-        Path(name).name != name or name in {".", ".."} for name in content_by_name
+        not name.strip() or Path(name).name != name or name in {".", ".."}
+        for name in content_by_name
     ):
         raise ValueError("expert-pilot stage artifact names must be flat and nonempty")
     resolved_output.parent.mkdir(parents=True, exist_ok=True)
