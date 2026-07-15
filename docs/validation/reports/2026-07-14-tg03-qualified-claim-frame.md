@@ -101,10 +101,12 @@ results remain useful as the failure baseline:
 | Source-measurement recall | 6/12 (50.00%) |
 | Canonical semantic stability | 5/17 (29.41%) |
 
-Historical artifacts remain under
-`docs/validation/reports/tg03-qualified-claim-frame-runs/`. They may catch
-regressions and prove runtime execution, but must not be relabeled as evidence
-that the new architecture improved product quality.
+The compact deterministic comparison is
+`docs/validation/reports/2026-07-15-tg03-qualified-claim-frame-holdout-v4.json`
+with a Markdown companion. Raw historical provider dumps are intentionally not
+kept in this PR because the contaminated development set cannot earn
+confirmatory credit. The fixture and comparison are sufficient for regression
+and audit-contract tests.
 
 ## Current Runtime Contract
 
