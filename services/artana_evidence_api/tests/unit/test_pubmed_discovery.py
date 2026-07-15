@@ -175,6 +175,12 @@ async def test_ncbi_pubmed_gateway_retries_rate_limit_and_succeeds(
                     },
                 },
             )
+        if request.url.path.endswith("/efetch.fcgi"):
+            return httpx.Response(
+                status_code=200,
+                request=request,
+                text=_efetch_xml("111", "222"),
+            )
         raise AssertionError(f"Unexpected request path: {request.url.path}")
 
     from artana_evidence_api import pubmed_search
@@ -197,6 +203,20 @@ async def test_ncbi_pubmed_gateway_retries_rate_limit_and_succeeds(
     assert sleep_calls == [1.0, 2.0]
     assert payload.article_ids == ["111", "222"]
     assert payload.total_count == 2
+    assert payload.preview_records[0]["abstract"] == "Authoritative abstract 111."
+    assert payload.preview_records[0]["source_validation"] == {
+        "schema_version": "authoritative_source_validation.v1",
+        "authority": "ncbi_pubmed",
+        "validation_method": "efetch_xml",
+        "authority_record_id": "111",
+        "source_identity": "matched",
+        "source_integrity": "clear",
+        "explanation": (
+            "NCBI PubMed EFetch verified the requested source identity and "
+            "publication integrity categories: identity=matched, integrity=clear."
+        ),
+        "relations": [],
+    }
 
 
 @pytest.mark.asyncio
@@ -246,6 +266,12 @@ async def test_ncbi_pubmed_gateway_retries_transient_server_errors(
                     },
                 },
             )
+        if request.url.path.endswith("/efetch.fcgi"):
+            return httpx.Response(
+                status_code=200,
+                request=request,
+                text=_efetch_xml("111"),
+            )
         raise AssertionError(f"Unexpected request path: {request.url.path}")
 
     from artana_evidence_api import pubmed_search
@@ -265,6 +291,50 @@ async def test_ncbi_pubmed_gateway_retries_transient_server_errors(
     assert summary_attempts == 1
     assert sleep_calls == [1.0]
     assert payload.article_ids == ["111"]
+
+
+@pytest.mark.asyncio
+async def test_ncbi_pubmed_gateway_preserves_preview_when_efetch_is_malformed() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/esearch.fcgi"):
+            return httpx.Response(
+                status_code=200,
+                request=request,
+                json={"esearchresult": {"count": "1", "idlist": ["111"]}},
+            )
+        if request.url.path.endswith("/esummary.fcgi"):
+            return httpx.Response(
+                status_code=200,
+                request=request,
+                json={
+                    "result": {
+                        "uids": ["111"],
+                        "111": {"title": "Emerging result"},
+                    },
+                },
+            )
+        if request.url.path.endswith("/efetch.fcgi"):
+            return httpx.Response(
+                status_code=200,
+                request=request,
+                text="<malformed",
+            )
+        raise AssertionError(f"Unexpected request path: {request.url.path}")
+
+    gateway = NCBIPubMedSearchGateway(
+        settings=NCBIPubMedGatewaySettings(timeout_seconds=1.0),
+        transport=httpx.MockTransport(handler),
+    )
+
+    payload = await gateway.run_search(
+        AdvancedQueryParameters(search_term="emerging hypothesis"),
+    )
+
+    assert payload.preview_records[0]["title"] == "Emerging result"
+    validation = payload.preview_records[0]["source_validation"]
+    assert isinstance(validation, dict)
+    assert validation["source_identity"] == "unresolved"
+    assert validation["source_integrity"] == "unresolved"
 
 
 @pytest.mark.asyncio
@@ -424,3 +494,20 @@ def test_get_search_job_translates_platform_session_id_back_to_space_id(
 
     assert response is not None
     assert response.session_id == harness_space_id
+
+
+def _efetch_xml(*pmids: str) -> str:
+    articles = "".join(
+        (
+            "<PubmedArticle><MedlineCitation>"
+            f"<PMID>{pmid}</PMID>"
+            "<Article>"
+            f"<ArticleTitle>Canonical result {pmid}</ArticleTitle>"
+            f"<Abstract><AbstractText>Authoritative abstract {pmid}.</AbstractText>"
+            "</Abstract>"
+            "</Article>"
+            "</MedlineCitation></PubmedArticle>"
+        )
+        for pmid in pmids
+    )
+    return f"<PubmedArticleSet>{articles}</PubmedArticleSet>"

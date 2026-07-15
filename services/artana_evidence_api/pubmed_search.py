@@ -4,19 +4,28 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import os
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, TypeVar
+from xml.etree.ElementTree import ParseError
 
 import httpx
+from artana_evidence_api.evidence_selection.source_integrity.pubmed import (
+    enrich_pubmed_preview_records,
+    parse_pubmed_articles,
+    unresolved_pubmed_preview_records,
+)
 from artana_evidence_api.request_context import build_request_id_headers
 from artana_evidence_api.runtime.http_response_limits import (
     async_limited_json_from_response,
+    async_limited_text_from_response,
 )
 from artana_evidence_api.types.common import JSONObject, JSONValue
+from defusedxml.common import DefusedXmlException
 
 if TYPE_CHECKING:
     from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
@@ -41,6 +50,9 @@ _ENV_NCBI_API_KEY = "NCBI_API_KEY"
 _ENV_NCBI_EMAIL = "NCBI_EMAIL"
 _ENV_NCBI_TOOL = "NCBI_TOOL"
 _ENV_TESTING = "TESTING"
+
+_ResponsePayload = TypeVar("_ResponsePayload")
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -211,8 +223,7 @@ def _resolve_pubmed_search_backend() -> str:
     if normalized in {"live", "real", _BACKEND_NCBI}:
         return _BACKEND_NCBI
     msg = (
-        "Unsupported ARTANA_PUBMED_SEARCH_BACKEND value. "
-        "Use 'deterministic' or 'ncbi'."
+        "Unsupported ARTANA_PUBMED_SEARCH_BACKEND value. Use 'deterministic' or 'ncbi'."
     )
     raise ValueError(msg)
 
@@ -351,6 +362,15 @@ class NCBIPubMedSearchGateway(PubMedSearchGateway):
             },
         )
 
+    def _build_fetch_params(self, article_ids: list[str]) -> dict[str, str | int]:
+        return self._attach_ncbi_metadata(
+            {
+                "db": "pubmed",
+                "id": ",".join(article_ids),
+                "retmode": "xml",
+            },
+        )
+
     async def _fetch_preview_records(
         self,
         client: httpx.AsyncClient,
@@ -384,7 +404,51 @@ class NCBIPubMedSearchGateway(PubMedSearchGateway):
                 preview_records.append(
                     self._build_preview_record(article_id, raw_summary),
                 )
-        return preview_records
+        return await self._enrich_with_authoritative_source(
+            client=client,
+            preview_records=preview_records,
+        )
+
+    async def _enrich_with_authoritative_source(
+        self,
+        *,
+        client: httpx.AsyncClient,
+        preview_records: list[JSONObject],
+    ) -> list[JSONObject]:
+        if not preview_records:
+            return []
+        article_ids = [
+            pmid
+            for record in preview_records
+            if isinstance((pmid := record.get("pmid")), str) and pmid
+        ]
+        if not article_ids:
+            return unresolved_pubmed_preview_records(preview_records)
+        try:
+            xml_payload = await self._request_text_with_retry(
+                client,
+                "GET",
+                "efetch.fcgi",
+                params=self._build_fetch_params(article_ids),
+                context="PubMed EFetch response",
+            )
+            authoritative_articles = parse_pubmed_articles(xml_payload)
+        except (
+            DefusedXmlException,
+            ParseError,
+            PubMedSearchRateLimitError,
+            UnicodeError,
+            httpx.HTTPError,
+        ) as exc:
+            _LOGGER.warning(
+                "PubMed source validation was unresolved (%s).",
+                type(exc).__name__,
+            )
+            return unresolved_pubmed_preview_records(preview_records)
+        return enrich_pubmed_preview_records(
+            preview_records=preview_records,
+            authoritative_articles=authoritative_articles,
+        )
 
     async def _request_json_with_retry(
         self,
@@ -395,16 +459,53 @@ class NCBIPubMedSearchGateway(PubMedSearchGateway):
         params: Mapping[str, str | int],
         context: str,
     ) -> object:
+        return await self._request_with_retry(
+            client,
+            method,
+            path,
+            params=params,
+            decoder=lambda response: async_limited_json_from_response(
+                response,
+                context=context,
+            ),
+        )
+
+    async def _request_text_with_retry(
+        self,
+        client: httpx.AsyncClient,
+        method: str,
+        path: str,
+        *,
+        params: Mapping[str, str | int],
+        context: str,
+    ) -> str:
+        return await self._request_with_retry(
+            client,
+            method,
+            path,
+            params=params,
+            decoder=lambda response: async_limited_text_from_response(
+                response,
+                context=context,
+            ),
+        )
+
+    async def _request_with_retry(
+        self,
+        client: httpx.AsyncClient,
+        method: str,
+        path: str,
+        *,
+        params: Mapping[str, str | int],
+        decoder: Callable[[httpx.Response], Awaitable[_ResponsePayload]],
+    ) -> _ResponsePayload:
         for delay_seconds in _PUBMED_429_RETRY_DELAYS_SECONDS:
             await self._rate_limiter.acquire()
             try:
                 async with client.stream(method, path, params=params) as response:
                     if not self._is_retryable_response(response):
                         response.raise_for_status()
-                        return await async_limited_json_from_response(
-                            response,
-                            context=context,
-                        )
+                        return await decoder(response)
                     retry_delay_seconds = self._retry_delay_seconds(
                         response,
                         delay_seconds,
@@ -424,10 +525,7 @@ class NCBIPubMedSearchGateway(PubMedSearchGateway):
                     retry_after_seconds=retry_after_seconds,
                 )
             final_response.raise_for_status()
-            return await async_limited_json_from_response(
-                final_response,
-                context=context,
-            )
+            return await decoder(final_response)
 
     @staticmethod
     def _is_retryable_response(response: httpx.Response) -> bool:

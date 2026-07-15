@@ -182,6 +182,24 @@ async def async_limited_json_from_response(
     )
 
 
+async def async_limited_text_from_response(
+    response: httpx.Response,
+    *,
+    context: str,
+    max_bytes: int | None = None,
+) -> str:
+    """Decode a streamed async text response after bounding its body size."""
+
+    return _decode_text(
+        await _aread_limited_response(
+            response,
+            context=context,
+            max_bytes=max_bytes,
+        ),
+        context=context,
+    )
+
+
 async def async_get_limited_text(
     client: httpx.AsyncClient,
     url: str,
