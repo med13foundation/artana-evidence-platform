@@ -250,6 +250,15 @@ production calibration and readiness unavailable. Follow
 `docs/validation/evidence-selection-expert-pilot-runbook.md` for distribution,
 reviewer independence, categorical findings, adjudication, and attestation.
 
+Completed pilot reviews use
+`scripts/import_evidence_selection_expert_pilot_reviews.py`. Its three commands
+(`prepare-adjudication`, `prepare-safety-audit`, and `finalize`) verify the
+issuer-signed reviewer authorization plus every human Ed25519 signature,
+generate the model-blinded disagreement packet, freeze adjudicated gold before
+revealing model claims, and compute metrics deterministically. The importer
+binds all six pre-existing live-agent runs but emits no model-adoption,
+production-calibration, or trusted-graph-readiness claim.
+
 Full expert/shadow study gate:
 
 For a selection-only study, pass `--study-type selection_relevance` to the

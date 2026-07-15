@@ -128,6 +128,12 @@ def _safe_path_segment(value: str, *, field_name: str) -> str:
     return value
 
 
+def publish_directory_no_replace(*, staging: Path, destination: Path) -> None:
+    """Publish an already staged directory through the platform no-replace API."""
+
+    _publish_directory_no_replace(staging=staging, destination=destination)
+
+
 def _publish_directory_no_replace(*, staging: Path, destination: Path) -> None:
     """Atomically publish a directory without replacing a racing destination."""
 
@@ -192,4 +198,4 @@ def _call_rename_no_replace(
         raise OSError(error_number, os.strerror(error_number), str(destination))
 
 
-__all__ = ["publish_expert_pilot_packets"]
+__all__ = ["publish_directory_no_replace", "publish_expert_pilot_packets"]

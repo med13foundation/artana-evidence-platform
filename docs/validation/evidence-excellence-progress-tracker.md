@@ -3441,6 +3441,35 @@ Remaining proof boundary:
   artifacts pass that boundary, benchmark v2 remains at zero expert-eligible
   records.
 
+### 2026-07-14 - PR154 External Attestation And Expert-Gold Import
+
+Branch: `alvaro/evidence-pr154-attestation`
+
+Goal: verify externally authenticated categorical human findings, freeze
+adjudicated gold before model-claim review, and recompute diagnostic model
+quality without accepting human or agent-authored numbers.
+
+Progress:
+
+- Added a pre-review evaluation protocol binding all six frozen PR150 live-agent
+  runs, evaluated commit, exact case/record scope, deterministic metric rules,
+  post-gold safety scope, and preserved PR150 coverage, per-case, canary, and
+  repeatability gates.
+- Added an issuer-signed Ed25519 study authorization binding three distinct
+  verified human subjects, qualifications, conflict declarations, reviewer
+  roles, keys, validity period, the packet publication, and both protocols.
+- Added exact signed first-pass import, deterministic disagreement requests,
+  signed third-reviewer adjudication, frozen gold, post-gold selected-claim
+  safety review, and atomic result publication.
+- Numeric reviewer and agent judgments remain forbidden. Agreement, quality,
+  repeatability, and safety values are code-derived from categorical findings.
+- Partial, insufficient, abstained, not-assessable, tampered, stale, missing, or
+  extra evidence fails closed or keeps diagnostic gates unavailable.
+- Model adoption, production calibration, and trusted-graph readiness remain
+  false. Real external reviewer artifacts are still pending.
+- Validation evidence:
+  `docs/validation/reports/2026-07-14-pr154-expert-pilot-attestation-import.md`.
+
 ## PR Update Template
 
 Copy this block when a PR is opened or merged.
