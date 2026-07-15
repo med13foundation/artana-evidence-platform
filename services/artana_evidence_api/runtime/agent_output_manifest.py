@@ -448,7 +448,7 @@ _POLICIES = (
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v3",),
+        prompt_identifiers=("document_extraction.claim_inventory.v4",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -571,7 +571,7 @@ _POLICIES = (
         schema_names=("LLMSingleClaimFramingResult",),
         shape_hash="79f83b484546c7f14f337684943fd1cd46c5d65656a481f4ba78d5b7cd9a84db",
         producer_paths=("document_extraction_support/llm_extraction/claim_framing.py",),
-        prompt_identifiers=("document_extraction.claim_framing.v5",),
+        prompt_identifiers=("document_extraction.claim_framing.v6",),
         numeric_fields=(
             NumericFieldPolicy(
                 path="$.relations[].source_measurements[].value",

@@ -52,15 +52,18 @@ _SCHEMA_RETRY_INSTRUCTION = """
 SCHEMA AND SOURCE-BINDING RETRY:
 The previous inventory output failed the strict schema or exact-span binding.
 Return the same source-local claims only when every span is copied exactly from
-the frozen chunk and every field follows the schema. Do not invent a claim.
+the frozen chunk and every field follows the schema. Preserve attached material
+state suffixes such as -positive, -negative, or -mutant in a VARIANT span. Do
+not invent a claim.
 """
 _ZERO_RETRY_INSTRUCTION = """
 
 ZERO-INVENTORY RETRY:
 The previous inventory returned no claims. Re-read the frozen chunk once. Return
-every explicit two-endpoint biomedical claim, including negative, null,
-uncertain, provisional, and hypothesis claims. Return an empty list only when no
-such claim is stated. Do not use outside knowledge or deterministic fallback.
+every explicit biomedical assertion with all material typed arguments, including
+negative, null, uncertain, provisional, and hypothesis claims. Return an empty
+list only when no such claim is stated. Do not use outside knowledge or
+deterministic fallback.
 """
 
 

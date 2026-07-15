@@ -10,6 +10,7 @@ from typing import Literal
 
 from artana_evidence_api.document_extraction_support.claim_frames.arguments import (
     ClaimArgument,
+    ClaimArgumentRole,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.contracts import (
     EpistemicStatus,
@@ -20,6 +21,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 CLAIM_INVENTORY_SOURCE_LOCATOR = "normalized_extraction_text"
 _SHA256_HEX_LENGTH = 64
 _MIN_ASSERTION_ARGUMENTS = 2
+_ATTACHED_VARIANT_STATE_SUFFIXES = (
+    "-positive",
+    "-negative",
+    "-mutant",
+    "-deficient",
+    "-high",
+    "-low",
+)
 
 
 class ClaimInventoryBindingError(ValueError):
@@ -199,6 +208,19 @@ def _require_inventory_item_spans(
             raise ClaimInventoryBindingError(
                 "claim inventory argument span is outside exact_span",
             )
+        if item.exact_span.count(argument.exact_span) != 1:
+            raise ClaimInventoryBindingError(
+                "claim inventory argument span must occur exactly once in exact_span",
+            )
+        if argument.role is ClaimArgumentRole.VARIANT:
+            argument_end = item.exact_span.index(argument.exact_span) + len(
+                argument.exact_span,
+            )
+            following_text = item.exact_span[argument_end:].casefold()
+            if following_text.startswith(_ATTACHED_VARIANT_STATE_SUFFIXES):
+                raise ClaimInventoryBindingError(
+                    "variant argument omits an attached material state suffix",
+                )
 
 
 def _canonical_sha256(value: object) -> str:

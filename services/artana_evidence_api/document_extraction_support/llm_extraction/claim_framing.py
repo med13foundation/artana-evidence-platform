@@ -49,10 +49,14 @@ _SCHEMA_RETRY_INSTRUCTION = """
 
 SCHEMA AND SOURCE-BINDING RETRY:
 The previous framing output failed the strict schema or contradicted the frozen
-inventory/source boundary. Frame only the supplied claim. Copy the two endpoint
-anchors from the typed arguments and copy exact_span verbatim, preserve polarity
-and epistemic_status, retain every typed role in every candidate frame, and do
-not borrow qualifiers from another claim. ABSTAIN rather than guessing.
+inventory/source boundary. Frame only the supplied claim. Copy candidate
+endpoints only from the typed arguments and copy exact_span verbatim. For each
+candidate, set a qualifier to NOT_APPLICABLE when its argument is already the
+subject or object; every non-endpoint role with a matching qualifier must remain
+PRESENT. Preserve polarity and epistemic_status and do not borrow qualifiers
+from another claim. When distinct intervention-to-condition and
+intervention-to-outcome projections are both source-supported, return both as
+MULTIPLE_VALID_FRAMES. ABSTAIN rather than guessing.
 """
 
 

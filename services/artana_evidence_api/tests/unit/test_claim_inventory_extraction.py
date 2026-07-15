@@ -18,6 +18,7 @@ from artana_evidence_api.document_extraction_prompting import (
     build_single_claim_framing_output_schema,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimInventoryBindingError,
     ClaimInventoryItem,
     bind_claim_inventory,
     derive_claim_local_source_region,
@@ -97,9 +98,9 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v5:claim_inventory.v3+"
+        "document_extraction.claim_pipeline.v6:claim_inventory.v4+"
         "claim_inventory_completeness.v3+claim_inventory_recovery.v3+"
-        "claim_framing.v5"
+        "claim_framing.v6"
     )
 
 
@@ -1223,6 +1224,48 @@ def test_inventory_binding_records_absolute_source_offsets() -> None:
 
     assert bound[0].source_start == 8000
     assert bound[0].source_end == 8000 + len(text)
+
+
+def test_inventory_binding_rejects_variant_with_dropped_state_suffix() -> None:
+    text = "Lorlatinib treated ALK G1202R-positive lung adenocarcinoma."
+    item = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": text,
+            "relation_cue_span": "treated",
+            "arguments": [
+                {
+                    "role": "INTERVENTION",
+                    "exact_span": "Lorlatinib",
+                    "role_rationale": "The source names the intervention.",
+                },
+                {
+                    "role": "VARIANT",
+                    "exact_span": "ALK G1202R",
+                    "role_rationale": "The source names the variant.",
+                },
+                {
+                    "role": "CONDITION",
+                    "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+                    "role_rationale": "The source names the condition.",
+                },
+            ],
+            "source_locator": "normalized_extraction_text",
+            "polarity": "SUPPORT",
+            "epistemic_status": "ASSERTED",
+            "inventory_rationale": "The source states one treatment claim.",
+        },
+    )
+
+    with pytest.raises(
+        ClaimInventoryBindingError,
+        match="omits an attached material state suffix",
+    ):
+        bind_claim_inventory(
+            (item,),
+            source_text=text,
+            source_sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            chunk_index=0,
+        )
 
 
 def test_claim_local_source_region_preserves_bound_inventory_exact_span() -> None:

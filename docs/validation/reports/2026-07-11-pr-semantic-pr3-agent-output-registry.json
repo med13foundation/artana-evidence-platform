@@ -197,7 +197,7 @@
         "document_extraction_support/llm_extraction/claim_framing.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_framing.v5"
+        "document_extraction.claim_framing.v6"
       ],
       "schema_id": "document_extraction.claim_framing.v2",
       "schema_names": [
@@ -269,7 +269,7 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory.v3"
+        "document_extraction.claim_inventory.v4"
       ],
       "schema_id": "document_extraction.claim_inventory.v3",
       "schema_names": [

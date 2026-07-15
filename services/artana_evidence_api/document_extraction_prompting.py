@@ -557,6 +557,7 @@ For each claim:
 - exact_span is the smallest complete verbatim source span that contains the event, every material argument, and the context needed to interpret it; when the same text repeats in the chunk, include enough adjacent verbatim context to make exact_span occur once;
 - arguments contains every material source-native span with one closed role: INTERVENTION, CONDITION, POPULATION, VARIANT, OUTCOME, COMPARATOR, TIMEFRAME, STUDY_DESIGN, TREATMENT_SETTING, GENE_OR_PROTEIN, CHEMICAL_OR_DRUG, BIOMARKER, EXPOSURE, BIOLOGICAL_PROCESS, ANATOMY, MEASUREMENT, or OTHER_ENTITY;
 - do not discard a condition, population, variant, or outcome merely because it is grammatical context rather than a direct verb argument;
+- a VARIANT exact_span includes any attached material state suffix such as -positive, -negative, -mutant, -deficient, -high, or -low;
 - role_rationale explains the source-local role in words without a score;
 - relation_cue_span is the exact verb or phrase that states the relation;
 - source_locator is exactly normalized_extraction_text;
@@ -585,6 +586,8 @@ ONE-CLAIM CONTRACT:
 - decision_rationale explains the categorical choice without a score.
 - The relation sentence must equal the supplied claim-local source region verbatim.
 - Every relation subject and object must be copied from the supplied typed arguments. The server preserves the complete typed argument inventory on every candidate frame. For roles with a matching qualified field, every non-endpoint argument must also appear in that field with its verbatim exact_span.
+- When an argument is selected as subject or object, set its matching qualifier to NOT_APPLICABLE; never duplicate the same role as both endpoint and qualifier.
+- Evaluate each independently source-supported projection. For a treatment-result assertion, preserve both intervention-to-condition and intervention-to-outcome frames when the source supports both; do not choose one merely because it follows the grammatical verb.
 - Do not assume that grammatical subject/object equals the only valid biomedical projection. A sentence may support both intervention-to-condition and intervention-to-outcome frames; preserve both or return AMBIGUOUS rather than silently collapsing one.
 - Preserve the inventory polarity and epistemic_status exactly. Never turn a negative, null, uncertain, provisional, or hypothesis claim into a positive asserted claim.
 - Populate every qualifier from this claim's exact source span only. Do not borrow a qualifier from a sibling claim in the surrounding chunk.
