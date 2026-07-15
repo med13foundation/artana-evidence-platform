@@ -2,7 +2,7 @@
 
 Created: 2026-07-14
 
-Status: Active; TG-01 is ready for review
+Status: Active; TG-01 and TG-02 are ready for review
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
@@ -124,7 +124,7 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 | Plan ID | GitHub PR | Suggested branch | Depends on | Status | Primary proof |
 |---|---:|---|---|---|---|
 | TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | ready_for_review | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
-| TG-02 | TBD | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | not_started | Every eligible claim has authoritative source identity and an exact locator. |
+| TG-02 | [#159](https://github.com/med13foundation/artana-evidence-platform/pull/159) | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | ready_for_review | Every eligible claim has authoritative source identity and an exact locator. Evidence: `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. |
 | TG-03 | TBD | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | not_started | Agent extraction preserves polarity, state, qualifiers, and evidence. |
 | TG-04 | TBD | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | not_started | Qualified claims round-trip through Evidence API and Graph DB without loss. |
 | TG-05 | TBD | `alvaro/trusted-claims-tg05-agent-verifier` | TG-04 | not_started | Independent agent verification replaces heuristic semantic trust. |
@@ -804,8 +804,8 @@ single unsafe failure. Track each dimension independently.
 | Dimension | Baseline | Required end state | Owning PR | Current evidence | Status |
 |---|---|---|---|---|---|
 | Agent execution | 300/300, fallback 0 | Preserve 100%, fallback 0 | All | July 14 report | passing |
-| Truthful trust | Heuristic and symbolic-authority gaps found | No non-agent semantic trust or fake authority | TG-01 | Pending | not_started |
-| Source traceability | 2/47 strong provenance | 100% eligible claims strong | TG-02 | Pending | not_started |
+| Truthful trust | Heuristic and symbolic-authority gaps found | No non-agent semantic trust or fake authority | TG-01 | `docs/validation/reports/2026-07-14-tg01-truthful-safety.md` | ready_for_review |
+| Source traceability | 2/47 strong provenance | 100% eligible claims strong | TG-02 | `docs/validation/reports/2026-07-15-tg02-source-provenance.md` | ready_for_review |
 | Claim completeness | 13/47 generic/overstated outcomes | Complete polarity/state/qualifiers | TG-03 | Pending | not_started |
 | Lossless persistence | Triple-oriented write path | Zero ClaimFrame field loss | TG-04 | Pending | not_started |
 | Semantic verification | Heuristic can return `ENTAILS` | Independent categorical agent verifier | TG-05 | Pending | not_started |
