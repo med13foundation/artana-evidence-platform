@@ -66,6 +66,9 @@ from artana_evidence_api.document_store import (
 from artana_evidence_api.graph_client import (
     GraphTransportBundle,  # noqa: TC001
 )
+from artana_evidence_api.graph_integration.source_provenance import (
+    bind_source_provenance_to_drafts,
+)
 from artana_evidence_api.proposal_store import HarnessProposalStore  # noqa: TC001
 from artana_evidence_api.research_state import (
     HarnessResearchStateStore,  # noqa: TC001
@@ -696,16 +699,20 @@ async def extract_document(  # noqa: PLR0913, PLR0915
             dismech_result = build_dismech_structured_extraction_drafts(
                 document=document,
             )
+            dismech_proposal_drafts = bind_source_provenance_to_drafts(
+                document=document,
+                drafts=dismech_result.proposal_drafts,
+            )
             created_proposals = proposal_store.create_proposals(
                 space_id=space_id,
                 run_id=run.id,
-                proposals=dismech_result.proposal_drafts,
+                proposals=dismech_proposal_drafts,
             )
             proposals, reused_existing_proposal_count = effective_proposals_for_drafts(
                 space_id=space_id,
                 document_id=document.id,
                 created_proposals=created_proposals,
-                proposal_drafts=dismech_result.proposal_drafts,
+                proposal_drafts=dismech_proposal_drafts,
                 proposal_store=proposal_store,
             )
             created_study_outcomes = study_outcome_store.create_outcomes(
@@ -798,10 +805,14 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 review_context=review_context,
             )
             variant_result = with_variant_aware_trust_metadata(variant_result)
+            variant_proposal_drafts = bind_source_provenance_to_drafts(
+                document=document,
+                drafts=variant_result.proposal_drafts,
+            )
             created_proposals = proposal_store.create_proposals(
                 space_id=space_id,
                 run_id=run.id,
-                proposals=variant_result.proposal_drafts,
+                proposals=variant_proposal_drafts,
             )
             created_review_items = review_item_store.create_review_items(
                 space_id=space_id,
@@ -818,7 +829,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 space_id=space_id,
                 document_id=document.id,
                 created_proposals=created_proposals,
-                proposal_drafts=variant_result.proposal_drafts,
+                proposal_drafts=variant_proposal_drafts,
                 proposal_store=proposal_store,
             )
             effective_review_items, reused_existing_review_item_count = (
@@ -1012,6 +1023,10 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                     ),
                 },
             )
+        drafts = bind_source_provenance_to_drafts(
+            document=document,
+            drafts=drafts,
+        )
         created_proposals = proposal_store.create_proposals(
             space_id=space_id,
             run_id=run.id,

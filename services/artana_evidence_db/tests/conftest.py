@@ -41,6 +41,7 @@ import artana_evidence_db.read_models  # noqa: E402, F401
 import artana_evidence_db.reasoning_path_persistence_models  # noqa: E402, F401
 import artana_evidence_db.relation_projection_source_model  # noqa: E402, F401
 import artana_evidence_db.source_document_model  # noqa: E402, F401
+import artana_evidence_db.source_provenance.snapshot_model  # noqa: E402, F401
 import artana_evidence_db.space_models  # noqa: E402, F401
 import artana_evidence_db.workflow_persistence_models  # noqa: E402, F401
 import pytest  # noqa: E402

@@ -2635,6 +2635,7 @@ async def _execute_test_harness_run(  # noqa: PLR0912
                 run=run,
                 approval_store=services.approval_store,
                 proposal_store=services.proposal_store,
+                document_store=services.document_store,
                 run_registry=services.run_registry,
                 artifact_store=services.artifact_store,
                 runtime=services.runtime,
@@ -2678,6 +2679,7 @@ async def _execute_test_harness_run(  # noqa: PLR0912
                 run=run,
                 approval_store=services.approval_store,
                 proposal_store=services.proposal_store,
+                document_store=services.document_store,
                 run_registry=services.run_registry,
                 artifact_store=services.artifact_store,
                 runtime=services.runtime,
@@ -7437,7 +7439,8 @@ def test_hypothesis_agent_run_completes_and_stages_candidates() -> None:
     promoted_payload = promote_response.json()
     assert promoted_payload["status"] == "promoted"
     assert promoted_payload["metadata"]["graph_claim_id"] is not None
-    assert promoted_payload["metadata"]["graph_claim_status"] == "RESOLVED"
+    assert promoted_payload["metadata"]["graph_claim_status"] == "OPEN"
+    assert promoted_payload["metadata"]["graph_relation_id"] is None
 
     reject_response = client.post(
         f"/v1/spaces/{space_id}/proposals/{proposal_ids[1]}/reject",

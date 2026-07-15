@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from artana_evidence_db._relation_repository_shared import _source_family_key
 from artana_evidence_db.kernel_claim_models import RelationClaimModel
 from artana_evidence_db.kernel_dictionary_models import RelationConstraintModel
 from artana_evidence_db.kernel_entity_models import GraphEntityModel
@@ -27,6 +28,9 @@ from artana_evidence_db.relation_autopromotion_policy import (
     parse_relation_autopromotion_float,
     parse_relation_autopromotion_int,
     relation_evidence_tier_rank,
+)
+from artana_evidence_db.source_provenance.eligibility import (
+    ClaimEvidenceEligibilityService,
 )
 from artana_evidence_db.space_registry_repository import (
     SqlAlchemyKernelSpaceRegistryRepository,
@@ -218,6 +222,17 @@ class _KernelRelationAutoPromotionMixin:
             )
 
         evidences = self._list_relation_evidences(relation_id)
+        eligible_snapshot_ids = ClaimEvidenceEligibilityService(
+            self._session,
+        ).eligible_snapshot_ids_for_relation(
+            relation_id=relation_id,
+            research_space_id=relation_model.research_space_id,
+        )
+        evidences = [
+            evidence
+            for evidence in evidences
+            if evidence.source_snapshot_id in eligible_snapshot_ids
+        ]
         if not evidences:
             return AutoPromotionDecision(
                 outcome="kept",
@@ -411,29 +426,17 @@ class _KernelRelationAutoPromotionMixin:
 
     @staticmethod
     def _count_distinct_sources(evidences: list[RelationEvidenceModel]) -> int:
-        distinct_sources: set[str] = set()
-        for evidence in evidences:
-            if evidence.provenance_id is not None:
-                distinct_sources.add(f"provenance:{evidence.provenance_id}")
-            elif evidence.source_document_id is not None:
-                distinct_sources.add(f"document:{evidence.source_document_id}")
-            elif evidence.source_document_ref is not None:
-                distinct_sources.add(f"document_ref:{evidence.source_document_ref}")
-            elif evidence.agent_run_id is not None:
-                distinct_sources.add(f"run:{evidence.agent_run_id}")
-            else:
-                distinct_sources.add(f"evidence:{evidence.id}")
-        return len(distinct_sources)
+        return len(
+            {
+                family_key
+                for evidence in evidences
+                if (family_key := _source_family_key(evidence)) is not None
+            },
+        )
 
     @staticmethod
     def _count_distinct_documents(evidences: list[RelationEvidenceModel]) -> int:
-        distinct_documents: set[str] = set()
-        for evidence in evidences:
-            if evidence.source_document_id is not None:
-                distinct_documents.add(f"id:{evidence.source_document_id}")
-            elif evidence.source_document_ref is not None:
-                distinct_documents.add(f"ref:{evidence.source_document_ref}")
-        return len(distinct_documents)
+        return _KernelRelationAutoPromotionMixin._count_distinct_sources(evidences)
 
     @staticmethod
     def _count_distinct_runs(evidences: list[RelationEvidenceModel]) -> int:

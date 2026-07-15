@@ -35,6 +35,10 @@ from artana_evidence_api.document_store import (
     HarnessDocumentRecord,
     HarnessDocumentStore,
 )
+from artana_evidence_api.full_ai_orchestrator_contracts import (
+    ResearchOrchestratorChaseCandidate,
+    ResearchOrchestratorChaseSelection,
+)
 from artana_evidence_api.graph_snapshot import HarnessGraphSnapshotStore
 from artana_evidence_api.harness_runtime import HarnessExecutionServices
 from artana_evidence_api.proposal_store import (
@@ -44,6 +48,7 @@ from artana_evidence_api.proposal_store import (
 from artana_evidence_api.research_bootstrap_runtime import (
     ResearchBootstrapExecutionResult,
 )
+from artana_evidence_api.research_init_models import _ChaseRoundPreparation
 from artana_evidence_api.research_init_source_enrichment import SourceEnrichmentResult
 from artana_evidence_api.research_state import HarnessResearchStateStore
 from artana_evidence_api.routers import research_init
@@ -748,13 +753,13 @@ async def test_research_init_full_pipeline_e2e(
 
     def _fake_prepare_chase_round(
         **kwargs: object,
-    ) -> research_init_runtime._ChaseRoundPreparation:
+    ) -> _ChaseRoundPreparation:
         round_number_value = kwargs.get("round_number", 1)
         round_number = round_number_value if isinstance(round_number_value, int) else 1
         if round_number == 1:
-            return research_init_runtime._ChaseRoundPreparation(
+            return _ChaseRoundPreparation(
                 candidates=(
-                    research_init_runtime.ResearchOrchestratorChaseCandidate(
+                    ResearchOrchestratorChaseCandidate(
                         entity_id="entity-1",
                         display_label="CDK8",
                         normalized_label="CDK8",
@@ -764,7 +769,7 @@ async def test_research_init_full_pipeline_e2e(
                         evidence_basis="Recent graph entity.",
                         novelty_basis="not_in_previous_seed_terms",
                     ),
-                    research_init_runtime.ResearchOrchestratorChaseCandidate(
+                    ResearchOrchestratorChaseCandidate(
                         entity_id="entity-2",
                         display_label="CCNC",
                         normalized_label="CCNC",
@@ -774,7 +779,7 @@ async def test_research_init_full_pipeline_e2e(
                         evidence_basis="Recent graph entity.",
                         novelty_basis="not_in_previous_seed_terms",
                     ),
-                    research_init_runtime.ResearchOrchestratorChaseCandidate(
+                    ResearchOrchestratorChaseCandidate(
                         entity_id="entity-3",
                         display_label="MED12",
                         normalized_label="MED12",
@@ -786,7 +791,7 @@ async def test_research_init_full_pipeline_e2e(
                     ),
                 ),
                 filtered_candidates=(),
-                deterministic_selection=research_init_runtime.ResearchOrchestratorChaseSelection(
+                deterministic_selection=ResearchOrchestratorChaseSelection(
                     selected_entity_ids=["entity-1", "entity-2", "entity-3"],
                     selected_labels=["CDK8", "CCNC", "MED12"],
                     stop_instead=False,
@@ -795,9 +800,9 @@ async def test_research_init_full_pipeline_e2e(
                 ),
                 errors=[],
             )
-        return research_init_runtime._ChaseRoundPreparation(
+        return _ChaseRoundPreparation(
             candidates=(
-                research_init_runtime.ResearchOrchestratorChaseCandidate(
+                ResearchOrchestratorChaseCandidate(
                     entity_id="entity-4",
                     display_label="CDK19",
                     normalized_label="CDK19",
@@ -809,7 +814,7 @@ async def test_research_init_full_pipeline_e2e(
                 ),
             ),
             filtered_candidates=(),
-            deterministic_selection=research_init_runtime.ResearchOrchestratorChaseSelection(
+            deterministic_selection=ResearchOrchestratorChaseSelection(
                 selected_entity_ids=[],
                 selected_labels=[],
                 stop_instead=True,
@@ -988,8 +993,13 @@ async def test_research_init_full_pipeline_e2e(
         run_id=queued_run.id,
     )
     assert len(all_proposals) > 0, "No proposals in store"
-    for proposal in all_proposals:
-        assert proposal.proposal_type == "candidate_claim"
+    claim_proposals = [
+        proposal
+        for proposal in all_proposals
+        if proposal.proposal_type == "candidate_claim"
+    ]
+    assert claim_proposals, "No candidate-claim proposals in store"
+    for proposal in claim_proposals:
         assert proposal.source_kind == "document_extraction"
 
     # Verify document extraction statuses updated

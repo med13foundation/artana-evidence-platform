@@ -18,6 +18,9 @@ from artana_evidence_api.dependencies import (
     require_harness_space_write_access,
 )
 from artana_evidence_api.graph_client import GraphTransportBundle  # noqa: TC001
+from artana_evidence_api.graph_integration.source_provenance import (
+    load_proposal_source_document,
+)
 from artana_evidence_api.proposal_actions import (
     decide_proposal,
     promote_to_graph_claim,
@@ -33,6 +36,7 @@ from artana_evidence_api.proposal_store import (  # noqa: TC001
 from artana_evidence_api.run_registry import HarnessRunRegistry  # noqa: TC001
 from artana_evidence_api.transparency import append_manual_review_decision
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -77,6 +81,7 @@ class HarnessProposalResponse(BaseModel):
     ranking_score: float
     reasoning_path: JSONObject
     evidence_bundle: list[JSONObject]
+    source_provenance: ClaimSourceProvenance | None
     payload: JSONObject
     metadata: JSONObject
     evidence_grade: str | None
@@ -103,6 +108,7 @@ class HarnessProposalResponse(BaseModel):
             ranking_score=record.ranking_score,
             reasoning_path=record.reasoning_path,
             evidence_bundle=record.evidence_bundle,
+            source_provenance=record.source_provenance,
             payload=record.payload,
             metadata=record.metadata,
             evidence_grade=record.evidence_grade,
@@ -256,6 +262,10 @@ def promote_proposal(  # noqa: PLR0913
                 proposal=proposal,
                 request_metadata=decision_request.metadata,
                 graph_api_gateway=graph_api_gateway,
+                source_document=load_proposal_source_document(
+                    document_store=execution_services.document_store,
+                    proposal=proposal,
+                ),
             )
             workspace_patch = {
                 "last_promoted_graph_claim_id": promotion_metadata["graph_claim_id"],

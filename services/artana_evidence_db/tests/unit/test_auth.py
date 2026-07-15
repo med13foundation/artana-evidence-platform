@@ -12,6 +12,7 @@ from artana_evidence_db.auth import (
     get_current_user,
     graph_ai_principal_for_user,
     graph_service_capability_for_user,
+    graph_source_attestation_service_for_user,
     to_graph_rls_session_context,
     to_graph_tenant_membership,
 )
@@ -149,6 +150,7 @@ async def test_get_current_user_reads_graph_service_capabilities_from_jwt(
                 "role": UserRole.RESEARCHER.value,
                 "type": "access",
                 "graph_service_capabilities": ["space_sync"],
+                "graph_source_attestation_service": "artana_evidence_api",
                 "exp": datetime.now(UTC) + timedelta(minutes=15),
                 "iat": datetime.now(UTC),
                 "iss": "graph-biomedical",
@@ -166,6 +168,7 @@ async def test_get_current_user_reads_graph_service_capabilities_from_jwt(
 
     assert user.graph_service_capabilities == ("space_sync",)
     assert graph_service_capability_for_user(user, "space_sync") is True
+    assert graph_source_attestation_service_for_user(user) == "artana_evidence_api"
 
 
 async def test_get_current_user_accepts_test_graph_service_capabilities_header(
@@ -180,6 +183,10 @@ async def test_get_current_user_accepts_test_graph_service_capabilities_header(
                 (b"x-test-user-email", b"space-sync@example.com"),
                 (b"x-test-user-role", b"researcher"),
                 (b"x-test-graph-service-capabilities", b"space_sync"),
+                (
+                    b"x-test-graph-source-attestation-service",
+                    b"artana_evidence_api",
+                ),
             ],
         },
     )
@@ -188,6 +195,7 @@ async def test_get_current_user_accepts_test_graph_service_capabilities_header(
 
     assert user.graph_service_capabilities == ("space_sync",)
     assert graph_service_capability_for_user(user, "space_sync") is True
+    assert graph_source_attestation_service_for_user(user) == "artana_evidence_api"
 
 
 def test_to_graph_tenant_membership_maps_space_role() -> None:

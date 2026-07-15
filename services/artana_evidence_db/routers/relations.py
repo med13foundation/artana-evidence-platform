@@ -16,6 +16,8 @@ from artana_evidence_db._relation_subgraph_helpers import (
 )
 from artana_evidence_db.auth import (
     get_current_active_user,
+    graph_service_capability_for_user,
+    graph_source_attestation_service_for_user,
     is_graph_service_admin,
 )
 from artana_evidence_db.claim_metrics import (
@@ -31,6 +33,7 @@ from artana_evidence_db.dependencies import (
     get_kernel_relation_projection_materialization_service,
     get_kernel_relation_service,
     get_kernel_relation_suggestion_service,
+    get_source_provenance_service,
     get_space_access_port,
     require_space_role,
     verify_space_membership,
@@ -71,6 +74,11 @@ from artana_evidence_db.service_contracts import (
     KernelRelationSuggestionResponse,
     KernelRelationSuggestionSkippedSourceResponse,
     KernelRelationTripleValidationRequest,
+)
+from artana_evidence_db.source_provenance.http import require_verified_source_snapshot
+from artana_evidence_db.source_provenance.service import (
+    SourceProvenanceService,
+    claim_evidence_provenance_status,
 )
 from artana_evidence_db.space_membership import MembershipRole
 from artana_evidence_db.user_models import User
@@ -686,6 +694,9 @@ def create_relation(
     relation_projection_materialization_service: KernelRelationProjectionMaterializationService = Depends(
         get_kernel_relation_projection_materialization_service,
     ),
+    source_provenance_service: SourceProvenanceService = Depends(
+        get_source_provenance_service,
+    ),
     session: Session = Depends(get_session),
 ) -> KernelRelationResponse:
     verify_space_membership(
@@ -754,12 +765,28 @@ def create_relation(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=_build_validation_error_detail(ai_validation),
             )
+        provenance_submission = source_provenance_service.verify_and_snapshot(
+            research_space_id=space_id,
+            source_document_id=request.source_document_id,
+            source_evidence=request.source_evidence,
+            source_attestation_capability=graph_service_capability_for_user(
+                current_user,
+                "source_provenance_submit",
+            ),
+            authenticated_attestation_service=(
+                graph_source_attestation_service_for_user(current_user)
+            ),
+        )
+        source_snapshot = require_verified_source_snapshot(provenance_submission)
         confidence_metadata = fact_assessment_metadata(request.assessment)
-        request_metadata = dict(request.metadata)
         derived_confidence = request.derived_confidence
         manual_claim = relation_claim_service.create_claim(
             research_space_id=str(space_id),
-            source_document_id=None,
+            source_document_id=(
+                str(request.source_document_id)
+                if request.source_document_id is not None
+                else None
+            ),
             source_document_ref=request.source_document_ref,
             agent_run_id=None,
             source_type=source_entity.entity_type,
@@ -783,7 +810,7 @@ def create_relation(
             claim_section=None,
             linked_relation_id=None,
             metadata={
-                **request_metadata,
+                **request.metadata,
                 "origin": "manual_relation_api",
                 "source_entity_id": str(request.source_id),
                 "target_entity_id": str(request.target_id),
@@ -814,41 +841,64 @@ def create_relation(
             position=1,
             qualifiers={"origin": "manual_relation_api"},
         )
-        if (
-            request.evidence_summary is not None
-            or request.evidence_sentence is not None
-            or request.provenance_id is not None
-            or request.source_document_ref is not None
-        ):
-            claim_evidence_service.create_evidence(
-                claim_id=claim_id,
-                source_document_id=None,
-                source_document_ref=request.source_document_ref,
-                agent_run_id=None,
-                sentence=request.evidence_sentence,
-                sentence_source=_normalize_claim_evidence_sentence_source(
-                    request.evidence_sentence_source,
+        claim_evidence_service.create_evidence(
+            claim_id=claim_id,
+            source_document_id=(
+                str(request.source_document_id)
+                if request.source_document_id is not None
+                else None
+            ),
+            source_document_ref=request.source_document_ref,
+            source_snapshot_id=str(source_snapshot.id),
+            agent_run_id=None,
+            sentence=(
+                request.evidence_sentence
+                or (
+                    request.source_evidence.locator.exact_quote
+                    if request.source_evidence is not None
+                    else None
+                )
+            ),
+            sentence_source=_normalize_claim_evidence_sentence_source(
+                request.evidence_sentence_source,
+            ),
+            sentence_confidence=_normalize_claim_evidence_sentence_confidence(
+                request.evidence_sentence_confidence,
+            ),
+            sentence_rationale=request.evidence_sentence_rationale,
+            figure_reference=(
+                request.source_evidence.locator.figure_reference
+                if request.source_evidence is not None
+                else None
+            ),
+            table_reference=(
+                request.source_evidence.locator.table_reference
+                if request.source_evidence is not None
+                else None
+            ),
+            confidence=derived_confidence,
+            evidence_locator=(
+                request.source_evidence.locator
+                if request.source_evidence is not None
+                else None
+            ),
+            provenance_status=claim_evidence_provenance_status(
+                provenance_submission.verification,
+            ),
+            provenance_reason_codes=provenance_submission.verification.reason_codes,
+            metadata={
+                **request.metadata,
+                "origin": "manual_relation_api",
+                "evidence_summary": request.evidence_summary,
+                "evidence_tier": request.evidence_tier or "COMPUTATIONAL",
+                **confidence_metadata,
+                "provenance_id": (
+                    str(request.provenance_id)
+                    if request.provenance_id is not None
+                    else None
                 ),
-                sentence_confidence=_normalize_claim_evidence_sentence_confidence(
-                    request.evidence_sentence_confidence,
-                ),
-                sentence_rationale=request.evidence_sentence_rationale,
-                figure_reference=None,
-                table_reference=None,
-                confidence=derived_confidence,
-                metadata={
-                    **request_metadata,
-                    "origin": "manual_relation_api",
-                    "evidence_summary": request.evidence_summary,
-                    "evidence_tier": request.evidence_tier or "COMPUTATIONAL",
-                    **confidence_metadata,
-                    "provenance_id": (
-                        str(request.provenance_id)
-                        if request.provenance_id is not None
-                        else None
-                    ),
-                },
-            )
+            },
+        )
         materialized = (
             relation_projection_materialization_service.materialize_support_claim(
                 claim_id=claim_id,

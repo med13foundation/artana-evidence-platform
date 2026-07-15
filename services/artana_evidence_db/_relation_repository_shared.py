@@ -52,42 +52,28 @@ def _tier_rank(value: str | None) -> int:
     return RELATION_AUTOPROMOTION_EVIDENCE_TIER_RANK.get(value.strip().upper(), 0)
 
 
-def _source_family_key(evidence: object) -> str:
-    """Derive a source-family key for support-unit collapsing.
-
-    Multiple evidence rows from the same source document collapse into
-    one support unit. The priority chain is:
-    source_document_id > source_document_ref > provenance_id > agent_run_id > evidence.id
-    """
-    doc_id = getattr(evidence, "source_document_id", None)
-    if doc_id is not None:
-        return f"document:{doc_id}"
-    doc_ref = getattr(evidence, "source_document_ref", None)
-    if doc_ref is not None:
-        return f"document_ref:{doc_ref}"
-    prov_id = getattr(evidence, "provenance_id", None)
-    if prov_id is not None:
-        return f"provenance:{prov_id}"
-    run_id = getattr(evidence, "agent_run_id", None)
-    if run_id is not None:
-        return f"run:{run_id}"
-    eid = getattr(evidence, "id", None)
-    return f"evidence:{eid}"
+def _source_family_key(evidence: object) -> str | None:
+    """Return one authoritative publication/record family for source counting."""
+    snapshot = getattr(evidence, "source_snapshot", None)
+    if snapshot is None:
+        return None
+    source_kind = getattr(snapshot, "source_kind", None)
+    authoritative_identifier = getattr(snapshot, "authoritative_identifier", None)
+    if not isinstance(source_kind, str) or not isinstance(
+        authoritative_identifier,
+        str,
+    ):
+        return None
+    normalized_kind = source_kind.strip().casefold()
+    normalized_identifier = authoritative_identifier.strip().casefold()
+    if not normalized_kind or not normalized_identifier:
+        return None
+    return f"{normalized_kind}:{normalized_identifier}"
 
 
-def _claim_source_family_key(claim: object) -> str:
-    """Derive a source-family key for claim-level confidence fallback."""
-    doc_id = getattr(claim, "source_document_id", None)
-    if doc_id is not None:
-        return f"document:{doc_id}"
-    doc_ref = getattr(claim, "source_document_ref", None)
-    if doc_ref is not None:
-        return f"document_ref:{doc_ref}"
-    run_id = getattr(claim, "agent_run_id", None)
-    if run_id is not None:
-        return f"run:{run_id}"
-    claim_id = getattr(claim, "id", None)
-    return f"claim:{claim_id}"
+def _claim_source_family_key(_claim: object) -> None:
+    """Claims without eligible snapshot evidence never form a source family."""
+    return
 
 
 def _diminishing_confidence(unit_scores: Iterable[float]) -> float:

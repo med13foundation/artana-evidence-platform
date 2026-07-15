@@ -70,9 +70,14 @@ from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
     KernelRelationResponse,
     KernelRelationTripleValidationRequest,
 )
+from artana_evidence_db.source_provenance.models import (
+    ExactEvidenceLocator,
+    SourceIdentity,
+)
 
 __all__ = [
     "DictionaryEntityTypeValidationRequest",
+    "ExactEvidenceLocator",
     "DictionaryRelationConstraintValidationRequest",
     "DictionaryRelationTypeValidationRequest",
     "GraphValidationNextAction",
@@ -132,4 +137,5 @@ __all__ = [
     "KernelRelationSuggestionResponse",
     "KernelRelationSuggestionScoreBreakdownResponse",
     "KernelRelationSuggestionSkippedSourceResponse",
+    "SourceIdentity",
 ]

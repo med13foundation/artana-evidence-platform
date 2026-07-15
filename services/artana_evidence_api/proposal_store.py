@@ -13,6 +13,7 @@ from artana_evidence_api.document_extraction_support.proposal_relation_type_guar
 )
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
+from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class HarnessProposalDraft:
     document_id: str | None = None
     claim_fingerprint: str | None = None
     evidence_grade: str | None = None
+    source_provenance: ClaimSourceProvenance | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +70,7 @@ class HarnessProposalRecord:
     updated_at: datetime
     claim_fingerprint: str | None = None
     evidence_grade: str | None = None
+    source_provenance: ClaimSourceProvenance | None = None
 
 
 class HarnessProposalStore:
@@ -116,6 +119,13 @@ class HarnessProposalStore:
             proposal_type=proposal.proposal_type,
             payload=proposal.payload,
         )
+        if (
+            proposal.source_provenance is not None
+            and proposal.source_provenance.status == "verified"
+            and proposal.document_id is None
+        ):
+            msg = "verified source provenance requires a proposal document_id"
+            raise ValueError(msg)
         return replace(
             proposal,
             title=cls.normalize_proposal_title(proposal.title),
@@ -182,6 +192,7 @@ class HarnessProposalStore:
                     metadata=normalized_proposal.metadata,
                     claim_fingerprint=normalized_proposal.claim_fingerprint,
                     evidence_grade=normalized_proposal.evidence_grade,
+                    source_provenance=normalized_proposal.source_provenance,
                     decision_reason=None,
                     decided_at=None,
                     created_at=now,

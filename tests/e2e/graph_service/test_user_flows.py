@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
+import hashlib
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
 from artana_evidence_db.app import create_app
 from artana_evidence_db.tests import support as graph_service_support
@@ -28,6 +30,44 @@ _SUPPORTED_ASSESSMENT = {
 }
 
 
+def _source_evidence_payload(
+    *,
+    space_id: UUID,
+    document_id: UUID,
+    source_text: str,
+) -> dict[str, object]:
+    content_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    return {
+        "upstream": {
+            "service": "artana_evidence_api",
+            "research_space_id": str(space_id),
+            "document_id": str(document_id),
+            "attested_at": datetime.now(UTC).isoformat(),
+        },
+        "identity": {
+            "source_kind": "pubmed",
+            "authoritative_identifier": "PMID:12345678",
+            "canonical_url": "https://pubmed.ncbi.nlm.nih.gov/12345678/",
+            "retrieved_at": datetime.now(UTC).isoformat(),
+            "content_sha256": content_hash,
+            "pmid": "12345678",
+        },
+        "canonical_text": source_text,
+        "locator": {
+            "source_content_sha256": content_hash,
+            "char_start": 0,
+            "char_end": len(source_text),
+            "exact_quote": source_text,
+            "quote_sha256": content_hash,
+        },
+    }
+
+
+def _enable_source_attestation(headers: dict[str, str]) -> None:
+    headers["X-TEST-GRAPH-SERVICE-CAPABILITIES"] = "source_provenance_submit"
+    headers["X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"] = "artana_evidence_api"
+
+
 def test_owner_entity_workflow_and_admin_relation_canonicalization(
     graph_client,
 ) -> None:
@@ -35,6 +75,7 @@ def test_owner_entity_workflow_and_admin_relation_canonicalization(
     owner_headers = fixture["headers"]
     space_id = fixture["space_id"]
     admin = admin_headers()
+    _enable_source_attestation(admin)
     suffix = uuid4().hex[:8]
     relation_type_id = f"GS_E2E_REL_{suffix}".upper()
     relation_synonym = f"modulates_{suffix.lower()}"
@@ -121,6 +162,8 @@ def test_owner_entity_workflow_and_admin_relation_canonicalization(
     )
     assert constraint_response.status_code == 201, constraint_response.text
 
+    source_text = "Synthetic end-to-end evidence directly supports the relation."
+    source_document_id = uuid4()
     relation_response = graph_client.post(
         f"/v1/spaces/{space_id}/relations",
         headers=admin,
@@ -129,8 +172,16 @@ def test_owner_entity_workflow_and_admin_relation_canonicalization(
             "target_id": target_entity["id"],
             "relation_type": relation_synonym,
             "assessment": _SUPPORTED_ASSESSMENT,
-            "evidence_summary": "Synthetic end-to-end evidence summary.",
-            "source_document_ref": "doi:10.0000/graph-e2e",
+            "evidence_summary": source_text,
+            "evidence_sentence": source_text,
+            "evidence_sentence_source": "verbatim_span",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=space_id,
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
         },
     )
     assert relation_response.status_code == 201, relation_response.text
@@ -155,6 +206,7 @@ def test_graph_service_write_and_read_workflow_end_to_end() -> None:
     try:
         with TestClient(create_app()) as client:
             graph_admin_headers = build_graph_admin_headers()
+            _enable_source_attestation(graph_admin_headers)
             owner_id = uuid4()
             member_id = uuid4()
             space_id = uuid4()
@@ -217,6 +269,8 @@ def test_graph_service_write_and_read_workflow_end_to_end() -> None:
             ), target_entity_response.text
             target_entity_id = target_entity_response.json()["entity"]["id"]
 
+            source_text = "MED13 is associated with developmental delay."
+            source_document_id = uuid4()
             create_relation_response = client.post(
                 f"/v1/spaces/{space_id}/relations",
                 headers=graph_admin_headers,
@@ -226,10 +280,17 @@ def test_graph_service_write_and_read_workflow_end_to_end() -> None:
                     "target_id": target_entity_id,
                     "assessment": _SUPPORTED_ASSESSMENT,
                     "evidence_summary": "Curated e2e relation.",
-                    "evidence_sentence": "MED13 is associated with developmental delay.",
+                    "evidence_sentence": source_text,
                     "evidence_sentence_source": "verbatim_span",
                     "evidence_sentence_confidence": "high",
                     "evidence_tier": "LITERATURE",
+                    "source_document_id": str(source_document_id),
+                    "source_document_ref": "PMID:12345678",
+                    "source_evidence": _source_evidence_payload(
+                        space_id=space_id,
+                        document_id=source_document_id,
+                        source_text=source_text,
+                    ),
                 },
             )
             assert (

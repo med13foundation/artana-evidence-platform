@@ -14,6 +14,9 @@ from artana_evidence_api.artifact_store import (
     HarnessArtifactStore,  # noqa: TC001
 )
 from artana_evidence_api.graph_client import GraphTransportBundle  # noqa: TC001
+from artana_evidence_api.graph_integration.source_provenance import (
+    load_proposal_source_document,
+)
 from artana_evidence_api.proposal_actions import (
     decide_proposal,
     promote_to_graph_claim,
@@ -43,6 +46,7 @@ from fastapi import HTTPException, status
 if TYPE_CHECKING:
     from artana_evidence_api.approval_store import HarnessApprovalRecord
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
+    from artana_evidence_api.document_store import HarnessDocumentStore
     from artana_evidence_api.proposal_store import (
         HarnessProposalRecord,
         HarnessProposalStore,
@@ -760,6 +764,7 @@ def resume_claim_curation_run(  # noqa: PLR0913
     run: HarnessRunRecord,
     approval_store: HarnessApprovalStore,
     proposal_store: HarnessProposalStore,
+    document_store: HarnessDocumentStore,
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     runtime: GraphHarnessKernelRuntime,
@@ -827,6 +832,10 @@ def resume_claim_curation_run(  # noqa: PLR0913
                     proposal=proposal,
                     request_metadata=action_metadata,
                     graph_api_gateway=graph_api_gateway,
+                    source_document=load_proposal_source_document(
+                        document_store=document_store,
+                        proposal=proposal,
+                    ),
                 )
                 updated_proposal = decide_proposal(
                     space_id=space_id,

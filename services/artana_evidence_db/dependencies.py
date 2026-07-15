@@ -46,6 +46,10 @@ from artana_evidence_db.kernel_services import (
 from artana_evidence_db.reasoning_path_service import (
     KernelReasoningPathInvalidationService,
 )
+from artana_evidence_db.source_provenance.eligibility import (
+    ClaimEvidenceEligibilityService,
+)
+from artana_evidence_db.source_provenance.service import SourceProvenanceService
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -290,6 +294,13 @@ def get_kernel_claim_evidence_service(
     )
 
 
+def get_source_provenance_service(
+    session: Session = Depends(get_session),
+) -> SourceProvenanceService:
+    """Return source handoff verification and snapshot service."""
+    return SourceProvenanceService(session)
+
+
 def get_kernel_reasoning_path_service(
     session: Session = Depends(get_session),
 ) -> KernelReasoningPathService:
@@ -425,6 +436,7 @@ def get_kernel_relation_projection_materialization_service(
         relation_claim_repo=SqlAlchemyKernelRelationClaimRepository(session),
         claim_participant_repo=SqlAlchemyKernelClaimParticipantRepository(session),
         claim_evidence_repo=SqlAlchemyKernelClaimEvidenceRepository(session),
+        claim_evidence_eligibility_service=ClaimEvidenceEligibilityService(session),
         entity_repo=build_entity_repository(session),
         dictionary_repo=build_dictionary_repository(
             session,
@@ -537,6 +549,7 @@ __all__ = [
     "get_kernel_relation_service",
     "get_space_access_port",
     "get_provenance_service",
+    "get_source_provenance_service",
     "require_space_role",
     "verify_space_membership",
 ]

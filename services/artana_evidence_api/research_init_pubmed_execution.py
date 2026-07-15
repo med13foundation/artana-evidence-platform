@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Mapping, Sequence
-from typing import Protocol
+from typing import Literal, Protocol
 from uuid import UUID
 
 from artana_evidence_api.request_context import build_request_id_headers
@@ -84,6 +84,7 @@ def pubmed_document_source_capture(
             "doi": candidate.doi,
             "pmc_id": candidate.pmc_id,
             "publication_types": list(candidate.publication_types),
+            "content_source_kind": candidate.content_source_kind,
         },
         result_count=1,
         provenance=compact_provenance(
@@ -92,6 +93,7 @@ def pubmed_document_source_capture(
             review_label=review.label,
             review_confidence=review.confidence,
             sha256=sha256,
+            content_source_kind=candidate.content_source_kind,
         ),
     )
 
@@ -289,6 +291,7 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
                     parts.append(f"DOI: {doi_value}")
                 text = "\n".join(parts)
 
+            content_source_kind: Literal["pubmed", "pmc"] = "pubmed"
             pmc_id = preview.get("pmc_id")
             if isinstance(pmc_id, str) and pmc_id.strip() != "":
                 try:
@@ -303,6 +306,7 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
                     )
                     if ft_result.found and ft_result.content_text:
                         text = f"{title_text}\n\n{ft_result.content_text}"
+                        content_source_kind = "pmc"
                 except Exception as full_text_exc:  # noqa: BLE001
                     local_errors.append(
                         "PMC full-text fetch failed for "
@@ -327,6 +331,7 @@ async def execute_pubmed_query(  # noqa: PLR0912, PLR0915
                         *publication_types_by_pmid.get(pmid or "", []),
                     ],
                 ),
+                content_source_kind=content_source_kind,
             )
             key = _candidate_key(
                 pmid=candidate.pmid,

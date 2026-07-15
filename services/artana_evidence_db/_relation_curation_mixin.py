@@ -9,7 +9,6 @@ from uuid import UUID
 
 from artana_evidence_db._relation_repository_shared import (
     _as_uuid,
-    _claim_source_family_key,
     _clamp_confidence,
     _diminishing_confidence,
     _normalize_evidence_tier,
@@ -24,6 +23,10 @@ from artana_evidence_db.kernel_claim_models import (
 from artana_evidence_db.kernel_relation_models import (
     RelationEvidenceModel,
     RelationModel,
+)
+from artana_evidence_db.source_provenance.eligibility import (
+    ClaimEvidenceEligibilityError,
+    ClaimEvidenceEligibilityService,
 )
 from sqlalchemy import delete as sa_delete
 from sqlalchemy import select
@@ -52,6 +55,17 @@ class _KernelRelationCurationMixin:
         if relation_model is None:
             msg = f"Relation {relation_id} not found"
             raise ValueError(msg)
+        if curation_status == "APPROVED" and not ClaimEvidenceEligibilityService(
+            self._session,
+        ).relation_has_eligible_evidence(
+            relation_id=relation_model.id,
+            research_space_id=relation_model.research_space_id,
+        ):
+            msg = (
+                "Relation approval requires server-verified immutable source "
+                "snapshot evidence."
+            )
+            raise ClaimEvidenceEligibilityError(msg)
         relation_model.curation_status = curation_status
         relation_model.reviewed_by = _as_uuid(reviewed_by)
         relation_model.reviewed_at = reviewed_at or datetime.now(UTC)
@@ -132,6 +146,17 @@ class _KernelRelationCurationMixin:
                 ),
             ).all(),
         )
+        eligible_snapshot_ids = ClaimEvidenceEligibilityService(
+            self._session,
+        ).eligible_snapshot_ids_for_relation(
+            relation_id=relation_id,
+            research_space_id=relation_model.research_space_id,
+        )
+        evidences = [
+            evidence
+            for evidence in evidences
+            if evidence.source_snapshot_id in eligible_snapshot_ids
+        ]
         if not evidences:
             relation_model.aggregate_confidence = 0.0
             relation_model.source_count = 0
@@ -159,6 +184,8 @@ class _KernelRelationCurationMixin:
 
             # Determine source family key for collapsing
             family_key = _source_family_key(evidence)
+            if family_key is None:
+                continue
             source_families.add(family_key)
 
             # Computational evidence does not contribute to support confidence
@@ -226,15 +253,16 @@ class _KernelRelationCurationMixin:
         for claim in refute_claims:
             claim_evidences = evidence_by_claim_id.get(claim.id, [])
             if not claim_evidences:
-                family_key = _claim_source_family_key(claim)
-                existing = refute_units.get(family_key, 0.0)
-                refute_units[family_key] = max(
-                    existing,
-                    _clamp_confidence(float(claim.confidence)),
-                )
                 continue
             for evidence in claim_evidences:
+                if not ClaimEvidenceEligibilityService(self._session).evaluate(
+                    evidence,
+                    research_space_id=relation_model.research_space_id,
+                ).eligible:
+                    continue
                 family_key = _source_family_key(evidence)
+                if family_key is None:
+                    continue
                 existing = refute_units.get(family_key, 0.0)
                 refute_units[family_key] = max(
                     existing,

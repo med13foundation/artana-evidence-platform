@@ -51,6 +51,7 @@ from artana_evidence_api.space_sync_types import (
 from artana_evidence_api.sqlalchemy_unit_of_work import commit_or_flush
 from artana_evidence_api.types.common import json_object_or_empty
 from artana_evidence_api.types.evidence_grade import normalize_evidence_grade
+from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -326,7 +327,22 @@ def _proposal_record_from_model(model: HarnessProposalModel) -> HarnessProposalR
         created_at=model.created_at,
         updated_at=model.updated_at,
         claim_fingerprint=getattr(model, "claim_fingerprint", None),
+        source_provenance=_source_provenance_from_payload(
+            getattr(model, "source_provenance_payload", None),
+        ),
     )
+
+
+def _source_provenance_from_payload(payload: object) -> ClaimSourceProvenance | None:
+    if not isinstance(payload, dict):
+        return None
+    try:
+        return ClaimSourceProvenance.model_validate(payload)
+    except ValueError:
+        return ClaimSourceProvenance(
+            status="invalid",
+            reason_code="malformed_persisted_source_provenance",
+        )
 
 
 def _review_item_record_from_model(
@@ -716,6 +732,16 @@ class SqlAlchemyHarnessProposalStore(HarnessProposalStore, _SessionBackedStore):
                 evidence_bundle_payload=normalized_proposal.evidence_bundle,
                 payload=normalized_proposal.payload,
                 metadata_payload=normalized_proposal.metadata,
+                source_provenance_payload=(
+                    normalized_proposal.source_provenance.model_dump(mode="json")
+                    if normalized_proposal.source_provenance is not None
+                    else None
+                ),
+                source_provenance_status=(
+                    normalized_proposal.source_provenance.status
+                    if normalized_proposal.source_provenance is not None
+                    else "unverified"
+                ),
                 evidence_grade=normalized_proposal.evidence_grade,
                 claim_fingerprint=normalized_proposal.claim_fingerprint,
                 decision_reason=None,

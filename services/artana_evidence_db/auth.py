@@ -44,6 +44,7 @@ class GraphServiceUser(User):
     is_graph_admin: bool = False
     graph_ai_principal: str | None = None
     graph_service_capabilities: tuple[str, ...] = ()
+    graph_source_attestation_service: str | None = None
 
 
 def _parse_graph_admin_flag(value: object) -> bool:
@@ -157,6 +158,9 @@ def _build_user_from_test_headers(request: Request) -> GraphServiceUser | None:
             )
             if capability.strip()
         ),
+        graph_source_attestation_service=_normalize_optional_text(
+            request.headers.get("X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"),
+        ),
     )
 
 
@@ -196,6 +200,9 @@ async def get_current_user(
     email = f"{user_id}@graph-service.example.com"
     graph_ai_principal = payload.get("graph_ai_principal")
     graph_service_capabilities = payload.get("graph_service_capabilities")
+    graph_source_attestation_service = payload.get(
+        "graph_source_attestation_service",
+    )
     return GraphServiceUser(
         id=user_id,
         email=email,
@@ -211,6 +218,12 @@ async def get_current_user(
             else None
         ),
         graph_service_capabilities=_normalize_capabilities(graph_service_capabilities),
+        graph_source_attestation_service=(
+            graph_source_attestation_service.strip()
+            if isinstance(graph_source_attestation_service, str)
+            and graph_source_attestation_service.strip()
+            else None
+        ),
     )
 
 
@@ -249,6 +262,15 @@ def graph_service_capability_for_user(
     if normalized == "":
         return False
     return normalized in current_user.graph_service_capabilities
+
+
+def graph_source_attestation_service_for_user(
+    current_user: User,
+) -> str | None:
+    """Return the authenticated upstream source-attestation service, if any."""
+    if not isinstance(current_user, GraphServiceUser):
+        return None
+    return current_user.graph_source_attestation_service
 
 
 def to_graph_principal(current_user: User) -> GraphPrincipal:
@@ -303,6 +325,7 @@ __all__ = [
     "get_current_user",
     "graph_ai_principal_for_user",
     "graph_service_capability_for_user",
+    "graph_source_attestation_service_for_user",
     "is_graph_service_admin",
     "security",
     "to_graph_access_role",

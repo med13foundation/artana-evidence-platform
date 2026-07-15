@@ -36,6 +36,7 @@ from artana_evidence_api.review_item_store import (
 )
 from artana_evidence_api.run_registry import HarnessRunRegistry  # noqa: TC001
 from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.source_provenance import ClaimSourceProvenance
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -124,6 +125,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
     metadata: JSONObject
     evidence_grade: str | None
     evidence_bundle: list[JSONObject]
+    source_provenance: ClaimSourceProvenance | None
     decision_reason: str | None
     decided_at: str | None
     created_at: str
@@ -158,6 +160,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             metadata=proposal.metadata,
             evidence_grade=proposal.evidence_grade,
             evidence_bundle=proposal.evidence_bundle,
+            source_provenance=proposal.source_provenance,
             decision_reason=proposal.decision_reason,
             decided_at=(
                 proposal.decided_at.isoformat()
@@ -195,6 +198,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             metadata=review_item.metadata,
             evidence_grade=review_item.evidence_grade,
             evidence_bundle=review_item.evidence_bundle,
+            source_provenance=None,
             decision_reason=review_item.decision_reason,
             decided_at=(
                 review_item.decided_at.isoformat()
@@ -254,6 +258,7 @@ class HarnessReviewQueueItemResponse(BaseModel):
             metadata=approval.metadata,
             evidence_grade=None,
             evidence_bundle=[],
+            source_provenance=None,
             decision_reason=approval.decision_reason,
             decided_at=decided_at,
             created_at=approval.created_at.replace(tzinfo=UTC).isoformat(),

@@ -12,6 +12,9 @@ from artana_evidence_db.schema_support import (
     qualify_graph_foreign_key_target,
     qualify_graph_table_name,
 )
+from artana_evidence_db.source_provenance import (
+    snapshot_model as _source_evidence_snapshot_model,
+)
 from sqlalchemy import (
     Column,
     Float,
@@ -30,6 +33,9 @@ from sqlalchemy.orm import relationship
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Mapped
+
+del _source_evidence_snapshot_model
+
 _relations_table = Base.metadata.tables.get(qualify_graph_table_name("relations"))
 if _relations_table is None:
     _relations_table = Table(
@@ -297,6 +303,16 @@ if _relation_evidence_table is None:
             doc="Graph-owned external document reference without platform identity coupling",
         ),
         Column(
+            "source_snapshot_id",
+            PGUUID(as_uuid=True),
+            ForeignKey(
+                qualify_graph_foreign_key_target("source_evidence_snapshots.id"),
+                ondelete="RESTRICT",
+            ),
+            nullable=True,
+            doc="Verified graph-owned source snapshot used for source counting",
+        ),
+        Column(
             "agent_run_id",
             String(255),
             nullable=True,
@@ -312,6 +328,7 @@ if _relation_evidence_table is None:
         Index("idx_relation_evidence_provenance", "provenance_id"),
         Index("idx_relation_evidence_tier", "evidence_tier"),
         Index("idx_relation_evidence_source_document_ref", "source_document_ref"),
+        Index("idx_relation_evidence_source_snapshot_id", "source_snapshot_id"),
         **graph_table_options(
             comment="Per-source evidence supporting canonical relation edges",
         ),
@@ -381,6 +398,7 @@ class GraphRelationEvidenceModel(Base):
         provenance_id: Mapped[UUID | None]
         source_document_id: Mapped[UUID | None]
         source_document_ref: Mapped[str | None]
+        source_snapshot_id: Mapped[UUID | None]
         agent_run_id: Mapped[str | None]
         created_at: Mapped[datetime]
 
@@ -388,6 +406,10 @@ class GraphRelationEvidenceModel(Base):
         "artana_evidence_db.kernel_relation_models.GraphRelationModel",
         back_populates="evidences",
         overlaps="evidences,relation",
+    )
+    source_snapshot = relationship(
+        "artana_evidence_db.source_provenance.snapshot_model.SourceEvidenceSnapshotModel",
+        lazy="selectin",
     )
 
 

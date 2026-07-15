@@ -72,6 +72,9 @@ from artana_evidence_db.source_document_model import (
     EnrichmentStatusEnum,
     SourceDocumentModel,
 )
+from artana_evidence_db.source_provenance.snapshot_model import (
+    SourceEvidenceSnapshotModel,
+)
 from artana_evidence_db.space_models import (
     GraphSpaceMembershipModel,
     GraphSpaceMembershipRoleEnum,
@@ -114,6 +117,16 @@ def test_claim_models_use_local_tables() -> None:
     assert ClaimParticipantModel.__table__.name == "claim_participants"
     assert RelationClaimModel.__table__.name == "relation_claims"
     assert RelationProjectionSourceModel.__table__.name == "relation_projection_sources"
+
+
+def test_graph_metadata_resolves_source_snapshot_foreign_keys() -> None:
+    source_snapshot_foreign_key = next(
+        foreign_key
+        for foreign_key in ClaimEvidenceModel.__table__.foreign_keys
+        if foreign_key.parent.name == "source_snapshot_id"
+    )
+
+    assert source_snapshot_foreign_key.column is SourceEvidenceSnapshotModel.__table__.c.id
 
 
 def test_concept_models_use_local_tables() -> None:

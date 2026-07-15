@@ -190,6 +190,10 @@ from artana_evidence_db.graph_api_schemas.workflow_schemas import (
     OperatingModeResponse,
     ValidationExplanationRequest,
 )
+from artana_evidence_db.source_provenance.models import (
+    ExactEvidenceLocator,
+    SourceIdentity,
+)
 
 __all__ = [
     "AIDecisionListResponse",
@@ -232,6 +236,7 @@ __all__ = [
     "DictionaryChangelogResponse",
     "DictionaryDomainContextListResponse",
     "DictionaryDomainContextResponse",
+    "ExactEvidenceLocator",
     "DictionaryEntityTypeCreateRequest",
     "DictionaryEntityTypeValidationRequest",
     "DictionaryEntityTypeListResponse",
@@ -338,6 +343,7 @@ __all__ = [
     "OperatingModeCapabilitiesResponse",
     "OperatingModeRequest",
     "OperatingModeResponse",
+    "SourceIdentity",
     "RelationConstraintListResponse",
     "RelationConstraintResponse",
     "TransformRegistryListResponse",

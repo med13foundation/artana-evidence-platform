@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Protocol
+from uuid import UUID
 
 from artana_evidence_db.common_types import JSONObject
 from artana_evidence_db.graph_core_models import (
@@ -19,7 +20,6 @@ from artana_evidence_db.relation_projection_materialization_support import (
     ProjectionEndpoints,
     RelationProjectionMaterializationError,
     RelationProjectionMaterializationResult,
-    backfill_claim_evidence_from_relation_cache,
     claim_evidence_provenance_id,
     claim_evidence_summary,
     claim_evidence_tier,
@@ -52,11 +52,7 @@ def _compute_canonicalization_fingerprint(
 
 
 if TYPE_CHECKING:
-    from artana_evidence_db.claim_evidence_models import (
-        ClaimEvidenceSentenceConfidence,
-        ClaimEvidenceSentenceSource,
-        KernelClaimEvidence,
-    )
+    from artana_evidence_db.claim_evidence_models import KernelClaimEvidence
     from artana_evidence_db.graph_core_models import KernelEntity, KernelRelation
     from artana_evidence_db.kernel_domain_models import (
         DictionaryRelationType,
@@ -165,24 +161,25 @@ class ClaimParticipantRepositoryLike(Protocol):
 class ClaimEvidenceRepositoryLike(Protocol):
     """Minimal claim-evidence repository surface needed by projection materialization."""
 
-    def create(  # noqa: PLR0913
+    def find_by_claim_id(self, claim_id: str) -> list[KernelClaimEvidence]: ...
+
+
+class ClaimEvidenceEligibilityServiceLike(Protocol):
+    """Persisted evidence eligibility required for canonical projections."""
+
+    def eligible_evidence_ids_for_claim(
         self,
         *,
-        claim_id: str,
-        source_document_id: str | None,
-        agent_run_id: str | None,
-        sentence: str | None,
-        sentence_source: ClaimEvidenceSentenceSource | None,
-        sentence_confidence: ClaimEvidenceSentenceConfidence | None,
-        sentence_rationale: str | None,
-        figure_reference: str | None,
-        table_reference: str | None,
-        confidence: float,
-        source_document_ref: str | None = None,
-        metadata: JSONObject | None = None,
-    ) -> KernelClaimEvidence: ...
+        claim_id: UUID,
+        research_space_id: UUID,
+    ) -> set[UUID]: ...
 
-    def find_by_claim_id(self, claim_id: str) -> list[KernelClaimEvidence]: ...
+    def claim_has_eligible_evidence(
+        self,
+        *,
+        claim_id: UUID,
+        research_space_id: UUID,
+    ) -> bool: ...
 
 
 class EntityRepositoryLike(Protocol):
@@ -276,6 +273,7 @@ class KernelRelationProjectionMaterializationService:
         relation_claim_repo: RelationClaimRepositoryLike,
         claim_participant_repo: ClaimParticipantRepositoryLike,
         claim_evidence_repo: ClaimEvidenceRepositoryLike,
+        claim_evidence_eligibility_service: ClaimEvidenceEligibilityServiceLike,
         entity_repo: EntityRepositoryLike,
         dictionary_repo: DictionaryRepositoryLike,
         relation_projection_repo: RelationProjectionSourceRepositoryLike,
@@ -286,6 +284,7 @@ class KernelRelationProjectionMaterializationService:
         self._claims = relation_claim_repo
         self._participants = claim_participant_repo
         self._claim_evidence = claim_evidence_repo
+        self._claim_evidence_eligibility = claim_evidence_eligibility_service
         self._entities = entity_repo
         self._dictionary = dictionary_repo
         self._projection_sources = relation_projection_repo
@@ -309,7 +308,10 @@ class KernelRelationProjectionMaterializationService:
             claim=claim,
             research_space_id=research_space_id,
         )
-        claim_evidences = self._claim_evidence.find_by_claim_id(claim_id)
+        claim_evidences = self._eligible_claim_evidences(
+            claim_id=claim_id,
+            research_space_id=research_space_id,
+        )
         self._assert_projection_evidence_policy(
             endpoints=endpoints,
             claim_evidences=claim_evidences,
@@ -450,11 +452,6 @@ class KernelRelationProjectionMaterializationService:
         participants_by_claim_id = self._participants.find_by_claim_ids(
             [str(row.claim_id) for row in projection_rows],
         )
-        current_evidence = self._relations.list_evidence_for_relation(
-            research_space_id=research_space_id,
-            relation_id=relation_id,
-            claim_backed_only=False,
-        )
         valid_sources: list[tuple[str, KernelRelationClaim, ProjectionEndpoints]] = []
         pruned_claim_ids: list[str] = []
         expected_signature: tuple[str, str, str, str, str] | None = None
@@ -466,6 +463,12 @@ class KernelRelationProjectionMaterializationService:
                 pruned_claim_ids.append(claim_id)
                 continue
             if not is_active_support_claim(claim):
+                pruned_claim_ids.append(claim_id)
+                continue
+            if not self._claim_evidence_eligibility.claim_has_eligible_evidence(
+                claim_id=UUID(claim_id),
+                research_space_id=UUID(research_space_id),
+            ):
                 pruned_claim_ids.append(claim_id)
                 continue
             try:
@@ -480,6 +483,7 @@ class KernelRelationProjectionMaterializationService:
             if not self._claim_satisfies_projection_evidence_policy(
                 endpoints=endpoints,
                 claim_id=claim_id,
+                research_space_id=research_space_id,
             ):
                 pruned_claim_ids.append(claim_id)
                 continue
@@ -528,16 +532,6 @@ class KernelRelationProjectionMaterializationService:
                 return result
             return RelationProjectionMaterializationResult(relation=None)
 
-        if len(valid_sources) == 1 and not self._claim_evidence.find_by_claim_id(
-            valid_sources[0][0],
-        ):
-            backfill_claim_evidence_from_relation_cache(
-                claim_id=valid_sources[0][0],
-                claim=valid_sources[0][1],
-                current_evidence=current_evidence,
-                claim_evidence_repo=self._claim_evidence,
-            )
-
         endpoints = valid_sources[0][2]
         first_claim_id = valid_sources[0][0]
         rebuild_participants = participants_by_claim_id.get(first_claim_id, [])
@@ -583,9 +577,13 @@ class KernelRelationProjectionMaterializationService:
                         provenance_id=claim_evidence_provenance_id(evidence),
                         source_document_id=evidence.source_document_id,
                         source_document_ref=evidence.source_document_ref,
+                        source_snapshot_id=evidence.source_snapshot_id,
                         agent_run_id=evidence.agent_run_id or claim.agent_run_id,
                     )
-                    for evidence in self._claim_evidence.find_by_claim_id(claim_id)
+                    for evidence in self._eligible_claim_evidences(
+                        claim_id=claim_id,
+                        research_space_id=research_space_id,
+                    )
                 ],
             )
         relation = self._relations.replace_derived_evidence_cache(
@@ -832,20 +830,47 @@ class KernelRelationProjectionMaterializationService:
             msg = "Claim projection requires supporting claim evidence."
             raise RelationProjectionMaterializationError(msg)
 
+    def _eligible_claim_evidences(
+        self,
+        *,
+        claim_id: str,
+        research_space_id: str,
+    ) -> list[KernelClaimEvidence]:
+        eligible_ids = (
+            self._claim_evidence_eligibility.eligible_evidence_ids_for_claim(
+                claim_id=UUID(claim_id),
+                research_space_id=UUID(research_space_id),
+            )
+        )
+        if not eligible_ids:
+            msg = (
+                "Claim projection requires server-verified immutable source "
+                "snapshot evidence."
+            )
+            raise RelationProjectionMaterializationError(msg)
+        return [
+            evidence
+            for evidence in self._claim_evidence.find_by_claim_id(claim_id)
+            if evidence.id in eligible_ids
+        ]
+
     def _claim_satisfies_projection_evidence_policy(
         self,
         *,
         endpoints: ProjectionEndpoints,
         claim_id: str,
+        research_space_id: str,
     ) -> bool:
         constraint = self._get_promotable_relation_constraint(
             source_type=endpoints.source_type,
             relation_type=endpoints.relation_type,
             target_type=endpoints.target_type,
         )
-        if not constraint.requires_evidence:
-            return True
-        return bool(self._claim_evidence.find_by_claim_id(claim_id))
+        del constraint
+        return self._claim_evidence_eligibility.claim_has_eligible_evidence(
+            claim_id=UUID(claim_id),
+            research_space_id=UUID(research_space_id),
+        )
 
     def _dispatch_projection_change(
         self,

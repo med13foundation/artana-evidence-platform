@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid4
 
 from artana_evidence_db._relation_repository_shared import (
-    _claim_source_family_key,
     _clamp_confidence,
     _diminishing_confidence,
     _source_family_key,
@@ -25,6 +24,9 @@ from artana_evidence_db.relation_claim_models import (
     RelationClaimPolarity,
     RelationClaimStatus,
     RelationClaimValidationState,
+)
+from artana_evidence_db.source_provenance.eligibility import (
+    ClaimEvidenceEligibilityService,
 )
 from sqlalchemy import false, func, select
 
@@ -451,14 +453,16 @@ class SqlAlchemyKernelRelationClaimRepository:
         for claim in active_claims:
             claim_evidences = evidence_by_claim_id.get(claim.id, [])
             if not claim_evidences:
-                family_key = _claim_source_family_key(claim)
-                units[family_key] = max(
-                    units.get(family_key, 0.0),
-                    _clamp_confidence(float(claim.confidence)),
-                )
                 continue
             for evidence in claim_evidences:
+                if not ClaimEvidenceEligibilityService(self._session).evaluate(
+                    evidence,
+                    research_space_id=claim.research_space_id,
+                ).eligible:
+                    continue
                 family_key = _source_family_key(evidence)
+                if family_key is None:
+                    continue
                 units[family_key] = max(
                     units.get(family_key, 0.0),
                     _clamp_confidence(float(evidence.confidence)),

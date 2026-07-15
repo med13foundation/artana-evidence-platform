@@ -18,6 +18,7 @@ from artana_evidence_api.dependencies import (
     get_research_space_store,
     get_run_registry,
 )
+from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.proposal_store import (
     HarnessProposalDraft,
     HarnessProposalStore,
@@ -40,6 +41,7 @@ _TEST_USER_EMAIL: Final[str] = "graph-harness-proposals@example.com"
 @dataclass(frozen=True, slots=True)
 class _FakeGraphClaimResponse:
     id: str
+    linked_relation_id: UUID | None = None
     claim_status: str = "OPEN"
     validation_state: str = "ALLOWED"
     persistability: str = "PERSISTABLE"
@@ -75,6 +77,7 @@ class _FakeGraphRelationResponse:
 class _StubExecutionServices:
     def __init__(self) -> None:
         self.runtime = FakeKernelRuntime()
+        self.document_store = HarnessDocumentStore()
 
 
 class _StubGraphApiGateway:
@@ -556,7 +559,8 @@ def test_promote_proposal_accepts_omitted_body_and_preserves_explicit_body() -> 
     assert body_response.status_code == 200
     assert body_response.json()["status"] == "promoted"
     assert body_response.json()["decision_reason"] == "Promote this proposal"
-    assert len(graph_api_gateway.created_relation_requests) == 2
+    assert len(graph_api_gateway.created_relation_requests) == 0
+    assert len(graph_api_gateway.created_claim_requests) == 2
 
 
 def test_reject_proposal_accepts_omitted_body_and_preserves_explicit_body() -> None:

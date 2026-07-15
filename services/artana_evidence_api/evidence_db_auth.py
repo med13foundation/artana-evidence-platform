@@ -13,6 +13,8 @@ _DEFAULT_GRAPH_SERVICE_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 _JWT_ALGORITHM = "HS256"
 _DEFAULT_GRAPH_JWT_ISSUER = "graph-biomedical"
 _PRODUCTION_LIKE_ENVS = frozenset({"production", "staging"})
+_SOURCE_PROVENANCE_CAPABILITY = "source_provenance_submit"
+_SOURCE_ATTESTATION_SERVICE = "artana_evidence_api"
 
 
 def _environment() -> str:
@@ -84,11 +86,16 @@ def build_graph_service_bearer_token_for_service(
         "graph_admin": graph_admin,
     }
     if graph_service_capabilities:
-        payload["graph_service_capabilities"] = [
-            capability
+        normalized_capabilities = [
+            capability.strip()
             for capability in graph_service_capabilities
             if isinstance(capability, str) and capability.strip()
         ]
+        payload["graph_service_capabilities"] = normalized_capabilities
+        if _SOURCE_PROVENANCE_CAPABILITY in normalized_capabilities:
+            payload["graph_source_attestation_service"] = (
+                _SOURCE_ATTESTATION_SERVICE
+            )
     resolved_ai_principal = (
         graph_ai_principal.strip()
         if isinstance(graph_ai_principal, str) and graph_ai_principal.strip()

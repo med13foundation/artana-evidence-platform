@@ -12,6 +12,9 @@ from artana_evidence_db.schema_support import (
     qualify_graph_foreign_key_target,
     qualify_graph_table_name,
 )
+from artana_evidence_db.source_provenance import (
+    snapshot_model as _source_evidence_snapshot_model,
+)
 from sqlalchemy import (
     CheckConstraint,
     Column,
@@ -28,10 +31,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import relationship
 
 if TYPE_CHECKING:
     from artana_evidence_db.common_types import JSONObject
     from sqlalchemy.orm import Mapped
+
+del _source_evidence_snapshot_model
+
 _claim_evidence_table = Base.metadata.tables.get(
     qualify_graph_table_name("claim_evidence"),
 )
@@ -66,6 +73,15 @@ if _claim_evidence_table is None:
             doc="Graph-owned external document reference without platform identity coupling",
         ),
         Column(
+            "source_snapshot_id",
+            PGUUID(as_uuid=True),
+            ForeignKey(
+                qualify_graph_foreign_key_target("source_evidence_snapshots.id"),
+                ondelete="RESTRICT",
+            ),
+            nullable=True,
+        ),
+        Column(
             "agent_run_id",
             String(255),
             nullable=True,
@@ -96,6 +112,19 @@ if _claim_evidence_table is None:
             nullable=False,
             server_default="{}",
         ),
+        Column("evidence_locator_payload", JSONB, nullable=True),
+        Column(
+            "provenance_status",
+            String(32),
+            nullable=False,
+            server_default="LEGACY_UNVERIFIED",
+        ),
+        Column(
+            "provenance_reason_codes",
+            JSONB,
+            nullable=False,
+            server_default='["legacy_evidence_without_typed_provenance"]',
+        ),
         Column(
             "created_at",
             TIMESTAMP(timezone=True),
@@ -105,6 +134,7 @@ if _claim_evidence_table is None:
         Index("idx_claim_evidence_claim_id", "claim_id"),
         Index("idx_claim_evidence_source_document_id", "source_document_id"),
         Index("idx_claim_evidence_source_document_ref", "source_document_ref"),
+        Index("idx_claim_evidence_source_snapshot_id", "source_snapshot_id"),
         Index("idx_claim_evidence_created_at", "created_at"),
         **graph_table_options(
             comment="Evidence rows supporting extracted relation claims",
@@ -465,6 +495,7 @@ class GraphClaimEvidenceModel(Base):
         claim_id: Mapped[UUID]
         source_document_id: Mapped[UUID | None]
         source_document_ref: Mapped[str | None]
+        source_snapshot_id: Mapped[UUID | None]
         agent_run_id: Mapped[str | None]
         sentence: Mapped[str | None]
         sentence_source: Mapped[str | None]
@@ -474,7 +505,15 @@ class GraphClaimEvidenceModel(Base):
         table_reference: Mapped[str | None]
         confidence: Mapped[float]
         metadata_payload: Mapped[JSONObject]
+        evidence_locator_payload: Mapped[JSONObject | None]
+        provenance_status: Mapped[str]
+        provenance_reason_codes: Mapped[list[str]]
         created_at: Mapped[datetime]
+
+    source_snapshot = relationship(
+        "artana_evidence_db.source_provenance.snapshot_model.SourceEvidenceSnapshotModel",
+        lazy="selectin",
+    )
 
 
 _claim_participants_table_model_table = require_table(_claim_participants_table)

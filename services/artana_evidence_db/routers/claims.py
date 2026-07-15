@@ -14,7 +14,11 @@ from artana_evidence_db._claim_relation_normalization import (
 from artana_evidence_db._claim_relation_normalization import (
     normalize_review_status,
 )
-from artana_evidence_db.auth import get_current_active_user
+from artana_evidence_db.auth import (
+    get_current_active_user,
+    graph_service_capability_for_user,
+    graph_source_attestation_service_for_user,
+)
 from artana_evidence_db.claim_metrics import increment_metric
 from artana_evidence_db.claim_router_normalization import (
     _CLAIM_VALIDATION_STATE_MAP,
@@ -41,6 +45,7 @@ from artana_evidence_db.dependencies import (
     get_kernel_entity_service,
     get_kernel_relation_claim_service,
     get_kernel_relation_projection_materialization_service,
+    get_source_provenance_service,
     get_space_access_port,
     require_space_role,
     verify_space_membership,
@@ -81,6 +86,14 @@ from artana_evidence_db.service_contracts import (
     KernelRelationConflictResponse,
 )
 from artana_evidence_db.source_document_model import SourceDocumentModel
+from artana_evidence_db.source_provenance.models import SourceIdentity
+from artana_evidence_db.source_provenance.service import (
+    SourceProvenanceService,
+    claim_evidence_provenance_status,
+)
+from artana_evidence_db.source_provenance.snapshot_repository import (
+    SqlAlchemySourceEvidenceSnapshotRepository,
+)
 from artana_evidence_db.space_membership import MembershipRole
 from artana_evidence_db.user_models import User
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
@@ -233,6 +246,9 @@ def create_claim(  # noqa: PLR0915
         get_kernel_claim_evidence_service,
     ),
     dictionary_service: DictionaryPort = Depends(get_dictionary_service),
+    source_provenance_service: SourceProvenanceService = Depends(
+        get_source_provenance_service,
+    ),
     session: Session = Depends(get_session),
 ) -> KernelRelationClaimResponse:
     require_space_role(
@@ -275,6 +291,8 @@ def create_claim(  # noqa: PLR0915
             (
                 request.evidence_summary,
                 request.evidence_sentence,
+                request.source_document_id,
+                request.source_evidence,
                 request.source_document_ref,
             ),
         )
@@ -383,10 +401,26 @@ def create_claim(  # noqa: PLR0915
             if request.ai_provenance is not None
             else None
         )
+        provenance_submission = source_provenance_service.verify_and_snapshot(
+            research_space_id=space_id,
+            source_document_id=request.source_document_id,
+            source_evidence=request.source_evidence,
+            source_attestation_capability=graph_service_capability_for_user(
+                current_user,
+                "source_provenance_submit",
+            ),
+            authenticated_attestation_service=(
+                graph_source_attestation_service_for_user(current_user)
+            ),
+        )
 
         claim = relation_claim_service.create_claim(
             research_space_id=str(space_id),
-            source_document_id=None,
+            source_document_id=(
+                str(request.source_document_id)
+                if request.source_document_id is not None
+                else None
+            ),
             source_document_ref=request.source_document_ref,
             source_ref=claim_source_ref,
             agent_run_id=request.agent_run_id,
@@ -439,10 +473,26 @@ def create_claim(  # noqa: PLR0915
         if has_evidence:
             claim_evidence_service.create_evidence(
                 claim_id=claim_id,
-                source_document_id=None,
+                source_document_id=(
+                    str(request.source_document_id)
+                    if request.source_document_id is not None
+                    else None
+                ),
                 source_document_ref=request.source_document_ref,
+                source_snapshot_id=(
+                    str(provenance_submission.snapshot.id)
+                    if provenance_submission.snapshot is not None
+                    else None
+                ),
                 agent_run_id=request.agent_run_id,
-                sentence=request.evidence_sentence,
+                sentence=(
+                    request.evidence_sentence
+                    or (
+                        request.source_evidence.locator.exact_quote
+                        if request.source_evidence is not None
+                        else None
+                    )
+                ),
                 sentence_source=_normalize_claim_evidence_sentence_source(
                     request.evidence_sentence_source,
                 ),
@@ -450,9 +500,28 @@ def create_claim(  # noqa: PLR0915
                     request.evidence_sentence_confidence,
                 ),
                 sentence_rationale=request.evidence_sentence_rationale,
-                figure_reference=None,
-                table_reference=None,
+                figure_reference=(
+                    request.source_evidence.locator.figure_reference
+                    if request.source_evidence is not None
+                    else None
+                ),
+                table_reference=(
+                    request.source_evidence.locator.table_reference
+                    if request.source_evidence is not None
+                    else None
+                ),
                 confidence=derived_confidence,
+                evidence_locator=(
+                    request.source_evidence.locator
+                    if request.source_evidence is not None
+                    else None
+                ),
+                provenance_status=claim_evidence_provenance_status(
+                    provenance_submission.verification,
+                ),
+                provenance_reason_codes=(
+                    provenance_submission.verification.reason_codes
+                ),
                 metadata={
                     "origin": "claim_api",
                     "evidence_summary": request.evidence_summary,
@@ -619,10 +688,19 @@ def list_claim_evidence(
             detail="Relation claim not found",
         )
     evidence_rows = claim_evidence_service.list_for_claim(str(claim_id))
+    snapshot_ids = {
+        evidence_row.source_snapshot_id
+        for evidence_row in evidence_rows
+        if evidence_row.source_snapshot_id is not None
+    }
+    source_snapshots_by_id = SqlAlchemySourceEvidenceSnapshotRepository(
+        session,
+    ).get_models_by_ids(snapshot_ids)
     source_document_ids = {
         str(evidence_row.source_document_id)
         for evidence_row in evidence_rows
         if evidence_row.source_document_id is not None
+        and evidence_row.source_snapshot_id is None
     }
     source_documents_by_id: dict[str, SourceDocumentModel] = {}
     if source_document_ids:
@@ -645,6 +723,15 @@ def list_claim_evidence(
         response_rows.append(
             KernelClaimEvidenceResponse.from_model(
                 evidence_row,
+                source_identity=(
+                    SourceIdentity.model_validate(
+                        source_snapshots_by_id[
+                            evidence_row.source_snapshot_id
+                        ].source_identity_payload,
+                    )
+                    if evidence_row.source_snapshot_id in source_snapshots_by_id
+                    else None
+                ),
                 paper_links=resolve_claim_evidence_paper_links(
                     source_document=source_document,
                     evidence_metadata=evidence_row.metadata_payload,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -65,6 +66,16 @@ from artana_evidence_db.source_document_model import (
     EnrichmentStatusEnum,
     SourceDocumentModel,
 )
+from artana_evidence_db.source_provenance.eligibility import (
+    ClaimEvidenceEligibilityService,
+)
+from artana_evidence_db.source_provenance.models import (
+    ExactEvidenceLocator,
+    SourceEvidenceHandoff,
+    SourceEvidenceUpstream,
+    SourceIdentity,
+)
+from artana_evidence_db.source_provenance.service import SourceProvenanceService
 from artana_evidence_db.space_models import (
     GraphSpaceMembershipModel,
     GraphSpaceMembershipRoleEnum,
@@ -104,6 +115,39 @@ _STRONG_ASSESSMENT = {
     "speculation_level": "DIRECT",
     "confidence_rationale": "Direct curated evidence strongly supports this AI decision.",
 }
+
+
+def _source_evidence_payload(
+    *,
+    space_id: UUID,
+    document_id: UUID,
+    source_text: str,
+) -> dict[str, object]:
+    source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    return {
+        "upstream": {
+            "service": "artana_evidence_api",
+            "research_space_id": str(space_id),
+            "document_id": str(document_id),
+            "attested_at": datetime.now(UTC).isoformat(),
+        },
+        "identity": {
+            "source_kind": "pubmed",
+            "authoritative_identifier": "PMID:12345678",
+            "canonical_url": "https://pubmed.ncbi.nlm.nih.gov/12345678/",
+            "retrieved_at": datetime.now(UTC).isoformat(),
+            "content_sha256": source_hash,
+            "pmid": "12345678",
+        },
+        "canonical_text": source_text,
+        "locator": {
+            "source_content_sha256": source_hash,
+            "char_start": 0,
+            "char_end": len(source_text),
+            "exact_quote": source_text,
+            "quote_sha256": source_hash,
+        },
+    }
 _DECISION_CONFIDENCE_ASSESSMENT = {
     "fact_assessment": _STRONG_ASSESSMENT,
     "validation_state": "VALID",
@@ -142,6 +186,7 @@ def _build_projection_materializer(
         relation_claim_repo=SqlAlchemyKernelRelationClaimRepository(session),
         claim_participant_repo=SqlAlchemyKernelClaimParticipantRepository(session),
         claim_evidence_repo=SqlAlchemyKernelClaimEvidenceRepository(session),
+        claim_evidence_eligibility_service=ClaimEvidenceEligibilityService(session),
         entity_repo=SqlAlchemyKernelEntityRepository(
             session,
             phi_encryption_service=None,
@@ -178,6 +223,40 @@ def _create_claim_backed_projection(
     source_document_id: UUID | None = None,
     source_document_ref: str | None = None,
 ) -> tuple[UUID, UUID]:
+    resolved_source_document_id = source_document_id or uuid4()
+    source_text = "MED13 is associated with developmental delay."
+    source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    locator = ExactEvidenceLocator(
+        source_content_sha256=source_hash,
+        char_start=0,
+        char_end=len(source_text),
+        exact_quote=source_text,
+        quote_sha256=source_hash,
+    )
+    provenance = SourceProvenanceService(session).verify_and_snapshot(
+        research_space_id=space_id,
+        source_document_id=resolved_source_document_id,
+        source_evidence=SourceEvidenceHandoff(
+            upstream=SourceEvidenceUpstream(
+                research_space_id=space_id,
+                document_id=resolved_source_document_id,
+                attested_at=datetime.now(UTC),
+            ),
+            identity=SourceIdentity(
+                source_kind="pubmed",
+                authoritative_identifier="PMID:12345678",
+                canonical_url="https://pubmed.ncbi.nlm.nih.gov/12345678/",
+                retrieved_at=datetime.now(UTC),
+                content_sha256=source_hash,
+                pmid="12345678",
+            ),
+            canonical_text=source_text,
+            locator=locator,
+        ),
+        source_attestation_capability=True,
+        authenticated_attestation_service="artana_evidence_api",
+    )
+    assert provenance.snapshot is not None
     claim_repo = SqlAlchemyKernelRelationClaimRepository(session)
     participant_repo = SqlAlchemyKernelClaimParticipantRepository(session)
     claim_evidence_repo = SqlAlchemyKernelClaimEvidenceRepository(session)
@@ -186,7 +265,7 @@ def _create_claim_backed_projection(
     claim = claim_repo.create(
         research_space_id=str(space_id),
         source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
+            str(resolved_source_document_id)
         ),
         source_document_ref=source_document_ref,
         agent_run_id="graph-service-test",
@@ -228,9 +307,10 @@ def _create_claim_backed_projection(
     claim_evidence_repo.create(
         claim_id=claim_id,
         source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
+            str(resolved_source_document_id)
         ),
         source_document_ref=source_document_ref,
+        source_snapshot_id=str(provenance.snapshot.id),
         agent_run_id="graph-service-test",
         sentence="MED13 is associated with developmental delay.",
         sentence_source="verbatim_span",
@@ -239,6 +319,9 @@ def _create_claim_backed_projection(
         figure_reference=None,
         table_reference=None,
         confidence=0.88,
+        evidence_locator=locator,
+        provenance_status="VERIFIED",
+        provenance_reason_codes=("verified",),
         metadata={
             "evidence_summary": "Curated claim-backed support evidence",
             "evidence_tier": "LITERATURE",
@@ -493,15 +576,51 @@ def _create_claim(
     claim_text: str = "MED13 is associated with developmental delay.",
     agent_run_id: str = "graph-service-test",
 ) -> UUID:
+    resolved_source_document_id = source_document_id or uuid4()
+    source_hash = hashlib.sha256(claim_text.encode("utf-8")).hexdigest()
+    publisher_record_id = f"test-{source_hash[:16]}"
+    locator = ExactEvidenceLocator(
+        source_content_sha256=source_hash,
+        char_start=0,
+        char_end=len(claim_text),
+        exact_quote=claim_text,
+        quote_sha256=source_hash,
+    )
+    provenance = SourceProvenanceService(session).verify_and_snapshot(
+        research_space_id=space_id,
+        source_document_id=resolved_source_document_id,
+        source_evidence=SourceEvidenceHandoff(
+            upstream=SourceEvidenceUpstream(
+                research_space_id=space_id,
+                document_id=resolved_source_document_id,
+                attested_at=datetime.now(UTC),
+            ),
+            identity=SourceIdentity(
+                source_kind="publisher",
+                authoritative_identifier=f"PUBLISHER:{publisher_record_id}",
+                canonical_url=f"https://example.org/sources/{publisher_record_id}",
+                retrieved_at=datetime.now(UTC),
+                content_sha256=source_hash,
+                publisher_record_id=publisher_record_id,
+            ),
+            canonical_text=claim_text,
+            locator=locator,
+        ),
+        source_attestation_capability=True,
+        authenticated_attestation_service="artana_evidence_api",
+    )
+    assert provenance.snapshot is not None
     claim_repo = SqlAlchemyKernelRelationClaimRepository(session)
     participant_repo = SqlAlchemyKernelClaimParticipantRepository(session)
     claim_evidence_repo = SqlAlchemyKernelClaimEvidenceRepository(session)
     claim = claim_repo.create(
         research_space_id=str(space_id),
         source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
+            str(resolved_source_document_id)
         ),
-        source_document_ref=source_document_ref,
+        source_document_ref=(
+            source_document_ref or f"PUBLISHER:{publisher_record_id}"
+        ),
         agent_run_id=agent_run_id,
         source_type="GENE",
         relation_type=relation_type,
@@ -541,9 +660,12 @@ def _create_claim(
     claim_evidence_repo.create(
         claim_id=claim_id,
         source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
+            str(resolved_source_document_id)
         ),
-        source_document_ref=source_document_ref,
+        source_document_ref=(
+            source_document_ref or f"PUBLISHER:{publisher_record_id}"
+        ),
+        source_snapshot_id=str(provenance.snapshot.id),
         agent_run_id=agent_run_id,
         sentence=claim_text,
         sentence_source="verbatim_span",
@@ -552,6 +674,9 @@ def _create_claim(
         figure_reference=None,
         table_reference=None,
         confidence=0.88,
+        evidence_locator=locator,
+        provenance_status="VERIFIED",
+        provenance_reason_codes=("verified",),
         metadata={
             "evidence_summary": "Curated claim-backed support evidence",
             "evidence_tier": "LITERATURE",
@@ -1850,9 +1975,17 @@ def test_graph_service_creates_and_curates_manual_relations(
 ) -> None:
     fixture = _seed_space_with_projection()
     admin_headers = _create_admin_headers()
+    admin_headers["X-TEST-GRAPH-SERVICE-CAPABILITIES"] = (
+        "source_provenance_submit"
+    )
+    admin_headers["X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"] = (
+        "artana_evidence_api"
+    )
     space_id = fixture["space_id"]
     source_id = fixture["source_id"]
     target_id = fixture["target_id"]
+    source_text = "MED13 is associated with developmental delay."
+    source_document_id = uuid4()
 
     create_response = graph_client.post(
         f"/v1/spaces/{space_id}/relations",
@@ -1863,11 +1996,17 @@ def test_graph_service_creates_and_curates_manual_relations(
             "target_id": str(target_id),
             "assessment": _SUPPORTED_ASSESSMENT,
             "evidence_summary": "Manual curator relation",
-            "evidence_sentence": "MED13 is associated with developmental delay.",
+            "evidence_sentence": source_text,
             "evidence_sentence_source": "verbatim_span",
             "evidence_sentence_confidence": "high",
             "evidence_tier": "COMPUTATIONAL",
-            "source_document_ref": "harness_proposal:proposal-1",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=space_id,
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
             "metadata": {
                 "source_kind": "document_extraction",
                 "source_key": "doc:0",
@@ -1895,7 +2034,7 @@ def test_graph_service_creates_and_curates_manual_relations(
     claim_payload = next(
         claim for claim in claims_response.json()["claims"] if claim["id"] == claim_id
     )
-    assert claim_payload["source_document_ref"] == "harness_proposal:proposal-1"
+    assert claim_payload["source_document_ref"] == "PMID:12345678"
     assert claim_payload["metadata"]["source_kind"] == "document_extraction"
     assert claim_payload["metadata"]["source_key"] == "doc:0"
     assert claim_payload["metadata"]["evidence_bundle"] == [
@@ -1911,6 +2050,13 @@ def test_graph_service_creates_and_curates_manual_relations(
     assert evidence_payload["evidence"][0]["metadata"]["source_kind"] == (
         "document_extraction"
     )
+    assert evidence_payload["evidence"][0]["provenance_status"] == "VERIFIED"
+    assert evidence_payload["evidence"][0]["source_identity"][
+        "authoritative_identifier"
+    ] == "PMID:12345678"
+    assert evidence_payload["evidence"][0]["evidence_locator"][
+        "exact_quote"
+    ] == source_text
 
     update_response = graph_client.put(
         f"/v1/spaces/{space_id}/relations/{relation_id}",
@@ -1932,6 +2078,85 @@ def test_graph_service_creates_and_curates_manual_relations(
         for relation in list_response.json()["relations"]
     }
     assert statuses[relation_id] == "APPROVED"
+
+
+def test_canonical_relation_rejects_forged_source_without_attestation_capability(
+    graph_client: TestClient,
+) -> None:
+    fixture = _seed_space_with_projection()
+    source_text = "MED13 is associated with developmental delay."
+
+    source_document_id = uuid4()
+    response = graph_client.post(
+        f"/v1/spaces/{fixture['space_id']}/relations",
+        headers=_create_admin_headers(),
+        json={
+            "source_id": str(fixture["source_id"]),
+            "relation_type": "ASSOCIATED_WITH",
+            "target_id": str(fixture["target_id"]),
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "evidence_sentence": source_text,
+            "evidence_sentence_source": "verbatim_span",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=fixture["space_id"],
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
+        },
+    )
+
+    assert response.status_code == 400, response.text
+    detail = response.json()["detail"]
+    assert detail["code"] == "invalid_source_provenance"
+    assert detail["provenance_status"] == "unverified"
+    assert detail["reason_codes"] == ["source_attestation_capability_missing"]
+
+
+def test_claim_without_attestation_capability_stays_open_and_unverified(
+    graph_client: TestClient,
+) -> None:
+    fixture = _seed_space_with_projection()
+    source_text = "MED13 is associated with developmental delay."
+
+    source_document_id = uuid4()
+    response = graph_client.post(
+        f"/v1/spaces/{fixture['space_id']}/claims",
+        headers=fixture["headers"],
+        json={
+            "source_entity_id": str(fixture["source_id"]),
+            "target_entity_id": str(fixture["target_id"]),
+            "relation_type": "ASSOCIATED_WITH",
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "claim_text": source_text,
+            "evidence_sentence": source_text,
+            "evidence_sentence_source": "verbatim_span",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=fixture["space_id"],
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    claim = response.json()
+    assert claim["claim_status"] == "OPEN"
+    assert claim["linked_relation_id"] is None
+    evidence_response = graph_client.get(
+        f"/v1/spaces/{fixture['space_id']}/claims/{claim['id']}/evidence",
+        headers=fixture["headers"],
+    )
+    assert evidence_response.status_code == 200, evidence_response.text
+    evidence = evidence_response.json()["evidence"][0]
+    assert evidence["provenance_status"] == "UNVERIFIED"
+    assert evidence["source_snapshot_id"] is None
+    assert evidence["provenance_reason_codes"] == [
+        "source_attestation_capability_missing"
+    ]
 
 
 def test_graph_service_lists_and_gets_provenance(
@@ -2377,7 +2602,7 @@ def test_graph_service_claim_evidence_exposes_external_document_refs(
     evidence_payload = evidence_response.json()
     assert evidence_payload["total"] == 1
     evidence_row = evidence_payload["evidence"][0]
-    assert evidence_row["source_document_id"] is None
+    assert evidence_row["source_document_id"] is not None
     assert evidence_row["source_document_ref"] == external_document_ref
     assert evidence_row["paper_links"][0]["url"] == external_document_ref
     assert evidence_row["paper_links"][0]["source"] == "external_ref"

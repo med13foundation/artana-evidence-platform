@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 from collections.abc import Generator
+from dataclasses import replace
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -12,8 +15,12 @@ from artana_evidence_api.database import engine as harness_engine
 from artana_evidence_api.db_schema import harness_schema_name
 from artana_evidence_api.graph_client import GraphTransportBundle, GraphTransportConfig
 from artana_evidence_api.graph_integration.context import GraphCallContext
+from artana_evidence_api.graph_integration.source_provenance import (
+    bind_source_provenance_to_drafts,
+)
 from artana_evidence_api.models.base import Base as HarnessBase
 from artana_evidence_api.proposal_store import HarnessProposalDraft
+from artana_evidence_api.sqlalchemy_stores import SqlAlchemyHarnessDocumentStore
 from artana_evidence_api.tests.integration.test_runtime_paths import (
     _build_client,
     _build_services,
@@ -89,10 +96,17 @@ def db_session() -> Generator[Session]:
 
 
 def _build_live_graph_gateway(*, graph_client: TestClient) -> GraphTransportBundle:
+    default_headers = build_graph_admin_headers()
+    default_headers["X-TEST-GRAPH-SERVICE-CAPABILITIES"] = (
+        "source_provenance_submit"
+    )
+    default_headers["X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"] = (
+        "artana_evidence_api"
+    )
     return GraphTransportBundle(
         config=GraphTransportConfig(
             base_url="http://testserver",
-            default_headers=build_graph_admin_headers(),
+            default_headers=default_headers,
         ),
         client=graph_client,
         call_context=GraphCallContext.service(graph_admin=True),
@@ -127,7 +141,10 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
     graph_client: TestClient,
 ) -> None:
     runtime = FakeKernelRuntime()
-    services = _build_services(session=db_session, runtime=runtime)
+    services = replace(
+        _build_services(session=db_session, runtime=runtime),
+        document_store=SqlAlchemyHarnessDocumentStore(db_session),
+    )
     live_graph_gateway = _build_live_graph_gateway(graph_client=graph_client)
     client = _build_client(
         session=db_session,
@@ -163,26 +180,50 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
         graph_service_version="live-graph-test",
     )
     services.artifact_store.seed_for_run(run=source_run)
-    proposal = services.proposal_store.create_proposals(
-        space_id=str(space_id),
-        run_id=source_run.id,
-        proposals=(
+    source_text = "MED13 is associated with developmental delay."
+    source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    source_document = services.document_store.create_document(
+        space_id=space_id,
+        created_by=uuid4(),
+        title="PubMed source 12345678",
+        source_type="pubmed",
+        filename=None,
+        media_type="text/plain",
+        sha256=source_hash,
+        byte_size=len(source_text.encode("utf-8")),
+        page_count=None,
+        text_content=source_text,
+        ingestion_run_id=source_run.id,
+        enrichment_status="skipped",
+        extraction_status="completed",
+        metadata={
+            "pubmed": {"pmid": "12345678"},
+            "content_source_kind": "pubmed",
+            "source_capture": {
+                "source_key": "pubmed",
+                "external_id": "12345678",
+            },
+        },
+    )
+    (proposal_draft,) = bind_source_provenance_to_drafts(
+        document=source_document,
+        drafts=(
             HarnessProposalDraft(
                 proposal_type="candidate_claim",
-                source_kind="integration_test",
+                source_kind="document_extraction",
                 source_key=f"{source_entity_id}:ASSOCIATED_WITH:{target_entity_id}",
+                document_id=source_document.id,
                 title="Promote live MED13 phenotype claim",
-                summary="Synthetic live graph promotion evidence.",
+                summary=source_text,
                 confidence=0.91,
                 ranking_score=0.98,
-                reasoning_path={
-                    "reasoning": (
-                        "MED13 is associated with developmental delay in the live "
-                        "graph test."
-                    ),
-                },
+                reasoning_path={"reasoning": source_text},
                 evidence_bundle=[
-                    {"source_type": "db", "locator": str(source_entity_id)},
+                    {
+                        "source_type": "paper",
+                        "locator": f"chars=0-{len(source_text)}",
+                        "excerpt": source_text,
+                    },
                 ],
                 payload=_candidate_claim_payload(
                     source_entity_id=str(source_entity_id),
@@ -193,9 +234,8 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
                     "agent_run_id": "integration-live-graph-promotion",
                     "evidence_grounding": {
                         "anchor_start": 0,
-                        "anchor_end": 68,
+                        "anchor_end": len(source_text),
                         "match_kind": "exact",
-                        "score": 1.0,
                         "subject_present": True,
                         "object_present": True,
                         "grounded": True,
@@ -203,12 +243,17 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
                     "support_verification": {
                         "support": "ENTAILS",
                         "rationale": "The sentence directly supports the relation.",
-                        "model_id": "artana-heuristic-support-v1",
-                        "verification_method": "heuristic",
+                        "model_id": "test-support-verifier",
+                        "verification_method": "agent",
                     },
                 },
             ),
         ),
+    )
+    proposal = services.proposal_store.create_proposals(
+        space_id=str(space_id),
+        run_id=source_run.id,
+        proposals=(proposal_draft,),
     )[0]
 
     response = client.post(
@@ -221,7 +266,10 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
     assert payload["status"] == "promoted"
     graph_relation_id = payload["metadata"].get("graph_relation_id")
     graph_claim_id = payload["metadata"].get("graph_claim_id")
-    assert isinstance(graph_relation_id, str)
+    assert isinstance(graph_relation_id, str), json.dumps(
+        payload["metadata"],
+        sort_keys=True,
+    )
     assert graph_relation_id != ""
     assert payload["metadata"]["graph_claim_status"] == "RESOLVED"
     assert payload["metadata"]["graph_claim_validation_state"] == "ALLOWED"
@@ -247,7 +295,7 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
     assert persisted_claim.claim_status == "RESOLVED"
     assert persisted_claim.source_label == "MED13"
     assert persisted_claim.target_label == "Developmental delay"
-    assert persisted_claim.source_document_ref == f"harness_proposal:{proposal.id}"
+    assert persisted_claim.source_document_ref == "PMID:12345678"
 
     participants = live_graph_gateway.list_claim_participants(
         space_id=space_id,
@@ -269,5 +317,11 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
     )
     assert evidence.total == 1
     persisted_evidence = evidence.evidence[0]
-    assert persisted_evidence.source_document_ref == f"harness_proposal:{proposal.id}"
+    assert persisted_evidence.source_document_ref == "PMID:12345678"
+    assert persisted_evidence.provenance_status == "VERIFIED"
+    assert persisted_evidence.source_snapshot_id is not None
+    assert persisted_evidence.source_identity is not None
+    assert persisted_evidence.source_identity.authoritative_identifier == "PMID:12345678"
+    assert persisted_evidence.evidence_locator is not None
+    assert persisted_evidence.evidence_locator.exact_quote == source_text
     assert persisted_evidence.metadata["origin"] == "manual_relation_api"

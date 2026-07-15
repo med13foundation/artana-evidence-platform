@@ -306,6 +306,7 @@ def _graph_call_context_for_harness_user(current_user: HarnessUser) -> GraphCall
         user_id=str(current_user.id),
         role=role,
         graph_admin=current_user.role == HarnessUserRole.ADMIN,
+        graph_service_capabilities=("source_provenance_submit",),
     )
 
 

@@ -115,6 +115,48 @@ def test_build_graph_service_bearer_token_includes_service_capabilities(
     )
 
     assert payload["graph_service_capabilities"] == ["space_sync"]
+    assert "graph_source_attestation_service" not in payload
+
+
+def test_source_provenance_capability_binds_token_to_evidence_api(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    secret = "test-graph-secret-key-with-minimum-length-123456"
+    monkeypatch.setenv("GRAPH_JWT_SECRET", secret)
+    monkeypatch.setenv("GRAPH_JWT_ISSUER", "graph-biomedical")
+
+    token = build_graph_service_bearer_token_for_service(
+        graph_service_capabilities=["source_provenance_submit"],
+    )
+    payload = jwt.decode(
+        token,
+        secret,
+        algorithms=["HS256"],
+        issuer="graph-biomedical",
+    )
+
+    assert payload["graph_source_attestation_service"] == "artana_evidence_api"
+
+
+def test_source_provenance_capability_is_normalized_before_binding_service(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    secret = "test-graph-secret-key-with-minimum-length-123456"
+    monkeypatch.setenv("GRAPH_JWT_SECRET", secret)
+    monkeypatch.setenv("GRAPH_JWT_ISSUER", "graph-biomedical")
+
+    token = build_graph_service_bearer_token_for_service(
+        graph_service_capabilities=[" source_provenance_submit "],
+    )
+    payload = jwt.decode(
+        token,
+        secret,
+        algorithms=["HS256"],
+        issuer="graph-biomedical",
+    )
+
+    assert payload["graph_service_capabilities"] == ["source_provenance_submit"]
+    assert payload["graph_source_attestation_service"] == "artana_evidence_api"
 
 
 def test_build_graph_service_bearer_token_does_not_include_env_ai_principal_by_default(
