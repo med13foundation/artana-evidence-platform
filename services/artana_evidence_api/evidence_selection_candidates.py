@@ -46,6 +46,7 @@ class EvidenceSelectionDecisionDeferralReason(StrEnum):
     SHADOW_MODE = "shadow_mode"
     SEMANTIC_REVIEW = "semantic_review"
     SEMANTIC_AGENT_FAILURE = "semantic_agent_failure"
+    SOURCE_INTEGRITY_REVIEW = "source_integrity_review"
 
 
 @dataclass(frozen=True, slots=True)

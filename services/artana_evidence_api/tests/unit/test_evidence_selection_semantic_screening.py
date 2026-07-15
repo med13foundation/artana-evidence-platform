@@ -40,6 +40,8 @@ from artana_evidence_api.evidence_selection.semantic.screening import (
 )
 from artana_evidence_api.evidence_selection_candidates import (
     EvidenceSelectionCandidateSearch,
+    EvidenceSelectionDecisionRelevance,
+    EvidenceSelectionDecisionState,
     record_hash,
 )
 from artana_evidence_api.pubmed_discovery import AdvancedQueryParameters
@@ -59,21 +61,56 @@ _BASELINE_REPORT_PATH = Path(
     "docs/validation/reports/2026-07-11-pr-semantic-pr1-failure-corpus-baseline.json",
 )
 _TEST_SEARCH_ID = UUID("11111111-1111-4111-8111-111111111111")
+
+
+def _source_validation(
+    *,
+    identity: str,
+    integrity: str,
+    authority_record_id: str = "1",
+) -> JSONObject:
+    return {
+        "schema_version": "authoritative_source_validation.v1",
+        "authority": "ncbi_pubmed",
+        "validation_method": "efetch_xml",
+        "authority_record_id": authority_record_id,
+        "source_identity": identity,
+        "source_integrity": integrity,
+        "explanation": "Categorical source-integrity finding.",
+        "relations": [],
+    }
+
+
 _TEST_RECORDS: tuple[JSONObject, ...] = (
     {
         "pmid": "1",
         "title": "EGFR T790M response in treated patients",
         "abstract": "EGFR T790M response was observed after targeted treatment.",
+        "source_validation": _source_validation(
+            identity="matched",
+            integrity="clear",
+            authority_record_id="1",
+        ),
     },
     {
         "pmid": "2",
         "title": "KRAS colorectal review",
         "abstract": "A narrative review of KRAS colorectal cancer biology.",
+        "source_validation": _source_validation(
+            identity="matched",
+            integrity="clear",
+            authority_record_id="2",
+        ),
     },
     {
         "pmid": "3",
         "title": "EGFR commentary",
         "abstract": "EGFR commentary with no stated variant or patient outcome.",
+        "source_validation": _source_validation(
+            identity="matched",
+            integrity="clear",
+            authority_record_id="3",
+        ),
     },
 )
 
@@ -272,6 +309,178 @@ async def test_agent_screening_maps_categories_to_deterministic_actions() -> Non
     assert runner.contexts[0].exclusion_criteria == (
         "Exclude review articles without primary patient evidence",
     )
+
+
+@pytest.mark.asyncio
+async def test_clear_source_validation_preserves_agent_selection() -> None:
+    record: JSONObject = {
+        **_TEST_RECORDS[0],
+        "knowledge_status": "emerging_hypothesis",
+        "source_validation": _source_validation(
+            identity="matched",
+            integrity="clear",
+        ),
+    }
+    runner = _FakeSemanticRunner(
+        _contract(
+            _assessment(
+                index=0,
+                decision="select",
+                objective="direct",
+                record=record,
+            ),
+        ),
+    )
+
+    result = await AgentEvidenceSelectionCandidateScreener(
+        model_runner=runner,
+    ).screen(context=_screening_context(records=(record,)))
+
+    assert len(result.selected_records) == 1
+    assert result.skipped_records == ()
+    assert result.deferred_records == ()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("identity", "integrity"),
+    [
+        ("matched", "correction_review"),
+        ("matched", "expression_of_concern"),
+        ("matched", "retracted"),
+        ("mismatched", "clear"),
+        ("unresolved", "unresolved"),
+    ],
+)
+async def test_source_integrity_review_preserves_agent_selected_candidate(
+    identity: str,
+    integrity: str,
+) -> None:
+    record: JSONObject = {
+        **_TEST_RECORDS[0],
+        "knowledge_status": "new_hypothesis",
+        "source_validation": _source_validation(
+            identity=identity,
+            integrity=integrity,
+        ),
+    }
+    runner = _FakeSemanticRunner(
+        _contract(
+            _assessment(
+                index=0,
+                decision="select",
+                objective="direct",
+                record=record,
+            ),
+        ),
+    )
+
+    result = await AgentEvidenceSelectionCandidateScreener(
+        model_runner=runner,
+    ).screen(context=_screening_context(records=(record,)))
+
+    assert result.selected_records == ()
+    assert result.skipped_records == ()
+    assert len(result.deferred_records) == 1
+    preserved = result.deferred_records[0]
+    assert preserved.deferral_reason == "source_integrity_review"
+    assert (
+        preserved.original_relevance_label
+        is EvidenceSelectionDecisionRelevance.STRONG_FIT
+    )
+    assert preserved.shadow_decision is EvidenceSelectionDecisionState.SELECTED
+    assert preserved.would_have_been_selected is True
+    assert "preserved" in preserved.reason
+
+
+@pytest.mark.asyncio
+async def test_invalid_source_validation_fails_closed_without_rejecting_candidate() -> (
+    None
+):
+    record: JSONObject = {
+        **_TEST_RECORDS[0],
+        "source_validation": {"authority": "ncbi_pubmed"},
+    }
+    runner = _FakeSemanticRunner(
+        _contract(
+            _assessment(
+                index=0,
+                decision="select",
+                objective="direct",
+                record=record,
+            ),
+        ),
+    )
+
+    result = await AgentEvidenceSelectionCandidateScreener(
+        model_runner=runner,
+    ).screen(context=_screening_context(records=(record,)))
+
+    assert result.selected_records == ()
+    assert result.skipped_records == ()
+    assert len(result.deferred_records) == 1
+    assert result.deferred_records[0].deferral_reason == "source_integrity_review"
+    assert result.deferred_records[0].would_have_been_selected is True
+
+
+@pytest.mark.asyncio
+async def test_missing_pubmed_validation_fails_closed_without_rejecting_candidate() -> (
+    None
+):
+    record: JSONObject = {
+        "pmid": "1",
+        "title": "New mechanistic hypothesis",
+        "abstract": "A newly reported mechanism requiring expert review.",
+    }
+    runner = _FakeSemanticRunner(
+        _contract(
+            _assessment(
+                index=0,
+                decision="select",
+                objective="direct",
+                record=record,
+            ),
+        ),
+    )
+
+    result = await AgentEvidenceSelectionCandidateScreener(
+        model_runner=runner,
+    ).screen(context=_screening_context(records=(record,)))
+
+    assert result.selected_records == ()
+    assert result.skipped_records == ()
+    assert result.deferred_records[0].deferral_reason == "source_integrity_review"
+    assert result.deferred_records[0].shadow_decision == "selected"
+    assert result.deferred_records[0].would_have_been_selected is True
+
+
+@pytest.mark.asyncio
+async def test_clear_validation_for_another_record_cannot_bypass_review() -> None:
+    source_validation = _source_validation(identity="matched", integrity="clear")
+    source_validation["authority_record_id"] = "another-pmid"
+    record: JSONObject = {
+        **_TEST_RECORDS[0],
+        "source_validation": source_validation,
+    }
+    runner = _FakeSemanticRunner(
+        _contract(
+            _assessment(
+                index=0,
+                decision="select",
+                objective="direct",
+                record=record,
+            ),
+        ),
+    )
+
+    result = await AgentEvidenceSelectionCandidateScreener(
+        model_runner=runner,
+    ).screen(context=_screening_context(records=(record,)))
+
+    assert result.selected_records == ()
+    assert result.skipped_records == ()
+    assert result.deferred_records[0].deferral_reason == "source_integrity_review"
+    assert result.deferred_records[0].would_have_been_selected is True
 
 
 @pytest.mark.asyncio
@@ -721,7 +930,10 @@ async def test_agent_evaluation_counts_invalid_agent_without_fallback() -> None:
     assert evaluation.quality_gate_passed is False
 
 
-def _screening_context() -> EvidenceSelectionScreeningContext:
+def _screening_context(
+    *,
+    records: tuple[JSONObject, ...] = _TEST_RECORDS,
+) -> EvidenceSelectionScreeningContext:
     space_id = uuid4()
     owner_id = uuid4()
     search_id = _TEST_SEARCH_ID
@@ -731,6 +943,7 @@ def _screening_context() -> EvidenceSelectionScreeningContext:
             space_id=space_id,
             owner_id=owner_id,
             search_id=search_id,
+            records=records,
         ),
         created_by=owner_id,
     )
@@ -749,10 +962,10 @@ def _screening_context() -> EvidenceSelectionScreeningContext:
             EvidenceSelectionCandidateSearch(
                 source_key="pubmed",
                 search_id=search_id,
-                max_records=3,
+                max_records=len(records),
             ),
         ),
-        max_records_per_search=3,
+        max_records_per_search=len(records),
         direct_source_search_store=store,
         document_store=HarnessDocumentStore(),
     )
@@ -798,9 +1011,10 @@ def _pubmed_search(
     space_id: UUID,
     owner_id: UUID,
     search_id: UUID,
+    records: tuple[JSONObject, ...] = _TEST_RECORDS,
 ) -> PubMedSourceSearchResponse:
     now = datetime.now(UTC)
-    records = list(_TEST_RECORDS)
+    record_list = list(records)
     capture = source_result_capture_metadata(
         source_key="pubmed",
         capture_stage=SourceCaptureStage.SEARCH_RESULT,
@@ -810,7 +1024,7 @@ def _pubmed_search(
         search_id=str(search_id),
         query="EGFR T790M treatment response",
         query_payload={"search_term": "EGFR T790M treatment response"},
-        result_count=len(records),
+        result_count=len(record_list),
         provenance={"provider": "semantic_screening_test"},
     )
     return PubMedSourceSearchResponse(
@@ -823,9 +1037,9 @@ def _pubmed_search(
             search_term="EGFR T790M treatment response",
             max_results=len(records),
         ),
-        total_results=len(records),
-        record_count=len(records),
-        records=records,
+        total_results=len(record_list),
+        record_count=len(record_list),
+        records=record_list,
         created_at=now,
         updated_at=now,
         completed_at=now,

@@ -11,6 +11,9 @@ from artana_evidence_api.direct_source_search import (
     DirectSourceSearchRecord,
     PubMedSourceSearchResponse,
 )
+from artana_evidence_api.evidence_selection.source_integrity.contracts import (
+    parse_authoritative_source_validation,
+)
 from artana_evidence_api.pubmed_discovery import (
     AdvancedQueryParameters,
     DiscoverySearchJob,
@@ -210,12 +213,13 @@ class PubMedSourcePlugin:
     def normalize_record(self, record: JSONObject) -> JSONObject:
         """Return normalized PubMed preview/article record fields."""
 
-        return compact_json_object(
+        normalized = compact_json_object(
             {
                 "pmid": string_field(record, "pmid", "pubmed_id", "uid"),
                 "title": string_field(record, "title"),
                 "abstract": string_field(record, "abstract"),
                 "journal": string_field(record, "journal", "source"),
+                "doi": string_field(record, "doi"),
                 "publication_date": string_field(
                     record,
                     "publication_date",
@@ -228,6 +232,12 @@ class PubMedSourcePlugin:
                 ),
             },
         )
+        source_validation = parse_authoritative_source_validation(
+            record.get("source_validation"),
+        )
+        if source_validation is not None:
+            normalized["source_validation"] = source_validation.to_json()
+        return normalized
 
     def provider_external_id(self, record: JSONObject) -> str | None:
         """Return the PMID used as PubMed's provider record identifier."""
@@ -405,7 +415,10 @@ def build_pubmed_execution_plugin(
     del marrvel_discovery_service_factory
     if pubmed_discovery_service_factory is None:
         return PUBMED_PLUGIN
-    return PubMedSourcePlugin(discovery_service_factory=pubmed_discovery_service_factory)
+    return PubMedSourcePlugin(
+        discovery_service_factory=pubmed_discovery_service_factory
+    )
+
 
 __all__ = [
     "PUBMED_PLUGIN",

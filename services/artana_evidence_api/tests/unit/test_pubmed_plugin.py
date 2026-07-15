@@ -66,8 +66,14 @@ def test_pubmed_plugin_matches_legacy_query_playbook() -> None:
 
     assert legacy_playbook is not None
     assert plugin.build_query_payload(intent) == legacy_playbook.build_payload(intent)
-    assert plugin.supported_objective_intents == legacy_playbook.supported_objective_intents
-    assert plugin.result_interpretation_hints == legacy_playbook.result_interpretation_hints
+    assert (
+        plugin.supported_objective_intents
+        == legacy_playbook.supported_objective_intents
+    )
+    assert (
+        plugin.result_interpretation_hints
+        == legacy_playbook.result_interpretation_hints
+    )
     assert plugin.non_goals == legacy_playbook.non_goals
     assert plugin.handoff_eligible is legacy_playbook.handoff_eligible
 
@@ -80,8 +86,12 @@ def test_pubmed_plugin_matches_legacy_record_policy() -> None:
     assert legacy_policy is not None
     assert plugin.handoff_target_kind == legacy_policy.handoff_target_kind
     assert plugin.direct_search_supported is legacy_policy.direct_search_supported
-    assert plugin.provider_external_id(record) == legacy_policy.provider_external_id(record)
-    assert plugin.recommends_variant_aware(record) is legacy_policy.recommends_variant_aware(record)
+    assert plugin.provider_external_id(record) == legacy_policy.provider_external_id(
+        record
+    )
+    assert plugin.recommends_variant_aware(
+        record
+    ) is legacy_policy.recommends_variant_aware(record)
     assert plugin.normalize_record(record) == legacy_policy.normalize_record(record)
 
 
@@ -150,6 +160,34 @@ def test_pubmed_plugin_normalizes_pubdate_to_publication_date() -> None:
         "title": "MED13 and congenital heart disease",
         "journal": "Journal of MED13",
         "publication_date": "2025 Dec",
+    }
+
+
+def test_pubmed_plugin_preserves_authoritative_source_validation() -> None:
+    plugin = PubMedSourcePlugin()
+    source_validation = {
+        "schema_version": "authoritative_source_validation.v1",
+        "authority": "ncbi_pubmed",
+        "validation_method": "efetch_xml",
+        "authority_record_id": "12345",
+        "source_identity": "matched",
+        "source_integrity": "clear",
+        "explanation": "Verified by NCBI PubMed EFetch.",
+        "relations": [],
+    }
+
+    normalized = plugin.normalize_record(
+        {
+            "pmid": "12345",
+            "doi": "10.1000/example",
+            "source_validation": source_validation,
+        },
+    )
+
+    assert normalized == {
+        "pmid": "12345",
+        "doi": "10.1000/example",
+        "source_validation": source_validation,
     }
 
 

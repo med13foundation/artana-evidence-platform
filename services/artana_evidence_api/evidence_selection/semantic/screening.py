@@ -31,6 +31,9 @@ from artana_evidence_api.evidence_selection.semantic.model import (
 from artana_evidence_api.evidence_selection.semantic.validation import (
     assess_validated_semantic_batch,
 )
+from artana_evidence_api.evidence_selection.source_integrity.policy import (
+    apply_source_integrity_policy,
+)
 from artana_evidence_api.evidence_selection_candidate_screening import (
     screen_candidate_searches,
 )
@@ -249,6 +252,18 @@ class AgentEvidenceSelectionCandidateScreener:
                 if decision.decision is EvidenceSelectionDecisionState.SKIPPED:
                     skipped.append(decision)
                     continue
+                source_integrity_decision = decision
+                if decision.record_index is not None:
+                    source_integrity_decision = apply_source_integrity_policy(
+                        decision=decision,
+                        record=records[decision.record_index],
+                    )
+                if (
+                    source_integrity_decision.decision
+                    is EvidenceSelectionDecisionState.DEFERRED
+                ):
+                    deferred.append(source_integrity_decision)
+                    continue
                 if selected_count >= search_limit:
                     deferred.append(
                         decision.with_decision(
@@ -260,10 +275,10 @@ class AgentEvidenceSelectionCandidateScreener:
                         ),
                     )
                     continue
-                selected.append(decision)
+                selected.append(source_integrity_decision)
                 selected_count += 1
                 mark_decision_seen(
-                    decision=decision,
+                    decision=source_integrity_decision,
                     existing_keys=existing_keys,
                     existing_hashes=existing_hashes,
                 )
