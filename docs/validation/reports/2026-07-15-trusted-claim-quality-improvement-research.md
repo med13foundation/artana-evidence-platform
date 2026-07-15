@@ -38,6 +38,10 @@ triplet generation as the complete product architecture.
 - Structured biomedical claim verification works better when claim
   comprehension, evidence analysis, an intermediate conclusion, and the final
   entailment decision are separate steps.
+- Biomedical event-extraction literature represents complex statements as
+  n-ary events with typed argument roles and explicitly warns that decomposing
+  them into independent binary relations loses role structure and compounds
+  errors. This matches the first clean TG-03 failure exactly.
 - Directional entity roles are important enough that BioREDirect added 10,864
   direction annotations to BioRED and jointly models relation, novelty, and
   role direction. Artana therefore cannot validate endpoints as an unordered
@@ -61,6 +65,8 @@ Primary references:
 - [Cross-corpus zero-shot relation-triplet benchmark](https://aclanthology.org/2025.bionlp-1.9/)
 - [Biomedical LLM-judge evaluation](https://aclanthology.org/2025.acl-long.1238/)
 - [Structured biomedical claim verification](https://aclanthology.org/2025.bionlp-1.14/)
+- [Biomedical relation extraction from binary to complex](https://pmc.ncbi.nlm.nih.gov/articles/PMC4156999/)
+- [Biomedical event extraction for diverse corpora](https://pmc.ncbi.nlm.nih.gov/articles/PMC4642046/)
 - [BioREDirect directionality annotations](https://pmc.ncbi.nlm.nih.gov/articles/PMC12306822/)
 - [HTGRS document-level decomposition](https://pmc.ncbi.nlm.nih.gov/articles/PMC11629692/)
 - [Generative relevance feedback for biomedical entity linking](https://academic.oup.com/bioinformatics/article/42/2/btag011/8426181)
@@ -71,10 +77,11 @@ The recommended path is an agent-centered, tool-assisted pipeline:
 
 ```text
 source snapshot
-  -> sentence and local-context claim inventory
+  -> sentence and local-context event inventory
+  -> typed argument roles and explicit ambiguity
   -> authoritative entity candidates from biomedical tools
   -> Luna selects or abstains on entity identity
-  -> Luna emits one complete qualified ClaimFrame at a time
+  -> Luna emits all source-supported candidate frames or abstains
   -> independent Luna verifier checks the complete frame against source only
   -> deterministic authority, schema, provenance, and policy checks
   -> claim ledger
@@ -90,26 +97,33 @@ selected identifier against the authoritative record.
 
 ### Q1: Decompose Complex Extraction
 
-Replace one unconstrained request for all relations with two semantic agent
+Replace one unconstrained request for all relations with three semantic agent
 steps:
 
-1. inventory each source-local claim and its exact supporting sentence or
+1. inventory each source-local event and its exact supporting sentence or
    local context;
-2. frame one inventoried claim at a time with closed polarity, status, roles,
-   qualifiers, and source measurements.
+2. label typed arguments such as intervention, condition, population, variant,
+   outcome, comparator, timeframe, and study design without selecting graph
+   endpoints yet;
+3. emit all source-supported frames with closed polarity, status, qualifiers,
+   and source measurements, or return explicit ambiguity or abstention.
 
 This directly targets the TG-03 failures where endpoints and qualifiers trade
 roles, multiple predicates are conflated, or no usable frame is returned.
 
-The inventory must also emit one closed endpoint-role category:
-`A_SUBJECT_B_OBJECT`, `B_SUBJECT_A_OBJECT`, or `UNRESOLVED`. Framing must follow
-the resolved direction exactly and may only abstain when direction is
-unresolved. This keeps semantic responsibility with the agent while making a
-reversed graph edge deterministically detectable.
+The first strict TG-03 Luna smoke disproved the assumption that every claim can
+be reduced safely to one early endpoint pair. It selected `lorlatinib` and
+`intracranial lesions` while discarding the condition, variant, and population
+needed by the expected treatment claim. The corrected contract therefore uses
+`SINGLE_FRAME`, `MULTIPLE_VALID_FRAMES`, `AMBIGUOUS`, or `ABSTAIN`; deterministic
+code checks role/span completeness and candidate parity but does not choose the
+biomedical meaning.
 
-Success evidence: paired improvement on the same sealed holdout in full-frame
-correctness, polarity, qualifier fidelity, measurement recall, and canonical
-stability. Safety counts must not regress.
+Success evidence: the ALK G1202R failure changes from silent role loss to a
+complete role set with both defensible frames or honest ambiguity, and untouched
+cases show a positive paired precision and recall change. Safety counts must not
+regress. The inspected development case diagnoses the fix but cannot provide
+confirmatory quality credit.
 
 If the paired transition ledger shows misses caused specifically by
 cross-sentence context, run a separate bounded-context experiment. Give the
@@ -228,8 +242,9 @@ claim belongs in a different epistemic lane.
 
 | Experiment | Owning PR | Required proof |
 |---|---|---|
-| Q1 claim inventory and one-frame-at-a-time extraction | TG-03 | Paired full-frame and stability improvement on the sealed holdout |
-| Lossless storage of every result, including hypotheses | TG-04 | Zero field loss through both services and Postgres |
+| Q1 inventory-first runtime and safety | TG-03 | Strict Luna completion, fallback 0, graph writes 0, and truthful failing quality report |
+| Q1 role-typed n-ary extraction and ambiguity | TG-04 | No silent role loss on the diagnostic case and positive paired precision/recall change on untouched cases |
+| Lossless storage of every result, including hypotheses | TG-04 | Zero role, candidate-frame, ambiguity, or evidence field loss through both services and Postgres |
 | Q3 independent source-only verifier | TG-05 | Unsupported or qualifier-wrong claims eligible: zero |
 | Q2 authoritative candidate tools and abstention | TG-06 | Wrong links zero, verified coverage at least 95% |
 | Deterministic policy over persisted facts | TG-07 | Unsafe or lossy projection zero |

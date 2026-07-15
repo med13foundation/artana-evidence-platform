@@ -185,8 +185,9 @@ Both root causes are fixed and covered by regressions. Follow-up adversarial
 review also required provider accounting for schema-invalid attempts,
 case-specific evidence-unit binding even when source text is identical,
 independent conflict/risk tests, and canonical AI actor coverage for official
-batch mutations. Those fixes are now implemented and test-green; final reviewer
-closure remains required before the PR is review-ready.
+batch mutations. Those fixes are implemented and test-green. Two independent
+follow-up reviewers rechecked the previously open findings at commit
+`7af56e93` and reported no remaining actionable finding.
 
 ## Stop Rule
 
