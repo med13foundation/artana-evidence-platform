@@ -65,6 +65,7 @@ def _frame(
     epistemic_status: EpistemicStatus = EpistemicStatus.ASSERTED,
     source: str = EVIDENCE,
     biological_or_variant_state: ClaimQualifier | None = None,
+    condition: ClaimQualifier | None = None,
     population: ClaimQualifier | None = None,
     intervention: ClaimQualifier | None = None,
     comparator: ClaimQualifier | None = None,
@@ -84,6 +85,7 @@ def _frame(
         epistemic_status=epistemic_status,
         biological_or_variant_state=biological_or_variant_state
         or _present("EGFR T790M", "EGFR T790M-positive"),
+        condition=condition or _present("advanced NSCLC", "advanced NSCLC"),
         population=population
         or _present(
             "advanced NSCLC",
@@ -152,6 +154,11 @@ def _agent_relation_payload(
             "value": "EGFR T790M",
             "exact_span": "EGFR T790M-positive",
         },
+        "condition": {
+            "state": "PRESENT",
+            "value": "advanced NSCLC",
+            "exact_span": "advanced NSCLC",
+        },
         "population": population,
         "intervention": {
             "state": "PRESENT",
@@ -206,6 +213,7 @@ def test_variant_state_and_all_qualifiers_are_preserved() -> None:
     frame = _frame(source_measurements=(_measurement(),))
 
     assert frame.biological_or_variant_state.value == "EGFR T790M"
+    assert frame.condition.value == "advanced NSCLC"
     assert frame.population.value == "advanced NSCLC"
     assert frame.intervention.value == "osimertinib"
     assert frame.comparator.value == "chemotherapy"
@@ -259,6 +267,7 @@ def test_fully_unqualified_frame_cannot_become_a_positive_projection() -> None:
     absent = ClaimQualifier.not_applicable()
     frame = _frame(
         biological_or_variant_state=absent,
+        condition=absent,
         population=absent,
         intervention=absent,
         comparator=absent,

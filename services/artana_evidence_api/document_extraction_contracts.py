@@ -91,6 +91,7 @@ class LLMRelationLike(Protocol):
     polarity: Polarity
     epistemic_status: EpistemicStatus
     biological_or_variant_state: ClaimQualifier
+    condition: ClaimQualifier
     population: ClaimQualifier
     intervention: ClaimQualifier
     comparator: ClaimQualifier
@@ -169,29 +170,36 @@ class ClaimExtractionLineage:
     claim_local_source_start: int
     claim_local_source_end: int
     inventory_payload: dict[str, object]
-    framing_decision: Literal["FRAMED", "ABSTAIN"]
-    candidate: ExtractedRelationCandidate | None
+    framing_decision: Literal[
+        "SINGLE_FRAME",
+        "MULTIPLE_VALID_FRAMES",
+        "AMBIGUOUS",
+        "ABSTAIN",
+    ]
+    candidates: tuple[ExtractedRelationCandidate, ...]
+    decision_rationale: str
     framing_attempt: dict[str, object]
     raw_agent_output: dict[str, object]
 
     def as_metadata(self) -> JSONObject:
         """Serialize complete claim-unit provenance for workflow metadata."""
 
-        candidate_payload: dict[str, object] | None = None
-        if self.candidate is not None:
-            candidate_payload = {
-                "subject_label": self.candidate.subject_label,
-                "relation_type": self.candidate.relation_type,
-                "object_label": self.candidate.object_label,
-                "sentence": self.candidate.sentence,
-                "review_status": self.candidate.review_status,
-                "review_reason_codes": self.candidate.review_reason_codes,
+        candidate_payloads = [
+            {
+                "subject_label": candidate.subject_label,
+                "relation_type": candidate.relation_type,
+                "object_label": candidate.object_label,
+                "sentence": candidate.sentence,
+                "review_status": candidate.review_status,
+                "review_reason_codes": candidate.review_reason_codes,
                 "claim_frame": (
-                    self.candidate.claim_frame.model_dump(mode="json")
-                    if self.candidate.claim_frame is not None
+                    candidate.claim_frame.model_dump(mode="json")
+                    if candidate.claim_frame is not None
                     else None
                 ),
             }
+            for candidate in self.candidates
+        ]
         return {
             "inventory_id": self.inventory_id,
             "source_sha256": self.source_sha256,
@@ -201,7 +209,8 @@ class ClaimExtractionLineage:
             "claim_local_source_end": self.claim_local_source_end,
             "inventory_payload": json_value(self.inventory_payload),
             "framing_decision": self.framing_decision,
-            "candidate": json_value(candidate_payload),
+            "candidates": json_value(candidate_payloads),
+            "decision_rationale": self.decision_rationale,
             "framing_attempt": json_value(self.framing_attempt),
             "raw_agent_output": json_value(self.raw_agent_output),
         }

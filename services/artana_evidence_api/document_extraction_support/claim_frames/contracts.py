@@ -8,6 +8,9 @@ import json
 from enum import Enum
 from typing import Final, Literal
 
+from artana_evidence_api.document_extraction_support.claim_frames.arguments import (
+    ClaimArgument,
+)
 from artana_evidence_api.runtime.agent_output_schema import SourceMeasurementNumber
 from pydantic import (
     AliasChoices,
@@ -175,9 +178,11 @@ class ClaimQualifier(BaseModel):
 
 
 Qualifier: Final = ClaimQualifier
+_MIN_ASSERTION_ARGUMENTS: Final = 2
 
 _QUALIFIER_FIELDS: Final[tuple[str, ...]] = (
     "biological_or_variant_state",
+    "condition",
     "population",
     "intervention",
     "comparator",
@@ -208,7 +213,12 @@ class ClaimFrame(BaseModel):
     )
     polarity: Polarity = Field(..., strict=False)
     epistemic_status: EpistemicStatus = Field(..., strict=False)
+    assertion_arguments: tuple[ClaimArgument, ...] = Field(
+        default=(),
+        max_length=32,
+    )
     biological_or_variant_state: ClaimQualifier
+    condition: ClaimQualifier = Field(default_factory=ClaimQualifier.unresolved)
     population: ClaimQualifier
     intervention: ClaimQualifier
     comparator: ClaimQualifier
@@ -232,6 +242,32 @@ class ClaimFrame(BaseModel):
         """Restore the immutable tuple after a JSON persistence round trip."""
 
         return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("assertion_arguments", mode="before")
+    @classmethod
+    def restore_argument_tuple(cls, value: builtins.object) -> builtins.object:
+        """Restore immutable typed arguments after a JSON persistence round trip."""
+
+        return tuple(value) if isinstance(value, list) else value
+
+    @model_validator(mode="after")
+    def validate_assertion_arguments(self) -> ClaimFrame:
+        """Reject partial or duplicate n-ary argument persistence."""
+
+        if not self.assertion_arguments:
+            return self
+        if (
+            len({argument.exact_span for argument in self.assertion_arguments})
+            < _MIN_ASSERTION_ARGUMENTS
+        ):
+            raise ValueError("claim frame requires at least two distinct arguments")
+        identities = tuple(
+            (argument.role, argument.exact_span)
+            for argument in self.assertion_arguments
+        )
+        if len(set(identities)) != len(identities):
+            raise ValueError("claim frame arguments must be role/span unique")
+        return self
 
     @property
     def evidence(self) -> SourceEvidenceSpan:

@@ -175,10 +175,9 @@ async def run_llm_relation_extraction_with_zero_retry(
                         ),
                         claim_local_source_end=framing_result.source_region.source_end,
                         inventory_payload=inventory_claim.item.model_dump(mode="json"),
-                        framing_decision=(
-                            "ABSTAIN" if framed_claim.abstained else "FRAMED"
-                        ),
-                        candidate=framed_claim.candidate,
+                        framing_decision=framed_claim.decision.value,
+                        candidates=framed_claim.candidates,
+                        decision_rationale=framed_claim.decision_rationale,
                         framing_attempt=framing_result.attempt_record.as_json(),
                         raw_agent_output=framing_result.raw_agent_outputs[0],
                     ),
@@ -186,11 +185,9 @@ async def run_llm_relation_extraction_with_zero_retry(
                 if framed_claim.abstained:
                     framing_abstention_count += 1
                     continue
-                raw_relation_count += 1
-                if framed_claim.candidate is not None:
-                    candidates.append(framed_claim.candidate)
-                if framed_claim.unknown_relation_type is not None:
-                    unknown_relation_types.add(framed_claim.unknown_relation_type)
+                raw_relation_count += len(framed_claim.candidates)
+                candidates.extend(framed_claim.candidates)
+                unknown_relation_types.update(framed_claim.unknown_relation_types)
 
         return LLMRelationExtractionAttempt(
             candidates=candidates,

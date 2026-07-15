@@ -451,6 +451,91 @@ def test_bound_abstention_is_a_terminal_claim_framing_result() -> None:
     assert comparison["gate_passed"] is False
 
 
+def test_typed_inventory_evidence_requires_every_role_in_each_frame() -> None:
+    sentence = (
+        "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, "
+        "lorlatinib reduced intracranial lesions."
+    )
+    item: dict[str, object] = {
+        "exact_span": sentence,
+        "relation_cue_span": "reduced",
+        "arguments": [
+            {"role": "POPULATION", "exact_span": "Korean adults"},
+            {"role": "VARIANT", "exact_span": "ALK G1202R-positive"},
+            {
+                "role": "CONDITION",
+                "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+            },
+            {"role": "INTERVENTION", "exact_span": "lorlatinib"},
+            {"role": "OUTCOME", "exact_span": "intracranial lesions"},
+        ],
+        "source_locator": "normalized_extraction_text",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+    }
+    semantic_unit_id = "typed-alk-claim"
+    absent = {"state": "NOT_APPLICABLE", "value": None, "exact_span": None}
+    relation: dict[str, object] = {
+        "subject": "lorlatinib",
+        "object": "intracranial lesions",
+        "sentence": sentence,
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "population": {
+            "state": "PRESENT",
+            "value": "Korean adults",
+            "exact_span": "Korean adults",
+        },
+        "biological_or_variant_state": {
+            "state": "PRESENT",
+            "value": "ALK G1202R-positive",
+            "exact_span": "ALK G1202R-positive",
+        },
+        "condition": {
+            "state": "PRESENT",
+            "value": "ALK G1202R-positive lung adenocarcinoma",
+            "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+        },
+    }
+    second_relation = {
+        **relation,
+        "object": "ALK G1202R-positive lung adenocarcinoma",
+        "condition": absent,
+        "outcome": {
+            "state": "PRESENT",
+            "value": "intracranial lesions",
+            "exact_span": "intracranial lesions",
+        },
+    }
+    framing_payload = {
+        "decision": "MULTIPLE_VALID_FRAMES",
+        "relations": [relation, second_relation],
+    }
+    attempt = {
+        "semantic_unit_id": semantic_unit_id,
+        "input_sha256": _sha256_json(
+            {"inventory_id": semantic_unit_id, "item": item},
+        ),
+        "raw_model_payload": framing_payload,
+    }
+    inventory_item = claim_frame_evidence._InventoriedItemEvidence(  # noqa: SLF001
+        identity="typed-alk-inventory",
+        item=item,
+    )
+
+    assert claim_frame_evidence._framing_units_match_inventory(  # noqa: SLF001
+        inventory_items=(inventory_item,),
+        framing_attempts=(attempt,),
+    )
+
+    condition = cast("dict[str, object]", relation["condition"])
+    condition.update(absent)
+    assert not claim_frame_evidence._framing_units_match_inventory(  # noqa: SLF001
+        inventory_items=(inventory_item,),
+        framing_attempts=(attempt,),
+    )
+
+
 def test_duplicate_inventory_rows_share_one_terminal_framing_unit() -> None:
     fixture = _minimal_fixture()
     reports = list(_three_reports(fixture, prefix="duplicate-inventory-row"))

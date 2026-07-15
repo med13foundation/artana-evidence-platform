@@ -1,5 +1,9 @@
 """Qualified, source-bound claim frames for document extraction."""
 
+from artana_evidence_api.document_extraction_support.claim_frames.arguments import (
+    ClaimArgument,
+    ClaimArgumentRole,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.completeness import (
     BoundInventoryCompletenessReview,
     ClaimInventoryCompletenessReview,
@@ -27,7 +31,6 @@ from artana_evidence_api.document_extraction_support.claim_frames.contracts impo
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
     CLAIM_INVENTORY_SOURCE_LOCATOR,
     BoundClaimInventoryItem,
-    ClaimEndpointRoleOrder,
     ClaimFramingAbstentionReason,
     ClaimFramingDecision,
     ClaimInventoryBindingError,
@@ -55,10 +58,11 @@ __all__ = [
     "CLAIM_INVENTORY_SOURCE_LOCATOR",
     "BoundClaimInventoryItem",
     "BoundInventoryCompletenessReview",
+    "ClaimArgument",
+    "ClaimArgumentRole",
     "ClaimFrame",
     "ClaimFrameNormalizationError",
     "ClaimFramePromotionError",
-    "ClaimEndpointRoleOrder",
     "ClaimFramingAbstentionReason",
     "ClaimFramingDecision",
     "ClaimInventoryBindingError",

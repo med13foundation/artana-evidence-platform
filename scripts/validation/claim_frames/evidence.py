@@ -87,6 +87,8 @@ FALLBACK_STATUSES: Final = frozenset(
 )
 _SHA256_RE: Final = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT_RE: Final = re.compile(r"^[0-9a-f]{40}$")
+_MIN_TYPED_ARGUMENTS: Final = 2
+_MIN_MULTI_FRAME_RELATIONS: Final = 2
 _NUMERIC_LEXEM_RE: Final = re.compile(
     r"^[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
     r"(?:[eE][-+]?\d+)?$",
@@ -106,6 +108,7 @@ _FALLBACK_PROVENANCE_KEYS: Final = frozenset(
 _QUALIFIER_FIELD_KEYS: Final = frozenset(
     {
         "biological_or_variant_state",
+        "condition",
         "population",
         "intervention",
         "comparator",
@@ -166,6 +169,39 @@ _INVENTORY_REQUIRED_KEYS: Final = frozenset(
         "exact_span",
         "relation_cue_span",
         "source_locator",
+    },
+)
+_TYPED_INVENTORY_REQUIRED_KEYS: Final = frozenset(
+    {
+        "arguments",
+        "exact_span",
+        "relation_cue_span",
+        "source_locator",
+    },
+)
+_TYPED_ARGUMENT_REQUIRED_KEYS: Final = frozenset({"role", "exact_span"})
+_ROLE_QUALIFIER_FIELDS: Final = {
+    "INTERVENTION": "intervention",
+    "CONDITION": "condition",
+    "POPULATION": "population",
+    "VARIANT": "biological_or_variant_state",
+    "OUTCOME": "outcome",
+    "COMPARATOR": "comparator",
+    "TIMEFRAME": "timeframe",
+    "STUDY_DESIGN": "study_design",
+    "TREATMENT_SETTING": "treatment_setting",
+}
+_TYPED_ARGUMENT_ROLES: Final = frozenset(
+    {
+        *_ROLE_QUALIFIER_FIELDS,
+        "GENE_OR_PROTEIN",
+        "CHEMICAL_OR_DRUG",
+        "BIOMARKER",
+        "EXPOSURE",
+        "BIOLOGICAL_PROCESS",
+        "ANATOMY",
+        "MEASUREMENT",
+        "OTHER_ENTITY",
     },
 )
 _RELATION_REQUIRED_KEYS: Final = frozenset(
@@ -684,16 +720,13 @@ def _framing_units_match_inventory(
 
         payload = _object(attempt.get("raw_model_payload"), "claim framing payload")
         decision = _required_string(payload, "decision")
+        relations = _framing_payload_relations(payload, decision=decision)
         if decision == "ABSTAIN":
-            if payload.get("relation") is not None:
-                return False
             continue
-        if decision != "FRAMED":
-            raise ValueError("claim_framing decision must be FRAMED or ABSTAIN")
-        relation = _object(payload.get("relation"), "framed relation")
-        if _framed_relation_semantic_signature(
-            relation,
-        ) != _inventory_semantic_signature(matched_inventory.item):
+        if not _framed_relations_match_inventory(
+            item=matched_inventory.item,
+            relations=relations,
+        ):
             return False
     return len(matched_inventory_ids) == len(inventory_items)
 
@@ -732,6 +765,99 @@ def _inventory_semantic_signature(item: Mapping[str, object]) -> str:
             "epistemic_status": _required_string(item, "epistemic_status"),
         },
     )
+
+
+def _framing_payload_relations(
+    payload: Mapping[str, object],
+    *,
+    decision: str,
+) -> tuple[JsonObject, ...]:
+    if decision == "FRAMED":
+        return (_object(payload.get("relation"), "framed relation"),)
+    if decision == "ABSTAIN" and "relations" not in payload:
+        if payload.get("relation") is not None:
+            raise ValueError("legacy ABSTAIN cannot include a framed relation")
+        return ()
+    raw_relations = payload.get("relations")
+    if not isinstance(raw_relations, list):
+        raise TypeError("typed claim_framing payload requires a relations list")
+    relations = tuple(_object(item, "framed relation") for item in raw_relations)
+    expected_cardinality = {
+        "SINGLE_FRAME": lambda count: count == 1,
+        "MULTIPLE_VALID_FRAMES": lambda count: count >= _MIN_MULTI_FRAME_RELATIONS,
+        "AMBIGUOUS": lambda count: count >= _MIN_MULTI_FRAME_RELATIONS,
+        "ABSTAIN": lambda count: count == 0,
+    }
+    cardinality_check = expected_cardinality.get(decision)
+    if cardinality_check is None:
+        raise ValueError(
+            "claim_framing decision is not a registered categorical outcome",
+        )
+    if not cardinality_check(len(relations)):
+        raise ValueError(f"claim_framing {decision} relation cardinality is invalid")
+    return relations
+
+
+def _framed_relations_match_inventory(
+    *,
+    item: Mapping[str, object],
+    relations: Sequence[Mapping[str, object]],
+) -> bool:
+    if "arguments" not in item:
+        expected = _inventory_semantic_signature(item)
+        return all(
+            _framed_relation_semantic_signature(relation) == expected
+            for relation in relations
+        )
+    return all(
+        _typed_framed_relation_matches_inventory(item=item, relation=relation)
+        for relation in relations
+    )
+
+
+def _typed_framed_relation_matches_inventory(
+    *,
+    item: Mapping[str, object],
+    relation: Mapping[str, object],
+) -> bool:
+    raw_arguments = item.get("arguments")
+    if (
+        not isinstance(raw_arguments, list)
+        or len(raw_arguments) < _MIN_TYPED_ARGUMENTS
+    ):
+        raise TypeError("typed inventory item requires at least two arguments")
+    arguments = tuple(
+        _object(argument, "typed inventory argument") for argument in raw_arguments
+    )
+    argument_spans = {_required_string(argument, "exact_span") for argument in arguments}
+    subject = _required_string(relation, "subject")
+    object_ = _required_string(relation, "object")
+    if subject not in argument_spans or object_ not in argument_spans:
+        return False
+    if _required_string(relation, "sentence") != _required_string(item, "exact_span"):
+        return False
+    if _required_string(relation, "polarity") != _required_string(item, "polarity"):
+        return False
+    if _required_string(relation, "epistemic_status") != _required_string(
+        item,
+        "epistemic_status",
+    ):
+        return False
+    endpoint_spans = {subject, object_}
+    for argument in arguments:
+        span = _required_string(argument, "exact_span")
+        if span in endpoint_spans:
+            continue
+        role = _required_string(argument, "role")
+        if role not in _TYPED_ARGUMENT_ROLES:
+            raise ValueError(f"typed inventory role is not registered: {role}")
+        qualifier_field = _ROLE_QUALIFIER_FIELDS.get(role)
+        if qualifier_field is None:
+            continue
+        qualifier = _object(relation.get(qualifier_field), qualifier_field)
+        if qualifier.get("state") != "PRESENT" or qualifier.get("exact_span") != span:
+            return False
+    return True
 
 
 def _framed_relation_semantic_signature(relation: Mapping[str, object]) -> str:
@@ -1002,6 +1128,13 @@ def _root_child_payload_context(
         parent.keys() >= _INVENTORY_REQUIRED_KEYS
         and key in _INVENTORY_SOURCE_FIELD_KEYS
     ):
+        return "source_evidence"
+    if (
+        parent.keys() >= _TYPED_INVENTORY_REQUIRED_KEYS
+        and key in _INVENTORY_SOURCE_FIELD_KEYS
+    ):
+        return "source_evidence"
+    if parent.keys() >= _TYPED_ARGUMENT_REQUIRED_KEYS and key == "exact_span":
         return "source_evidence"
     if parent.keys() >= _RELATION_REQUIRED_KEYS and key == "sentence":
         return "source_evidence"

@@ -402,7 +402,7 @@ async def run_missing_claim_recovery_stage(
         missing_claim=missing_claim,
     )
     step_key = fingerprinted_step_key(
-        "research_init.claim_inventory_recovery.v2",
+        "research_init.claim_inventory_recovery.v3",
         MISSING_CLAIM_RECOVERY_PROMPT_VERSION,
         model_id,
         document_fingerprint,
@@ -447,7 +447,7 @@ async def run_missing_claim_recovery_stage(
             model=model_id,
             prompt=provider_prompt,
             output_schema=output_schema,
-            schema_id="document_extraction.claim_inventory_recovery.v2",
+            schema_id="document_extraction.claim_inventory_recovery.v3",
             step_key=step_key,
             replay_policy="fork_on_drift",
         )
@@ -543,7 +543,7 @@ async def _run_inventory_step(
             model=model_id,
             prompt=provider_prompt,
             output_schema=output_schema,
-            schema_id="document_extraction.claim_inventory.v2",
+            schema_id="document_extraction.claim_inventory.v3",
             step_key=step_key,
             replay_policy="fork_on_drift",
         )
@@ -598,7 +598,7 @@ async def _run_inventory_completeness_step(
             model=model_id,
             prompt=provider_prompt,
             output_schema=output_schema,
-            schema_id="document_extraction.claim_inventory_completeness.v2",
+            schema_id="document_extraction.claim_inventory_completeness.v3",
             step_key=step_key,
             replay_policy="fork_on_drift",
         )
@@ -624,7 +624,7 @@ def _inventory_step_key(
     execution_namespace: str,
 ) -> str:
     return fingerprinted_step_key(
-        "research_init.claim_inventory.v2",
+        "research_init.claim_inventory.v3",
         prompt_version,
         model_id,
         document_fingerprint,
@@ -645,7 +645,7 @@ def _inventory_review_step_key(
     execution_namespace: str,
 ) -> str:
     return fingerprinted_step_key(
-        "research_init.claim_inventory_completeness.v2",
+        "research_init.claim_inventory_completeness.v3",
         prompt_version,
         phase,
         model_id,

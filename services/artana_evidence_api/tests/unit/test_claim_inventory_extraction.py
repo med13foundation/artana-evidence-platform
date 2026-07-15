@@ -15,6 +15,7 @@ from artana_evidence_api.document_extraction import (
 from artana_evidence_api.document_extraction_contracts import ExtractedRelationCandidate
 from artana_evidence_api.document_extraction_prompting import (
     SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT,
+    build_single_claim_framing_output_schema,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryItem,
@@ -53,7 +54,7 @@ from artana_evidence_api.document_extraction_support.relation_candidate_quality_
 from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
     RelationSpecificityPruningResult,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class ScriptedStepRunner:
@@ -91,15 +92,36 @@ def test_claim_frame_pipeline_prompt_version_tracks_every_agent_stage() -> None:
 def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     normalized_prompt = SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT.casefold()
 
-    assert "exactly one source-bound biomedical claim" in normalized_prompt
+    assert "exactly one source-bound, role-typed biomedical assertion" in normalized_prompt
     assert "top 10" not in normalized_prompt
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v4:claim_inventory.v2+"
-        "claim_inventory_completeness.v2+claim_inventory_recovery.v2+"
-        "claim_framing.v4"
+        "document_extraction.claim_pipeline.v5:claim_inventory.v3+"
+        "claim_inventory_completeness.v3+claim_inventory_recovery.v3+"
+        "claim_framing.v5"
     )
+
+
+def test_multi_frame_decision_requires_multiple_candidate_relations() -> None:
+    schema = build_single_claim_framing_output_schema()
+    relation = _relation_payload(
+        sentence="MED13 was associated with cardiomyopathy.",
+        subject="MED13",
+        relation_type="ASSOCIATED_WITH",
+        object_="cardiomyopathy",
+    )
+
+    with pytest.raises(ValidationError, match="requires at least two relations"):
+        schema.model_validate(
+            {
+                "decision": "MULTIPLE_VALID_FRAMES",
+                "abstention_reason": None,
+                "abstention_rationale": None,
+                "decision_rationale": "Two projections are claimed.",
+                "relations": [relation],
+            },
+        )
 
 
 def _complete_inventory() -> dict[str, object]:
@@ -130,12 +152,27 @@ def _inventory_claim(
     polarity: str = "SUPPORT",
     epistemic_status: str = "ASSERTED",
 ) -> dict[str, object]:
+    if endpoint_role_order == "B_SUBJECT_A_OBJECT":
+        endpoint_a_role = "CONDITION"
+        endpoint_b_role = "INTERVENTION"
+    else:
+        endpoint_a_role = "INTERVENTION"
+        endpoint_b_role = "CONDITION"
     return {
         "exact_span": exact_span,
-        "endpoint_a_span": endpoint_a_span,
         "relation_cue_span": relation_cue_span,
-        "endpoint_b_span": endpoint_b_span,
-        "endpoint_role_order": endpoint_role_order,
+        "arguments": [
+            {
+                "role": endpoint_a_role,
+                "exact_span": endpoint_a_span,
+                "role_rationale": "First typed biomedical argument.",
+            },
+            {
+                "role": endpoint_b_role,
+                "exact_span": endpoint_b_span,
+                "role_rationale": "Second typed biomedical argument.",
+            },
+        ],
         "source_locator": "normalized_extraction_text",
         "polarity": polarity,
         "epistemic_status": epistemic_status,
@@ -163,37 +200,67 @@ def _framed_relation(
     population: dict[str, object] | None = None,
     outcome: dict[str, object] | None = None,
 ) -> dict[str, object]:
+    relation = _relation_payload(
+        sentence=sentence,
+        subject=subject,
+        relation_type=relation_type,
+        object_=object_,
+        polarity=polarity,
+        epistemic_status=epistemic_status,
+        biological_state=biological_state,
+        population=population,
+        outcome=outcome,
+    )
+    return {
+        "decision": "SINGLE_FRAME",
+        "abstention_reason": None,
+        "abstention_rationale": None,
+        "decision_rationale": "The source supports one frame.",
+        "relations": [relation],
+    }
+
+
+def _relation_payload(
+    *,
+    sentence: str,
+    subject: str,
+    relation_type: str,
+    object_: str,
+    polarity: str = "SUPPORT",
+    epistemic_status: str = "ASSERTED",
+    biological_state: dict[str, object] | None = None,
+    condition: dict[str, object] | None = None,
+    population: dict[str, object] | None = None,
+    intervention: dict[str, object] | None = None,
+    outcome: dict[str, object] | None = None,
+) -> dict[str, object]:
     review_only = polarity != "SUPPORT" or epistemic_status != "ASSERTED"
     absent = _absent_qualifier
     return {
-        "decision": "FRAMED",
-        "abstention_reason": None,
-        "abstention_rationale": None,
-        "relation": {
-            "subject": subject,
-            "subject_curie": None,
-            "relation_type": relation_type,
-            "proposed_relation_type": None,
-            "new_relation_type_rationale": None,
-            "object": object_,
-            "object_curie": None,
-            "sentence": sentence,
-            "review_status": "review_only" if review_only else "candidate",
-            "review_reason_codes": ["non_positive_claim"] if review_only else [],
-            "polarity": polarity,
-            "epistemic_status": epistemic_status,
-            "biological_or_variant_state": biological_state or absent(),
-            "population": population or absent(),
-            "intervention": absent(),
-            "comparator": absent(),
-            "outcome": outcome or absent(),
-            "study_design": absent(),
-            "treatment_setting": absent(),
-            "timeframe": absent(),
-            "threshold": absent(),
-            "source_measurements": [],
-            "extraction_rationale": "The exact source span supports this frame.",
-        },
+        "subject": subject,
+        "subject_curie": None,
+        "relation_type": relation_type,
+        "proposed_relation_type": None,
+        "new_relation_type_rationale": None,
+        "object": object_,
+        "object_curie": None,
+        "sentence": sentence,
+        "review_status": "review_only" if review_only else "candidate",
+        "review_reason_codes": ["non_positive_claim"] if review_only else [],
+        "polarity": polarity,
+        "epistemic_status": epistemic_status,
+        "biological_or_variant_state": biological_state or absent(),
+        "condition": condition or absent(),
+        "population": population or absent(),
+        "intervention": intervention or absent(),
+        "comparator": absent(),
+        "outcome": outcome or absent(),
+        "study_design": absent(),
+        "treatment_setting": absent(),
+        "timeframe": absent(),
+        "threshold": absent(),
+        "source_measurements": [],
+        "extraction_rationale": "The exact source span supports this frame.",
     }
 
 
@@ -414,7 +481,7 @@ async def test_postposed_qualifier_remains_inside_inventory_claim_boundary(
     framing_prompt = next(
         str(call["prompt"])
         for call in runner.calls
-        if call["schema_id"] == "document_extraction.claim_framing.v1"
+        if call["schema_id"] == "document_extraction.claim_framing.v2"
     )
     assert claim_span in framing_prompt
 
@@ -479,7 +546,7 @@ async def test_endpoint_qualifier_swap_is_rejected_then_reframed() -> None:
 
 
 @pytest.mark.asyncio
-async def test_reversed_claim_direction_is_rejected_then_reframed() -> None:
+async def test_untyped_endpoint_is_rejected_then_reframed() -> None:
     text = "MED13 causes cardiomyopathy."
     inventory = {
         "claims": [
@@ -497,9 +564,9 @@ async def test_reversed_claim_direction_is_rejected_then_reframed() -> None:
             _complete_inventory(),
             _framed_relation(
                 sentence=text,
-                subject="cardiomyopathy",
+                subject="MED13",
                 relation_type="CAUSES",
-                object_="MED13",
+                object_="heart failure",
             ),
             _framed_relation(
                 sentence=text,
@@ -557,7 +624,7 @@ async def test_reversed_inventory_anchor_order_preserves_semantic_direction() ->
 
 
 @pytest.mark.asyncio
-async def test_unresolved_inventory_direction_can_only_abstain() -> None:
+async def test_ambiguous_agent_decision_preserves_multiple_frames() -> None:
     text = "MED13 was associated with cardiomyopathy."
     inventory = {
         "claims": [
@@ -566,39 +633,228 @@ async def test_unresolved_inventory_direction_can_only_abstain() -> None:
                 endpoint_a_span="MED13",
                 relation_cue_span="associated with",
                 endpoint_b_span="cardiomyopathy",
-                endpoint_role_order="UNRESOLVED",
             ),
         ],
     }
-    abstention = {
-        "decision": "ABSTAIN",
-        "abstention_reason": "ENDPOINTS_AMBIGUOUS",
-        "abstention_rationale": "The source does not resolve semantic direction.",
-        "relation": None,
-    }
-    runner = ScriptedStepRunner(
-        (
-            inventory,
-            _complete_inventory(),
-            _framed_relation(
+    ambiguous = {
+        "decision": "AMBIGUOUS",
+        "abstention_reason": None,
+        "abstention_rationale": None,
+        "decision_rationale": "The source supports association without direction.",
+        "relations": [
+            _relation_payload(
                 sentence=text,
                 subject="MED13",
                 relation_type="ASSOCIATED_WITH",
                 object_="cardiomyopathy",
             ),
-            abstention,
+            _relation_payload(
+                sentence=text,
+                subject="cardiomyopathy",
+                relation_type="ASSOCIATED_WITH",
+                object_="MED13",
+            ),
+        ],
+    }
+    runner = ScriptedStepRunner(
+        (
+            inventory,
+            _complete_inventory(),
+            ambiguous,
         ),
     )
 
     result = await _run_pipeline(text=text, runner=runner)
 
-    assert result.candidates == []
-    assert result.framing_abstention_count == 1
+    assert [(item.subject_label, item.object_label) for item in result.candidates] == [
+        ("MED13", "cardiomyopathy"),
+        ("cardiomyopathy", "MED13"),
+    ]
+    assert result.framing_abstention_count == 0
+    assert result.claim_lineage[0].framing_decision == "AMBIGUOUS"
+
+
+@pytest.mark.asyncio
+async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames() -> None:
+    text = (
+        "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, "
+        "lorlatinib reduced intracranial lesions."
+    )
+    inventory_claim = {
+        "exact_span": text,
+        "relation_cue_span": "reduced",
+        "arguments": [
+            {
+                "role": "POPULATION",
+                "exact_span": "Korean adults",
+                "role_rationale": "The treated population is explicit.",
+            },
+            {
+                "role": "VARIANT",
+                "exact_span": "ALK G1202R-positive",
+                "role_rationale": "The molecular variant is explicit.",
+            },
+            {
+                "role": "CONDITION",
+                "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+                "role_rationale": "The disease condition is explicit.",
+            },
+            {
+                "role": "INTERVENTION",
+                "exact_span": "lorlatinib",
+                "role_rationale": "The administered intervention is explicit.",
+            },
+            {
+                "role": "OUTCOME",
+                "exact_span": "intracranial lesions",
+                "role_rationale": "The measured outcome is explicit.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The sentence states one qualified treatment result.",
+    }
+    condition_frame = _relation_payload(
+        sentence=text,
+        subject="lorlatinib",
+        relation_type="TREATS",
+        object_="ALK G1202R-positive lung adenocarcinoma",
+        biological_state=_present_qualifier(
+            "ALK G1202R-positive",
+            "ALK G1202R-positive",
+        ),
+        population=_present_qualifier("Korean adults", "Korean adults"),
+        outcome=_present_qualifier("intracranial lesions", "intracranial lesions"),
+    )
+    outcome_frame = _relation_payload(
+        sentence=text,
+        subject="lorlatinib",
+        relation_type="TREATS",
+        object_="intracranial lesions",
+        biological_state=_present_qualifier(
+            "ALK G1202R-positive",
+            "ALK G1202R-positive",
+        ),
+        condition=_present_qualifier(
+            "ALK G1202R-positive lung adenocarcinoma",
+            "ALK G1202R-positive lung adenocarcinoma",
+        ),
+        population=_present_qualifier("Korean adults", "Korean adults"),
+    )
+    role_dropping_outcome_frame = {
+        **outcome_frame,
+        "condition": _absent_qualifier(),
+    }
+    invalid_frames = {
+        "decision": "MULTIPLE_VALID_FRAMES",
+        "abstention_reason": None,
+        "abstention_rationale": None,
+        "decision_rationale": "The assertion has disease and outcome projections.",
+        "relations": [condition_frame, role_dropping_outcome_frame],
+    }
+    complete_frames = {
+        **invalid_frames,
+        "relations": [condition_frame, outcome_frame],
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [inventory_claim]},
+            _complete_inventory(),
+            invalid_frames,
+            complete_frames,
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.inventory_claim_count == 1
+    assert result.raw_relation_count == 2
+    assert result.claim_lineage[0].framing_decision == "MULTIPLE_VALID_FRAMES"
+    assert result.claim_lineage[0].inventory_payload["arguments"] == (
+        inventory_claim["arguments"]
+    )
+    assert [candidate.object_label for candidate in result.candidates] == [
+        "ALK G1202R-positive lung adenocarcinoma",
+        "intracranial lesions",
+    ]
+    assert all(
+        [argument.role.value for argument in candidate.claim_frame.assertion_arguments]
+        == [
+            "POPULATION",
+            "VARIANT",
+            "CONDITION",
+            "INTERVENTION",
+            "OUTCOME",
+        ]
+        for candidate in result.candidates
+        if candidate.claim_frame is not None
+    )
     assert any(
-        record.validation_outcome == "semantic_invalid"
-        and record.pass_role == "claim_framing"
+        record.pass_role == "claim_framing"
+        and record.validation_outcome == "semantic_invalid"
+        and record.raw_model_payload == invalid_frames
         for record in result.model_attempt_records
     )
+
+
+@pytest.mark.asyncio
+async def test_nonclinical_entity_roles_survive_in_the_claim_frame() -> None:
+    text = "MED13 regulates cardiac development and causes cardiomyopathy."
+    inventory_claim = {
+        "exact_span": text,
+        "relation_cue_span": "causes",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "exact_span": "MED13",
+                "role_rationale": "MED13 is the source-local gene entity.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "exact_span": "cardiac development",
+                "role_rationale": "The sentence names a biological process.",
+            },
+            {
+                "role": "CONDITION",
+                "exact_span": "cardiomyopathy",
+                "role_rationale": "The sentence names the resulting condition.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "One gene claim includes process and disease roles.",
+    }
+    frame = _relation_payload(
+        sentence=text,
+        subject="MED13",
+        relation_type="CAUSES",
+        object_="cardiomyopathy",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [inventory_claim]},
+            _complete_inventory(),
+            {
+                "decision": "SINGLE_FRAME",
+                "abstention_reason": None,
+                "abstention_rationale": None,
+                "decision_rationale": "The causal projection is explicit.",
+                "relations": [frame],
+            },
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    claim_frame = result.candidates[0].claim_frame
+    assert claim_frame is not None
+    assert [(argument.role.value, argument.exact_span) for argument in claim_frame.assertion_arguments] == [
+        ("GENE_OR_PROTEIN", "MED13"),
+        ("BIOLOGICAL_PROCESS", "cardiac development"),
+        ("CONDITION", "cardiomyopathy"),
+    ]
 
 
 @pytest.mark.asyncio
@@ -898,8 +1154,10 @@ async def test_partial_inventory_gets_reviewed_missing_only_recovery() -> None:
     recovered_lineage = next(
         lineage
         for lineage in result.claim_lineage
-        if lineage.candidate is not None
-        and lineage.candidate.subject_label == "BRCA1 loss"
+        if any(
+            candidate.subject_label == "BRCA1 loss"
+            for candidate in lineage.candidates
+        )
     )
     assert recovery_record.semantic_unit_id == recovered_lineage.inventory_id
     assert not any(
@@ -927,7 +1185,8 @@ async def test_agent_abstention_does_not_create_deterministic_meaning() -> None:
         "decision": "ABSTAIN",
         "abstention_reason": "RELATION_AMBIGUOUS",
         "abstention_rationale": "The source does not resolve a canonical relation.",
-        "relation": None,
+        "decision_rationale": "No source-supported projection is safe.",
+        "relations": [],
     }
     runner = ScriptedStepRunner((inventory, _complete_inventory(), abstention))
 
@@ -1060,7 +1319,7 @@ async def test_sibling_clause_qualifier_cannot_leak_into_selected_claim() -> Non
     framing_records = [
         record
         for record in runner.calls
-        if record["schema_id"] == "document_extraction.claim_framing.v1"
+        if record["schema_id"] == "document_extraction.claim_framing.v2"
     ]
     assert len(framing_records) == 2
     assert "KRAS predicts toxicity" not in str(framing_records[0]["prompt"])
@@ -1068,7 +1327,7 @@ async def test_sibling_clause_qualifier_cannot_leak_into_selected_claim() -> Non
 
 
 @pytest.mark.asyncio
-async def test_inventory_dedupes_changed_rationale_and_reversed_endpoints() -> None:
+async def test_inventory_dedupes_changed_rationale_and_argument_order() -> None:
     text = "MED13 causes cardiomyopathy."
     first = _inventory_claim(
         exact_span=text,
@@ -1078,9 +1337,7 @@ async def test_inventory_dedupes_changed_rationale_and_reversed_endpoints() -> N
     )
     reversed_claim = {
         **first,
-        "endpoint_a_span": "cardiomyopathy",
-        "endpoint_b_span": "MED13",
-        "endpoint_role_order": "B_SUBJECT_A_OBJECT",
+        "arguments": list(reversed(first["arguments"])),
         "inventory_rationale": "Different wording for the same explicit claim.",
     }
     runner = ScriptedStepRunner(
@@ -1105,7 +1362,7 @@ async def test_inventory_dedupes_changed_rationale_and_reversed_endpoints() -> N
             [
                 call
                 for call in runner.calls
-                if call["schema_id"] == "document_extraction.claim_framing.v1"
+                if call["schema_id"] == "document_extraction.claim_framing.v2"
             ],
         )
         == 1
@@ -1331,7 +1588,7 @@ async def test_long_sentence_split_is_rejoined_before_inventory() -> None:
     inventory_prompt = next(
         str(call["prompt"])
         for call in runner.calls
-        if call["schema_id"] == "document_extraction.claim_inventory.v2"
+        if call["schema_id"] == "document_extraction.claim_inventory.v3"
     )
     assert "MED13 causes developmental delay" in inventory_prompt
 

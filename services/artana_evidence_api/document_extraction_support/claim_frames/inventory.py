@@ -8,14 +8,18 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
+from artana_evidence_api.document_extraction_support.claim_frames.arguments import (
+    ClaimArgument,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.contracts import (
     EpistemicStatus,
     Polarity,
 )
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 CLAIM_INVENTORY_SOURCE_LOCATOR = "normalized_extraction_text"
 _SHA256_HEX_LENGTH = 64
+_MIN_ASSERTION_ARGUMENTS = 2
 
 
 class ClaimInventoryBindingError(ValueError):
@@ -25,7 +29,9 @@ class ClaimInventoryBindingError(ValueError):
 class ClaimFramingDecision(str, Enum):
     """Closed outcome of one claim-framing agent call."""
 
-    FRAMED = "FRAMED"
+    SINGLE_FRAME = "SINGLE_FRAME"
+    MULTIPLE_VALID_FRAMES = "MULTIPLE_VALID_FRAMES"
+    AMBIGUOUS = "AMBIGUOUS"
     ABSTAIN = "ABSTAIN"
 
 
@@ -38,28 +44,27 @@ class ClaimFramingAbstentionReason(str, Enum):
     SOURCE_CONFLICT = "SOURCE_CONFLICT"
 
 
-class ClaimEndpointRoleOrder(str, Enum):
-    """Closed mapping from inventory anchors to semantic claim roles."""
-
-    A_SUBJECT_B_OBJECT = "A_SUBJECT_B_OBJECT"
-    B_SUBJECT_A_OBJECT = "B_SUBJECT_A_OBJECT"
-    UNRESOLVED = "UNRESOLVED"
-
-
 class ClaimInventoryItem(BaseModel):
     """One source-local claim boundary identified by the inventory agent."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     exact_span: str = Field(..., min_length=1, max_length=12000)
-    endpoint_a_span: str = Field(..., min_length=1, max_length=1000)
     relation_cue_span: str = Field(..., min_length=1, max_length=1000)
-    endpoint_b_span: str = Field(..., min_length=1, max_length=1000)
-    endpoint_role_order: ClaimEndpointRoleOrder = Field(..., strict=False)
+    arguments: tuple[ClaimArgument, ...] = Field(..., min_length=2, max_length=32)
     source_locator: Literal["normalized_extraction_text"]
     polarity: Polarity = Field(..., strict=False)
     epistemic_status: EpistemicStatus = Field(..., strict=False)
     inventory_rationale: str = Field(..., min_length=1, max_length=2000)
+
+    @field_validator("arguments", mode="before")
+    @classmethod
+    def freeze_json_arguments(cls, value: object) -> object:
+        """Convert the structured-output JSON array into an immutable tuple."""
+
+        if isinstance(value, list):
+            return tuple(value)
+        return value
 
     @model_validator(mode="after")
     def validate_closed_epistemic_pair(self) -> ClaimInventoryItem:
@@ -84,6 +89,16 @@ class ClaimInventoryItem(BaseModel):
             raise ValueError(
                 "uncertain polarity requires provisional or uncertain status"
             )
+        argument_keys = tuple(
+            (argument.role, argument.exact_span) for argument in self.arguments
+        )
+        if len(set(argument_keys)) != len(argument_keys):
+            raise ValueError("claim inventory arguments must be role/span unique")
+        if (
+            len({argument.exact_span for argument in self.arguments})
+            < _MIN_ASSERTION_ARGUMENTS
+        ):
+            raise ValueError("claim inventory requires at least two distinct arguments")
         return self
 
 
@@ -175,16 +190,15 @@ def _require_inventory_item_spans(
         raise ClaimInventoryBindingError(
             "claim inventory exact_span must occur exactly once in the source chunk",
         )
-    for field_name in ("endpoint_a_span", "relation_cue_span", "endpoint_b_span"):
-        value = getattr(item, field_name)
-        if value not in item.exact_span:
-            raise ClaimInventoryBindingError(
-                f"claim inventory {field_name} is outside exact_span",
-            )
-    if item.endpoint_a_span == item.endpoint_b_span:
+    if item.relation_cue_span not in item.exact_span:
         raise ClaimInventoryBindingError(
-            "claim inventory endpoint spans must identify two distinct mentions",
+            "claim inventory relation_cue_span is outside exact_span",
         )
+    for argument in item.arguments:
+        if argument.exact_span not in item.exact_span:
+            raise ClaimInventoryBindingError(
+                "claim inventory argument span is outside exact_span",
+            )
 
 
 def _canonical_sha256(value: object) -> str:
@@ -203,15 +217,22 @@ def _inventory_semantic_identity(
     source_sha256: str,
     source_start: int,
 ) -> str:
-    semantic_subject, semantic_object = _semantic_endpoint_roles(item)
     return _canonical_sha256(
         {
             "source_sha256": source_sha256,
             "source_start": source_start,
             "source_end": source_start + len(item.exact_span),
             "exact_span": item.exact_span,
-            "semantic_subject": semantic_subject,
-            "semantic_object": semantic_object,
+            "arguments": sorted(
+                (
+                    {
+                        "role": argument.role.value,
+                        "exact_span": argument.exact_span,
+                    }
+                    for argument in item.arguments
+                ),
+                key=lambda argument: (argument["role"], argument["exact_span"]),
+            ),
             "relation_cue_span": item.relation_cue_span,
             "source_locator": item.source_locator,
             "polarity": item.polarity.value,
@@ -220,19 +241,9 @@ def _inventory_semantic_identity(
     )
 
 
-def _semantic_endpoint_roles(item: ClaimInventoryItem) -> tuple[str, str]:
-    if item.endpoint_role_order is ClaimEndpointRoleOrder.A_SUBJECT_B_OBJECT:
-        return item.endpoint_a_span, item.endpoint_b_span
-    if item.endpoint_role_order is ClaimEndpointRoleOrder.B_SUBJECT_A_OBJECT:
-        return item.endpoint_b_span, item.endpoint_a_span
-    unresolved = sorted((item.endpoint_a_span, item.endpoint_b_span))
-    return f"UNRESOLVED:{unresolved[0]}", f"UNRESOLVED:{unresolved[1]}"
-
-
 __all__ = [
     "CLAIM_INVENTORY_SOURCE_LOCATOR",
     "BoundClaimInventoryItem",
-    "ClaimEndpointRoleOrder",
     "ClaimInventoryBindingError",
     "ClaimInventoryItem",
     "ClaimFramingAbstentionReason",

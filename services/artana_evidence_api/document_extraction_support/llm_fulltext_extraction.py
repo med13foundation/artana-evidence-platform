@@ -477,6 +477,7 @@ def _claim_frame_from_relation(
             polarity=rel.polarity,
             epistemic_status=rel.epistemic_status,
             biological_or_variant_state=rel.biological_or_variant_state,
+            condition=rel.condition,
             population=rel.population,
             intervention=rel.intervention,
             comparator=rel.comparator,
