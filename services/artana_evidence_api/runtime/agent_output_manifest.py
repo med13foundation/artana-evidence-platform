@@ -73,6 +73,25 @@ _CLAIM_QUALIFIER_STATE = {
     "NOT_APPLICABLE": "the qualifier does not apply to this source-local claim.",
     "UNRESOLVED": "the qualifier may apply but cannot be resolved from the cited text.",
 }
+_CLAIM_ARGUMENT_ROLE = {
+    "INTERVENTION": "the span is an administered, assigned, or evaluated intervention.",
+    "CONDITION": "the span is the disease, disorder, phenotype, or clinical condition.",
+    "POPULATION": "the span identifies the studied population or cohort.",
+    "VARIANT": "the span identifies a molecular variant or biological state.",
+    "OUTCOME": "the span identifies a measured or reported outcome.",
+    "COMPARATOR": "the span identifies the comparison arm, exposure, or condition.",
+    "TIMEFRAME": "the span identifies a source-stated duration or timepoint.",
+    "STUDY_DESIGN": "the span identifies the source-stated study design.",
+    "TREATMENT_SETTING": "the span identifies the clinical treatment setting.",
+    "GENE_OR_PROTEIN": "the span identifies a gene or protein entity.",
+    "CHEMICAL_OR_DRUG": "the span identifies a chemical or drug outside an intervention role.",
+    "BIOMARKER": "the span identifies a source-stated biomarker.",
+    "EXPOSURE": "the span identifies an environmental, behavioral, or clinical exposure.",
+    "BIOLOGICAL_PROCESS": "the span identifies a biological process or mechanism.",
+    "ANATOMY": "the span identifies an anatomical structure or location.",
+    "MEASUREMENT": "the span identifies a measured quantity or assay result.",
+    "OTHER_ENTITY": "the span is a material biomedical entity not covered by another role.",
+}
 _FACT_SUPPORT = {
     "INSUFFICIENT": "no cited span establishes the asserted fact.",
     "TENTATIVE": "a cited span is indirect, incomplete, or explicitly uncertain.",
@@ -423,13 +442,13 @@ _POLICIES = (
         prompt_identifiers=("marrvel.gene_inference.v1",),
     ),
     AgentOutputSchemaPolicy(
-        schema_id="document_extraction.claim_inventory.v2",
+        schema_id="document_extraction.claim_inventory.v3",
         schema_names=("LLMClaimInventoryResult",),
-        shape_hash="73b0b45d79dabc949bb92604780bed4d605703b460518fde6b0c64a53b029d07",
+        shape_hash="148c48c630c44692bb340d60b8aada4bcc3142c0de20cf1be5ecc64cc17bd1d6",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v2",),
+        prompt_identifiers=("document_extraction.claim_inventory.v3",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -443,14 +462,10 @@ _POLICIES = (
                 ),
             ),
             _category(
-                "$.claims[].endpoint_role_order",
-                {
-                    "A_SUBJECT_B_OBJECT": "endpoint A is the semantic subject and endpoint B is the object.",
-                    "B_SUBJECT_A_OBJECT": "endpoint B is the semantic subject and endpoint A is the object.",
-                    "UNRESOLVED": "the source does not resolve semantic endpoint direction.",
-                },
+                "$.claims[].arguments[].role",
+                _CLAIM_ARGUMENT_ROLE,
                 evidence_requirement=(
-                    "The exact claim span and relation cue must establish endpoint roles."
+                    "The exact argument span and complete assertion must establish the role."
                 ),
             ),
             _category(
@@ -470,13 +485,13 @@ _POLICIES = (
         ),
     ),
     AgentOutputSchemaPolicy(
-        schema_id="document_extraction.claim_inventory_completeness.v2",
+        schema_id="document_extraction.claim_inventory_completeness.v3",
         schema_names=("ClaimInventoryCompletenessReview",),
-        shape_hash="a338d7cf6d6600dd5235b601cdc9cceb9c2ba827d0c5273402be8015b3c6fe95",
+        shape_hash="ddb27fdfe24e871fe88006938953f5950bafd8045c6c3ff39acfd4e4dcedf00a",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v2",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v3",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -498,13 +513,9 @@ _POLICIES = (
                 evidence_requirement="Every missing claim span must bind exactly to source.",
             ),
             _category(
-                "$.missing_claims[].endpoint_role_order",
-                {
-                    "A_SUBJECT_B_OBJECT": "endpoint A is the semantic subject and endpoint B is the object.",
-                    "B_SUBJECT_A_OBJECT": "endpoint B is the semantic subject and endpoint A is the object.",
-                    "UNRESOLVED": "the source does not resolve semantic endpoint direction.",
-                },
-                evidence_requirement="The missing claim span must establish endpoint roles.",
+                "$.missing_claims[].arguments[].role",
+                _CLAIM_ARGUMENT_ROLE,
+                evidence_requirement="The missing claim span must establish every argument role.",
             ),
             _category(
                 "$.missing_claims[].polarity",
@@ -519,13 +530,13 @@ _POLICIES = (
         ),
     ),
     AgentOutputSchemaPolicy(
-        schema_id="document_extraction.claim_inventory_recovery.v2",
+        schema_id="document_extraction.claim_inventory_recovery.v3",
         schema_names=("MissingClaimRecoveryResult",),
-        shape_hash="3055df3c30ac829aefa523f5942dc648dac2e9e65ad480b8b4a45686cbde19d0",
+        shape_hash="c97ac5e526f4aa73b0a5d1fcd0b6372e7775b8ab78ae6a09e6e97cf4d104ee35",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_recovery.v2",),
+        prompt_identifiers=("document_extraction.claim_inventory_recovery.v3",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -539,13 +550,9 @@ _POLICIES = (
                 ),
             ),
             _category(
-                "$.claims[].endpoint_role_order",
-                {
-                    "A_SUBJECT_B_OBJECT": "endpoint A is the semantic subject and endpoint B is the object.",
-                    "B_SUBJECT_A_OBJECT": "endpoint B is the semantic subject and endpoint A is the object.",
-                    "UNRESOLVED": "the source does not resolve semantic endpoint direction.",
-                },
-                evidence_requirement="The recovered claim must preserve reviewed endpoint roles.",
+                "$.claims[].arguments[].role",
+                _CLAIM_ARGUMENT_ROLE,
+                evidence_requirement="The recovered claim must preserve every reviewed argument role.",
             ),
             _category(
                 "$.claims[].polarity",
@@ -560,14 +567,14 @@ _POLICIES = (
         ),
     ),
     AgentOutputSchemaPolicy(
-        schema_id="document_extraction.claim_framing.v1",
+        schema_id="document_extraction.claim_framing.v2",
         schema_names=("LLMSingleClaimFramingResult",),
-        shape_hash="33693a7916d75f489278b4818cfb100d9929713ba8b10f5bdb3a571034e829c8",
+        shape_hash="79f83b484546c7f14f337684943fd1cd46c5d65656a481f4ba78d5b7cd9a84db",
         producer_paths=("document_extraction_support/llm_extraction/claim_framing.py",),
-        prompt_identifiers=("document_extraction.claim_framing.v4",),
+        prompt_identifiers=("document_extraction.claim_framing.v5",),
         numeric_fields=(
             NumericFieldPolicy(
-                path="$.relation.source_measurements[].value",
+                path="$.relations[].source_measurements[].value",
                 origin=NumericOrigin.SOURCE_MEASUREMENT,
             ),
         ),
@@ -575,7 +582,9 @@ _POLICIES = (
             _category(
                 "$.decision",
                 {
-                    "FRAMED": "one source-bound inventory item supports one complete claim frame.",
+                    "SINGLE_FRAME": "the assertion supports exactly one complete source-bound frame.",
+                    "MULTIPLE_VALID_FRAMES": "the assertion independently supports multiple graph projections.",
+                    "AMBIGUOUS": "multiple source-bound frames remain plausible without a resolved choice.",
                     "ABSTAIN": "the source-bound inventory item cannot be framed without guessing.",
                 },
                 evidence_requirement=(
@@ -595,7 +604,7 @@ _POLICIES = (
                 ),
             ),
             _category(
-                "$.relation.review_status",
+                "$.relations[].review_status",
                 {
                     "candidate": "the exact source span directly supports a canonical relation candidate.",
                     "review_only": "the exact source span is non-positive, weak, or requires review.",
@@ -603,21 +612,21 @@ _POLICIES = (
                 evidence_requirement="The literal source span is required.",
             ),
             _category(
-                "$.relation.polarity",
+                "$.relations[].polarity",
                 _CLAIM_POLARITY,
                 evidence_requirement=(
                     "The relation polarity must equal the source-bound inventory polarity."
                 ),
             ),
             _category(
-                "$.relation.epistemic_status",
+                "$.relations[].epistemic_status",
                 _CLAIM_EPISTEMIC_STATUS,
                 evidence_requirement=(
                     "The relation status must equal the source-bound inventory status."
                 ),
             ),
             _category(
-                "$.relation.source_measurements[].field_name",
+                "$.relations[].source_measurements[].field_name",
                 {
                     "THRESHOLD": "the number defines a source-stated cutoff or boundary.",
                     "TIMEFRAME": "the number defines a source-stated duration or timepoint.",
@@ -631,7 +640,7 @@ _POLICIES = (
                 ),
             ),
             _category(
-                "$.relation.source_measurements[].extraction_method",
+                "$.relations[].source_measurements[].extraction_method",
                 {
                     "agent_exact_copy": (
                         "the agent copied the exact ASCII numeric literal from the claim span."
@@ -643,7 +652,7 @@ _POLICIES = (
             ),
             *(
                 _category(
-                    f"$.relation.{field}.state",
+                    f"$.relations[].{field}.state",
                     _CLAIM_QUALIFIER_STATE,
                     evidence_requirement=(
                         "PRESENT requires a literal value and exact source span; "
@@ -652,6 +661,7 @@ _POLICIES = (
                 )
                 for field in (
                     "biological_or_variant_state",
+                    "condition",
                     "population",
                     "intervention",
                     "comparator",
@@ -667,7 +677,7 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.relation.v3",
         schema_names=("LLMExtractionResult",),
-        shape_hash="adfcae6deb6dba80099b9b3d63fd2cf0caa263b7d6a39414011807e3a95df0ae",
+        shape_hash="b4027c5eae4151e644bbfc057b89a9aa166ffdaeeded22b77b97a6f81891330a",
         producer_paths=("document_extraction_support/llm_fulltext_extraction.py",),
         prompt_identifiers=("document_extraction.relation.v3",),
         numeric_fields=(
@@ -735,6 +745,7 @@ _POLICIES = (
                 )
                 for field in (
                     "biological_or_variant_state",
+                    "condition",
                     "population",
                     "intervention",
                     "comparator",

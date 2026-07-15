@@ -361,16 +361,16 @@ def test_production_manifest_covers_current_model_output_schemas() -> None:
     from artana_evidence_api.variant_extraction_contracts import LLMExtractionContract
 
     schemas = {
-        "document_extraction.claim_inventory_completeness.v2": (
+        "document_extraction.claim_inventory_completeness.v3": (
             build_claim_inventory_completeness_output_schema()
         ),
-        "document_extraction.claim_inventory_recovery.v2": (
+        "document_extraction.claim_inventory_recovery.v3": (
             build_missing_claim_recovery_output_schema()
         ),
-        "document_extraction.claim_framing.v1": (
+        "document_extraction.claim_framing.v2": (
             build_single_claim_framing_output_schema()
         ),
-        "document_extraction.claim_inventory.v2": (
+        "document_extraction.claim_inventory.v3": (
             build_claim_inventory_output_schema(max_claims=64)
         ),
         "document_extraction.proposal_review.v1": build_proposal_review_output_schema(),

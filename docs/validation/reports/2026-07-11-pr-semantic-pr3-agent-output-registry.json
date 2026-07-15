@@ -3,7 +3,7 @@
   "debt_manifest": [],
   "debt_numeric_field_count": 0,
   "origin_governed_numeric_field_count": 3,
-  "registered_category_field_count": 108,
+  "registered_category_field_count": 110,
   "registered_numeric_field_count": 3,
   "registered_schema_count": 19,
   "registered_schemas": [
@@ -14,7 +14,9 @@
           "debt_id": null,
           "path": "$.decision",
           "values": [
-            "FRAMED",
+            "SINGLE_FRAME",
+            "MULTIPLE_VALID_FRAMES",
+            "AMBIGUOUS",
             "ABSTAIN"
           ]
         },
@@ -32,7 +34,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.review_status",
+          "path": "$.relations[].review_status",
           "values": [
             "candidate",
             "review_only"
@@ -41,7 +43,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.polarity",
+          "path": "$.relations[].polarity",
           "values": [
             "SUPPORT",
             "REFUTE",
@@ -53,7 +55,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.epistemic_status",
+          "path": "$.relations[].epistemic_status",
           "values": [
             "ASSERTED",
             "PROVISIONAL",
@@ -65,7 +67,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.source_measurements[].field_name",
+          "path": "$.relations[].source_measurements[].field_name",
           "values": [
             "THRESHOLD",
             "TIMEFRAME",
@@ -78,7 +80,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.source_measurements[].extraction_method",
+          "path": "$.relations[].source_measurements[].extraction_method",
           "values": [
             "agent_exact_copy"
           ]
@@ -86,7 +88,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.biological_or_variant_state.state",
+          "path": "$.relations[].biological_or_variant_state.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -96,7 +98,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.population.state",
+          "path": "$.relations[].condition.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -106,7 +108,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.intervention.state",
+          "path": "$.relations[].population.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -116,7 +118,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.comparator.state",
+          "path": "$.relations[].intervention.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -126,7 +128,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.outcome.state",
+          "path": "$.relations[].comparator.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -136,7 +138,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.study_design.state",
+          "path": "$.relations[].outcome.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -146,7 +148,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.treatment_setting.state",
+          "path": "$.relations[].study_design.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -156,7 +158,7 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.timeframe.state",
+          "path": "$.relations[].treatment_setting.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -166,7 +168,17 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.relation.threshold.state",
+          "path": "$.relations[].timeframe.state",
+          "values": [
+            "PRESENT",
+            "NOT_APPLICABLE",
+            "UNRESOLVED"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
+          "path": "$.relations[].threshold.state",
           "values": [
             "PRESENT",
             "NOT_APPLICABLE",
@@ -178,20 +190,20 @@
         {
           "debt_id": null,
           "origin": "source_measurement",
-          "path": "$.relation.source_measurements[].value"
+          "path": "$.relations[].source_measurements[].value"
         }
       ],
       "producer_paths": [
         "document_extraction_support/llm_extraction/claim_framing.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_framing.v4"
+        "document_extraction.claim_framing.v5"
       ],
-      "schema_id": "document_extraction.claim_framing.v1",
+      "schema_id": "document_extraction.claim_framing.v2",
       "schema_names": [
         "LLMSingleClaimFramingResult"
       ],
-      "shape_hash": "33693a7916d75f489278b4818cfb100d9929713ba8b10f5bdb3a571034e829c8"
+      "shape_hash": "79f83b484546c7f14f337684943fd1cd46c5d65656a481f4ba78d5b7cd9a84db"
     },
     {
       "categorical_fields": [
@@ -206,11 +218,25 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.claims[].endpoint_role_order",
+          "path": "$.claims[].arguments[].role",
           "values": [
-            "A_SUBJECT_B_OBJECT",
-            "B_SUBJECT_A_OBJECT",
-            "UNRESOLVED"
+            "INTERVENTION",
+            "CONDITION",
+            "POPULATION",
+            "VARIANT",
+            "OUTCOME",
+            "COMPARATOR",
+            "TIMEFRAME",
+            "STUDY_DESIGN",
+            "TREATMENT_SETTING",
+            "GENE_OR_PROTEIN",
+            "CHEMICAL_OR_DRUG",
+            "BIOMARKER",
+            "EXPOSURE",
+            "BIOLOGICAL_PROCESS",
+            "ANATOMY",
+            "MEASUREMENT",
+            "OTHER_ENTITY"
           ]
         },
         {
@@ -243,13 +269,13 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory.v2"
+        "document_extraction.claim_inventory.v3"
       ],
-      "schema_id": "document_extraction.claim_inventory.v2",
+      "schema_id": "document_extraction.claim_inventory.v3",
       "schema_names": [
         "LLMClaimInventoryResult"
       ],
-      "shape_hash": "73b0b45d79dabc949bb92604780bed4d605703b460518fde6b0c64a53b029d07"
+      "shape_hash": "148c48c630c44692bb340d60b8aada4bcc3142c0de20cf1be5ecc64cc17bd1d6"
     },
     {
       "categorical_fields": [
@@ -273,11 +299,25 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.missing_claims[].endpoint_role_order",
+          "path": "$.missing_claims[].arguments[].role",
           "values": [
-            "A_SUBJECT_B_OBJECT",
-            "B_SUBJECT_A_OBJECT",
-            "UNRESOLVED"
+            "INTERVENTION",
+            "CONDITION",
+            "POPULATION",
+            "VARIANT",
+            "OUTCOME",
+            "COMPARATOR",
+            "TIMEFRAME",
+            "STUDY_DESIGN",
+            "TREATMENT_SETTING",
+            "GENE_OR_PROTEIN",
+            "CHEMICAL_OR_DRUG",
+            "BIOMARKER",
+            "EXPOSURE",
+            "BIOLOGICAL_PROCESS",
+            "ANATOMY",
+            "MEASUREMENT",
+            "OTHER_ENTITY"
           ]
         },
         {
@@ -310,13 +350,13 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory_completeness.v2"
+        "document_extraction.claim_inventory_completeness.v3"
       ],
-      "schema_id": "document_extraction.claim_inventory_completeness.v2",
+      "schema_id": "document_extraction.claim_inventory_completeness.v3",
       "schema_names": [
         "ClaimInventoryCompletenessReview"
       ],
-      "shape_hash": "a338d7cf6d6600dd5235b601cdc9cceb9c2ba827d0c5273402be8015b3c6fe95"
+      "shape_hash": "ddb27fdfe24e871fe88006938953f5950bafd8045c6c3ff39acfd4e4dcedf00a"
     },
     {
       "categorical_fields": [
@@ -331,11 +371,25 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
-          "path": "$.claims[].endpoint_role_order",
+          "path": "$.claims[].arguments[].role",
           "values": [
-            "A_SUBJECT_B_OBJECT",
-            "B_SUBJECT_A_OBJECT",
-            "UNRESOLVED"
+            "INTERVENTION",
+            "CONDITION",
+            "POPULATION",
+            "VARIANT",
+            "OUTCOME",
+            "COMPARATOR",
+            "TIMEFRAME",
+            "STUDY_DESIGN",
+            "TREATMENT_SETTING",
+            "GENE_OR_PROTEIN",
+            "CHEMICAL_OR_DRUG",
+            "BIOMARKER",
+            "EXPOSURE",
+            "BIOLOGICAL_PROCESS",
+            "ANATOMY",
+            "MEASUREMENT",
+            "OTHER_ENTITY"
           ]
         },
         {
@@ -368,13 +422,13 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory_recovery.v2"
+        "document_extraction.claim_inventory_recovery.v3"
       ],
-      "schema_id": "document_extraction.claim_inventory_recovery.v2",
+      "schema_id": "document_extraction.claim_inventory_recovery.v3",
       "schema_names": [
         "MissingClaimRecoveryResult"
       ],
-      "shape_hash": "3055df3c30ac829aefa523f5942dc648dac2e9e65ad480b8b4a45686cbde19d0"
+      "shape_hash": "c97ac5e526f4aa73b0a5d1fcd0b6372e7775b8ab78ae6a09e6e97cf4d104ee35"
     },
     {
       "categorical_fields": [
@@ -495,6 +549,16 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
+          "path": "$.relations[].condition.state",
+          "values": [
+            "PRESENT",
+            "NOT_APPLICABLE",
+            "UNRESOLVED"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
           "path": "$.relations[].population.state",
           "values": [
             "PRESENT",
@@ -590,7 +654,7 @@
       "schema_names": [
         "LLMExtractionResult"
       ],
-      "shape_hash": "adfcae6deb6dba80099b9b3d63fd2cf0caa263b7d6a39414011807e3a95df0ae"
+      "shape_hash": "b4027c5eae4151e644bbfc057b89a9aa166ffdaeeded22b77b97a6f81891330a"
     },
     {
       "categorical_fields": [
