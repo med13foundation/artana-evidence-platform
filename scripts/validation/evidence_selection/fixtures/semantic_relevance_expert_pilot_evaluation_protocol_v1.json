@@ -1,0 +1,107 @@
+{
+  "schema_version": "evidence_selection_expert_pilot_evaluation_protocol.v1",
+  "study_id": "semantic-relevance-expert-pilot-v1",
+  "registered_at": "2026-07-14T23:06:41Z",
+  "evaluated_commit": "71460f596b7efa19cf74a5e1d76710a7a75a3ab8",
+  "pilot_protocol": {
+    "path": "scripts/validation/evidence_selection/fixtures/semantic_relevance_expert_pilot_protocol_v1.json",
+    "sha256": "701ff90a5377c96843164d221e403079d7fa8d90e49c1278447dda6879c57def"
+  },
+  "expected_case_count": 4,
+  "expected_record_count": 33,
+  "case_inventory_sha256": "9ebdf2a2a049441a3d9aaf98ea0750f2ff8034ee65d711204f41c52e4aff5b69",
+  "record_inventory_sha256": "65a1dc34ce2b874f3a484a204f80db19114aecbbf4f55844953ae9a1aa70fbdf",
+  "model_runs": [
+    {
+      "run_id": "current-run-1",
+      "model_role": "current",
+      "model_id": "openai:gpt-5.4-mini",
+      "run_index": 1,
+      "artifact": {
+        "path": "docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/current-run-1.json",
+        "sha256": "f28c89e559adb587433d743346bb98562eaeea3a648316c39e860f7ebe993c82"
+      }
+    },
+    {
+      "run_id": "current-run-2",
+      "model_role": "current",
+      "model_id": "openai:gpt-5.4-mini",
+      "run_index": 2,
+      "artifact": {
+        "path": "docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/current-run-2.json",
+        "sha256": "36f071bb5c500ac2d2039b9d73a2a9dc1e4f82343017511d2d2744660354fc10"
+      }
+    },
+    {
+      "run_id": "current-run-3",
+      "model_role": "current",
+      "model_id": "openai:gpt-5.4-mini",
+      "run_index": 3,
+      "artifact": {
+        "path": "docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/current-run-3.json",
+        "sha256": "df26eec63c147152fec256b2b42777359c0539c147bf80bebdbec523b2328b2f"
+      }
+    },
+    {
+      "run_id": "candidate-run-1",
+      "model_role": "candidate",
+      "model_id": "openai:gpt-5.6-luna",
+      "run_index": 1,
+      "artifact": {
+        "path": "docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/candidate-run-1.json",
+        "sha256": "f62a9a56f42c374debd0b9a59be2de5a71e14176478d20d07b4e0eb66bdc47bd"
+      }
+    },
+    {
+      "run_id": "candidate-run-2",
+      "model_role": "candidate",
+      "model_id": "openai:gpt-5.6-luna",
+      "run_index": 2,
+      "artifact": {
+        "path": "docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/candidate-run-2.json",
+        "sha256": "06801de9d934cb9b23c9ca139f3e2583aacbe3589c01c903b9794ee4046f64c1"
+      }
+    },
+    {
+      "run_id": "candidate-run-3",
+      "model_role": "candidate",
+      "model_id": "openai:gpt-5.6-luna",
+      "run_index": 3,
+      "artifact": {
+        "path": "docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/candidate-run-3.json",
+        "sha256": "3c688cec981f62e49cb7332cb1a27cd75739b6d6b2aed996a85ab7bcd6a3a5f0"
+      }
+    }
+  ],
+  "prediction_evidence_kind": "preexisting_frozen_live_agent_runs",
+  "comparison_policy": "all_registered_runs_worst_run",
+  "first_pass_agreement_definition": "exact_selection_and_packet_sufficiency_pair",
+  "precision_definition": "true_selects_divided_by_all_agent_selects_on_eligible_gold",
+  "recall_definition": "true_selects_divided_by_all_expert_selects_including_agent_abstentions",
+  "safety_review_phase": "after_adjudicated_gold_freeze",
+  "safety_review_scope": "every_registered_agent_select_claim",
+  "safety_reviewer_role": "same_qualified_adjudicator_after_gold_freeze",
+  "safety_categories": [
+    "supported",
+    "unsupported_nonsevere",
+    "unsupported_high_severity",
+    "not_assessable"
+  ],
+  "minimum_worst_decision_coverage": 0.8,
+  "minimum_case_precision": 0.7,
+  "minimum_case_recall": 0.7,
+  "minimum_case_decision_coverage": 0.7,
+  "minimum_exact_decision_repeatability": 1.0,
+  "canary_gate_definition": "every_run_full_recall_zero_false_positive_zero_invalid_agent",
+  "repeatability_definition": "records_with_identical_decisions_across_three_runs_divided_by_all_records",
+  "agent_numeric_judgments_allowed": false,
+  "acceptance_thresholds": {
+    "metric_origin": "deterministic_from_categorical_human_findings",
+    "minimum_adjudicated_precision": 0.8,
+    "minimum_adjudicated_recall": 0.8,
+    "minimum_first_pass_percent_agreement": 0.8,
+    "maximum_high_severity_overclaim_count": 0
+  },
+  "production_readiness_claim": false,
+  "production_calibration_claim": false
+}
