@@ -75,6 +75,11 @@ def require_claim_frame_promotion_preflight(
             "Canonical promotion requires a valid qualified ClaimFrame.",
         ) from exc
 
+    if not frame.assertion_arguments:
+        _reject(
+            "missing_typed_assertion_arguments",
+            "Canonical promotion requires the agent's complete typed assertion arguments.",
+        )
     if not frame.is_positive_projection_candidate:
         _reject(
             "non_positive_claim_frame",

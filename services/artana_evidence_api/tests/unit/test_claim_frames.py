@@ -738,6 +738,8 @@ def test_agent_frame_conversion_binds_source_and_preserves_measurements() -> Non
     assert frame.is_positive_projection_candidate
     assert not frame.is_positive_projection_eligible
     assert not candidates[0].trusted_evidence_eligible
+    assert candidates[0].review_status == "review_only"
+    assert "missing_typed_assertion_arguments" in candidates[0].review_reason_codes
     assert "non_positive_claim_frame" not in candidates[0].review_reason_codes
 
 

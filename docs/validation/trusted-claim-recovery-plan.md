@@ -2,9 +2,8 @@
 
 Created: 2026-07-14
 
-Status: Active; TG-01 and TG-03 are merged, TG-02 is ready for review, and
-TG-03 proves runtime safety but not scientific-quality improvement. TG-04 is
-redesigned around role-typed assertions.
+Status: TG-01 through TG-03 are merged. TG-04 reached a controlled stop after
+preserving typed roles but failing to prove scientific precision or recall.
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
@@ -172,9 +171,9 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 | Plan ID | GitHub PR | Suggested branch | Depends on | Status | Primary proof |
 |---|---:|---|---|---|---|
 | TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | merged | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
-| TG-02 | [#159](https://github.com/med13foundation/artana-evidence-platform/pull/159) | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | ready_for_review | Every eligible claim has authoritative source identity and an exact locator. Evidence: `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. |
+| TG-02 | [#159](https://github.com/med13foundation/artana-evidence-platform/pull/159) | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | merged | Every eligible claim has authoritative source identity and an exact locator. Evidence: `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. |
 | TG-03 | [#160](https://github.com/med13foundation/artana-evidence-platform/pull/160) | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | merged | Runtime and safety proof is complete: the strict Luna path completed with three provider-bound calls, fallback 0, graph writes 0, and both adversarial re-reviews clear. Scientific-quality proof failed on the first clean case with 0% endpoint/full-frame precision and recall, so the remaining 18 development cases were not run. This PR merged only as a truthful safety and architecture improvement. Evidence: `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. |
-| TG-04 | TBD | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | not_started | Role-typed n-ary assertions, ambiguity, candidate frames, qualifiers, and evidence round-trip through Evidence API and Graph DB without loss. |
+| TG-04 | [#161](https://github.com/med13foundation/artana-evidence-platform/pull/161) | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | blocked | The diagnostic Luna run preserved all six source roles and multiple frames, but the binary gold no longer measures the n-ary representation and the projected predicates remain scientifically unresolved. Prompt editing and Graph persistence are paused pending an untouched n-ary event benchmark and frozen model/task ablation. Evidence: `docs/validation/reports/2026-07-15-tg04-typed-assertion-checkpoint.md`. |
 | TG-05 | TBD | `alvaro/trusted-claims-tg05-agent-verifier` | TG-04 | not_started | Independent agent verification replaces heuristic semantic trust. |
 | TG-06 | TBD | `alvaro/trusted-claims-tg06-authoritative-grounding` | TG-04 | not_started | Every promotion-eligible entity resolves to an authoritative identifier. |
 | TG-07 | TBD | `alvaro/trusted-claims-tg07-safe-projection` | TG-05, TG-06 | not_started | Only complete supported claims project to positive graph relations. |

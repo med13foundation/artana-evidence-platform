@@ -10,20 +10,102 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 import shutil
 import subprocess
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Literal, cast
+from typing import Final, cast
 
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     CLAIM_FRAME_PIPELINE_PROMPT_VERSION,
     canonical_openai_response_id,
 )
 
+from scripts.validation.claim_frames.evidence_contract import (
+    AGENT_NUMERIC_ASSESSMENT_RES as _AGENT_NUMERIC_ASSESSMENT_RES,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    ATTEMPT_OUTCOMES,
+    ATTEMPT_ROLES,
+    DIAGNOSTIC_STATUSES,
+    FALLBACK_STATUSES,
+    PASS_ROLES,
+    ROUTING_STATUSES,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    COMMIT_RE as _COMMIT_RE,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    FALLBACK_MARKER_KEYS as _FALLBACK_MARKER_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    FALLBACK_PROVENANCE_KEYS as _FALLBACK_PROVENANCE_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    FALLBACK_PROVENANCE_RE as _FALLBACK_PROVENANCE_RE,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    INVENTORY_REQUIRED_KEYS as _INVENTORY_REQUIRED_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    INVENTORY_SOURCE_FIELD_KEYS as _INVENTORY_SOURCE_FIELD_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    MIN_MULTI_FRAME_RELATIONS as _MIN_MULTI_FRAME_RELATIONS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    MIN_TYPED_ARGUMENTS as _MIN_TYPED_ARGUMENTS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    NUMERIC_LEXEM_RE as _NUMERIC_LEXEM_RE,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    QUALIFIER_FIELD_KEYS as _QUALIFIER_FIELD_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    QUALIFIER_SOURCE_FIELD_KEYS as _QUALIFIER_SOURCE_FIELD_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    RELATION_REQUIRED_KEYS as _RELATION_REQUIRED_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    ROLE_QUALIFIER_FIELDS as _ROLE_QUALIFIER_FIELDS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    SHA256_RE as _SHA256_RE,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    SOURCE_CITATION_FIELD_KEYS as _SOURCE_CITATION_FIELD_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    SOURCE_EVIDENCE_CONTAINER_KEYS as _SOURCE_EVIDENCE_CONTAINER_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    SOURCE_EVIDENCE_FIELD_KEYS as _SOURCE_EVIDENCE_FIELD_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    SOURCE_MEASUREMENT_CONTAINER_KEYS as _SOURCE_MEASUREMENT_CONTAINER_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    SOURCE_MEASUREMENT_FIELD_KEYS as _SOURCE_MEASUREMENT_FIELD_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    SOURCE_MEASUREMENT_NUMERIC_FIELD_KEYS as _SOURCE_MEASUREMENT_NUMERIC_FIELD_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    TYPED_ARGUMENT_REQUIRED_KEYS as _TYPED_ARGUMENT_REQUIRED_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    TYPED_ARGUMENT_ROLES as _TYPED_ARGUMENT_ROLES,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    TYPED_INVENTORY_REQUIRED_KEYS as _TYPED_INVENTORY_REQUIRED_KEYS,
+)
+from scripts.validation.claim_frames.evidence_contract import (
+    AgentPayloadContext as _AgentPayloadContext,
+)
 from scripts.validation.claim_frames.provider_receipts import (
     REPORT_MODEL_ID,
     canonical_provider_model_id,
@@ -34,227 +116,6 @@ JsonObject = dict[str, object]
 REQUIRED_MODEL_ID: Final = REPORT_MODEL_ID
 REQUIRED_PROMPT_VERSION: Final = CLAIM_FRAME_PIPELINE_PROMPT_VERSION
 OFFLINE_JSON_AUTHENTICATION: Final = "not_cryptographically_authenticated"
-
-ATTEMPT_OUTCOMES: Final = frozenset(
-    {
-        "accepted",
-        "schema_invalid",
-        "semantic_invalid",
-        "invocation_failed",
-        "intentionally_skipped",
-    },
-)
-ATTEMPT_ROLES: Final = frozenset(
-    {
-        "primary",
-        "weak_review",
-        "schema_retry",
-        "zero_candidate_retry",
-        "proposal_review",
-        "claim_inventory",
-        "claim_inventory_completeness",
-        "claim_inventory_recovery",
-        "claim_framing",
-    },
-)
-PASS_ROLES: Final = frozenset(
-    {
-        "primary",
-        "weak_review",
-        "proposal_review",
-        "claim_inventory",
-        "claim_inventory_completeness",
-        "claim_inventory_recovery",
-        "claim_framing",
-    }
-)
-DIAGNOSTIC_STATUSES: Final = frozenset(
-    {
-        "not_needed",
-        "completed",
-        "llm_empty",
-        "fallback",
-        "fallback_error",
-        "unavailable",
-        "semantic_incomplete",
-    },
-)
-ROUTING_STATUSES: Final = frozenset(
-    {"not_run", "complete", "candidate_overflow", "semantic_incomplete"},
-)
-FALLBACK_STATUSES: Final = frozenset(
-    {"fallback", "fallback_error", "unavailable"},
-)
-_SHA256_RE: Final = re.compile(r"^[0-9a-f]{64}$")
-_COMMIT_RE: Final = re.compile(r"^[0-9a-f]{40}$")
-_MIN_TYPED_ARGUMENTS: Final = 2
-_MIN_MULTI_FRAME_RELATIONS: Final = 2
-_NUMERIC_LEXEM_RE: Final = re.compile(
-    r"^[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
-    r"(?:[eE][-+]?\d+)?$",
-)
-_FALLBACK_MARKER_KEYS: Final = frozenset(
-    {"fallback_output_used", "fallback_used", "used_fallback"},
-)
-_FALLBACK_PROVENANCE_KEYS: Final = frozenset(
-    {
-        "extraction_method",
-        "verification_method",
-        "producer",
-        "provenance",
-        "source_method",
-    },
-)
-_QUALIFIER_FIELD_KEYS: Final = frozenset(
-    {
-        "biological_or_variant_state",
-        "condition",
-        "population",
-        "intervention",
-        "comparator",
-        "outcome",
-        "study_design",
-        "treatment_setting",
-        "timeframe",
-        "threshold",
-    },
-)
-_FALLBACK_PROVENANCE_RE: Final = re.compile(r"(?:fallback|heuristic)", re.IGNORECASE)
-_SOURCE_EVIDENCE_CONTAINER_KEYS: Final = frozenset({"evidence", "source_evidence"})
-_SOURCE_EVIDENCE_FIELD_KEYS: Final = frozenset(
-    {
-        "exact_span",
-        "evidence_span",
-        "sentence",
-        "source_span",
-        "span",
-    },
-)
-_SOURCE_CITATION_FIELD_KEYS: Final = frozenset(
-    {"citation", "citations", "doi", "locator", "pmid", "source_locator"},
-)
-_QUALIFIER_SOURCE_FIELD_KEYS: Final = frozenset(
-    {"evidence_span", "exact_span", "span", "value"},
-)
-_SOURCE_MEASUREMENT_CONTAINER_KEYS: Final = frozenset(
-    {"source_measurement", "source_measurements"},
-)
-_SOURCE_MEASUREMENT_FIELD_KEYS: Final = frozenset(
-    {
-        "field_name",
-        "literal_span",
-        "source_hash",
-        "source_locator",
-        "unit",
-        "value",
-    },
-)
-_SOURCE_MEASUREMENT_NUMERIC_FIELD_KEYS: Final = frozenset(
-    {"literal_span", "value"},
-)
-_INVENTORY_SOURCE_FIELD_KEYS: Final = frozenset(
-    {
-        "endpoint_a_span",
-        "endpoint_b_span",
-        "exact_span",
-        "relation_cue_span",
-        "source_locator",
-    },
-)
-_INVENTORY_REQUIRED_KEYS: Final = frozenset(
-    {
-        "endpoint_a_span",
-        "endpoint_b_span",
-        "endpoint_role_order",
-        "exact_span",
-        "relation_cue_span",
-        "source_locator",
-    },
-)
-_TYPED_INVENTORY_REQUIRED_KEYS: Final = frozenset(
-    {
-        "arguments",
-        "exact_span",
-        "relation_cue_span",
-        "source_locator",
-    },
-)
-_TYPED_ARGUMENT_REQUIRED_KEYS: Final = frozenset({"role", "exact_span"})
-_ROLE_QUALIFIER_FIELDS: Final = {
-    "INTERVENTION": "intervention",
-    "CONDITION": "condition",
-    "POPULATION": "population",
-    "VARIANT": "biological_or_variant_state",
-    "OUTCOME": "outcome",
-    "COMPARATOR": "comparator",
-    "TIMEFRAME": "timeframe",
-    "STUDY_DESIGN": "study_design",
-    "TREATMENT_SETTING": "treatment_setting",
-}
-_TYPED_ARGUMENT_ROLES: Final = frozenset(
-    {
-        *_ROLE_QUALIFIER_FIELDS,
-        "GENE_OR_PROTEIN",
-        "CHEMICAL_OR_DRUG",
-        "BIOMARKER",
-        "EXPOSURE",
-        "BIOLOGICAL_PROCESS",
-        "ANATOMY",
-        "MEASUREMENT",
-        "OTHER_ENTITY",
-    },
-)
-_RELATION_REQUIRED_KEYS: Final = frozenset(
-    {"object", "predicate", "sentence", "subject"},
-)
-_NUMERIC_ASSERTION_TOKEN: Final = (
-    r"[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
-    r"(?:[eE][-+]?\d+)?\s*%?"
-)
-_ASSESSMENT_CONCEPT: Final = r"(?:confidence|probability|rating|score)"
-_AGENT_NUMERIC_ASSESSMENT_RES: Final[tuple[re.Pattern[str], ...]] = (
-    re.compile(
-        rf"\b{_ASSESSMENT_CONCEPT}\b\s*(?:[:=]\s*)?"
-        rf"(?<![\w.]){_NUMERIC_ASSERTION_TOKEN}(?!\w)",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        rf"\b{_ASSESSMENT_CONCEPT}\b"
-        rf"(?:\s+[A-Za-z][\w'-]*){{0,5}}\s+"
-        rf"(?:is|was|at|to|of)\s*"
-        rf"(?<![\w.]){_NUMERIC_ASSERTION_TOKEN}(?!\w)",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        rf"(?<![\w.]){_NUMERIC_ASSERTION_TOKEN}(?!\w)\s*"
-        r"(?:as\s+)?(?:(?:my|its|the|our|model's|agent's)\s+)?"
-        r"(?:confidence|probability|rating|score|confident)\b",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"\b(?:assign(?:s|ed|ing)?|giv(?:e|es|ing)|gave|"
-        r"rat(?:e|es|ed|ing)|scor(?:e|es|ed|ing))\b\s+"
-        r"(?:this|it|the\s+(?:claim|evidence|output|relation|answer|"
-        r"assessment|result))(?:\s+[A-Za-z][\w'-]*){0,4}\s+"
-        rf"(?<![\w.]){_NUMERIC_ASSERTION_TOKEN}(?!\w)",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        rf"(?<![\w.]){_NUMERIC_ASSERTION_TOKEN}(?!\w)\s*"
-        rf"(?:/|out\s+of)\s*{_NUMERIC_ASSERTION_TOKEN}(?!\w)",
-        re.IGNORECASE,
-    ),
-)
-
-_AgentPayloadContext = Literal[
-    "agent_text",
-    "qualifier_collection",
-    "qualifier",
-    "source_evidence",
-    "source_measurement_collection",
-    "source_measurement",
-]
-
 
 def collect_repository_evidence(repo_root: Path) -> JsonObject:
     """Capture the clean tracked-tree evidence required for live TG-03 runs."""

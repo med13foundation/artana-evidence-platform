@@ -67,6 +67,8 @@ from artana_evidence_api.dependencies import (
     get_schedule_store,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimArgument,
+    ClaimArgumentRole,
     ClaimFrame,
     ClaimQualifier,
     EpistemicStatus,
@@ -384,7 +386,20 @@ def _with_qualified_agent_claim(
         ),
         polarity=Polarity.SUPPORT,
         epistemic_status=EpistemicStatus.ASSERTED,
+        assertion_arguments=(
+            ClaimArgument(
+                role=ClaimArgumentRole.OTHER_ENTITY,
+                exact_span=subject,
+                role_rationale="The synthetic source names the subject.",
+            ),
+            ClaimArgument(
+                role=ClaimArgumentRole.OTHER_ENTITY,
+                exact_span=object_,
+                role_rationale="The synthetic source names the object.",
+            ),
+        ),
         biological_or_variant_state=absent,
+        condition=absent,
         population=absent,
         intervention=absent,
         comparator=absent,

@@ -675,6 +675,7 @@ async def test_llm_extraction_logs_debug_for_filtered_candidates(
                         }
                         for field in (
                             "biological_or_variant_state",
+                            "condition",
                             "population",
                             "intervention",
                             "comparator",

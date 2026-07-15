@@ -508,6 +508,8 @@ def _claim_frame_review_reason_codes(
     if claim_frame is None:
         return ()
     reasons: list[str] = []
+    if not claim_frame.assertion_arguments:
+        reasons.append("missing_typed_assertion_arguments")
     if not claim_frame.is_positive_projection_candidate:
         reasons.append("non_positive_claim_frame")
     if any(

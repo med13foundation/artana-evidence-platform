@@ -10,6 +10,8 @@ from uuid import UUID, uuid4
 import pytest
 from artana_evidence_api.confidence_assessment import proposal_fact_assessment
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimArgument,
+    ClaimArgumentRole,
     ClaimFrame,
     ClaimFramePromotionError,
     ClaimQualifier,
@@ -853,7 +855,20 @@ def _proposal_with_resolved_entities(
         ),
         polarity=Polarity.SUPPORT,
         epistemic_status=EpistemicStatus.ASSERTED,
+        assertion_arguments=(
+            ClaimArgument(
+                role=ClaimArgumentRole.GENE_OR_PROTEIN,
+                exact_span="MED13",
+                role_rationale="The source names the associated gene.",
+            ),
+            ClaimArgument(
+                role=ClaimArgumentRole.CONDITION,
+                exact_span="cardiomyopathy",
+                role_rationale="The source names the associated condition.",
+            ),
+        ),
         biological_or_variant_state=absent,
+        condition=absent,
         population=absent,
         intervention=absent,
         comparator=absent,
@@ -1345,6 +1360,32 @@ def test_promote_to_graph_claim_rejects_unframed_legacy_candidate() -> None:
 
     assert exc_info.value.status_code == 409
     assert exc_info.value.detail["reason_code"] == "missing_qualified_claim_frame"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_promote_to_graph_claim_rejects_argumentless_legacy_frame() -> None:
+    proposal = _proposal_with_resolved_entities()
+    frame = ClaimFrame.model_validate(proposal.payload["claim_frame"])
+    payload = {
+        **proposal.payload,
+        "claim_frame": frame.model_copy(
+            update={"assertion_arguments": ()},
+        ).model_dump(mode="json"),
+    }
+    gateway = _MockRelationGateway()
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=replace(proposal, payload=payload),
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == "missing_typed_assertion_arguments"
     assert gateway.calls == []
     assert gateway.claim_calls == []
 

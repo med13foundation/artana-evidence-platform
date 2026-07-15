@@ -58,6 +58,8 @@ from artana_evidence_api.dependencies import (
     get_schedule_store,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimArgument,
+    ClaimArgumentRole,
     ClaimFrame,
     ClaimQualifier,
     EpistemicStatus,
@@ -757,7 +759,25 @@ def _source_bound_positive_claim_frame(
         ),
         polarity=Polarity.SUPPORT,
         epistemic_status=EpistemicStatus.ASSERTED,
+        assertion_arguments=(
+            ClaimArgument(
+                role=ClaimArgumentRole.OTHER_ENTITY,
+                exact_span=subject_label,
+                role_rationale="The source names the relation subject.",
+            ),
+            ClaimArgument(
+                role=ClaimArgumentRole.OTHER_ENTITY,
+                exact_span=object_label,
+                role_rationale="The source names the relation object.",
+            ),
+            ClaimArgument(
+                role=ClaimArgumentRole.POPULATION,
+                exact_span=population,
+                role_rationale="The source names the studied population.",
+            ),
+        ),
         biological_or_variant_state=ClaimQualifier.not_applicable(),
+        condition=ClaimQualifier.not_applicable(),
         population=ClaimQualifier.present(
             value=population,
             exact_span=population,
