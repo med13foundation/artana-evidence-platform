@@ -1001,6 +1001,70 @@ def test_provider_backed_attempt_without_payload_cannot_escape_receipt_gate() ->
     assert comparison["gate_passed"] is False
 
 
+def test_partial_failure_after_accepted_frame_is_reported_and_fails_parity_gate() -> (
+    None
+):
+    fixture = _minimal_fixture()
+    baseline = _build_report(fixture, run_id="partial-framing-baseline")
+    case = copy.deepcopy(baseline["cases"][0])
+    raw_output = case["raw_agent_output"]
+    failed_attempt = _synthetic_model_attempt(
+        invocation_id="partial-framing-failure",
+        attempt_role="schema_retry",
+        pass_role="claim_framing",
+        semantic_unit_id="partial-framing-unit",
+        source_sha256=_sha256_text(fixture.cases[0].source_text),
+        input_sha256="d" * 64,
+        raw_model_payload={"malformed": "retry"},
+        output_schema_identity="synthetic.SingleClaimFramingResult",
+    )
+    failed_attempt.update(
+        {
+            "validation_outcome": "invocation_failed",
+            "raw_model_payload": None,
+            "payload_sha256": None,
+            "error_type": "ModelTimeoutError",
+            "provider_execution_response_id": None,
+            "provider_response_id": None,
+            "provider_output_sha256": None,
+            "kernel_run_id": None,
+            "kernel_event_seq": None,
+            "replayed": None,
+        },
+    )
+    raw_output["attempts"].append(failed_attempt)
+    raw_output["strict_error_type"] = "ModelTimeoutError"
+    candidate_output = {"relations": []}
+    case.update(
+        {
+            "frames": [],
+            "postprocessed_candidate_output": candidate_output,
+            "diagnostics": _diagnostics(
+                "unavailable",
+                claim_extraction_routing_status="not_run",
+            ),
+            "model_attempt_invocation_ids": _executed_attempt_ids(raw_output),
+            "output_sha256": _sha256_json(raw_output),
+            "postprocessed_output_sha256": _sha256_json(candidate_output),
+        },
+    )
+
+    report = build_run_report(
+        fixture=fixture,
+        run_id="partial-framing-report",
+        generated_at=_GENERATED_AT,
+        model_id=REQUIRED_MODEL_ID,
+        prompt_version=REQUIRED_PROMPT_VERSION,
+        case_results=[case],
+        repository_evidence=_REPOSITORY_EVIDENCE,
+    )
+
+    assert report["metrics"]["model_invocation_failure_count"] == 1
+    assert report["metrics"]["omitted_accepted_framing_output_count"] == 1
+    assert report["gates"]["accepted_framing_output_parity"]["passed"] is False
+    assert report["gate_passed"] is False
+
+
 @pytest.mark.parametrize(
     ("failure_mode", "expected_failure"),
     [

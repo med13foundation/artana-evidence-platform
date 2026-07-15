@@ -432,6 +432,12 @@ def _normalize_case_results(
                 expected_model_id=model_id,
             ),
         )
+        case["omitted_accepted_framing_output_count"] = (
+            _omitted_accepted_framing_output_count(
+                case,
+                expected_model_id=model_id,
+            )
+        )
         normalized.append(case)
     return tuple(normalized)
 
@@ -867,6 +873,11 @@ def _validate_case_artifact_integrity(
             candidate_frames=candidate_frames,
             attempts=attempts,
             case_id=_string(case.get("case_id")),
+            allow_partial_failure=(
+                isinstance(raw_output.get("strict_error_type"), str)
+                and bool(raw_output.get("strict_error_type"))
+                and case.get("strict_usable_extraction_completed") is False
+            ),
         )
 
 
@@ -875,6 +886,7 @@ def _validate_candidate_lineage(
     candidate_frames: Sequence[Mapping[str, object]],
     attempts: Sequence[Mapping[str, object]],
     case_id: str,
+    allow_partial_failure: bool,
 ) -> None:
     framing_attempts = tuple(
         attempt
@@ -894,6 +906,8 @@ def _validate_candidate_lineage(
             f"case {case_id} contains a candidate not derived from an accepted "
             "raw agent relation",
         )
+    if allow_partial_failure:
+        return
     raise ValueError(
         f"case {case_id} omits an accepted provider-bound framing output from "
         "postprocessing or scoring",
@@ -997,6 +1011,12 @@ def _recompute_case_results(
                 expected_model_id=_required_nonempty_string(report, "model_id"),
             ),
         )
+        evaluated["omitted_accepted_framing_output_count"] = (
+            _omitted_accepted_framing_output_count(
+                case_result,
+                expected_model_id=_required_nonempty_string(report, "model_id"),
+            )
+        )
         output.append(evaluated)
     return tuple(output)
 
@@ -1019,6 +1039,25 @@ def _frames_from_case_result(
     if not isinstance(raw_frames, list):
         raise TypeError("report case frames must be a list")
     return tuple(_object(frame) for frame in raw_frames)
+
+
+def _omitted_accepted_framing_output_count(
+    case_result: Mapping[str, object],
+    *,
+    expected_model_id: str,
+) -> int:
+    attempts = validate_model_attempt_records(
+        case_result.get("raw_agent_output"),
+        expected_model_id=expected_model_id,
+    )
+    provider_frames = Counter(
+        _sha256_json(_raw_relation_frame(relation))
+        for relation in accepted_raw_relations(attempts)
+    )
+    scored_frames = Counter(
+        _sha256_json(frame) for frame in _frames_from_case_result(case_result)
+    )
+    return sum((provider_frames - scored_frames).values())
 
 
 def _find_frame(

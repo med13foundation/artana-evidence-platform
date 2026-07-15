@@ -2,12 +2,14 @@
 
 Date: 2026-07-15
 
-Status: `evidence_pending`
+Status: `runtime_complete_quality_not_demonstrated`
 
 Decision: **TG-03 now has an inventory-first, direction-aware ClaimFrame path and
-stronger fail-closed graph boundaries. The implementation is test-green, but no
-current result yet proves that scientific precision or recall improved. Agent
-claim and relation persistence therefore remains quarantined.**
+stronger fail-closed graph boundaries. A clean strict Luna smoke proves that the
+real agent path completes without fallback, but its first simple case scored
+zero endpoint and full-frame precision/recall. Scientific quality improvement is
+not demonstrated, the 19-case run was stopped, and agent claim/relation
+persistence remains quarantined.**
 
 ## Product Result
 
@@ -60,14 +62,21 @@ tree:
 - missing or malformed quality metrics fail closed;
 - abstention can no longer manufacture perfect precision while recall is absent;
 - agent-authored claims and graph projections remain non-persistable.
+- a clean detached-worktree `openai:gpt-5.6-luna` smoke completed the real
+  inventory, completeness, and framing calls with three canonical provider
+  response IDs, zero model invocation failures, zero fallback outputs, and no
+  graph write;
+- partial semantic failures now produce valid failing reports instead of losing
+  earlier accepted attempt evidence or crashing the audit.
 
 These results prove a stricter and more truthful system boundary. They do not
 prove better biomedical extraction.
 
 ## What Is Not Proven
 
-- The current inventory-first pipeline has not yet completed its strict live
-  `openai:gpt-5.6-luna` smoke run.
+- The live smoke did not produce a correct frame on
+  `holdout_variant_alk_g1202r`: endpoint/source and full-frame precision/recall
+  were all `0.0`.
 - No prospectively frozen external set has measured current claim precision,
   recall, direction, qualifiers, polarity, or stability.
 - No authenticated human expert has validated the outputs.
@@ -120,6 +129,48 @@ is limited to proving that the real provider path completes with the current
 schemas, no semantic fallback credit, exact attempt audit records, and no graph
 write. It cannot earn a scientific-quality merge claim.
 
+The smoke ran from clean commit `de4e9a6c` as
+`tg03-one-case-luna-smoke-final`. Runtime results were:
+
+| Deterministic measure | Result |
+|---|---:|
+| Provider-bound executed attempts | 3 |
+| Agent invocation completion | 100% |
+| Composed pipeline completion | 100% |
+| Strict usable extraction completion | 100% |
+| Model invocation failures | 0 |
+| Fallback outputs | 0 |
+| Endpoint/source precision and recall | 0% / 0% |
+| Full-frame precision and recall | 0% / 0% |
+
+The compact evidence packet is
+`docs/validation/reports/2026-07-15-tg03-luna-one-case-smoke-summary.json`.
+Single-run provider receipts remain `not_verified` by policy because live
+retrieval is a comparison-only gate; the report nevertheless contains three
+canonical provider IDs and exact attempt/output bindings.
+
+## Root-Cause Finding
+
+The source says that, among Korean adults with ALK G1202R-positive lung
+adenocarcinoma, lorlatinib reduced intracranial lesions. The frozen target treats
+`lorlatinib` and `ALK G1202R-positive lung adenocarcinoma` as the primary
+`TREATS` endpoints, with population, variant state, and intracranial lesions as
+typed qualifiers. The inventory agent instead selected the grammatical clause
+`lorlatinib reduced intracranial lesions`, treated the lesions as the second
+endpoint, and declared the disease and population to be context. Framing then
+received only that shortened claim-local span, so it could not recover the
+discarded roles.
+
+This is a claim-representation failure, not merely a stronger-model question.
+The sentence can support an intervention-disease assertion and an
+intervention-outcome assertion. A binary untyped endpoint inventory forces an
+early lossy choice. The next product experiment must preserve the full source
+sentence and classify `INTERVENTION`, `CONDITION`, `POPULATION`, `VARIANT`, and
+`OUTCOME` roles before selecting graph endpoints. When more than one assertion
+is defensible, the agent must emit categorical `MULTIPLE_VALID_FRAMES` or
+`AMBIGUOUS` output and retain both candidates for verification rather than
+silently collapsing one.
+
 ## Adversarial Review
 
 The first independent reviews found two high-severity classes of issue:
@@ -130,8 +181,12 @@ The first independent reviews found two high-severity classes of issue:
    switch, resolve claims as a UUID-shaped human, or mark workflows applied from
    self-asserted evidence.
 
-Both root causes are fixed and covered by regressions. A second independent
-review of those fixes is required before the PR can be called review-ready.
+Both root causes are fixed and covered by regressions. Follow-up adversarial
+review also required provider accounting for schema-invalid attempts,
+case-specific evidence-unit binding even when source text is identical,
+independent conflict/risk tests, and canonical AI actor coverage for official
+batch mutations. Those fixes are now implemented and test-green; final reviewer
+closure remains required before the PR is review-ready.
 
 ## Stop Rule
 
@@ -140,7 +195,12 @@ smoke completes, credited fallback and graph writes remain zero, provider and
 attempt lineage are intact, all service gates remain green, and the second
 adversarial review has no unresolved high-severity finding.
 
-Actual scientific progress is deferred to the prospectively frozen TG-08 set.
+The stop rule was applied after the first clean live case produced `0.0`
+endpoint/full-frame precision and recall. The remaining 18 development cases
+were not run, because they would add cost without changing the architectural
+finding.
+
+Actual confirmatory scientific progress is deferred to the prospectively frozen TG-08 set.
 If two consecutive product experiments fail to produce a positive paired net
 change in precision and recall without weakening safety, stop prompt iteration
 and run a model/task ablation. Do not build another evaluation layer.
@@ -148,7 +208,13 @@ and run a model/task ablation. Do not build another evaluation layer.
 ## Honest Next Decision
 
 TG-03 is not trusted-graph ready and is not human-expert validated. Its current
-value is that the system asks a better structured question, measures omissions
-as well as false positives, and cannot silently promote an agent result through
-a manual or fallback path. TG-04 may add lossless claim-ledger persistence, but
-projection must remain disabled until TG-05, TG-06, and TG-07 gates pass.
+value is real but limited: the provider path is truthful and auditable, and it
+cannot silently promote an agent result through a manual or fallback path. The
+current binary claim inventory is still scientifically lossy.
+
+TG-04 should therefore persist a role-typed, n-ary clinical assertion rather
+than freezing the current binary mistake. TG-05 should independently verify
+each role and proposed frame from source-only evidence. TG-06 should ground the
+condition, intervention, variant, and outcome independently. Projection stays
+disabled until those gates pass and TG-08 shows a positive paired precision and
+recall change on prospective cases.

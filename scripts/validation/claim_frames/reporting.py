@@ -104,6 +104,7 @@ def render_markdown(report: Mapping[str, object]) -> str:
         "positive_on_negative_or_null_count",
         "agent_authored_numeric_value_count",
         "model_invocation_failure_count",
+        "omitted_accepted_framing_output_count",
         "source_measurement_without_span_count",
         "exact_semantic_frame_stability_rate",
         "canonical_semantic_frame_stability_rate",

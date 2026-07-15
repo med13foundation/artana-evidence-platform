@@ -7,6 +7,11 @@ from uuid import UUID, uuid4
 import pytest
 import sqlalchemy as sa
 from artana_evidence_db import database as graph_database
+from artana_evidence_db.ai_full_mode_persistence_models import (
+    ConceptProposalModel,
+    ConnectorProposalModel,
+    GraphChangeProposalModel,
+)
 from artana_evidence_db.app import create_app
 from artana_evidence_db.claim_relation_persistence_model import ClaimRelationModel
 from artana_evidence_db.claim_relation_repository import (
@@ -17,6 +22,9 @@ from artana_evidence_db.kernel_claim_models import (
     GraphClaimParticipantModel,
     GraphRelationClaimModel,
     RelationProjectionSourceModel,
+)
+from artana_evidence_db.kernel_dictionary_proposal_models import (
+    DictionaryProposalModel,
 )
 from artana_evidence_db.kernel_relation_models import RelationModel
 from artana_evidence_db.kernel_repositories import (
@@ -1142,8 +1150,10 @@ def test_ai_cannot_mark_workflow_resolved_without_server_application(
     assert "cannot mark workflows resolved" in action_response.text
 
 
+@pytest.mark.parametrize("action", ["approve", "apply_plan"])
 def test_ai_cannot_approve_conflict_even_when_low_risk_policy_allows_ai(
     graph_client: TestClient,
+    action: str,
 ) -> None:
     space_id, admin_headers = _create_space(graph_client)
     principal = "agent:conflict-policy"
@@ -1172,7 +1182,7 @@ def test_ai_cannot_approve_conflict_even_when_low_risk_policy_allows_ai(
             "X-TEST-GRAPH-AI-PRINCIPAL": principal,
         },
         json={
-            "action": "approve",
+            "action": action,
             "input_hash": workflow["workflow_hash"],
             "risk_tier": "low",
             "confidence_assessment": _AI_DECISION_CONFIDENCE_ASSESSMENT,
@@ -1263,6 +1273,163 @@ def test_nested_workflow_risk_is_derived_independently_of_outer_batch(
         headers=admin_headers,
     ).json()
     assert target_after["status"] == "PLAN_READY"
+
+
+def test_ai_batch_persists_canonical_actor_on_official_proposal_reviews(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    principal = "agent:persisted-batch-reviewer"
+    _enable_ai_workflows(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        ai_principal=principal,
+        batch_auto_apply_low_risk=True,
+    )
+    suffix = uuid4().hex[:8]
+    concept_response = graph_client.post(
+        f"/v1/spaces/{space_id}/concepts/proposals",
+        headers=admin_headers,
+        json={
+            "domain_context": "general",
+            "entity_type": "PHENOTYPE",
+            "canonical_label": f"AI batch lineage concept {suffix}",
+            "evidence_payload": {"source": "actor-lineage-test"},
+            "source_ref": f"actor-lineage-concept-{suffix}",
+        },
+    )
+    assert concept_response.status_code == 201, concept_response.text
+    concept = concept_response.json()
+    dictionary_response = graph_client.post(
+        "/v1/dictionary/proposals/relation-types",
+        headers=admin_headers,
+        json={
+            "id": f"AI_BATCH_LINEAGE_{suffix.upper()}",
+            "display_name": f"AI batch lineage {suffix}",
+            "description": "Synthetic relation type for actor-lineage validation.",
+            "domain_context": "general",
+            "rationale": "Verify canonical AI review persistence.",
+            "evidence_payload": {"source": "actor-lineage-test"},
+        },
+    )
+    assert dictionary_response.status_code == 201, dictionary_response.text
+    dictionary = dictionary_response.json()
+    connector_response = graph_client.post(
+        f"/v1/spaces/{space_id}/connector-proposals",
+        headers=admin_headers,
+        json={
+            "connector_slug": f"actor-lineage-{suffix}",
+            "display_name": f"Actor Lineage {suffix}",
+            "connector_kind": "document_source",
+            "domain_context": "general",
+            "metadata_payload": {"runtime": "external"},
+            "mapping_payload": {
+                "field_mappings": [
+                    {
+                        "source_field": "gene",
+                        "target_dimension": "entity_type",
+                        "target_id": "GENE",
+                    },
+                ],
+            },
+            "evidence_payload": {"source": "actor-lineage-test"},
+            "source_ref": f"actor-lineage-connector-{suffix}",
+        },
+    )
+    assert connector_response.status_code == 201, connector_response.text
+    connector = connector_response.json()
+    graph_change_response = graph_client.post(
+        f"/v1/spaces/{space_id}/graph-change-proposals",
+        headers=admin_headers,
+        json={
+            "concepts": [
+                {
+                    "local_id": f"phenotype-{suffix}",
+                    "domain_context": "general",
+                    "entity_type": "PHENOTYPE",
+                    "canonical_label": f"Actor lineage phenotype {suffix}",
+                },
+            ],
+            "claims": [],
+            "source_ref": f"actor-lineage-graph-change-{suffix}",
+        },
+    )
+    assert graph_change_response.status_code == 201, graph_change_response.text
+    graph_change = graph_change_response.json()
+    batch_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": principal,
+        },
+        json={
+            "kind": "batch_review",
+            "input_payload": {
+                "generated_resources": [
+                    {
+                        "resource_type": "concept_proposal",
+                        "resource_id": concept["id"],
+                        "action": "reject",
+                        "input_hash": concept["proposal_hash"],
+                    },
+                    {
+                        "resource_type": "dictionary_proposal",
+                        "resource_id": dictionary["id"],
+                        "action": "reject",
+                    },
+                    {
+                        "resource_type": "connector_proposal",
+                        "resource_id": connector["id"],
+                        "action": "reject",
+                    },
+                    {
+                        "resource_type": "graph_change_proposal",
+                        "resource_id": graph_change["id"],
+                        "action": "reject",
+                        "input_hash": graph_change["proposal_hash"],
+                    },
+                ],
+            },
+            "source_ref": f"actor-lineage-batch-{suffix}",
+        },
+    )
+    assert batch_response.status_code == 201, batch_response.text
+    batch = batch_response.json()
+
+    action_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{batch['id']}/actions",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": principal,
+        },
+        json={
+            "action": "approve",
+            "input_hash": batch["workflow_hash"],
+            "risk_tier": "low",
+            "confidence_assessment": _AI_DECISION_CONFIDENCE_ASSESSMENT,
+            "ai_decision": {
+                "ai_principal": principal,
+                "rationale": "Reject proposals with canonical AI lineage.",
+            },
+        },
+    )
+
+    assert action_response.status_code == 200, action_response.text
+    assert action_response.json()["status"] == "APPLIED"
+    with graph_database.SessionLocal() as session:
+        reviewed_models = (
+            session.get(ConceptProposalModel, UUID(concept["id"])),
+            session.get(DictionaryProposalModel, dictionary["id"]),
+            session.get(ConnectorProposalModel, UUID(connector["id"])),
+            session.get(GraphChangeProposalModel, UUID(graph_change["id"])),
+        )
+        assert all(model is not None for model in reviewed_models)
+        assert {
+            model.reviewed_by for model in reviewed_models if model is not None
+        } == {
+            principal,
+        }
 
 
 def test_noncanonical_ai_principal_is_rejected_at_authentication(

@@ -148,6 +148,13 @@ def _quality_readiness_gates(
             passed=_integer(metrics.get("model_invocation_failure_count")) == 0,
             rule=f"model invocation failures are zero{scope}",
         ),
+        "accepted_framing_output_parity": _gate(
+            passed=_integer(
+                metrics.get("omitted_accepted_framing_output_count"),
+            )
+            == 0,
+            rule=f"accepted provider framing outputs are never omitted{scope}",
+        ),
         "no_fallback": _gate(
             passed=_integer(metrics.get("fallback_output_count")) == 0,
             rule=f"strict reports contain no fallback output{scope}",
