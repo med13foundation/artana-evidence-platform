@@ -25,6 +25,12 @@ hand to real non-developer reviewers.
 Do not import the simulated decisions produced by this evaluation. They are
 diagnostic simulation output only.
 
+An authoritative-source follow-up is available in
+[`2026-07-14-post-pr154-external-source-validation.md`](2026-07-14-post-pr154-external-source-validation.md).
+It verifies all 29 unique PubMed sources, identifies one linked erratum, and
+separates source-level relevance from packet-only sufficiency for the four
+BRCA1 disagreements. It remains diagnostic and does not create human gold.
+
 ## Scope And Method
 
 The evaluation used three separate subagent runs:
