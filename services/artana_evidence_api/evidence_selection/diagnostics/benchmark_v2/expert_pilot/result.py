@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
 _RUNS_PER_MODEL = 3
 ModelRole = Literal["current", "candidate"]
+_MODEL_ROLES: tuple[ModelRole, ...] = ("current", "candidate")
 GateStatus = Literal["passed", "failed", "unavailable"]
 ComparisonStatus = Literal[
     "current_only_passed",
@@ -125,7 +126,7 @@ def build_expert_pilot_result(
             gold=gold,
             protocol=protocol,
         )
-        for role in ("current", "candidate")
+        for role in _MODEL_ROLES
     )
     status_by_role = {summary.model_role: summary.gate_status for summary in summaries}
     comparison_status = _comparison_status(status_by_role)
