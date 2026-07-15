@@ -123,7 +123,7 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 
 | Plan ID | GitHub PR | Suggested branch | Depends on | Status | Primary proof |
 |---|---:|---|---|---|---|
-| TG-01 | TBD | `alvaro/trusted-claims-tg01-truthful-safety` | None | ready_for_review | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
+| TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | ready_for_review | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
 | TG-02 | TBD | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | not_started | Every eligible claim has authoritative source identity and an exact locator. |
 | TG-03 | TBD | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | not_started | Agent extraction preserves polarity, state, qualifiers, and evidence. |
 | TG-04 | TBD | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | not_started | Qualified claims round-trip through Evidence API and Graph DB without loss. |
