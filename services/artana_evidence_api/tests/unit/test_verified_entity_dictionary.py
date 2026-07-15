@@ -37,7 +37,6 @@ def test_verified_dictionary_resolves_cardiac_septum_alias() -> None:
             "familial hypercholesterolemia",
             "MONDO:0005439",
         ),
-        ("KRAS G12D", "KRAS G12D", "ClinVar:KRAS_G12D"),
         ("Larotrectinib", "Larotrectinib", "DrugBank:DB14723"),
         ("MSI-high status", "MSI-high status", "NCIT:C36493"),
         ("NTRK fusion solid tumors", "NTRK fusion positive cancer", "MONDO:0700215"),
@@ -111,6 +110,26 @@ def test_verified_dictionary_resolves_repeated_v3_high_value_endpoint_gaps(
         ("GLA variants", "gene_state_requires_structured_grounding"),
         ("HER2 amplification", "gene_state_requires_structured_grounding"),
         ("JAK2 signaling", "gene_state_requires_structured_grounding"),
+        (
+            "BRAF V600E",
+            "variant_identifier_requires_authoritative_verification",
+        ),
+        (
+            "EGFR T790M",
+            "variant_identifier_requires_authoritative_verification",
+        ),
+        (
+            "JAK2 V617F",
+            "variant_identifier_requires_authoritative_verification",
+        ),
+        (
+            "KRAS G12C",
+            "variant_identifier_requires_authoritative_verification",
+        ),
+        (
+            "KRAS G12D",
+            "variant_identifier_requires_authoritative_verification",
+        ),
         ("LDLR loss-of-function variants", "gene_state_requires_structured_grounding"),
         ("MECP2 pathogenic variants", "gene_state_requires_structured_grounding"),
         ("MET amplification", "gene_state_requires_structured_grounding"),
@@ -118,6 +137,10 @@ def test_verified_dictionary_resolves_repeated_v3_high_value_endpoint_gaps(
         ("PD-L1 expression", "gene_state_requires_structured_grounding"),
         ("PTEN loss", "gene_state_requires_structured_grounding"),
         ("TP53 loss", "gene_state_requires_structured_grounding"),
+        (
+            "RET p.Arg1174*",
+            "variant_identifier_requires_authoritative_verification",
+        ),
     ],
 )
 def test_non_exact_v3_endpoint_labels_are_review_only(

@@ -30,10 +30,6 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
         curie="HGNC:583",
     ),
     VerifiedEntityRecord(
-        label="BRAF V600E",
-        curie="ClinVar:BRAF_V600E",
-    ),
-    VerifiedEntityRecord(
         label="BRCA-mutated ovarian cancer",
         curie="MONDO:0008170",
     ),
@@ -57,10 +53,6 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="Cisplatin",
         curie="DrugBank:DB00515",
-    ),
-    VerifiedEntityRecord(
-        label="EGFR T790M",
-        curie="ClinVar:EGFR_T790M",
     ),
     VerifiedEntityRecord(
         label="Fabry disease",
@@ -107,14 +99,6 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="JAK2",
         curie="HGNC:6192",
-    ),
-    VerifiedEntityRecord(
-        label="KRAS G12C",
-        curie="ClinVar:KRAS_G12C",
-    ),
-    VerifiedEntityRecord(
-        label="KRAS G12D",
-        curie="ClinVar:KRAS_G12D",
     ),
     VerifiedEntityRecord(
         label="Larotrectinib",
@@ -182,10 +166,6 @@ VERIFIED_ENTITY_RECORDS: tuple[VerifiedEntityRecord, ...] = (
     VerifiedEntityRecord(
         label="PTEN",
         curie="HGNC:9588",
-    ),
-    VerifiedEntityRecord(
-        label="RET p.Arg1174*",
-        curie="ClinVar:RET_ARG1174TER",
     ),
     VerifiedEntityRecord(
         label="Rett syndrome",
@@ -272,6 +252,14 @@ REVIEW_ONLY_ENTITY_RECORDS: tuple[ReviewOnlyEntityRecord, ...] = (
         aliases=("BRCA1 truncating variants",),
     ),
     ReviewOnlyEntityRecord(
+        label="BRAF V600E",
+        reason_code="variant_identifier_requires_authoritative_verification",
+    ),
+    ReviewOnlyEntityRecord(
+        label="EGFR T790M",
+        reason_code="variant_identifier_requires_authoritative_verification",
+    ),
+    ReviewOnlyEntityRecord(
         label="EGFR exon 19 deletion lung adenocarcinoma",
         reason_code="molecular_subtype_requires_structured_grounding",
     ),
@@ -301,6 +289,18 @@ REVIEW_ONLY_ENTITY_RECORDS: tuple[ReviewOnlyEntityRecord, ...] = (
         reason_code="gene_state_requires_structured_grounding",
     ),
     ReviewOnlyEntityRecord(
+        label="JAK2 V617F",
+        reason_code="variant_identifier_requires_authoritative_verification",
+    ),
+    ReviewOnlyEntityRecord(
+        label="KRAS G12C",
+        reason_code="variant_identifier_requires_authoritative_verification",
+    ),
+    ReviewOnlyEntityRecord(
+        label="KRAS G12D",
+        reason_code="variant_identifier_requires_authoritative_verification",
+    ),
+    ReviewOnlyEntityRecord(
         label="LDLR loss-of-function variants",
         reason_code="gene_state_requires_structured_grounding",
     ),
@@ -327,6 +327,10 @@ REVIEW_ONLY_ENTITY_RECORDS: tuple[ReviewOnlyEntityRecord, ...] = (
     ReviewOnlyEntityRecord(
         label="response to pembrolizumab",
         reason_code="composite_treatment_response_label",
+    ),
+    ReviewOnlyEntityRecord(
+        label="RET p.Arg1174*",
+        reason_code="variant_identifier_requires_authoritative_verification",
     ),
     ReviewOnlyEntityRecord(
         label="TP53 loss",

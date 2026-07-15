@@ -35,8 +35,9 @@
           "support_sentence": "Osimertinib targets EGFR T790M in resistant lung cancer cells.",
           "value_level": "high",
           "rationale": "Direct drug-to-variant target relation.",
+          "review_status": "review_only",
           "subject_curie": "DrugBank:DB09330",
-          "object_curie": "ClinVar:EGFR_T790M",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -92,8 +93,9 @@
           "support_sentence": "Sotorasib targets KRAS G12C by binding the mutant cysteine pocket.",
           "value_level": "high",
           "rationale": "Direct drug-to-variant target relation.",
+          "review_status": "review_only",
           "subject_curie": "DrugBank:DB15569",
-          "object_curie": "ClinVar:KRAS_G12C",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -168,7 +170,8 @@
           "support_sentence": "BRAF V600E activates MAPK signaling in melanoma cells.",
           "value_level": "high",
           "rationale": "Specific variant-to-pathway activation.",
-          "subject_curie": "ClinVar:BRAF_V600E",
+          "review_status": "review_only",
+          "subject_curie": null,
           "object_curie": "GO:0000165",
           "requires_entailment": true
         }
@@ -336,8 +339,9 @@
           "support_sentence": "KRAS G12C is targeted by sotorasib in lung cancer models.",
           "value_level": "high",
           "rationale": "The second sentence should not be accepted as full support because it omits the named subject and object pair.",
+          "review_status": "review_only",
           "subject_curie": "DrugBank:DB15569",
-          "object_curie": "ClinVar:KRAS_G12C",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -355,7 +359,8 @@
           "support_sentence": "RET p.Arg1174* activates MAPK signaling in engineered cells.",
           "value_level": "high",
           "rationale": "Variant aliases should not fragment the entity identity.",
-          "subject_curie": "ClinVar:RET_ARG1174TER",
+          "review_status": "review_only",
+          "subject_curie": null,
           "object_curie": "GO:0000165",
           "requires_entailment": true
         }
@@ -431,7 +436,8 @@
           "support_sentence": "EGFR T790M causes resistance to gefitinib and is associated with disease progression.",
           "value_level": "high",
           "rationale": "Specific resistance cause should suppress a redundant generic association.",
-          "subject_curie": "ClinVar:EGFR_T790M",
+          "review_status": "review_only",
+          "subject_curie": null,
           "object_curie": "DrugBank:DB00317",
           "requires_entailment": true
         }
@@ -469,7 +475,8 @@
           "support_sentence": "BRAF V600E activates MAPK signaling in melanoma cells.",
           "value_level": "high",
           "rationale": "Tail relation should remain measurable as long-document coverage expands.",
-          "subject_curie": "ClinVar:BRAF_V600E",
+          "review_status": "review_only",
+          "subject_curie": null,
           "object_curie": "GO:0000165",
           "requires_entailment": true
         }

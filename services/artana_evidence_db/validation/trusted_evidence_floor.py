@@ -6,6 +6,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.validation.identifier_authority import (
+    has_authority_compatible_identifier_syntax,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +36,7 @@ def trusted_evidence_floor_issue(
         or _failed_trust_floors_issue(metadata)
         or _review_lane_floor_issue(metadata)
         or _entity_link_floor_issue(metadata)
+        or _server_verified_support_receipt_floor_issue()
     )
 
 
@@ -80,12 +84,19 @@ def _grounding_floor_issue(metadata: JSONObject) -> TrustedEvidenceFloorIssue | 
 
 def _support_floor_issue(metadata: JSONObject) -> TrustedEvidenceFloorIssue | None:
     support = _object(metadata.get("support_verification"))
-    if support.get("support") != "ENTAILS":
+    if (
+        support.get("support") != "ENTAILS"
+        or support.get("verification_method") != "agent"
+    ):
         return TrustedEvidenceFloorIssue(
-            message="Trusted AI evidence requires support verification with support=ENTAILS.",
+            message=(
+                "Trusted AI evidence requires independent agent support "
+                "verification with support=ENTAILS."
+            ),
             next_action="attach_support_verification",
             next_action_reason=(
-                "Provide metadata.support_verification with support=ENTAILS."
+                "Provide metadata.support_verification with support=ENTAILS and "
+                "verification_method=agent; heuristic support is triage-only."
             ),
         )
     return None
@@ -136,8 +147,8 @@ def _entity_link_floor_issue(
     ):
         return TrustedEvidenceFloorIssue(
             message=(
-                "Trusted AI evidence requires linked subject and object entity "
-                "identifiers."
+                "Trusted AI evidence requires authoritatively linked subject and "
+                "object entity identifiers."
             ),
             next_action="attach_entity_links",
             next_action_reason=(
@@ -146,6 +157,20 @@ def _entity_link_floor_issue(
             ),
         )
     return None
+
+
+def _server_verified_support_receipt_floor_issue() -> TrustedEvidenceFloorIssue:
+    return TrustedEvidenceFloorIssue(
+        message=(
+            "Trusted AI evidence promotion is quarantined until Graph DB can "
+            "verify a server-owned agent-verification receipt."
+        ),
+        next_action="route_to_human_review",
+        next_action_reason=(
+            "Caller-supplied verifier metadata cannot prove that an independent "
+            "agent performed support verification."
+        ),
+    )
 
 
 def _trusted_evidence_claimed(
@@ -195,6 +220,7 @@ def _has_linked_endpoint(metadata: JSONObject, endpoint_name: str) -> bool:
         and verified
         and isinstance(curie, str)
         and bool(curie.strip())
+        and has_authority_compatible_identifier_syntax(curie)
     )
 
 
