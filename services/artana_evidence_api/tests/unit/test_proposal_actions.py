@@ -600,9 +600,8 @@ def test_build_graph_observation_request_preserves_source_measurement_provenance
     assert request.provenance.extraction_run_id == run_id
     assert request.provenance.mapping_method == "agent_source_measurement"
     assert request.provenance.raw_input is not None
-    assert (
-        request.provenance.raw_input["source_measurement"]
-        == (proposal.payload["source_measurement"])
+    assert request.provenance.raw_input["source_measurement"] == (
+        proposal.payload["source_measurement"]
     )
 
 
@@ -906,6 +905,8 @@ def _proposal_with_resolved_entities(
             "proposed_object": str(oid),
             "proposed_object_label": "cardiomyopathy",
             "claim_frame": claim_frame.model_dump(mode="json"),
+            "framing_decision": "SINGLE_FRAME",
+            "framing_decision_rationale": "The source supports one frame.",
         },
         metadata={
             "subject_label": "MED13",
@@ -913,6 +914,8 @@ def _proposal_with_resolved_entities(
             "agent_extraction_completed": True,
             "fallback_output_used": False,
             "review_status": "candidate",
+            "framing_decision": "SINGLE_FRAME",
+            "framing_decision_rationale": "The source supports one frame.",
             "qualified_claim_frame_present": True,
             "claim_frame_positive_projection_candidate": True,
             "claim_frame_positive_projection_eligible": False,
@@ -1362,6 +1365,109 @@ def test_promote_to_graph_claim_rejects_unframed_legacy_candidate() -> None:
 
     assert exc_info.value.status_code == 409
     assert exc_info.value.detail["reason_code"] == "missing_qualified_claim_frame"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_promote_to_graph_claim_rejects_ambiguous_frame_set() -> None:
+    proposal = _proposal_with_resolved_entities()
+    gateway = _MockRelationGateway()
+    ambiguous_proposal = replace(
+        proposal,
+        payload={**proposal.payload, "framing_decision": "AMBIGUOUS"},
+        metadata={
+            **proposal.metadata,
+            "framing_decision": "AMBIGUOUS",
+            "review_status": "review_only",
+            "review_reason_codes": ["ambiguous_frame_set"],
+        },
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=ambiguous_proposal,
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == "unresolved_frame_set_decision"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_promote_to_graph_claim_rejects_multiple_valid_frame_set() -> None:
+    proposal = _proposal_with_resolved_entities()
+    gateway = _MockRelationGateway()
+    multiple_proposal = replace(
+        proposal,
+        payload={
+            **proposal.payload,
+            "framing_decision": "MULTIPLE_VALID_FRAMES",
+        },
+        metadata={
+            **proposal.metadata,
+            "framing_decision": "MULTIPLE_VALID_FRAMES",
+            "review_status": "review_only",
+            "review_reason_codes": ["multiple_valid_frame_set"],
+        },
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=multiple_proposal,
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.detail["reason_code"] == "unresolved_frame_set_decision"
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+@pytest.mark.parametrize(
+    ("payload_rationale", "metadata_rationale", "reason_code"),
+    [
+        (None, None, "missing_framing_decision_rationale"),
+        (
+            "The source supports one frame.",
+            "A different rationale.",
+            "framing_decision_rationale_mismatch",
+        ),
+    ],
+)
+def test_promote_to_graph_claim_rejects_invalid_framing_rationale(
+    payload_rationale: str | None,
+    metadata_rationale: str | None,
+    reason_code: str,
+) -> None:
+    proposal = _proposal_with_resolved_entities()
+    gateway = _MockRelationGateway()
+    payload = {**proposal.payload}
+    metadata = {**proposal.metadata}
+    if payload_rationale is None:
+        payload.pop("framing_decision_rationale")
+    else:
+        payload["framing_decision_rationale"] = payload_rationale
+    if metadata_rationale is None:
+        metadata.pop("framing_decision_rationale")
+    else:
+        metadata["framing_decision_rationale"] = metadata_rationale
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=replace(proposal, payload=payload, metadata=metadata),
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.detail["reason_code"] == reason_code
     assert gateway.calls == []
     assert gateway.claim_calls == []
 

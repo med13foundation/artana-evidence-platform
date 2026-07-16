@@ -433,6 +433,10 @@ def _with_qualified_agent_claim(
             "proposed_subject_label": subject,
             "proposed_object_label": object_,
             "claim_frame": claim_frame.model_dump(mode="json"),
+            "framing_decision": "SINGLE_FRAME",
+            "framing_decision_rationale": (
+                "The synthetic source supports one unambiguous projection."
+            ),
         },
         metadata={
             **proposal.metadata,
@@ -443,6 +447,10 @@ def _with_qualified_agent_claim(
             "claim_frame_positive_projection_candidate": True,
             "claim_frame_positive_projection_eligible": False,
             "claim_frame_semantic_fingerprint": claim_frame.semantic_fingerprint,
+            "framing_decision": "SINGLE_FRAME",
+            "framing_decision_rationale": (
+                "The synthetic source supports one unambiguous projection."
+            ),
             "evidence_grounding": {
                 "grounded": True,
                 "subject_present": True,
@@ -3886,9 +3894,8 @@ def test_supervisor_run_composes_bootstrap_chat_and_curation() -> None:
         == "supervisor_child_approval_gate"
     )
     assert workspace_payload["snapshot"]["pending_approvals"] == 1
-    assert (
-        workspace_payload["snapshot"]["selected_curation_proposal_ids"]
-        == (payload["selected_curation_proposal_ids"])
+    assert workspace_payload["snapshot"]["selected_curation_proposal_ids"] == (
+        payload["selected_curation_proposal_ids"]
     )
 
     capabilities_response = client.get(
@@ -4104,9 +4111,8 @@ def test_get_supervisor_run_detail_returns_typed_composed_state() -> None:
     assert payload["curation_status"] == "paused"
     assert payload["curation_source"] == create_payload["curation_source"]
     assert payload["chat_graph_write_proposal_ids"] == []
-    assert (
-        payload["selected_curation_proposal_ids"]
-        == (create_payload["selected_curation_proposal_ids"])
+    assert payload["selected_curation_proposal_ids"] == (
+        create_payload["selected_curation_proposal_ids"]
     )
     assert payload["skipped_steps"] == []
     assert payload["chat_graph_write_review_count"] == 0
@@ -4891,35 +4897,29 @@ def test_get_supervisor_dashboard_returns_summary_without_paginated_runs() -> No
     assert dashboard_payload["highlights"]["latest_completed_run"]["run_id"] == (
         completed_reviewed_id
     )
-    assert (
-        dashboard_payload["highlights"]["latest_completed_run"]["timestamp"]
-        == (completed_reviewed_response.json()["run"]["updated_at"])
+    assert dashboard_payload["highlights"]["latest_completed_run"]["timestamp"] == (
+        completed_reviewed_response.json()["run"]["updated_at"]
     )
     assert dashboard_payload["highlights"]["latest_reviewed_run"]["run_id"] == (
         completed_reviewed_id
     )
-    assert (
-        dashboard_payload["highlights"]["latest_reviewed_run"]["timestamp"]
-        == (review_response.json()["latest_chat_graph_write_review"]["reviewed_at"])
+    assert dashboard_payload["highlights"]["latest_reviewed_run"]["timestamp"] == (
+        review_response.json()["latest_chat_graph_write_review"]["reviewed_at"]
     )
-    assert (
-        dashboard_payload["highlights"]["oldest_paused_run"]["run_id"]
-        == (paused_bootstrap_response.json()["run"]["id"])
+    assert dashboard_payload["highlights"]["oldest_paused_run"]["run_id"] == (
+        paused_bootstrap_response.json()["run"]["id"]
     )
-    assert (
-        dashboard_payload["highlights"]["oldest_paused_run"]["timestamp"]
-        == (paused_bootstrap_response.json()["run"]["created_at"])
+    assert dashboard_payload["highlights"]["oldest_paused_run"]["timestamp"] == (
+        paused_bootstrap_response.json()["run"]["created_at"]
     )
     assert dashboard_payload["highlights"]["latest_bootstrap_run"]["run_id"] == (
         completed_reviewed_id
     )
-    assert (
-        dashboard_payload["highlights"]["latest_bootstrap_run"]["timestamp"]
-        == (completed_reviewed_response.json()["run"]["created_at"])
+    assert dashboard_payload["highlights"]["latest_bootstrap_run"]["timestamp"] == (
+        completed_reviewed_response.json()["run"]["created_at"]
     )
-    assert (
-        dashboard_payload["highlights"]["latest_chat_graph_write_run"]["run_id"]
-        == (paused_chat_graph_write_response.json()["run"]["id"])
+    assert dashboard_payload["highlights"]["latest_chat_graph_write_run"]["run_id"] == (
+        paused_chat_graph_write_response.json()["run"]["id"]
     )
     assert (
         dashboard_payload["highlights"]["latest_chat_graph_write_run"]["timestamp"]
@@ -5121,9 +5121,8 @@ def test_supervisor_can_auto_derive_chat_graph_write_proposals() -> None:
     assert workspace_response.status_code == 200
     workspace_payload = workspace_response.json()
     assert workspace_payload["snapshot"]["curation_source"] == "chat_graph_write"
-    assert (
-        workspace_payload["snapshot"]["chat_graph_write_proposal_ids"]
-        == (payload["chat_graph_write_proposal_ids"])
+    assert workspace_payload["snapshot"]["chat_graph_write_proposal_ids"] == (
+        payload["chat_graph_write_proposal_ids"]
     )
 
 
@@ -6350,9 +6349,8 @@ def test_graph_chat_session_uses_bootstrap_research_memory() -> None:
     assert workspace_response.status_code == 200
     workspace_payload = workspace_response.json()["snapshot"]
     assert workspace_payload["research_objective"] == "Map MED13 mechanism evidence."
-    assert (
-        workspace_payload["research_state_last_graph_snapshot_id"]
-        == (bootstrap_payload["graph_snapshot"]["id"])
+    assert workspace_payload["research_state_last_graph_snapshot_id"] == (
+        bootstrap_payload["graph_snapshot"]["id"]
     )
     assert workspace_payload["pending_question_count"] == len(
         bootstrap_payload["pending_questions"],
@@ -6958,9 +6956,8 @@ def test_continuous_learning_run_reuses_bootstrap_memory_context() -> None:
     assert response.status_code == 201
     payload = response.json()
     run_payload = payload["run"]
-    assert (
-        payload["delta_report"]["previous_graph_snapshot_id"]
-        == (bootstrap_payload["graph_snapshot"]["id"])
+    assert payload["delta_report"]["previous_graph_snapshot_id"] == (
+        bootstrap_payload["graph_snapshot"]["id"]
     )
     assert payload["delta_report"]["research_objective"] == (
         "Map MED13 mechanism evidence."

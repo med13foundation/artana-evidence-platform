@@ -6,6 +6,8 @@ import copy
 import hashlib
 from collections.abc import Sequence
 from types import SimpleNamespace
+from typing import cast
+from uuid import uuid4
 
 import pytest
 from artana_evidence_api import document_extraction
@@ -14,6 +16,9 @@ from artana_evidence_api.document_extraction import (
     discover_relation_candidates,
 )
 from artana_evidence_api.document_extraction_contracts import ExtractedRelationCandidate
+from artana_evidence_api.document_extraction_drafts import (
+    build_document_extraction_drafts,
+)
 from artana_evidence_api.document_extraction_prompting import (
     CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT,
     CLAIM_INVENTORY_SYSTEM_PROMPT,
@@ -63,6 +68,9 @@ from artana_evidence_api.document_extraction_support.relation_candidate_quality_
 from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
     RelationSpecificityPruningResult,
 )
+from artana_evidence_api.document_store import HarnessDocumentStore
+from artana_evidence_api.graph_client import GraphTransportBundle
+from artana_evidence_api.proposal_store import HarnessProposalDraft
 from pydantic import BaseModel, ValidationError
 
 from scripts.validation.claim_events.runner import _case_receipt_expectations
@@ -358,6 +366,48 @@ async def _run_inventory(
     )
 
 
+def _build_pipeline_drafts(
+    *,
+    monkeypatch: pytest.MonkeyPatch,
+    text: str,
+    candidates: list[ExtractedRelationCandidate],
+) -> tuple[HarnessProposalDraft, ...]:
+    """Carry composed agent candidates through the real draft boundary."""
+
+    space_id = uuid4()
+    document = HarnessDocumentStore().create_document(
+        space_id=space_id,
+        created_by=uuid4(),
+        title="Framing lineage test",
+        source_type="pubmed",
+        filename=None,
+        media_type="text/plain",
+        sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        byte_size=len(text),
+        page_count=None,
+        text_content=text,
+        raw_storage_key=None,
+        enriched_storage_key=None,
+        ingestion_run_id="framing-lineage-test",
+        last_enrichment_run_id=None,
+        enrichment_status="skipped",
+        extraction_status="not_started",
+        metadata={"pubmed": {"pmid": "12345678"}},
+    )
+    monkeypatch.setattr(
+        "artana_evidence_api.document_extraction_drafts.resolve_entity_label",
+        lambda **_kwargs: None,
+    )
+    drafts, skipped = build_document_extraction_drafts(
+        space_id=space_id,
+        document=document,
+        candidates=candidates,
+        graph_api_gateway=cast("GraphTransportBundle", object()),
+    )
+    assert skipped == []
+    return drafts
+
+
 @pytest.mark.asyncio
 async def test_inventory_entry_point_stops_before_claim_framing() -> None:
     text = "AKT1 phosphorylation increased in B cells."
@@ -421,7 +471,9 @@ async def test_inventory_entry_point_stops_before_claim_framing() -> None:
 
 
 @pytest.mark.asyncio
-async def test_inventory_frames_each_claim_in_multi_claim_sentence() -> None:
+async def test_inventory_frames_each_claim_in_multi_claim_sentence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     first_span = "BRCA1 loss sensitized tumors to cisplatin"
     second_span = "TP53 loss predisposed patients to leukemia."
     text = f"{first_span}, whereas {second_span}"
@@ -506,6 +558,19 @@ async def test_inventory_frames_each_claim_in_multi_claim_sentence() -> None:
             ).hexdigest()
         )
     assert len(result.claim_lineage) == 2
+    drafts = _build_pipeline_drafts(
+        monkeypatch=monkeypatch,
+        text=text,
+        candidates=result.candidates,
+    )
+    assert all(draft.payload["framing_decision"] == "SINGLE_FRAME" for draft in drafts)
+    assert all(draft.metadata["framing_decision"] == "SINGLE_FRAME" for draft in drafts)
+    assert all(
+        draft.payload["framing_decision_rationale"]
+        == draft.metadata["framing_decision_rationale"]
+        == "The source supports one frame."
+        for draft in drafts
+    )
     assert all(
         lineage.framing_attempt["semantic_unit_id"] == lineage.inventory_id
         for lineage in result.claim_lineage
@@ -756,7 +821,9 @@ async def test_reversed_inventory_anchor_order_preserves_semantic_direction() ->
 
 
 @pytest.mark.asyncio
-async def test_ambiguous_agent_decision_preserves_multiple_frames() -> None:
+async def test_ambiguous_agent_decision_preserves_multiple_frames(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     text = "MED13 was associated with cardiomyopathy."
     inventory = {
         "claims": [
@@ -804,10 +871,40 @@ async def test_ambiguous_agent_decision_preserves_multiple_frames() -> None:
     ]
     assert result.framing_abstention_count == 0
     assert result.claim_lineage[0].framing_decision == "AMBIGUOUS"
+    assert all(
+        candidate.review_status == "review_only" for candidate in result.candidates
+    )
+    assert all(
+        "ambiguous_frame_set" in candidate.review_reason_codes
+        for candidate in result.candidates
+    )
+    assert all(
+        candidate.framing_decision == "AMBIGUOUS" for candidate in result.candidates
+    )
+    drafts = _build_pipeline_drafts(
+        monkeypatch=monkeypatch,
+        text=text,
+        candidates=result.candidates,
+    )
+    assert all(draft.payload["framing_decision"] == "AMBIGUOUS" for draft in drafts)
+    assert all(draft.metadata["framing_decision"] == "AMBIGUOUS" for draft in drafts)
+    assert all(draft.metadata["review_status"] == "review_only" for draft in drafts)
+    assert all(
+        "ambiguous_frame_set" in draft.metadata["review_reason_codes"]
+        for draft in drafts
+    )
+    assert all(
+        draft.payload["framing_decision_rationale"]
+        == draft.metadata["framing_decision_rationale"]
+        == "The source supports association without direction."
+        for draft in drafts
+    )
 
 
 @pytest.mark.asyncio
-async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames() -> None:
+async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     text = (
         "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, "
         "lorlatinib reduced intracranial lesions."
@@ -909,14 +1006,46 @@ async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames() -> 
     assert result.inventory_claim_count == 1
     assert result.raw_relation_count == 2
     assert result.claim_lineage[0].framing_decision == "MULTIPLE_VALID_FRAMES"
-    assert (
-        result.claim_lineage[0].inventory_payload["arguments"]
-        == (inventory_claim["arguments"])
+    assert result.claim_lineage[0].inventory_payload["arguments"] == (
+        inventory_claim["arguments"]
     )
     assert [candidate.object_label for candidate in result.candidates] == [
         "ALK G1202R-positive lung adenocarcinoma",
         "intracranial lesions",
     ]
+    assert all(
+        candidate.review_status == "review_only" for candidate in result.candidates
+    )
+    assert all(
+        "multiple_valid_frame_set" in candidate.review_reason_codes
+        for candidate in result.candidates
+    )
+    assert all(
+        candidate.trusted_evidence_eligible is False for candidate in result.candidates
+    )
+    drafts = _build_pipeline_drafts(
+        monkeypatch=monkeypatch,
+        text=text,
+        candidates=result.candidates,
+    )
+    assert all(
+        draft.payload["framing_decision"] == "MULTIPLE_VALID_FRAMES" for draft in drafts
+    )
+    assert all(
+        draft.metadata["framing_decision"] == "MULTIPLE_VALID_FRAMES"
+        for draft in drafts
+    )
+    assert all(draft.metadata["review_status"] == "review_only" for draft in drafts)
+    assert all(
+        "multiple_valid_frame_set" in draft.metadata["review_reason_codes"]
+        for draft in drafts
+    )
+    assert all(
+        draft.payload["framing_decision_rationale"]
+        == draft.metadata["framing_decision_rationale"]
+        == "The assertion has disease and outcome projections."
+        for draft in drafts
+    )
     assert all(
         [argument.role.value for argument in candidate.claim_frame.assertion_arguments]
         == [

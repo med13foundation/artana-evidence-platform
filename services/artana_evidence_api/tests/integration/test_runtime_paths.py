@@ -819,6 +819,8 @@ def _qualified_candidate_claim_payload(
         "proposed_subject_label": frame.subject,
         "proposed_object_label": frame.object,
         "claim_frame": frame.model_dump(mode="json"),
+        "framing_decision": "SINGLE_FRAME",
+        "framing_decision_rationale": "The source supports one frame.",
     }
 
 
@@ -838,6 +840,8 @@ def _qualified_agent_claim_metadata(
         "trust_floor_failures": [],
         "review_status": "candidate",
         "review_reason_codes": [],
+        "framing_decision": "SINGLE_FRAME",
+        "framing_decision_rationale": "The source supports one frame.",
         "qualified_claim_frame_present": True,
         "claim_frame_positive_projection_candidate": True,
         "claim_frame_positive_projection_eligible": False,

@@ -3,7 +3,8 @@
 Created: 2026-07-14
 
 Status: TG-01 through TG-03 are merged. TG-04 reached a controlled stop after
-preserving typed roles but failing to prove scientific precision or recall.
+an ephemeral development run suggested typed-role preservation but failed the
+durable-evidence protocol and did not prove scientific precision or recall.
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
@@ -277,7 +278,7 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 | TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | merged | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
 | TG-02 | [#159](https://github.com/med13foundation/artana-evidence-platform/pull/159) | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | merged | Every eligible claim has authoritative source identity and an exact locator. Evidence: `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. |
 | TG-03 | [#160](https://github.com/med13foundation/artana-evidence-platform/pull/160) | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | merged | Runtime and safety proof is complete: the strict Luna path completed with three provider-bound calls, fallback 0, graph writes 0, and both adversarial re-reviews clear. Scientific-quality proof failed on the first clean case with 0% endpoint/full-frame precision and recall, so the remaining 18 development cases were not run. This PR merged only as a truthful safety and architecture improvement. Evidence: `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. |
-| TG-04 | [#161](https://github.com/med13foundation/artana-evidence-platform/pull/161) | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | blocked | The diagnostic Luna run preserved all six source roles and multiple frames, but the binary gold no longer measures the n-ary representation and the projected predicates remain scientifically unresolved. Prompt editing and Graph persistence are paused pending an untouched n-ary event benchmark and frozen model/task ablation. Evidence: `docs/validation/reports/2026-07-15-tg04-typed-assertion-checkpoint.md`. |
+| TG-04 | [#161](https://github.com/med13foundation/artana-evidence-platform/pull/161) | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | blocked | An unavailable diagnostic artifact reportedly preserved six source roles and multiple frames, but this receives no scientific or persistence credit. The binary gold no longer measures the n-ary representation and the projected predicates remain scientifically unresolved. Prompt editing and Graph persistence are paused pending an untouched n-ary event benchmark and frozen model/task ablation. Evidence: `docs/validation/reports/2026-07-15-tg04-typed-assertion-checkpoint.md`. |
 | TG-05 | TBD | `alvaro/trusted-claims-tg05-agent-verifier` | TG-04 | not_started | Independent agent verification replaces heuristic semantic trust. |
 | TG-06 | TBD | `alvaro/trusted-claims-tg06-authoritative-grounding` | TG-04 | not_started | Every promotion-eligible entity resolves to an authoritative identifier. |
 | TG-07 | TBD | `alvaro/trusted-claims-tg07-safe-projection` | TG-05, TG-06 | not_started | Only complete supported claims project to positive graph relations. |
@@ -1029,10 +1030,10 @@ single unsafe failure. Track each dimension independently.
 |---|---|---|---|---|---|
 | Agent execution | Historical note: 300/300, fallback 0 | Establish 100%, fallback 0 from committed provider evidence | All | Original July 14 raw report missing; TG-03 has a smaller provider-bound smoke run | not_evaluable |
 | Truthful trust | Heuristic and symbolic-authority gaps found | No non-agent semantic trust or fake authority | TG-01 | `docs/validation/reports/2026-07-14-tg01-truthful-safety.md` | merged |
-| Source traceability | 2/47 strong provenance | 100% eligible claims strong | TG-02 | `docs/validation/reports/2026-07-15-tg02-source-provenance.md` | ready_for_review |
+| Source traceability | 2/47 strong provenance | 100% eligible claims strong | TG-02 | Implementation and safety gates merged; the experimental evidence remains non-evaluable under the durable-artifact protocol. See `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. | merged |
 | Claim extraction runtime safety | No inventory-first provider path | Strict agent path is auditable, fallback-free, and quarantined | TG-03 | Clean Luna smoke completed with fallback 0 and graph writes 0; both adversarial re-reviews are clear. See `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. | merged |
-| Claim completeness | 13/47 generic/overstated outcomes | Complete typed roles, polarity, state, qualifiers, and honest ambiguity | TG-04 | First clean TG-03 case scored 0% endpoint/full-frame precision and recall because binary endpoint selection discarded condition, population, and variant roles. | not_started |
-| Lossless persistence | Triple-oriented write path | Zero assertion-role, candidate-frame, ambiguity, or evidence field loss | TG-04 | Pending | not_started |
+| Claim completeness | 13/47 generic/overstated outcomes | Complete typed roles, polarity, state, qualifiers, and honest ambiguity | TG-04 | A development run reported better role preservation, but its artifacts were ephemeral and its candidate projections remained scientifically ambiguous. The controlled stop is recorded in `docs/validation/reports/2026-07-15-tg04-typed-assertion-checkpoint.md`. | blocked |
+| Lossless persistence | Triple-oriented write path | Zero assertion-role, candidate-frame, ambiguity, or evidence field loss | TG-04 | Persistence was intentionally not implemented because claim completeness and durable scientific proof did not pass. | blocked |
 | Semantic verification | Heuristic can return `ENTAILS` | Independent categorical agent verifier | TG-05 | Pending | not_started |
 | Entity grounding | 75.86% worst-run diagnostic rate | At least 95%, wrong links 0 | TG-06 | Pending | not_started |
 | Safe projection | Review flags can accompany assertive tuples | Zero unsafe or lossy positive edges | TG-07 | Pending | not_started |
@@ -1066,8 +1067,10 @@ and the smallest next experiment. Do not continue the PR sequence by inertia.
 
 - **After TG-01:** the system is more truthful but may have zero trusted claims.
   This is a safe operational stop.
-- **After TG-04:** Artana has a traceable claim ledger even before automatic
-  projection. Candidate discovery and human review can use it safely.
+- **At the TG-04 controlled stop:** Artana preserves richer assertion data in
+  runtime proposals, but has no validated lossless claim ledger or automatic
+  projection. Resume persistence only after durable n-ary scientific evidence
+  passes the checkpoint.
 - **After TG-07:** the product path is technically complete; automatic trusted
   promotion may remain disabled while real-source proof runs.
 - **After TG-08:** decide whether to enable the agent-verified lane, repeat a

@@ -270,7 +270,25 @@ async def _run_claim_framing_step(
                 )
             except ValueError as exc:
                 raise StructuredModelSemanticError(str(exc)) from exc
-            candidate = replace(candidate, claim_frame=frame)
+            review_reason_codes = candidate.review_reason_codes
+            review_status = candidate.review_status
+            frame_set_review_reason = {
+                ClaimFramingDecision.MULTIPLE_VALID_FRAMES: "multiple_valid_frame_set",
+                ClaimFramingDecision.AMBIGUOUS: "ambiguous_frame_set",
+            }.get(output.decision)
+            if frame_set_review_reason is not None:
+                review_status = "review_only"
+                review_reason_codes = tuple(
+                    dict.fromkeys((*review_reason_codes, frame_set_review_reason)),
+                )
+            candidate = replace(
+                candidate,
+                claim_frame=frame,
+                framing_decision=output.decision.value,
+                framing_decision_rationale=output.decision_rationale,
+                review_status=review_status,
+                review_reason_codes=review_reason_codes,
+            )
             candidates.append(candidate)
             if unknown_relation_type is not None:
                 unknown_relation_types.append(unknown_relation_type)

@@ -28,6 +28,12 @@ PriorityScale = Literal["prioritize", "review", "background", "ignore"]
 RelationGovernanceStatus = Literal["canonical", "requires_relation_review"]
 CurieSource = Literal["none", "model", "verified_linker"]
 RelationReviewStatus = Literal["candidate", "review_only"]
+ClaimFramingDecisionValue = Literal[
+    "SINGLE_FRAME",
+    "MULTIPLE_VALID_FRAMES",
+    "AMBIGUOUS",
+    "ABSTAIN",
+]
 ClaimExtractionRoutingStatus = Literal[
     "not_run",
     "complete",
@@ -146,6 +152,8 @@ class ExtractedRelationCandidate:
     review_status: RelationReviewStatus = "candidate"
     review_reason_codes: tuple[str, ...] = ()
     claim_frame: ClaimFrame | None = None
+    framing_decision: ClaimFramingDecisionValue | None = None
+    framing_decision_rationale: str | None = None
 
     @property
     def trusted_evidence_eligible(self) -> bool:
@@ -156,6 +164,9 @@ class ExtractedRelationCandidate:
             and self.review_status != "review_only"
             and self.claim_frame is not None
             and self.claim_frame.is_positive_projection_eligible
+            and self.framing_decision == "SINGLE_FRAME"
+            and isinstance(self.framing_decision_rationale, str)
+            and bool(self.framing_decision_rationale.strip())
         )
 
 
@@ -170,12 +181,7 @@ class ClaimExtractionLineage:
     claim_local_source_start: int
     claim_local_source_end: int
     inventory_payload: dict[str, object]
-    framing_decision: Literal[
-        "SINGLE_FRAME",
-        "MULTIPLE_VALID_FRAMES",
-        "AMBIGUOUS",
-        "ABSTAIN",
-    ]
+    framing_decision: ClaimFramingDecisionValue
     candidates: tuple[ExtractedRelationCandidate, ...]
     decision_rationale: str
     framing_attempt: dict[str, object]

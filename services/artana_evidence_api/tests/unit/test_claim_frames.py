@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 from types import SimpleNamespace
 from typing import cast
 from uuid import uuid4
@@ -878,6 +879,15 @@ def test_draft_preserves_frame_and_does_not_split_qualified_object(
         source_text=SOURCE,
         source_hash=hashlib.sha256(SOURCE.encode()).hexdigest(),
     )
+    candidates = [
+        replace(
+            candidates[0],
+            framing_decision="SINGLE_FRAME",
+            framing_decision_rationale=(
+                "The source supports one unambiguous projection."
+            ),
+        ),
+    ]
     document_store = HarnessDocumentStore()
     space_id = uuid4()
     document = document_store.create_document(
@@ -920,6 +930,14 @@ def test_draft_preserves_frame_and_does_not_split_qualified_object(
     frame = candidates[0].claim_frame
     assert frame is not None
     assert drafts[0].payload["claim_frame"] == frame.model_dump(mode="json")
+    assert drafts[0].payload["framing_decision"] == "SINGLE_FRAME"
+    assert drafts[0].metadata["framing_decision"] == "SINGLE_FRAME"
+    assert drafts[0].payload["framing_decision_rationale"] == (
+        "The source supports one unambiguous projection."
+    )
+    assert drafts[0].metadata["framing_decision_rationale"] == (
+        drafts[0].payload["framing_decision_rationale"]
+    )
     assert drafts[0].claim_fingerprint == frame.dedupe_identity
     assert drafts[0].metadata["claim_frame_positive_projection_candidate"] is True
     assert drafts[0].metadata["claim_frame_positive_projection_eligible"] is False

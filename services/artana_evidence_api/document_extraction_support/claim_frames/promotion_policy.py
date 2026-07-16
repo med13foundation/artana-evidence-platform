@@ -75,6 +75,8 @@ def require_claim_frame_promotion_preflight(
             "Canonical promotion requires a valid qualified ClaimFrame.",
         ) from exc
 
+    _require_resolved_framing_decision(payload=payload, metadata=metadata)
+
     if not frame.assertion_arguments:
         _reject(
             "missing_typed_assertion_arguments",
@@ -120,6 +122,40 @@ def require_claim_frame_promotion_preflight(
             "Canonical promotion requires an agent entailment verification.",
         )
     return frame
+
+
+def _require_resolved_framing_decision(
+    *,
+    payload: Mapping[str, object],
+    metadata: Mapping[str, object],
+) -> None:
+    """Reject incomplete or lossy frame-set lineage."""
+
+    framing_decision = payload.get("framing_decision")
+    if framing_decision != "SINGLE_FRAME":
+        _reject(
+            "unresolved_frame_set_decision",
+            "Canonical promotion requires one unambiguous agent-selected frame. "
+            "Multiple-valid, ambiguous, and abstained frame sets remain review-only "
+            "until lossless frame-set persistence exists.",
+        )
+    if metadata.get("framing_decision") != framing_decision:
+        _reject(
+            "frame_set_decision_mismatch",
+            "Canonical promotion requires matching payload and metadata "
+            "frame-set decisions.",
+        )
+    framing_rationale = payload.get("framing_decision_rationale")
+    if not isinstance(framing_rationale, str) or not framing_rationale.strip():
+        _reject(
+            "missing_framing_decision_rationale",
+            "Canonical promotion requires the agent's non-empty framing rationale.",
+        )
+    if metadata.get("framing_decision_rationale") != framing_rationale:
+        _reject(
+            "framing_decision_rationale_mismatch",
+            "Canonical promotion requires matching payload and metadata framing rationales.",
+        )
 
 
 def _require_projection_match(

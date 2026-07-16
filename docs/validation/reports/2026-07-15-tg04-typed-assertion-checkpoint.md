@@ -12,9 +12,10 @@ Acceptance model: `openai:gpt-5.6-luna`
 
 ## Decision
 
-The role-typed assertion experiment improved information preservation, but it
-did not prove better scientific claim precision or recall. TG-04 therefore
-stops before adding Graph persistence.
+The role-typed assertion experiment produced a promising development
+observation, but its ephemeral artifacts do not meet this plan's evidence
+protocol and it did not prove better scientific claim precision or recall.
+TG-04 therefore stops before adding Graph persistence.
 
 This is not a trusted-graph result. It is a useful representation result with
 an unresolved semantic-projection problem.
@@ -34,10 +35,10 @@ The case was selected from the fully validated sealed TG-03 fixture. Because
 the prompt was subsequently changed while diagnosing this case, the case is now
 a development case and cannot provide confirmatory merge credit.
 
-## What Improved
+## Unverified Diagnostic Observation
 
-The final strict Luna run completed the composed agent pipeline and preserved
-six source-bound roles:
+A development Luna run was reported to complete the composed agent pipeline
+and preserve six source-bound roles:
 
 | Role | Exact source span |
 |---|---|
@@ -48,7 +49,7 @@ six source-bound roles:
 | `INTERVENTION` | `lorlatinib` |
 | `OUTCOME` | `intracranial lesions` |
 
-The framing agent returned `MULTIPLE_VALID_FRAMES` and two candidate
+The saved output was reported to contain `MULTIPLE_VALID_FRAMES` and two candidate
 projections instead of silently selecting one. The runtime copied the
 inventory agent's immutable argument tuple onto each projection without
 reclassifying or inventing roles:
@@ -73,10 +74,17 @@ Deterministic safety observations:
   with the parity fix on the saved live artifact. The immutable historical
   report still contains the pre-fix value `2` and is not rewritten.
 
-The immutable local run artifacts are:
+The development artifacts were written only to these ephemeral local paths:
 
 - `/tmp/artana-tg04-alk-luna-45e3024b/claim_frame_feasibility_run.json`
 - `/tmp/artana-tg04-alk-luna-45e3024b/claim_frame_feasibility_run.md`
+
+Those files are not committed, retrievable from the PR, or independently
+reproducible. They are therefore historical diagnostic references, not
+protocol-compliant evidence. None of the observations or hashes transcribed
+below receive scientific-improvement, readiness, or merge credit. A future
+run must publish the frozen input, provider receipt, raw categorical outputs,
+and deterministic scorecard in a durable evidence packet.
 
 The report records prompt
 `document_extraction.claim_pipeline.v6:claim_inventory.v4+claim_inventory_completeness.v3+claim_inventory_recovery.v3+claim_framing.v6`,
@@ -108,11 +116,11 @@ Those zeroes reveal two different problems and must not be explained away:
    directional `reduced` event semantics, and does not match the Graph
    dictionary's biological regulation meaning.
 
-The preliminary inventory-preservation sub-check therefore passes: the
-inventory agent authored the typed roles and deterministic code copied them
+The preliminary inventory-preservation observation is encouraging but
+unverified: the unavailable artifact reportedly showed typed roles copied
 without semantic modification. Framing correctness, the TG-04 semantic
-checkpoint, and the product-quality gate fail. No numeric precision credit is
-assigned from this case.
+checkpoint, the evidence-protocol gate, and the product-quality gate fail. No
+numeric precision or improvement credit is assigned from this case.
 
 ## Adversarial Review Closure
 
@@ -205,9 +213,10 @@ Both commands completed successfully on 2026-07-15. The aggregate service
 gate passed lint, typing, service boundaries, OpenAPI and generated-contract
 checks, agent-output governance, architecture limits, isolated PostgreSQL
 tests, and the `86%` coverage floor with `87.46%` measured coverage. Live
-external-API and already-running-service tests remained explicitly skipped;
-the strict Luna diagnostic described above supplies the live model evidence
-for this checkpoint.
+external-API and already-running-service tests remained explicitly skipped.
+The unavailable Luna diagnostic described above is only an unverified
+historical observation and supplies no acceptance or scientific evidence for
+this checkpoint.
 
 ## Next Gate
 

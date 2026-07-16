@@ -400,10 +400,7 @@ def candidate_extraction_trust_metadata(
     """Return proposal-safe trust flags from candidate extraction diagnostics."""
 
     diagnostics_metadata = diagnostics.as_metadata()
-    return {
-        key: diagnostics_metadata[key]
-        for key in _CANDIDATE_TRUST_METADATA_KEYS
-    }
+    return {key: diagnostics_metadata[key] for key in _CANDIDATE_TRUST_METADATA_KEYS}
 
 
 def with_candidate_extraction_trust_metadata(
@@ -574,18 +571,22 @@ def _candidate_review_metadata(candidate: ExtractedRelationCandidate) -> JSONObj
 def _claim_frame_payload(candidate: ExtractedRelationCandidate) -> JSONObject:
     if candidate.claim_frame is None:
         return {}
-    return {
+    payload: JSONObject = {
         "claim_frame": cast(
             "JSONObject",
             candidate.claim_frame.model_dump(mode="json"),
         ),
     }
+    if candidate.framing_decision is not None:
+        payload["framing_decision"] = candidate.framing_decision
+        payload["framing_decision_rationale"] = candidate.framing_decision_rationale
+    return payload
 
 
 def _claim_frame_metadata(candidate: ExtractedRelationCandidate) -> JSONObject:
     if candidate.claim_frame is None:
         return {"qualified_claim_frame_present": False}
-    return {
+    metadata: JSONObject = {
         "qualified_claim_frame_present": True,
         "claim_frame_positive_projection_candidate": (
             candidate.claim_frame.is_positive_projection_candidate
@@ -598,6 +599,10 @@ def _claim_frame_metadata(candidate: ExtractedRelationCandidate) -> JSONObject:
             candidate.claim_frame.semantic_fingerprint
         ),
     }
+    if candidate.framing_decision is not None:
+        metadata["framing_decision"] = candidate.framing_decision
+        metadata["framing_decision_rationale"] = candidate.framing_decision_rationale
+    return metadata
 
 
 def _is_relation_type_governance_candidate(
