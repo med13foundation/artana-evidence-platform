@@ -281,6 +281,7 @@ def _nary_events(
     events: list[dict[str, object]] = []
     for claim in claims:
         item = claim.item.model_dump(mode="json")
+        trigger_mention = claim.trigger_mention
         exact_span = item.get("exact_span")
         if not isinstance(exact_span, str):
             raise TypeError("TG-04 inventory exact_span must be text")
@@ -288,17 +289,29 @@ def _nary_events(
         if not isinstance(raw_arguments, list):
             raise TypeError("TG-04 inventory arguments must be a list")
         arguments: list[dict[str, object]] = []
-        for raw_argument in raw_arguments:
+        for bound_argument, raw_argument in zip(
+            claim.bound_arguments,
+            raw_arguments,
+            strict=True,
+        ):
             if not isinstance(raw_argument, dict):
                 raise TypeError("TG-04 inventory argument must be an object")
             argument_span = raw_argument.get("exact_span")
             if not isinstance(argument_span, str):
                 raise TypeError("TG-04 inventory argument exact_span must be text")
+            mentions = bound_argument.mentions
             arguments.append(
                 {
                     **raw_argument,
-                    "source_start": claim.source_start
-                    + exact_span.index(argument_span),
+                    "source_start": bound_argument.primary_mention.source_start,
+                    "source_mentions": [
+                        {
+                            "exact_span": mention.exact_span,
+                            "source_start": mention.source_start,
+                            "source_end": mention.source_end,
+                        }
+                        for mention in mentions
+                    ],
                 },
             )
         events.append(
@@ -309,11 +322,14 @@ def _nary_events(
                 "exact_span": exact_span,
                 "source_locator": item.get("source_locator"),
                 "trigger_span": item.get("relation_cue_span"),
-                "trigger_source_start": (
-                    claim.source_start
-                    + exact_span.index(str(item.get("relation_cue_span")))
-                ),
+                "trigger_source_start": trigger_mention.source_start,
+                "trigger_source_mention": {
+                    "exact_span": trigger_mention.exact_span,
+                    "source_start": trigger_mention.source_start,
+                    "source_end": trigger_mention.source_end,
+                },
                 "relation_cue_span": item.get("relation_cue_span"),
+                "relation_cue_anchor": item.get("relation_cue_anchor"),
                 "event_type": item.get("event_type"),
                 "polarity": item.get("polarity"),
                 "epistemic_status": item.get("epistemic_status"),

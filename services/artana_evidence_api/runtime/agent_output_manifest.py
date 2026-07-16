@@ -475,11 +475,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory.v3",
         schema_names=("LLMClaimInventoryResult",),
-        shape_hash="a4d084f26d113cc7a0f4ebf6584b72a431c7e16f0c7fc5265fb28deeac31ff17",
+        shape_hash="5971e1fec819faa32812a0ba5dce46138031eb05df1e55e9c137ef7723b45cda",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v6",),
+        prompt_identifiers=("document_extraction.claim_inventory.v7",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -532,11 +532,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory_completeness.v3",
         schema_names=("ClaimInventoryCompletenessReview",),
-        shape_hash="541c7f78ed01e31d66baaf94a5ab2d4bd67c7efda7e6f46546bd9a21fefa8314",
+        shape_hash="c16184f40c2854ff40dfe85c43024e73d9d93e2599de79e9f60fdcfe741e7c23",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v5",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v6",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -587,11 +587,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory_recovery.v3",
         schema_names=("MissingClaimRecoveryResult",),
-        shape_hash="59e9df9996c60ae0b9040287bd85ca94cf0b719fb0e8b616a0906c0e856a3b0f",
+        shape_hash="ffdc56f2350b801840891aa82eef0f4d51abaee21a6900f8b4ba0d83dc932601",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_recovery.v5",),
+        prompt_identifiers=("document_extraction.claim_inventory_recovery.v6",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",

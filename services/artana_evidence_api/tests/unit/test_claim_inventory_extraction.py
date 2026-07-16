@@ -108,6 +108,14 @@ def test_claim_frame_pipeline_prompt_version_tracks_every_agent_stage() -> None:
     )
 
 
+def test_inventory_prompt_requires_verbatim_context_not_numeric_offsets() -> None:
+    normalized_prompt = CLAIM_INVENTORY_SYSTEM_PROMPT.casefold()
+
+    assert "mention_anchors" in normalized_prompt
+    assert "relation_cue_anchor" in normalized_prompt
+    assert "never return offsets or numeric positions" in normalized_prompt
+
+
 def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     normalized_prompt = SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT.casefold()
 
@@ -118,8 +126,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v8:claim_inventory.v6+"
-        "claim_inventory_completeness.v5+claim_inventory_recovery.v5+"
+        "document_extraction.claim_pipeline.v9:claim_inventory.v7+"
+        "claim_inventory_completeness.v6+claim_inventory_recovery.v6+"
         "claim_framing.v6"
     )
 
@@ -1006,8 +1014,10 @@ async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames(
     assert result.inventory_claim_count == 1
     assert result.raw_relation_count == 2
     assert result.claim_lineage[0].framing_decision == "MULTIPLE_VALID_FRAMES"
-    assert result.claim_lineage[0].inventory_payload["arguments"] == (
-        inventory_claim["arguments"]
+    expected_inventory = ClaimInventoryItem.model_validate(inventory_claim)
+    assert (
+        result.claim_lineage[0].inventory_payload["arguments"]
+        == (expected_inventory.model_dump(mode="json")["arguments"])
     )
     assert [candidate.object_label for candidate in result.candidates] == [
         "ALK G1202R-positive lung adenocarcinoma",
@@ -1716,8 +1726,7 @@ async def test_sibling_clause_qualifier_cannot_leak_into_selected_claim() -> Non
     assert "children" not in str(framing_records[0]["prompt"])
 
 
-@pytest.mark.asyncio
-async def test_inventory_dedupes_changed_rationale_and_argument_order() -> None:
+def test_inventory_rejects_duplicate_semantic_claims() -> None:
     text = "MED13 causes cardiomyopathy."
     first = _inventory_claim(
         exact_span=text,
@@ -1730,33 +1739,16 @@ async def test_inventory_dedupes_changed_rationale_and_argument_order() -> None:
         "arguments": list(reversed(first["arguments"])),
         "inventory_rationale": "Different wording for the same explicit claim.",
     }
-    runner = ScriptedStepRunner(
-        (
-            {"claims": [first, reversed_claim]},
-            _complete_inventory(),
-            _framed_relation(
-                sentence=text,
-                subject="MED13",
-                relation_type="CAUSES",
-                object_="cardiomyopathy",
+    with pytest.raises(ClaimInventoryBindingError, match="cannot repeat"):
+        bind_claim_inventory(
+            tuple(
+                ClaimInventoryItem.model_validate(claim)
+                for claim in (first, reversed_claim)
             ),
-        ),
-    )
-
-    result = await _run_pipeline(text=text, runner=runner)
-
-    assert result.inventory_claim_count == 1
-    assert len(result.claim_lineage) == 1
-    assert (
-        len(
-            [
-                call
-                for call in runner.calls
-                if call["schema_id"] == "document_extraction.claim_framing.v2"
-            ],
+            source_text=text,
+            source_sha256=hashlib.sha256(text.encode()).hexdigest(),
+            chunk_index=0,
         )
-        == 1
-    )
 
 
 @pytest.mark.asyncio

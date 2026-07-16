@@ -260,7 +260,11 @@ async def _run_claim_framing_step(
                     "framed relation failed qualified claim source validation",
                 )
             frame = candidate.claim_frame.model_copy(
-                update={"assertion_arguments": inventory_claim.item.arguments},
+                update={
+                    "assertion_arguments": tuple(
+                        bound.argument for bound in inventory_claim.bound_arguments
+                    ),
+                },
             )
             try:
                 frame = normalize_claim_frame(
