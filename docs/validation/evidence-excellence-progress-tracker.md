@@ -6,6 +6,14 @@ This is the living tracker for raising Artana Evidence from "useful relation
 candidate extraction" to a high-confidence, agent-driven, evidence-grounded
 trusted graph system.
 
+Current recovery plan after the July 14 Luna agent-expert evaluation:
+
+- `docs/validation/trusted-claim-recovery-plan.md`
+
+That plan is the canonical source for new trusted-claim work. The PR plans
+listed below are historical execution records and must not override its current
+baseline, safety rules, or readiness decision.
+
 Next trusted-readiness PR plans:
 
 - PR11-PR16 foundation plan:
