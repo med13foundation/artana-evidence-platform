@@ -111,6 +111,110 @@ gate, and no safety invariant may regress. Two consecutive product experiments
 without a positive paired net change trigger a model/task-ablation review
 instead of another prompt-edit loop.
 
+## Scientific Improvement Measurement Protocol
+
+Scientific improvement means that Artana recovers more complete and useful
+source-supported claims without creating more unsupported, generic, reversed,
+or overconfident claims. Producing more candidates, preserving more JSON
+fields, passing more unit tests, or receiving a favorable agent opinion is not
+scientific improvement by itself.
+
+### Frozen evaluation design
+
+Before a semantic experiment starts, freeze and hash:
+
+- an untouched confirmatory panel of complete biomedical events;
+- source snapshots and exact evidence regions;
+- categorical gold labels for event type, trigger, polarity, epistemic status,
+  typed participant roles, material qualifiers, and acceptable graph
+  projections;
+- a categorical `valuable` or `not_valuable` label with an expert-derived
+  reason describing the decision or scientific question the claim informs;
+- model identifiers, prompts, tool permissions, decoding settings, and run
+  count;
+- the deterministic scorer version and every matching rule.
+
+The panel must include positive, negative, null, uncertain, hypothesis,
+multi-event, multi-sentence, long-context, and novel-but-uncorroborated cases.
+Labels come from independent expert-curated corpora or authenticated human
+review, never from the implementation under test. A case inspected while
+designing a change immediately becomes development data and cannot provide
+confirmatory credit for that change.
+
+Agents may browse authoritative sources when the protocol permits it, but they
+return categorical findings, exact spans, explanations, and falsification
+notes. They never author precision, recall, confidence, importance, or
+readiness numbers. External corroboration is recorded separately and cannot
+convert a source-local `insufficient` finding into `entailed`.
+
+### Deterministic metrics
+
+The scorer computes each metric from the frozen labels and immutable agent
+artifacts. No weighted overall score is used because an average could hide a
+safety failure.
+
+| Measure | Deterministic definition | Scientific question |
+|---|---|---|
+| Whole-claim precision | exact supported claims / all emitted positive claims | When Artana asserts a complete claim, how often is it right? |
+| Whole-claim recall | recovered exact supported claims / all eligible gold claims | How much supported knowledge does Artana recover? |
+| Valuable-claim recall | recovered exact `valuable` claims / all eligible gold `valuable` claims | Does it recover claims that inform a real scientific decision? |
+| Typed-role fidelity | correctly matched required role and span pairs / all required gold role and span pairs | Did it preserve who or what played each scientific role? |
+| Polarity and direction fidelity | exact polarity and direction matches / all emitted matched claims | Did it preserve positive, negative, null, and directional meaning? |
+| Unsupported projection rate | positive graph projections outside the frozen acceptable set / all positive projections | Did claim-to-edge conversion invent meaning? |
+| Generic projection rate | projections labeled broader than their source claim / all projections | Did the graph discard material context? |
+| Negative/null leakage | positive claims emitted for frozen negative or null controls | Does the system create false positive knowledge? |
+| Abstention error | eligible gold claims incorrectly abstained / all eligible gold claims | Is fail-closed behavior becoming uselessly conservative? |
+| Canonical repeatability | cases with identical categorical semantics in all three runs / all cases | Does the same evidence produce the same meaning? |
+
+A whole claim is an exact match only when event type, polarity, every required
+typed participant, material qualifier, and source support agree. Partial
+matches are reported diagnostically but never counted as a true positive.
+Novel hypotheses are evaluated in their own epistemic lane: correctly
+preserved hypotheses earn recovery credit, while projecting them as established
+positive relations counts as leakage.
+
+### Paired experiment and gates
+
+Run the current approach and the proposed approach on the same untouched panel
+three times. Report every case as `improved`, `unchanged_correct`,
+`unchanged_incorrect`, or `regressed`, with the exact categorical difference.
+The worst run, not the average run, controls the gate.
+
+Provisional agent-readiness gates are:
+
+- whole-claim precision at least `90%` in every run;
+- valuable-claim recall at least `80%` in every run;
+- typed-role fidelity and polarity/direction fidelity at least `95%`;
+- unsupported and generic positive projection rates at most `5%`;
+- negative/null positive leakage `0`;
+- credited semantic fallback `0`, invalid agent output `0`, and unauthenticated
+  provider output `0`;
+- positive paired net change in every run, with no safety regression;
+- canonical categorical repeatability at least `95%`.
+
+These gates qualify a review-only agent lane. Automatic trusted promotion still
+requires `100%` precision on its prospectively frozen promotion set and an
+explicit governance decision. Agent results do not satisfy the human-expert
+finish line.
+
+### Model and task ablation decision
+
+TG-04 resumes with one controlled experiment: run
+`openai:gpt-5.6-luna` and one predeclared stronger model against the identical
+frozen panel, prompts, tools, and scorer. This distinguishes three root causes:
+
+1. If both models fail the same cases, redesign the task representation,
+   ontology, or supplied context.
+2. If only the stronger model clears the gates, make an explicit product
+   decision about model quality, cost, latency, and reproducibility.
+3. If Luna clears the gates, continue with Luna and preserve the stronger model
+   as an adversarial comparison, not an unrecorded fallback.
+
+If neither model produces a positive paired net change, stop. Do not tune on
+the confirmatory panel, start Graph persistence, or add another evaluation
+layer. Publish the failed result and design the smallest new scientific
+experiment from the observed failure class.
+
 ## Non-Negotiable Rules
 
 These rules apply to every PR in this plan.
@@ -524,6 +628,22 @@ Graph DB participant, qualifier, evidence, and projection capabilities.
 
 **Implementation scope:**
 
+TG-04 has a scientific restart gate before persistence work:
+
+- freeze an untouched, set-valued n-ary event panel and its categorical gold;
+- implement only the deterministic scorer needed for the metrics defined in
+  the Scientific Improvement Measurement Protocol;
+- run the predeclared Luna-versus-stronger-model task ablation three times;
+- publish paired case transitions, worst-run metrics, provider receipts, and
+  artifact hashes;
+- resume the persistence scope below only when the scientific gates pass.
+
+Until that gate passes, Graph schema, migration, and persistence changes remain
+paused. Preserving six roles on one diagnostic case is an information-retention
+result, not evidence of better scientific precision or recall.
+
+After the scientific restart gate passes:
+
 - Replace the binary inventory handoff with a role-typed assertion containing
   `INTERVENTION`, `CONDITION`, `POPULATION`, `VARIANT`, `OUTCOME`, `COMPARATOR`,
   `TIMEFRAME`, and `STUDY_DESIGN` participants as applicable, each bound to an
@@ -567,6 +687,14 @@ Graph DB participant, qualifier, evidence, and projection capabilities.
 
 **Merge gate:**
 
+- untouched n-ary panel, labels, scorer, prompts, and model configuration are
+  frozen and hash-addressed before execution;
+- every deterministic scientific metric and paired case transition is
+  published for all three runs;
+- the proposed approach clears every provisional agent-readiness gate in the
+  Scientific Improvement Measurement Protocol;
+- if the gate fails, TG-04 remains a documented controlled stop and persistence
+  does not resume;
 - assertion roles, candidate frames, or ClaimFrame fields lost in round-trip:
   `0`;
 - source-supported ambiguous alternatives silently collapsed: `0`;
