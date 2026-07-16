@@ -202,7 +202,9 @@ def _assess_candidate(
     support_verification_method = (
         support_result.verification_method if support_result is not None else None
     )
-    has_support_verification = support_verification is not None
+    has_support_verification = (
+        support_result is not None and support_verification_method != "unavailable"
+    )
     has_entailment_support = (
         not requires_entailment or support_verification == "ENTAILS"
     )
@@ -275,6 +277,8 @@ def _assess_candidate(
             candidate.trusted_evidence_eligible
             and not governed_relation_proposal
             and support_verification_method == "agent"
+            and has_support_verification
+            and support_verification == "ENTAILS"
         ),
         has_specific_subject=subject_specific,
         has_specific_object=object_specific,

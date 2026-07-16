@@ -203,10 +203,20 @@ describing what would change the decision.
 
 ## Required Artifacts
 
-Store one immutable evaluation bundle under
-`reports/luna-agent-expert-evaluation/<run-id>/`:
+Store one immutable evaluation bundle under the versioned path
+`docs/validation/reports/luna-agent-expert-evaluation/<run-id>/`. An external
+write-once archive is allowed only when its URI and digest are committed in the
+run manifest; an ignored top-level `reports/` directory cannot satisfy this
+protocol.
 
-- `run-manifest.json`: commit, model, configuration, case, and artifact hashes;
+- `run-manifest.json`: commit, model, configuration, case, frozen-label,
+  label-provenance, label-attestation, and artifact hashes, plus the URI and
+  digest for any externally archived artifact;
+- `provider-receipts.json`: one record per credited semantic call containing
+  the retrievable provider response ID, expected and retrieved model IDs,
+  completion status, normalized prompt hash, canonical provider-output hash,
+  structured-payload hash, retrieval timestamp, and categorical verification
+  result;
 - `metric-protocol.json`: pre-registered definitions, denominators, thresholds,
   aggregation rules, and calculation-command or script hash;
 - `reviewer-assignments.json`: roles, unique agent run IDs, model IDs, prompt
@@ -215,7 +225,8 @@ Store one immutable evaluation bundle under
   reviewer;
 - `tool-policies/<agent-run-id>.md`: exact tool and access policy supplied to
   each reviewer;
-- `artana-output/`: untouched results from every Luna run;
+- `artana-output/`: untouched results from every Luna run, each joined to its
+  `provider-receipts.json` record;
 - `reviews/packet-only/<agent-run-id>/`: independent network-disabled findings;
 - `reviews/source-enriched/<agent-run-id>/`: independent tool-enabled findings;
 - `raw-responses/<agent-run-id>.txt`: complete unedited reviewer responses;
@@ -223,9 +234,20 @@ Store one immutable evaluation bundle under
 - `source-ledger.jsonl`: authoritative sources, retrieval facts, and spans;
 - `adversarial-findings.json`: attempted falsifications and rescued hypotheses;
 - `adjudication.json`: parent decisions and unresolved disagreements;
+- `frozen-labels.json`: the exact categorical labels, case identities, and
+  per-label `score_eligible` state loaded only after the no-replace review
+  artifacts are frozen;
+- `label-provenance.json`: source dataset or snapshot identities, immutable
+  input hashes, label-production and adjudication lineage, and the protocol
+  version governing eligibility;
+- `label-attestation.json`: the independent human attestation identity or
+  pseudonymous reviewer ID, role and qualification, attested artifact hashes,
+  completion timestamp, conflict disclosure, and categorical eligibility
+  decision; it must not contain PHI or secrets;
 - `metrics.json`: deterministic counts and rates with explicit denominators;
 - `root-manifest.json` and `root-manifest.sha256`: the complete no-replace
-  artifact inventory and root digest, also recorded outside the bundle;
+  artifact inventory and root digest, including all frozen-label, provenance,
+  and attestation artifacts, also recorded outside the bundle;
 - `evaluation-report.md`: plain-language conclusions and limitations.
 
 The parent task is the only artifact publisher. It refuses an existing output

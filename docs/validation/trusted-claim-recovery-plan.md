@@ -2,11 +2,14 @@
 
 Created: 2026-07-14
 
-Status: Active; TG-01 through TG-03 are ready for review; TG-03 proves runtime safety but not scientific-quality improvement, and TG-04 is redesigned around role-typed assertions
+Status: Active; TG-01 and TG-03 are merged, TG-02 is ready for review, and
+TG-03 proves runtime safety but not scientific-quality improvement. TG-04 is
+redesigned around role-typed assertions.
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
-Baseline evaluation: `reports/luna-agent-expert-evaluation/2026-07-14-run-01/evaluation-report.md`
+Baseline evaluation:
+`docs/validation/reports/2026-07-14-luna-agent-expert-baseline.md`
 
 This is the canonical implementation and progress plan after the July 14 Luna
 agent-expert evaluation. It replaces the earlier open-ended trusted-graph
@@ -55,9 +58,11 @@ technically ready for trusted promotion without enabling that promotion.
 
 ## July 14 Baseline
 
-The following numbers are deterministic counts over frozen categorical agent
-findings. The 47-case set is risk-enriched, so its counts diagnose failures and
-do not estimate whole-corpus prevalence.
+The following numbers are historical diagnostic counts. The original raw
+July 14 bundle is not committed, so they are not independently evaluable and
+must not receive current merge credit. The 47-case set was risk-enriched, so
+its counts diagnose possible failures and do not estimate whole-corpus
+prevalence.
 
 | Measure | Baseline | Interpretation |
 |---|---:|---|
@@ -166,9 +171,9 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 
 | Plan ID | GitHub PR | Suggested branch | Depends on | Status | Primary proof |
 |---|---:|---|---|---|---|
-| TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | ready_for_review | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
+| TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | merged | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
 | TG-02 | [#159](https://github.com/med13foundation/artana-evidence-platform/pull/159) | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | ready_for_review | Every eligible claim has authoritative source identity and an exact locator. Evidence: `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. |
-| TG-03 | [#160](https://github.com/med13foundation/artana-evidence-platform/pull/160) | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | ready_for_review | Runtime and safety proof is complete: the strict Luna path completed with three provider-bound calls, fallback 0, graph writes 0, and both adversarial re-reviews clear. Scientific-quality proof failed on the first clean case with 0% endpoint/full-frame precision and recall, so the remaining 18 development cases were not run. This PR may merge only as a truthful safety and architecture improvement. Evidence: `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. |
+| TG-03 | [#160](https://github.com/med13foundation/artana-evidence-platform/pull/160) | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | merged | Runtime and safety proof is complete: the strict Luna path completed with three provider-bound calls, fallback 0, graph writes 0, and both adversarial re-reviews clear. Scientific-quality proof failed on the first clean case with 0% endpoint/full-frame precision and recall, so the remaining 18 development cases were not run. This PR merged only as a truthful safety and architecture improvement. Evidence: `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. |
 | TG-04 | TBD | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | not_started | Role-typed n-ary assertions, ambiguity, candidate frames, qualifiers, and evidence round-trip through Evidence API and Graph DB without loss. |
 | TG-05 | TBD | `alvaro/trusted-claims-tg05-agent-verifier` | TG-04 | not_started | Independent agent verification replaces heuristic semantic trust. |
 | TG-06 | TBD | `alvaro/trusted-claims-tg06-authoritative-grounding` | TG-04 | not_started | Every promotion-eligible entity resolves to an authoritative identifier. |
@@ -280,16 +285,23 @@ Strict live-agent regression template:
 set -a
 source .env.postgres
 set +a
+export ARTANA_AI_EVIDENCE_EXTRACTION_MODEL=openai:gpt-5.6-luna
+RUN_DIR=docs/validation/reports/relation_feasibility/<date>-<plan-id>-run-01
+test ! -e "$RUN_DIR"
 uv run python scripts/run_relation_feasibility_audit.py \
   --extractor agent \
-  --output-dir reports/relation_feasibility/<date>-<plan-id>-run-01
+  --output-dir "$RUN_DIR"
 ```
 
 For semantic PRs, repeat into `run-02` and `run-03`, then evaluate worst-run
-results with the existing readiness gate. Do not overwrite a prior run or retry
-only failed cases. Store the exact command, environment-name allowlist, model,
+results with the existing readiness gate. The no-clobber preflight is mandatory
+for every run ID; a pre-existing run directory invalidates the command rather
+than authorizing replacement. Do not overwrite a prior run or retry only failed
+cases. Store the exact command, environment-name allowlist, model,
 prompt/configuration hashes, and output hashes in the evidence report. Never
-record secret values.
+record secret values. The run preflight and manifest must both prove that the
+configured and retrieved provider model is exactly `openai:gpt-5.6-luna`; a
+runtime-default substitution invalidates the run.
 
 ## TG-01: Truthful Safety Floor
 
@@ -888,10 +900,10 @@ single unsafe failure. Track each dimension independently.
 
 | Dimension | Baseline | Required end state | Owning PR | Current evidence | Status |
 |---|---|---|---|---|---|
-| Agent execution | 300/300, fallback 0 | Preserve 100%, fallback 0 | All | July 14 report | passing |
-| Truthful trust | Heuristic and symbolic-authority gaps found | No non-agent semantic trust or fake authority | TG-01 | `docs/validation/reports/2026-07-14-tg01-truthful-safety.md` | ready_for_review |
+| Agent execution | Historical note: 300/300, fallback 0 | Establish 100%, fallback 0 from committed provider evidence | All | Original July 14 raw report missing; TG-03 has a smaller provider-bound smoke run | not_evaluable |
+| Truthful trust | Heuristic and symbolic-authority gaps found | No non-agent semantic trust or fake authority | TG-01 | `docs/validation/reports/2026-07-14-tg01-truthful-safety.md` | merged |
 | Source traceability | 2/47 strong provenance | 100% eligible claims strong | TG-02 | `docs/validation/reports/2026-07-15-tg02-source-provenance.md` | ready_for_review |
-| Claim extraction runtime safety | No inventory-first provider path | Strict agent path is auditable, fallback-free, and quarantined | TG-03 | Clean Luna smoke completed with fallback 0 and graph writes 0; both adversarial re-reviews are clear. See `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. | ready_for_review |
+| Claim extraction runtime safety | No inventory-first provider path | Strict agent path is auditable, fallback-free, and quarantined | TG-03 | Clean Luna smoke completed with fallback 0 and graph writes 0; both adversarial re-reviews are clear. See `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. | merged |
 | Claim completeness | 13/47 generic/overstated outcomes | Complete typed roles, polarity, state, qualifiers, and honest ambiguity | TG-04 | First clean TG-03 case scored 0% endpoint/full-frame precision and recall because binary endpoint selection discarded condition, population, and variant roles. | not_started |
 | Lossless persistence | Triple-oriented write path | Zero assertion-role, candidate-frame, ambiguity, or evidence field loss | TG-04 | Pending | not_started |
 | Semantic verification | Heuristic can return `ENTAILS` | Independent categorical agent verifier | TG-05 | Pending | not_started |

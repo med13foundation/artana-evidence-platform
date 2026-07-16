@@ -2945,7 +2945,9 @@ def test_graph_service_rejects_forged_agent_origin_without_server_receipt(
         "Trusted AI evidence promotion is quarantined until Graph DB can verify "
         "a server-owned agent-verification receipt."
     )
-    assert validation_payload["next_actions"][0]["action"] == ("route_to_human_review")
+    assert validation_payload["next_actions"][0]["action"] == (
+        "route_to_human_review"
+    )
 
     create_response = graph_client.post(
         f"/v1/spaces/{space_id}/claims",
