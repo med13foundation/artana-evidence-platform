@@ -11,7 +11,7 @@ alembic>=1.13.0
 google-cloud-secret-manager>=2.16.0
 google-cloud-storage>=2.10.0
 httpx>=0.27.0
-artana-kernel @ git+https://github.com/aandresalvarez/artana-kernel.git@5678d779c21b935a32c917ee78d06a61222b287d
+artana-kernel @ git+https://github.com/aandresalvarez/artana-kernel.git@d591c55f8363a8854f76ef93af714e04c9022fd5
 bcrypt>=4.1.0
 cryptography>=46.0.5
 defusedxml>=0.7.1

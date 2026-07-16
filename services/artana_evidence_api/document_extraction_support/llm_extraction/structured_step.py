@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Generic, TypeVar
 from uuid import uuid4
 
+from artana.ports.model import ModelOutputValidationError
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     bind_prompt_to_invocation,
     kernel_run_id_for_invocation,
@@ -27,7 +28,15 @@ ValidatedValueT = TypeVar("ValidatedValueT")
 ModelStepInvoker = Callable[[str, str], Awaitable[ModelStepResult]]
 
 
-class StructuredModelSemanticError(ValueError):
+class StructuredModelValidationError(ValueError):
+    """Base failure for a provider result rejected by extraction validation."""
+
+
+class StructuredModelSchemaError(StructuredModelValidationError):
+    """Raised when provider-bound structured output violates its schema."""
+
+
+class StructuredModelSemanticError(StructuredModelValidationError):
     """Raised when schema-valid model output violates source semantics."""
 
 
@@ -96,6 +105,25 @@ async def run_audited_structured_step(
             error_type=type(exc).__name__,
         )
         raise
+    except ModelOutputValidationError as exc:
+        raw_output = exc.output
+        _require_invocation_topology(
+            model_result=exc,
+            invocation_id=invocation_id,
+        )
+        _record_terminal_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=provider_prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=audit_context,
+            model_result=exc,
+            raw_output=raw_output,
+            validation_outcome="schema_invalid",
+            error_type=StructuredModelSchemaError.__name__,
+        )
+        raise StructuredModelSchemaError(str(exc)) from exc
     except ValidationError as exc:
         _record_terminal_attempt(
             invocation_id=invocation_id,
@@ -163,11 +191,11 @@ async def run_audited_structured_step(
 
 def _require_invocation_topology(
     *,
-    model_result: ModelStepResult,
+    model_result: object,
     invocation_id: str,
 ) -> None:
     expected_run_id = kernel_run_id_for_invocation(invocation_id)
-    if model_result.run_id != expected_run_id:
+    if getattr(model_result, "run_id", None) != expected_run_id:
         raise StructuredModelInvocationTopologyError(
             "structured model result does not match its invocation run",
         )
@@ -203,6 +231,8 @@ def _record_terminal_attempt(
 __all__ = [
     "AuditedStructuredStepResult",
     "StructuredModelInvocationTopologyError",
+    "StructuredModelSchemaError",
     "StructuredModelSemanticError",
+    "StructuredModelValidationError",
     "run_audited_structured_step",
 ]

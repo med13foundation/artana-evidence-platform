@@ -10,6 +10,7 @@ from typing import cast
 from uuid import uuid4
 
 import pytest
+from artana.ports.model import ModelOutputValidationError, ModelUsage
 from artana_evidence_api import document_extraction
 from artana_evidence_api.document_extraction import (
     _route_agent_extraction_result,
@@ -87,6 +88,12 @@ class ScriptedStepRunner:
         self.calls.append(dict(kwargs))
         step = next(self._steps)
         if isinstance(step, Exception):
+            if isinstance(step, ModelOutputValidationError):
+                step.bind_kernel_terminal(
+                    run_id=cast("str", kwargs["run_id"]),
+                    seq=len(self.calls),
+                    replayed=False,
+                )
             raise step
         call_number = len(self.calls)
         return SimpleNamespace(
@@ -476,6 +483,61 @@ async def test_inventory_entry_point_stops_before_claim_framing() -> None:
     assert len(expectations) == 3
     assert invalid_count == 1
     assert unidentified_count == 0
+
+
+@pytest.mark.asyncio
+async def test_provider_bound_kernel_schema_failure_runs_agent_schema_retry() -> None:
+    text = "AKT1 phosphorylation increased in B cells."
+    invalid_payload = {"claims": "invalid provider schema"}
+    invalid_error = ModelOutputValidationError(
+        raw_output='{"claims":"invalid provider schema"}',
+        usage=ModelUsage(prompt_tokens=17, completion_tokens=6, cost_usd=0.01),
+        api_mode_used="responses",
+        response_id="resp_inventory_invalid_1",
+        response_output_items=(
+            {
+                "type": "message",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": '{"claims":"invalid provider schema"}',
+                    }
+                ],
+            },
+        ),
+    )
+    runner = ScriptedStepRunner(
+        (
+            invalid_error,
+            {
+                "claims": [
+                    _inventory_claim(
+                        exact_span=text,
+                        endpoint_a_span="AKT1",
+                        relation_cue_span="phosphorylation",
+                        endpoint_b_span="B cells",
+                        event_type="PHOSPHORYLATION",
+                    ),
+                ],
+            },
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert len(result.claims) == 1
+    first_record = result.model_attempt_records[0]
+    assert first_record.validation_outcome == "schema_invalid"
+    assert first_record.error_type == "StructuredModelSchemaError"
+    assert first_record.raw_model_payload == invalid_payload
+    assert first_record.provider_response_id == "resp_inventory_invalid_1"
+    assert first_record.kernel_event_seq == 1
+    assert [record.attempt_role for record in result.model_attempt_records[:2]] == [
+        "claim_inventory",
+        "schema_retry",
+    ]
+    assert result.model_attempt_records[1].validation_outcome == "accepted"
 
 
 @pytest.mark.asyncio

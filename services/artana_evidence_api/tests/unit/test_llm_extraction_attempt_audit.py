@@ -7,10 +7,19 @@ import base64
 import hashlib
 import json
 from types import SimpleNamespace
+from typing import Literal, Never
 
 import pytest
+from artana.ports.model import ModelOutputValidationError, ModelUsage
 from artana_evidence_api.document_extraction_prompting import (
     _build_llm_extraction_output_schema,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
+    kernel_run_id_for_invocation,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+    StructuredModelSchemaError,
+    run_audited_structured_step,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     ModelAttemptAuditContext,
@@ -21,7 +30,11 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
     start_model_attempt_audit,
     stop_model_attempt_audit,
 )
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
+
+
+class _ProviderBoundSchema(BaseModel):
+    approved: bool
 
 
 def _legacy_output_schema() -> type:
@@ -140,6 +153,76 @@ async def test_schema_invalid_attempt_preserves_exact_raw_payload() -> None:
     manifest_without_hash = dict(first_manifest)
     manifest_sha256 = manifest_without_hash.pop("manifest_sha256")
     assert manifest_sha256 == _canonical_sha256(manifest_without_hash)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("replay_state", ["fresh", "replayed"])
+async def test_kernel_schema_failure_remains_provider_bound_for_retry(
+    replay_state: Literal["fresh", "replayed"],
+) -> None:
+    replayed = replay_state == "replayed"
+    raw_payload = {"approved": "maybe"}
+    provider_response_id = "resp_provider_kernel_invalid_1"
+    response_output_items = (
+        {
+            "type": "message",
+            "content": [
+                {
+                    "type": "output_text",
+                    "text": json.dumps(raw_payload, sort_keys=True),
+                }
+            ],
+        },
+    )
+
+    async def _invoke_model(invocation_id: str, _prompt: str) -> Never:
+        error = ModelOutputValidationError(
+            raw_output=json.dumps(raw_payload, sort_keys=True),
+            usage=ModelUsage(prompt_tokens=11, completion_tokens=3, cost_usd=0.01),
+            api_mode_used="responses",
+            response_id=provider_response_id,
+            response_output_items=response_output_items,
+        )
+        error.bind_kernel_terminal(
+            run_id=kernel_run_id_for_invocation(invocation_id),
+            seq=23,
+            replayed=replayed,
+        )
+        raise error
+
+    session = start_model_attempt_audit()
+    try:
+        with pytest.raises(StructuredModelSchemaError):
+            await run_audited_structured_step(
+                invoke_model=_invoke_model,
+                model_id="openai:gpt-5.6-luna",
+                prompt="Return one decision.",
+                output_schema=_ProviderBoundSchema,
+                step_key="document_extraction.test.provider_schema_failure",
+                audit_context=ModelAttemptAuditContext(
+                    attempt_role="schema_retry",
+                    pass_role="claim_inventory",
+                    retry_context=None,
+                    source_sha256="c" * 64,
+                    input_sha256="d" * 64,
+                ),
+                validate_semantics=lambda parsed: parsed,
+            )
+    finally:
+        stop_model_attempt_audit(session)
+
+    assert len(session.records) == 1
+    record = session.records[0]
+    assert record.validation_outcome == "schema_invalid"
+    assert record.error_type == "StructuredModelSchemaError"
+    assert record.raw_model_payload == raw_payload
+    assert record.provider_response_id == provider_response_id
+    assert record.provider_output_sha256 == _canonical_sha256(
+        list(response_output_items),
+    )
+    assert record.kernel_run_id is not None
+    assert record.kernel_event_seq == 23
+    assert record.replayed is replayed
 
 
 def test_semantic_unit_id_is_serialized_for_claim_framing_attempts() -> None:

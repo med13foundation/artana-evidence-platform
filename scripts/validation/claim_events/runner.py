@@ -208,7 +208,7 @@ async def _execute_case(
         run_llm_claim_inventory_with_zero_retry,
     )
     from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
-        StructuredModelSemanticError,
+        StructuredModelValidationError,
     )
     from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
         llm_extraction_document_fingerprint,
@@ -222,7 +222,7 @@ async def _execute_case(
     normalized_text = normalize_text_document(case.source_text)
     audit = start_model_attempt_audit(evidence_unit_id=case.case_id)
     inventory = None
-    terminal_error: ValidationError | StructuredModelSemanticError | None = None
+    terminal_error: ValidationError | StructuredModelValidationError | None = None
     try:
         try:
             inventory = await run_llm_claim_inventory_with_zero_retry(
@@ -237,7 +237,7 @@ async def _execute_case(
                 step_runner=run_single_step_with_policy,
                 execution_namespace=invocation_namespace,
             )
-        except (ValidationError, StructuredModelSemanticError) as exc:
+        except (ValidationError, StructuredModelValidationError) as exc:
             terminal_error = exc
     finally:
         stop_model_attempt_audit(audit)
