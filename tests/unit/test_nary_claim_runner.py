@@ -8,6 +8,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
 )
 
 from scripts.validation.claim_events.runner import (
+    _attempt_output_schema_sha256,
     _nary_events,
     _require_attempt_model,
     _require_model,
@@ -93,3 +94,22 @@ def test_runner_rejects_unregistered_or_substituted_models() -> None:
 
     _require_attempt_model("openai/gpt-5.6-sol", "openai:gpt-5.6-sol")
     assert canonical_provider_model_id("openai:gpt-5.6-sol") == "gpt-5.6-sol"
+
+
+def test_zero_candidate_retry_uses_inventory_pass_schema() -> None:
+    primary = _attempt_output_schema_sha256(
+        {
+            "attempt_role": "claim_inventory",
+            "pass_role": "claim_inventory",
+        },
+    )
+
+    assert (
+        _attempt_output_schema_sha256(
+            {
+                "attempt_role": "zero_candidate_retry",
+                "pass_role": "claim_inventory",
+            },
+        )
+        == primary
+    )

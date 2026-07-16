@@ -361,8 +361,7 @@ def receipt_expectation_from_attempt(
 
 
 def _attempt_output_schema_sha256(record: dict[str, object]) -> str:
-    role = record.get("attempt_role")
-    schema_role = record.get("pass_role") if role == "schema_retry" else role
+    schema_role = record.get("pass_role")
     if schema_role == "claim_inventory":
         schema = build_claim_inventory_output_schema(64)
     elif schema_role == "claim_inventory_completeness":
