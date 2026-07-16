@@ -38,6 +38,7 @@ from scripts.validation.claim_events.evidence_binding import (
 from scripts.validation.claim_events.operational import (
     OperationalSafetyEvidence,
     build_operational_summary,
+    require_sealable_unbindable_attempts,
 )
 from scripts.validation.claim_events.runner import receipt_expectation_from_attempt
 from scripts.validation.claim_events.scoring import score_fixture
@@ -583,6 +584,46 @@ def _semantic_invalid_inventory_payload() -> dict[str, object]:
 
 def test_stress_unbindable_output_retains_provider_custody() -> None:
     case, prediction, evidence = _unbindable_stress_artifact()
+
+    expectations, topology = bind_unbindable_case_evidence(
+        case=case,
+        prediction=prediction,
+        case_record=evidence,
+        model_id="openai:gpt-5.6-luna",
+    )
+
+    assert len(expectations) == 2
+    assert topology
+
+
+def test_unbindable_terminal_chain_allows_audited_prior_chunk_history() -> None:
+    _case, _prediction, evidence = _unbindable_stress_artifact()
+    terminal_attempts = list(evidence["attempts"])
+    prior_payload = {"claims": []}
+    prior_attempt = {
+        **terminal_attempts[0],
+        "invocation_id": "prior-chunk-invocation",
+        "attempt_role": "claim_inventory",
+        "validation_outcome": "accepted",
+        "error_type": None,
+        "provider_response_id": "resp_prior_chunk",
+        "provider_output_sha256": "a" * 64,
+        "payload_sha256": _sha256_json(prior_payload),
+        "kernel_run_id": "research-init-extraction:prior-chunk-invocation",
+        "input_sha256": "f" * 64,
+        "raw_model_payload": prior_payload,
+    }
+
+    require_sealable_unbindable_attempts((prior_attempt, *terminal_attempts))
+
+
+def test_stress_unbindable_accepts_provider_boundary_schema_error() -> None:
+    case, prediction, evidence = _unbindable_stress_artifact()
+    for attempt in evidence["attempts"]:
+        attempt["error_type"] = "StructuredModelSchemaError"
+    evidence["diagnostics"]["terminal_error_category"] = (
+        "StructuredModelSchemaError"
+    )
 
     expectations, topology = bind_unbindable_case_evidence(
         case=case,

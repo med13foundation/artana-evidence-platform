@@ -356,12 +356,12 @@ def _validate_reported_inventory_outcome(
             derived = "accepted"
     if reported != derived:
         raise ValueError("TG-04 reported validation outcome differs from replay")
-    expected_error_type = {
-        "accepted": None,
-        "schema_invalid": "ValidationError",
-        "semantic_invalid": "StructuredModelSemanticError",
+    expected_error_types = {
+        "accepted": {None},
+        "schema_invalid": {"StructuredModelSchemaError", "ValidationError"},
+        "semantic_invalid": {"StructuredModelSemanticError"},
     }[derived]
-    if attempt.get("error_type") != expected_error_type:
+    if attempt.get("error_type") not in expected_error_types:
         raise ValueError("TG-04 reported error type differs from validation replay")
 
 
