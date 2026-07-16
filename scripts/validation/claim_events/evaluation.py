@@ -8,8 +8,15 @@ import re
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Final, cast
 
-from scripts.validation.claim_events.evidence_binding import bind_case_evidence
+from scripts.validation.claim_events.evidence_binding import (
+    bind_case_evidence,
+    bind_unbindable_case_evidence,
+)
 from scripts.validation.claim_events.fixture import require_frozen_development_fixture
+from scripts.validation.claim_events.operational import (
+    OperationalSafetyEvidence,
+    build_operational_summary,
+)
 from scripts.validation.claim_events.scoring import (
     CountRate,
     FixtureScore,
@@ -50,6 +57,7 @@ _REPORT_KEYS: Final = frozenset(
         "predictions",
         "metrics",
         "case_scores",
+        "operational_summary",
         "safety",
         "provider_receipts",
         "case_evidence",
@@ -112,7 +120,7 @@ def evaluate_matrix(
             raise ValueError(
                 "TG-04 stored provider receipts differ from live verification"
             )
-        _validate_safety(report, expectations)
+        _validate_safety(fixture, report, expectations)
         grouped.setdefault(_required_text(report, "model_id"), []).append(report)
 
     if len(repository_identities) != 1:
@@ -278,7 +286,7 @@ def _validate_report_identity(report: dict[str, object], fixture_sha256: str) ->
     del unsealed["report_sha256"]
     if _sha256_json(unsealed) != report_sha256:
         raise ValueError("TG-04 live report digest mismatch")
-    if report.get("schema_version") != "tg04_live_arm.v1":
+    if report.get("schema_version") != "tg04_live_arm.v2":
         raise ValueError("unknown TG-04 live report schema")
     if report.get("fixture_sha256") != fixture_sha256:
         raise ValueError("TG-04 report fixture hash mismatch")
@@ -310,6 +318,23 @@ def _validate_derived_report_content(
         raise ValueError("TG-04 report metrics differ from deterministic recomputation")
     if report.get("case_scores") != [asdict(case) for case in score.cases]:
         raise ValueError("TG-04 case scores differ from deterministic recomputation")
+    qualification_invalid, stress_invalid = _invalid_attempt_counts(fixture, report)
+    stored_receipts = _object(report.get("provider_receipts"), "provider_receipts")
+    summary = build_operational_summary(
+        cases=fixture.cases,
+        predictions=[_object(item, "prediction") for item in predictions],
+        safety=OperationalSafetyEvidence(
+            fallback_count=0,
+            unidentified_provider_attempt_count=0,
+            qualification_invalid_agent_output_count=qualification_invalid,
+            representability_stress_invalid_agent_output_count=stress_invalid,
+            provider_receipt_gate_passed=_stored_receipt_gate_passed(stored_receipts),
+        ),
+    )
+    if report.get("operational_summary") != summary:
+        raise ValueError("TG-04 operational summary differs from recomputation")
+    if summary["gate_passed"] is not True:
+        raise ValueError("TG-04 qualification run did not complete operationally")
 
 
 def _receipt_expectations(
@@ -339,14 +364,23 @@ def _receipt_expectations(
         prediction = predictions_by_id.get(case_id)
         if case is None or prediction is None:
             raise ValueError("TG-04 audit evidence references an unknown fixture case")
-        case_expectations, case_topology = bind_case_evidence(
-            case=case,
-            prediction=prediction,
-            case_record=case_record,
-            model_id=model_id,
-        )
+        if prediction.get("execution_outcome") == "UNBINDABLE_OUTPUT":
+            case_expectations, case_topology = bind_unbindable_case_evidence(
+                case=case,
+                prediction=prediction,
+                case_record=case_record,
+                model_id=model_id,
+            )
+        else:
+            case_expectations, case_topology = bind_case_evidence(
+                case=case,
+                prediction=prediction,
+                case_record=case_record,
+                model_id=model_id,
+            )
         expectations.extend(case_expectations)
-        topology[case_id] = case_topology
+        if str(case.control_status) != "REPRESENTABILITY_STRESS":
+            topology[case_id] = case_topology
     if set(evidence_case_ids) != expected_case_ids or len(evidence_case_ids) != len(
         expected_case_ids
     ):
@@ -359,12 +393,16 @@ def _receipt_expectations(
 
 
 def _validate_safety(
+    fixture: NaryClaimFixture,
     report: dict[str, object],
     expectations: tuple[ProviderReceiptExpectation, ...],
 ) -> None:
+    qualification_invalid, stress_invalid = _invalid_attempt_counts(fixture, report)
     expected = {
         "fallback_count": 0,
-        "invalid_agent_output_count": 0,
+        "invalid_agent_output_count": qualification_invalid + stress_invalid,
+        "qualification_invalid_agent_output_count": qualification_invalid,
+        "representability_stress_invalid_agent_output_count": stress_invalid,
         "provider_response_id_count": len(expectations),
         "provider_receipt_status": "verified_live",
         "verified_provider_receipt_count": len(expectations),
@@ -372,6 +410,39 @@ def _validate_safety(
     }
     if _object(report.get("safety"), "safety") != expected:
         raise ValueError("TG-04 safety envelope differs from audited attempts")
+
+
+def _invalid_attempt_counts(
+    fixture: NaryClaimFixture,
+    report: dict[str, object],
+) -> tuple[int, int]:
+    control_by_case = {case.case_id: str(case.control_status) for case in fixture.cases}
+    qualification_invalid = stress_invalid = 0
+    for raw_case in _list(report.get("case_evidence"), "case_evidence"):
+        case_record = _object(raw_case, "case evidence")
+        case_id = _required_text(case_record, "case_id")
+        invalid = sum(
+            _object(raw_attempt, "attempt").get("validation_outcome")
+            in {"schema_invalid", "semantic_invalid"}
+            for raw_attempt in _list(case_record.get("attempts"), "attempts")
+        )
+        if control_by_case.get(case_id) == "REPRESENTABILITY_STRESS":
+            stress_invalid += invalid
+        else:
+            qualification_invalid += invalid
+    return qualification_invalid, stress_invalid
+
+
+def _stored_receipt_gate_passed(receipts: dict[str, object]) -> bool:
+    expected = receipts.get("expected_count")
+    verified = receipts.get("verified_count")
+    return (
+        receipts.get("status") == "verified_live"
+        and isinstance(expected, int)
+        and not isinstance(expected, bool)
+        and expected > 0
+        and verified == expected
+    )
 
 
 def _three_model_runs(

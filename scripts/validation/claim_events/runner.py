@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 import json
 from contextlib import suppress
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Protocol, cast
@@ -22,6 +22,12 @@ from artana_evidence_api.document_extraction_support.llm_extraction.invocation_b
 )
 
 from scripts.validation.claim_events.fixture import require_frozen_development_fixture
+from scripts.validation.claim_events.operational import (
+    CaseExecutionOutcome,
+    OperationalSafetyEvidence,
+    build_operational_summary,
+    require_sealable_unbindable_attempts,
+)
 from scripts.validation.claim_events.scoring import score_fixture
 from scripts.validation.claim_frames.evidence import collect_repository_evidence
 from scripts.validation.claim_frames.provider_receipts import (
@@ -39,7 +45,10 @@ if TYPE_CHECKING:
         ModelAttemptAuditRecord,
     )
 
-    from scripts.validation.claim_events.contracts import NaryClaimFixture
+    from scripts.validation.claim_events.contracts import (
+        NaryClaimCase,
+        NaryClaimFixture,
+    )
     from scripts.validation.claim_events.scoring import BenchmarkFixtureContract
 
 _ALLOWED_MODELS: Final = frozenset(
@@ -51,6 +60,13 @@ _TASK_ID: Final = "nary_event_inventory"
 
 class _AsyncClosable(Protocol):
     async def close(self) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class _CaseRunResult:
+    prediction: dict[str, object]
+    evidence: dict[str, object]
+    records: tuple[ModelAttemptAuditRecord, ...]
 
 
 def run_live_arm(
@@ -83,22 +99,6 @@ async def _run_live_arm(
     run_id: str,
     repository_evidence: dict[str, object],
 ) -> dict[str, object]:
-    from artana_evidence_api.document_extraction import (
-        normalize_text_document,
-    )
-    from artana_evidence_api.document_extraction_support.full_text_chunking import (
-        build_relation_extraction_text_chunks,
-    )
-    from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
-        run_llm_claim_inventory_with_zero_retry,
-    )
-    from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
-        llm_extraction_document_fingerprint,
-        start_model_attempt_audit,
-        stop_model_attempt_audit,
-    )
-    from artana_evidence_api.step_helpers import run_single_step_with_policy
-
     client, tenant, execution_model_id, kernel, store = _build_inventory_runtime(
         model_id,
     )
@@ -108,65 +108,35 @@ async def _run_live_arm(
     provider_ids: set[str] = set()
     receipt_expectations: list[ProviderReceiptExpectation] = []
     fallback_count = invalid_count = unidentified_provider_count = 0
+    qualification_invalid_count = stress_invalid_count = 0
     try:
         for case in fixture.cases:
-            invocation_namespace = f"tg04-{_TASK_ID}-{uuid4().hex}"
-            normalized_text = normalize_text_document(case.source_text)
-            audit = start_model_attempt_audit(evidence_unit_id=case.case_id)
-            try:
-                inventory = await run_llm_claim_inventory_with_zero_retry(
-                    normalized_text=normalized_text,
-                    chunks=build_relation_extraction_text_chunks(normalized_text),
-                    document_fingerprint=llm_extraction_document_fingerprint(
-                        normalized_text,
-                    ),
-                    client=client,
-                    tenant=tenant,
-                    model_id=execution_model_id,
-                    step_runner=run_single_step_with_policy,
-                    execution_namespace=invocation_namespace,
-                )
-                events = _nary_events(inventory.claims)
-            finally:
-                stop_model_attempt_audit(audit)
-
-            attempts = [record.as_json() for record in audit.records]
+            case_result = await _execute_case(
+                case=case,
+                client=client,
+                tenant=tenant,
+                execution_model_id=execution_model_id,
+            )
             case_expectations, case_invalid, case_unidentified = (
                 _case_receipt_expectations(
-                    records=tuple(audit.records),
+                    records=case_result.records,
                     case_id=case.case_id,
                     model_id=model_id,
                 )
             )
             invalid_count += case_invalid
+            if str(case.control_status) == "REPRESENTABILITY_STRESS":
+                stress_invalid_count += case_invalid
+            else:
+                qualification_invalid_count += case_invalid
             unidentified_provider_count += case_unidentified
             for expectation in case_expectations:
                 if expectation.response_id in provider_ids:
                     raise RuntimeError("TG-04 provider response IDs must be unique")
                 provider_ids.add(expectation.response_id)
                 receipt_expectations.append(expectation)
-            predictions.append(
-                {
-                    "case_id": case.case_id,
-                    "events": events,
-                    "abstained": not events,
-                },
-            )
-            case_evidence.append(
-                {
-                    "case_id": case.case_id,
-                    "invocation_namespace": invocation_namespace,
-                    "attempts": attempts,
-                    "diagnostics": {
-                        "fallback_output_used": False,
-                        "claim_extraction_routing_status": (
-                            "complete"
-                            if inventory.semantic_inventory_complete
-                            else "semantic_incomplete"
-                        ),
-                    },
-                },
-            )
+            predictions.append(case_result.prediction)
+            case_evidence.append(case_result.evidence)
     finally:
         with suppress(Exception):
             await kernel.close()
@@ -181,8 +151,19 @@ async def _run_live_arm(
         receipt_expectations,
         OpenAIProviderReceiptVerifier.from_environment(),
     )
+    operational_summary = build_operational_summary(
+        cases=fixture.cases,
+        predictions=predictions,
+        safety=OperationalSafetyEvidence(
+            fallback_count=fallback_count,
+            unidentified_provider_attempt_count=unidentified_provider_count,
+            qualification_invalid_agent_output_count=qualification_invalid_count,
+            representability_stress_invalid_agent_output_count=stress_invalid_count,
+            provider_receipt_gate_passed=provider_receipts.gate_passed,
+        ),
+    )
     report: dict[str, object] = {
-        "schema_version": "tg04_live_arm.v1",
+        "schema_version": "tg04_live_arm.v2",
         "run_id": run_id,
         "generated_at": datetime.now(UTC).isoformat(),
         "fixture_sha256": fixture.sha256,
@@ -192,9 +173,14 @@ async def _run_live_arm(
         "predictions": predictions,
         "metrics": asdict(score.metrics),
         "case_scores": [asdict(case) for case in score.cases],
+        "operational_summary": operational_summary,
         "safety": {
             "fallback_count": fallback_count,
             "invalid_agent_output_count": invalid_count,
+            "qualification_invalid_agent_output_count": (qualification_invalid_count),
+            "representability_stress_invalid_agent_output_count": (
+                stress_invalid_count
+            ),
             "provider_response_id_count": len(provider_ids),
             "provider_receipt_status": provider_receipts.status,
             "verified_provider_receipt_count": provider_receipts.verified_count,
@@ -205,6 +191,106 @@ async def _run_live_arm(
     }
     report["report_sha256"] = _sha256_json(report)
     return report
+
+
+async def _execute_case(
+    *,
+    case: NaryClaimCase,
+    client: object,
+    tenant: object,
+    execution_model_id: str,
+) -> _CaseRunResult:
+    from artana_evidence_api.document_extraction import normalize_text_document
+    from artana_evidence_api.document_extraction_support.full_text_chunking import (
+        build_relation_extraction_text_chunks,
+    )
+    from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
+        run_llm_claim_inventory_with_zero_retry,
+    )
+    from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+        StructuredModelSemanticError,
+    )
+    from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+        llm_extraction_document_fingerprint,
+        start_model_attempt_audit,
+        stop_model_attempt_audit,
+    )
+    from artana_evidence_api.step_helpers import run_single_step_with_policy
+    from pydantic import ValidationError
+
+    invocation_namespace = f"tg04-{_TASK_ID}-{uuid4().hex}"
+    normalized_text = normalize_text_document(case.source_text)
+    audit = start_model_attempt_audit(evidence_unit_id=case.case_id)
+    inventory = None
+    terminal_error: ValidationError | StructuredModelSemanticError | None = None
+    try:
+        try:
+            inventory = await run_llm_claim_inventory_with_zero_retry(
+                normalized_text=normalized_text,
+                chunks=build_relation_extraction_text_chunks(normalized_text),
+                document_fingerprint=llm_extraction_document_fingerprint(
+                    normalized_text,
+                ),
+                client=client,
+                tenant=tenant,
+                model_id=execution_model_id,
+                step_runner=run_single_step_with_policy,
+                execution_namespace=invocation_namespace,
+            )
+        except (ValidationError, StructuredModelSemanticError) as exc:
+            terminal_error = exc
+    finally:
+        stop_model_attempt_audit(audit)
+
+    if terminal_error is not None:
+        require_sealable_unbindable_attempts(
+            tuple(record.as_json() for record in audit.records),
+        )
+        if audit.records[-1].error_type != type(terminal_error).__name__:
+            raise RuntimeError("TG-04 terminal audit error differs from raised error")
+
+    events = [] if inventory is None else _nary_events(inventory.claims)
+    outcome = _execution_outcome(events=events, failed=terminal_error is not None)
+    routing_status = "unbound"
+    if terminal_error is None:
+        routing_status = (
+            "complete"
+            if inventory is not None and inventory.semantic_inventory_complete
+            else "semantic_incomplete"
+        )
+    return _CaseRunResult(
+        prediction={
+            "case_id": case.case_id,
+            "events": events,
+            "abstained": not events,
+            "execution_outcome": outcome.value,
+        },
+        evidence={
+            "case_id": case.case_id,
+            "invocation_namespace": invocation_namespace,
+            "attempts": [record.as_json() for record in audit.records],
+            "diagnostics": {
+                "fallback_output_used": False,
+                "claim_extraction_routing_status": routing_status,
+                "terminal_error_category": (
+                    None if terminal_error is None else type(terminal_error).__name__
+                ),
+            },
+        },
+        records=tuple(audit.records),
+    )
+
+
+def _execution_outcome(
+    *,
+    events: list[dict[str, object]],
+    failed: bool,
+) -> CaseExecutionOutcome:
+    if failed:
+        return CaseExecutionOutcome.UNBINDABLE_OUTPUT
+    return (
+        CaseExecutionOutcome.BOUND_OUTPUT if events else CaseExecutionOutcome.NO_OUTPUT
+    )
 
 
 def _build_inventory_runtime(
