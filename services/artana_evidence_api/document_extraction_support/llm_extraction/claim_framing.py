@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol, cast
 
 from artana_evidence_api.document_extraction_contracts import (
@@ -16,11 +15,14 @@ from artana_evidence_api.document_extraction_prompting import (
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
-    ClaimEndpointRoleOrder,
+    ClaimArgumentRole,
     ClaimFramingDecision,
     ClaimInventoryBindingError,
     ClaimLocalSourceRegion,
+    QualifierState,
+    claim_inventory_input_sha256,
     derive_claim_local_source_region,
+    normalize_claim_frame,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.prompt_versions import (
     CLAIM_FRAMING_PROMPT_VERSION,
@@ -47,9 +49,14 @@ _SCHEMA_RETRY_INSTRUCTION = """
 
 SCHEMA AND SOURCE-BINDING RETRY:
 The previous framing output failed the strict schema or contradicted the frozen
-inventory/source boundary. Frame only the supplied claim. Copy the two endpoint
-anchors and exact_span verbatim, preserve polarity and epistemic_status, and do
-not borrow qualifiers from another claim. ABSTAIN rather than guessing.
+inventory/source boundary. Frame only the supplied claim. Copy candidate
+endpoints only from the typed arguments and copy exact_span verbatim. For each
+candidate, set a qualifier to NOT_APPLICABLE when its argument is already the
+subject or object; every non-endpoint role with a matching qualifier must remain
+PRESENT. Preserve polarity and epistemic_status and do not borrow qualifiers
+from another claim. When distinct intervention-to-condition and
+intervention-to-outcome projections are both source-supported, return both as
+MULTIPLE_VALID_FRAMES. ABSTAIN rather than guessing.
 """
 
 
@@ -57,16 +64,22 @@ class SingleClaimFramingResultLike(Protocol):
     """Typed view of the dynamic one-claim framing output schema."""
 
     decision: ClaimFramingDecision
-    relation: LLMRelationLike | None
+    relations: list[LLMRelationLike]
+    decision_rationale: str
 
 
 @dataclass(frozen=True, slots=True)
 class FramedClaimResult:
     """Validated result of one claim-specific model call."""
 
-    candidate: ExtractedRelationCandidate | None
-    unknown_relation_type: str | None
-    abstained: bool
+    candidates: tuple[ExtractedRelationCandidate, ...]
+    unknown_relation_types: tuple[str, ...]
+    decision: ClaimFramingDecision
+    decision_rationale: str
+
+    @property
+    def abstained(self) -> bool:
+        return self.decision is ClaimFramingDecision.ABSTAIN
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,34 +234,69 @@ async def _run_claim_framing_step(
         output = cast("SingleClaimFramingResultLike", parsed)
         if output.decision is ClaimFramingDecision.ABSTAIN:
             return FramedClaimResult(
-                candidate=None,
-                unknown_relation_type=None,
-                abstained=True,
+                candidates=(),
+                unknown_relation_types=(),
+                decision=output.decision,
+                decision_rationale=output.decision_rationale,
             )
-        relation = output.relation
-        if relation is None:
-            raise StructuredModelSemanticError("FRAMED output is missing its relation")
-        _require_inventory_consistency(
-            relation=relation,
-            inventory_claim=inventory_claim,
-            source_region=source_region,
-        )
-        try:
-            candidate, unknown_relation_type = llm_relation_to_candidate(
-                relation,
-                source_text=source_region.text,
-                source_hash=inventory_claim.source_sha256,
+        candidates: list[ExtractedRelationCandidate] = []
+        unknown_relation_types: list[str] = []
+        for relation in output.relations:
+            _require_inventory_consistency(
+                relation=relation,
+                inventory_claim=inventory_claim,
+                source_region=source_region,
             )
-        except ValueError as exc:
-            raise StructuredModelSemanticError(str(exc)) from exc
-        if candidate is None or candidate.claim_frame is None:
-            raise StructuredModelSemanticError(
-                "framed relation failed qualified claim source validation",
+            try:
+                candidate, unknown_relation_type = llm_relation_to_candidate(
+                    relation,
+                    source_text=source_region.text,
+                    source_hash=inventory_claim.source_sha256,
+                )
+            except ValueError as exc:
+                raise StructuredModelSemanticError(str(exc)) from exc
+            if candidate is None or candidate.claim_frame is None:
+                raise StructuredModelSemanticError(
+                    "framed relation failed qualified claim source validation",
+                )
+            frame = candidate.claim_frame.model_copy(
+                update={"assertion_arguments": inventory_claim.item.arguments},
             )
+            try:
+                frame = normalize_claim_frame(
+                    frame,
+                    source_region.text,
+                    expected_source_hash=inventory_claim.source_sha256,
+                )
+            except ValueError as exc:
+                raise StructuredModelSemanticError(str(exc)) from exc
+            review_reason_codes = candidate.review_reason_codes
+            review_status = candidate.review_status
+            frame_set_review_reason = {
+                ClaimFramingDecision.MULTIPLE_VALID_FRAMES: "multiple_valid_frame_set",
+                ClaimFramingDecision.AMBIGUOUS: "ambiguous_frame_set",
+            }.get(output.decision)
+            if frame_set_review_reason is not None:
+                review_status = "review_only"
+                review_reason_codes = tuple(
+                    dict.fromkeys((*review_reason_codes, frame_set_review_reason)),
+                )
+            candidate = replace(
+                candidate,
+                claim_frame=frame,
+                framing_decision=output.decision.value,
+                framing_decision_rationale=output.decision_rationale,
+                review_status=review_status,
+                review_reason_codes=review_reason_codes,
+            )
+            candidates.append(candidate)
+            if unknown_relation_type is not None:
+                unknown_relation_types.append(unknown_relation_type)
         return FramedClaimResult(
-            candidate=candidate,
-            unknown_relation_type=unknown_relation_type,
-            abstained=False,
+            candidates=tuple(candidates),
+            unknown_relation_types=tuple(unknown_relation_types),
+            decision=output.decision,
+            decision_rationale=output.decision_rationale,
         )
 
     async def _invoke_model(
@@ -262,7 +310,7 @@ async def _run_claim_framing_step(
             model=model_id,
             prompt=provider_prompt,
             output_schema=output_schema,
-            schema_id="document_extraction.claim_framing.v1",
+            schema_id="document_extraction.claim_framing.v2",
             step_key=step_key,
             replay_policy="fork_on_drift",
         )
@@ -301,26 +349,48 @@ def _require_inventory_consistency(
         raise StructuredModelSemanticError(
             "framed relation changed the inventoried epistemic_status",
         )
-    expected_endpoints = _ordered_inventory_endpoints(inventory_claim)
-    if expected_endpoints is None:
+    argument_spans = {argument.exact_span for argument in item.arguments}
+    if relation.subject not in argument_spans or relation.object not in argument_spans:
         raise StructuredModelSemanticError(
-            "framed relation requires resolved inventory endpoint roles",
+            "framed relation endpoints must come from typed inventory arguments",
         )
-    if (relation.subject, relation.object) != expected_endpoints:
-        raise StructuredModelSemanticError(
-            "framed relation direction must equal the inventoried endpoint roles",
-        )
+    _require_role_retention(relation=relation, inventory_claim=inventory_claim)
 
 
-def _ordered_inventory_endpoints(
+_ROLE_QUALIFIER_FIELDS: dict[ClaimArgumentRole, str] = {
+    ClaimArgumentRole.INTERVENTION: "intervention",
+    ClaimArgumentRole.POPULATION: "population",
+    ClaimArgumentRole.VARIANT: "biological_or_variant_state",
+    ClaimArgumentRole.OUTCOME: "outcome",
+    ClaimArgumentRole.COMPARATOR: "comparator",
+    ClaimArgumentRole.TIMEFRAME: "timeframe",
+    ClaimArgumentRole.STUDY_DESIGN: "study_design",
+    ClaimArgumentRole.TREATMENT_SETTING: "treatment_setting",
+    ClaimArgumentRole.CONDITION: "condition",
+}
+
+
+def _require_role_retention(
+    *,
+    relation: LLMRelationLike,
     inventory_claim: BoundClaimInventoryItem,
-) -> tuple[str, str] | None:
-    item = inventory_claim.item
-    if item.endpoint_role_order is ClaimEndpointRoleOrder.A_SUBJECT_B_OBJECT:
-        return item.endpoint_a_span, item.endpoint_b_span
-    if item.endpoint_role_order is ClaimEndpointRoleOrder.B_SUBJECT_A_OBJECT:
-        return item.endpoint_b_span, item.endpoint_a_span
-    return None
+) -> None:
+    endpoints = {relation.subject, relation.object}
+    for argument in inventory_claim.item.arguments:
+        if argument.exact_span in endpoints:
+            continue
+        qualifier_field = _ROLE_QUALIFIER_FIELDS.get(argument.role)
+        if qualifier_field is None:
+            continue
+        qualifier = getattr(relation, qualifier_field)
+        if (
+            qualifier.state is not QualifierState.PRESENT
+            or qualifier.exact_span != argument.exact_span
+        ):
+            raise StructuredModelSemanticError(
+                f"framed relation dropped {argument.role.value} argument "
+                f"{argument.exact_span!r}",
+            )
 
 
 def _require_exact_inventory_source_region(
@@ -346,7 +416,7 @@ def _claim_framing_step_key(
     execution_namespace: str,
 ) -> str:
     return fingerprinted_step_key(
-        "research_init.claim_framing.v1",
+        "research_init.claim_framing.v2",
         prompt_version,
         model_id,
         inventory_claim.source_sha256,
@@ -385,16 +455,10 @@ def _accepted_framing_attempt_record() -> ModelAttemptAuditRecord:
 
 
 def _claim_input_sha256(inventory_claim: BoundClaimInventoryItem) -> str:
-    payload = json.dumps(
-        {
-            "inventory_id": inventory_claim.inventory_id,
-            "item": inventory_claim.item.model_dump(mode="json"),
-        },
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
+    return claim_inventory_input_sha256(
+        inventory_id=inventory_claim.inventory_id,
+        item=inventory_claim.item,
+    )
 
 
 __all__ = [

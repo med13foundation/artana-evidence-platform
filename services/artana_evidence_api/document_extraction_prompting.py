@@ -34,6 +34,8 @@ from pydantic import (
     model_validator,
 )
 
+_MIN_MULTI_FRAME_RELATIONS = 2
+
 
 def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
     """Build the structured output schema for one LLM extraction pass."""
@@ -98,7 +100,7 @@ def build_missing_claim_recovery_output_schema() -> type[BaseModel]:
 
 
 class _SingleClaimFramingEnvelope(BaseModel):
-    """Common decision contract for one inventoried-claim framing call."""
+    """Common decision contract for one role-typed assertion framing call."""
 
     model_config = ConfigDict(strict=True, extra="forbid")
 
@@ -108,20 +110,35 @@ class _SingleClaimFramingEnvelope(BaseModel):
         strict=False,
     )
     abstention_rationale: str | None = Field(default=None, max_length=2000)
+    decision_rationale: str = Field(..., min_length=1, max_length=2000)
 
     @model_validator(mode="after")
     def validate_decision_payload(self) -> _SingleClaimFramingEnvelope:
-        relation = getattr(self, "relation", None)
-        if self.decision is ClaimFramingDecision.FRAMED:
-            if relation is None:
-                raise ValueError("FRAMED requires exactly one relation")
+        relations = getattr(self, "relations", [])
+        relation_count = len(relations)
+        if self.decision is ClaimFramingDecision.SINGLE_FRAME:
+            if relation_count != 1:
+                raise ValueError("SINGLE_FRAME requires exactly one relation")
             if (
                 self.abstention_reason is not None
                 or self.abstention_rationale is not None
             ):
-                raise ValueError("FRAMED cannot include abstention fields")
+                raise ValueError("SINGLE_FRAME cannot include abstention fields")
+        elif self.decision in {
+            ClaimFramingDecision.MULTIPLE_VALID_FRAMES,
+            ClaimFramingDecision.AMBIGUOUS,
+        }:
+            if relation_count < _MIN_MULTI_FRAME_RELATIONS:
+                raise ValueError(f"{self.decision.value} requires at least two relations")
+            if (
+                self.abstention_reason is not None
+                or self.abstention_rationale is not None
+            ):
+                raise ValueError(
+                    f"{self.decision.value} cannot include abstention fields"
+                )
         else:
-            if relation is not None:
+            if relation_count:
                 raise ValueError("ABSTAIN cannot include a relation")
             if self.abstention_reason is None or not self.abstention_rationale:
                 raise ValueError("ABSTAIN requires a categorical reason and rationale")
@@ -129,10 +146,10 @@ class _SingleClaimFramingEnvelope(BaseModel):
 
 
 def build_single_claim_framing_output_schema() -> type[BaseModel]:
-    """Build a strict one-relation-or-abstain output schema."""
+    """Build a strict candidate-frame-set-or-abstain output schema."""
 
     relation_list_schema = _build_llm_extraction_output_schema(
-        max_relations=1,
+        max_relations=4,
         strict_relation_type=False,
         require_claim_frame_fields=True,
     )
@@ -141,11 +158,13 @@ def build_single_claim_framing_output_schema() -> type[BaseModel]:
     relation_model_object = next(iter(relation_arguments), None)
     if len(relation_arguments) != 1 or not isinstance(relation_model_object, type):
         raise TypeError("unable to resolve the qualified relation output model")
-    relation_model: type[BaseModel] = relation_model_object
     return create_model(
         "LLMSingleClaimFramingResult",
         __base__=_SingleClaimFramingEnvelope,
-        relation=(relation_model | None, None),
+        relations=(
+            relation_annotation,
+            Field(default_factory=list, max_length=4),
+        ),
     )
 
 
@@ -313,6 +332,7 @@ def _build_llm_extraction_output_schema(
             polarity: Polarity = Field(..., strict=False)
             epistemic_status: EpistemicStatus = Field(..., strict=False)
             biological_or_variant_state: ClaimQualifier
+            condition: ClaimQualifier
             population: ClaimQualifier
             intervention: ClaimQualifier
             comparator: ClaimQualifier
@@ -438,7 +458,7 @@ QUALIFIED CLAIM FRAME — REQUIRED FOR EVERY RELATION:
 - epistemic_status is exactly one of ASSERTED, PROVISIONAL, UNCERTAIN,
   HYPOTHESIS, or NULL_RESULT. Preserve what this source says; outside knowledge
   must not upgrade a hypothesis or provisional statement.
-- Return all nine qualifier fields: biological_or_variant_state, population,
+- Return all ten qualifier fields: biological_or_variant_state, condition, population,
   intervention, comparator, outcome, study_design, treatment_setting, timeframe,
   and threshold. Each qualifier has state PRESENT, NOT_APPLICABLE, or UNRESOLVED.
   PRESENT requires both a precise value and an exact_span copied verbatim from
@@ -531,38 +551,46 @@ Return up to 10 of the strongest, most specific relationships. Quality over quan
 
 CLAIM_INVENTORY_SYSTEM_PROMPT = """You inventory explicit biomedical claims in one frozen source chunk before any relation framing.
 
-Return every source-local claim that identifies two concrete biomedical endpoints and a relation cue. Do not rank claims and do not return confidence, probability, quality, importance, or any other numeric score.
+Return every source-local biomedical event or assertion with a relation cue, one closed event_type, and at least two typed arguments. Do not choose graph endpoints in this step. Do not rank claims and do not return confidence, probability, quality, importance, or any other numeric score.
 
 For each claim:
-- exact_span is the smallest verbatim source span that contains both endpoints, the relation cue, and every qualifier needed to interpret this one claim; when the same text repeats in the chunk, include enough adjacent verbatim context to make exact_span occur once;
-- endpoint_a_span and endpoint_b_span are the two exact source-native endpoint mentions, not a population, intervention, comparator, outcome, measurement, timeframe, or other qualifier;
-- endpoint_role_order is A_SUBJECT_B_OBJECT or B_SUBJECT_A_OBJECT when the source resolves semantic direction, otherwise UNRESOLVED; do not infer direction from outside knowledge;
+- exact_span is the smallest complete verbatim source span that contains the event, every material argument, and the context needed to interpret it; when the same text repeats in the chunk, include enough adjacent verbatim context to make exact_span occur once;
+- arguments contains every material source-native span with one closed participant role: INTERVENTION, CONDITION, POPULATION, VARIANT, OUTCOME, COMPARATOR, TIMEFRAME, STUDY_DESIGN, TREATMENT_SETTING, GENE_OR_PROTEIN, CHEMICAL_OR_DRUG, BIOMARKER, EXPOSURE, BIOLOGICAL_PROCESS, ANATOMY, MEASUREMENT, or OTHER_ENTITY;
+- every argument also has one closed event_role describing what it does in the event: AGENT, THEME, TARGET, CAUSE, EFFECT, CONTEXT, SITE, CSITE, ATLOC, TOLOC, FROMLOC, or MEASURE;
+- do not discard a condition, population, variant, or outcome merely because it is grammatical context rather than a direct verb argument;
+- a VARIANT exact_span includes any attached material state suffix such as -positive, -negative, -mutant, -deficient, -high, or -low;
+- role_rationale explains the source-local role in words without a score;
 - relation_cue_span is the exact verb or phrase that states the relation;
+- event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT; choose the most specific source-explicit category and use OTHER_EXPLICIT only when none of the named categories fits;
 - source_locator is exactly normalized_extraction_text;
 - polarity is one of SUPPORT, REFUTE, UNCERTAIN, HYPOTHESIS, or NULL_RESULT;
 - epistemic_status is one of ASSERTED, PROVISIONAL, UNCERTAIN, HYPOTHESIS, or NULL_RESULT;
 - inventory_rationale explains why this is a distinct explicit claim, without scoring it.
 
-Inventory sibling predicates and sibling endpoint pairs as separate claims even when they occur in one sentence. Preserve direct negative findings, measured null results, provisional findings, author hypotheses, and refutations. Do not convert them to positive asserted findings. Return an empty claims list only when the source contains no explicit two-endpoint biomedical claim. Do not use outside knowledge, infer an unstated claim, or frame the final relation type and qualifiers in this step."""
+Inventory sibling predicates as separate claims even when they occur in one sentence, but keep every role needed to interpret each event. Preserve direct negative findings, measured null results, provisional findings, author hypotheses, and refutations. Do not convert them to positive asserted findings. Return an empty claims list only when the source contains no explicit biomedical event or assertion with at least two arguments. Do not use outside knowledge, infer an unstated claim, or frame final graph endpoints, relation types, or qualifiers in this step."""
 
 
 CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT = """You independently review whether a supplied claim inventory completely covers one frozen source chunk.
 
-Return one categorical decision only: COMPLETE when every explicit two-endpoint biomedical claim is represented, or INCOMPLETE when at least one explicit claim is absent. For INCOMPLETE, return a source-bound descriptor for every missing claim using exact spans, endpoint anchors, relation cue, polarity, and epistemic status. For COMPLETE, return no missing descriptors. Include negative, null, uncertain, provisional, hypothesis, and sibling claims. Do not frame final relation types, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score."""
+Return one categorical decision only: COMPLETE when every explicit biomedical event and every material typed argument is represented, or INCOMPLETE when at least one event or argument is absent. For INCOMPLETE, return a source-bound descriptor for every missing claim using its complete exact span, typed arguments, event roles, relation cue, event_type, polarity, and epistemic status. event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT. For COMPLETE, return no missing descriptors. Include negative, null, uncertain, provisional, hypothesis, and sibling claims. Do not frame final graph endpoints or relation types, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score."""
 
 
 MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT = """You recover only claims identified as missing by an independent inventory-completeness review.
 
-Return every reviewed missing claim and no existing or additional claim. Copy all spans exactly from the frozen source, preserve polarity and epistemic status, and use source_locator=normalized_extraction_text. Do not frame final relations, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score. If a reviewed descriptor cannot be recovered exactly, return schema-invalid output rather than inventing content."""
+Return every reviewed missing claim and no existing or additional claim. Copy the complete event span and every typed argument exactly from the frozen source; preserve each argument's event_role, event_type, polarity, and epistemic status; and use source_locator=normalized_extraction_text. event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT. Do not frame final graph endpoints or relations, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score. If a reviewed descriptor cannot be recovered exactly, return schema-invalid output rather than inventing content."""
 
 
-SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT = f"""You frame exactly one source-bound biomedical claim. This is not a search, ranking, or multi-relation extraction task.
+SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT = f"""You frame exactly one source-bound, role-typed biomedical assertion. This is not a search or ranking task.
 
 ONE-CLAIM CONTRACT:
 - You receive exactly one inventory item and one claim-local frozen source region. Frame only that claim.
-- Return decision FRAMED with exactly one relation, or decision ABSTAIN with one categorical abstention_reason and a source-specific rationale.
+- Return SINGLE_FRAME with one relation, MULTIPLE_VALID_FRAMES with every independently source-supported projection, AMBIGUOUS with at least two plausible candidate frames when the source does not resolve which projection is intended, or ABSTAIN with no relation and one categorical abstention_reason.
+- decision_rationale explains the categorical choice without a score.
 - The relation sentence must equal the supplied claim-local source region verbatim.
-- The relation subject and object must follow the inventory endpoint_role_order exactly. ABSTAIN with ENDPOINTS_AMBIGUOUS when it is UNRESOLVED. Never promote a population, intervention, comparator, outcome, measurement, timeframe, threshold, or other qualifier into an endpoint.
+- Every relation subject and object must be copied from the supplied typed arguments. The server preserves the complete typed argument inventory on every candidate frame. For roles with a matching qualified field, every non-endpoint argument must also appear in that field with its verbatim exact_span.
+- When an argument is selected as subject or object, set its matching qualifier to NOT_APPLICABLE; never duplicate the same role as both endpoint and qualifier.
+- Evaluate each independently source-supported projection. For a treatment-result assertion, preserve both intervention-to-condition and intervention-to-outcome frames when the source supports both; do not choose one merely because it follows the grammatical verb.
+- Do not assume that grammatical subject/object equals the only valid biomedical projection. A sentence may support both intervention-to-condition and intervention-to-outcome frames; preserve both or return AMBIGUOUS rather than silently collapsing one.
 - Preserve the inventory polarity and epistemic_status exactly. Never turn a negative, null, uncertain, provisional, or hypothesis claim into a positive asserted claim.
 - Populate every qualifier from this claim's exact source span only. Do not borrow a qualifier from a sibling claim in the surrounding chunk.
 - Do not return confidence, probability, quality, rank, or any model-authored numeric score. Source measurements are allowed only as exact copied source literals under the source_measurements contract.
@@ -575,7 +603,7 @@ Choose exactly one canonical relation type from this list:
 Use the most specific type directly supported by the frozen source. Use ASSOCIATED_WITH only when no more specific canonical type fits. Use PROPOSE_NEW_RELATION_TYPE only when no canonical type fits, with an UPPER_SNAKE_CASE proposal and source-specific rationale. Never use outside knowledge to choose or strengthen a relation.
 
 QUALIFIED CLAIM FRAME:
-- Return all nine qualifier fields: biological_or_variant_state, population, intervention, comparator, outcome, study_design, treatment_setting, timeframe, and threshold.
+- Return all ten qualifier fields: biological_or_variant_state, condition, population, intervention, comparator, outcome, study_design, treatment_setting, timeframe, and threshold.
 - PRESENT requires a precise value and verbatim exact_span from this claim-local region. NOT_APPLICABLE and UNRESOLVED require null value and exact_span.
 - Copy source measurements exactly with their unit, field role, evidence span, source locator, and source hash. Do not calculate, normalize, or estimate a value.
 - The extraction rationale explains the source-local mapping in words. It must not contain confidence, probability, or another score."""

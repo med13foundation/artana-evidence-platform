@@ -18,6 +18,8 @@ from artana_evidence_api.document_extraction_support.llm_extraction.invocation_b
 
 import scripts.run_claim_frame_feasibility_audit as claim_frame_cli
 import scripts.validation.claim_frames.evidence as claim_frame_evidence
+import scripts.validation.claim_frames.lineage as claim_frame_lineage
+import scripts.validation.claim_frames.metrics as claim_frame_metrics
 from scripts.validation.claim_frames.evidence import (
     OFFLINE_JSON_AUTHENTICATION,
     REQUIRED_MODEL_ID,
@@ -332,6 +334,172 @@ def test_postprocessed_candidate_requires_accepted_raw_relation() -> None:
         )
 
 
+def test_candidate_lineage_allows_only_inventory_bound_argument_enrichment() -> None:
+    fixture = _minimal_fixture()
+    frame = _actual_frame(fixture.cases[0].frames[0])
+    arguments = [
+        {
+            "role": "CHEMICAL_OR_DRUG",
+            "exact_span": "Drug",
+            "role_rationale": "The source names the drug.",
+        },
+        {
+            "role": "CONDITION",
+            "exact_span": "disease",
+            "role_rationale": "The source names the condition.",
+        },
+    ]
+    inventory_item = {
+        "exact_span": "Drug treated disease.",
+        "relation_cue_span": "treated",
+        "arguments": arguments,
+        "source_locator": "normalized_extraction_text",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source states one treatment assertion.",
+    }
+    relation = {
+        "subject": frame["subject"],
+        "relation_type": frame["predicate"],
+        "object": frame["object"],
+        "sentence": frame["source_evidence"]["exact_span"],
+        "polarity": frame["polarity"],
+        "epistemic_status": frame["epistemic_status"],
+        **{field: frame[field] for field in QUALIFIER_FIELDS},
+        "source_measurements": frame["source_measurements"],
+        "extraction_rationale": frame["extraction_rationale"],
+    }
+    condition = {"state": "NOT_APPLICABLE", "value": None, "exact_span": None}
+    relation["condition"] = condition
+    frame["condition"] = copy.deepcopy(condition)
+    semantic_unit_id = "typed-treatment-assertion"
+    attempts = (
+        {
+            "validation_outcome": "accepted",
+            "pass_role": "claim_inventory",
+            "raw_model_payload": {"claims": [inventory_item]},
+        },
+        {
+            "validation_outcome": "accepted",
+            "pass_role": "claim_framing",
+            "semantic_unit_id": semantic_unit_id,
+            "input_sha256": _sha256_json(
+                {"inventory_id": semantic_unit_id, "item": inventory_item},
+            ),
+            "raw_model_payload": {
+                "decision": "SINGLE_FRAME",
+                "relations": [relation],
+            },
+        },
+    )
+    frame["assertion_arguments"] = copy.deepcopy(arguments)
+
+    claim_frame_metrics._validate_candidate_lineage(  # noqa: SLF001
+        candidate_frames=(frame,),
+        attempts=attempts,
+        case_id="synthetic",
+        allow_partial_failure=False,
+    )
+
+    cast("list[dict[str, object]]", frame["assertion_arguments"])[0]["role"] = (
+        "INTERVENTION"
+    )
+    with pytest.raises(ValueError, match="not derived from an accepted raw agent"):
+        claim_frame_metrics._validate_candidate_lineage(  # noqa: SLF001
+            candidate_frames=(frame,),
+            attempts=attempts,
+            case_id="synthetic",
+            allow_partial_failure=False,
+        )
+
+
+def test_omitted_output_count_uses_inventory_bound_argument_enrichment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _minimal_fixture()
+    frame = _actual_frame(fixture.cases[0].frames[0])
+    arguments = [
+        {
+            "role": "CHEMICAL_OR_DRUG",
+            "exact_span": "Drug",
+            "role_rationale": "The source names the drug.",
+        },
+        {
+            "role": "CONDITION",
+            "exact_span": "disease",
+            "role_rationale": "The source names the condition.",
+        },
+    ]
+    inventory_item = {
+        "exact_span": "Drug treated disease.",
+        "relation_cue_span": "treated",
+        "arguments": arguments,
+        "source_locator": "normalized_extraction_text",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source states one treatment assertion.",
+    }
+    relation = {
+        "subject": frame["subject"],
+        "relation_type": frame["predicate"],
+        "object": frame["object"],
+        "sentence": frame["source_evidence"]["exact_span"],
+        "polarity": frame["polarity"],
+        "epistemic_status": frame["epistemic_status"],
+        **{field: frame[field] for field in QUALIFIER_FIELDS},
+        "source_measurements": frame["source_measurements"],
+        "extraction_rationale": frame["extraction_rationale"],
+    }
+    condition = {"state": "NOT_APPLICABLE", "value": None, "exact_span": None}
+    relation["condition"] = condition
+    frame["condition"] = copy.deepcopy(condition)
+    semantic_unit_id = "typed-treatment-assertion"
+    attempts = (
+        {
+            "validation_outcome": "accepted",
+            "pass_role": "claim_inventory",
+            "raw_model_payload": {"claims": [inventory_item]},
+        },
+        {
+            "validation_outcome": "accepted",
+            "pass_role": "claim_framing",
+            "semantic_unit_id": semantic_unit_id,
+            "input_sha256": _sha256_json(
+                {"inventory_id": semantic_unit_id, "item": inventory_item},
+            ),
+            "raw_model_payload": {
+                "decision": "SINGLE_FRAME",
+                "relations": [relation],
+            },
+        },
+    )
+    frame["assertion_arguments"] = copy.deepcopy(arguments)
+    monkeypatch.setattr(
+        claim_frame_lineage,
+        "validate_model_attempt_records",
+        lambda raw_output, *, expected_model_id: attempts,
+    )
+
+    assert (
+        claim_frame_metrics._omitted_accepted_framing_output_count(  # noqa: SLF001
+            {"raw_agent_output": {}, "frames": [frame]},
+            expected_model_id=REQUIRED_MODEL_ID,
+        )
+        == 0
+    )
+
+    cast("list[dict[str, object]]", frame["assertion_arguments"])[0]["role"] = (
+        "INTERVENTION"
+    )
+    assert (
+        claim_frame_metrics._omitted_accepted_framing_output_count(  # noqa: SLF001
+            {"raw_agent_output": {}, "frames": [frame]},
+            expected_model_id=REQUIRED_MODEL_ID,
+        )
+        == 1
+    )
+
+
 def test_perfect_legacy_primary_report_cannot_satisfy_tg03_lineage() -> None:
     fixture = _minimal_fixture()
     reports = list(_three_reports(fixture, prefix="legacy-primary"))
@@ -449,6 +617,91 @@ def test_bound_abstention_is_a_terminal_claim_framing_result() -> None:
     assert comparison["gates"]["full_frame_recall"]["passed"] is False
     assert comparison["metrics"]["inventory_full_recall"] == 1.0
     assert comparison["gate_passed"] is False
+
+
+def test_typed_inventory_evidence_requires_every_role_in_each_frame() -> None:
+    sentence = (
+        "Among Korean adults with ALK G1202R-positive lung adenocarcinoma, "
+        "lorlatinib reduced intracranial lesions."
+    )
+    item: dict[str, object] = {
+        "exact_span": sentence,
+        "relation_cue_span": "reduced",
+        "arguments": [
+            {"role": "POPULATION", "exact_span": "Korean adults"},
+            {"role": "VARIANT", "exact_span": "ALK G1202R-positive"},
+            {
+                "role": "CONDITION",
+                "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+            },
+            {"role": "INTERVENTION", "exact_span": "lorlatinib"},
+            {"role": "OUTCOME", "exact_span": "intracranial lesions"},
+        ],
+        "source_locator": "normalized_extraction_text",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+    }
+    semantic_unit_id = "typed-alk-claim"
+    absent = {"state": "NOT_APPLICABLE", "value": None, "exact_span": None}
+    relation: dict[str, object] = {
+        "subject": "lorlatinib",
+        "object": "intracranial lesions",
+        "sentence": sentence,
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "population": {
+            "state": "PRESENT",
+            "value": "Korean adults",
+            "exact_span": "Korean adults",
+        },
+        "biological_or_variant_state": {
+            "state": "PRESENT",
+            "value": "ALK G1202R-positive",
+            "exact_span": "ALK G1202R-positive",
+        },
+        "condition": {
+            "state": "PRESENT",
+            "value": "ALK G1202R-positive lung adenocarcinoma",
+            "exact_span": "ALK G1202R-positive lung adenocarcinoma",
+        },
+    }
+    second_relation = {
+        **relation,
+        "object": "ALK G1202R-positive lung adenocarcinoma",
+        "condition": absent,
+        "outcome": {
+            "state": "PRESENT",
+            "value": "intracranial lesions",
+            "exact_span": "intracranial lesions",
+        },
+    }
+    framing_payload = {
+        "decision": "MULTIPLE_VALID_FRAMES",
+        "relations": [relation, second_relation],
+    }
+    attempt = {
+        "semantic_unit_id": semantic_unit_id,
+        "input_sha256": _sha256_json(
+            {"inventory_id": semantic_unit_id, "item": item},
+        ),
+        "raw_model_payload": framing_payload,
+    }
+    inventory_item = claim_frame_evidence._InventoriedItemEvidence(  # noqa: SLF001
+        identity="typed-alk-inventory",
+        item=item,
+    )
+
+    assert claim_frame_evidence._framing_units_match_inventory(  # noqa: SLF001
+        inventory_items=(inventory_item,),
+        framing_attempts=(attempt,),
+    )
+
+    condition = cast("dict[str, object]", relation["condition"])
+    condition.update(absent)
+    assert not claim_frame_evidence._framing_units_match_inventory(  # noqa: SLF001
+        inventory_items=(inventory_item,),
+        framing_attempts=(attempt,),
+    )
 
 
 def test_duplicate_inventory_rows_share_one_terminal_framing_unit() -> None:
@@ -1106,7 +1359,7 @@ def test_arbitrary_model_alias_cannot_impersonate_required_execution_model() -> 
         reports[0]["execution_manifest"],
     )
 
-    with pytest.raises(ValueError, match="unrecognized TG-03 model identity"):
+    with pytest.raises(ValueError, match="unrecognized benchmark model identity"):
         compare_three_reports(tuple(reports), fixture)
 
 
@@ -1140,6 +1393,51 @@ def test_default_cli_fails_when_live_quality_gate_fails(
         )
         == 1
     )
+
+
+def test_live_cli_selects_one_case_after_loading_complete_fixture(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    fixture = load_fixture(Path(DEFAULT_FIXTURE_PATH))
+    selected_case = fixture.cases[0]
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(claim_frame_cli, "load_fixture", lambda path: fixture)
+    monkeypatch.setattr(
+        claim_frame_cli,
+        "configured_model_id",
+        lambda: REQUIRED_MODEL_ID,
+    )
+
+    def _run_live_benchmark(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return {"gate_passed": False}
+
+    monkeypatch.setattr(
+        claim_frame_cli,
+        "run_live_benchmark",
+        _run_live_benchmark,
+    )
+    monkeypatch.setattr(claim_frame_cli, "write_reports", lambda **kwargs: None)
+
+    result = claim_frame_cli.main(
+        (
+            "--case-id",
+            selected_case.case_id,
+            "--json-output",
+            str(tmp_path / "run.json"),
+            "--markdown-output",
+            str(tmp_path / "run.md"),
+        ),
+    )
+
+    assert result == 1
+    selected_fixture = cast("BenchmarkFixture", captured["fixture"])
+    assert selected_fixture.path == fixture.path
+    assert selected_fixture.sha256 == fixture.sha256
+    assert selected_fixture.methodology_complete is True
+    assert selected_fixture.cases == (selected_case,)
 
 
 def test_compare_cli_uses_environment_provider_receipt_verifier(
@@ -2497,6 +2795,7 @@ def _provider_prompt(
         source_sha256=source_sha256,
         input_sha256=input_sha256,
         evidence_unit_sha256=evidence_unit_sha256,
+        output_schema_sha256="0" * 64,
     )
 
 

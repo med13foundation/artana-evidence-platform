@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -22,6 +23,7 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 
 from scripts.validation.claim_frames.fixture import (  # noqa: E402
     DEFAULT_FIXTURE_PATH,
+    BenchmarkFixture,
     load_fixture,
 )
 from scripts.validation.claim_frames.metrics import (  # noqa: E402
@@ -59,6 +61,13 @@ def _parse_args(argv: tuple[str, ...] | None) -> argparse.Namespace:
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--run-id")
+    parser.add_argument(
+        "--case-id",
+        help=(
+            "Run one case selected from the fully validated sealed fixture. "
+            "This is a development diagnostic, not a merge-gate comparison."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -68,6 +77,11 @@ def main(argv: tuple[str, ...] | None = None) -> int:
     args = _parse_args(argv)
     try:
         fixture = load_fixture(_resolve(args.fixture))
+        fixture = _select_case(
+            fixture,
+            case_id=args.case_id,
+            comparing=args.compare is not None,
+        )
         json_path, markdown_path = _report_paths(args)
         if args.compare is not None:
             report = compare_three_reports(
@@ -105,6 +119,22 @@ def main(argv: tuple[str, ...] | None = None) -> int:
     except (ImportError, OSError, RuntimeError, TypeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+
+
+def _select_case(
+    fixture: BenchmarkFixture,
+    *,
+    case_id: str | None,
+    comparing: bool,
+) -> BenchmarkFixture:
+    if case_id is None:
+        return fixture
+    if comparing:
+        raise ValueError("--case-id cannot be combined with --compare")
+    matching_cases = tuple(case for case in fixture.cases if case.case_id == case_id)
+    if len(matching_cases) != 1:
+        raise ValueError(f"unknown benchmark case_id: {case_id}")
+    return replace(fixture, cases=matching_cases)
 
 
 def _report_paths(args: argparse.Namespace) -> tuple[Path, Path]:

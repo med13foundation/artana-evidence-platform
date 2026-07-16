@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 from types import SimpleNamespace
 from typing import cast
 from uuid import uuid4
@@ -65,6 +66,7 @@ def _frame(
     epistemic_status: EpistemicStatus = EpistemicStatus.ASSERTED,
     source: str = EVIDENCE,
     biological_or_variant_state: ClaimQualifier | None = None,
+    condition: ClaimQualifier | None = None,
     population: ClaimQualifier | None = None,
     intervention: ClaimQualifier | None = None,
     comparator: ClaimQualifier | None = None,
@@ -84,6 +86,7 @@ def _frame(
         epistemic_status=epistemic_status,
         biological_or_variant_state=biological_or_variant_state
         or _present("EGFR T790M", "EGFR T790M-positive"),
+        condition=condition or _present("advanced NSCLC", "advanced NSCLC"),
         population=population
         or _present(
             "advanced NSCLC",
@@ -152,6 +155,11 @@ def _agent_relation_payload(
             "value": "EGFR T790M",
             "exact_span": "EGFR T790M-positive",
         },
+        "condition": {
+            "state": "PRESENT",
+            "value": "advanced NSCLC",
+            "exact_span": "advanced NSCLC",
+        },
         "population": population,
         "intervention": {
             "state": "PRESENT",
@@ -206,6 +214,7 @@ def test_variant_state_and_all_qualifiers_are_preserved() -> None:
     frame = _frame(source_measurements=(_measurement(),))
 
     assert frame.biological_or_variant_state.value == "EGFR T790M"
+    assert frame.condition.value == "advanced NSCLC"
     assert frame.population.value == "advanced NSCLC"
     assert frame.intervention.value == "osimertinib"
     assert frame.comparator.value == "chemotherapy"
@@ -259,6 +268,7 @@ def test_fully_unqualified_frame_cannot_become_a_positive_projection() -> None:
     absent = ClaimQualifier.not_applicable()
     frame = _frame(
         biological_or_variant_state=absent,
+        condition=absent,
         population=absent,
         intervention=absent,
         comparator=absent,
@@ -729,6 +739,8 @@ def test_agent_frame_conversion_binds_source_and_preserves_measurements() -> Non
     assert frame.is_positive_projection_candidate
     assert not frame.is_positive_projection_eligible
     assert not candidates[0].trusted_evidence_eligible
+    assert candidates[0].review_status == "review_only"
+    assert "missing_typed_assertion_arguments" in candidates[0].review_reason_codes
     assert "non_positive_claim_frame" not in candidates[0].review_reason_codes
 
 
@@ -867,6 +879,15 @@ def test_draft_preserves_frame_and_does_not_split_qualified_object(
         source_text=SOURCE,
         source_hash=hashlib.sha256(SOURCE.encode()).hexdigest(),
     )
+    candidates = [
+        replace(
+            candidates[0],
+            framing_decision="SINGLE_FRAME",
+            framing_decision_rationale=(
+                "The source supports one unambiguous projection."
+            ),
+        ),
+    ]
     document_store = HarnessDocumentStore()
     space_id = uuid4()
     document = document_store.create_document(
@@ -909,6 +930,14 @@ def test_draft_preserves_frame_and_does_not_split_qualified_object(
     frame = candidates[0].claim_frame
     assert frame is not None
     assert drafts[0].payload["claim_frame"] == frame.model_dump(mode="json")
+    assert drafts[0].payload["framing_decision"] == "SINGLE_FRAME"
+    assert drafts[0].metadata["framing_decision"] == "SINGLE_FRAME"
+    assert drafts[0].payload["framing_decision_rationale"] == (
+        "The source supports one unambiguous projection."
+    )
+    assert drafts[0].metadata["framing_decision_rationale"] == (
+        drafts[0].payload["framing_decision_rationale"]
+    )
     assert drafts[0].claim_fingerprint == frame.dedupe_identity
     assert drafts[0].metadata["claim_frame_positive_projection_candidate"] is True
     assert drafts[0].metadata["claim_frame_positive_projection_eligible"] is False

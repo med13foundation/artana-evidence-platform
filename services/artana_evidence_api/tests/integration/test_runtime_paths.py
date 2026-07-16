@@ -58,6 +58,8 @@ from artana_evidence_api.dependencies import (
     get_schedule_store,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimArgument,
+    ClaimArgumentRole,
     ClaimFrame,
     ClaimQualifier,
     EpistemicStatus,
@@ -757,7 +759,28 @@ def _source_bound_positive_claim_frame(
         ),
         polarity=Polarity.SUPPORT,
         epistemic_status=EpistemicStatus.ASSERTED,
+        assertion_arguments=(
+            ClaimArgument(
+                role=ClaimArgumentRole.OTHER_ENTITY,
+                event_role="AGENT",
+                exact_span=subject_label,
+                role_rationale="The source names the relation subject.",
+            ),
+            ClaimArgument(
+                role=ClaimArgumentRole.OTHER_ENTITY,
+                event_role="THEME",
+                exact_span=object_label,
+                role_rationale="The source names the relation object.",
+            ),
+            ClaimArgument(
+                role=ClaimArgumentRole.POPULATION,
+                event_role="CONTEXT",
+                exact_span=population,
+                role_rationale="The source names the studied population.",
+            ),
+        ),
         biological_or_variant_state=ClaimQualifier.not_applicable(),
+        condition=ClaimQualifier.not_applicable(),
         population=ClaimQualifier.present(
             value=population,
             exact_span=population,
@@ -796,6 +819,8 @@ def _qualified_candidate_claim_payload(
         "proposed_subject_label": frame.subject,
         "proposed_object_label": frame.object,
         "claim_frame": frame.model_dump(mode="json"),
+        "framing_decision": "SINGLE_FRAME",
+        "framing_decision_rationale": "The source supports one frame.",
     }
 
 
@@ -815,6 +840,8 @@ def _qualified_agent_claim_metadata(
         "trust_floor_failures": [],
         "review_status": "candidate",
         "review_reason_codes": [],
+        "framing_decision": "SINGLE_FRAME",
+        "framing_decision_rationale": "The source supports one frame.",
         "qualified_claim_frame_present": True,
         "claim_frame_positive_projection_candidate": True,
         "claim_frame_positive_projection_eligible": False,

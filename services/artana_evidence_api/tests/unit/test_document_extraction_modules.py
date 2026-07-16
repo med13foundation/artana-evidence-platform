@@ -338,6 +338,7 @@ def test_weak_review_extraction_schema_allows_raw_relation_type_for_guard() -> N
                         }
                         for field in (
                             "biological_or_variant_state",
+                            "condition",
                             "population",
                             "intervention",
                             "comparator",

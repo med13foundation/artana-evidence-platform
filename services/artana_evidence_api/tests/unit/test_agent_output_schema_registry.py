@@ -9,6 +9,7 @@ from artana_evidence_api.runtime.agent_output_debt import (
     validate_agent_output_debt_coverage,
 )
 from artana_evidence_api.runtime.agent_output_manifest import (
+    AGENT_OUTPUT_SCHEMA_REGISTRY,
     validate_registered_agent_output_schema,
 )
 from artana_evidence_api.runtime.agent_output_report import (
@@ -361,16 +362,16 @@ def test_production_manifest_covers_current_model_output_schemas() -> None:
     from artana_evidence_api.variant_extraction_contracts import LLMExtractionContract
 
     schemas = {
-        "document_extraction.claim_inventory_completeness.v2": (
+        "document_extraction.claim_inventory_completeness.v3": (
             build_claim_inventory_completeness_output_schema()
         ),
-        "document_extraction.claim_inventory_recovery.v2": (
+        "document_extraction.claim_inventory_recovery.v3": (
             build_missing_claim_recovery_output_schema()
         ),
-        "document_extraction.claim_framing.v1": (
+        "document_extraction.claim_framing.v2": (
             build_single_claim_framing_output_schema()
         ),
-        "document_extraction.claim_inventory.v2": (
+        "document_extraction.claim_inventory.v3": (
             build_claim_inventory_output_schema(max_claims=64)
         ),
         "document_extraction.proposal_review.v1": build_proposal_review_output_schema(),
@@ -405,6 +406,86 @@ def test_debt_manifest_exactly_covers_registered_legacy_fields() -> None:
     debt_ids = [item.debt_id for item in manifest]
     assert debt_ids == []
     assert all(item.quarantined for item in manifest)
+
+
+def test_inventory_schema_registry_governs_closed_event_type() -> None:
+    from artana_evidence_api.document_extraction_prompting import (
+        build_claim_inventory_completeness_output_schema,
+        build_claim_inventory_output_schema,
+        build_missing_claim_recovery_output_schema,
+    )
+    from artana_evidence_api.document_extraction_support.claim_frames import (
+        ClaimEventType,
+    )
+
+    schemas_and_paths = (
+        (
+            "document_extraction.claim_inventory.v3",
+            build_claim_inventory_output_schema(max_claims=64),
+            "$.claims[].event_type",
+        ),
+        (
+            "document_extraction.claim_inventory_completeness.v3",
+            build_claim_inventory_completeness_output_schema(),
+            "$.missing_claims[].event_type",
+        ),
+        (
+            "document_extraction.claim_inventory_recovery.v3",
+            build_missing_claim_recovery_output_schema(),
+            "$.claims[].event_type",
+        ),
+    )
+    expected_values = {event_type.value for event_type in ClaimEventType}
+
+    for schema_id, output_schema, event_path in schemas_and_paths:
+        policy = AGENT_OUTPUT_SCHEMA_REGISTRY.validate(
+            schema_id=schema_id,
+            output_schema=output_schema,
+        )
+        event_policy = next(
+            field for field in policy.categorical_fields if field.path == event_path
+        )
+        assert {value.value for value in event_policy.values} == expected_values
+
+
+def test_inventory_schema_registry_governs_closed_event_role() -> None:
+    from artana_evidence_api.document_extraction_prompting import (
+        build_claim_inventory_completeness_output_schema,
+        build_claim_inventory_output_schema,
+        build_missing_claim_recovery_output_schema,
+    )
+    from artana_evidence_api.document_extraction_support.claim_frames import (
+        ClaimEventRole,
+    )
+
+    schemas_and_paths = (
+        (
+            "document_extraction.claim_inventory.v3",
+            build_claim_inventory_output_schema(max_claims=64),
+            "$.claims[].arguments[].event_role",
+        ),
+        (
+            "document_extraction.claim_inventory_completeness.v3",
+            build_claim_inventory_completeness_output_schema(),
+            "$.missing_claims[].arguments[].event_role",
+        ),
+        (
+            "document_extraction.claim_inventory_recovery.v3",
+            build_missing_claim_recovery_output_schema(),
+            "$.claims[].arguments[].event_role",
+        ),
+    )
+    expected_values = {role.value for role in ClaimEventRole}
+
+    for schema_id, output_schema, event_path in schemas_and_paths:
+        policy = AGENT_OUTPUT_SCHEMA_REGISTRY.validate(
+            schema_id=schema_id,
+            output_schema=output_schema,
+        )
+        event_policy = next(
+            field for field in policy.categorical_fields if field.path == event_path
+        )
+        assert {value.value for value in event_policy.values} == expected_values
 
 
 def test_registry_report_exposes_merge_gate_counts() -> None:

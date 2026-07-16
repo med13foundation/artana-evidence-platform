@@ -23,6 +23,7 @@ class ClaimFrameNormalizationError(ValueError):
 
 _QUALIFIER_FIELDS: tuple[str, ...] = (
     "biological_or_variant_state",
+    "condition",
     "population",
     "intervention",
     "comparator",
@@ -91,6 +92,7 @@ def normalize_claim_frame(
     )
     _require_endpoint_grounding(frame)
     _require_semantic_consistency(frame)
+    _bind_assertion_arguments(frame)
     for field in _QUALIFIER_FIELDS:
         qualifier = getattr(frame, field)
         _bind_qualifier(
@@ -153,6 +155,15 @@ def normalize_claim_frame(
             )
 
     return frame
+
+
+def _bind_assertion_arguments(frame: ClaimFrame) -> None:
+    for index, argument in enumerate(frame.assertion_arguments):
+        _require_unique_span(
+            source_text=frame.source_evidence.exact_span,
+            exact_span=argument.exact_span,
+            label=f"assertion_arguments[{index}] exact_span",
+        )
 
 
 def bind_claim_frame(

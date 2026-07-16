@@ -1,5 +1,9 @@
 """Qualified, source-bound claim frames for document extraction."""
 
+from artana_evidence_api.document_extraction_support.claim_frames.arguments import (
+    ClaimArgument,
+    ClaimArgumentRole,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.completeness import (
     BoundInventoryCompletenessReview,
     ClaimInventoryCompletenessReview,
@@ -24,15 +28,20 @@ from artana_evidence_api.document_extraction_support.claim_frames.contracts impo
     is_positive_projection_eligible,
     replace_claim_frame_projection,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
+    ClaimEventRole,
+    ClaimEventType,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
     CLAIM_INVENTORY_SOURCE_LOCATOR,
     BoundClaimInventoryItem,
-    ClaimEndpointRoleOrder,
     ClaimFramingAbstentionReason,
     ClaimFramingDecision,
     ClaimInventoryBindingError,
     ClaimInventoryItem,
     bind_claim_inventory,
+    claim_inventory_identity,
+    claim_inventory_input_sha256,
     merge_bound_claim_inventories,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.normalization import (
@@ -55,10 +64,13 @@ __all__ = [
     "CLAIM_INVENTORY_SOURCE_LOCATOR",
     "BoundClaimInventoryItem",
     "BoundInventoryCompletenessReview",
+    "ClaimArgument",
+    "ClaimArgumentRole",
+    "ClaimEventType",
+    "ClaimEventRole",
     "ClaimFrame",
     "ClaimFrameNormalizationError",
     "ClaimFramePromotionError",
-    "ClaimEndpointRoleOrder",
     "ClaimFramingAbstentionReason",
     "ClaimFramingDecision",
     "ClaimInventoryBindingError",
@@ -78,6 +90,8 @@ __all__ = [
     "SourceMeasurementNumber",
     "bind_claim_frame",
     "bind_claim_inventory",
+    "claim_inventory_identity",
+    "claim_inventory_input_sha256",
     "bind_inventory_completeness_review",
     "claim_frame_dedupe_identity",
     "claim_frame_semantic_fingerprint",

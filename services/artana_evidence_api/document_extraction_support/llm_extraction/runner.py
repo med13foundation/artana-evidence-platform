@@ -62,6 +62,18 @@ class LLMRelationExtractionAttempt:
 
 
 @dataclass(frozen=True, slots=True)
+class LLMClaimInventoryAttempt:
+    """Observable production inventory result before graph framing."""
+
+    claims: tuple[BoundClaimInventoryItem, ...]
+    processed_chunk_count: int
+    semantic_inventory_complete: bool
+    inventory_incompleteness: tuple[BoundClaimInventoryItem, ...]
+    raw_agent_outputs: tuple[dict[str, object], ...]
+    model_attempt_records: tuple[ModelAttemptAuditRecord, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class _ChunkInventoryOutcome:
     """Complete-or-explicitly-incomplete inventory result for one source chunk."""
 
@@ -175,10 +187,9 @@ async def run_llm_relation_extraction_with_zero_retry(
                         ),
                         claim_local_source_end=framing_result.source_region.source_end,
                         inventory_payload=inventory_claim.item.model_dump(mode="json"),
-                        framing_decision=(
-                            "ABSTAIN" if framed_claim.abstained else "FRAMED"
-                        ),
-                        candidate=framed_claim.candidate,
+                        framing_decision=framed_claim.decision.value,
+                        candidates=framed_claim.candidates,
+                        decision_rationale=framed_claim.decision_rationale,
                         framing_attempt=framing_result.attempt_record.as_json(),
                         raw_agent_output=framing_result.raw_agent_outputs[0],
                     ),
@@ -186,11 +197,9 @@ async def run_llm_relation_extraction_with_zero_retry(
                 if framed_claim.abstained:
                     framing_abstention_count += 1
                     continue
-                raw_relation_count += 1
-                if framed_claim.candidate is not None:
-                    candidates.append(framed_claim.candidate)
-                if framed_claim.unknown_relation_type is not None:
-                    unknown_relation_types.add(framed_claim.unknown_relation_type)
+                raw_relation_count += len(framed_claim.candidates)
+                candidates.extend(framed_claim.candidates)
+                unknown_relation_types.update(framed_claim.unknown_relation_types)
 
         return LLMRelationExtractionAttempt(
             candidates=candidates,
@@ -203,6 +212,72 @@ async def run_llm_relation_extraction_with_zero_retry(
             inventory_incompleteness=tuple(unresolved_missing_claims),
             claim_lineage=tuple(claim_lineage),
             raw_agent_outputs=tuple(raw_agent_outputs),
+            model_attempt_records=tuple(
+                audit_session.records[first_record_index:],
+            ),
+        )
+    finally:
+        if owns_audit_session:
+            stop_model_attempt_audit(audit_session)
+
+
+async def run_llm_claim_inventory_with_zero_retry(
+    *,
+    normalized_text: str,
+    chunks: tuple[RelationExtractionTextChunk, ...],
+    document_fingerprint: str,
+    client: object,
+    tenant: object,
+    model_id: str,
+    step_runner: ModelStepRunner,
+    execution_namespace: str = "",
+) -> LLMClaimInventoryAttempt:
+    """Run the production agent inventory and completeness stages only."""
+
+    inventory_output_schema = build_claim_inventory_output_schema(
+        _MAX_INVENTORY_CLAIMS_PER_CHUNK,
+    )
+    completeness_output_schema = build_claim_inventory_completeness_output_schema()
+    recovery_output_schema = build_missing_claim_recovery_output_schema()
+    extraction_chunks = coalesce_long_sentence_chunks(
+        normalized_text=normalized_text,
+        chunks=chunks,
+    )
+    audit_session = current_model_attempt_audit()
+    owns_audit_session = audit_session is None
+    if audit_session is None:
+        audit_session = start_model_attempt_audit()
+    first_record_index = len(audit_session.records)
+    claims: tuple[BoundClaimInventoryItem, ...] = ()
+    unresolved: tuple[BoundClaimInventoryItem, ...] = ()
+    raw_outputs: tuple[dict[str, object], ...] = ()
+    try:
+        for chunk in extraction_chunks:
+            outcome = await _inventory_chunk_with_recovery(
+                chunk=chunk,
+                total_chunks=len(extraction_chunks),
+                document_fingerprint=document_fingerprint,
+                inventory_output_schema=inventory_output_schema,
+                completeness_output_schema=completeness_output_schema,
+                recovery_output_schema=recovery_output_schema,
+                client=client,
+                tenant=tenant,
+                model_id=model_id,
+                step_runner=step_runner,
+                execution_namespace=execution_namespace,
+            )
+            claims = merge_bound_claim_inventories(claims, outcome.claims)
+            unresolved = merge_bound_claim_inventories(
+                unresolved,
+                outcome.unresolved_missing_claims,
+            )
+            raw_outputs += outcome.raw_agent_outputs
+        return LLMClaimInventoryAttempt(
+            claims=claims,
+            processed_chunk_count=len(extraction_chunks),
+            semantic_inventory_complete=not unresolved,
+            inventory_incompleteness=unresolved,
+            raw_agent_outputs=raw_outputs,
             model_attempt_records=tuple(
                 audit_session.records[first_record_index:],
             ),
@@ -333,6 +408,8 @@ async def _inventory_chunk_with_recovery(
 
 
 __all__ = [
+    "LLMClaimInventoryAttempt",
     "LLMRelationExtractionAttempt",
+    "run_llm_claim_inventory_with_zero_retry",
     "run_llm_relation_extraction_with_zero_retry",
 ]

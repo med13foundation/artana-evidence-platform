@@ -477,6 +477,7 @@ def _claim_frame_from_relation(
             polarity=rel.polarity,
             epistemic_status=rel.epistemic_status,
             biological_or_variant_state=rel.biological_or_variant_state,
+            condition=rel.condition,
             population=rel.population,
             intervention=rel.intervention,
             comparator=rel.comparator,
@@ -507,6 +508,8 @@ def _claim_frame_review_reason_codes(
     if claim_frame is None:
         return ()
     reasons: list[str] = []
+    if not claim_frame.assertion_arguments:
+        reasons.append("missing_typed_assertion_arguments")
     if not claim_frame.is_positive_projection_candidate:
         reasons.append("non_positive_claim_frame")
     if any(
