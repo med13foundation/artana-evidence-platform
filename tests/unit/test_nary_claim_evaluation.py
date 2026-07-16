@@ -12,6 +12,7 @@ from artana_evidence_api.document_extraction_prompting import (
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryItem,
     bind_claim_inventory,
+    claim_inventory_batch_input_sha256,
     claim_inventory_identity,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
@@ -177,12 +178,32 @@ def _prediction(case: _Case, *, correct: bool) -> dict[str, object]:
         "events": [
             {
                 **item.model_dump(mode="json"),
-                "arguments": [asdict(argument) for argument in event.arguments],
+                "arguments": [
+                    {
+                        **asdict(argument),
+                        "mention_anchors": [],
+                        "source_mentions": [
+                            {
+                                "exact_span": argument.exact_span,
+                                "source_start": argument.source_start,
+                                "source_end": (
+                                    argument.source_start + len(argument.exact_span)
+                                ),
+                            },
+                        ],
+                    }
+                    for argument in event.arguments
+                ],
                 "inventory_id": inventory_id,
                 "source_start": 0,
                 "source_end": len(case.source_text),
                 "trigger_span": event.trigger_span,
                 "trigger_source_start": event.trigger_source_start,
+                "trigger_source_mention": {
+                    "exact_span": event.trigger_span,
+                    "source_start": event.trigger_source_start,
+                    "source_end": event.trigger_source_start + len(event.trigger_span),
+                },
             },
         ],
         "abstained": False,
@@ -255,7 +276,7 @@ def _report(
                     {
                         key: value
                         for key, value in argument.items()
-                        if key != "source_start"
+                        if key not in {"source_start", "source_mentions"}
                     }
                     for argument in event["arguments"]
                 ],
@@ -273,13 +294,9 @@ def _report(
             f"{completeness_schema.__module__}.{completeness_schema.__qualname__}"
         )
         completeness_invocation = f"completeness-{slug}-{run_index}-{case.case_id}"
-        completeness_input_sha256 = hashlib.sha256(
-            json.dumps(
-                [bound_claim.inventory_id],
-                separators=(",", ":"),
-                ensure_ascii=True,
-            ).encode(),
-        ).hexdigest()
+        completeness_input_sha256 = claim_inventory_batch_input_sha256(
+            (bound_claim,),
+        )
         completeness_prompt = bind_prompt_to_invocation(
             prompt=build_inventory_completeness_prompt(
                 chunk=chunk,
@@ -463,10 +480,7 @@ def test_absolute_gate_selects_sol_when_only_sol_clears_quality() -> None:
     assert result["selected_model"] == "openai:gpt-5.6-sol"
     assert result["decision"] == "QUALIFY_FOR_HELD_OUT_CONFIRMATION"
     assert result["framing_readiness"] == "NOT_EVALUATED_INVENTORY_ONLY"
-    assert (
-        result["persistence_readiness"]
-        == "BLOCKED_UPSTREAM_FRAMING_NOT_VALIDATED"
-    )
+    assert result["persistence_readiness"] == "BLOCKED_UPSTREAM_FRAMING_NOT_VALIDATED"
 
 
 def test_inventory_schema_digest_binds_dynamic_claim_limit() -> None:
@@ -665,7 +679,11 @@ def test_evaluator_rejects_prediction_substitution_after_provider_execution() ->
         }
         | {
             "arguments": [
-                {key: value for key, value in argument.items() if key != "source_start"}
+                {
+                    key: value
+                    for key, value in argument.items()
+                    if key not in {"source_start", "source_mentions"}
+                }
                 for argument in event["arguments"]
             ],
         },

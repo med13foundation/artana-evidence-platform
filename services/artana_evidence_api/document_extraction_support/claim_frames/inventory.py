@@ -19,6 +19,12 @@ from artana_evidence_api.document_extraction_support.claim_frames.contracts impo
 from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
     ClaimEventType,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.mentions import (
+    BoundClaimMention,
+    ClaimMentionAnchor,
+    MentionBindingError,
+    bind_source_mentions,
+)
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 CLAIM_INVENTORY_SOURCE_LOCATOR = "normalized_extraction_text"
@@ -56,6 +62,36 @@ class ClaimFramingAbstentionReason(str, Enum):
     SOURCE_CONFLICT = "SOURCE_CONFLICT"
 
 
+class ClaimInventoryArgument(ClaimArgument):
+    """Semantic argument plus inventory-only source mention selectors."""
+
+    mention_anchors: tuple[ClaimMentionAnchor, ...] = Field(
+        default_factory=tuple,
+        max_length=16,
+    )
+
+    @field_validator("mention_anchors", mode="before")
+    @classmethod
+    def freeze_json_mention_anchors(cls, value: object) -> object:
+        if isinstance(value, list):
+            return tuple(value)
+        return value
+
+    @field_validator("mention_anchors")
+    @classmethod
+    def require_unique_mention_anchors(
+        cls,
+        value: tuple[ClaimMentionAnchor, ...],
+    ) -> tuple[ClaimMentionAnchor, ...]:
+        identities = tuple(
+            (anchor.mention_span, anchor.left_context, anchor.right_context)
+            for anchor in value
+        )
+        if len(set(identities)) != len(identities):
+            raise ValueError("claim inventory mention anchors must be unique")
+        return value
+
+
 class ClaimInventoryItem(BaseModel):
     """One source-local claim boundary identified by the inventory agent."""
 
@@ -63,7 +99,12 @@ class ClaimInventoryItem(BaseModel):
 
     exact_span: str = Field(..., min_length=1, max_length=12000)
     relation_cue_span: str = Field(..., min_length=1, max_length=1000)
-    arguments: tuple[ClaimArgument, ...] = Field(..., min_length=2, max_length=32)
+    relation_cue_anchor: ClaimMentionAnchor | None = None
+    arguments: tuple[ClaimInventoryArgument, ...] = Field(
+        ...,
+        min_length=2,
+        max_length=32,
+    )
     source_locator: Literal["normalized_extraction_text"]
     event_type: ClaimEventType = Field(..., strict=False)
     polarity: Polarity = Field(..., strict=False)
@@ -116,6 +157,15 @@ class ClaimInventoryItem(BaseModel):
 
 
 @dataclass(frozen=True, slots=True)
+class BoundClaimArgument:
+    """One semantic argument and all deterministically localized mentions."""
+
+    argument: ClaimArgument
+    primary_mention: BoundClaimMention
+    mentions: tuple[BoundClaimMention, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class BoundClaimInventoryItem:
     """An inventory item with deterministic source identity and offsets."""
 
@@ -125,6 +175,8 @@ class BoundClaimInventoryItem:
     chunk_index: int
     source_start: int
     source_end: int
+    trigger_mention: BoundClaimMention
+    bound_arguments: tuple[BoundClaimArgument, ...]
 
 
 def bind_claim_inventory(
@@ -139,14 +191,7 @@ def bind_claim_inventory(
 
     if not source_text:
         raise ClaimInventoryBindingError("claim inventory source text is empty")
-    if len(source_sha256) != _SHA256_HEX_LENGTH or any(
-        character not in "0123456789abcdef" for character in source_sha256
-    ):
-        raise ClaimInventoryBindingError("claim inventory source hash must be SHA-256")
-    if chunk_index < 0:
-        raise ClaimInventoryBindingError(
-            "claim inventory chunk index must be nonnegative"
-        )
+    _require_binding_metadata(source_sha256=source_sha256, chunk_index=chunk_index)
     if source_start_offset < 0:
         raise ClaimInventoryBindingError(
             "claim inventory source offset must be nonnegative"
@@ -155,7 +200,10 @@ def bind_claim_inventory(
     bound: list[BoundClaimInventoryItem] = []
     seen_item_fingerprints: set[str] = set()
     for item in items:
-        _require_inventory_item_spans(item=item, source_text=source_text)
+        if source_text.count(item.exact_span) != 1:
+            raise ClaimInventoryBindingError(
+                "claim inventory exact_span must occur exactly once in the source chunk",
+            )
         source_start = source_start_offset + source_text.index(item.exact_span)
         item_fingerprint = claim_inventory_identity(
             item=item,
@@ -163,16 +211,16 @@ def bind_claim_inventory(
             source_start=source_start,
         )
         if item_fingerprint in seen_item_fingerprints:
-            continue
+            raise ClaimInventoryBindingError(
+                "one inventory response cannot repeat a semantic claim",
+            )
         seen_item_fingerprints.add(item_fingerprint)
         bound.append(
-            BoundClaimInventoryItem(
-                inventory_id=item_fingerprint,
+            bind_claim_inventory_item_at_source(
                 item=item,
                 source_sha256=source_sha256,
                 chunk_index=chunk_index,
                 source_start=source_start,
-                source_end=source_start + len(item.exact_span),
             ),
         )
     return tuple(bound)
@@ -194,37 +242,129 @@ def merge_bound_claim_inventories(
     return tuple(merged)
 
 
-def _require_inventory_item_spans(
+def bind_claim_inventory_item_at_source(
     *,
     item: ClaimInventoryItem,
-    source_text: str,
-) -> None:
-    if source_text.count(item.exact_span) != 1:
+    source_sha256: str,
+    chunk_index: int,
+    source_start: int,
+) -> BoundClaimInventoryItem:
+    """Create the sole deterministic binding for one source-located inventory item."""
+
+    _require_binding_metadata(source_sha256=source_sha256, chunk_index=chunk_index)
+    if source_start < 0:
         raise ClaimInventoryBindingError(
-            "claim inventory exact_span must occur exactly once in the source chunk",
+            "claim inventory source offset must be nonnegative"
         )
-    if item.relation_cue_span not in item.exact_span:
-        raise ClaimInventoryBindingError(
-            "claim inventory relation_cue_span is outside exact_span",
-        )
+    trigger_mention = _bind_inventory_trigger(item=item, source_start=source_start)
+    bound_arguments: list[BoundClaimArgument] = []
     for argument in item.arguments:
-        if argument.exact_span not in item.exact_span:
-            raise ClaimInventoryBindingError(
-                "claim inventory argument span is outside exact_span",
-            )
-        if item.exact_span.count(argument.exact_span) != 1:
-            raise ClaimInventoryBindingError(
-                "claim inventory argument span must occur exactly once in exact_span",
-            )
+        mentions = _bind_inventory_argument_mentions(
+            item=item,
+            argument=argument,
+            source_start=source_start,
+        )
         if argument.role is ClaimArgumentRole.VARIANT:
-            argument_end = item.exact_span.index(argument.exact_span) + len(
-                argument.exact_span,
-            )
-            following_text = item.exact_span[argument_end:].casefold()
-            if following_text.startswith(_ATTACHED_VARIANT_STATE_SUFFIXES):
-                raise ClaimInventoryBindingError(
-                    "variant argument omits an attached material state suffix",
-                )
+            for mention in mentions:
+                relative_end = mention.source_end - source_start
+                following_text = item.exact_span[relative_end:].casefold()
+                if following_text.startswith(_ATTACHED_VARIANT_STATE_SUFFIXES):
+                    raise ClaimInventoryBindingError(
+                        "variant argument omits an attached material state suffix",
+                    )
+        bound_arguments.append(
+            BoundClaimArgument(
+                argument=_semantic_argument(argument),
+                primary_mention=_primary_canonical_mention(
+                    argument=argument,
+                    mentions=mentions,
+                ),
+                mentions=mentions,
+            ),
+        )
+    return BoundClaimInventoryItem(
+        inventory_id=claim_inventory_identity(
+            item=item,
+            source_sha256=source_sha256,
+            source_start=source_start,
+        ),
+        item=item,
+        source_sha256=source_sha256,
+        chunk_index=chunk_index,
+        source_start=source_start,
+        source_end=source_start + len(item.exact_span),
+        trigger_mention=trigger_mention,
+        bound_arguments=tuple(bound_arguments),
+    )
+
+
+def _require_binding_metadata(*, source_sha256: str, chunk_index: int) -> None:
+    if len(source_sha256) != _SHA256_HEX_LENGTH or any(
+        character not in "0123456789abcdef" for character in source_sha256
+    ):
+        raise ClaimInventoryBindingError("claim inventory source hash must be SHA-256")
+    if chunk_index < 0:
+        raise ClaimInventoryBindingError(
+            "claim inventory chunk index must be nonnegative"
+        )
+
+
+def _bind_inventory_argument_mentions(
+    *,
+    item: ClaimInventoryItem,
+    argument: ClaimInventoryArgument,
+    source_start: int,
+) -> tuple[BoundClaimMention, ...]:
+    try:
+        return bind_source_mentions(
+            canonical_span=argument.exact_span,
+            source_span=item.exact_span,
+            anchors=argument.mention_anchors,
+            source_start_offset=source_start,
+        )
+    except MentionBindingError as exc:
+        raise ClaimInventoryBindingError(
+            f"claim inventory argument mention binding failed: {exc}",
+        ) from exc
+
+
+def _bind_inventory_trigger(
+    *,
+    item: ClaimInventoryItem,
+    source_start: int,
+) -> BoundClaimMention:
+    anchors = () if item.relation_cue_anchor is None else (item.relation_cue_anchor,)
+    try:
+        mentions = bind_source_mentions(
+            canonical_span=item.relation_cue_span,
+            source_span=item.exact_span,
+            anchors=anchors,
+            source_start_offset=source_start,
+        )
+    except MentionBindingError as exc:
+        raise ClaimInventoryBindingError(
+            f"claim inventory trigger mention binding failed: {exc}",
+        ) from exc
+    return mentions[0]
+
+
+def _semantic_argument(argument: ClaimInventoryArgument) -> ClaimArgument:
+    return ClaimArgument(
+        role=argument.role,
+        event_role=argument.event_role,
+        exact_span=argument.exact_span,
+        role_rationale=argument.role_rationale,
+    )
+
+
+def _primary_canonical_mention(
+    *,
+    argument: ClaimInventoryArgument,
+    mentions: tuple[BoundClaimMention, ...],
+) -> BoundClaimMention:
+    return next(
+        mention for mention in mentions if mention.exact_span == argument.exact_span
+    )
 
 
 def _canonical_sha256(value: object) -> str:
@@ -288,14 +428,34 @@ def claim_inventory_input_sha256(
     )
 
 
+def claim_inventory_batch_input_sha256(
+    inventory: tuple[BoundClaimInventoryItem, ...],
+) -> str:
+    """Hash ordered semantic identities and complete provider-authored inputs."""
+
+    return _canonical_sha256(
+        [
+            {
+                "inventory_id": claim.inventory_id,
+                "item": claim.item.model_dump(mode="json"),
+            }
+            for claim in inventory
+        ],
+    )
+
+
 __all__ = [
     "CLAIM_INVENTORY_SOURCE_LOCATOR",
+    "BoundClaimArgument",
     "BoundClaimInventoryItem",
     "ClaimInventoryBindingError",
+    "ClaimInventoryArgument",
     "ClaimInventoryItem",
     "ClaimFramingAbstentionReason",
     "ClaimFramingDecision",
     "bind_claim_inventory",
+    "bind_claim_inventory_item_at_source",
+    "claim_inventory_batch_input_sha256",
     "claim_inventory_identity",
     "claim_inventory_input_sha256",
     "merge_bound_claim_inventories",

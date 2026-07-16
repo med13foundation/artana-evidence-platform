@@ -34,15 +34,23 @@ from artana_evidence_api.document_extraction_support.claim_frames.event_types im
 )
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
     CLAIM_INVENTORY_SOURCE_LOCATOR,
+    BoundClaimArgument,
     BoundClaimInventoryItem,
     ClaimFramingAbstentionReason,
     ClaimFramingDecision,
+    ClaimInventoryArgument,
     ClaimInventoryBindingError,
     ClaimInventoryItem,
     bind_claim_inventory,
+    bind_claim_inventory_item_at_source,
+    claim_inventory_batch_input_sha256,
     claim_inventory_identity,
     claim_inventory_input_sha256,
     merge_bound_claim_inventories,
+)
+from artana_evidence_api.document_extraction_support.claim_frames.mentions import (
+    BoundClaimMention,
+    ClaimMentionAnchor,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.normalization import (
     ClaimFrameNormalizationError,
@@ -62,7 +70,9 @@ from artana_evidence_api.document_extraction_support.claim_frames.source_regions
 
 __all__ = [
     "CLAIM_INVENTORY_SOURCE_LOCATOR",
+    "BoundClaimArgument",
     "BoundClaimInventoryItem",
+    "BoundClaimMention",
     "BoundInventoryCompletenessReview",
     "ClaimArgument",
     "ClaimArgumentRole",
@@ -74,9 +84,11 @@ __all__ = [
     "ClaimFramingAbstentionReason",
     "ClaimFramingDecision",
     "ClaimInventoryBindingError",
+    "ClaimInventoryArgument",
     "ClaimInventoryCompletenessReview",
     "ClaimInventoryItem",
     "ClaimLocalSourceRegion",
+    "ClaimMentionAnchor",
     "ClaimQualifier",
     "ClaimSourceMeasurement",
     "EpistemicStatus",
@@ -90,6 +102,8 @@ __all__ = [
     "SourceMeasurementNumber",
     "bind_claim_frame",
     "bind_claim_inventory",
+    "bind_claim_inventory_item_at_source",
+    "claim_inventory_batch_input_sha256",
     "claim_inventory_identity",
     "claim_inventory_input_sha256",
     "bind_inventory_completeness_review",

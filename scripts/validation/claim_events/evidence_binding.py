@@ -18,7 +18,8 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryCompletenessReview,
     ClaimInventoryItem,
     bind_claim_inventory,
-    claim_inventory_identity,
+    bind_claim_inventory_item_at_source,
+    claim_inventory_batch_input_sha256,
     coalesce_long_sentence_chunks,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
@@ -326,7 +327,7 @@ def _take_complete_review_attempt(
     inventory: tuple[BoundClaimInventoryItem, ...],
     context: _PromptContext,
 ) -> Mapping[str, object]:
-    input_sha256 = _inventory_ids_sha256(inventory)
+    input_sha256 = claim_inventory_batch_input_sha256(inventory)
     matches: list[Mapping[str, object]] = []
     for attempt in attempts:
         if attempt.get("input_sha256") != input_sha256:
@@ -406,6 +407,7 @@ def _validate_predictions(
             {
                 "exact_span": event.get("exact_span"),
                 "relation_cue_span": event.get("relation_cue_span"),
+                "relation_cue_anchor": event.get("relation_cue_anchor"),
                 "arguments": _agent_arguments(event.get("arguments")),
                 "source_locator": event.get("source_locator"),
                 "event_type": event.get("event_type"),
@@ -420,12 +422,14 @@ def _validate_predictions(
             raise ValueError("TG-04 prediction source offsets do not match exact_span")
         if context.normalized_source[source_start:source_end] != item.exact_span:
             raise ValueError("TG-04 prediction exact_span differs from frozen source")
-        _validate_scored_mentions(event=event, item=item, source_start=source_start)
-        inventory_id = claim_inventory_identity(
+        bound_claim = bind_claim_inventory_item_at_source(
             item=item,
             source_sha256=context.source_sha256,
+            chunk_index=0,
             source_start=source_start,
         )
+        _validate_scored_mentions(event=event, bound_claim=bound_claim)
+        inventory_id = bound_claim.inventory_id
         if event.get("inventory_id") != inventory_id:
             raise ValueError("TG-04 prediction inventory identity mismatch")
         if inventory_id in inventory:
@@ -437,28 +441,47 @@ def _validate_predictions(
 def _validate_scored_mentions(
     *,
     event: Mapping[str, object],
-    item: ClaimInventoryItem,
-    source_start: int,
+    bound_claim: BoundClaimInventoryItem,
 ) -> None:
+    item = bound_claim.item
     cue = item.relation_cue_span
-    if item.exact_span.count(cue) != 1:
-        raise ValueError("TG-04 scored trigger is ambiguous within its source span")
-    if event.get("trigger_span") != cue or event.get(
-        "trigger_source_start"
-    ) != source_start + item.exact_span.index(cue):
+    trigger = bound_claim.trigger_mention
+    if (
+        event.get("trigger_span") != cue
+        or event.get("trigger_source_start") != trigger.source_start
+    ):
         raise ValueError("TG-04 scored trigger differs from provider-bound inventory")
+    if event.get("trigger_source_mention") != {
+        "exact_span": trigger.exact_span,
+        "source_start": trigger.source_start,
+        "source_end": trigger.source_end,
+    }:
+        raise ValueError("TG-04 scored trigger mention differs from inventory")
     scored_arguments = _sequence(event.get("arguments"), "prediction arguments")
     if len(scored_arguments) != len(item.arguments):
         raise ValueError("TG-04 scored argument count differs from inventory")
-    for scored, argument in zip(scored_arguments, item.arguments, strict=True):
+    for scored, bound_argument in zip(
+        scored_arguments,
+        bound_claim.bound_arguments,
+        strict=True,
+    ):
         scored_argument = _object(scored, "prediction argument")
-        if item.exact_span.count(argument.exact_span) != 1:
-            raise ValueError(
-                "TG-04 scored argument is ambiguous within its source span"
-            )
-        expected_start = source_start + item.exact_span.index(argument.exact_span)
-        if scored_argument.get("source_start") != expected_start:
+        mentions = bound_argument.mentions
+        if (
+            scored_argument.get("source_start")
+            != bound_argument.primary_mention.source_start
+        ):
             raise ValueError("TG-04 scored argument offset differs from inventory")
+        expected_mentions = [
+            {
+                "exact_span": mention.exact_span,
+                "source_start": mention.source_start,
+                "source_end": mention.source_end,
+            }
+            for mention in mentions
+        ]
+        if scored_argument.get("source_mentions") != expected_mentions:
+            raise ValueError("TG-04 scored argument mentions differ from inventory")
 
 
 def _validate_attempt_record(attempt: Mapping[str, object], outcome: object) -> None:
@@ -514,21 +537,17 @@ def _agent_arguments(value: object) -> list[dict[str, object]]:
     return [
         {
             key: argument.get(key)
-            for key in ("role", "event_role", "exact_span", "role_rationale")
+            for key in (
+                "role",
+                "event_role",
+                "exact_span",
+                "mention_anchors",
+                "role_rationale",
+            )
         }
         for item in _sequence(value, "prediction arguments")
         if (argument := _object(item, "prediction argument"))
     ]
-
-
-def _inventory_ids_sha256(inventory: Sequence[BoundClaimInventoryItem]) -> str:
-    return _sha256_text(
-        json.dumps(
-            [claim.inventory_id for claim in inventory],
-            separators=(",", ":"),
-            ensure_ascii=True,
-        ),
-    )
 
 
 def _insert_unique_attempt(

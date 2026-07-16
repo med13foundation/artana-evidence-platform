@@ -10,6 +10,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.inventory impo
     ClaimInventoryBindingError,
     ClaimInventoryItem,
     bind_claim_inventory,
+    claim_inventory_input_sha256,
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -116,9 +117,21 @@ def require_recovery_matches_review(
 ) -> None:
     """Require recovery to return exactly the claims named by the review agent."""
 
-    recovered_ids = {claim.inventory_id for claim in recovered_claims}
-    reviewed_ids = {claim.inventory_id for claim in reviewed_missing_claims}
-    if recovered_ids != reviewed_ids:
+    recovered_inputs = {
+        claim.inventory_id: claim_inventory_input_sha256(
+            inventory_id=claim.inventory_id,
+            item=claim.item,
+        )
+        for claim in recovered_claims
+    }
+    reviewed_inputs = {
+        claim.inventory_id: claim_inventory_input_sha256(
+            inventory_id=claim.inventory_id,
+            item=claim.item,
+        )
+        for claim in reviewed_missing_claims
+    }
+    if recovered_inputs != reviewed_inputs:
         raise ClaimInventoryBindingError(
             "missing-claim recovery did not exactly match the completeness review",
         )

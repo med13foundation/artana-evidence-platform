@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import dataclass
 from typing import Protocol, cast
@@ -21,6 +20,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     MissingClaimRecoveryResult,
     bind_claim_inventory,
     bind_inventory_completeness_review,
+    claim_inventory_batch_input_sha256,
     require_recovery_matches_review,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
@@ -287,7 +287,6 @@ async def run_inventory_completeness_review_stage(
         execution_namespace=execution_namespace,
     )
     audit_context = _inventory_review_audit_context(
-        chunk=chunk,
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
         schema_retry=False,
@@ -304,7 +303,6 @@ async def run_inventory_completeness_review_stage(
         execution_namespace=execution_namespace,
     )
     retry_context = _inventory_review_audit_context(
-        chunk=chunk,
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
         schema_retry=True,
@@ -409,7 +407,7 @@ async def run_missing_claim_recovery_stage(
         MISSING_CLAIM_RECOVERY_PROMPT_VERSION,
         model_id,
         document_fingerprint,
-        missing_claim.inventory_id,
+        claim_inventory_batch_input_sha256((missing_claim,)),
         execution_namespace,
     )
     audit_context = ModelAttemptAuditContext(
@@ -417,7 +415,7 @@ async def run_missing_claim_recovery_stage(
         pass_role="claim_inventory_recovery",
         retry_context=None,
         source_sha256=document_fingerprint,
-        input_sha256=_inventory_ids_sha256((missing_claim,)),
+        input_sha256=claim_inventory_batch_input_sha256((missing_claim,)),
         semantic_unit_id=missing_claim.inventory_id,
     )
 
@@ -653,14 +651,13 @@ def _inventory_review_step_key(
         phase,
         model_id,
         chunk.sha256,
-        _inventory_ids_sha256(current_inventory),
+        claim_inventory_batch_input_sha256(current_inventory),
         execution_namespace,
     )
 
 
 def _inventory_review_audit_context(
     *,
-    chunk: RelationExtractionTextChunk,
     document_fingerprint: str,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     schema_retry: bool,
@@ -672,20 +669,9 @@ def _inventory_review_audit_context(
         pass_role="claim_inventory_completeness",
         retry_context=None,
         source_sha256=document_fingerprint,
-        input_sha256=_inventory_ids_sha256(current_inventory) or chunk.sha256,
+        input_sha256=claim_inventory_batch_input_sha256(current_inventory),
         semantic_unit_id=None,
     )
-
-
-def _inventory_ids_sha256(
-    inventory: tuple[BoundClaimInventoryItem, ...],
-) -> str:
-    payload = json.dumps(
-        [claim.inventory_id for claim in inventory],
-        separators=(",", ":"),
-        ensure_ascii=True,
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
 
 
 def _inventory_audit_context(
