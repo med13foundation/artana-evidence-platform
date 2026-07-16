@@ -62,7 +62,7 @@ packet or independently validate every count above.
 |---|---|
 | `docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/semantic_model_comparison_manifest.json` | `601b430bc34fe368a1656abdb1594b730188ccbd9bf2a89a94232212164be7a8` |
 | `docs/validation/reports/semantic-model-comparisons/2026-07-13-pr6-gpt-5.6-luna-v3/semantic_model_comparison_report.json` | `f159482dd5cab13c32b04487df5ff66808439309abfe166012a06fddc708763b` |
-| `docs/validation/codex-agent-expert-evaluation-protocol.md` | `1f44e9a2f8745633d0e92bdef7d60986171e9f17c1a797a84cc4eacde991b966` |
+| `docs/validation/codex-agent-expert-evaluation-protocol.md` | `07b9885622f4469769f9a84576db99f721ae0dc38bfa79da45b6828f91614713` |
 
 ## Replacement Requirement
 
