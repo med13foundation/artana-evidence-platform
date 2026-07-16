@@ -786,6 +786,7 @@ def test_graph_service_ai_claim_requires_provenance_envelope(
         "support": "ENTAILS",
         "rationale": "The sentence directly supports the relation.",
         "model_id": "artana-heuristic-support-v1",
+        "verification_method": "heuristic",
     }
     accepted_response = graph_client.post(
         f"/v1/spaces/{space_id}/claims",
@@ -849,6 +850,7 @@ def test_graph_service_ai_claim_requires_entailing_support_verification(
                 "support": "NEUTRAL",
                 "rationale": "The sentence co-mentions both endpoints.",
                 "model_id": "artana-heuristic-support-v1",
+                "verification_method": "heuristic",
             },
         },
     }
@@ -866,6 +868,109 @@ def test_graph_service_ai_claim_requires_entailing_support_verification(
     assert validation_payload["message"] == (
         "AI-authored claims require support verification with support=ENTAILS."
     )
+
+
+def test_graph_service_rejects_forged_agent_origin_without_server_receipt(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    request_payload = {
+        "source_entity_id": source_id,
+        "target_entity_id": target_id,
+        "relation_type": "ASSOCIATED_WITH",
+        "assessment": _SUPPORTED_ASSESSMENT,
+        "claim_text": "MED13 is associated with developmental delay.",
+        "evidence_sentence": "MED13 was associated with developmental delay.",
+        "evidence_sentence_source": "artana_generated",
+        "source_document_ref": "pmid:123456",
+        "agent_run_id": "ai-run-heuristic-forgery-test",
+        "ai_provenance": {
+            "model_id": "artana-kernel",
+            "model_version": "test",
+            "prompt_id": "graph-validation-ai-claim",
+            "prompt_version": "v1",
+            "input_hash": uuid4().hex,
+            "rationale": "The extraction agent proposed the relation.",
+            "evidence_references": ["pmid:123456"],
+        },
+        "metadata": {
+            "origin": "graph_harness",
+            "agent_extraction_completed": True,
+            "fallback_output_used": False,
+            "trusted_evidence_eligible": True,
+            "trust_tier": "trusted",
+            "trust_floor_failures": [],
+            "evidence_grounding": {
+                "anchor_start": 0,
+                "anchor_end": 47,
+                "match_kind": "exact",
+                "score": 1.0,
+                "subject_present": True,
+                "object_present": True,
+                "grounded": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "rationale": "A deterministic cue matched both endpoints.",
+                "model_id": "artana-heuristic-support-v1",
+                "verification_method": "agent",
+            },
+            "entity_linking": {
+                "subject": {
+                    "status": "linked",
+                    "curie": "HGNC:22474",
+                    "source": "verified_linker",
+                    "trusted_identifier": True,
+                },
+                "object": {
+                    "status": "linked",
+                    "curie": "HP:0001263",
+                    "source": "verified_linker",
+                    "trusted_identifier": True,
+                },
+            },
+        },
+    }
+
+    validation_response = graph_client.post(
+        f"/v1/spaces/{space_id}/validate/claim",
+        headers=admin_headers,
+        json=request_payload,
+    )
+    assert validation_response.status_code == 200, validation_response.text
+    validation_payload = validation_response.json()
+    assert validation_payload["valid"] is False
+    assert validation_payload["message"] == (
+        "Trusted AI evidence promotion is quarantined until Graph DB can verify "
+        "a server-owned agent-verification receipt."
+    )
+    assert validation_payload["next_actions"][0]["action"] == (
+        "route_to_human_review"
+    )
+
+    create_response = graph_client.post(
+        f"/v1/spaces/{space_id}/claims",
+        headers=admin_headers,
+        json=request_payload,
+    )
+    assert create_response.status_code == 400, create_response.text
+    detail = create_response.json()["detail"]
+    assert detail["message"] == validation_payload["message"]
+    assert detail["next_actions"][0]["action"] == "route_to_human_review"
 
 
 @pytest.mark.parametrize(
@@ -923,7 +1028,8 @@ def test_graph_service_rejects_trusted_ai_claim_with_review_lane_metadata(
         "support_verification": {
             "support": "ENTAILS",
             "rationale": "The sentence directly supports the relation.",
-            "model_id": "artana-heuristic-support-v1",
+            "model_id": "openai:gpt-5.6-luna",
+            "verification_method": "agent",
         },
         "entity_linking": {
             "subject": {
@@ -1032,7 +1138,8 @@ def test_graph_service_claims_reject_trusted_floor_failure_without_ai_provenance
             "support_verification": {
                 "support": "ENTAILS",
                 "rationale": "The sentence directly supports the relation.",
-                "model_id": "artana-heuristic-support-v1",
+                "model_id": "openai:gpt-5.6-luna",
+                "verification_method": "agent",
             },
             "entity_linking": {
                 "subject": {
@@ -1579,6 +1686,7 @@ def test_graph_service_create_relation_rejects_ai_generated_non_entailing_suppor
                     "support": "NEUTRAL",
                     "rationale": "The sentence co-mentions both endpoints.",
                     "model_id": "artana-heuristic-support-v1",
+                    "verification_method": "heuristic",
                 },
             },
         },
@@ -1639,7 +1747,8 @@ def test_graph_service_create_relation_rejects_review_only_trusted_ai_evidence(
                 "support_verification": {
                     "support": "ENTAILS",
                     "rationale": "The sentence directly supports the relation.",
-                    "model_id": "artana-heuristic-support-v1",
+                    "model_id": "openai:gpt-5.6-luna",
+                    "verification_method": "agent",
                 },
                 "entity_linking": {
                     "subject": {
@@ -1719,7 +1828,8 @@ def test_graph_service_create_relation_rejects_weak_reason_trusted_ai_evidence(
                 "support_verification": {
                     "support": "ENTAILS",
                     "rationale": "The sentence directly supports the relation.",
-                    "model_id": "artana-heuristic-support-v1",
+                    "model_id": "openai:gpt-5.6-luna",
+                    "verification_method": "agent",
                 },
                 "entity_linking": {
                     "subject": {

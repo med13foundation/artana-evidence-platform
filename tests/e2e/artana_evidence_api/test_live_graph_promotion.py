@@ -204,6 +204,7 @@ def test_promote_proposal_persists_claim_through_live_graph_service(
                         "support": "ENTAILS",
                         "rationale": "The sentence directly supports the relation.",
                         "model_id": "artana-heuristic-support-v1",
+                        "verification_method": "heuristic",
                     },
                 },
             ),

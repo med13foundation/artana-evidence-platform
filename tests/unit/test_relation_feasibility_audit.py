@@ -5,11 +5,15 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from artana_evidence_api.document_extraction import (
     DocumentCandidateExtractionDiagnostics,
     ExtractedRelationCandidate,
+)
+from artana_evidence_api.document_extraction_support.evidence_support_verifier import (
+    TripleSupportResult,
 )
 
 from scripts.run_relation_feasibility_audit import (
@@ -34,6 +38,63 @@ from scripts.validation.relation_feasibility.models import (
 )
 from scripts.validation.relation_feasibility.reporting import render_markdown_report
 from scripts.validation.relation_feasibility.runner import run_feasibility_audit
+
+
+class _EntailingAgentSupportVerifier:
+    model_id = "test:independent-agent-verifier"
+
+    def verify(
+        self,
+        *,
+        sentence: str,
+        subject: str,
+        relation_type: str,
+        object_: str,
+    ) -> TripleSupportResult:
+        del sentence, subject, relation_type, object_
+        return TripleSupportResult(
+            support="ENTAILS",
+            rationale="The test verifier found direct categorical support.",
+        )
+
+
+_AGENT_SUPPORT_VERIFIER = _EntailingAgentSupportVerifier()
+
+
+class _NonEntailingAgentSupportVerifier:
+    model_id = "test:independent-agent-verifier"
+
+    def __init__(self, support: Literal["NEUTRAL", "CONTRADICTS"]) -> None:
+        self._support = support
+
+    def verify(
+        self,
+        *,
+        sentence: str,
+        subject: str,
+        relation_type: str,
+        object_: str,
+    ) -> TripleSupportResult:
+        del sentence, subject, relation_type, object_
+        return TripleSupportResult(
+            support=self._support,
+            rationale="The independent verifier did not entail the candidate.",
+        )
+
+
+class _UnavailableAgentSupportVerifier:
+    model_id = "test:unavailable-agent-verifier"
+
+    def verify(
+        self,
+        *,
+        sentence: str,
+        subject: str,
+        relation_type: str,
+        object_: str,
+    ) -> TripleSupportResult:
+        del sentence, subject, relation_type, object_
+        raise RuntimeError("simulated verifier outage")
 
 
 def _case(
@@ -87,7 +148,13 @@ def test_audit_scores_specific_supported_relations_as_valuable() -> None:
     assert report.summary.recall_against_gold == 1.0
     assert report.summary.valuable_candidate_rate == 1.0
     assert report.summary.generic_relation_rate == 0.0
-    assert report.case_results[0].candidate_assessments[0].is_valuable is True
+    assessment = report.case_results[0].candidate_assessments[0]
+    assert assessment.is_valuable is True
+    assert assessment.support_verification_method == "heuristic"
+    assert assessment.is_trusted_evidence_eligible is False
+    assert report.summary.trusted_candidate_count == 0
+    assert report.summary.trusted_high_value_match_count == 0
+    assert report.summary.trusted_candidate_valuable_count == 0
 
 
 def test_audit_reports_candidate_score_calibration_error() -> None:
@@ -127,7 +194,11 @@ def test_audit_reports_candidate_score_calibration_error() -> None:
             ),
         ]
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     summary_payload = report.summary.to_json()
 
     assert report.summary.candidate_score_calibration_sample_count == 2
@@ -166,7 +237,11 @@ def test_audit_calibrates_supported_low_value_relation_as_negative() -> None:
             ),
         ]
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     assessment = report.case_results[0].candidate_assessments[0]
 
     assert assessment.is_supported_by_gold is True
@@ -174,6 +249,89 @@ def test_audit_calibrates_supported_low_value_relation_as_negative() -> None:
     assert assessment.is_valuable is False
     assert report.summary.candidate_score_ece == 1.0
     assert report.summary.trusted_candidate_score_ece == 1.0
+
+
+@pytest.mark.parametrize("support", ["NEUTRAL", "CONTRADICTS"])
+def test_non_entailing_agent_result_cannot_enter_trusted_metrics(
+    support: Literal["NEUTRAL", "CONTRADICTS"],
+) -> None:
+    case = _case(
+        case_id=f"agent_{support.casefold()}",
+        text="MED13 activates cardiac septal development.",
+        gold=(
+            GoldRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                support_sentence="MED13 activates cardiac septal development.",
+                value_level="high",
+                rationale="Specific gene-to-process mechanism.",
+            ),
+        ),
+    )
+
+    report = run_feasibility_audit(
+        cases=(case,),
+        extractor=lambda _: [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence="MED13 activates cardiac septal development.",
+            ),
+        ],
+        support_verifier=_NonEntailingAgentSupportVerifier(support),
+    )
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.support_verification == support
+    assert assessment.support_verification_method == "agent"
+    assert assessment.has_support_verification is True
+    assert assessment.has_entailment_support is False
+    assert assessment.is_trusted_evidence_eligible is False
+    assert report.summary.entailment_checked_rate == 1.0
+    assert report.summary.entailment_supported_rate == 0.0
+    assert report.summary.trusted_candidate_count == 0
+
+
+def test_unavailable_agent_verifier_is_unchecked_and_untrusted() -> None:
+    case = _case(
+        case_id="agent_verifier_unavailable",
+        text="MED13 activates cardiac septal development.",
+        gold=(
+            GoldRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                support_sentence="MED13 activates cardiac septal development.",
+                value_level="high",
+                rationale="Specific gene-to-process mechanism.",
+            ),
+        ),
+    )
+
+    report = run_feasibility_audit(
+        cases=(case,),
+        extractor=lambda _: [
+            ExtractedRelation(
+                subject="MED13",
+                relation_type="ACTIVATES",
+                object="cardiac septal development",
+                sentence="MED13 activates cardiac septal development.",
+            ),
+        ],
+        support_verifier=_UnavailableAgentSupportVerifier(),
+    )
+    assessment = report.case_results[0].candidate_assessments[0]
+
+    assert assessment.support_verification == "NEUTRAL"
+    assert assessment.support_verification_method == "unavailable"
+    assert assessment.has_support_verification is False
+    assert assessment.has_entailment_support is False
+    assert assessment.is_trusted_evidence_eligible is False
+    assert "support_not_checked" in assessment.quality_flags
+    assert report.summary.entailment_checked_rate == 0.0
+    assert report.summary.trusted_candidate_count == 0
 
 
 def test_audit_rejects_off_target_support_sentence_for_matching_triple() -> None:
@@ -490,7 +648,11 @@ def test_verified_curie_match_can_support_curated_endpoint_alias() -> None:
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     assessment = report.case_results[0].candidate_assessments[0]
 
     assert assessment.is_supported_by_gold is True
@@ -595,7 +757,11 @@ def test_trusted_high_value_recall_requires_completed_agent_and_verified_curies(
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
 
     assert report.summary.high_value_recall == 1.0
     assert report.summary.trusted_high_value_match_count == 1
@@ -1241,7 +1407,11 @@ def test_trusted_eligible_high_value_recall_excludes_high_value_review_only_gold
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     summary_json = report.summary.to_json()
 
     assert report.summary.high_value_recall == 1.0
@@ -1365,7 +1535,11 @@ def test_review_only_generic_candidates_do_not_drive_trusted_readiness_warnings(
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     summary_json = report.summary.to_json()
 
     assert report.summary.generic_relation_rate > 0.25
@@ -1450,7 +1624,11 @@ def test_trusted_candidate_matching_review_only_gold_is_hard_leakage() -> None:
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     summary_json = report.summary.to_json()
 
     assert report.summary.review_only_gold_trusted_leakage_count == 1
@@ -1669,7 +1847,11 @@ def test_low_value_review_recall_captures_pr23_weak_cases_without_trust_leakage(
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     low_value_flags = {
         result.case.case_id: result.candidate_assessments[0].quality_flags
         for result in report.case_results
@@ -1762,7 +1944,11 @@ def test_endpoint_metrics_split_trusted_eligible_from_low_value_review() -> None
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     summary_json = report.summary.to_json()
 
     assert report.summary.trusted_eligible_gold_curie_endpoint_count == 2
@@ -1810,7 +1996,11 @@ def test_weak_low_value_claim_trusted_leakage_is_counted() -> None:
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
 
     assert report.summary.weak_claim_trusted_leakage_count == 1
     assert report.summary.low_value_review_candidate_count == 0
@@ -1922,7 +2112,11 @@ def test_verdict_uses_trusted_eligible_endpoint_rate_not_all_gold_rate() -> None
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
 
     assert report.summary.curie_linked_gold_endpoint_rate < 0.95
     assert report.summary.trusted_eligible_curie_linked_gold_endpoint_rate == 1.0
@@ -2418,7 +2612,11 @@ def test_adversarial_findings_distinguish_trusted_generic_candidates() -> None:
             ),
         )
 
-    report = run_feasibility_audit(cases=cases, extractor=extractor)
+    report = run_feasibility_audit(
+        cases=cases,
+        extractor=extractor,
+        support_verifier=_AGENT_SUPPORT_VERIFIER,
+    )
     findings = find_quality_illusions(report)
     finding_codes = {finding.code for finding in findings}
 

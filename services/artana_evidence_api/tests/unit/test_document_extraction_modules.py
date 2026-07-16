@@ -1596,6 +1596,7 @@ def test_draft_builder_preserves_review_only_candidate_trust_floor() -> None:
     assert trusted_draft.metadata["trust_tier"] == "agent_candidate"
     assert trusted_draft.metadata["trust_floor_failures"] == [
         "review_only_candidate",
+        "support_verified_by_agent",
     ]
 
 
@@ -1709,7 +1710,10 @@ def test_candidate_extraction_trust_requires_all_hard_floors() -> None:
                 "subject_present": True,
                 "object_present": True,
             },
-            "support_verification": {"support": "ENTAILS"},
+            "support_verification": {
+                "support": "ENTAILS",
+                "verification_method": "agent",
+            },
             "entity_linking": {
                 "subject": {"status": "abstained", "reason": "missing_curie"},
                 "object": {
@@ -1738,7 +1742,7 @@ def test_candidate_extraction_trust_requires_all_hard_floors() -> None:
     ]
 
 
-def test_candidate_extraction_trust_marks_verified_linked_agent_relation_trusted() -> (
+def test_candidate_extraction_trust_caps_verified_agent_relation_below_trusted() -> (
     None
 ):
     draft = HarnessProposalDraft(
@@ -1758,7 +1762,10 @@ def test_candidate_extraction_trust_marks_verified_linked_agent_relation_trusted
                 "subject_present": True,
                 "object_present": True,
             },
-            "support_verification": {"support": "ENTAILS"},
+            "support_verification": {
+                "support": "ENTAILS",
+                "verification_method": "agent",
+            },
             "entity_linking": {
                 "subject": {
                     "status": "linked",
@@ -1782,9 +1789,62 @@ def test_candidate_extraction_trust_marks_verified_linked_agent_relation_trusted
         ),
     )
 
-    assert trusted_draft.metadata["trusted_evidence_eligible"] is True
-    assert trusted_draft.metadata["trust_tier"] == "trusted"
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is False
+    assert trusted_draft.metadata["trust_tier"] == "verified_evidence"
     assert trusted_draft.metadata["trust_floor_failures"] == []
+
+
+def test_candidate_extraction_trust_rejects_symbolic_clinvar_endpoint() -> None:
+    draft = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="doc:0",
+        title="BRAF V600E activates MAPK signaling",
+        summary="BRAF V600E activates MAPK signaling.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={"proposed_claim_type": "ACTIVATES"},
+        metadata={
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "verification_method": "agent",
+            },
+            "entity_linking": {
+                "subject": {
+                    "status": "linked",
+                    "curie": "ClinVar:BRAF_V600E",
+                    "source": "verified_linker",
+                    "trusted_identifier": True,
+                },
+                "object": {
+                    "status": "linked",
+                    "curie": "GO:0000165",
+                    "source": "verified_linker",
+                    "trusted_identifier": True,
+                },
+            },
+        },
+    )
+
+    (trusted_draft,) = with_candidate_extraction_trust_metadata(
+        drafts=(draft,),
+        diagnostics=DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="completed",
+            llm_candidate_count=1,
+        ),
+    )
+
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is False
+    assert trusted_draft.metadata["trust_floor_failures"] == [
+        "curie_linked_subject",
+    ]
 
 
 def test_candidate_extraction_trust_blocks_review_only_candidates() -> None:
@@ -1807,7 +1867,10 @@ def test_candidate_extraction_trust_blocks_review_only_candidates() -> None:
                 "subject_present": True,
                 "object_present": True,
             },
-            "support_verification": {"support": "ENTAILS"},
+            "support_verification": {
+                "support": "ENTAILS",
+                "verification_method": "agent",
+            },
             "entity_linking": {
                 "subject": {
                     "status": "linked",
@@ -1835,6 +1898,58 @@ def test_candidate_extraction_trust_blocks_review_only_candidates() -> None:
     assert trusted_draft.metadata["trust_tier"] == "agent_candidate"
     assert trusted_draft.metadata["trust_floor_failures"] == [
         "review_only_candidate",
+    ]
+
+
+def test_candidate_extraction_trust_rejects_heuristic_entailment() -> None:
+    draft = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="doc:0",
+        title="MED13 causes developmental delay",
+        summary="MED13 causes developmental delay.",
+        confidence=0.5,
+        ranking_score=0.5,
+        reasoning_path={},
+        evidence_bundle=[],
+        payload={"proposed_claim_type": "CAUSES"},
+        metadata={
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "verification_method": "heuristic",
+            },
+            "entity_linking": {
+                "subject": {
+                    "status": "linked",
+                    "curie": "HGNC:22474",
+                    "source": "verified_linker",
+                },
+                "object": {
+                    "status": "linked",
+                    "curie": "HP:0001263",
+                    "source": "verified_linker",
+                },
+            },
+        },
+    )
+
+    (trusted_draft,) = with_candidate_extraction_trust_metadata(
+        drafts=(draft,),
+        diagnostics=DocumentCandidateExtractionDiagnostics(
+            llm_candidate_status="completed",
+            llm_candidate_count=1,
+        ),
+    )
+
+    assert trusted_draft.metadata["trusted_evidence_eligible"] is False
+    assert trusted_draft.metadata["trust_tier"] == "agent_candidate"
+    assert trusted_draft.metadata["trust_floor_failures"] == [
+        "support_verified_by_agent",
     ]
 
 

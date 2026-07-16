@@ -18,6 +18,8 @@ def test_supported_sentence_returns_entails() -> None:
     )
 
     assert result.support == "ENTAILS"
+    assert result.verification_method == "heuristic"
+    assert result.to_metadata()["verification_method"] == "heuristic"
 
 
 def test_reversed_direction_returns_neutral() -> None:
@@ -260,3 +262,35 @@ def test_model_exception_returns_neutral() -> None:
         rationale="Support verifier failed closed: model unavailable",
         model_id="test-verifier",
     )
+
+
+def test_model_result_is_labeled_as_agent_verification() -> None:
+    class PassingModel:
+        model_id = "openai:gpt-5.6-luna"
+
+        def verify(
+            self,
+            *,
+            sentence: str,
+            subject: str,
+            relation_type: str,
+            object_: str,
+        ) -> TripleSupportResult:
+            del sentence, subject, relation_type, object_
+            return TripleSupportResult(
+                support="ENTAILS",
+                rationale="The cited sentence directly supports the triple.",
+                model_id="untrusted-caller-value",
+                verification_method="heuristic",
+            )
+
+    result = verify_triple_support(
+        sentence="MED13 activates EGFR.",
+        subject="MED13",
+        relation_type="ACTIVATES",
+        object_="EGFR",
+        model=PassingModel(),
+    )
+
+    assert result.model_id == "openai:gpt-5.6-luna"
+    assert result.verification_method == "agent"

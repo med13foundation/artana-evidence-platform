@@ -66,8 +66,9 @@
           "support_sentence": "Sotorasib targets KRAS G12C by binding the switch-II pocket in mutant lung cancer.",
           "value_level": "high",
           "rationale": "Direct drug-to-variant target relation.",
+          "review_status": "review_only",
           "subject_curie": "DrugBank:DB15569",
-          "object_curie": "ClinVar:KRAS_G12C",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -89,8 +90,9 @@
           "support_sentence": "Vemurafenib targets BRAF V600E and suppresses downstream MAPK signaling in melanoma.",
           "value_level": "high",
           "rationale": "Specific inhibitor-to-variant target relation.",
+          "review_status": "review_only",
           "subject_curie": "DrugBank:DB08881",
-          "object_curie": "ClinVar:BRAF_V600E",
+          "object_curie": null,
           "requires_entailment": true
         }
       ]
@@ -296,7 +298,7 @@
           "value_level": "high",
           "review_status": "review_only",
           "rationale": "Specific variant-to-pathway activation relation with a broad pathway endpoint that must remain review-only.",
-          "subject_curie": "ClinVar:BRAF_V600E",
+          "subject_curie": null,
           "object_curie": null,
           "requires_entailment": true
         }
@@ -366,7 +368,7 @@
           "value_level": "high",
           "review_status": "review_only",
           "rationale": "Specific variant-to-pathway activation relation with a broad pathway endpoint that must remain review-only.",
-          "subject_curie": "ClinVar:KRAS_G12D",
+          "subject_curie": null,
           "object_curie": null,
           "requires_entailment": true
         }
@@ -436,7 +438,8 @@
           "support_sentence": "EGFR T790M confers resistance to gefitinib in previously responsive lung tumors.",
           "value_level": "high",
           "rationale": "Specific variant-to-drug resistance relation.",
-          "subject_curie": "ClinVar:EGFR_T790M",
+          "review_status": "review_only",
+          "subject_curie": null,
           "object_curie": "DrugBank:DB00317",
           "requires_entailment": true
         }
@@ -649,7 +652,7 @@
           "value_level": "low",
           "review_status": "review_only",
           "rationale": "Possible-link evidence should be reviewed.",
-          "subject_curie": "ClinVar:JAK2_V617F",
+          "subject_curie": null,
           "object_curie": "MONDO:0000831",
           "requires_entailment": false
         }
@@ -998,7 +1001,8 @@
           "support_sentence": "EGFR T790M confers resistance to erlotinib in lung cancer samples after initial response.",
           "value_level": "high",
           "rationale": "Specific variant-to-drug resistance relation.",
-          "subject_curie": "ClinVar:EGFR_T790M",
+          "review_status": "review_only",
+          "subject_curie": null,
           "object_curie": "DrugBank:DB00530",
           "requires_entailment": true
         }
@@ -1208,7 +1212,7 @@
           "support_sentence": "BRAF V600E is a biomarker for response to vemurafenib in metastatic melanoma.",
           "value_level": "high",
           "rationale": "Composite response endpoint remains review-only for trusted promotion.",
-          "subject_curie": "ClinVar:BRAF_V600E",
+          "subject_curie": null,
           "object_curie": null,
           "requires_entailment": true,
           "review_status": "review_only"
@@ -1232,7 +1236,7 @@
           "support_sentence": "KRAS G12D was associated with pancreatic cancer cell proliferation in engineered organoid models.",
           "value_level": "high",
           "rationale": "Composite process endpoint remains review-only for trusted promotion.",
-          "subject_curie": "ClinVar:KRAS_G12D",
+          "subject_curie": null,
           "object_curie": null,
           "requires_entailment": true,
           "review_status": "review_only"
@@ -1470,7 +1474,7 @@
           "support_sentence": "RET p.Arg1174* activates MAPK signaling in engineered endocrine tumor cells.",
           "value_level": "high",
           "rationale": "Long-document broad pathway endpoint remains review-only for trusted promotion.",
-          "subject_curie": "ClinVar:RET_ARG1174TER",
+          "subject_curie": null,
           "object_curie": null,
           "requires_entailment": true,
           "review_status": "review_only"

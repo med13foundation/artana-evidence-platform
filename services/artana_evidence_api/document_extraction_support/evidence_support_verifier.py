@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal, Protocol
 
 from artana_evidence_api.document_extraction_support.evidence_grounding import (
@@ -21,6 +21,7 @@ from artana_evidence_api.document_extraction_support.evidence_support.cues impor
 from artana_evidence_api.types.common import JSONObject
 
 TripleSupport = Literal["ENTAILS", "NEUTRAL", "CONTRADICTS"]
+SupportVerificationMethod = Literal["agent", "heuristic", "unavailable"]
 _MODEL_ID = "artana-heuristic-support-v1"
 
 
@@ -31,6 +32,7 @@ class TripleSupportResult:
     support: TripleSupport
     rationale: str
     model_id: str | None = None
+    verification_method: SupportVerificationMethod = "unavailable"
 
     def to_metadata(self) -> JSONObject:
         """Return JSON-safe support verification metadata."""
@@ -39,6 +41,7 @@ class TripleSupportResult:
             "support": self.support,
             "rationale": self.rationale,
             "model_id": self.model_id,
+            "verification_method": self.verification_method,
         }
 
 
@@ -70,17 +73,23 @@ def verify_triple_support(
 
     if model is not None:
         try:
-            return model.verify(
+            result = model.verify(
                 sentence=sentence,
                 subject=subject,
                 relation_type=relation_type,
                 object_=object_,
+            )
+            return replace(
+                result,
+                model_id=model.model_id,
+                verification_method="agent",
             )
         except Exception as exc:  # noqa: BLE001
             return TripleSupportResult(
                 support="NEUTRAL",
                 rationale=f"Support verifier failed closed: {exc}",
                 model_id=model.model_id,
+                verification_method="unavailable",
             )
     return _heuristic_support(
         sentence=sentence,
@@ -103,6 +112,7 @@ def _heuristic_support(
             support="NEUTRAL",
             rationale="Sentence does not contain both relation endpoints.",
             model_id=_MODEL_ID,
+            verification_method="heuristic",
         )
     normalized_relation_type = _normalized_relation_type(relation_type)
     cues = relation_cues(normalized_relation_type)
@@ -138,6 +148,7 @@ def _heuristic_support(
                 "candidate triple."
             ),
             model_id=_MODEL_ID,
+            verification_method="heuristic",
         )
     if any(
         _has_entailing_relation_support(
@@ -156,11 +167,13 @@ def _heuristic_support(
                 "orientation."
             ),
             model_id=_MODEL_ID,
+            verification_method="heuristic",
         )
     return TripleSupportResult(
         support="NEUTRAL",
         rationale="Sentence contains both endpoints but no relation cue.",
         model_id=_MODEL_ID,
+        verification_method="heuristic",
     )
 
 
@@ -349,6 +362,7 @@ _NEGATED_CUE_PATTERNS = (
 
 
 __all__ = [
+    "SupportVerificationMethod",
     "TripleSupport",
     "TripleSupportModel",
     "TripleSupportResult",

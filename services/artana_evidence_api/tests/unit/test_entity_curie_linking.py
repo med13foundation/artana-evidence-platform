@@ -54,18 +54,18 @@ def test_gene_state_alias_without_exact_state_identifier_requires_review() -> No
     assert metadata["trusted_identifier"] is False
 
 
-def test_clinvar_variant_curie_can_be_verified() -> None:
+def test_symbolic_clinvar_variant_curie_is_quarantined() -> None:
     link = normalize_entity_curie(
         "ClinVar:EGFR_T790M",
         label="EGFR T790M",
         source="model",
     )
 
-    assert link.status == "linked"
-    assert link.curie == "ClinVar:EGFR_T790M"
-    assert link.source == "verified_linker"
-    assert link.entity_type == "VARIANT"
-    assert link.identifiers == {"clinvar_id": "ClinVar:EGFR_T790M"}
+    assert link.status == "abstained"
+    assert link.curie is None
+    assert link.source == "none"
+    assert link.reason == "grounding_requires_review"
+    assert link.to_metadata()["trusted_identifier"] is False
 
 
 @pytest.mark.parametrize(
@@ -94,12 +94,6 @@ def test_clinvar_variant_curie_can_be_verified() -> None:
             "PI3K-AKT signaling",
             "GO:0043491",
             {"go_id": "GO:0043491"},
-        ),
-        (
-            None,
-            "KRAS G12D",
-            "ClinVar:KRAS_G12D",
-            {"clinvar_id": "ClinVar:KRAS_G12D"},
         ),
         (
             None,
@@ -135,6 +129,48 @@ def test_v3_curated_endpoint_records_verify_or_replace_model_hints(
     assert metadata["trusted_identifier"] is True
     if raw_curie is not None:
         assert metadata["model_hint_status"] == "replaced"
+
+
+@pytest.mark.parametrize(
+    "raw_curie",
+    [
+        "ClinVar:BRAF_V600E",
+        "ClinVar:EGFR_T790M",
+        "ClinVar:KRAS_G12C",
+        "ClinVar:KRAS_G12D",
+        "ClinVar:RET_ARG1174TER",
+    ],
+)
+def test_symbolic_clinvar_placeholders_never_become_trusted_identifiers(
+    raw_curie: str,
+) -> None:
+    link = normalize_entity_curie(
+        raw_curie,
+        label="unlisted variant",
+        source="verified_linker",
+    )
+
+    assert link.source != "verified_linker"
+    assert link.to_metadata()["trusted_identifier"] is False
+
+
+@pytest.mark.parametrize(
+    "raw_curie",
+    ["ClinVar:16613", "ClinVar:VCV000016613.8", "ClinVar:RCV000019947.18"],
+)
+def test_raw_authority_compatible_clinvar_identifier_remains_an_untrusted_hint(
+    raw_curie: str,
+) -> None:
+    link = normalize_entity_curie(
+        raw_curie,
+        label="unlisted variant",
+        source="verified_linker",
+    )
+
+    assert link.status == "linked"
+    assert link.curie == raw_curie
+    assert link.source == "model"
+    assert link.to_metadata()["trusted_identifier"] is False
 
 
 @pytest.mark.parametrize(

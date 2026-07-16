@@ -41,7 +41,8 @@ _VALID_GROUNDING = {
 _VALID_SUPPORT_VERIFICATION = {
     "support": "ENTAILS",
     "rationale": "Sentence contains both endpoints in the correct relation.",
-    "model_id": "artana-heuristic-support-v1",
+    "model_id": "openai:gpt-5.6-luna",
+    "verification_method": "agent",
 }
 _VALID_ENTITY_LINKING = {
     "subject": {
@@ -186,8 +187,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_without_linked_entities() -> None
     assert issue is not None
     assert issue.code == "insufficient_evidence"
     assert issue.message == (
-        "Trusted AI evidence requires linked subject and object entity "
-        "identifiers."
+        "Trusted AI evidence requires authoritatively linked subject and object "
+        "entity identifiers."
     )
     assert len(issue.next_actions) == 1
     assert issue.next_actions[0].action == "attach_entity_links"
@@ -264,8 +265,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "Trusted AI evidence requires linked subject and object entity "
-                "identifiers."
+                "Trusted AI evidence requires authoritatively linked subject and "
+                "object entity identifiers."
             ),
             "attach_entity_links",
         ),
@@ -281,8 +282,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "Trusted AI evidence requires linked subject and object entity "
-                "identifiers."
+                "Trusted AI evidence requires authoritatively linked subject and "
+                "object entity identifiers."
             ),
             "attach_entity_links",
         ),
@@ -298,8 +299,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "Trusted AI evidence requires linked subject and object entity "
-                "identifiers."
+                "Trusted AI evidence requires authoritatively linked subject and "
+                "object entity identifiers."
             ),
             "attach_entity_links",
         ),
@@ -319,14 +320,63 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "Trusted AI evidence requires linked subject and object entity "
-                "identifiers."
+                "Trusted AI evidence requires authoritatively linked subject and "
+                "object entity identifiers."
+            ),
+            "attach_entity_links",
+        ),
+        (
+            {
+                "entity_linking": {
+                    "subject": {
+                        "status": "linked",
+                        "curie": "ClinVar:BRAF_V600E",
+                        "source": "verified_linker",
+                        "trusted_identifier": True,
+                    },
+                    "object": {
+                        "status": "linked",
+                        "curie": "HP:0001263",
+                        "source": "verified_linker",
+                        "trusted_identifier": True,
+                    },
+                },
+            },
+            (
+                "Trusted AI evidence requires authoritatively linked subject and "
+                "object entity identifiers."
             ),
             "attach_entity_links",
         ),
         (
             {"support_verification": {**_VALID_SUPPORT_VERIFICATION, "support": "NEUTRAL"}},
             "AI-authored claims require support verification with support=ENTAILS.",
+            "attach_support_verification",
+        ),
+        (
+            {
+                "support_verification": {
+                    **_VALID_SUPPORT_VERIFICATION,
+                    "verification_method": "heuristic",
+                },
+            },
+            (
+                "Trusted AI evidence requires independent agent support "
+                "verification with support=ENTAILS."
+            ),
+            "attach_support_verification",
+        ),
+        (
+            {
+                "support_verification": {
+                    "support": "ENTAILS",
+                    "model_id": "openai:gpt-5.6-luna",
+                },
+            },
+            (
+                "Trusted AI evidence requires independent agent support "
+                "verification with support=ENTAILS."
+            ),
             "attach_support_verification",
         ),
         (
@@ -386,7 +436,7 @@ def test_ai_claim_rejects_every_unsafe_trusted_promotion_floor(
     assert issue.next_actions[0].action == expected_action
 
 
-def test_ai_claim_accepts_claimed_trusted_tier_when_hard_floors_pass() -> None:
+def test_ai_claim_quarantines_trusted_tier_without_server_verified_receipt() -> None:
     issue = validate_ai_claim_evidence(
         _claim_request(
             agent_run_id="ai-run-1",
@@ -407,10 +457,15 @@ def test_ai_claim_accepts_claimed_trusted_tier_when_hard_floors_pass() -> None:
         requires_evidence=True,
     )
 
-    assert issue is None
+    assert issue is not None
+    assert issue.message == (
+        "Trusted AI evidence promotion is quarantined until Graph DB can verify "
+        "a server-owned agent-verification receipt."
+    )
+    assert issue.next_actions[0].action == "route_to_human_review"
 
 
-def test_ai_claim_accepts_claimed_trusted_tier_with_empty_review_reason_codes() -> None:
+def test_ai_claim_with_empty_review_reasons_still_requires_server_receipt() -> None:
     issue = validate_ai_claim_evidence(
         _claim_request(
             agent_run_id="ai-run-1",
@@ -425,7 +480,38 @@ def test_ai_claim_accepts_claimed_trusted_tier_with_empty_review_reason_codes() 
         requires_evidence=True,
     )
 
-    assert issue is None
+    assert issue is not None
+    assert issue.message == (
+        "Trusted AI evidence promotion is quarantined until Graph DB can verify "
+        "a server-owned agent-verification receipt."
+    )
+
+
+def test_ai_claim_rejects_forged_agent_method_without_server_receipt() -> None:
+    metadata = _trusted_ai_metadata()
+    metadata["support_verification"] = {
+        "support": "ENTAILS",
+        "rationale": "A deterministic cue matched both endpoints.",
+        "model_id": "artana-heuristic-support-v1",
+        "verification_method": "agent",
+    }
+
+    issue = validate_ai_claim_evidence(
+        _claim_request(
+            agent_run_id="unregistered-agent-run",
+            ai_provenance=_AI_PROVENANCE,
+            evidence_sentence_source="artana_generated",
+            metadata=metadata,
+        ),
+        requires_evidence=True,
+    )
+
+    assert issue is not None
+    assert issue.message == (
+        "Trusted AI evidence promotion is quarantined until Graph DB can verify "
+        "a server-owned agent-verification receipt."
+    )
+    assert issue.next_actions[0].action == "route_to_human_review"
 
 
 def test_ai_relation_create_requires_structured_grounding() -> None:

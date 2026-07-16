@@ -45,6 +45,7 @@ def is_trusted_graph_evidence_candidate(assessment: CandidateAssessment) -> bool
 
     return (
         assessment.is_trusted_evidence_eligible
+        and assessment.support_verification_method == "agent"
         and not is_review_only_context_relation(assessment.candidate.relation_type)
     )
 

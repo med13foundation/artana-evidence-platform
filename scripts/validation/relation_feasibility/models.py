@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from artana_evidence_api.document_extraction_support.evidence_support_verifier import (
+        SupportVerificationMethod,
         TripleSupport,
     )
 
@@ -232,6 +233,7 @@ class CandidateAssessment:
     has_known_relation_type: bool
     requires_entailment: bool
     support_verification: TripleSupport | None
+    support_verification_method: SupportVerificationMethod | None
     has_support_verification: bool
     has_entailment_support: bool
     has_subject_curie: bool
@@ -264,6 +266,7 @@ class CandidateAssessment:
             "has_known_relation_type": self.has_known_relation_type,
             "requires_entailment": self.requires_entailment,
             "support_verification": self.support_verification,
+            "support_verification_method": self.support_verification_method,
             "has_support_verification": self.has_support_verification,
             "has_entailment_support": self.has_entailment_support,
             "has_subject_curie": self.has_subject_curie,

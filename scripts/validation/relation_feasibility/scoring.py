@@ -16,7 +16,8 @@ from artana_evidence_api.document_extraction_support.evidence_grounding import (
     ground_relation_sentence,
 )
 from artana_evidence_api.document_extraction_support.evidence_support_verifier import (
-    TripleSupport,
+    TripleSupportModel,
+    TripleSupportResult,
     verify_triple_support,
 )
 
@@ -112,6 +113,8 @@ class _CurieEndpointFlagContext:
 def assess_case(
     case: BenchmarkCase,
     candidates: tuple[ExtractedRelation, ...],
+    *,
+    support_verifier: TripleSupportModel | None = None,
 ) -> tuple[tuple[CandidateAssessment, ...], tuple[int, ...]]:
     """Assess extracted candidates for one benchmark case."""
 
@@ -129,6 +132,7 @@ def assess_case(
                 case=case,
                 candidate=candidate,
                 matched_gold_index=matched_index,
+                support_verifier=support_verifier,
             ),
         )
     missed_gold_indices = tuple(
@@ -148,6 +152,7 @@ def _assess_candidate(
     case: BenchmarkCase,
     candidate: ExtractedRelation,
     matched_gold_index: int | None,
+    support_verifier: TripleSupportModel | None,
 ) -> CandidateAssessment:
     matched_gold = (
         case.gold_relations[matched_gold_index]
@@ -185,14 +190,21 @@ def _assess_candidate(
     requires_entailment = (
         matched_gold.requires_entailment if matched_gold is not None else True
     )
-    support_verification = _support_verification(
+    support_result = _support_verification(
         candidate=candidate,
         requires_entailment=requires_entailment,
         grounded_source_sentence=(
             grounding.source_sentence if grounding.grounded else None
         ),
+        support_verifier=support_verifier,
     )
-    has_support_verification = support_verification is not None
+    support_verification = support_result.support if support_result is not None else None
+    support_verification_method = (
+        support_result.verification_method if support_result is not None else None
+    )
+    has_support_verification = (
+        support_result is not None and support_verification_method != "unavailable"
+    )
     has_entailment_support = (
         not requires_entailment or support_verification == "ENTAILS"
     )
@@ -261,8 +273,13 @@ def _assess_candidate(
         proposal_matched_gold_index=proposal_matched_gold_index,
         is_supported_by_gold=supported,
         is_governed_relation_proposal=governed_relation_proposal,
-        is_trusted_evidence_eligible=candidate.trusted_evidence_eligible
-        and not governed_relation_proposal,
+        is_trusted_evidence_eligible=(
+            candidate.trusted_evidence_eligible
+            and not governed_relation_proposal
+            and support_verification_method == "agent"
+            and has_support_verification
+            and support_verification == "ENTAILS"
+        ),
         has_specific_subject=subject_specific,
         has_specific_object=object_specific,
         is_relation_specific=relation_specific,
@@ -274,6 +291,7 @@ def _assess_candidate(
         has_known_relation_type=known_relation_type,
         requires_entailment=requires_entailment,
         support_verification=support_verification,
+        support_verification_method=support_verification_method,
         has_support_verification=has_support_verification,
         has_entailment_support=has_entailment_support,
         has_subject_curie=has_subject_curie,
@@ -303,7 +321,8 @@ def _support_verification(
     candidate: ExtractedRelation,
     requires_entailment: bool,
     grounded_source_sentence: str | None,
-) -> TripleSupport | None:
+    support_verifier: TripleSupportModel | None,
+) -> TripleSupportResult | None:
     if not requires_entailment or grounded_source_sentence is None:
         return None
     return verify_triple_support(
@@ -311,7 +330,8 @@ def _support_verification(
         subject=candidate.subject,
         relation_type=candidate.relation_type,
         object_=candidate.object,
-    ).support
+        model=support_verifier,
+    )
 
 
 def _matched_gold_index(

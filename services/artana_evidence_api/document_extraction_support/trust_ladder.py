@@ -9,6 +9,9 @@ from typing import Literal
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     canonicalize_extraction_relation_type,
 )
+from artana_evidence_api.document_extraction_support.entity_grounding.identifier_authority import (
+    has_authority_compatible_identifier_syntax,
+)
 from artana_evidence_api.types.common import JSONObject
 
 CandidateTrustTier = Literal[
@@ -24,6 +27,7 @@ CandidateTrustFloorFailure = Literal[
     "evidence_has_subject",
     "evidence_has_object",
     "support_entails_claim",
+    "support_verified_by_agent",
     "canonical_relation_type",
     "curie_linked_subject",
     "curie_linked_object",
@@ -80,6 +84,8 @@ def assess_candidate_trust(
     support = _object(metadata.get("support_verification"))
     if support.get("support") != "ENTAILS":
         failures.append("support_entails_claim")
+    if support.get("verification_method") != "agent":
+        failures.append("support_verified_by_agent")
 
     if not _has_canonical_relation_type(payload):
         failures.append("canonical_relation_type")
@@ -108,7 +114,7 @@ def _trust_tier_for_failures(
     failures: tuple[CandidateTrustFloorFailure, ...],
 ) -> CandidateTrustTier:
     if not failures:
-        return "trusted"
+        return "verified_evidence"
     if (
         "agent_extraction_completed" in failures
         or "no_fallback_output" in failures
@@ -119,6 +125,7 @@ def _trust_tier_for_failures(
         "evidence_has_subject",
         "evidence_has_object",
         "support_entails_claim",
+        "support_verified_by_agent",
         "canonical_relation_type",
         "review_only_candidate",
     }
@@ -151,6 +158,7 @@ def _has_linked_endpoint(
         and verified
         and isinstance(curie, str)
         and bool(curie.strip())
+        and has_authority_compatible_identifier_syntax(curie)
     )
 
 

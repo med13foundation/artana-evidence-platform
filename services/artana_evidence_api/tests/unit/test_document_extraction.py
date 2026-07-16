@@ -1465,7 +1465,9 @@ async def test_extract_relation_candidates_with_llm_filters_pathway_target_sibli
 
     assert len(candidates) == 1
     assert candidates[0].relation_type == "TARGETS"
-    assert candidates[0].trusted_evidence_eligible is True
+    assert candidates[0].trusted_evidence_eligible is False
+    assert candidates[0].review_status == "review_only"
+    assert "review_only_object_grounding" in candidates[0].review_reason_codes
 
 
 @pytest.mark.asyncio

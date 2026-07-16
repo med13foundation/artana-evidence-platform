@@ -2,7 +2,7 @@
 
 Created: 2026-07-14
 
-Status: Draft for execution review, implementation not started
+Status: Active; TG-01 is ready for review
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
@@ -127,7 +127,7 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 
 | Plan ID | GitHub PR | Suggested branch | Depends on | Status | Primary proof |
 |---|---:|---|---|---|---|
-| TG-01 | TBD | `alvaro/trusted-claims-tg01-truthful-safety` | None | not_started | Existing unsafe evidence cannot become trusted. |
+| TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | ready_for_review | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
 | TG-02 | TBD | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | not_started | Every eligible claim has authoritative source identity and an exact locator. |
 | TG-03 | TBD | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | not_started | Agent extraction preserves polarity, state, qualifiers, and evidence. |
 | TG-04 | TBD | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | not_started | Qualified claims round-trip through Evidence API and Graph DB without loss. |
@@ -260,9 +260,10 @@ runtime-default substitution invalidates the run.
 ## TG-01: Truthful Safety Floor
 
 **Hypothesis:** current candidates can satisfy the `trusted` tier using
-heuristic semantic support, internal-only source references, and symbolic
-variant identifiers. Blocking those paths will remove false trust even if the
-trusted count temporarily falls to zero.
+heuristic semantic support and symbolic variant identifiers. Blocking those
+paths will remove false trust even if the trusted count temporarily falls to
+zero. Authoritative source identity and exact locators remain TG-02's separate
+responsibility.
 
 **Root cause:** trust checks validate a result shape, not the authority that
 produced it. `_heuristic_support` can return `ENTAILS`; `trust_ladder.py` accepts
@@ -283,8 +284,6 @@ dictionary contains symbolic ClinVar-like values also used by fixtures.
   or `unavailable`.
 - Prevent `heuristic` and `unavailable` results from satisfying trusted or
   verified semantic floors.
-- Add source-authority and exact-locator failures to both Evidence API and Graph
-  DB trust checks.
 - Reject symbolic ClinVar placeholders as verified identifiers. Quarantine
   affected dictionary entries and fixtures instead of silently rewriting them.
 - Keep heuristic support available only as clearly labeled triage metadata.
@@ -297,7 +296,7 @@ dictionary contains symbolic ClinVar-like values also used by fixtures.
 - Unit: symbolic ClinVar values cannot set `trusted_identifier=true`.
 - Regression: forged metadata cannot bypass Graph DB trust enforcement.
 - Integration: the old proposal write path cannot create a trusted claim from
-  an internal `harness_proposal:*` reference alone.
+  heuristic semantic support.
 - Adversarial: mutate each trust metadata field independently and prove none can
   create a trusted result.
 
@@ -305,7 +304,6 @@ dictionary contains symbolic ClinVar-like values also used by fixtures.
 
 - heuristic-supported trusted count: `0`;
 - symbolic-placeholder verified count: `0`;
-- internal-only-source trusted count: `0`;
 - fallback and invalid-agent counts: `0`;
 - Graph DB independently rejects every forged case;
 - any reduction in trusted-candidate count is reported as truthful quarantine,

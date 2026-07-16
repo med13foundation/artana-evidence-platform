@@ -11,6 +11,9 @@ from artana_evidence_api.document_extraction_support.entity_grounding.contracts 
     ReviewOnlyEntityRecord,
     VerifiedEntityRecord,
 )
+from artana_evidence_api.document_extraction_support.entity_grounding.identifier_authority import (
+    has_authority_compatible_identifier_syntax,
+)
 from artana_evidence_api.document_extraction_support.entity_grounding.verified_dictionary import (
     review_only_record_for_label,
     verified_record_for_label,
@@ -156,6 +159,14 @@ def _normalize_raw_curie(
 
     namespace, identifier_key, entity_type = prefix_config
     normalized = f"{namespace}:{match.group('local')}"
+    if source == "verified_linker" and not has_authority_compatible_identifier_syntax(
+        normalized,
+    ):
+        return EntityCurieLink(
+            status="abstained",
+            source=source,
+            reason="non_authoritative_identifier_syntax",
+        )
     if enforce_label_type and _label_conflicts_with_entity_type(
         label=label,
         entity_type=entity_type,

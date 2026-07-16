@@ -3,6 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from artana_evidence_api.document_extraction_support.evidence_support_verifier import (
+        TripleSupportModel,
+    )
 
 from scripts.validation.relation_feasibility.models import (
     BenchmarkCase,
@@ -31,6 +37,7 @@ def run_feasibility_audit(
     cases: Sequence[BenchmarkCase],
     extractor: RelationExtractor,
     require_agent_completion: bool = False,
+    support_verifier: TripleSupportModel | None = None,
 ) -> FeasibilityReport:
     """Run extraction and quality scoring for all benchmark cases."""
 
@@ -49,7 +56,11 @@ def run_feasibility_audit(
         candidates = extraction_result.relations
         trace = extraction_result.trace
         relation_type_surfaces = extraction_result.relation_type_surfaces
-        assessments, missed_gold_indices = assess_case(case, candidates)
+        assessments, missed_gold_indices = assess_case(
+            case,
+            candidates,
+            support_verifier=support_verifier,
+        )
         case_results.append(
             CaseResult(
                 case=case,
