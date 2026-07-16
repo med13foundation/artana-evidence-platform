@@ -6,7 +6,8 @@ Status: Active; TG-01 is ready for review
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
-Baseline evaluation: `reports/luna-agent-expert-evaluation/2026-07-14-run-01/evaluation-report.md`
+Baseline evaluation:
+`docs/validation/reports/2026-07-14-luna-agent-expert-baseline.md`
 
 This is the canonical implementation and progress plan after the July 14 Luna
 agent-expert evaluation. It replaces the earlier open-ended trusted-graph
@@ -54,23 +55,26 @@ technically ready for trusted promotion without enabling that promotion.
 
 ## July 14 Baseline
 
-The following numbers are deterministic counts over frozen categorical agent
-findings. The 47-case set is risk-enriched, so its counts diagnose failures and
-do not estimate whole-corpus prevalence.
+The following values are unverified historical notes transcribed from the July
+14 evaluation session. The missing original raw report prevents independent
+recalculation, so these values identify failure hypotheses only. They are not a
+factual scientific baseline and receive no confirmatory, readiness, or
+before/after credit. The 47-case set was reported as risk-enriched and therefore
+would not estimate whole-corpus prevalence even if its artifacts were present.
 
-| Measure | Baseline | Interpretation |
+| Measure | Historical note | Interpretation |
 |---|---:|---|
-| Strict agent completion | 300/300 | The live `openai:gpt-5.6-luna` path completes. |
-| Credited fallback | 0 | Fallback did not masquerade as agent evidence. |
-| Invalid agent results | 0 | Structured extraction completed. |
-| Stable cases across three runs | 88/100 | Twelve cases changed under identical inputs. |
-| Worst-run generic relation rate | 36.76% | Generic output is far above the 5% limit. |
-| Worst-run verified CURIE match rate | 75.86% | Entity grounding is below the 95% target. |
-| Negative-control leakage | 1 | One explicit negative produced a candidate. |
-| Source-reviewed packet sufficiency | 8/47 | Most packets could not support the claim on their own. |
-| Final action `keep` | 1/47 | Most risk cases required revision, rejection, or human routing. |
-| Strong provenance | 2/47 | Source identity and locators are usually missing. |
-| Generic or overstated outcomes | 13/47 | The tuple often loses scientifically material context. |
+| Strict agent completion | 300/300 | Reported completion; must be re-established from committed provider evidence. |
+| Credited fallback | 0 | Reported fallback count; not a current safety proof. |
+| Invalid agent results | 0 | Reported structured-output count; not independently reproducible. |
+| Stable cases across three runs | 88/100 | Suggests a repeatability failure requiring a frozen rerun. |
+| Worst-run generic relation rate | 36.76% | Suggests generic output substantially exceeded the planned 5% limit. |
+| Worst-run verified CURIE match rate | 75.86% | Suggests entity grounding was below the planned 95% target. |
+| Negative-control leakage | 1 | Suggests at least one positive candidate escaped a negative control. |
+| Source-reviewed packet sufficiency | 8/47 | Suggests most risk packets lacked self-contained support. |
+| Final action `keep` | 1/47 | Suggests most risk cases required revision, rejection, or human routing. |
+| Strong provenance | 2/47 | Suggests source identity and locators were usually missing. |
+| Generic or overstated outcomes | 13/47 | Suggests binary tuples lost scientifically material context. |
 
 Current decision: **not ready for automatic trusted-graph promotion**.
 
@@ -235,16 +239,23 @@ Strict live-agent regression template:
 set -a
 source .env.postgres
 set +a
+export ARTANA_AI_EVIDENCE_EXTRACTION_MODEL=openai:gpt-5.6-luna
+RUN_DIR=docs/validation/reports/relation_feasibility/<date>-<plan-id>-run-01
+test ! -e "$RUN_DIR"
 uv run python scripts/run_relation_feasibility_audit.py \
   --extractor agent \
-  --output-dir reports/relation_feasibility/<date>-<plan-id>-run-01
+  --output-dir "$RUN_DIR"
 ```
 
 For semantic PRs, repeat into `run-02` and `run-03`, then evaluate worst-run
-results with the existing readiness gate. Do not overwrite a prior run or retry
-only failed cases. Store the exact command, environment-name allowlist, model,
+results with the existing readiness gate. The no-clobber preflight is mandatory
+for every run ID; a pre-existing run directory invalidates the command rather
+than authorizing replacement. Do not overwrite a prior run or retry only failed
+cases. Store the exact command, environment-name allowlist, model,
 prompt/configuration hashes, and output hashes in the evidence report. Never
-record secret values.
+record secret values. The run preflight and manifest must both prove that the
+configured and retrieved provider model is exactly `openai:gpt-5.6-luna`; a
+runtime-default substitution invalidates the run.
 
 ## TG-01: Truthful Safety Floor
 
@@ -803,15 +814,15 @@ single unsafe failure. Track each dimension independently.
 
 | Dimension | Baseline | Required end state | Owning PR | Current evidence | Status |
 |---|---|---|---|---|---|
-| Agent execution | 300/300, fallback 0 | Preserve 100%, fallback 0 | All | July 14 report | passing |
+| Agent execution | Historical note: 300/300, fallback 0 | Establish 100%, fallback 0 from committed provider evidence | All | Original July 14 raw report missing | not_evaluable |
 | Truthful trust | Heuristic and symbolic-authority gaps found | No non-agent semantic trust or fake authority | TG-01 | Pending | not_started |
-| Source traceability | 2/47 strong provenance | 100% eligible claims strong | TG-02 | Pending | not_started |
-| Claim completeness | 13/47 generic/overstated outcomes | Complete polarity/state/qualifiers | TG-03 | Pending | not_started |
+| Source traceability | Historical note: 2/47 strong provenance | 100% eligible claims strong | TG-02 | Original July 14 raw report missing | not_evaluable |
+| Claim completeness | Historical note: 13/47 generic/overstated outcomes | Complete polarity/state/qualifiers | TG-03 | Original July 14 raw report missing | not_evaluable |
 | Lossless persistence | Triple-oriented write path | Zero ClaimFrame field loss | TG-04 | Pending | not_started |
 | Semantic verification | Heuristic can return `ENTAILS` | Independent categorical agent verifier | TG-05 | Pending | not_started |
-| Entity grounding | 75.86% worst-run diagnostic rate | At least 95%, wrong links 0 | TG-06 | Pending | not_started |
+| Entity grounding | Historical note: 75.86% worst-run diagnostic rate | At least 95%, wrong links 0 | TG-06 | Original July 14 raw report missing | not_evaluable |
 | Safe projection | Review flags can accompany assertive tuples | Zero unsafe or lossy positive edges | TG-07 | Pending | not_started |
-| Real-source proof | 8/47 sufficient risk packets | All TG-08 gates on 60+ real sources | TG-08 | Pending | not_started |
+| Real-source proof | Historical note: 8/47 sufficient risk packets | All TG-08 gates on 60+ real sources | TG-08 | Original July 14 raw report missing | not_evaluable |
 | Human-expert proof | None | Authenticated independent expert study | Future governance | Not available | blocked |
 
 ## Stop And Reassess Rules
