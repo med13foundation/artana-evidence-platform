@@ -858,11 +858,13 @@ def _proposal_with_resolved_entities(
         assertion_arguments=(
             ClaimArgument(
                 role=ClaimArgumentRole.GENE_OR_PROTEIN,
+                event_role="THEME",
                 exact_span="MED13",
                 role_rationale="The source names the associated gene.",
             ),
             ClaimArgument(
                 role=ClaimArgumentRole.CONDITION,
+                event_role="TARGET",
                 exact_span="cardiomyopathy",
                 role_rationale="The source names the associated condition.",
             ),

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 from collections.abc import Sequence
 from types import SimpleNamespace
@@ -14,10 +15,14 @@ from artana_evidence_api.document_extraction import (
 )
 from artana_evidence_api.document_extraction_contracts import ExtractedRelationCandidate
 from artana_evidence_api.document_extraction_prompting import (
+    CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT,
+    CLAIM_INVENTORY_SYSTEM_PROMPT,
+    MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT,
     SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT,
     build_single_claim_framing_output_schema,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimEventType,
     ClaimInventoryBindingError,
     ClaimInventoryItem,
     bind_claim_inventory,
@@ -28,6 +33,7 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
     build_relation_extraction_text_chunks,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
+    output_schema_json_sha256,
     parse_provider_invocation_binding,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.prompt_versions import (
@@ -93,15 +99,47 @@ def test_claim_frame_pipeline_prompt_version_tracks_every_agent_stage() -> None:
 def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     normalized_prompt = SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT.casefold()
 
-    assert "exactly one source-bound, role-typed biomedical assertion" in normalized_prompt
+    assert (
+        "exactly one source-bound, role-typed biomedical assertion" in normalized_prompt
+    )
     assert "top 10" not in normalized_prompt
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v6:claim_inventory.v4+"
-        "claim_inventory_completeness.v3+claim_inventory_recovery.v3+"
+        "document_extraction.claim_pipeline.v8:claim_inventory.v6+"
+        "claim_inventory_completeness.v5+claim_inventory_recovery.v5+"
         "claim_framing.v6"
     )
+
+
+def test_claim_event_type_is_closed_and_required_across_inventory_prompts() -> None:
+    expected_values = {
+        "EXPRESSION",
+        "TRANSCRIPTION",
+        "DEGRADATION",
+        "PHOSPHORYLATION",
+        "LOCALIZATION",
+        "BINDING",
+        "REGULATION",
+        "POSITIVE_REGULATION",
+        "NEGATIVE_REGULATION",
+        "INCREASE",
+        "DECREASE",
+        "ASSOCIATION",
+        "TREATMENT_RESPONSE",
+        "NO_EFFECT",
+        "OTHER_EXPLICIT",
+    }
+
+    assert {event_type.value for event_type in ClaimEventType} == expected_values
+    for prompt in (
+        CLAIM_INVENTORY_SYSTEM_PROMPT,
+        CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT,
+        MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT,
+    ):
+        assert "event_type" in prompt
+        assert "event_role" in prompt or "event roles" in prompt
+        assert all(value in prompt for value in expected_values)
 
 
 def test_multi_frame_decision_requires_multiple_candidate_relations() -> None:
@@ -150,6 +188,7 @@ def _inventory_claim(
     relation_cue_span: str,
     endpoint_b_span: str,
     endpoint_role_order: str = "A_SUBJECT_B_OBJECT",
+    event_type: str = "ASSOCIATION",
     polarity: str = "SUPPORT",
     epistemic_status: str = "ASSERTED",
 ) -> dict[str, object]:
@@ -165,16 +204,19 @@ def _inventory_claim(
         "arguments": [
             {
                 "role": endpoint_a_role,
+                "event_role": "AGENT",
                 "exact_span": endpoint_a_span,
                 "role_rationale": "First typed biomedical argument.",
             },
             {
                 "role": endpoint_b_role,
+                "event_role": "THEME",
                 "exact_span": endpoint_b_span,
                 "role_rationale": "Second typed biomedical argument.",
             },
         ],
         "source_locator": "normalized_extraction_text",
+        "event_type": event_type,
         "polarity": polarity,
         "epistemic_status": epistemic_status,
         "inventory_rationale": "The span states one explicit source-local claim.",
@@ -371,9 +413,15 @@ async def test_inventory_frames_each_claim_in_multi_claim_sentence() -> None:
         binding = parse_provider_invocation_binding(provider_prompt)
         assert call["run_id"] == binding.kernel_run_id
         assert record.invocation_id == binding.invocation_id
-        assert record.prompt_sha256 == hashlib.sha256(
-            provider_prompt.encode("utf-8"),
-        ).hexdigest()
+        assert binding.output_schema_sha256 == output_schema_json_sha256(
+            call["output_schema"],
+        )
+        assert (
+            record.prompt_sha256
+            == hashlib.sha256(
+                provider_prompt.encode("utf-8"),
+            ).hexdigest()
+        )
     assert len(result.claim_lineage) == 2
     assert all(
         lineage.framing_attempt["semantic_unit_id"] == lineage.inventory_id
@@ -687,31 +735,37 @@ async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames() -> 
         "arguments": [
             {
                 "role": "POPULATION",
+                "event_role": "CONTEXT",
                 "exact_span": "Korean adults",
                 "role_rationale": "The treated population is explicit.",
             },
             {
                 "role": "VARIANT",
+                "event_role": "CONTEXT",
                 "exact_span": "ALK G1202R-positive",
                 "role_rationale": "The molecular variant is explicit.",
             },
             {
                 "role": "CONDITION",
+                "event_role": "CONTEXT",
                 "exact_span": "ALK G1202R-positive lung adenocarcinoma",
                 "role_rationale": "The disease condition is explicit.",
             },
             {
                 "role": "INTERVENTION",
+                "event_role": "AGENT",
                 "exact_span": "lorlatinib",
                 "role_rationale": "The administered intervention is explicit.",
             },
             {
                 "role": "OUTCOME",
+                "event_role": "THEME",
                 "exact_span": "intracranial lesions",
                 "role_rationale": "The measured outcome is explicit.",
             },
         ],
         "source_locator": "normalized_extraction_text",
+        "event_type": "TREATMENT_RESPONSE",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "The sentence states one qualified treatment result.",
@@ -772,8 +826,9 @@ async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames() -> 
     assert result.inventory_claim_count == 1
     assert result.raw_relation_count == 2
     assert result.claim_lineage[0].framing_decision == "MULTIPLE_VALID_FRAMES"
-    assert result.claim_lineage[0].inventory_payload["arguments"] == (
-        inventory_claim["arguments"]
+    assert (
+        result.claim_lineage[0].inventory_payload["arguments"]
+        == (inventory_claim["arguments"])
     )
     assert [candidate.object_label for candidate in result.candidates] == [
         "ALK G1202R-positive lung adenocarcinoma",
@@ -808,21 +863,25 @@ async def test_nonclinical_entity_roles_survive_in_the_claim_frame() -> None:
         "arguments": [
             {
                 "role": "GENE_OR_PROTEIN",
+                "event_role": "AGENT",
                 "exact_span": "MED13",
                 "role_rationale": "MED13 is the source-local gene entity.",
             },
             {
                 "role": "BIOLOGICAL_PROCESS",
+                "event_role": "EFFECT",
                 "exact_span": "cardiac development",
                 "role_rationale": "The sentence names a biological process.",
             },
             {
                 "role": "CONDITION",
+                "event_role": "EFFECT",
                 "exact_span": "cardiomyopathy",
                 "role_rationale": "The sentence names the resulting condition.",
             },
         ],
         "source_locator": "normalized_extraction_text",
+        "event_type": "OTHER_EXPLICIT",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
         "inventory_rationale": "One gene claim includes process and disease roles.",
@@ -851,7 +910,10 @@ async def test_nonclinical_entity_roles_survive_in_the_claim_frame() -> None:
 
     claim_frame = result.candidates[0].claim_frame
     assert claim_frame is not None
-    assert [(argument.role.value, argument.exact_span) for argument in claim_frame.assertion_arguments] == [
+    assert [
+        (argument.role.value, argument.exact_span)
+        for argument in claim_frame.assertion_arguments
+    ] == [
         ("GENE_OR_PROTEIN", "MED13"),
         ("BIOLOGICAL_PROCESS", "cardiac development"),
         ("CONDITION", "cardiomyopathy"),
@@ -1156,8 +1218,7 @@ async def test_partial_inventory_gets_reviewed_missing_only_recovery() -> None:
         lineage
         for lineage in result.claim_lineage
         if any(
-            candidate.subject_label == "BRCA1 loss"
-            for candidate in lineage.candidates
+            candidate.subject_label == "BRCA1 loss" for candidate in lineage.candidates
         )
     )
     assert recovery_record.semantic_unit_id == recovered_lineage.inventory_id
@@ -1226,6 +1287,76 @@ def test_inventory_binding_records_absolute_source_offsets() -> None:
     assert bound[0].source_end == 8000 + len(text)
 
 
+def test_inventory_rejects_missing_or_open_ended_event_type() -> None:
+    payload = _inventory_claim(
+        exact_span="MED13 causes cardiomyopathy.",
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    payload.pop("event_type")
+
+    with pytest.raises(ValidationError, match="event_type"):
+        ClaimInventoryItem.model_validate(payload)
+
+    payload["event_type"] = "CAUSATION"
+    with pytest.raises(ValidationError, match="event_type"):
+        ClaimInventoryItem.model_validate(payload)
+
+
+def test_inventory_identity_preserves_event_semantics() -> None:
+    text = "AKT1 phosphorylation increased signaling."
+    base_payload = _inventory_claim(
+        exact_span=text,
+        endpoint_a_span="AKT1",
+        relation_cue_span="phosphorylation",
+        endpoint_b_span="signaling",
+        event_type="PHOSPHORYLATION",
+    )
+    changed_payload = {**base_payload, "event_type": "INCREASE"}
+    source_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    bound = bind_claim_inventory(
+        (
+            ClaimInventoryItem.model_validate(base_payload),
+            ClaimInventoryItem.model_validate(changed_payload),
+        ),
+        source_text=text,
+        source_sha256=source_sha256,
+        chunk_index=0,
+    )
+
+    assert len(bound) == 2
+    assert bound[0].inventory_id != bound[1].inventory_id
+
+
+def test_inventory_identity_preserves_event_argument_roles() -> None:
+    text = "AKT1 activation increased signaling."
+    base_payload = _inventory_claim(
+        exact_span=text,
+        endpoint_a_span="AKT1",
+        relation_cue_span="increased",
+        endpoint_b_span="signaling",
+        event_type="POSITIVE_REGULATION",
+    )
+    changed_payload = copy.deepcopy(base_payload)
+    changed_payload["arguments"][0]["event_role"] = "CONTEXT"
+    source_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    bound = bind_claim_inventory(
+        (
+            ClaimInventoryItem.model_validate(base_payload),
+            ClaimInventoryItem.model_validate(changed_payload),
+        ),
+        source_text=text,
+        source_sha256=source_sha256,
+        chunk_index=0,
+    )
+
+    assert len(bound) == 2
+    assert bound[0].inventory_id != bound[1].inventory_id
+
+
 def test_inventory_binding_rejects_variant_with_dropped_state_suffix() -> None:
     text = "Lorlatinib treated ALK G1202R-positive lung adenocarcinoma."
     item = ClaimInventoryItem.model_validate(
@@ -1235,21 +1366,25 @@ def test_inventory_binding_rejects_variant_with_dropped_state_suffix() -> None:
             "arguments": [
                 {
                     "role": "INTERVENTION",
+                    "event_role": "AGENT",
                     "exact_span": "Lorlatinib",
                     "role_rationale": "The source names the intervention.",
                 },
                 {
                     "role": "VARIANT",
+                    "event_role": "CONTEXT",
                     "exact_span": "ALK G1202R",
                     "role_rationale": "The source names the variant.",
                 },
                 {
                     "role": "CONDITION",
+                    "event_role": "THEME",
                     "exact_span": "ALK G1202R-positive lung adenocarcinoma",
                     "role_rationale": "The source names the condition.",
                 },
             ],
             "source_locator": "normalized_extraction_text",
+            "event_type": "TREATMENT_RESPONSE",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
             "inventory_rationale": "The source states one treatment claim.",

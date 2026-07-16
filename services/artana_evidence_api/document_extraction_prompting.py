@@ -551,15 +551,17 @@ Return up to 10 of the strongest, most specific relationships. Quality over quan
 
 CLAIM_INVENTORY_SYSTEM_PROMPT = """You inventory explicit biomedical claims in one frozen source chunk before any relation framing.
 
-Return every source-local biomedical event or assertion with a relation cue and at least two typed arguments. Do not choose graph endpoints in this step. Do not rank claims and do not return confidence, probability, quality, importance, or any other numeric score.
+Return every source-local biomedical event or assertion with a relation cue, one closed event_type, and at least two typed arguments. Do not choose graph endpoints in this step. Do not rank claims and do not return confidence, probability, quality, importance, or any other numeric score.
 
 For each claim:
 - exact_span is the smallest complete verbatim source span that contains the event, every material argument, and the context needed to interpret it; when the same text repeats in the chunk, include enough adjacent verbatim context to make exact_span occur once;
-- arguments contains every material source-native span with one closed role: INTERVENTION, CONDITION, POPULATION, VARIANT, OUTCOME, COMPARATOR, TIMEFRAME, STUDY_DESIGN, TREATMENT_SETTING, GENE_OR_PROTEIN, CHEMICAL_OR_DRUG, BIOMARKER, EXPOSURE, BIOLOGICAL_PROCESS, ANATOMY, MEASUREMENT, or OTHER_ENTITY;
+- arguments contains every material source-native span with one closed participant role: INTERVENTION, CONDITION, POPULATION, VARIANT, OUTCOME, COMPARATOR, TIMEFRAME, STUDY_DESIGN, TREATMENT_SETTING, GENE_OR_PROTEIN, CHEMICAL_OR_DRUG, BIOMARKER, EXPOSURE, BIOLOGICAL_PROCESS, ANATOMY, MEASUREMENT, or OTHER_ENTITY;
+- every argument also has one closed event_role describing what it does in the event: AGENT, THEME, TARGET, CAUSE, EFFECT, CONTEXT, SITE, CSITE, ATLOC, TOLOC, FROMLOC, or MEASURE;
 - do not discard a condition, population, variant, or outcome merely because it is grammatical context rather than a direct verb argument;
 - a VARIANT exact_span includes any attached material state suffix such as -positive, -negative, -mutant, -deficient, -high, or -low;
 - role_rationale explains the source-local role in words without a score;
 - relation_cue_span is the exact verb or phrase that states the relation;
+- event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT; choose the most specific source-explicit category and use OTHER_EXPLICIT only when none of the named categories fits;
 - source_locator is exactly normalized_extraction_text;
 - polarity is one of SUPPORT, REFUTE, UNCERTAIN, HYPOTHESIS, or NULL_RESULT;
 - epistemic_status is one of ASSERTED, PROVISIONAL, UNCERTAIN, HYPOTHESIS, or NULL_RESULT;
@@ -570,12 +572,12 @@ Inventory sibling predicates as separate claims even when they occur in one sent
 
 CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT = """You independently review whether a supplied claim inventory completely covers one frozen source chunk.
 
-Return one categorical decision only: COMPLETE when every explicit biomedical event and every material typed argument is represented, or INCOMPLETE when at least one event or argument is absent. For INCOMPLETE, return a source-bound descriptor for every missing claim using its complete exact span, typed arguments, relation cue, polarity, and epistemic status. For COMPLETE, return no missing descriptors. Include negative, null, uncertain, provisional, hypothesis, and sibling claims. Do not frame final graph endpoints or relation types, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score."""
+Return one categorical decision only: COMPLETE when every explicit biomedical event and every material typed argument is represented, or INCOMPLETE when at least one event or argument is absent. For INCOMPLETE, return a source-bound descriptor for every missing claim using its complete exact span, typed arguments, event roles, relation cue, event_type, polarity, and epistemic status. event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT. For COMPLETE, return no missing descriptors. Include negative, null, uncertain, provisional, hypothesis, and sibling claims. Do not frame final graph endpoints or relation types, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score."""
 
 
 MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT = """You recover only claims identified as missing by an independent inventory-completeness review.
 
-Return every reviewed missing claim and no existing or additional claim. Copy the complete event span and every typed argument exactly from the frozen source, preserve polarity and epistemic status, and use source_locator=normalized_extraction_text. Do not frame final graph endpoints or relations, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score. If a reviewed descriptor cannot be recovered exactly, return schema-invalid output rather than inventing content."""
+Return every reviewed missing claim and no existing or additional claim. Copy the complete event span and every typed argument exactly from the frozen source; preserve each argument's event_role, event_type, polarity, and epistemic status; and use source_locator=normalized_extraction_text. event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT. Do not frame final graph endpoints or relations, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score. If a reviewed descriptor cannot be recovered exactly, return schema-invalid output rather than inventing content."""
 
 
 SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT = f"""You frame exactly one source-bound, role-typed biomedical assertion. This is not a search or ranking task.

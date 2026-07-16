@@ -28,6 +28,10 @@ from artana_evidence_api.document_extraction_support.claim_frames.contracts impo
     is_positive_projection_eligible,
     replace_claim_frame_projection,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
+    ClaimEventRole,
+    ClaimEventType,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
     CLAIM_INVENTORY_SOURCE_LOCATOR,
     BoundClaimInventoryItem,
@@ -36,6 +40,8 @@ from artana_evidence_api.document_extraction_support.claim_frames.inventory impo
     ClaimInventoryBindingError,
     ClaimInventoryItem,
     bind_claim_inventory,
+    claim_inventory_identity,
+    claim_inventory_input_sha256,
     merge_bound_claim_inventories,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.normalization import (
@@ -60,6 +66,8 @@ __all__ = [
     "BoundInventoryCompletenessReview",
     "ClaimArgument",
     "ClaimArgumentRole",
+    "ClaimEventType",
+    "ClaimEventRole",
     "ClaimFrame",
     "ClaimFrameNormalizationError",
     "ClaimFramePromotionError",
@@ -82,6 +90,8 @@ __all__ = [
     "SourceMeasurementNumber",
     "bind_claim_frame",
     "bind_claim_inventory",
+    "claim_inventory_identity",
+    "claim_inventory_input_sha256",
     "bind_inventory_completeness_review",
     "claim_frame_dedupe_identity",
     "claim_frame_semantic_fingerprint",

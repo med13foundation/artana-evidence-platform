@@ -1,0 +1,897 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import asdict, dataclass
+
+import pytest
+from artana_evidence_api.document_extraction_prompting import (
+    build_claim_inventory_completeness_output_schema,
+    build_claim_inventory_output_schema,
+    build_single_claim_framing_output_schema,
+)
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    BoundClaimInventoryItem,
+    ClaimInventoryItem,
+    bind_claim_inventory,
+    claim_inventory_identity,
+    claim_inventory_input_sha256,
+)
+from artana_evidence_api.document_extraction_support.full_text_chunking import (
+    build_relation_extraction_text_chunks,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.claim_framing import (
+    build_single_claim_framing_prompt,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    build_claim_inventory_prompt,
+    build_inventory_completeness_prompt,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
+    bind_prompt_to_invocation,
+    output_schema_json_sha256,
+)
+
+from scripts.validation.claim_events.evaluation import (
+    _canonical_repeatability,
+    _run_passes,
+    evaluate_matrix,
+)
+from scripts.validation.claim_events.runner import receipt_expectation_from_attempt
+from scripts.validation.claim_events.scoring import score_fixture
+from scripts.validation.claim_frames.provider_receipts import (
+    _receipt_evidence,
+    _RetrievedReceiptFields,
+    _verify_response_schema,
+    verify_provider_receipts,
+)
+
+
+@dataclass(frozen=True)
+class _Argument:
+    role: str
+    event_role: str
+    exact_span: str
+    role_rationale: str = "source role"
+    source_start: int = 0
+
+
+@dataclass(frozen=True)
+class _Event:
+    event_id: str
+    trigger_span: str
+    trigger_source_start: int
+    event_type: str
+    polarity: str
+    epistemic_status: str
+    arguments: tuple[_Argument, ...]
+    valuable: object = "UNADJUDICATED"
+    supported_projections: object = "UNADJUDICATED"
+    eligibility: object = True
+
+
+@dataclass(frozen=True)
+class _Case:
+    case_id: str
+    source_text: str
+    events: tuple[_Event, ...]
+    control_status: str = "EVENT_GOLD"
+
+
+@dataclass(frozen=True)
+class _Fixture:
+    sha256: str
+    cases: tuple[_Case, ...]
+
+
+class _LiveVerifier:
+    def verify(self, expectation):
+        return _receipt_evidence(
+            expectation,
+            status="verified_live",
+            failure="none",
+        )
+
+
+def _event(
+    case_id: str,
+    *,
+    polarity: str = "SUPPORT",
+    epistemic_status: str = "ASSERTED",
+) -> _Event:
+    return _Event(
+        event_id=f"{case_id}-event",
+        trigger_span="activated",
+        trigger_source_start=len(f"AKT1-{case_id} "),
+        event_type="POSITIVE_REGULATION",
+        polarity=polarity,
+        epistemic_status=epistemic_status,
+        arguments=(
+            _Argument("GENE_OR_PROTEIN", "CAUSE", f"AKT1-{case_id}", source_start=0),
+            _Argument(
+                "BIOLOGICAL_PROCESS",
+                "THEME",
+                f"signaling-{case_id}",
+                source_start=len(f"AKT1-{case_id} activated "),
+            ),
+        ),
+    )
+
+
+def _fixture() -> _Fixture:
+    return _Fixture(
+        sha256="a" * 64,
+        cases=(
+            _Case(
+                "positive",
+                "AKT1-positive activated signaling-positive.",
+                (_event("positive", epistemic_status="UNCERTAIN"),),
+            ),
+            _Case(
+                "negative",
+                "AKT1-negative activated signaling-negative.",
+                (_event("negative", polarity="REFUTE"),),
+            ),
+            _Case(
+                "replicate-a",
+                "AKT1-replicate-a activated signaling-replicate-a.",
+                (_event("replicate-a"),),
+            ),
+            _Case(
+                "replicate-b",
+                "AKT1-replicate-b activated signaling-replicate-b.",
+                (_event("replicate-b"),),
+            ),
+            _Case(
+                "replicate-c",
+                "AKT1-replicate-c activated signaling-replicate-c.",
+                (_event("replicate-c"),),
+            ),
+        ),
+    )
+
+
+def _prediction(case: _Case, *, correct: bool) -> dict[str, object]:
+    event = case.events[0]
+    item = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": case.source_text,
+            "relation_cue_span": event.trigger_span,
+            "event_type": event.event_type if correct else "OTHER_EXPLICIT",
+            "polarity": event.polarity,
+            "epistemic_status": event.epistemic_status,
+            "arguments": [
+                {
+                    key: value
+                    for key, value in asdict(argument).items()
+                    if key != "source_start"
+                }
+                for argument in event.arguments
+            ],
+            "source_locator": "normalized_extraction_text",
+            "inventory_rationale": "explicit synthetic claim",
+        },
+    )
+    source_sha256 = hashlib.sha256(case.source_text.encode()).hexdigest()
+    inventory_id = claim_inventory_identity(
+        item=item,
+        source_sha256=source_sha256,
+        source_start=0,
+    )
+    return {
+        "case_id": case.case_id,
+        "events": [
+            {
+                **item.model_dump(mode="json"),
+                "arguments": [asdict(argument) for argument in event.arguments],
+                "inventory_id": inventory_id,
+                "source_start": 0,
+                "source_end": len(case.source_text),
+                "trigger_span": event.trigger_span,
+                "trigger_source_start": event.trigger_source_start,
+            },
+        ],
+        "abstained": False,
+    }
+
+
+def _report(
+    fixture: _Fixture,
+    *,
+    model: str,
+    run_index: int,
+    correct: bool,
+) -> dict[str, object]:
+    slug = "luna" if model.endswith("luna") else "sol"
+    predictions = [_prediction(case, correct=correct) for case in fixture.cases]
+    score = score_fixture(fixture, predictions)
+    case_evidence = []
+    for case in fixture.cases:
+        prediction = next(
+            item for item in predictions if item["case_id"] == case.case_id
+        )
+        event = prediction["events"][0]
+        source_sha256 = hashlib.sha256(case.source_text.encode()).hexdigest()
+        evidence_unit_sha256 = hashlib.sha256(case.case_id.encode()).hexdigest()
+        chunk = build_relation_extraction_text_chunks(case.source_text)[0]
+        schema = build_claim_inventory_output_schema(64)
+        schema_identity = f"{schema.__module__}.{schema.__qualname__}"
+        initial_invocation = f"inventory-{slug}-{run_index}-{case.case_id}"
+        initial_prompt = bind_prompt_to_invocation(
+            prompt=build_claim_inventory_prompt(
+                chunk=chunk,
+                total_chunks=1,
+                document_fingerprint=source_sha256,
+            ),
+            invocation_id=initial_invocation,
+            source_sha256=source_sha256,
+            input_sha256=chunk.sha256,
+            evidence_unit_sha256=evidence_unit_sha256,
+            output_schema_sha256=output_schema_json_sha256(schema),
+        )
+        zero_invocation = f"zero-{slug}-{run_index}-{case.case_id}"
+        zero_prompt = bind_prompt_to_invocation(
+            prompt=build_claim_inventory_prompt(
+                chunk=chunk,
+                total_chunks=1,
+                document_fingerprint=source_sha256,
+                zero_retry=True,
+            ),
+            invocation_id=zero_invocation,
+            source_sha256=source_sha256,
+            input_sha256=chunk.sha256,
+            evidence_unit_sha256=evidence_unit_sha256,
+            output_schema_sha256=output_schema_json_sha256(schema),
+        )
+        inventory_id = event["inventory_id"]
+        item = ClaimInventoryItem.model_validate(
+            {
+                key: event[key]
+                for key in (
+                    "exact_span",
+                    "relation_cue_span",
+                    "event_type",
+                    "polarity",
+                    "epistemic_status",
+                    "source_locator",
+                    "inventory_rationale",
+                )
+            }
+            | {
+                "arguments": [
+                    {
+                        key: value
+                        for key, value in argument.items()
+                        if key != "source_start"
+                    }
+                    for argument in event["arguments"]
+                ],
+            },
+        )
+        bound_claim = bind_claim_inventory(
+            (item,),
+            source_text=chunk.text,
+            source_sha256=source_sha256,
+            chunk_index=chunk.index,
+            source_start_offset=chunk.start_char,
+        )[0]
+        completeness_schema = build_claim_inventory_completeness_output_schema()
+        completeness_schema_identity = (
+            f"{completeness_schema.__module__}.{completeness_schema.__qualname__}"
+        )
+        completeness_invocation = f"completeness-{slug}-{run_index}-{case.case_id}"
+        completeness_input_sha256 = hashlib.sha256(
+            json.dumps(
+                [bound_claim.inventory_id],
+                separators=(",", ":"),
+                ensure_ascii=True,
+            ).encode(),
+        ).hexdigest()
+        completeness_prompt = bind_prompt_to_invocation(
+            prompt=build_inventory_completeness_prompt(
+                chunk=chunk,
+                total_chunks=1,
+                document_fingerprint=source_sha256,
+                current_inventory=(bound_claim,),
+                confirmation=False,
+            ),
+            invocation_id=completeness_invocation,
+            source_sha256=source_sha256,
+            input_sha256=completeness_input_sha256,
+            evidence_unit_sha256=evidence_unit_sha256,
+            output_schema_sha256=output_schema_json_sha256(completeness_schema),
+        )
+        framing_schema = build_single_claim_framing_output_schema()
+        framing_schema_identity = (
+            f"{framing_schema.__module__}.{framing_schema.__qualname__}"
+        )
+        framing_invocation = f"framing-{slug}-{run_index}-{case.case_id}"
+        framing_input_sha256 = claim_inventory_input_sha256(
+            inventory_id=inventory_id,
+            item=item,
+        )
+        framing_prompt = bind_prompt_to_invocation(
+            prompt=build_single_claim_framing_prompt(
+                inventory_claim=BoundClaimInventoryItem(
+                    inventory_id=inventory_id,
+                    item=item,
+                    source_sha256=source_sha256,
+                    chunk_index=chunk.index,
+                    source_start=0,
+                    source_end=len(case.source_text),
+                ),
+            ),
+            invocation_id=framing_invocation,
+            source_sha256=source_sha256,
+            input_sha256=framing_input_sha256,
+            evidence_unit_sha256=evidence_unit_sha256,
+            output_schema_sha256=output_schema_json_sha256(framing_schema),
+        )
+        case_evidence.append(
+            {
+                "case_id": case.case_id,
+                "invocation_namespace": f"invocation-{slug}-{run_index}-{case.case_id}",
+                "diagnostics": {
+                    "fallback_output_used": False,
+                    "claim_extraction_routing_status": "complete",
+                },
+                "attempts": [
+                    {
+                        "invocation_id": initial_invocation,
+                        "attempt_role": "claim_inventory",
+                        "model_id": model.replace(":", "/", 1),
+                        "pass_role": "claim_inventory",
+                        "retry_context": None,
+                        "validation_outcome": "accepted",
+                        "provider_response_id": f"resp_inventory_{slug}_{run_index}_{case.case_id}",
+                        "provider_output_sha256": "b" * 64,
+                        "payload_sha256": _sha256_json(
+                            {"claims": [item.model_dump(mode="json")]},
+                        ),
+                        "prompt_sha256": hashlib.sha256(
+                            initial_prompt.encode()
+                        ).hexdigest(),
+                        "kernel_run_id": f"research-init-extraction:{initial_invocation}",
+                        "source_sha256": source_sha256,
+                        "input_sha256": chunk.sha256,
+                        "evidence_unit_sha256": evidence_unit_sha256,
+                        "output_schema_identity": schema_identity,
+                        "semantic_unit_id": None,
+                        "raw_model_payload": {"claims": [item.model_dump(mode="json")]},
+                    },
+                    {
+                        "invocation_id": zero_invocation,
+                        "attempt_role": "zero_candidate_retry",
+                        "model_id": model.replace(":", "/", 1),
+                        "pass_role": "claim_inventory",
+                        "retry_context": "zero_candidate_retry",
+                        "validation_outcome": "intentionally_skipped",
+                        "prompt_sha256": hashlib.sha256(
+                            zero_prompt.encode()
+                        ).hexdigest(),
+                        "source_sha256": source_sha256,
+                        "input_sha256": chunk.sha256,
+                        "evidence_unit_sha256": evidence_unit_sha256,
+                        "output_schema_identity": schema_identity,
+                        "semantic_unit_id": None,
+                        "raw_model_payload": None,
+                    },
+                    {
+                        "invocation_id": completeness_invocation,
+                        "attempt_role": "claim_inventory_completeness",
+                        "model_id": model.replace(":", "/", 1),
+                        "pass_role": "claim_inventory_completeness",
+                        "retry_context": None,
+                        "validation_outcome": "accepted",
+                        "provider_response_id": f"resp_completeness_{slug}_{run_index}_{case.case_id}",
+                        "provider_output_sha256": "d" * 64,
+                        "payload_sha256": _sha256_json(
+                            {
+                                "decision": "COMPLETE",
+                                "missing_claims": [],
+                                "review_rationale": "complete",
+                            },
+                        ),
+                        "prompt_sha256": hashlib.sha256(
+                            completeness_prompt.encode(),
+                        ).hexdigest(),
+                        "kernel_run_id": f"research-init-extraction:{completeness_invocation}",
+                        "source_sha256": source_sha256,
+                        "input_sha256": completeness_input_sha256,
+                        "evidence_unit_sha256": evidence_unit_sha256,
+                        "output_schema_identity": completeness_schema_identity,
+                        "semantic_unit_id": None,
+                        "raw_model_payload": {
+                            "decision": "COMPLETE",
+                            "missing_claims": [],
+                            "review_rationale": "complete",
+                        },
+                    },
+                    {
+                        "invocation_id": framing_invocation,
+                        "attempt_role": "claim_framing",
+                        "model_id": model.replace(":", "/", 1),
+                        "pass_role": "claim_framing",
+                        "retry_context": None,
+                        "validation_outcome": "accepted",
+                        "provider_response_id": f"resp_framing_{slug}_{run_index}_{case.case_id}",
+                        "provider_output_sha256": "e" * 64,
+                        "payload_sha256": _sha256_json({"decision": "ABSTAIN"}),
+                        "prompt_sha256": hashlib.sha256(
+                            framing_prompt.encode(),
+                        ).hexdigest(),
+                        "kernel_run_id": f"research-init-extraction:{framing_invocation}",
+                        "source_sha256": source_sha256,
+                        "input_sha256": framing_input_sha256,
+                        "evidence_unit_sha256": evidence_unit_sha256,
+                        "output_schema_identity": framing_schema_identity,
+                        "semantic_unit_id": inventory_id,
+                        "raw_model_payload": {"decision": "ABSTAIN"},
+                    },
+                ],
+            },
+        )
+    expectations = tuple(
+        receipt_expectation_from_attempt(
+            case_id=case_record["case_id"],
+            report_model_id=model,
+            record=attempt,
+        )
+        for case_record in case_evidence
+        for attempt in case_record["attempts"]
+        if attempt["validation_outcome"] == "accepted"
+    )
+    receipt_verification = verify_provider_receipts(expectations, _LiveVerifier())
+    report: dict[str, object] = {
+        "schema_version": "tg04_live_arm.v1",
+        "run_id": f"tg04-{slug}-nary-{run_index:02d}",
+        "generated_at": "2026-07-16T00:00:00+00:00",
+        "fixture_sha256": fixture.sha256,
+        "task_id": "nary_event_inventory",
+        "model_id": model,
+        "repository_evidence": {
+            "commit": "1" * 40,
+            "clean": True,
+            "tracked_tree_oid": "2" * 40,
+            "tracked_tree_sha256": "3" * 64,
+        },
+        "predictions": predictions,
+        "metrics": asdict(score.metrics),
+        "case_scores": [asdict(case) for case in score.cases],
+        "safety": {
+            "fallback_count": 0,
+            "invalid_agent_output_count": 0,
+            "provider_response_id_count": len(fixture.cases) * 3,
+            "provider_receipt_status": "verified_live",
+            "verified_provider_receipt_count": len(fixture.cases) * 3,
+            "unidentified_provider_attempt_count": 0,
+        },
+        "provider_receipts": receipt_verification.as_json(),
+        "case_evidence": case_evidence,
+    }
+    report["report_sha256"] = _sha256_json(report)
+    return report
+
+
+def _matrix(fixture: _Fixture) -> list[dict[str, object]]:
+    return [
+        _report(
+            fixture,
+            model=model,
+            run_index=run_index,
+            correct=model.endswith("sol"),
+        )
+        for model in ("openai:gpt-5.6-luna", "openai:gpt-5.6-sol")
+        for run_index in range(1, 4)
+    ]
+
+
+def _sha256_json(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":")).encode(),
+    ).hexdigest()
+
+
+def _reseal_with_recomputed_score(
+    fixture: _Fixture,
+    report: dict[str, object],
+) -> None:
+    score = score_fixture(fixture, report["predictions"])
+    report["metrics"] = asdict(score.metrics)
+    report["case_scores"] = [asdict(case) for case in score.cases]
+    report["report_sha256"] = _sha256_json(
+        {key: value for key, value in report.items() if key != "report_sha256"},
+    )
+
+
+def test_absolute_gate_selects_sol_when_only_sol_clears_quality() -> None:
+    fixture = _fixture()
+    result = evaluate_matrix(
+        fixture,  # type: ignore[arg-type]
+        _matrix(fixture),
+        provider_receipt_verifier=_LiveVerifier(),
+        enforce_frozen_fixture=False,
+    )
+
+    assert result["gate_passed"] is True
+    assert result["selected_model"] == "openai:gpt-5.6-sol"
+    assert result["decision"] == "QUALIFY_FOR_HELD_OUT_CONFIRMATION"
+    assert result["framing_readiness"] == "BLOCKED_EVENT_TYPE_NOT_PERSISTED"
+    assert result["persistence_readiness"] == "BLOCKED_EVENT_TYPE_NOT_PERSISTED"
+
+
+def test_inventory_schema_digest_binds_dynamic_claim_limit() -> None:
+    assert output_schema_json_sha256(build_claim_inventory_output_schema(1)) != (
+        output_schema_json_sha256(build_claim_inventory_output_schema(64))
+    )
+
+
+def test_repeatability_excludes_representability_stress_denominator() -> None:
+    event_case = _fixture().cases[0]
+    stress_case = _Case(
+        "stress",
+        "An unrepresentable nested event.",
+        (),
+        "REPRESENTABILITY_STRESS",
+    )
+    fixture = _Fixture("b" * 64, (event_case, stress_case))
+    correct = _prediction(event_case, correct=True)
+    incorrect = _prediction(event_case, correct=False)
+    stress_prediction = {
+        "case_id": "stress",
+        "events": [{"polarity": "SUPPORT"}],
+        "abstained": False,
+    }
+    scores = (
+        score_fixture(fixture, [correct, stress_prediction]),
+        score_fixture(fixture, [incorrect, stress_prediction]),
+        score_fixture(fixture, [correct, {**stress_prediction, "events": []}]),
+    )
+
+    assert _canonical_repeatability(scores) == {
+        "count": 0,
+        "denominator": 1,
+        "rate": 0.0,
+    }
+
+
+def test_provider_receipt_rejects_wrong_structured_output_schema() -> None:
+    fixture = _fixture()
+    report = _report(
+        fixture,
+        model="openai:gpt-5.6-luna",
+        run_index=1,
+        correct=True,
+    )
+    attempt = report["case_evidence"][0]["attempts"][0]
+    expectation = receipt_expectation_from_attempt(
+        case_id="positive",
+        report_model_id="openai:gpt-5.6-luna",
+        record=attempt,
+    )
+
+    result = _verify_response_schema(
+        expectation,
+        {"text": {"format": {"schema": {"type": "object"}}}},
+        _RetrievedReceiptFields(),
+    )
+
+    assert result.failure == "output_schema_mismatch"
+
+
+def test_evaluator_rejects_report_authored_metric_fabrication() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    reports[0]["metrics"] = reports[-1]["metrics"]
+    reports[0]["report_sha256"] = _sha256_json(
+        {key: value for key, value in reports[0].items() if key != "report_sha256"},
+    )
+
+    with pytest.raises(ValueError, match="deterministic recomputation"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_requires_live_receipt_reverification() -> None:
+    fixture = _fixture()
+    with pytest.raises(ValueError, match="not live-verified"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            _matrix(fixture),
+            provider_receipt_verifier=None,
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_positive_leakage_fails_even_when_other_rates_exceed_thresholds() -> None:
+    cases = tuple(
+        _Case(
+            f"case-{index}",
+            f"AKT1-case-{index} activated signaling-case-{index}.",
+            (_event(f"case-{index}"),),
+        )
+        for index in range(39)
+    ) + (
+        _Case(
+            "negative",
+            "AKT1-negative activated signaling-negative.",
+            (_event("negative", polarity="REFUTE"),),
+        ),
+    )
+    fixture = _Fixture("f" * 64, cases)
+    predictions = [_prediction(case, correct=True) for case in cases]
+    leaked = predictions[-1]["events"][0]
+    leaked["polarity"] = "SUPPORT"
+
+    score = score_fixture(fixture, predictions)
+
+    assert score.metrics.polarity_fidelity.rate == 0.975
+    assert score.metrics.negative_null_leakage.count == 1
+    assert _run_passes(score) is False
+
+
+def test_evaluation_requires_exactly_six_runs() -> None:
+    fixture = _fixture()
+    with pytest.raises(ValueError, match="exactly 6"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            _matrix(fixture)[:-1],
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_missing_case_audit_evidence() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    reports[0]["case_evidence"] = reports[0]["case_evidence"][:-1]
+    reports[0]["report_sha256"] = _sha256_json(
+        {key: value for key, value in reports[0].items() if key != "report_sha256"},
+    )
+
+    with pytest.raises(
+        ValueError, match="audit evidence must cover every fixture case"
+    ):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_recovery_dependent_inventory_qualification() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    retry = dict(reports[0]["case_evidence"][0]["attempts"][0])
+    retry.update(
+        {
+            "invocation_id": "retry-attempt",
+            "attempt_role": "claim_inventory_recovery",
+            "pass_role": "claim_inventory_recovery",
+            "retry_context": None,
+            "input_sha256": "9" * 64,
+            "kernel_run_id": "research-init-extraction:retry-attempt",
+            "provider_response_id": "resp_retry",
+        },
+    )
+    reports[0]["case_evidence"][0]["attempts"].append(retry)
+    reports[0]["safety"]["provider_response_id_count"] += 1
+    reports[0]["safety"]["verified_provider_receipt_count"] += 1
+    reports[0]["report_sha256"] = _sha256_json(
+        {key: value for key, value in reports[0].items() if key != "report_sha256"},
+    )
+
+    with pytest.raises(ValueError, match="requires complete initial inventory"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_prediction_substitution_after_provider_execution() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    event = report["predictions"][0]["events"][0]
+    event["event_type"] = "POSITIVE_REGULATION"
+    item = ClaimInventoryItem.model_validate(
+        {
+            key: event[key]
+            for key in (
+                "exact_span",
+                "relation_cue_span",
+                "event_type",
+                "polarity",
+                "epistemic_status",
+                "source_locator",
+                "inventory_rationale",
+            )
+        }
+        | {
+            "arguments": [
+                {key: value for key, value in argument.items() if key != "source_start"}
+                for argument in event["arguments"]
+            ],
+        },
+    )
+    source_sha256 = hashlib.sha256(fixture.cases[0].source_text.encode()).hexdigest()
+    inventory_id = claim_inventory_identity(
+        item=item,
+        source_sha256=source_sha256,
+        source_start=event["source_start"],
+    )
+    event["inventory_id"] = inventory_id
+    framing = report["case_evidence"][0]["attempts"][3]
+    framing["semantic_unit_id"] = inventory_id
+    framing["input_sha256"] = claim_inventory_input_sha256(
+        inventory_id=inventory_id,
+        item=item,
+    )
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="framing prompt|accepted inventory payloads"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_noncanonical_inventory_prompt() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    report["case_evidence"][0]["attempts"][0]["prompt_sha256"] = "9" * 64
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="frozen production prompt"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_missing_completeness_review() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    del report["case_evidence"][0]["attempts"][2]
+    report["safety"]["provider_response_id_count"] -= 1
+    report["safety"]["verified_provider_receipt_count"] -= 1
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="canonical completeness review"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_noncanonical_framing_prompt() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    report["case_evidence"][0]["attempts"][3]["prompt_sha256"] = "9" * 64
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="framing prompt differs"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_raw_payload_not_bound_to_provider_hash() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    report["case_evidence"][0]["attempts"][2]["raw_model_payload"][
+        "review_rationale"
+    ] = "fabricated complete decision"
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="raw payload hash differs"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_report_authored_scoring_offsets() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    report["predictions"][0]["events"][0]["trigger_source_start"] = 999
+    report["predictions"][0]["events"][0]["arguments"][0]["source_start"] = 999
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="scored trigger differs"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_skipped_primary_inventory() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    primary = report["case_evidence"][0]["attempts"][0]
+    primary["validation_outcome"] = "intentionally_skipped"
+    primary["raw_model_payload"] = None
+    primary["payload_sha256"] = None
+    primary["provider_response_id"] = None
+    primary["provider_output_sha256"] = None
+    primary["kernel_run_id"] = None
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="primary inventory call must be accepted"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_fabricated_stored_receipt_summary() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    report["provider_receipts"]["receipts"] = []
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="stored provider receipts differ"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_rejects_semantically_incomplete_case() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    report["case_evidence"][0]["diagnostics"]["claim_extraction_routing_status"] = (
+        "semantic_incomplete"
+    )
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="did not complete semantic inventory"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
+def test_evaluator_enforces_frozen_fixture_by_default() -> None:
+    fixture = _fixture()
+
+    with pytest.raises(ValueError, match="frozen fixture path"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            _matrix(fixture),
+            provider_receipt_verifier=_LiveVerifier(),
+        )

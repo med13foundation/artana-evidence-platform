@@ -389,11 +389,13 @@ def _with_qualified_agent_claim(
         assertion_arguments=(
             ClaimArgument(
                 role=ClaimArgumentRole.OTHER_ENTITY,
+                event_role="AGENT",
                 exact_span=subject,
                 role_rationale="The synthetic source names the subject.",
             ),
             ClaimArgument(
                 role=ClaimArgumentRole.OTHER_ENTITY,
+                event_role="THEME",
                 exact_span=object_,
                 role_rationale="The synthetic source names the object.",
             ),

@@ -1359,7 +1359,7 @@ def test_arbitrary_model_alias_cannot_impersonate_required_execution_model() -> 
         reports[0]["execution_manifest"],
     )
 
-    with pytest.raises(ValueError, match="unrecognized TG-03 model identity"):
+    with pytest.raises(ValueError, match="unrecognized benchmark model identity"):
         compare_three_reports(tuple(reports), fixture)
 
 
@@ -2795,6 +2795,7 @@ def _provider_prompt(
         source_sha256=source_sha256,
         input_sha256=input_sha256,
         evidence_unit_sha256=evidence_unit_sha256,
+        output_schema_sha256="0" * 64,
     )
 
 

@@ -11,6 +11,7 @@ from uuid import uuid4
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     bind_prompt_to_invocation,
     kernel_run_id_for_invocation,
+    output_schema_json_sha256,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     ModelAttemptAuditContext,
@@ -64,6 +65,7 @@ async def run_audited_structured_step(
         evidence_unit_sha256=model_attempt_evidence_unit_sha256(
             default=audit_context.source_sha256,
         ),
+        output_schema_sha256=output_schema_json_sha256(output_schema),
     )
     model_result: ModelStepResult | None = None
     raw_output: object | None = None

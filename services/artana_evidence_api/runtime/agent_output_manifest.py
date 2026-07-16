@@ -92,6 +92,37 @@ _CLAIM_ARGUMENT_ROLE = {
     "MEASUREMENT": "the span identifies a measured quantity or assay result.",
     "OTHER_ENTITY": "the span is a material biomedical entity not covered by another role.",
 }
+_CLAIM_EVENT_ROLE = {
+    "AGENT": "the span initiates or performs the event.",
+    "THEME": "the span is acted on or undergoes the event.",
+    "TARGET": "the span is the explicit target of the event.",
+    "CAUSE": "the span explicitly causes or controls the event.",
+    "EFFECT": "the span is the explicit result of the event.",
+    "CONTEXT": "the span provides material event context.",
+    "SITE": "the span identifies the event site.",
+    "CSITE": "the span identifies the causal event site.",
+    "ATLOC": "the span identifies the current event location.",
+    "TOLOC": "the span identifies the destination location.",
+    "FROMLOC": "the span identifies the origin location.",
+    "MEASURE": "the span identifies the event measurement.",
+}
+_CLAIM_EVENT_TYPE = {
+    "EXPRESSION": "the source explicitly states gene or protein expression.",
+    "TRANSCRIPTION": "the source explicitly states transcription of genetic material.",
+    "DEGRADATION": "the source explicitly states molecular degradation.",
+    "PHOSPHORYLATION": "the source explicitly states phosphorylation.",
+    "LOCALIZATION": "the source explicitly states molecular or cellular localization.",
+    "BINDING": "the source explicitly states physical or molecular binding.",
+    "REGULATION": "the source states regulation without a resolved direction.",
+    "POSITIVE_REGULATION": "the source explicitly states positive regulation.",
+    "NEGATIVE_REGULATION": "the source explicitly states negative regulation.",
+    "INCREASE": "the source explicitly states an increase in a measured state or outcome.",
+    "DECREASE": "the source explicitly states a decrease in a measured state or outcome.",
+    "ASSOCIATION": "the source explicitly states a non-causal association.",
+    "TREATMENT_RESPONSE": "the source explicitly states response to an intervention.",
+    "NO_EFFECT": "the source explicitly states no effect or response.",
+    "OTHER_EXPLICIT": "the source explicitly states an event not covered by another category.",
+}
 _FACT_SUPPORT = {
     "INSUFFICIENT": "no cited span establishes the asserted fact.",
     "TENTATIVE": "a cited span is indirect, incomplete, or explicitly uncertain.",
@@ -444,11 +475,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory.v3",
         schema_names=("LLMClaimInventoryResult",),
-        shape_hash="148c48c630c44692bb340d60b8aada4bcc3142c0de20cf1be5ecc64cc17bd1d6",
+        shape_hash="a4d084f26d113cc7a0f4ebf6584b72a431c7e16f0c7fc5265fb28deeac31ff17",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v4",),
+        prompt_identifiers=("document_extraction.claim_inventory.v6",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -466,6 +497,20 @@ _POLICIES = (
                 _CLAIM_ARGUMENT_ROLE,
                 evidence_requirement=(
                     "The exact argument span and complete assertion must establish the role."
+                ),
+            ),
+            _category(
+                "$.claims[].arguments[].event_role",
+                _CLAIM_EVENT_ROLE,
+                evidence_requirement=(
+                    "The exact argument span and relation cue must establish the event role."
+                ),
+            ),
+            _category(
+                "$.claims[].event_type",
+                _CLAIM_EVENT_TYPE,
+                evidence_requirement=(
+                    "The exact inventory span and relation cue must establish the event category."
                 ),
             ),
             _category(
@@ -487,11 +532,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory_completeness.v3",
         schema_names=("ClaimInventoryCompletenessReview",),
-        shape_hash="ddb27fdfe24e871fe88006938953f5950bafd8045c6c3ff39acfd4e4dcedf00a",
+        shape_hash="541c7f78ed01e31d66baaf94a5ab2d4bd67c7efda7e6f46546bd9a21fefa8314",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v3",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v5",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -518,6 +563,16 @@ _POLICIES = (
                 evidence_requirement="The missing claim span must establish every argument role.",
             ),
             _category(
+                "$.missing_claims[].arguments[].event_role",
+                _CLAIM_EVENT_ROLE,
+                evidence_requirement="The missing claim span must establish every event role.",
+            ),
+            _category(
+                "$.missing_claims[].event_type",
+                _CLAIM_EVENT_TYPE,
+                evidence_requirement="The missing claim span must establish the event category.",
+            ),
+            _category(
                 "$.missing_claims[].polarity",
                 _CLAIM_POLARITY,
                 evidence_requirement="The missing claim span must establish direction.",
@@ -532,11 +587,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory_recovery.v3",
         schema_names=("MissingClaimRecoveryResult",),
-        shape_hash="c97ac5e526f4aa73b0a5d1fcd0b6372e7775b8ab78ae6a09e6e97cf4d104ee35",
+        shape_hash="59e9df9996c60ae0b9040287bd85ca94cf0b719fb0e8b616a0906c0e856a3b0f",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_recovery.v3",),
+        prompt_identifiers=("document_extraction.claim_inventory_recovery.v5",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -553,6 +608,16 @@ _POLICIES = (
                 "$.claims[].arguments[].role",
                 _CLAIM_ARGUMENT_ROLE,
                 evidence_requirement="The recovered claim must preserve every reviewed argument role.",
+            ),
+            _category(
+                "$.claims[].arguments[].event_role",
+                _CLAIM_EVENT_ROLE,
+                evidence_requirement="The recovered claim must preserve every reviewed event role.",
+            ),
+            _category(
+                "$.claims[].event_type",
+                _CLAIM_EVENT_TYPE,
+                evidence_requirement="The recovered claim must preserve reviewed event semantics.",
             ),
             _category(
                 "$.claims[].polarity",

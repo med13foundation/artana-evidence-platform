@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from enum import Enum
 
+from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
+    ClaimEventRole,
+)
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -35,8 +38,9 @@ class ClaimArgument(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     role: ClaimArgumentRole = Field(..., strict=False)
+    event_role: ClaimEventRole = Field(..., strict=False)
     exact_span: str = Field(..., min_length=1, max_length=1000)
     role_rationale: str = Field(..., min_length=1, max_length=1000)
 
 
-__all__ = ["ClaimArgument", "ClaimArgumentRole"]
+__all__ = ["ClaimArgument", "ClaimArgumentRole", "ClaimEventRole"]

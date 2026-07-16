@@ -16,6 +16,9 @@ from artana_evidence_api.document_extraction_support.claim_frames.contracts impo
     EpistemicStatus,
     Polarity,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
+    ClaimEventType,
+)
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 CLAIM_INVENTORY_SOURCE_LOCATOR = "normalized_extraction_text"
@@ -62,6 +65,7 @@ class ClaimInventoryItem(BaseModel):
     relation_cue_span: str = Field(..., min_length=1, max_length=1000)
     arguments: tuple[ClaimArgument, ...] = Field(..., min_length=2, max_length=32)
     source_locator: Literal["normalized_extraction_text"]
+    event_type: ClaimEventType = Field(..., strict=False)
     polarity: Polarity = Field(..., strict=False)
     epistemic_status: EpistemicStatus = Field(..., strict=False)
     inventory_rationale: str = Field(..., min_length=1, max_length=2000)
@@ -153,7 +157,7 @@ def bind_claim_inventory(
     for item in items:
         _require_inventory_item_spans(item=item, source_text=source_text)
         source_start = source_start_offset + source_text.index(item.exact_span)
-        item_fingerprint = _inventory_semantic_identity(
+        item_fingerprint = claim_inventory_identity(
             item=item,
             source_sha256=source_sha256,
             source_start=source_start,
@@ -233,7 +237,7 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _inventory_semantic_identity(
+def claim_inventory_identity(
     *,
     item: ClaimInventoryItem,
     source_sha256: str,
@@ -249,16 +253,37 @@ def _inventory_semantic_identity(
                 (
                     {
                         "role": argument.role.value,
+                        "event_role": argument.event_role.value,
                         "exact_span": argument.exact_span,
                     }
                     for argument in item.arguments
                 ),
-                key=lambda argument: (argument["role"], argument["exact_span"]),
+                key=lambda argument: (
+                    argument["role"],
+                    argument["event_role"],
+                    argument["exact_span"],
+                ),
             ),
             "relation_cue_span": item.relation_cue_span,
             "source_locator": item.source_locator,
+            "event_type": item.event_type.value,
             "polarity": item.polarity.value,
             "epistemic_status": item.epistemic_status.value,
+        },
+    )
+
+
+def claim_inventory_input_sha256(
+    *,
+    inventory_id: str,
+    item: ClaimInventoryItem,
+) -> str:
+    """Bind a framing input to one exact source-local inventory claim."""
+
+    return _canonical_sha256(
+        {
+            "inventory_id": inventory_id,
+            "item": item.model_dump(mode="json"),
         },
     )
 
@@ -271,5 +296,7 @@ __all__ = [
     "ClaimFramingAbstentionReason",
     "ClaimFramingDecision",
     "bind_claim_inventory",
+    "claim_inventory_identity",
+    "claim_inventory_input_sha256",
     "merge_bound_claim_inventories",
 ]

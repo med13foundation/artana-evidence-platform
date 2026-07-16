@@ -762,16 +762,19 @@ def _source_bound_positive_claim_frame(
         assertion_arguments=(
             ClaimArgument(
                 role=ClaimArgumentRole.OTHER_ENTITY,
+                event_role="AGENT",
                 exact_span=subject_label,
                 role_rationale="The source names the relation subject.",
             ),
             ClaimArgument(
                 role=ClaimArgumentRole.OTHER_ENTITY,
+                event_role="THEME",
                 exact_span=object_label,
                 role_rationale="The source names the relation object.",
             ),
             ClaimArgument(
                 role=ClaimArgumentRole.POPULATION,
+                event_role="CONTEXT",
                 exact_span=population,
                 role_rationale="The source names the studied population.",
             ),

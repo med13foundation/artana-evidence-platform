@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import dataclass, replace
 from typing import Protocol, cast
@@ -21,6 +20,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryBindingError,
     ClaimLocalSourceRegion,
     QualifierState,
+    claim_inventory_input_sha256,
     derive_claim_local_source_region,
     normalize_claim_frame,
 )
@@ -437,16 +437,10 @@ def _accepted_framing_attempt_record() -> ModelAttemptAuditRecord:
 
 
 def _claim_input_sha256(inventory_claim: BoundClaimInventoryItem) -> str:
-    payload = json.dumps(
-        {
-            "inventory_id": inventory_claim.inventory_id,
-            "item": inventory_claim.item.model_dump(mode="json"),
-        },
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
+    return claim_inventory_input_sha256(
+        inventory_id=inventory_claim.inventory_id,
+        item=inventory_claim.item,
+    )
 
 
 __all__ = [
