@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -9,6 +10,11 @@ from uuid import UUID, uuid4
 import pytest
 import sqlalchemy as sa
 from artana_evidence_db import database as graph_database
+from artana_evidence_db.ai_full_mode_persistence_models import (
+    ConceptProposalModel,
+    ConnectorProposalModel,
+    GraphChangeProposalModel,
+)
 from artana_evidence_db.app import create_app
 from artana_evidence_db.biomedical_concept_bootstrap import (
     seed_biomedical_starter_concepts,
@@ -20,6 +26,11 @@ from artana_evidence_db.entity_neighbors_projector import (
 from artana_evidence_db.graph_domain_config import (
     GRAPH_SERVICE_DICTIONARY_LOADING_CONFIG,
 )
+from artana_evidence_db.kernel_claim_models import (
+    GraphClaimEvidenceModel,
+    GraphClaimParticipantModel,
+    GraphRelationClaimModel,
+)
 from artana_evidence_db.kernel_concept_models import (
     ConceptAliasModel,
     ConceptMemberModel,
@@ -27,9 +38,15 @@ from artana_evidence_db.kernel_concept_models import (
 )
 from artana_evidence_db.kernel_dictionary_models import (
     DictionaryDomainContextModel,
+    DictionaryRelationTypeModel,
     TransformRegistryModel,
 )
+from artana_evidence_db.kernel_dictionary_proposal_models import DictionaryProposalModel
 from artana_evidence_db.kernel_entity_models import EntityModel
+from artana_evidence_db.kernel_relation_models import (
+    GraphRelationEvidenceModel,
+    GraphRelationModel,
+)
 from artana_evidence_db.kernel_repositories import (
     SqlAlchemyDictionaryRepository,
     SqlAlchemyKernelClaimEvidenceRepository,
@@ -65,6 +82,16 @@ from artana_evidence_db.source_document_model import (
     EnrichmentStatusEnum,
     SourceDocumentModel,
 )
+from artana_evidence_db.source_provenance.eligibility import (
+    ClaimEvidenceEligibilityService,
+)
+from artana_evidence_db.source_provenance.models import (
+    ExactEvidenceLocator,
+    SourceEvidenceHandoff,
+    SourceEvidenceUpstream,
+    SourceIdentity,
+)
+from artana_evidence_db.source_provenance.service import SourceProvenanceService
 from artana_evidence_db.space_models import (
     GraphSpaceMembershipModel,
     GraphSpaceMembershipRoleEnum,
@@ -104,6 +131,41 @@ _STRONG_ASSESSMENT = {
     "speculation_level": "DIRECT",
     "confidence_rationale": "Direct curated evidence strongly supports this AI decision.",
 }
+
+
+def _source_evidence_payload(
+    *,
+    space_id: UUID,
+    document_id: UUID,
+    source_text: str,
+) -> dict[str, object]:
+    source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    return {
+        "upstream": {
+            "service": "artana_evidence_api",
+            "research_space_id": str(space_id),
+            "document_id": str(document_id),
+            "attested_at": datetime.now(UTC).isoformat(),
+        },
+        "identity": {
+            "source_kind": "pubmed",
+            "authoritative_identifier": "PMID:12345678",
+            "canonical_url": "https://pubmed.ncbi.nlm.nih.gov/12345678/",
+            "retrieved_at": datetime.now(UTC).isoformat(),
+            "content_sha256": source_hash,
+            "pmid": "12345678",
+        },
+        "canonical_text": source_text,
+        "locator": {
+            "source_content_sha256": source_hash,
+            "char_start": 0,
+            "char_end": len(source_text),
+            "exact_quote": source_text,
+            "quote_sha256": source_hash,
+        },
+    }
+
+
 _DECISION_CONFIDENCE_ASSESSMENT = {
     "fact_assessment": _STRONG_ASSESSMENT,
     "validation_state": "VALID",
@@ -113,6 +175,56 @@ _DECISION_CONFIDENCE_ASSESSMENT = {
     "risk_tier": "low",
     "rationale": "Deterministic test assessment for AI authority.",
 }
+
+
+def _assert_ai_persistence_quarantined(response) -> None:
+    assert response.status_code == 409, response.text
+    assert response.json()["detail"] == {
+        "code": "qualified_claim_persistence_not_ready",
+        "message": (
+            "AI-authored claim/relation persistence is quarantined until TG04 adds "
+            "lossless ClaimFrame persistence."
+        ),
+        "persistability": "NON_PERSISTABLE",
+    }
+
+
+def _graph_mutation_row_counts() -> dict[str, int]:
+    with graph_database.SessionLocal() as session:
+        return {
+            "claims": session.scalar(
+                sa.select(sa.func.count()).select_from(GraphRelationClaimModel),
+            )
+            or 0,
+            "claim_evidence": session.scalar(
+                sa.select(sa.func.count()).select_from(GraphClaimEvidenceModel),
+            )
+            or 0,
+            "claim_participants": session.scalar(
+                sa.select(sa.func.count()).select_from(GraphClaimParticipantModel),
+            )
+            or 0,
+            "concept_members": session.scalar(
+                sa.select(sa.func.count()).select_from(ConceptMemberModel),
+            )
+            or 0,
+            "dictionary_relation_types": session.scalar(
+                sa.select(sa.func.count()).select_from(DictionaryRelationTypeModel),
+            )
+            or 0,
+            "entities": session.scalar(
+                sa.select(sa.func.count()).select_from(EntityModel),
+            )
+            or 0,
+            "relation_evidence": session.scalar(
+                sa.select(sa.func.count()).select_from(GraphRelationEvidenceModel),
+            )
+            or 0,
+            "relations": session.scalar(
+                sa.select(sa.func.count()).select_from(GraphRelationModel),
+            )
+            or 0,
+        }
 
 
 def _auth_headers(
@@ -142,6 +254,7 @@ def _build_projection_materializer(
         relation_claim_repo=SqlAlchemyKernelRelationClaimRepository(session),
         claim_participant_repo=SqlAlchemyKernelClaimParticipantRepository(session),
         claim_evidence_repo=SqlAlchemyKernelClaimEvidenceRepository(session),
+        claim_evidence_eligibility_service=ClaimEvidenceEligibilityService(session),
         entity_repo=SqlAlchemyKernelEntityRepository(
             session,
             phi_encryption_service=None,
@@ -178,6 +291,40 @@ def _create_claim_backed_projection(
     source_document_id: UUID | None = None,
     source_document_ref: str | None = None,
 ) -> tuple[UUID, UUID]:
+    resolved_source_document_id = source_document_id or uuid4()
+    source_text = "MED13 is associated with developmental delay."
+    source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    locator = ExactEvidenceLocator(
+        source_content_sha256=source_hash,
+        char_start=0,
+        char_end=len(source_text),
+        exact_quote=source_text,
+        quote_sha256=source_hash,
+    )
+    provenance = SourceProvenanceService(session).verify_and_snapshot(
+        research_space_id=space_id,
+        source_document_id=resolved_source_document_id,
+        source_evidence=SourceEvidenceHandoff(
+            upstream=SourceEvidenceUpstream(
+                research_space_id=space_id,
+                document_id=resolved_source_document_id,
+                attested_at=datetime.now(UTC),
+            ),
+            identity=SourceIdentity(
+                source_kind="pubmed",
+                authoritative_identifier="PMID:12345678",
+                canonical_url="https://pubmed.ncbi.nlm.nih.gov/12345678/",
+                retrieved_at=datetime.now(UTC),
+                content_sha256=source_hash,
+                pmid="12345678",
+            ),
+            canonical_text=source_text,
+            locator=locator,
+        ),
+        source_attestation_capability=True,
+        authenticated_attestation_service="artana_evidence_api",
+    )
+    assert provenance.snapshot is not None
     claim_repo = SqlAlchemyKernelRelationClaimRepository(session)
     participant_repo = SqlAlchemyKernelClaimParticipantRepository(session)
     claim_evidence_repo = SqlAlchemyKernelClaimEvidenceRepository(session)
@@ -185,11 +332,9 @@ def _create_claim_backed_projection(
 
     claim = claim_repo.create(
         research_space_id=str(space_id),
-        source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
-        ),
+        source_document_id=(str(resolved_source_document_id)),
         source_document_ref=source_document_ref,
-        agent_run_id="graph-service-test",
+        agent_run_id=None,
         source_type="GENE",
         relation_type="ASSOCIATED_WITH",
         target_type="PHENOTYPE",
@@ -227,11 +372,10 @@ def _create_claim_backed_projection(
     )
     claim_evidence_repo.create(
         claim_id=claim_id,
-        source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
-        ),
+        source_document_id=(str(resolved_source_document_id)),
         source_document_ref=source_document_ref,
-        agent_run_id="graph-service-test",
+        source_snapshot_id=str(provenance.snapshot.id),
+        agent_run_id=None,
         sentence="MED13 is associated with developmental delay.",
         sentence_source="verbatim_span",
         sentence_confidence="high",
@@ -239,6 +383,9 @@ def _create_claim_backed_projection(
         figure_reference=None,
         table_reference=None,
         confidence=0.88,
+        evidence_locator=locator,
+        provenance_status="VERIFIED",
+        provenance_reason_codes=("verified",),
         metadata={
             "evidence_summary": "Curated claim-backed support evidence",
             "evidence_tier": "LITERATURE",
@@ -491,17 +638,49 @@ def _create_claim(
     polarity: str = "SUPPORT",
     relation_type: str = "ASSOCIATED_WITH",
     claim_text: str = "MED13 is associated with developmental delay.",
-    agent_run_id: str = "graph-service-test",
+    agent_run_id: str | None = None,
 ) -> UUID:
+    resolved_source_document_id = source_document_id or uuid4()
+    source_hash = hashlib.sha256(claim_text.encode("utf-8")).hexdigest()
+    publisher_record_id = f"test-{source_hash[:16]}"
+    locator = ExactEvidenceLocator(
+        source_content_sha256=source_hash,
+        char_start=0,
+        char_end=len(claim_text),
+        exact_quote=claim_text,
+        quote_sha256=source_hash,
+    )
+    provenance = SourceProvenanceService(session).verify_and_snapshot(
+        research_space_id=space_id,
+        source_document_id=resolved_source_document_id,
+        source_evidence=SourceEvidenceHandoff(
+            upstream=SourceEvidenceUpstream(
+                research_space_id=space_id,
+                document_id=resolved_source_document_id,
+                attested_at=datetime.now(UTC),
+            ),
+            identity=SourceIdentity(
+                source_kind="publisher",
+                authoritative_identifier=f"PUBLISHER:{publisher_record_id}",
+                canonical_url=f"https://example.org/sources/{publisher_record_id}",
+                retrieved_at=datetime.now(UTC),
+                content_sha256=source_hash,
+                publisher_record_id=publisher_record_id,
+            ),
+            canonical_text=claim_text,
+            locator=locator,
+        ),
+        source_attestation_capability=True,
+        authenticated_attestation_service="artana_evidence_api",
+    )
+    assert provenance.snapshot is not None
     claim_repo = SqlAlchemyKernelRelationClaimRepository(session)
     participant_repo = SqlAlchemyKernelClaimParticipantRepository(session)
     claim_evidence_repo = SqlAlchemyKernelClaimEvidenceRepository(session)
     claim = claim_repo.create(
         research_space_id=str(space_id),
-        source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
-        ),
-        source_document_ref=source_document_ref,
+        source_document_id=(str(resolved_source_document_id)),
+        source_document_ref=(source_document_ref or f"PUBLISHER:{publisher_record_id}"),
         agent_run_id=agent_run_id,
         source_type="GENE",
         relation_type=relation_type,
@@ -540,10 +719,9 @@ def _create_claim(
     )
     claim_evidence_repo.create(
         claim_id=claim_id,
-        source_document_id=(
-            str(source_document_id) if source_document_id is not None else None
-        ),
-        source_document_ref=source_document_ref,
+        source_document_id=(str(resolved_source_document_id)),
+        source_document_ref=(source_document_ref or f"PUBLISHER:{publisher_record_id}"),
+        source_snapshot_id=str(provenance.snapshot.id),
         agent_run_id=agent_run_id,
         sentence=claim_text,
         sentence_source="verbatim_span",
@@ -552,6 +730,9 @@ def _create_claim(
         figure_reference=None,
         table_reference=None,
         confidence=0.88,
+        evidence_locator=locator,
+        provenance_status="VERIFIED",
+        provenance_reason_codes=("verified",),
         metadata={
             "evidence_summary": "Curated claim-backed support evidence",
             "evidence_tier": "LITERATURE",
@@ -757,7 +938,7 @@ def _seed_space_with_open_claims(*, claim_count: int = 1) -> dict[str, object]:
                     if index == 0
                     else "Independent evidence also links MED13 to developmental delay."
                 ),
-                agent_run_id=f"graph-service-claim-{index}",
+                agent_run_id=None,
             )
             for index in range(claim_count)
         )
@@ -1850,9 +2031,13 @@ def test_graph_service_creates_and_curates_manual_relations(
 ) -> None:
     fixture = _seed_space_with_projection()
     admin_headers = _create_admin_headers()
+    admin_headers["X-TEST-GRAPH-SERVICE-CAPABILITIES"] = "source_provenance_submit"
+    admin_headers["X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"] = "artana_evidence_api"
     space_id = fixture["space_id"]
     source_id = fixture["source_id"]
     target_id = fixture["target_id"]
+    source_text = "MED13 is associated with developmental delay."
+    source_document_id = uuid4()
 
     create_response = graph_client.post(
         f"/v1/spaces/{space_id}/relations",
@@ -1863,11 +2048,17 @@ def test_graph_service_creates_and_curates_manual_relations(
             "target_id": str(target_id),
             "assessment": _SUPPORTED_ASSESSMENT,
             "evidence_summary": "Manual curator relation",
-            "evidence_sentence": "MED13 is associated with developmental delay.",
+            "evidence_sentence": source_text,
             "evidence_sentence_source": "verbatim_span",
             "evidence_sentence_confidence": "high",
             "evidence_tier": "COMPUTATIONAL",
-            "source_document_ref": "harness_proposal:proposal-1",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=space_id,
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
             "metadata": {
                 "source_kind": "document_extraction",
                 "source_key": "doc:0",
@@ -1895,7 +2086,7 @@ def test_graph_service_creates_and_curates_manual_relations(
     claim_payload = next(
         claim for claim in claims_response.json()["claims"] if claim["id"] == claim_id
     )
-    assert claim_payload["source_document_ref"] == "harness_proposal:proposal-1"
+    assert claim_payload["source_document_ref"] == "PMID:12345678"
     assert claim_payload["metadata"]["source_kind"] == "document_extraction"
     assert claim_payload["metadata"]["source_key"] == "doc:0"
     assert claim_payload["metadata"]["evidence_bundle"] == [
@@ -1910,6 +2101,15 @@ def test_graph_service_creates_and_curates_manual_relations(
     evidence_payload = evidence_response.json()
     assert evidence_payload["evidence"][0]["metadata"]["source_kind"] == (
         "document_extraction"
+    )
+    assert evidence_payload["evidence"][0]["provenance_status"] == "VERIFIED"
+    assert (
+        evidence_payload["evidence"][0]["source_identity"]["authoritative_identifier"]
+        == "PMID:12345678"
+    )
+    assert (
+        evidence_payload["evidence"][0]["evidence_locator"]["exact_quote"]
+        == source_text
     )
 
     update_response = graph_client.put(
@@ -1932,6 +2132,116 @@ def test_graph_service_creates_and_curates_manual_relations(
         for relation in list_response.json()["relations"]
     }
     assert statuses[relation_id] == "APPROVED"
+
+
+def test_canonical_relation_rejects_forged_source_without_attestation_capability(
+    graph_client: TestClient,
+) -> None:
+    fixture = _seed_space_with_projection()
+    source_text = "MED13 is associated with developmental delay."
+
+    source_document_id = uuid4()
+    response = graph_client.post(
+        f"/v1/spaces/{fixture['space_id']}/relations",
+        headers=_create_admin_headers(),
+        json={
+            "source_id": str(fixture["source_id"]),
+            "relation_type": "ASSOCIATED_WITH",
+            "target_id": str(fixture["target_id"]),
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "evidence_sentence": source_text,
+            "evidence_sentence_source": "verbatim_span",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=fixture["space_id"],
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
+        },
+    )
+
+    assert response.status_code == 400, response.text
+    detail = response.json()["detail"]
+    assert detail["code"] == "invalid_source_provenance"
+    assert detail["provenance_status"] == "unverified"
+    assert detail["reason_codes"] == ["source_attestation_capability_missing"]
+
+
+def test_claim_without_attestation_capability_stays_open_and_unverified(
+    graph_client: TestClient,
+) -> None:
+    fixture = _seed_space_with_projection()
+    source_text = "MED13 is associated with developmental delay."
+
+    source_document_id = uuid4()
+    response = graph_client.post(
+        f"/v1/spaces/{fixture['space_id']}/claims",
+        headers=fixture["headers"],
+        json={
+            "source_entity_id": str(fixture["source_id"]),
+            "target_entity_id": str(fixture["target_id"]),
+            "relation_type": "ASSOCIATED_WITH",
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "claim_text": source_text,
+            "evidence_sentence": source_text,
+            "evidence_sentence_source": "verbatim_span",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=fixture["space_id"],
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    claim = response.json()
+    assert claim["claim_status"] == "OPEN"
+    assert claim["linked_relation_id"] is None
+    evidence_response = graph_client.get(
+        f"/v1/spaces/{fixture['space_id']}/claims/{claim['id']}/evidence",
+        headers=fixture["headers"],
+    )
+    assert evidence_response.status_code == 200, evidence_response.text
+    evidence = evidence_response.json()["evidence"][0]
+    assert evidence["provenance_status"] == "UNVERIFIED"
+    assert evidence["source_snapshot_id"] is None
+    assert evidence["provenance_reason_codes"] == [
+        "source_attestation_capability_missing"
+    ]
+
+
+def test_claim_rejects_source_evidence_detached_from_submitted_sentence(
+    graph_client: TestClient,
+) -> None:
+    fixture = _seed_space_with_projection()
+    source_text = "MED13 is associated with developmental delay."
+    source_document_id = uuid4()
+    response = graph_client.post(
+        f"/v1/spaces/{fixture['space_id']}/claims",
+        headers=fixture["headers"],
+        json={
+            "source_entity_id": str(fixture["source_id"]),
+            "target_entity_id": str(fixture["target_id"]),
+            "relation_type": "ASSOCIATED_WITH",
+            "assessment": _SUPPORTED_ASSESSMENT,
+            "claim_text": source_text,
+            "evidence_sentence": "MED13 was associated with developmental delay.",
+            "evidence_sentence_source": "verbatim_span",
+            "source_document_id": str(source_document_id),
+            "source_document_ref": "PMID:12345678",
+            "source_evidence": _source_evidence_payload(
+                space_id=fixture["space_id"],
+                document_id=source_document_id,
+                source_text=source_text,
+            ),
+        },
+    )
+
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"]["code"] == "invalid_source_evidence_binding"
 
 
 def test_graph_service_lists_and_gets_provenance(
@@ -2377,7 +2687,7 @@ def test_graph_service_claim_evidence_exposes_external_document_refs(
     evidence_payload = evidence_response.json()
     assert evidence_payload["total"] == 1
     evidence_row = evidence_payload["evidence"][0]
-    assert evidence_row["source_document_id"] is None
+    assert evidence_row["source_document_id"] is not None
     assert evidence_row["source_document_ref"] == external_document_ref
     assert evidence_row["paper_links"][0]["url"] == external_document_ref
     assert evidence_row["paper_links"][0]["source"] == "external_ref"
@@ -2825,6 +3135,19 @@ def test_graph_service_hypothesis_list_and_manual_create(
     )
     assert empty_response.status_code == 200, empty_response.text
     assert empty_response.json()["total"] == 0
+
+    concept_set_response = graph_client.post(
+        f"/v1/spaces/{space_id}/concepts/sets",
+        headers=headers,
+        json={
+            "name": "Hypothesis Concepts",
+            "slug": f"hypothesis-concepts-{uuid4().hex[:12]}",
+            "domain_context": "general",
+            "description": "Concept set for manual hypothesis governance.",
+            "source_ref": "hypothesis-route-test",
+        },
+    )
+    assert concept_set_response.status_code == 201, concept_set_response.text
 
     create_response = graph_client.post(
         f"/v1/spaces/{space_id}/hypotheses/manual",
@@ -4885,9 +5208,7 @@ def test_graph_service_phase9_graph_change_plan_and_idempotency(
         params={"status": "READY_FOR_REVIEW"},
     )
     assert list_response.status_code == 200, list_response.text
-    listed_ids = {
-        item["id"] for item in list_response.json()["graph_change_proposals"]
-    }
+    listed_ids = {item["id"] for item in list_response.json()["graph_change_proposals"]}
     assert first_payload["id"] in listed_ids
 
     review_payload = {**payload, "source_ref": "phase9-graph-change-review"}
@@ -4922,8 +5243,7 @@ def test_graph_service_phase9_graph_change_plan_and_idempotency(
     )
     assert rejected_list_response.status_code == 200, rejected_list_response.text
     rejected_ids = {
-        item["id"]
-        for item in rejected_list_response.json()["graph_change_proposals"]
+        item["id"] for item in rejected_list_response.json()["graph_change_proposals"]
     }
     assert review_id in rejected_ids
 
@@ -4985,8 +5305,9 @@ def test_graph_service_phase10_operating_mode_and_workflow_plan(
         headers=headers,
     )
     assert capabilities_response.status_code == 200, capabilities_response.text
-    assert "evidence_approval" in (
-        capabilities_response.json()["capabilities"]["supported_workflow_kinds"]
+    assert (
+        "evidence_approval"
+        in (capabilities_response.json()["capabilities"]["supported_workflow_kinds"])
     )
 
     payload = {
@@ -5031,9 +5352,14 @@ def test_graph_service_phase10_operating_mode_and_workflow_plan(
     assert workflow_response.status_code == 201, workflow_response.text
     workflow_payload = workflow_response.json()
     assert workflow_payload["status"] == "PLAN_READY"
-    assert len(
-        workflow_payload["generated_resources_payload"]["graph_change_proposal_ids"],
-    ) == 1
+    assert (
+        len(
+            workflow_payload["generated_resources_payload"][
+                "graph_change_proposal_ids"
+            ],
+        )
+        == 1
+    )
 
     stale_action_response = graph_client.post(
         f"/v1/spaces/{space_id}/workflows/{workflow_payload['id']}/actions",
@@ -5075,6 +5401,7 @@ def test_graph_service_phase10_operating_mode_and_workflow_plan(
         ).all()
     assert blocked_events
 
+    graph_counts_before_quarantined_action = _graph_mutation_row_counts()
     trusted_ai_response = graph_client.post(
         f"/v1/spaces/{space_id}/workflows/{workflow_payload['id']}/actions",
         headers={**headers, "X-TEST-GRAPH-AI-PRINCIPAL": "agent:phase10"},
@@ -5089,17 +5416,35 @@ def test_graph_service_phase10_operating_mode_and_workflow_plan(
             },
         },
     )
-    assert trusted_ai_response.status_code == 200, trusted_ai_response.text
-    assert trusted_ai_response.json()["status"] == "APPLIED"
+    _assert_ai_persistence_quarantined(trusted_ai_response)
+    assert _graph_mutation_row_counts() == graph_counts_before_quarantined_action
+
+    unchanged_workflow_response = graph_client.get(
+        f"/v1/spaces/{space_id}/workflows/{workflow_payload['id']}",
+        headers=headers,
+    )
+    assert unchanged_workflow_response.status_code == 200
+    assert unchanged_workflow_response.json()["status"] == "PLAN_READY"
+
+    graph_change_id = workflow_payload["generated_resources_payload"][
+        "graph_change_proposal_ids"
+    ][0]
+    graph_change_response = graph_client.get(
+        f"/v1/spaces/{space_id}/graph-change-proposals/{graph_change_id}",
+        headers=headers,
+    )
+    assert graph_change_response.status_code == 200, graph_change_response.text
+    assert graph_change_response.json()["status"] == "READY_FOR_REVIEW"
 
     explain_response = graph_client.get(
         f"/v1/spaces/{space_id}/explain/workflow/{workflow_payload['id']}",
         headers=headers,
     )
     assert explain_response.status_code == 200, explain_response.text
-    assert explain_response.json()["generated_resources"][
-        "graph_change_proposal_ids"
-    ] == workflow_payload["generated_resources_payload"]["graph_change_proposal_ids"]
+    assert (
+        explain_response.json()["generated_resources"]["graph_change_proposal_ids"]
+        == workflow_payload["generated_resources_payload"]["graph_change_proposal_ids"]
+    )
 
     list_response = graph_client.get(
         f"/v1/spaces/{space_id}/workflows",
@@ -5156,7 +5501,7 @@ def test_graph_service_workflow_count_is_not_capped_by_list_limit(
     assert len(payload["workflows"]) == 1
 
 
-def test_graph_service_batch_review_applies_mixed_resources_idempotently(
+def test_graph_service_batch_review_quarantines_ai_graph_change_atomically(
     graph_client: TestClient,
 ) -> None:
     fixture = _seed_space_with_projection()
@@ -5324,6 +5669,7 @@ def test_graph_service_batch_review_applies_mixed_resources_idempotently(
     assert workflow_response.status_code == 201, workflow_response.text
     workflow_payload = workflow_response.json()
 
+    graph_counts_before_quarantined_action = _graph_mutation_row_counts()
     action_response = graph_client.post(
         f"/v1/spaces/{space_id}/workflows/{workflow_payload['id']}/actions",
         headers=headers,
@@ -5333,26 +5679,44 @@ def test_graph_service_batch_review_applies_mixed_resources_idempotently(
             "reason": "Apply the batch.",
         },
     )
-    assert action_response.status_code == 200, action_response.text
-    batch_payload = action_response.json()
-    assert batch_payload["status"] == "CHANGES_REQUESTED"
-    assert len(batch_payload["generated_resources_payload"]["applied_resource_refs"]) == 5
-    assert len(batch_payload["generated_resources_payload"]["failed_resource_refs"]) == 1
+    _assert_ai_persistence_quarantined(action_response)
+    assert _graph_mutation_row_counts() == graph_counts_before_quarantined_action
 
     replay_response = graph_client.post(
         f"/v1/spaces/{space_id}/workflows/{workflow_payload['id']}/actions",
         headers=headers,
         json={
             "action": "approve",
-            "input_hash": batch_payload["workflow_hash"],
+            "input_hash": workflow_payload["workflow_hash"],
             "reason": "Replay the batch safely.",
         },
     )
-    assert replay_response.status_code == 200, replay_response.text
-    replay_payload = replay_response.json()
-    assert replay_payload["status"] == "CHANGES_REQUESTED"
-    assert len(replay_payload["generated_resources_payload"]["applied_resource_refs"]) == 5
-    assert len(replay_payload["generated_resources_payload"]["failed_resource_refs"]) == 1
+    _assert_ai_persistence_quarantined(replay_response)
+    assert _graph_mutation_row_counts() == graph_counts_before_quarantined_action
+
+    with graph_database.SessionLocal() as session:
+        concept = session.get(ConceptProposalModel, UUID(concept_payload["id"]))
+        dictionary = session.get(DictionaryProposalModel, dictionary_payload["id"])
+        connector = session.get(ConnectorProposalModel, UUID(connector_payload["id"]))
+        graph_change = session.get(
+            GraphChangeProposalModel,
+            UUID(graph_change_payload["id"]),
+        )
+        claim = session.get(GraphRelationClaimModel, UUID(claim_payload["id"]))
+        workflow = session.get(GraphWorkflowModel, UUID(workflow_payload["id"]))
+
+        assert concept is not None
+        assert dictionary is not None
+        assert connector is not None
+        assert graph_change is not None
+        assert claim is not None
+        assert workflow is not None
+        assert concept.status == concept_payload["status"]
+        assert dictionary.status == dictionary_payload["status"]
+        assert connector.status == connector_payload["status"]
+        assert graph_change.status == graph_change_payload["status"]
+        assert claim.claim_status == claim_payload["claim_status"]
+        assert workflow.status == workflow_payload["status"]
 
 
 def test_graph_service_phase10_evidence_workflow_applies_valid_claim(
@@ -5469,7 +5833,7 @@ def test_graph_service_phase10_evidence_workflow_creates_dictionary_proposal(
     }
 
 
-def test_graph_service_evidence_workflow_composes_dictionary_and_graph_repair(
+def test_graph_service_evidence_workflow_plans_dictionary_and_quarantines_graph_repair(
     graph_client: TestClient,
 ) -> None:
     fixture = _seed_space_with_projection()
@@ -5555,6 +5919,7 @@ def test_graph_service_evidence_workflow_composes_dictionary_and_graph_repair(
     )
     assert "claim_ids" not in generated
 
+    graph_counts_before_quarantined_action = _graph_mutation_row_counts()
     action_response = graph_client.post(
         f"/v1/spaces/{space_id}/workflows/{payload['id']}/actions",
         headers={**headers, "X-TEST-GRAPH-AI-PRINCIPAL": "agent:phase12"},
@@ -5569,17 +5934,32 @@ def test_graph_service_evidence_workflow_composes_dictionary_and_graph_repair(
             },
         },
     )
-    assert action_response.status_code == 200, action_response.text
-    action_payload = action_response.json()
-    assert action_payload["status"] == "PLAN_READY"
-    assert "claim_ids" not in action_payload["generated_resources_payload"]
+    _assert_ai_persistence_quarantined(action_response)
+    assert _graph_mutation_row_counts() == graph_counts_before_quarantined_action
 
     graph_change_response = graph_client.get(
         f"/v1/spaces/{space_id}/graph-change-proposals/{generated['graph_change_proposal_ids'][0]}",
         headers=headers,
     )
     assert graph_change_response.status_code == 200, graph_change_response.text
-    assert graph_change_response.json()["status"] == "APPLIED"
+    assert graph_change_response.json()["status"] == "READY_FOR_REVIEW"
+
+    unchanged_workflow_response = graph_client.get(
+        f"/v1/spaces/{space_id}/workflows/{payload['id']}",
+        headers=headers,
+    )
+    assert unchanged_workflow_response.status_code == 200
+    unchanged_workflow = unchanged_workflow_response.json()
+    assert unchanged_workflow["status"] == "PLAN_READY"
+    assert "claim_ids" not in unchanged_workflow["generated_resources_payload"]
+
+    with graph_database.SessionLocal() as session:
+        dictionary = session.get(
+            DictionaryProposalModel,
+            generated["dictionary_proposal_ids"][0],
+        )
+        assert dictionary is not None
+        assert dictionary.status == "SUBMITTED"
 
 
 def test_graph_service_phase9_ai_full_mode_auto_merge_and_rejections(
@@ -5826,7 +6206,9 @@ def test_graph_service_ai_decision_application_error_rolls_back(
         f"/v1/spaces/{space_id}/concepts/proposals/{concept_payload['id']}",
         headers=headers,
     )
-    assert unchanged_concept_response.status_code == 200, unchanged_concept_response.text
+    assert unchanged_concept_response.status_code == 200, (
+        unchanged_concept_response.text
+    )
     assert unchanged_concept_response.json()["status"] == "SUBMITTED"
 
 
@@ -5953,8 +6335,7 @@ def test_graph_service_phase9_connector_metadata_workflow(
     )
     assert rejected_list_response.status_code == 200, rejected_list_response.text
     rejected_ids = {
-        item["id"]
-        for item in rejected_list_response.json()["connector_proposals"]
+        item["id"] for item in rejected_list_response.json()["connector_proposals"]
     }
     assert invalid_payload["id"] in rejected_ids
 
@@ -5995,7 +6376,9 @@ def test_graph_service_phase9_rejects_cross_space_governance_mutations(
         f"/v1/spaces/{first_space_id}/concepts/proposals/{concept_payload['id']}",
         headers=first_headers,
     )
-    assert unchanged_concept_response.status_code == 200, unchanged_concept_response.text
+    assert unchanged_concept_response.status_code == 200, (
+        unchanged_concept_response.text
+    )
     assert unchanged_concept_response.json()["status"] == "SUBMITTED"
 
     graph_change_response = graph_client.post(

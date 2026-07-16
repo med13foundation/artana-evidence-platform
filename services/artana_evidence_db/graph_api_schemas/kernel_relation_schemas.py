@@ -8,6 +8,13 @@ from typing import Literal
 from uuid import UUID
 
 from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.fact_assessment import (
+    FactAssessment,
+    assessment_confidence,
+)
+from artana_evidence_db.graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+)
 from artana_evidence_db.graph_api_schemas.kernel_schema_common import (
     _to_required_utc_datetime,
     _to_utc_datetime,
@@ -19,12 +26,14 @@ from artana_evidence_db.kernel_domain_models import (
     KernelRelationClaim,
     KernelRelationConflictSummary,
 )
-from pydantic import BaseModel, ConfigDict, Field
-
-from artana_evidence_db.fact_assessment import (
-    FactAssessment,
-    assessment_confidence,
+from artana_evidence_db.source_provenance.models import (
+    ClaimEvidenceProvenanceStatus,
+    ExactEvidenceLocator,
+    SourceEvidenceHandoff,
+    SourceIdentity,
+    SourceProvenanceReasonCode,
 )
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class KernelRelationCreateRequest(BaseModel):
@@ -33,6 +42,7 @@ class KernelRelationCreateRequest(BaseModel):
     model_config = ConfigDict(strict=False, extra="forbid")
 
     source_id: UUID
+    authorship: GraphWriteAuthorship = "MANUAL"
     relation_type: str = Field(..., min_length=1, max_length=64)
     target_id: UUID
     assessment: FactAssessment
@@ -43,6 +53,8 @@ class KernelRelationCreateRequest(BaseModel):
     evidence_sentence_rationale: str | None = Field(default=None, max_length=2000)
     evidence_tier: str | None = Field(None, max_length=32)
     provenance_id: UUID | None = None
+    source_document_id: UUID | None = None
+    source_evidence: SourceEvidenceHandoff | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
     metadata: JSONObject = Field(default_factory=dict)
 
@@ -88,6 +100,7 @@ class KernelRelationClaimCreateRequest(BaseModel):
     model_config = ConfigDict(strict=False, extra="forbid")
 
     source_entity_id: UUID
+    authorship: GraphWriteAuthorship = "MANUAL"
     target_entity_id: UUID
     relation_type: str = Field(..., min_length=1, max_length=64)
     assessment: FactAssessment
@@ -97,6 +110,8 @@ class KernelRelationClaimCreateRequest(BaseModel):
     evidence_sentence_source: str | None = Field(default=None, max_length=32)
     evidence_sentence_confidence: str | None = Field(default=None, max_length=32)
     evidence_sentence_rationale: str | None = Field(default=None, max_length=4000)
+    source_document_id: UUID | None = None
+    source_evidence: SourceEvidenceHandoff | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
     source_ref: str | None = Field(default=None, max_length=1024)
     agent_run_id: str | None = Field(default=None, max_length=255)
@@ -118,6 +133,8 @@ class KernelRelationTripleValidationRequest(BaseModel):
     relation_type: str = Field(..., min_length=1, max_length=64)
     evidence_summary: str | None = Field(default=None, max_length=2000)
     evidence_sentence: str | None = Field(default=None, max_length=4000)
+    source_document_id: UUID | None = None
+    source_evidence: SourceEvidenceHandoff | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
 
 
@@ -169,6 +186,7 @@ GraphValidationCode = Literal[
     "unknown_provenance",
     "cross_space_provenance",
     "insufficient_evidence",
+    "invalid_source_provenance",
     "permission_denied",
 ]
 GraphValidationSeverity = Literal["info", "warning", "blocking"]
@@ -487,6 +505,7 @@ class KernelClaimEvidenceResponse(BaseModel):
     claim_id: UUID
     source_document_id: UUID | None = None
     source_document_ref: str | None = None
+    source_snapshot_id: UUID | None = None
     agent_run_id: str | None = None
     sentence: str | None
     sentence_source: str | None
@@ -496,6 +515,10 @@ class KernelClaimEvidenceResponse(BaseModel):
     table_reference: str | None
     confidence: float
     metadata: JSONObject
+    source_identity: SourceIdentity | None = None
+    evidence_locator: ExactEvidenceLocator | None = None
+    provenance_status: ClaimEvidenceProvenanceStatus
+    provenance_reason_codes: list[SourceProvenanceReasonCode]
     paper_links: list[KernelRelationPaperLinkResponse] = Field(default_factory=list)
     created_at: datetime
 
@@ -505,6 +528,7 @@ class KernelClaimEvidenceResponse(BaseModel):
         model: KernelClaimEvidence,
         *,
         paper_links: list[KernelRelationPaperLinkResponse] | None = None,
+        source_identity: SourceIdentity | None = None,
     ) -> KernelClaimEvidenceResponse:
         source_document_id_raw = getattr(model, "source_document_id", None)
         metadata_payload = getattr(model, "metadata_payload", {}) or {}
@@ -526,6 +550,11 @@ class KernelClaimEvidenceResponse(BaseModel):
             table_reference=model.table_reference,
             confidence=float(model.confidence),
             metadata=dict(metadata_payload),
+            source_snapshot_id=model.source_snapshot_id,
+            source_identity=source_identity,
+            evidence_locator=model.evidence_locator,
+            provenance_status=model.provenance_status,
+            provenance_reason_codes=list(model.provenance_reason_codes),
             paper_links=[] if paper_links is None else paper_links,
             created_at=_to_required_utc_datetime(
                 model.created_at,

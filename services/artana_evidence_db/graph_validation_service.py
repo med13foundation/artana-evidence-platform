@@ -151,6 +151,8 @@ class GraphValidationService:
                 relation_type=request.relation_type,
                 evidence_summary=request.evidence_summary,
                 evidence_sentence=request.evidence_sentence,
+                source_document_id=request.source_document_id,
+                source_evidence=request.source_evidence,
                 source_document_ref=request.source_document_ref,
             ),
         )
@@ -1116,6 +1118,8 @@ class GraphValidationService:
             (
                 request.evidence_summary,
                 request.evidence_sentence,
+                request.source_document_id,
+                request.source_evidence,
                 request.source_document_ref,
             ),
         )

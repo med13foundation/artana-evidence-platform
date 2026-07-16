@@ -20,6 +20,8 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    event,
+    inspect,
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
@@ -111,7 +113,6 @@ class HarnessIntentModel(Base):
         nullable=False,
         default=dict,
     )
-
     run: Mapped[HarnessRunModel] = relationship(
         "HarnessRunModel",
         back_populates="intent",
@@ -233,6 +234,17 @@ class HarnessProposalModel(Base):
         nullable=False,
         default=dict,
     )
+    source_provenance_payload: Mapped[JSONObject | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+    source_provenance_status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="unverified",
+        server_default="unverified",
+        index=True,
+    )
     evidence_grade: Mapped[str | None] = mapped_column(
         String(96),
         nullable=True,
@@ -269,6 +281,24 @@ class HarnessProposalModel(Base):
             comment="Candidate proposals staged by graph-harness runs.",
         ),
     )
+
+
+def _reject_source_provenance_update(
+    _mapper: object,
+    _connection: object,
+    target: HarnessProposalModel,
+) -> None:
+    state = inspect(target)
+    provenance_changed = (
+        state.attrs.source_provenance_payload.history.has_changes()
+        or state.attrs.source_provenance_status.history.has_changes()
+    )
+    if provenance_changed:
+        msg = "proposal source provenance is immutable"
+        raise ValueError(msg)
+
+
+event.listen(HarnessProposalModel, "before_update", _reject_source_provenance_update)
 
 
 class HarnessReviewItemModel(Base):

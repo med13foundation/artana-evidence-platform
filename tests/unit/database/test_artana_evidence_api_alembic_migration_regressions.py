@@ -8,10 +8,12 @@ import sys
 from pathlib import Path
 from uuid import uuid4
 
+import pytest
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.exc import DBAPIError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-CURRENT_HEAD_REVISION = "024_unique_active_proposal_fingerprints"
+CURRENT_HEAD_REVISION = "025_proposal_source_provenance"
 HARNESS_ALEMBIC_VERSION_TABLE = "alembic_version_artana_evidence_api"
 _ALEMBIC_SUBPROCESS_TEMPLATE = """
 import os
@@ -432,3 +434,153 @@ def test_024_aborts_when_multiple_promoted_duplicates_exist(
 
     assert result.returncode != 0
     assert "multiple promoted proposals" in result.stderr
+
+
+def test_025_marks_legacy_proposals_unverified_without_inventing_provenance(
+    tmp_path: Path,
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'harness_025_provenance.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="024_unique_active_proposal_fingerprints",
+    )
+    space_id = str(uuid4())
+    run_id = str(uuid4())
+    proposal_id = str(uuid4())
+    _seed_harness_run_and_duplicate_proposals(
+        database_url=database_url,
+        space_id=space_id,
+        run_id=run_id,
+        claim_fingerprint="d" * 32,
+        proposals=(
+            {
+                "id": proposal_id,
+                "source_key": "legacy",
+                "title": "Legacy proposal",
+                "status": "pending_review",
+                "created_at": "2026-07-03 10:00:00",
+                "updated_at": "2026-07-03 10:00:00",
+            },
+        ),
+    )
+
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="025_proposal_source_provenance",
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        columns = {
+            column["name"]
+            for column in inspect(engine).get_columns("harness_proposals")
+        }
+        with engine.connect() as connection:
+            row = (
+                connection.execute(
+                    text(
+                        """
+                    SELECT source_provenance_status, source_provenance_payload
+                    FROM harness_proposals
+                    WHERE id = :proposal_id
+                    """,
+                    ),
+                    {"proposal_id": proposal_id},
+                )
+                .mappings()
+                .one()
+            )
+    finally:
+        engine.dispose()
+
+    assert "source_provenance_status" in columns
+    assert "source_provenance_payload" in columns
+    assert row["source_provenance_status"] == "unverified"
+    assert row["source_provenance_payload"] is None
+
+
+def test_025_makes_proposal_source_provenance_immutable(
+    tmp_path: Path,
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'harness_025_immutable.db'}"
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="024_unique_active_proposal_fingerprints",
+    )
+    space_id = str(uuid4())
+    run_id = str(uuid4())
+    proposal_id = str(uuid4())
+    _seed_harness_run_and_duplicate_proposals(
+        database_url=database_url,
+        space_id=space_id,
+        run_id=run_id,
+        claim_fingerprint="e" * 32,
+        proposals=(
+            {
+                "id": proposal_id,
+                "source_key": "immutable",
+                "title": "Immutable proposal provenance",
+                "status": "pending_review",
+                "created_at": "2026-07-03 10:00:00",
+                "updated_at": "2026-07-03 10:00:00",
+            },
+        ),
+    )
+    _run_alembic(
+        database_url=database_url,
+        command="upgrade",
+        revision="025_proposal_source_provenance",
+    )
+
+    engine = create_engine(database_url, future=True)
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "UPDATE harness_proposals SET title = :title WHERE id = :id",
+                ),
+                {"id": proposal_id, "title": "Review title may change"},
+            )
+        for mutation in (
+            "source_provenance_status = 'verified'",
+            "source_provenance_payload = '{}'",
+        ):
+            with (
+                engine.begin() as connection,
+                pytest.raises(
+                    DBAPIError,
+                    match="proposal source provenance is immutable",
+                ),
+            ):
+                connection.execute(
+                    text(
+                        "UPDATE harness_proposals "
+                        f"SET {mutation} WHERE id = :proposal_id",
+                    ),
+                    {"proposal_id": proposal_id},
+                )
+        with engine.connect() as connection:
+            row = (
+                connection.execute(
+                    text(
+                        """
+                    SELECT title, source_provenance_status,
+                           source_provenance_payload
+                    FROM harness_proposals
+                    WHERE id = :proposal_id
+                    """,
+                    ),
+                    {"proposal_id": proposal_id},
+                )
+                .mappings()
+                .one()
+            )
+    finally:
+        engine.dispose()
+
+    assert row["title"] == "Review title may change"
+    assert row["source_provenance_status"] == "unverified"
+    assert row["source_provenance_payload"] is None

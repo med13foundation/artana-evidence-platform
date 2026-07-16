@@ -10,6 +10,11 @@ from artana_evidence_db.claim_evidence_models import (
     KernelClaimEvidence,
 )
 from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.source_provenance.models import (
+    ClaimEvidenceProvenanceStatus,
+    ExactEvidenceLocator,
+    SourceProvenanceReasonCode,
+)
 
 
 class ClaimEvidenceRepositoryLike(Protocol):
@@ -33,6 +38,12 @@ class ClaimEvidenceRepositoryLike(Protocol):
         confidence: float,
         source_document_ref: str | None = None,
         metadata: JSONObject | None = None,
+        source_snapshot_id: str | None = None,
+        evidence_locator: ExactEvidenceLocator | None = None,
+        provenance_status: ClaimEvidenceProvenanceStatus = "LEGACY_UNVERIFIED",
+        provenance_reason_codes: tuple[SourceProvenanceReasonCode, ...] = (
+            "legacy_evidence_without_typed_provenance",
+        ),
     ) -> KernelClaimEvidence:
         """Create one claim evidence row."""
 
@@ -71,6 +82,12 @@ class KernelClaimEvidenceService:
         confidence: float,
         source_document_ref: str | None = None,
         metadata: JSONObject | None = None,
+        source_snapshot_id: str | None = None,
+        evidence_locator: ExactEvidenceLocator | None = None,
+        provenance_status: ClaimEvidenceProvenanceStatus = "LEGACY_UNVERIFIED",
+        provenance_reason_codes: tuple[SourceProvenanceReasonCode, ...] = (
+            "legacy_evidence_without_typed_provenance",
+        ),
     ) -> KernelClaimEvidence:
         """Create one claim evidence row."""
         return self._claim_evidence.create(
@@ -86,6 +103,10 @@ class KernelClaimEvidenceService:
             table_reference=table_reference,
             confidence=confidence,
             metadata=metadata,
+            source_snapshot_id=source_snapshot_id,
+            evidence_locator=evidence_locator,
+            provenance_status=provenance_status,
+            provenance_reason_codes=provenance_reason_codes,
         )
 
     def list_for_claim_ids(

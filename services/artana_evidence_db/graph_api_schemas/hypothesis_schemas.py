@@ -7,6 +7,9 @@ from datetime import datetime
 from uuid import UUID
 
 from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+)
 from artana_evidence_db.kernel_domain_models import KernelRelationClaim
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,6 +20,7 @@ class CreateManualHypothesisRequest(BaseModel):
     model_config = ConfigDict(strict=True)
 
     statement: str = Field(..., min_length=1, max_length=4000)
+    authorship: GraphWriteAuthorship = "MANUAL"
     rationale: str = Field(..., min_length=1, max_length=4000)
     seed_entity_ids: list[str] = Field(default_factory=list, max_length=100)
     source_type: str = Field(default="manual", min_length=1, max_length=64)

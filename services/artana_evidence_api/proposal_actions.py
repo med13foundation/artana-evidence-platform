@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import json
-import re
 import threading
 from collections.abc import Coroutine
 from functools import lru_cache
@@ -19,7 +16,18 @@ from artana_evidence_api.confidence_assessment import (
     assessment_confidence_metadata,
     proposal_fact_assessment,
 )
-from artana_evidence_api.document_extraction import resolve_graph_entity_label
+from artana_evidence_api.document_extraction import (
+    normalize_text_document,
+    resolve_graph_entity_label,
+)
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFramePromotionError,
+    require_canonical_claim_promotion,
+    require_claim_frame_promotion_preflight,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    llm_extraction_document_fingerprint,
+)
 from artana_evidence_api.document_extraction_support.variant import (
     observation_promotion_support,
 )
@@ -28,6 +36,18 @@ from artana_evidence_api.graph_client import (
     GraphTransportBundle,  # noqa: TC001
 )
 from artana_evidence_api.graph_integration.preflight import GraphAIPreflightService
+from artana_evidence_api.graph_integration.proposal_support import (
+    graph_promotion_error_response,
+    merge_promotion_metadata,
+    metadata_text,
+    stable_json_hash,
+)
+from artana_evidence_api.graph_integration.source_provenance import (
+    ResolvedSourceProvenance,
+    SourceProvenanceError,
+    source_evidence_handoff,
+    verify_persisted_source_provenance,
+)
 from artana_evidence_api.graph_integration.submission import (
     GraphWorkflowSubmissionService,
 )
@@ -53,84 +73,18 @@ from artana_evidence_api.types.graph_contracts import (
     KernelRelationClaimCreateRequest,
     KernelRelationClaimResponse,
     KernelRelationCreateRequest,
-    KernelRelationResponse,
 )
 from artana_evidence_api.types.graph_fact_assessment import assessment_confidence
 from fastapi import HTTPException, status
 
 if TYPE_CHECKING:
+    from artana_evidence_api.document_store import HarnessDocumentRecord
     from artana_evidence_api.proposal_store import (
         HarnessProposalRecord,
         HarnessProposalStore,
     )
 
 _T = TypeVar("_T")
-
-
-def _stable_json_hash(payload: dict[str, object]) -> str:
-    serialized = json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=str,
-    )
-    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-
-
-def _metadata_text(
-    metadata: JSONObject,
-    key: str,
-    *,
-    default: str,
-) -> str:
-    value = metadata.get(key)
-    if isinstance(value, str) and value.strip():
-        return value.strip()
-    return default
-
-
-def _merge_promotion_metadata(
-    *,
-    proposal_metadata: JSONObject,
-    request_metadata: JSONObject,
-) -> JSONObject:
-    return {
-        **proposal_metadata,
-        **{
-            key: value
-            for key, value in request_metadata.items()
-            if key not in _VERIFIER_OWNED_PROMOTION_METADATA_KEYS
-        },
-    }
-
-
-_VERIFIER_OWNED_PROMOTION_METADATA_KEYS = frozenset(
-    {
-        "agent_extraction_completed",
-        "evidence_grounding",
-        "fallback_output_used",
-        "support_verification",
-        "support_verification_floor",
-        "review_reason_codes",
-        "review_status",
-        "trust_floor_failures",
-        "trust_tier",
-        "trusted_evidence_eligible",
-    },
-)
-
-
-_RELATION_CONSTRAINT_ERROR_RE = re.compile(
-    r"relation \((?P<triple>[^)]+)\) is not allowed by ACTIVE relation constraints",
-    re.IGNORECASE,
-)
-_EXACT_RELATION_CONSTRAINT_PROMOTION_RE = re.compile(
-    r"Triple \((?P<triple>[^)]+)\) requires an active exact relation constraint before promotion\.",
-    re.IGNORECASE,
-)
-_SQLALCHEMY_SQL_MARKER = "[SQL:"
-_SQLALCHEMY_BACKGROUND_MARKER = "Background on this error at:"
 
 
 @lru_cache(maxsize=1)
@@ -166,48 +120,6 @@ def _run_async_preflight(awaitable: Coroutine[object, object, _T]) -> _T:
     return cast("_T", result["value"])
 
 
-def _message_from_graph_detail_mapping(
-    parsed: object,
-    *,
-    fallback: str,
-) -> str:
-    if not isinstance(parsed, dict):
-        return fallback
-
-    nested_detail = parsed.get("detail")
-    if isinstance(nested_detail, str) and nested_detail.strip() != "":
-        return nested_detail.strip()
-
-    nested_message = parsed.get("message")
-    if isinstance(nested_message, str) and nested_message.strip() != "":
-        return nested_message.strip()
-
-    return fallback
-
-
-def _normalize_raw_graph_detail(raw_detail: str | None) -> str:
-    if not isinstance(raw_detail, str):
-        return ""
-
-    stripped = raw_detail.strip()
-    if stripped == "":
-        return ""
-
-    try:
-        parsed = json.loads(stripped)
-    except json.JSONDecodeError:
-        return stripped
-    return _message_from_graph_detail_mapping(parsed, fallback=stripped)
-
-
-def _strip_sqlalchemy_detail_noise(detail: str) -> str:
-    if _SQLALCHEMY_SQL_MARKER in detail:
-        detail = detail.split(_SQLALCHEMY_SQL_MARKER, 1)[0].rstrip()
-    if _SQLALCHEMY_BACKGROUND_MARKER in detail:
-        detail = detail.split(_SQLALCHEMY_BACKGROUND_MARKER, 1)[0].rstrip()
-    return detail.strip()
-
-
 def require_proposal(
     *,
     space_id: UUID,
@@ -222,47 +134,6 @@ def require_proposal(
             detail=f"Proposal '{proposal_id}' not found in space '{space_id}'",
         )
     return proposal
-
-
-def _extract_graph_service_error_detail(
-    exc: GraphServiceClientError,
-) -> str:
-    detail = _normalize_raw_graph_detail(exc.detail)
-    if detail == "":
-        detail = str(exc)
-    return _strip_sqlalchemy_detail_noise(detail)
-
-
-def _graph_promotion_error_response(
-    exc: GraphServiceClientError,
-) -> tuple[int, str]:
-    detail = _extract_graph_service_error_detail(exc)
-    triple_match = _RELATION_CONSTRAINT_ERROR_RE.search(detail)
-    if triple_match is None:
-        triple_match = _EXACT_RELATION_CONSTRAINT_PROMOTION_RE.search(detail)
-    if triple_match is not None:
-        triple = " ".join(triple_match.group("triple").split())
-        return (
-            status.HTTP_409_CONFLICT,
-            (
-                "This proposal cannot be promoted as a canonical relation because "
-                f"the active graph constraints do not allow {triple}. Review the "
-                "claim structure or relation type before promoting."
-            ),
-        )
-
-    return (
-        exc.status_code or status.HTTP_503_SERVICE_UNAVAILABLE,
-        detail or str(exc),
-    )
-
-
-def _is_relation_constraint_error(exc: GraphServiceClientError) -> bool:
-    detail = _extract_graph_service_error_detail(exc)
-    return (
-        _RELATION_CONSTRAINT_ERROR_RE.search(detail) is not None
-        or _EXACT_RELATION_CONSTRAINT_PROMOTION_RE.search(detail) is not None
-    )
 
 
 def status_counts(
@@ -337,12 +208,29 @@ def _require_payload_uuid(
         ) from exc
 
 
+def _proposal_source_document_uuid(proposal: HarnessProposalRecord) -> UUID:
+    if proposal.document_id is None:
+        raise SourceProvenanceError(
+            "missing_source_document",
+            "Verified source provenance requires a source document identifier.",
+        )
+    try:
+        return UUID(proposal.document_id)
+    except ValueError as exc:
+        raise SourceProvenanceError(
+            "invalid_source_document_id",
+            "Verified source provenance requires a UUID source document identifier.",
+        ) from exc
+
+
 def build_graph_claim_request(
     *,
     space_id: UUID,
     proposal: HarnessProposalRecord,
     request_metadata: JSONObject,
     graph_api_gateway: GraphTransportBundle,
+    source_provenance: ResolvedSourceProvenance | None = None,
+    source_provenance_reason_code: str | None = None,
 ) -> KernelRelationClaimCreateRequest:
     """Build one graph-claim creation request from a harness proposal."""
     if proposal.proposal_type != "candidate_claim":
@@ -366,8 +254,17 @@ def build_graph_claim_request(
         if isinstance(reasoning, str) and reasoning.strip() != ""
         else proposal.summary
     )
-    source_document_ref = f"harness_proposal:{proposal.id}"
-    input_hash = _stable_json_hash(
+    source_document_ref = (
+        source_provenance.source_identity.authoritative_identifier
+        if source_provenance is not None
+        else f"harness_proposal:{proposal.id}"
+    )
+    evidence_sentence = (
+        source_provenance.evidence_locator.exact_quote
+        if source_provenance is not None
+        else None
+    )
+    input_hash = stable_json_hash(
         {
             "proposal_id": proposal.id,
             "document_id": proposal.document_id,
@@ -404,26 +301,47 @@ def build_graph_claim_request(
         assessment=assessment,
         claim_text=claim_text,
         evidence_summary=proposal.summary,
+        evidence_sentence=evidence_sentence,
+        evidence_sentence_source=(
+            "verbatim_span" if source_provenance is not None else None
+        ),
+        evidence_sentence_confidence=(
+            "high" if source_provenance is not None else None
+        ),
+        source_document_id=(
+            _proposal_source_document_uuid(proposal)
+            if source_provenance is not None
+            else None
+        ),
         source_document_ref=source_document_ref,
+        source_evidence=(
+            source_evidence_handoff(
+                research_space_id=space_id,
+                document_id=_proposal_source_document_uuid(proposal),
+                provenance=source_provenance,
+            )
+            if source_provenance is not None
+            else None
+        ),
         source_ref=f"harness-proposal-claim:{proposal.id}",
         agent_run_id=agent_run_id_value,
         ai_provenance=ClaimAIProvenanceEnvelope(
-            model_id=_metadata_text(
+            model_id=metadata_text(
                 proposal.metadata,
                 "model_id",
                 default="artana-kernel",
             ),
-            model_version=_metadata_text(
+            model_version=metadata_text(
                 proposal.metadata,
                 "model_version",
                 default="unknown",
             ),
-            prompt_id=_metadata_text(
+            prompt_id=metadata_text(
                 proposal.metadata,
                 "prompt_id",
                 default=f"harness_proposal:{proposal.proposal_type}",
             ),
-            prompt_version=_metadata_text(
+            prompt_version=metadata_text(
                 proposal.metadata,
                 "prompt_version",
                 default="unknown",
@@ -434,7 +352,7 @@ def build_graph_claim_request(
             tool_trace_ref=f"harness-run:{proposal.run_id}",
         ),
         metadata={
-            **_merge_promotion_metadata(
+            **merge_promotion_metadata(
                 proposal_metadata=proposal.metadata,
                 request_metadata=request_metadata,
             ),
@@ -445,6 +363,14 @@ def build_graph_claim_request(
             "proposal_type": proposal.proposal_type,
             "source_kind": proposal.source_kind,
             "source_key": proposal.source_key,
+            "source_provenance_status": (
+                "verified"
+                if source_provenance is not None
+                else "invalid"
+                if source_provenance_reason_code is not None
+                else "unverified"
+            ),
+            "source_provenance_reason_code": source_provenance_reason_code,
             "reasoning_path": proposal.reasoning_path,
             "evidence_bundle": proposal.evidence_bundle,
         },
@@ -457,6 +383,7 @@ def build_graph_relation_request(
     proposal: HarnessProposalRecord,
     request_metadata: JSONObject,
     graph_api_gateway: GraphTransportBundle,
+    source_provenance: ResolvedSourceProvenance,
 ) -> KernelRelationCreateRequest:
     """Build a relation-creation request from a harness proposal.
 
@@ -472,12 +399,6 @@ def build_graph_relation_request(
                 "graph relation promotion"
             ),
         )
-    reasoning = proposal.reasoning_path.get("reasoning")
-    evidence_sentence = (
-        reasoning
-        if isinstance(reasoning, str) and reasoning.strip() != ""
-        else proposal.summary
-    )
     assessment = proposal_fact_assessment(proposal)
     return KernelRelationCreateRequest(
         source_id=_resolve_payload_entity_id(
@@ -504,12 +425,20 @@ def build_graph_relation_request(
         ),
         assessment=assessment,
         evidence_summary=proposal.summary,
-        evidence_sentence=evidence_sentence,
-        evidence_sentence_source="artana_generated",
-        evidence_sentence_confidence="medium",
-        source_document_ref=f"harness_proposal:{proposal.id}",
+        evidence_sentence=source_provenance.evidence_locator.exact_quote,
+        evidence_sentence_source="verbatim_span",
+        evidence_sentence_confidence="high",
+        source_document_id=_proposal_source_document_uuid(proposal),
+        source_document_ref=(
+            source_provenance.source_identity.authoritative_identifier
+        ),
+        source_evidence=source_evidence_handoff(
+            research_space_id=space_id,
+            document_id=_proposal_source_document_uuid(proposal),
+            provenance=source_provenance,
+        ),
         metadata={
-            **_merge_promotion_metadata(
+            **merge_promotion_metadata(
                 proposal_metadata=proposal.metadata,
                 request_metadata=request_metadata,
             ),
@@ -520,6 +449,7 @@ def build_graph_relation_request(
             "proposal_type": proposal.proposal_type,
             "source_kind": proposal.source_kind,
             "source_key": proposal.source_key,
+            "source_provenance_status": "verified",
             "reasoning_path": proposal.reasoning_path,
             "evidence_bundle": list(proposal.evidence_bundle),
         },
@@ -578,8 +508,10 @@ def build_graph_observation_request(
             detail="Observation proposal payload is missing required 'value'",
         )
     unit = optional_json_string(proposal.payload.get("unit"))
-    provenance = observation_promotion_support.build_source_measurement_provenance_request(
-        proposal=proposal, mapping_confidence=assessment_confidence(assessment)
+    provenance = (
+        observation_promotion_support.build_source_measurement_provenance_request(
+            proposal=proposal, mapping_confidence=assessment_confidence(assessment)
+        )
     )
     return KernelObservationCreateRequest(
         subject_id=UUID(subject_id),
@@ -671,10 +603,7 @@ def _create_graph_entity_from_candidate_payload(
     if isinstance(anchors, dict) and anchors:
         metadata = {
             **metadata,
-            "source_anchors": {
-                str(key): value
-                for key, value in anchors.items()
-            },
+            "source_anchors": {str(key): value for key, value in anchors.items()},
         }
     try:
         resolved_intent = preflight_service.prepare_entity_create(
@@ -691,7 +620,7 @@ def _create_graph_entity_from_candidate_payload(
             graph_transport=graph_api_gateway,
         )
     except GraphServiceClientError as exc:
-        status_code, detail = _graph_promotion_error_response(exc)
+        status_code, detail = graph_promotion_error_response(exc)
         raise HTTPException(
             status_code=status_code,
             detail=detail,
@@ -712,7 +641,9 @@ def _create_graph_entity_from_candidate_payload(
     if not isinstance(resolved_id, str) or not resolved_id.strip():
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(f"Failed to create graph entity for '{fallback_label}': missing entity id"),
+            detail=(
+                f"Failed to create graph entity for '{fallback_label}': missing entity id"
+            ),
         )
 
     resolved_display_label = entity_payload.get("display_label")
@@ -720,7 +651,8 @@ def _create_graph_entity_from_candidate_payload(
         "id": resolved_id,
         "display_label": (
             resolved_display_label
-            if isinstance(resolved_display_label, str) and resolved_display_label.strip()
+            if isinstance(resolved_display_label, str)
+            and resolved_display_label.strip()
             else display_label
         ),
         "created": bool(created.get("created")) if "created" in created else None,
@@ -750,7 +682,7 @@ def _create_graph_entity_for_label(
             graph_transport=graph_api_gateway,
         )
     except GraphServiceClientError as exc:
-        status_code, detail = _graph_promotion_error_response(exc)
+        status_code, detail = graph_promotion_error_response(exc)
         raise HTTPException(
             status_code=status_code,
             detail=detail,
@@ -840,6 +772,7 @@ def build_manual_hypothesis_request(
             proposal.payload,
             field_name="hypothesis_statement",
         ),
+        authorship="MANUAL",
         rationale=_require_payload_string(
             proposal.payload,
             field_name="hypothesis_rationale",
@@ -861,64 +794,60 @@ def promote_to_graph_claim(
     proposal: HarnessProposalRecord,
     request_metadata: JSONObject,
     graph_api_gateway: GraphTransportBundle,
+    source_document: HarnessDocumentRecord | None = None,
 ) -> JSONObject:
-    """Promote a harness proposal to the graph.
-
-    Prefer a RESOLVED+SUPPORT claim materialized into a canonical relation.
-    When the active graph constraints reject that canonical triple, keep the
-    review action useful by storing an open graph claim instead.
-    """
-    preflight_service = _graph_preflight_service()
-    submission_service = _graph_submission_service()
+    """Validate a proposal, then fail closed until ClaimFrame persistence exists."""
+    del space_id, request_metadata, graph_api_gateway
     try:
-        relation_request = build_graph_relation_request(
-            space_id=space_id,
-            proposal=proposal,
-            request_metadata=request_metadata,
-            graph_api_gateway=graph_api_gateway,
+        require_claim_frame_promotion_preflight(
+            payload=proposal.payload,
+            metadata=proposal.metadata,
         )
-        resolved_intent = _run_async_preflight(
-            preflight_service.prepare_relation_create(
-                space_id=space_id,
-                request=relation_request,
-                graph_transport=graph_api_gateway,
-            ),
-        )
-        relation = submission_service.submit_resolved_intent(
-            resolved_intent=resolved_intent,
-            graph_transport=graph_api_gateway,
-        )
-    except GraphServiceClientError as exc:
-        if _is_relation_constraint_error(exc):
-            return _promote_to_open_graph_claim(
-                space_id=space_id,
-                proposal=proposal,
-                request_metadata={
-                    **request_metadata,
-                    "canonical_promotion_blocked": True,
-                    "canonical_promotion_error": _extract_graph_service_error_detail(
-                        exc,
-                    ),
-                },
-                graph_api_gateway=graph_api_gateway,
-            )
-        status_code, detail = _graph_promotion_error_response(exc)
+    except ClaimFramePromotionError as exc:
         raise HTTPException(
-            status_code=status_code,
-            detail=detail,
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"reason_code": exc.reason_code, "message": str(exc)},
         ) from exc
-    relation_response = cast("KernelRelationResponse", relation)
-    source_claim_id = relation_response.source_claim_id
-    return {
-        "graph_claim_id": str(source_claim_id) if source_claim_id is not None else None,
-        "graph_claim_status": "RESOLVED",
-        "graph_claim_validation_state": "ALLOWED",
-        "graph_claim_persistability": "PERSISTABLE",
-        "graph_claim_polarity": "SUPPORT",
-        "graph_relation_id": str(relation_response.id),
-        "graph_relation_curation_status": relation_response.curation_status,
-        "graph_promotion_mode": "canonical_relation",
-    }
+    if source_document is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "reason_code": "missing_source_document",
+                "message": "Qualified claim promotion requires the stored source document.",
+            },
+        )
+    try:
+        verify_persisted_source_provenance(
+            document=source_document,
+            proposal=proposal,
+        )
+        normalized_source = normalize_text_document(source_document.text_content)
+        require_canonical_claim_promotion(
+            payload=proposal.payload,
+            metadata=proposal.metadata,
+            source_text=normalized_source,
+            source_sha256=llm_extraction_document_fingerprint(normalized_source),
+        )
+    except SourceProvenanceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"reason_code": exc.reason_code, "message": str(exc)},
+        ) from exc
+    except ClaimFramePromotionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"reason_code": exc.reason_code, "message": str(exc)},
+        ) from exc
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "reason_code": "qualified_claim_persistence_not_ready",
+            "message": (
+                "The qualified claim passed extraction safety checks, but the graph "
+                "contract cannot yet persist its complete ClaimFrame without loss."
+            ),
+        },
+    )
 
 
 def _promote_to_open_graph_claim(
@@ -927,6 +856,8 @@ def _promote_to_open_graph_claim(
     proposal: HarnessProposalRecord,
     request_metadata: JSONObject,
     graph_api_gateway: GraphTransportBundle,
+    source_provenance: ResolvedSourceProvenance | None = None,
+    source_provenance_reason_code: str | None = None,
 ) -> JSONObject:
     preflight_service = _graph_preflight_service()
     submission_service = _graph_submission_service()
@@ -936,6 +867,8 @@ def _promote_to_open_graph_claim(
             proposal=proposal,
             request_metadata=request_metadata,
             graph_api_gateway=graph_api_gateway,
+            source_provenance=source_provenance,
+            source_provenance_reason_code=source_provenance_reason_code,
         )
         resolved_intent = _run_async_preflight(
             preflight_service.prepare_claim_create(
@@ -949,14 +882,24 @@ def _promote_to_open_graph_claim(
             graph_transport=graph_api_gateway,
         )
     except GraphServiceClientError as exc:
-        status_code, detail = _graph_promotion_error_response(exc)
+        status_code, detail = graph_promotion_error_response(exc)
         raise HTTPException(
             status_code=status_code,
             detail=detail,
         ) from exc
-    return _graph_claim_promotion_result(
-        claim=cast("KernelRelationClaimResponse", claim)
-    )
+    return {
+        **_graph_claim_promotion_result(
+            claim=cast("KernelRelationClaimResponse", claim)
+        ),
+        "source_provenance_status": (
+            "verified"
+            if source_provenance is not None
+            else "invalid"
+            if source_provenance_reason_code is not None
+            else "unverified"
+        ),
+        "source_provenance_reason_code": source_provenance_reason_code,
+    }
 
 
 def _graph_claim_promotion_result(
@@ -1009,7 +952,9 @@ def promote_to_graph_entity(
     return {
         "graph_entity_id": entity_id,
         "graph_entity_display_label": (
-            display_label if isinstance(display_label, str) and display_label.strip() else None
+            display_label
+            if isinstance(display_label, str) and display_label.strip()
+            else None
         ),
         "graph_entity_created": created.get("created"),
     }
@@ -1057,7 +1002,7 @@ def promote_to_graph_observation(
             graph_transport=graph_api_gateway,
         )
     except GraphServiceClientError as exc:
-        status_code, detail = _graph_promotion_error_response(exc)
+        status_code, detail = graph_promotion_error_response(exc)
         raise HTTPException(
             status_code=status_code,
             detail=detail,
@@ -1080,7 +1025,7 @@ def promote_to_graph_hypothesis(
             request=build_manual_hypothesis_request(proposal=proposal),
         )
     except GraphServiceClientError as exc:
-        status_code, detail = _graph_promotion_error_response(exc)
+        status_code, detail = graph_promotion_error_response(exc)
         raise HTTPException(
             status_code=status_code,
             detail=detail,

@@ -103,6 +103,7 @@ export interface ClaimParticipantResponse {
 
 export interface ClaimRelationCreateRequest {
   source_claim_id: string;
+  authorship?: 'AGENT' | 'MANUAL';
   target_claim_id: string;
   relation_type: string;
   agent_run_id?: string | null;
@@ -358,6 +359,7 @@ export interface ConnectorProposalResponse {
 
 export interface CreateManualHypothesisRequest {
   statement: string;
+  authorship?: 'AGENT' | 'MANUAL';
   rationale: string;
   seed_entity_ids?: string[];
   source_type?: string;
@@ -596,6 +598,20 @@ export interface EntityResolutionPolicyResponse {
   updated_at: string;
 }
 
+export interface ExactEvidenceLocator {
+  source_content_sha256: string;
+  char_start: number;
+  char_end: number;
+  exact_quote: string;
+  quote_sha256: string;
+  section?: string | null;
+  paragraph_index?: number | null;
+  sentence_index?: number | null;
+  page_number?: number | null;
+  table_reference?: string | null;
+  figure_reference?: string | null;
+}
+
 export interface ExplanationResponse {
   research_space_id: string;
   resource_type: string;
@@ -828,6 +844,7 @@ export interface KernelClaimEvidenceResponse {
   claim_id: string;
   source_document_id?: string | null;
   source_document_ref?: string | null;
+  source_snapshot_id?: string | null;
   agent_run_id?: string | null;
   sentence: string | null;
   sentence_source: string | null;
@@ -837,6 +854,10 @@ export interface KernelClaimEvidenceResponse {
   table_reference: string | null;
   confidence: number;
   metadata: Record<string, unknown>;
+  source_identity?: SourceIdentity | null;
+  evidence_locator?: ExactEvidenceLocator | null;
+  provenance_status: 'INVALID' | 'LEGACY_UNVERIFIED' | 'UNVERIFIED' | 'VERIFIED';
+  provenance_reason_codes: 'authoritative_identifier_invalid' | 'authoritative_identifier_mismatch' | 'evidence_bounds_invalid' | 'evidence_quote_mismatch' | 'identity_locator_hash_mismatch' | 'legacy_evidence_without_typed_provenance' | 'missing_evidence_locator' | 'missing_source_document_id' | 'missing_source_identity' | 'missing_source_snapshot_text' | 'quote_hash_mismatch' | 'source_attestation_capability_missing' | 'source_attestation_service_mismatch' | 'source_attestation_service_missing' | 'source_content_hash_mismatch' | 'source_content_unavailable' | 'source_identifier_field_mismatch' | 'source_identifier_field_missing' | 'source_version_mismatch' | 'source_version_unverifiable' | 'upstream_document_id_mismatch' | 'upstream_research_space_mismatch' | 'verified'[];
   paper_links?: KernelRelationPaperLinkResponse[];
   created_at: string;
 }
@@ -1085,7 +1106,7 @@ export interface KernelGraphSubgraphResponse {
 
 export interface KernelGraphValidationResponse {
   valid: boolean;
-  code: 'allowed' | 'conflicting_claim' | 'cross_space_provenance' | 'duplicate_claim' | 'duplicate_entity_candidate' | 'inactive_entity_type' | 'insufficient_evidence' | 'invalid_relation_type' | 'invalid_value_for_variable' | 'missing_ai_provenance' | 'missing_provenance' | 'missing_required_identifier' | 'permission_denied' | 'relation_constraint_not_allowed' | 'relation_constraint_review_only' | 'unknown_entity' | 'unknown_entity_type' | 'unknown_provenance' | 'unknown_relation_type' | 'unknown_subject' | 'unknown_variable';
+  code: 'allowed' | 'conflicting_claim' | 'cross_space_provenance' | 'duplicate_claim' | 'duplicate_entity_candidate' | 'inactive_entity_type' | 'insufficient_evidence' | 'invalid_relation_type' | 'invalid_source_provenance' | 'invalid_value_for_variable' | 'missing_ai_provenance' | 'missing_provenance' | 'missing_required_identifier' | 'permission_denied' | 'relation_constraint_not_allowed' | 'relation_constraint_review_only' | 'unknown_entity' | 'unknown_entity_type' | 'unknown_provenance' | 'unknown_relation_type' | 'unknown_subject' | 'unknown_variable';
   message: string;
   severity: 'blocking' | 'info' | 'warning';
   next_actions?: GraphValidationNextAction[];
@@ -1266,6 +1287,7 @@ export interface KernelReasoningPathStepResponse {
 
 export interface KernelRelationClaimCreateRequest {
   source_entity_id: string;
+  authorship?: 'AGENT' | 'MANUAL';
   target_entity_id: string;
   relation_type: string;
   assessment: FactAssessment;
@@ -1275,6 +1297,8 @@ export interface KernelRelationClaimCreateRequest {
   evidence_sentence_source?: string | null;
   evidence_sentence_confidence?: string | null;
   evidence_sentence_rationale?: string | null;
+  source_document_id?: string | null;
+  source_evidence?: SourceEvidenceHandoff | null;
   source_document_ref?: string | null;
   source_ref?: string | null;
   agent_run_id?: string | null;
@@ -1342,6 +1366,7 @@ export interface KernelRelationConflictResponse {
 
 export interface KernelRelationCreateRequest {
   source_id: string;
+  authorship?: 'AGENT' | 'MANUAL';
   relation_type: string;
   target_id: string;
   assessment: FactAssessment;
@@ -1352,6 +1377,8 @@ export interface KernelRelationCreateRequest {
   evidence_sentence_rationale?: string | null;
   evidence_tier?: string | null;
   provenance_id?: string | null;
+  source_document_id?: string | null;
+  source_evidence?: SourceEvidenceHandoff | null;
   source_document_ref?: string | null;
   metadata?: Record<string, unknown>;
 }
@@ -1454,6 +1481,8 @@ export interface KernelRelationTripleValidationRequest {
   relation_type: string;
   evidence_summary?: string | null;
   evidence_sentence?: string | null;
+  source_document_id?: string | null;
+  source_evidence?: SourceEvidenceHandoff | null;
   source_document_ref?: string | null;
 }
 
@@ -1514,6 +1543,22 @@ export interface RelationConstraintResponse {
   revocation_reason: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface SourceIdentity {
+  source_kind: 'clinicaltrials' | 'clinvar' | 'doi' | 'pmc' | 'publisher' | 'pubmed';
+  authoritative_identifier: string;
+  canonical_url: string;
+  retrieved_at: string;
+  content_sha256: string;
+  version?: string | null;
+  pmid?: string | null;
+  pmcid?: string | null;
+  doi?: string | null;
+  nct_id?: string | null;
+  clinvar_accession?: string | null;
+  publisher_record_id?: string | null;
+  artifact_sha256?: string | null;
 }
 
 export interface TransformRegistryListResponse {

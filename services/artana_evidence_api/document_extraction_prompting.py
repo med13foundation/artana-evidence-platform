@@ -14,7 +14,25 @@ from artana_evidence_api.document_extraction_relation_taxonomy import (
     LLM_RELATION_SYNONYMS,
     LLM_VALID_RELATION_TYPES,
 )
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFramingAbstentionReason,
+    ClaimFramingDecision,
+    ClaimInventoryCompletenessReview,
+    ClaimInventoryItem,
+    ClaimQualifier,
+    ClaimSourceMeasurement,
+    EpistemicStatus,
+    MissingClaimRecoveryResult,
+    Polarity,
+)
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    create_model,
+    field_validator,
+    model_validator,
+)
 
 
 def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
@@ -23,6 +41,7 @@ def build_llm_extraction_output_schema(max_relations: int) -> type[BaseModel]:
     return _build_llm_extraction_output_schema(
         max_relations=max_relations,
         strict_relation_type=True,
+        require_claim_frame_fields=False,
     )
 
 
@@ -32,6 +51,7 @@ def build_llm_guarded_extraction_output_schema(max_relations: int) -> type[BaseM
     return _build_llm_extraction_output_schema(
         max_relations=max_relations,
         strict_relation_type=False,
+        require_claim_frame_fields=True,
     )
 
 
@@ -43,6 +63,89 @@ def build_llm_weak_review_extraction_output_schema(
     return _build_llm_extraction_output_schema(
         max_relations=max_relations,
         strict_relation_type=False,
+        require_claim_frame_fields=True,
+    )
+
+
+def build_claim_inventory_output_schema(max_claims: int) -> type[BaseModel]:
+    """Build the closed schema for one source-local claim inventory call."""
+
+    class LLMClaimInventoryResult(BaseModel):
+        model_config = ConfigDict(strict=True, extra="forbid")
+
+        claims: list[ClaimInventoryItem] = Field(
+            default_factory=list,
+            max_length=max_claims,
+            description=(
+                "Every explicit source-local biomedical claim in this chunk. "
+                "Negative, null, uncertain, and hypothesis claims are included."
+            ),
+        )
+
+    return LLMClaimInventoryResult
+
+
+def build_claim_inventory_completeness_output_schema() -> type[BaseModel]:
+    """Return the closed categorical inventory-completeness schema."""
+
+    return ClaimInventoryCompletenessReview
+
+
+def build_missing_claim_recovery_output_schema() -> type[BaseModel]:
+    """Return the missing-only inventory recovery schema."""
+
+    return MissingClaimRecoveryResult
+
+
+class _SingleClaimFramingEnvelope(BaseModel):
+    """Common decision contract for one inventoried-claim framing call."""
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    decision: ClaimFramingDecision = Field(..., strict=False)
+    abstention_reason: ClaimFramingAbstentionReason | None = Field(
+        default=None,
+        strict=False,
+    )
+    abstention_rationale: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def validate_decision_payload(self) -> _SingleClaimFramingEnvelope:
+        relation = getattr(self, "relation", None)
+        if self.decision is ClaimFramingDecision.FRAMED:
+            if relation is None:
+                raise ValueError("FRAMED requires exactly one relation")
+            if (
+                self.abstention_reason is not None
+                or self.abstention_rationale is not None
+            ):
+                raise ValueError("FRAMED cannot include abstention fields")
+        else:
+            if relation is not None:
+                raise ValueError("ABSTAIN cannot include a relation")
+            if self.abstention_reason is None or not self.abstention_rationale:
+                raise ValueError("ABSTAIN requires a categorical reason and rationale")
+        return self
+
+
+def build_single_claim_framing_output_schema() -> type[BaseModel]:
+    """Build a strict one-relation-or-abstain output schema."""
+
+    relation_list_schema = _build_llm_extraction_output_schema(
+        max_relations=1,
+        strict_relation_type=False,
+        require_claim_frame_fields=True,
+    )
+    relation_annotation = relation_list_schema.model_fields["relations"].annotation
+    relation_arguments = getattr(relation_annotation, "__args__", ())
+    relation_model_object = next(iter(relation_arguments), None)
+    if len(relation_arguments) != 1 or not isinstance(relation_model_object, type):
+        raise TypeError("unable to resolve the qualified relation output model")
+    relation_model: type[BaseModel] = relation_model_object
+    return create_model(
+        "LLMSingleClaimFramingResult",
+        __base__=_SingleClaimFramingEnvelope,
+        relation=(relation_model | None, None),
     )
 
 
@@ -50,20 +153,21 @@ def _build_llm_extraction_output_schema(
     *,
     max_relations: int,
     strict_relation_type: bool,
+    require_claim_frame_fields: bool,
 ) -> type[BaseModel]:
     """Build a relation extraction output schema."""
 
-    class LLMRelation(BaseModel):
-        model_config = ConfigDict(strict=True)
+    class LLMRelationCore(BaseModel):
+        model_config = ConfigDict(strict=True, extra="forbid")
 
         subject: str = Field(
             ...,
             min_length=1,
             max_length=50,
             description=(
-                "Short canonical entity name, usually 1-4 words; preserve "
-                "specific disease-subtype labels up to 6 tokens "
-                "(e.g. BRCA1, cisplatin, EGFR T790M)"
+                "Concise source-native entity span copied exactly from the "
+                "evidence clause; do not paraphrase, canonicalize, or reorder "
+                "its words. Preserve material subtype and state modifiers."
             ),
         )
         subject_curie: str | None = Field(
@@ -107,9 +211,9 @@ def _build_llm_extraction_output_schema(
             min_length=1,
             max_length=50,
             description=(
-                "Short canonical entity name, usually 1-4 words; preserve "
-                "specific disease-subtype labels up to 6 tokens "
-                "(e.g. TNBC, osimertinib, DNA damage repair)"
+                "Concise source-native entity span copied exactly from the "
+                "evidence clause; do not paraphrase, canonicalize, or reorder "
+                "its words. Preserve material subtype and state modifiers."
             ),
         )
         object_curie: str | None = Field(
@@ -121,7 +225,15 @@ def _build_llm_extraction_output_schema(
                 "from the entity name, otherwise null."
             ),
         )
-        sentence: str = Field(..., min_length=1, max_length=1000)
+        sentence: str = Field(
+            ...,
+            min_length=1,
+            max_length=1000,
+            description=(
+                "Smallest complete verbatim source clause containing both "
+                "relation endpoints, the relation cue, and every qualifier."
+            ),
+        )
         review_status: RelationReviewStatus = Field(
             default="candidate",
             description=(
@@ -166,7 +278,7 @@ def _build_llm_extraction_output_schema(
             return canonical
 
         @model_validator(mode="after")
-        def _validate_new_relation_contract(self) -> LLMRelation:
+        def _validate_new_relation_contract(self) -> LLMRelationCore:
             if self.relation_type == LLM_PROPOSE_NEW_RELATION_TYPE:
                 if self.proposed_relation_type is None:
                     raise ValueError(
@@ -190,15 +302,33 @@ def _build_llm_extraction_output_schema(
                     )
                 if self.proposed_relation_type != self.relation_type:
                     raise ValueError(
-                        "proposed_relation_type conflicts with canonical "
-                        "relation_type",
+                        "proposed_relation_type conflicts with canonical relation_type",
                     )
                 self.proposed_relation_type = None
                 self.new_relation_type_rationale = None
             return self
 
+    class LLMRelation(LLMRelationCore):
+        if require_claim_frame_fields:
+            polarity: Polarity = Field(..., strict=False)
+            epistemic_status: EpistemicStatus = Field(..., strict=False)
+            biological_or_variant_state: ClaimQualifier
+            population: ClaimQualifier
+            intervention: ClaimQualifier
+            comparator: ClaimQualifier
+            outcome: ClaimQualifier
+            study_design: ClaimQualifier
+            treatment_setting: ClaimQualifier
+            timeframe: ClaimQualifier
+            threshold: ClaimQualifier
+            source_measurements: list[ClaimSourceMeasurement] = Field(
+                default_factory=list,
+                max_length=64,
+            )
+            extraction_rationale: str = Field(..., min_length=1, max_length=4000)
+
     class LLMExtractionResult(BaseModel):
-        model_config = ConfigDict(strict=True)
+        model_config = ConfigDict(strict=True, extra="forbid")
 
         relations: list[LLMRelation] = Field(
             default_factory=list,
@@ -216,8 +346,7 @@ def _relation_type_prompt_lines() -> str:
     """Return the canonical extraction relation types for prompt injection."""
 
     return "\n".join(
-        f"    {relation_type}"
-        for relation_type in sorted(LLM_VALID_RELATION_TYPES)
+        f"    {relation_type}" for relation_type in sorted(LLM_VALID_RELATION_TYPES)
     )
 
 
@@ -251,10 +380,15 @@ def build_proposal_review_output_schema() -> type[BaseModel]:
 LLM_EXTRACTION_SYSTEM_PROMPT = f"""You are a biomedical knowledge extraction system. Your task is to identify concrete biological relationships from research text and return them as structured triples.
 
 Each triple has:
-- subject: a single named biomedical entity. This MUST be a short canonical name, not a sentence fragment.
+- subject: a single named biomedical entity copied verbatim from the evidence
+  clause. This MUST be a concise source-native span, not a sentence fragment.
   GOOD: "BRCA1", "BRCA1 truncating variants", "cisplatin", "EGFR", "T790M", "HRD", "PD-L1", "osimertinib", "triple-negative breast cancer", "DNA damage repair"
   BAD: "Inherited pathogenic variants in BRCA1", "In order to examine whether", "there are DNA repair functions", "the compound was found to"
-  Rules: usually max 4 words, but preserve disease-subtype labels up to 6 tokens when the modifier changes the claim. Use gene symbols (BRCA1 not "breast cancer gene 1"). Use drug names (cisplatin not "the platinum agent"). Use standard abbreviations (TNBC, NSCLC, HRD). For mutations, use the notation (T790M, V600E).
+  Rules: usually max 4 words, but preserve disease-subtype labels up to 6 tokens
+  when the modifier changes the claim. The returned text must occur exactly in
+  sentence with the same word order and spelling. Do not paraphrase, expand an
+  abbreviation, replace a source term with a synonym, or reorder words for a
+  more canonical label. Entity linking is the separate canonicalization step.
   Do not discard direct gene-variant-to-disease associations just because the
   subject includes "pathogenic variants", "loss-of-function variants", or
   "truncating variants"; keep the specific variant-state label when it is the
@@ -277,7 +411,8 @@ Each triple has:
   cisplatin. Do not replace this with ASSOCIATED_WITH DNA repair defects when
   the sentence supports the specific drug-sensitivity relation.
 
-- object: the target entity. Same rules as subject: short canonical name, usually max 4 words, no sentence fragments.
+- object: the target entity. Same rules as subject: copy one concise
+  source-native span exactly, usually max 4 words, with no sentence fragments.
   Preserve modifiers that define the biomedical entity or clinical subgroup.
   Do not shorten "BRCA-mutated ovarian cancer" to "ovarian cancer".
   Do not shorten "early-onset breast cancer" to "breast cancer".
@@ -288,15 +423,75 @@ Each triple has:
   "central nervous system involvement".
   Do not shorten "response to pembrolizumab" to "pembrolizumab response"
   unless both arguments remain explicit in the sentence.
+  Never paraphrase or reorder an entity span; copy the exact source order.
 - subject_curie and object_curie: stable biomedical identifiers for the subject/object when directly knowable from the exact entity name. Use CURIEs such as HGNC:22474, HP:0001263, MONDO:0000001, CHEBI:63637, GO:0006281, or MESH:D009369. If uncertain, ambiguous, unsupported by the name, or unavailable, return null rather than guessing.
-- sentence: the verbatim sentence from the input text that supports this relationship. Copy it exactly, do not paraphrase.
+- sentence: copy the smallest complete verbatim source clause that contains the
+  subject, relation cue, object, and every returned qualifier. Do not paraphrase.
+  When one sentence contains sibling claims, return a separate clause-local span
+  for each claim; never attach a qualifier from one clause to another claim.
+
+QUALIFIED CLAIM FRAME — REQUIRED FOR EVERY RELATION:
+- polarity is exactly one of SUPPORT, REFUTE, UNCERTAIN, HYPOTHESIS, or
+  NULL_RESULT. Use REFUTE only when the source explicitly contradicts or refutes
+  a prior/proposed claim. Use NULL_RESULT for no association, no effect, a failed
+  threshold, or another measured null outcome. Neither may be labeled SUPPORT.
+- epistemic_status is exactly one of ASSERTED, PROVISIONAL, UNCERTAIN,
+  HYPOTHESIS, or NULL_RESULT. Preserve what this source says; outside knowledge
+  must not upgrade a hypothesis or provisional statement.
+- Return all nine qualifier fields: biological_or_variant_state, population,
+  intervention, comparator, outcome, study_design, treatment_setting, timeframe,
+  and threshold. Each qualifier has state PRESENT, NOT_APPLICABLE, or UNRESOLVED.
+  PRESENT requires both a precise value and an exact_span copied verbatim from
+  the input. NOT_APPLICABLE and UNRESOLVED must have null value and exact_span.
+  Use the shortest source-native value that preserves meaning, and the shortest
+  exact_span that proves it. Use NOT_APPLICABLE when the claim clause contains no
+  explicit value for that field. Use UNRESOLVED only when the clause explicitly
+  signals that the qualifier exists but its value is omitted or ambiguous; never
+  use UNRESOLVED as a generic substitute for an absent field.
+  Qualifiers add context beyond the subject and object. Do not duplicate the
+  subject as intervention or the object as population/outcome. Population is the
+  cohort or subgroup in which the relation was observed. Outcome is a measured
+  endpoint beyond the object. Treatment setting is an explicit line, stage,
+  refractory status, or metastatic context. Study design must be explicit.
+  Exception: biological_or_variant_state must be PRESENT whenever an explicit
+  mutation, zygosity, expression state, amplification, loss, or molecular subtype
+  appears, even when that state is also part of the subject or object. Words such
+  as cohort, replication study, randomized trial, and case-control study are
+  explicit study designs. Never attach non-null content to NOT_APPLICABLE or
+  UNRESOLVED.
+  Never remove a disease subtype, variant state, zygosity, treatment line,
+  population, comparator, endpoint, assay cutoff, or timeframe merely to make a
+  broader triple.
+- extraction_rationale explains in plain language how the exact sentence and
+  qualifiers support the frame. Do not return confidence, probability, quality,
+  or any other numeric score.
+- source_measurements contains only numbers literally present in the source.
+  Exclude digits embedded in gene, variant, exon, or entity names. For every
+  measurement use origin=source_measurement, copy the exact ASCII numeric token
+  as value, copy its exact value-plus-unit text as literal_span, use
+  source_locator=normalized_extraction_text, copy document_sha256 from the model
+  contract as source_hash, set extraction_method=agent_exact_copy, and choose
+  field_name from THRESHOLD, TIMEFRAME, OUTCOME, DOSAGE, POPULATION_SIZE, or
+  OTHER. Do not invent a numeric value for written words or Roman numerals.
+  Do not calculate, estimate, round, or infer a number.
+- Explicit negative, null, provisional, uncertain, and hypothesis statements
+  are valuable claims. Preserve them with honest polarity and epistemic_status,
+  set review_status=review_only, and do not rewrite them as positive relations.
+  Examples:
+  - "The study refuted the claim that X is a biomarker for Y" -> BIOMARKER_FOR,
+    polarity REFUTE, epistemic_status ASSERTED.
+  - "Drug X did not meet the response threshold in disease Y" -> TREATS,
+    polarity NULL_RESULT, epistemic_status NULL_RESULT.
+  - "We hypothesize that X predisposes tumors to Y" -> PREDISPOSES_TO,
+    polarity HYPOTHESIS, epistemic_status HYPOTHESIS.
 
 IMPORTANT — do NOT extract:
 - Funding acknowledgments, grant numbers, or institutional affiliations
 - Author names or contributions
 - Study design descriptions that don't state a biological finding
 - Sentences about methods or protocols without a biological conclusion
-- Vague non-relational statements ("may play a role", "further research is needed")
+- Vague non-relational statements that do not identify a concrete subject,
+  predicate, and object
 - Relations where subject or object is not a specific named entity
 
 WEAK REVIEW-ONLY RELATIONS:
@@ -334,6 +529,58 @@ Focus on:
 Return up to 10 of the strongest, most specific relationships. Quality over quantity."""
 
 
+CLAIM_INVENTORY_SYSTEM_PROMPT = """You inventory explicit biomedical claims in one frozen source chunk before any relation framing.
+
+Return every source-local claim that identifies two concrete biomedical endpoints and a relation cue. Do not rank claims and do not return confidence, probability, quality, importance, or any other numeric score.
+
+For each claim:
+- exact_span is the smallest verbatim source span that contains both endpoints, the relation cue, and every qualifier needed to interpret this one claim; when the same text repeats in the chunk, include enough adjacent verbatim context to make exact_span occur once;
+- endpoint_a_span and endpoint_b_span are the two exact source-native endpoint mentions, not a population, intervention, comparator, outcome, measurement, timeframe, or other qualifier;
+- endpoint_role_order is A_SUBJECT_B_OBJECT or B_SUBJECT_A_OBJECT when the source resolves semantic direction, otherwise UNRESOLVED; do not infer direction from outside knowledge;
+- relation_cue_span is the exact verb or phrase that states the relation;
+- source_locator is exactly normalized_extraction_text;
+- polarity is one of SUPPORT, REFUTE, UNCERTAIN, HYPOTHESIS, or NULL_RESULT;
+- epistemic_status is one of ASSERTED, PROVISIONAL, UNCERTAIN, HYPOTHESIS, or NULL_RESULT;
+- inventory_rationale explains why this is a distinct explicit claim, without scoring it.
+
+Inventory sibling predicates and sibling endpoint pairs as separate claims even when they occur in one sentence. Preserve direct negative findings, measured null results, provisional findings, author hypotheses, and refutations. Do not convert them to positive asserted findings. Return an empty claims list only when the source contains no explicit two-endpoint biomedical claim. Do not use outside knowledge, infer an unstated claim, or frame the final relation type and qualifiers in this step."""
+
+
+CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT = """You independently review whether a supplied claim inventory completely covers one frozen source chunk.
+
+Return one categorical decision only: COMPLETE when every explicit two-endpoint biomedical claim is represented, or INCOMPLETE when at least one explicit claim is absent. For INCOMPLETE, return a source-bound descriptor for every missing claim using exact spans, endpoint anchors, relation cue, polarity, and epistemic status. For COMPLETE, return no missing descriptors. Include negative, null, uncertain, provisional, hypothesis, and sibling claims. Do not frame final relation types, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score."""
+
+
+MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT = """You recover only claims identified as missing by an independent inventory-completeness review.
+
+Return every reviewed missing claim and no existing or additional claim. Copy all spans exactly from the frozen source, preserve polarity and epistemic status, and use source_locator=normalized_extraction_text. Do not frame final relations, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score. If a reviewed descriptor cannot be recovered exactly, return schema-invalid output rather than inventing content."""
+
+
+SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT = f"""You frame exactly one source-bound biomedical claim. This is not a search, ranking, or multi-relation extraction task.
+
+ONE-CLAIM CONTRACT:
+- You receive exactly one inventory item and one claim-local frozen source region. Frame only that claim.
+- Return decision FRAMED with exactly one relation, or decision ABSTAIN with one categorical abstention_reason and a source-specific rationale.
+- The relation sentence must equal the supplied claim-local source region verbatim.
+- The relation subject and object must follow the inventory endpoint_role_order exactly. ABSTAIN with ENDPOINTS_AMBIGUOUS when it is UNRESOLVED. Never promote a population, intervention, comparator, outcome, measurement, timeframe, threshold, or other qualifier into an endpoint.
+- Preserve the inventory polarity and epistemic_status exactly. Never turn a negative, null, uncertain, provisional, or hypothesis claim into a positive asserted claim.
+- Populate every qualifier from this claim's exact source span only. Do not borrow a qualifier from a sibling claim in the surrounding chunk.
+- Do not return confidence, probability, quality, rank, or any model-authored numeric score. Source measurements are allowed only as exact copied source literals under the source_measurements contract.
+- ABSTAIN when the inventory item is not explicit, its endpoint roles remain ambiguous, no relation type can be framed without inventing meaning, or the frozen source conflicts with the inventory. Abstention is preferable to guessing.
+
+RELATION TYPE:
+Choose exactly one canonical relation type from this list:
+{_relation_type_prompt_lines()}
+
+Use the most specific type directly supported by the frozen source. Use ASSOCIATED_WITH only when no more specific canonical type fits. Use PROPOSE_NEW_RELATION_TYPE only when no canonical type fits, with an UPPER_SNAKE_CASE proposal and source-specific rationale. Never use outside knowledge to choose or strengthen a relation.
+
+QUALIFIED CLAIM FRAME:
+- Return all nine qualifier fields: biological_or_variant_state, population, intervention, comparator, outcome, study_design, treatment_setting, timeframe, and threshold.
+- PRESENT requires a precise value and verbatim exact_span from this claim-local region. NOT_APPLICABLE and UNRESOLVED require null value and exact_span.
+- Copy source measurements exactly with their unit, field role, evidence span, source locator, and source hash. Do not calculate, normalize, or estimate a value.
+- The extraction rationale explains the source-local mapping in words. It must not contain confidence, probability, or another score."""
+
+
 DOCUMENT_PROPOSAL_REVIEW_SYSTEM_PROMPT = """You review extracted scientific claims for manual curation inside a research space.
 
 Assess each claim on three categorical scales only. Never invent numbers.
@@ -367,10 +614,18 @@ Important rules:
 """
 
 __all__ = [
+    "CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT",
+    "CLAIM_INVENTORY_SYSTEM_PROMPT",
     "DOCUMENT_PROPOSAL_REVIEW_SYSTEM_PROMPT",
     "LLM_EXTRACTION_SYSTEM_PROMPT",
+    "MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT",
+    "SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT",
+    "build_claim_inventory_completeness_output_schema",
+    "build_claim_inventory_output_schema",
     "build_llm_extraction_output_schema",
     "build_llm_guarded_extraction_output_schema",
     "build_llm_weak_review_extraction_output_schema",
+    "build_missing_claim_recovery_output_schema",
     "build_proposal_review_output_schema",
+    "build_single_claim_framing_output_schema",
 ]

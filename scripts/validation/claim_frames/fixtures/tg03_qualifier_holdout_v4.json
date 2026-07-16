@@ -1,0 +1,139 @@
+{
+  "schema_version": "tg03_qualifier_benchmark.v4",
+  "metadata": {
+    "freeze_timestamp": "2026-07-15T02:30:00-07:00",
+    "purpose": "sealed_holdout_methodology_corrected_after_blind_measurement_adjudication",
+    "derivation": "Immutable v2 source cases plus independently explicit benchmark methodology.",
+    "production_semantic_policy_imported": false,
+    "quality_denominator_policy": "Only adjudicated frames contribute to semantic quality and stability denominators; unresolved frames remain visible and excluded individually.",
+    "measurement_policy": "ASCII numeric source measurements only; written and Roman numerals are quarantined because the production numeric contract cannot represent them.",
+    "quarantined_lexical_numerals": [
+      {"case_id": "holdout_intervention_ctdna", "literal_span": "four cycles"},
+      {"case_id": "holdout_study_adagrasib", "literal_span": "phase II"}
+    ]
+  },
+  "base_fixture": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v2.json",
+    "sha256": "22fbdf50333811d52e26296e9f1ddd561bfe0f29b0ed7d3771017199552ab956",
+    "schema_version": "tg03_qualifier_benchmark.v2"
+  },
+  "case_methodology": [
+    {
+      "case_id": "holdout_variant_alk_g1202r",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_variant_alk_g1202r_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_explicit_negative_tmb",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_explicit_negative_tmb_01", "promotion_eligible": false, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_null_margin",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_null_margin_01", "promotion_eligible": false, "expected_source_measurements": [{"origin": "source_measurement", "value": "15", "source_locator": "normalized_extraction_text", "literal_span": "15%", "field_name": "THRESHOLD", "unit": "percent", "extraction_method": "agent_exact_copy"}]}]
+    },
+    {
+      "case_id": "holdout_provisional_zanubrutinib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_provisional_zanubrutinib_01", "promotion_eligible": false, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_uncertain_talazoparib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_uncertain_talazoparib_01", "promotion_eligible": false, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_hypothesis_keap1",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_hypothesis_keap1_01", "promotion_eligible": false, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_intervention_ctdna",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_intervention_ctdna_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_comparator_amivantamab",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_comparator_amivantamab_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_outcome_enfortumab",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_outcome_enfortumab_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_study_adagrasib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_study_adagrasib_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_setting_ibrutinib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_setting_ibrutinib_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_timeframe_milvexian",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_timeframe_milvexian_01", "promotion_eligible": true, "expected_source_measurements": [{"origin": "source_measurement", "value": "16", "source_locator": "normalized_extraction_text", "literal_span": "week 16", "field_name": "TIMEFRAME", "unit": "week", "extraction_method": "agent_exact_copy"}]}]
+    },
+    {
+      "case_id": "holdout_threshold_cabozantinib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_threshold_cabozantinib_01", "promotion_eligible": true, "expected_source_measurements": [{"origin": "source_measurement", "value": "3.5", "source_locator": "normalized_extraction_text", "literal_span": "3.5", "field_name": "THRESHOLD", "unit": "dimensionless", "extraction_method": "agent_exact_copy"}]}]
+    },
+    {
+      "case_id": "holdout_multi_clause_ret_ntrk",
+      "adjudication_status": "unresolved",
+      "unresolved_frame_ids": ["holdout_multi_clause_ret_ntrk_02"],
+      "frames": [
+        {"frame_id": "holdout_multi_clause_ret_ntrk_01", "promotion_eligible": true, "expected_source_measurements": [{"origin": "source_measurement", "value": "24", "source_locator": "normalized_extraction_text", "literal_span": "24 weeks", "field_name": "TIMEFRAME", "unit": "week", "extraction_method": "agent_exact_copy"}]},
+        {"frame_id": "holdout_multi_clause_ret_ntrk_02", "promotion_eligible": false, "expected_source_measurements": []}
+      ]
+    },
+    {
+      "case_id": "holdout_extra_output_capivasertib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_extra_output_capivasertib_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_unresolved_population",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_unresolved_population_01", "promotion_eligible": false, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_source_measurement_repoterctinib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_source_measurement_repoterctinib_01", "promotion_eligible": true, "expected_source_measurements": [{"origin": "source_measurement", "value": "8.7", "source_locator": "normalized_extraction_text", "literal_span": "8.7 months", "field_name": "OUTCOME", "unit": "month", "extraction_method": "agent_exact_copy"}]}]
+    },
+    {
+      "case_id": "holdout_positive_sotorasib",
+      "adjudication_status": "adjudicated",
+      "unresolved_frame_ids": [],
+      "frames": [{"frame_id": "holdout_positive_sotorasib_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    },
+    {
+      "case_id": "holdout_population_futibatinib",
+      "adjudication_status": "unresolved",
+      "unresolved_frame_ids": ["holdout_population_futibatinib_01"],
+      "frames": [{"frame_id": "holdout_population_futibatinib_01", "promotion_eligible": true, "expected_source_measurements": []}]
+    }
+  ]
+}

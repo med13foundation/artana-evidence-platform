@@ -13,13 +13,14 @@ from artana_evidence_db.claim_projection_readiness_support import (
     group_projection_rows_by_claim_id,
     has_required_projection_participants,
     has_role_anchor,
-    has_usable_claim_evidence,
     is_active_support_claim,
     load_claims_by_ids,
-    load_evidence_by_claim_id,
     load_participants_by_claim_id,
     load_projection_relevant_support_claims,
     load_projection_rows,
+)
+from artana_evidence_db.source_provenance.eligibility import (
+    ClaimEvidenceEligibilityService,
 )
 
 if TYPE_CHECKING:
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
         ClaimParticipantBackfillGlobalSummary,
     )
     from artana_evidence_db.kernel_claim_models import (
-        ClaimEvidenceModel,
         ClaimParticipantModel,
         RelationClaimModel,
         RelationProjectionSourceModel,
@@ -119,6 +119,7 @@ class KernelClaimProjectionReadinessService:
         self._projection_invariants = relation_projection_invariant_service
         self._materializer = relation_projection_materialization_service
         self._participant_backfill = claim_participant_backfill_service
+        self._evidence_eligibility = ClaimEvidenceEligibilityService(session)
 
     def audit(
         self,
@@ -137,10 +138,6 @@ class KernelClaimProjectionReadinessService:
             self._session,
             claim_ids=support_claim_ids,
         )
-        evidence_by_claim_id = load_evidence_by_claim_id(
-            self._session,
-            claim_ids=support_claim_ids,
-        )
 
         missing_participant_issue = self._build_missing_participant_issue(
             support_claims=support_claims,
@@ -149,7 +146,6 @@ class KernelClaimProjectionReadinessService:
         )
         missing_evidence_issue = self._build_missing_evidence_issue(
             support_claims=support_claims,
-            evidence_by_claim_id=evidence_by_claim_id,
             sample_limit=normalized_sample_limit,
         )
         linked_mismatch_issue = self._build_linked_relation_mismatch_issue(
@@ -212,8 +208,16 @@ class KernelClaimProjectionReadinessService:
             has_required_participants = has_required_projection_participants(
                 participants_by_claim_id.get(claim_id, []),
             )
+            has_eligible_evidence = self._evidence_eligibility.claim_has_eligible_evidence(
+                claim_id=claim.id,
+                research_space_id=claim.research_space_id,
+            )
 
-            if is_active_support_claim(claim) and has_required_participants:
+            if (
+                is_active_support_claim(claim)
+                and has_required_participants
+                and has_eligible_evidence
+            ):
                 try:
                     self._materializer.materialize_support_claim(
                         claim_id=claim_id,
@@ -311,14 +315,16 @@ class KernelClaimProjectionReadinessService:
         self,
         *,
         support_claims: list[RelationClaimModel],
-        evidence_by_claim_id: dict[str, list[ClaimEvidenceModel]],
         sample_limit: int,
     ) -> ClaimProjectionReadinessIssue:
         samples: list[ClaimProjectionReadinessSample] = []
         count = 0
         for claim in support_claims:
             claim_id = str(claim.id)
-            if has_usable_claim_evidence(evidence_by_claim_id.get(claim_id, [])):
+            if self._evidence_eligibility.claim_has_eligible_evidence(
+                claim_id=claim.id,
+                research_space_id=claim.research_space_id,
+            ):
                 continue
             count += 1
             if len(samples) < sample_limit:
@@ -331,7 +337,10 @@ class KernelClaimProjectionReadinessService:
                             if claim.linked_relation_id is not None
                             else None
                         ),
-                        detail="Support claim has no usable claim_evidence rows",
+                        detail=(
+                            "Support claim has no eligible immutable source snapshot "
+                            "evidence"
+                        ),
                     ),
                 )
         return ClaimProjectionReadinessIssue(count=count, samples=tuple(samples))

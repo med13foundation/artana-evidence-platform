@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from threading import Lock
@@ -22,6 +23,11 @@ class StepResultLike(Protocol):
     """Protocol for structured step results returned by the kernel client."""
 
     output: object
+    run_id: str
+    seq: int
+    replayed: bool
+    response_id: str | None
+    response_output_items: Sequence[dict[str, object]]
 
 
 @runtime_checkable

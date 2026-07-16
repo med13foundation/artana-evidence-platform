@@ -59,6 +59,11 @@ from .graph_workflow_contracts import (
     OperatingModeResponse,
     ValidationExplanationRequest,
 )
+from .source_provenance import (
+    ExactEvidenceLocator,
+    SourceEvidenceHandoff,
+    SourceIdentity,
+)
 
 
 class KernelRelationPaperLinkResponse(BaseModel):
@@ -318,7 +323,9 @@ class KernelRelationClaimCreateRequest(BaseModel):
     evidence_sentence_source: str | None = Field(default=None, max_length=32)
     evidence_sentence_confidence: str | None = Field(default=None, max_length=32)
     evidence_sentence_rationale: str | None = Field(default=None, max_length=4000)
+    source_document_id: UUID | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
+    source_evidence: SourceEvidenceHandoff | None = None
     source_ref: str | None = Field(default=None, max_length=1024)
     agent_run_id: str | None = Field(default=None, max_length=255)
     ai_provenance: ClaimAIProvenanceEnvelope | None = None
@@ -378,7 +385,9 @@ class KernelRelationCreateRequest(BaseModel):
     evidence_sentence_rationale: str | None = Field(default=None, max_length=2000)
     evidence_tier: str | None = Field(default=None, max_length=32)
     provenance_id: UUID | None = None
+    source_document_id: UUID | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
+    source_evidence: SourceEvidenceHandoff | None = None
     metadata: JSONObject = Field(default_factory=dict)
 
     @property
@@ -466,6 +475,16 @@ class KernelClaimEvidenceResponse(BaseModel):
     claim_id: UUID
     source_document_id: UUID | None = None
     source_document_ref: str | None = None
+    source_snapshot_id: UUID | None = None
+    source_identity: SourceIdentity | None = None
+    evidence_locator: ExactEvidenceLocator | None = None
+    provenance_status: Literal[
+        "VERIFIED",
+        "UNVERIFIED",
+        "INVALID",
+        "LEGACY_UNVERIFIED",
+    ] = "LEGACY_UNVERIFIED"
+    provenance_reason_codes: list[str] = Field(default_factory=list)
     agent_run_id: str | None = None
     sentence: str | None
     sentence_source: str | None
@@ -1045,6 +1064,7 @@ __all__ = [
     "DictionarySearchListResponse",
     "DictionarySearchResultResponse",
     "ExplanationResponse",
+    "ExactEvidenceLocator",
     "GraphChangeClaimRequest",
     "GraphChangeConceptRequest",
     "GraphChangeProposalCreateRequest",
@@ -1097,5 +1117,6 @@ __all__ = [
     "OperatingModeCapabilitiesResponse",
     "OperatingModeRequest",
     "OperatingModeResponse",
+    "SourceIdentity",
     "ValidationExplanationRequest",
 ]

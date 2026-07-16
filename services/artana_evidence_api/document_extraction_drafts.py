@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from artana_evidence_api.claim_fingerprint import compute_claim_fingerprint
@@ -30,6 +30,9 @@ from artana_evidence_api.document_extraction_review import (
     apply_document_proposal_review,
     build_document_review_context,
     build_fallback_document_review,
+)
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    replace_claim_frame_projection,
 )
 from artana_evidence_api.document_extraction_support.entity_curie_linking import (
     entity_candidate_payload_from_curie,
@@ -134,7 +137,14 @@ def build_document_extraction_drafts(
                 ),
             )
             continue
-        candidate = replace(raw_candidate, relation_type=canonical_relation_type)
+        candidate = replace(
+            raw_candidate,
+            relation_type=canonical_relation_type,
+            claim_frame=replace_claim_frame_projection(
+                raw_candidate.claim_frame,
+                predicate=canonical_relation_type,
+            ),
+        )
         subject_rejection_reason = canonical_entity_label_rejection_reason(
             candidate.subject_label,
         )
@@ -171,10 +181,14 @@ def build_document_extraction_drafts(
             if subject_match is None
             else require_match_display_label(subject_match)
         )
-        object_labels = split_compound_entity_label(
-            space_id=space_id,
-            label=candidate.object_label,
-            graph_api_gateway=graph_api_gateway,
+        object_labels = (
+            (candidate.object_label,)
+            if candidate.claim_frame is not None
+            else split_compound_entity_label(
+                space_id=space_id,
+                label=candidate.object_label,
+                graph_api_gateway=graph_api_gateway,
+            )
         )
         for object_index, object_label in enumerate(object_labels):
             object_rejection_reason = canonical_entity_label_rejection_reason(
@@ -222,6 +236,7 @@ def build_document_extraction_drafts(
                     sentence=candidate.sentence,
                     review_status=candidate.review_status,
                     review_reason_codes=candidate.review_reason_codes,
+                    claim_frame=candidate.claim_frame,
                 ),
                 review_context=normalized_review_context,
             )
@@ -231,10 +246,14 @@ def build_document_extraction_drafts(
                 if not split_applied
                 else f"{document.id}:{index}:{object_index}"
             )
-            claim_fingerprint = compute_claim_fingerprint(
-                resolved_subject_label,
-                candidate.relation_type,
-                resolved_object_label,
+            claim_fingerprint = (
+                candidate.claim_frame.dedupe_identity
+                if candidate.claim_frame is not None
+                else compute_claim_fingerprint(
+                    resolved_subject_label,
+                    candidate.relation_type,
+                    resolved_object_label,
+                )
             )
             evidence_grounding = ground_relation_sentence(
                 source_text=document.text_content,
@@ -331,6 +350,7 @@ def build_document_extraction_drafts(
                             for entity_id in (subject_id, object_id)
                             if not entity_id.startswith("unresolved:")
                         ],
+                        **_claim_frame_payload(candidate),
                     },
                     metadata=metadata_with_evidence_grade(
                         {
@@ -354,6 +374,7 @@ def build_document_extraction_drafts(
                             "object_split_applied": split_applied,
                             "origin": "document_extraction",
                             "evidence_grounding": evidence_grounding.to_metadata(),
+                            **_claim_frame_metadata(candidate),
                             **support_metadata,
                         },
                         evidence_grade,
@@ -550,6 +571,35 @@ def _candidate_review_metadata(candidate: ExtractedRelationCandidate) -> JSONObj
     }
 
 
+def _claim_frame_payload(candidate: ExtractedRelationCandidate) -> JSONObject:
+    if candidate.claim_frame is None:
+        return {}
+    return {
+        "claim_frame": cast(
+            "JSONObject",
+            candidate.claim_frame.model_dump(mode="json"),
+        ),
+    }
+
+
+def _claim_frame_metadata(candidate: ExtractedRelationCandidate) -> JSONObject:
+    if candidate.claim_frame is None:
+        return {"qualified_claim_frame_present": False}
+    return {
+        "qualified_claim_frame_present": True,
+        "claim_frame_positive_projection_candidate": (
+            candidate.claim_frame.is_positive_projection_candidate
+        ),
+        "claim_frame_positive_projection_eligible": (
+            candidate.claim_frame.is_positive_projection_eligible
+        ),
+        "claim_frame_dedupe_identity": candidate.claim_frame.dedupe_identity,
+        "claim_frame_semantic_fingerprint": (
+            candidate.claim_frame.semantic_fingerprint
+        ),
+    }
+
+
 def _is_relation_type_governance_candidate(
     candidate: ExtractedRelationCandidate,
 ) -> bool:
@@ -624,6 +674,7 @@ def _relation_type_governance_draft(
             "object_label": candidate.object_label,
             "evidence_sentence": candidate.sentence,
             "trusted_evidence_eligible": False,
+            **_claim_frame_payload(candidate),
         },
         metadata=metadata,
         evidence_grade=evidence_grade,

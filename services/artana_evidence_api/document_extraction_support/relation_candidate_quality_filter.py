@@ -12,6 +12,9 @@ from artana_evidence_api.document_extraction_contracts import (
 from artana_evidence_api.document_extraction_relation_taxonomy import (
     canonicalize_extraction_relation_type,
 )
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    replace_claim_frame_projection,
+)
 from artana_evidence_api.document_extraction_support.evidence_grounding import (
     ground_relation_sentence,
 )
@@ -200,6 +203,15 @@ def filter_low_value_relation_candidates(
     )
     for candidate_index, candidate in enumerate(repaired_candidates):
         reason = _quality_filter_reason(candidate)
+        if candidate.claim_frame is not None:
+            review_candidate = _review_lane_candidate(candidate) or candidate
+            if reason is not None:
+                review_candidate = _with_review_only_reason(
+                    review_candidate,
+                    reason,
+                )
+            kept_candidates.append(review_candidate)
+            continue
         if reason is None and _is_context_relation_shadowed(
             candidate=candidate,
             candidates=repaired_candidates,
@@ -258,9 +270,9 @@ def _merge_duplicate_kept_candidates(
     candidates: list[ExtractedRelationCandidate],
 ) -> tuple[ExtractedRelationCandidate, ...]:
     merged_by_key: dict[
-        tuple[str, str, str, str, str | None], ExtractedRelationCandidate
+        tuple[str, str, str, str, str | None, str], ExtractedRelationCandidate
     ] = {}
-    ordered_keys: list[tuple[str, str, str, str, str | None]] = []
+    ordered_keys: list[tuple[str, str, str, str, str | None, str]] = []
     for candidate in candidates:
         key = (
             candidate.subject_label.casefold(),
@@ -271,6 +283,11 @@ def _merge_duplicate_kept_candidates(
                 candidate.proposed_relation_type.casefold()
                 if candidate.proposed_relation_type is not None
                 else None
+            ),
+            (
+                candidate.claim_frame.semantic_fingerprint
+                if candidate.claim_frame is not None
+                else ""
             ),
         )
         existing = merged_by_key.get(key)
@@ -351,6 +368,10 @@ def _repair_weak_review_candidate(
         object_label=repaired_object,
         object_curie=None,
         object_curie_source="none",
+        claim_frame=replace_claim_frame_projection(
+            candidate.claim_frame,
+            object_=repaired_object,
+        ),
     )
 
 
@@ -368,7 +389,14 @@ def _repair_trend_response_relation_type(
         return candidate
     if re.search(r"\btrend(?:ed|s|ing)?\s+with\b", claim_scope) is None:
         return candidate
-    return replace(candidate, relation_type="ASSOCIATED_WITH")
+    return replace(
+        candidate,
+        relation_type="ASSOCIATED_WITH",
+        claim_frame=replace_claim_frame_projection(
+            candidate.claim_frame,
+            predicate="ASSOCIATED_WITH",
+        ),
+    )
 
 
 def _correlated_resistance_object(

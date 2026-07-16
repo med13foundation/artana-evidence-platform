@@ -32,6 +32,9 @@ from artana_evidence_db.graph_workflow_service import (
 from artana_evidence_db.ports import SpaceAccessPort
 from artana_evidence_db.space_membership import MembershipRole
 from artana_evidence_db.user_models import User
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
+)
 from artana_evidence_db.workflow_models import GraphWorkflowKind, GraphWorkflowStatus
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
@@ -86,6 +89,15 @@ def _http_error(error: ValueError) -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=message,
+    )
+
+
+def _ai_persistence_http_error(
+    error: AIPersistenceQuarantineError,
+) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=error.violation.as_detail(),
     )
 
 
@@ -229,6 +241,7 @@ def create_workflow(
             decision_payload=request.decision_payload,
             source_ref=request.source_ref,
             created_by=_manual_actor(current_user),
+            authenticated_ai_principal=graph_ai_principal_for_user(current_user),
         )
         session.commit()
     except IntegrityError as exc:
@@ -237,6 +250,9 @@ def create_workflow(
             status_code=status.HTTP_409_CONFLICT,
             detail="Workflow conflicts with existing idempotency scope",
         ) from exc
+    except AIPersistenceQuarantineError as exc:
+        session.rollback()
+        raise _ai_persistence_http_error(exc) from exc
     except ValueError as exc:
         session.rollback()
         raise _http_error(exc) from exc
@@ -367,6 +383,9 @@ def act_on_workflow(
     except WorkflowActionRejected as exc:
         session.commit()
         raise _http_error(exc) from exc
+    except AIPersistenceQuarantineError as exc:
+        session.rollback()
+        raise _ai_persistence_http_error(exc) from exc
     except ValueError as exc:
         session.rollback()
         raise _http_error(exc) from exc

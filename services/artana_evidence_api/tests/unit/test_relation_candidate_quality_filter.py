@@ -6,6 +6,13 @@ import pytest
 from artana_evidence_api.document_extraction_contracts import (
     ExtractedRelationCandidate,
 )
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFrame,
+    ClaimQualifier,
+    EpistemicStatus,
+    Polarity,
+    SourceEvidenceSpan,
+)
 from artana_evidence_api.document_extraction_support.relation_candidate_quality_filter import (
     filter_low_value_relation_candidates,
 )
@@ -28,6 +35,52 @@ def test_quality_filter_keeps_entailed_specific_candidate_as_review_only() -> No
     )
     assert result.candidates[0].trusted_evidence_eligible is False
     assert result.filtered_candidates == ()
+
+
+def test_deterministic_semantic_disagreement_cannot_erase_agent_claim_frame() -> None:
+    sentence = "BRCA1 was not associated with breast cancer."
+    absent = ClaimQualifier.not_applicable()
+    frame = ClaimFrame(
+        subject="BRCA1",
+        predicate="ASSOCIATED_WITH",
+        object="breast cancer",
+        source_evidence=SourceEvidenceSpan(
+            exact_span=sentence,
+            locator="normalized_extraction_text",
+        ),
+        polarity=Polarity.REFUTE,
+        epistemic_status=EpistemicStatus.ASSERTED,
+        biological_or_variant_state=absent,
+        population=absent,
+        intervention=absent,
+        comparator=absent,
+        outcome=ClaimQualifier.present(
+            value="breast cancer",
+            exact_span="breast cancer",
+        ),
+        study_design=absent,
+        treatment_setting=absent,
+        timeframe=absent,
+        threshold=absent,
+        extraction_rationale="The source explicitly refutes the association.",
+    )
+    candidate = ExtractedRelationCandidate(
+        subject_label=frame.subject,
+        relation_type=frame.predicate,
+        object_label=frame.object,
+        sentence=sentence,
+        review_status="review_only",
+        review_reason_codes=("non_positive_claim_frame",),
+        claim_frame=frame,
+    )
+
+    result = filter_low_value_relation_candidates((candidate,))
+
+    assert result.filtered_candidates == ()
+    assert len(result.candidates) == 1
+    assert result.candidates[0].claim_frame == frame
+    assert result.candidates[0].review_status == "review_only"
+    assert "support_not_entailed" in result.candidates[0].review_reason_codes
 
 
 @pytest.mark.parametrize(

@@ -204,6 +204,7 @@ class KernelRelationEvidence(BaseModel):
     provenance_id: UUID | None = None
     source_document_id: UUID | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
+    source_snapshot_id: UUID | None = None
     agent_run_id: str | None = Field(default=None, max_length=255)
     created_at: datetime
 
@@ -223,6 +224,7 @@ class RelationEvidenceWrite(BaseModel):
     provenance_id: UUID | None = None
     source_document_id: UUID | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
+    source_snapshot_id: UUID | None = None
     agent_run_id: str | None = Field(default=None, max_length=255)
 
 

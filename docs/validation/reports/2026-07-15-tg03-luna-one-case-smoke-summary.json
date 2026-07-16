@@ -1,0 +1,46 @@
+{
+  "schema_version": "tg03.luna_one_case_smoke_summary.v1",
+  "run_id": "tg03-one-case-luna-smoke-final",
+  "repository_commit": "de4e9a6c",
+  "model_id": "openai:gpt-5.6-luna",
+  "case_id": "holdout_variant_alk_g1202r",
+  "development_evidence_only": true,
+  "runtime": {
+    "provider_bound_executed_attempt_count": 3,
+    "agent_invocation_completed": true,
+    "composed_pipeline_completed": true,
+    "strict_usable_extraction_completed": true,
+    "model_invocation_failure_count": 0,
+    "fallback_output_count": 0,
+    "graph_write_count": 0
+  },
+  "deterministic_quality": {
+    "endpoint_source_match_precision": 0.0,
+    "endpoint_source_match_recall": 0.0,
+    "full_frame_precision": 0.0,
+    "full_frame_recall": 0.0,
+    "inventory_boundary_precision": 0.0,
+    "inventory_boundary_recall": 0.0,
+    "unmatched_inventory_claim_count": 1,
+    "unsupported_positive_output_count": 1
+  },
+  "expected_frame": {
+    "subject": "lorlatinib",
+    "predicate": "TREATS",
+    "object": "ALK G1202R-positive lung adenocarcinoma",
+    "population": "Korean adults",
+    "biological_or_variant_state": "ALK G1202R-positive",
+    "outcome": "intracranial lesions"
+  },
+  "agent_frame": {
+    "subject": "lorlatinib",
+    "predicate": "TREATS",
+    "object": "intracranial lesions",
+    "population_state": "NOT_APPLICABLE",
+    "biological_or_variant_state": "NOT_APPLICABLE",
+    "outcome": "reduced intracranial lesions"
+  },
+  "root_cause_category": "lossy_binary_endpoint_inventory",
+  "stop_rule_applied": true,
+  "full_19_case_run_executed": false
+}

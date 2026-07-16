@@ -39,6 +39,7 @@ import artana_evidence_db.read_models  # noqa: F401
 import artana_evidence_db.reasoning_path_persistence_models  # noqa: F401
 import artana_evidence_db.relation_projection_source_model  # noqa: E402, F401
 import artana_evidence_db.source_document_model  # noqa: E402, F401
+import artana_evidence_db.source_provenance.snapshot_model  # noqa: E402, F401
 import artana_evidence_db.space_models  # noqa: F401
 import pytest
 import sqlalchemy as sa
@@ -66,6 +67,7 @@ def build_graph_auth_headers(
     graph_admin: bool = False,
     graph_ai_principal: str | None = None,
     graph_service_capabilities: tuple[str, ...] | list[str] | None = None,
+    graph_source_attestation_service: str | None = None,
 ) -> dict[str, str]:
     headers = {
         "X-TEST-USER-ID": str(user_id),
@@ -81,6 +83,10 @@ def build_graph_auth_headers(
             for capability in graph_service_capabilities
             if capability.strip()
         )
+    if graph_source_attestation_service is not None:
+        headers["X-TEST-GRAPH-SOURCE-ATTESTATION-SERVICE"] = (
+            graph_source_attestation_service
+        )
     return headers
 
 
@@ -92,6 +98,7 @@ def auth_headers(
     graph_admin: bool = False,
     graph_ai_principal: str | None = None,
     graph_service_capabilities: tuple[str, ...] | list[str] | None = None,
+    graph_source_attestation_service: str | None = None,
 ) -> dict[str, str]:
     return build_graph_auth_headers(
         user_id=user_id,
@@ -100,6 +107,7 @@ def auth_headers(
         graph_admin=graph_admin,
         graph_ai_principal=graph_ai_principal,
         graph_service_capabilities=graph_service_capabilities,
+        graph_source_attestation_service=graph_source_attestation_service,
     )
 
 

@@ -7,7 +7,12 @@ from typing import Literal
 from uuid import UUID
 
 from artana_evidence_db.common_types import JSONObject
-from pydantic import BaseModel, ConfigDict, Field
+from artana_evidence_db.source_provenance.models import (
+    ClaimEvidenceProvenanceStatus,
+    ExactEvidenceLocator,
+    SourceProvenanceReasonCode,
+)
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 ClaimEvidenceSentenceSource = Literal["verbatim_span", "artana_generated"]
 ClaimEvidenceSentenceConfidence = Literal["low", "medium", "high"]
@@ -22,6 +27,7 @@ class KernelClaimEvidence(BaseModel):
     claim_id: UUID
     source_document_id: UUID | None = None
     source_document_ref: str | None = Field(default=None, max_length=512)
+    source_snapshot_id: UUID | None = None
     agent_run_id: str | None = Field(default=None, max_length=255)
     sentence: str | None = None
     sentence_source: ClaimEvidenceSentenceSource | None = None
@@ -31,6 +37,17 @@ class KernelClaimEvidence(BaseModel):
     table_reference: str | None = None
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     metadata_payload: JSONObject = Field(default_factory=dict)
+    evidence_locator: ExactEvidenceLocator | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "evidence_locator",
+            "evidence_locator_payload",
+        ),
+    )
+    provenance_status: ClaimEvidenceProvenanceStatus = "LEGACY_UNVERIFIED"
+    provenance_reason_codes: tuple[SourceProvenanceReasonCode, ...] = (
+        "legacy_evidence_without_typed_provenance",
+    )
     created_at: datetime
 
 

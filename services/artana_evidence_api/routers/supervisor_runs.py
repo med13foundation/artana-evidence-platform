@@ -37,6 +37,9 @@ from artana_evidence_api.graph_client import (
     GraphServiceClientError,
     GraphTransportBundle,  # noqa: TC001
 )
+from artana_evidence_api.graph_integration.source_provenance import (
+    load_proposal_source_document,
+)
 from artana_evidence_api.proposal_actions import (
     decide_proposal,
     promote_to_graph_claim,
@@ -499,6 +502,10 @@ def review_supervisor_chat_graph_write_candidate(  # noqa: PLR0913
                 proposal=proposal,
                 request_metadata=request_metadata,
                 graph_api_gateway=graph_api_gateway,
+                source_document=load_proposal_source_document(
+                    document_store=execution_services.document_store,
+                    proposal=proposal,
+                ),
             )
             updated_proposal = decide_proposal(
                 space_id=space_id,

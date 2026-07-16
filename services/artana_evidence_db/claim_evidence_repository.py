@@ -12,6 +12,11 @@ from artana_evidence_db.claim_evidence_models import (
     KernelClaimEvidence,
 )
 from artana_evidence_db.kernel_claim_models import ClaimEvidenceModel
+from artana_evidence_db.source_provenance.models import (
+    ClaimEvidenceProvenanceStatus,
+    ExactEvidenceLocator,
+    SourceProvenanceReasonCode,
+)
 from sqlalchemy import case, select
 
 if TYPE_CHECKING:
@@ -63,12 +68,19 @@ class SqlAlchemyKernelClaimEvidenceRepository:
         confidence: float,
         source_document_ref: str | None = None,
         metadata: JSONObject | None = None,
+        source_snapshot_id: str | None = None,
+        evidence_locator: ExactEvidenceLocator | None = None,
+        provenance_status: ClaimEvidenceProvenanceStatus = "LEGACY_UNVERIFIED",
+        provenance_reason_codes: tuple[SourceProvenanceReasonCode, ...] = (
+            "legacy_evidence_without_typed_provenance",
+        ),
     ) -> KernelClaimEvidence:
         model = ClaimEvidenceModel(
             id=uuid4(),
             claim_id=_as_uuid(claim_id),
             source_document_id=_try_as_uuid(source_document_id),
             source_document_ref=_normalize_optional_text(source_document_ref),
+            source_snapshot_id=_try_as_uuid(source_snapshot_id),
             agent_run_id=_normalize_optional_text(agent_run_id),
             sentence=_normalize_optional_text(sentence),
             sentence_source=sentence_source,
@@ -78,6 +90,13 @@ class SqlAlchemyKernelClaimEvidenceRepository:
             table_reference=_normalize_optional_text(table_reference),
             confidence=max(0.0, min(1.0, float(confidence))),
             metadata_payload=metadata or {},
+            evidence_locator_payload=(
+                evidence_locator.model_dump(mode="json")
+                if evidence_locator is not None
+                else None
+            ),
+            provenance_status=provenance_status,
+            provenance_reason_codes=list(provenance_reason_codes),
             created_at=datetime.now(UTC),
         )
         self._session.add(model)

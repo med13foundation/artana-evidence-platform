@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import sys
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
@@ -38,6 +39,11 @@ from artana_evidence_api.sqlalchemy_stores import (
 from artana_evidence_api.sqlalchemy_unit_of_work import session_unit_of_work
 from artana_evidence_api.study_outcomes import SqlAlchemyStudyOutcomeStore
 from artana_evidence_api.study_outcomes.contracts import StudyOutcomeDraft
+from artana_evidence_api.types.source_provenance import (
+    ClaimSourceProvenance,
+    ExactEvidenceLocator,
+    SourceIdentity,
+)
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
@@ -53,7 +59,9 @@ if TYPE_CHECKING:
 def _sqlite_schema_paths(tmp_path: Path) -> dict[str, Path]:
     return {
         schema: tmp_path / f"sqlalchemy_store_{schema}.db"
-        for schema in {table.schema for table in Base.metadata.tables.values() if table.schema}
+        for schema in {
+            table.schema for table in Base.metadata.tables.values() if table.schema
+        }
     }
 
 
@@ -620,18 +628,27 @@ def test_sqlalchemy_document_delete_contract_removes_document_children(
         ),
     )
 
-    assert proposal_store.delete_proposals_for_documents(
-        space_id=space_id,
-        document_ids=(document.id,),
-    ) == 1
-    assert review_item_store.delete_review_items_for_documents(
-        space_id=space_id,
-        document_ids=(document.id,),
-    ) == 1
-    assert outcome_store.delete_outcomes_for_documents(
-        space_id=space_id,
-        document_ids=(document.id,),
-    ) == 1
+    assert (
+        proposal_store.delete_proposals_for_documents(
+            space_id=space_id,
+            document_ids=(document.id,),
+        )
+        == 1
+    )
+    assert (
+        review_item_store.delete_review_items_for_documents(
+            space_id=space_id,
+            document_ids=(document.id,),
+        )
+        == 1
+    )
+    assert (
+        outcome_store.delete_outcomes_for_documents(
+            space_id=space_id,
+            document_ids=(document.id,),
+        )
+        == 1
+    )
     assert document_store.delete_documents(
         space_id=space_id,
         document_ids=(document.id,),
@@ -1056,6 +1073,111 @@ def test_sqlalchemy_harness_proposal_store_persists_and_decides_proposals(
         run_id=run.id,
     )
     assert [proposal.id for proposal in promoted_only] == [created[0].id]
+
+
+def test_sqlalchemy_harness_proposal_store_round_trips_frozen_source_provenance(
+    session: Session,
+) -> None:
+    proposal_store = SqlAlchemyHarnessProposalStore(session)
+    document_store = SqlAlchemyHarnessDocumentStore(session)
+    space_id = str(uuid4())
+    run = _create_run_catalog_entry(
+        session,
+        space_id=space_id,
+        harness_id="document-extraction",
+        title="Source provenance round trip",
+        input_payload={},
+    )
+    quote = "MED13 was associated with cardiomyopathy."
+    snapshot_hash = hashlib.sha256(quote.encode("utf-8")).hexdigest()
+    now = datetime.now(UTC)
+    document = document_store.create_document(
+        space_id=space_id,
+        created_by=str(uuid4()),
+        title="MED13 publication",
+        source_type="pubmed",
+        filename=None,
+        media_type="text/plain",
+        sha256=snapshot_hash,
+        byte_size=len(quote.encode("utf-8")),
+        page_count=None,
+        text_content=quote,
+        raw_storage_key=None,
+        enriched_storage_key=None,
+        ingestion_run_id=run.id,
+        last_enrichment_run_id=None,
+        enrichment_status="skipped",
+        extraction_status="completed",
+        metadata={},
+    )
+    provenance = ClaimSourceProvenance(
+        status="verified",
+        source_identity=SourceIdentity(
+            source_kind="pubmed",
+            authoritative_identifier="PMID:12345678",
+            canonical_url="https://pubmed.ncbi.nlm.nih.gov/12345678/",
+            retrieved_at=now,
+            content_sha256=snapshot_hash,
+            pmid="12345678",
+            artifact_sha256=snapshot_hash,
+        ),
+        evidence_locator=ExactEvidenceLocator(
+            source_content_sha256=snapshot_hash,
+            char_start=0,
+            char_end=len(quote),
+            exact_quote=quote,
+            quote_sha256=snapshot_hash,
+        ),
+    )
+
+    (created,) = proposal_store.create_proposals(
+        space_id=space_id,
+        run_id=run.id,
+        proposals=(
+            HarnessProposalDraft(
+                proposal_type="candidate_claim",
+                source_kind="document_extraction",
+                source_key=f"{document.id}:relation:0",
+                document_id=document.id,
+                title="Source-backed claim",
+                summary="Source-backed claim summary.",
+                confidence=0.9,
+                ranking_score=0.9,
+                reasoning_path={},
+                evidence_bundle=[{"excerpt": quote}],
+                payload={"proposed_claim_type": "ASSOCIATED_WITH"},
+                metadata={},
+                source_provenance=provenance,
+            ),
+        ),
+    )
+
+    fetched = proposal_store.get_proposal(
+        space_id=space_id,
+        proposal_id=created.id,
+    )
+
+    assert fetched is not None
+    assert fetched.source_provenance == provenance
+    model = session.get(HarnessProposalModel, created.id)
+    assert model is not None
+    assert model.source_provenance_status == "verified"
+
+    model.title = "Review metadata remains editable"
+    session.flush()
+    session.commit()
+
+    model.source_provenance_status = "invalid"
+    with pytest.raises(ValueError, match="proposal source provenance is immutable"):
+        session.flush()
+    session.rollback()
+
+    model = session.get(HarnessProposalModel, created.id)
+    assert model is not None
+    model.source_provenance_payload = {"status": "unverified"}
+    with pytest.raises(ValueError, match="proposal source provenance is immutable"):
+        session.flush()
+    session.rollback()
 
 
 def test_sqlalchemy_harness_proposal_store_normalizes_oversized_titles(
@@ -1657,11 +1779,15 @@ def test_sqlalchemy_harness_review_item_store_reuses_existing_item_after_unique_
         assert len(verified) == 1
         assert verified[0].id == created[0].id
 
-        stored_models = verifier_session.execute(
-            select(HarnessReviewItemModel).where(
-                HarnessReviewItemModel.space_id == space_id,
-            ),
-        ).scalars().all()
+        stored_models = (
+            verifier_session.execute(
+                select(HarnessReviewItemModel).where(
+                    HarnessReviewItemModel.space_id == space_id,
+                ),
+            )
+            .scalars()
+            .all()
+        )
         assert len(stored_models) == 1
 
 

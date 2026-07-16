@@ -123,6 +123,7 @@ def _clone_pubmed_candidate(candidate: object) -> _PubMedCandidate:
         pmc_id=getattr(candidate, "pmc_id", None),
         journal=getattr(candidate, "journal", None),
         publication_types=list(publication_types),
+        content_source_kind=getattr(candidate, "content_source_kind", "pubmed"),
     )
 
 def _clone_pubmed_candidate_review(review: object) -> object:
@@ -274,6 +275,9 @@ def _serialize_pubmed_candidate(candidate: object) -> JSONObject:
             for publication_type in getattr(candidate, "publication_types", ())
             if isinstance(publication_type, str) and publication_type.strip() != ""
         ],
+        "content_source_kind": str(
+            getattr(candidate, "content_source_kind", "pubmed"),
+        ),
     }
 
 def _serialize_pubmed_candidate_review(review: object) -> JSONObject:
@@ -364,6 +368,7 @@ def _deserialize_pubmed_candidate(payload: object) -> object | None:
     pmc_id = payload.get("pmc_id")
     journal = payload.get("journal")
     raw_publication_types = payload.get("publication_types")
+    content_source_kind = payload.get("content_source_kind")
     publication_types = (
         [
             publication_type
@@ -384,6 +389,9 @@ def _deserialize_pubmed_candidate(payload: object) -> object | None:
             journal if isinstance(journal, str) and journal.strip() != "" else None
         ),
         publication_types=publication_types,
+        content_source_kind=(
+            "pmc" if content_source_kind == "pmc" else "pubmed"
+        ),
     )
 
 def _deserialize_pubmed_candidate_review(payload: object) -> object | None:

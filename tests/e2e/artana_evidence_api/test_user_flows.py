@@ -1519,7 +1519,7 @@ def _build_client(
 
 
 @pytest.mark.e2e
-def test_chat_flow_runs_to_inline_graph_write_review_with_artana_backed_state(
+def test_chat_flow_rejects_unqualified_inline_graph_write_with_artana_backed_state(
     db_session: Session,
 ) -> None:
     client, _services = _build_client(session=db_session, runtime=FakeKernelRuntime())
@@ -1549,10 +1549,8 @@ def test_chat_flow_runs_to_inline_graph_write_review_with_artana_backed_state(
         headers=auth_headers(),
         json={"decision": "promote", "reason": "Grounded evidence is sufficient"},
     )
-    assert review_response.status_code == 200
-    review_payload = review_response.json()
-    assert review_payload["proposal"]["status"] == "promoted"
-    assert review_payload["candidate"]["relation_type"] == "REGULATES"
+    assert review_response.status_code == 409
+    assert review_response.json()["reason_code"] == "missing_qualified_claim_frame"
 
     capabilities_response = client.get(
         f"/v1/spaces/{space_id}/runs/{message_payload['run']['id']}/capabilities",
@@ -1571,14 +1569,13 @@ def test_chat_flow_runs_to_inline_graph_write_review_with_artana_backed_state(
     )
     assert policy_response.status_code == 200
     policy_payload = policy_response.json()
-    assert policy_payload["summary"]["manual_review_count"] == 1
+    assert policy_payload["summary"]["manual_review_count"] == 0
     manual_records = [
         record
         for record in policy_payload["records"]
         if record["decision_source"] == "manual_review"
     ]
-    assert len(manual_records) == 1
-    assert manual_records[0]["tool_name"] == "create_graph_claim"
+    assert manual_records == []
 
 
 @pytest.mark.e2e
@@ -1653,7 +1650,7 @@ def test_claim_curation_flow_pauses_for_approval_and_completes_after_resume(
 
 
 @pytest.mark.e2e
-def test_research_bootstrap_flow_stages_proposals_and_allows_promotion(
+def test_research_bootstrap_flow_rejects_unqualified_promotion(
     db_session: Session,
 ) -> None:
     client, _services = _build_client(session=db_session, runtime=FakeKernelRuntime())
@@ -1684,8 +1681,15 @@ def test_research_bootstrap_flow_stages_proposals_and_allows_promotion(
         headers=auth_headers(),
         json={"reason": "Bootstrap evidence is sufficient"},
     )
-    assert promote_response.status_code == 200
-    assert promote_response.json()["status"] == "promoted"
+    assert promote_response.status_code == 409
+    assert promote_response.json()["reason_code"] == "missing_qualified_claim_frame"
+
+    proposal_response = client.get(
+        f"/v1/spaces/{space_id}/proposals/{proposal_id}",
+        headers=auth_headers(),
+    )
+    assert proposal_response.status_code == 200
+    assert proposal_response.json()["status"] == "pending_review"
 
 
 @pytest.mark.e2e

@@ -14,6 +14,9 @@ from artana_evidence_api.document_extraction import (
 from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
     with_variant_aware_trust_metadata,
 )
+from artana_evidence_api.graph_integration.source_provenance import (
+    bind_source_provenance_to_drafts,
+)
 from artana_evidence_api.research_init_document_extraction_dependencies import (
     _enrich_pdf_document,
     _ground_candidate_claim_drafts,
@@ -1106,6 +1109,10 @@ def _store_prepared_extractions(
                 entity_ids=created_grounded_entity_ids,
             )
             errors.extend(grounding_errors)
+            grounded_drafts = bind_source_provenance_to_drafts(
+                document=prepared.document,
+                drafts=grounded_drafts,
+            )
             proposal_store.create_proposals(
                 space_id=space_id,
                 run_id=run.id,

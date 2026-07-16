@@ -233,6 +233,7 @@ class _PubMedCandidate:
     pmc_id: str | None = None
     journal: str | None = None
     publication_types: list[str] = field(default_factory=list)
+    content_source_kind: Literal["pubmed", "pmc"] = "pubmed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -456,12 +457,12 @@ def _merge_candidate(
     incoming: _PubMedCandidate,
 ) -> _PubMedCandidate:
     merged_queries = _dedupe_preserving_order([*existing.queries, *incoming.queries])
-    merged_text = (
-        incoming.text if len(incoming.text) > len(existing.text) else existing.text
+    preferred_content = (
+        incoming if len(incoming.text) > len(existing.text) else existing
     )
     return _PubMedCandidate(
         title=existing.title,
-        text=merged_text,
+        text=preferred_content.text,
         queries=merged_queries,
         pmid=existing.pmid or incoming.pmid,
         doi=existing.doi or incoming.doi,
@@ -470,6 +471,7 @@ def _merge_candidate(
         publication_types=_dedupe_preserving_order(
             [*existing.publication_types, *incoming.publication_types],
         ),
+        content_source_kind=preferred_content.content_source_kind,
     )
 
 

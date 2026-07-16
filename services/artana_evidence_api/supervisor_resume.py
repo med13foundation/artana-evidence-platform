@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from artana_evidence_api.approval_store import HarnessApprovalStore
     from artana_evidence_api.artifact_store import HarnessArtifactStore
     from artana_evidence_api.composition import GraphHarnessKernelRuntime
+    from artana_evidence_api.document_store import HarnessDocumentStore
     from artana_evidence_api.graph_client import GraphTransportBundle
     from artana_evidence_api.proposal_store import HarnessProposalStore
     from artana_evidence_api.run_registry import (
@@ -40,6 +41,7 @@ def resume_supervisor_run(  # noqa: PLR0913, PLR0915
     run: HarnessRunRecord,
     approval_store: HarnessApprovalStore,
     proposal_store: HarnessProposalStore,
+    document_store: HarnessDocumentStore,
     run_registry: HarnessRunRegistry,
     artifact_store: HarnessArtifactStore,
     runtime: GraphHarnessKernelRuntime,
@@ -147,6 +149,7 @@ def resume_supervisor_run(  # noqa: PLR0913, PLR0915
             run=curation_run,
             approval_store=approval_store,
             proposal_store=proposal_store,
+            document_store=document_store,
             run_registry=run_registry,
             artifact_store=artifact_store,
             runtime=runtime,

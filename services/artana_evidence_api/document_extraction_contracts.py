@@ -3,9 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol, cast
 
-from artana_evidence_api.types.common import JSONObject
+from artana_evidence_api.types.common import JSONObject, json_value
+
+if TYPE_CHECKING:
+    from artana_evidence_api.document_extraction_support.claim_frames import (
+        ClaimFrame,
+        ClaimQualifier,
+        ClaimSourceMeasurement,
+        EpistemicStatus,
+        Polarity,
+    )
 
 FactualSupportScale = Literal["strong", "moderate", "tentative", "unsupported"]
 GoalRelevanceScale = Literal[
@@ -19,6 +28,27 @@ PriorityScale = Literal["prioritize", "review", "background", "ignore"]
 RelationGovernanceStatus = Literal["canonical", "requires_relation_review"]
 CurieSource = Literal["none", "model", "verified_linker"]
 RelationReviewStatus = Literal["candidate", "review_only"]
+ClaimExtractionRoutingStatus = Literal[
+    "not_run",
+    "complete",
+    "candidate_overflow",
+    "semantic_incomplete",
+]
+_CLAIM_EXTRACTION_ROUTING_STATUSES = frozenset(
+    {"not_run", "complete", "candidate_overflow", "semantic_incomplete"},
+)
+
+
+def normalize_claim_extraction_routing_status(
+    value: object,
+) -> ClaimExtractionRoutingStatus:
+    """Read a closed routing status from compatibility-list telemetry."""
+
+    if isinstance(value, str) and value in _CLAIM_EXTRACTION_ROUTING_STATUSES:
+        return cast("ClaimExtractionRoutingStatus", value)
+    return "not_run"
+
+
 PdfTextExtractionOutcome = Literal[
     "text",
     "no_text_image_likely",
@@ -58,6 +88,19 @@ class LLMRelationLike(Protocol):
     object: str
     object_curie: str | None
     sentence: str
+    polarity: Polarity
+    epistemic_status: EpistemicStatus
+    biological_or_variant_state: ClaimQualifier
+    population: ClaimQualifier
+    intervention: ClaimQualifier
+    comparator: ClaimQualifier
+    outcome: ClaimQualifier
+    study_design: ClaimQualifier
+    treatment_setting: ClaimQualifier
+    timeframe: ClaimQualifier
+    threshold: ClaimQualifier
+    source_measurements: list[ClaimSourceMeasurement]
+    extraction_rationale: str
 
 
 class LLMExtractionResultLike(Protocol):
@@ -101,6 +144,7 @@ class ExtractedRelationCandidate:
     relation_governance_status: RelationGovernanceStatus = "canonical"
     review_status: RelationReviewStatus = "candidate"
     review_reason_codes: tuple[str, ...] = ()
+    claim_frame: ClaimFrame | None = None
 
     @property
     def trusted_evidence_eligible(self) -> bool:
@@ -109,7 +153,58 @@ class ExtractedRelationCandidate:
         return (
             self.relation_governance_status == "canonical"
             and self.review_status != "review_only"
+            and self.claim_frame is not None
+            and self.claim_frame.is_positive_projection_eligible
         )
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimExtractionLineage:
+    """Production-visible join from inventory unit to audited framing output."""
+
+    inventory_id: str
+    source_sha256: str
+    source_start: int
+    source_end: int
+    claim_local_source_start: int
+    claim_local_source_end: int
+    inventory_payload: dict[str, object]
+    framing_decision: Literal["FRAMED", "ABSTAIN"]
+    candidate: ExtractedRelationCandidate | None
+    framing_attempt: dict[str, object]
+    raw_agent_output: dict[str, object]
+
+    def as_metadata(self) -> JSONObject:
+        """Serialize complete claim-unit provenance for workflow metadata."""
+
+        candidate_payload: dict[str, object] | None = None
+        if self.candidate is not None:
+            candidate_payload = {
+                "subject_label": self.candidate.subject_label,
+                "relation_type": self.candidate.relation_type,
+                "object_label": self.candidate.object_label,
+                "sentence": self.candidate.sentence,
+                "review_status": self.candidate.review_status,
+                "review_reason_codes": self.candidate.review_reason_codes,
+                "claim_frame": (
+                    self.candidate.claim_frame.model_dump(mode="json")
+                    if self.candidate.claim_frame is not None
+                    else None
+                ),
+            }
+        return {
+            "inventory_id": self.inventory_id,
+            "source_sha256": self.source_sha256,
+            "source_start": self.source_start,
+            "source_end": self.source_end,
+            "claim_local_source_start": self.claim_local_source_start,
+            "claim_local_source_end": self.claim_local_source_end,
+            "inventory_payload": json_value(self.inventory_payload),
+            "framing_decision": self.framing_decision,
+            "candidate": json_value(candidate_payload),
+            "framing_attempt": json_value(self.framing_attempt),
+            "raw_agent_output": json_value(self.raw_agent_output),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,6 +279,7 @@ class DocumentCandidateExtractionDiagnostics:
         "fallback",
         "fallback_error",
         "unavailable",
+        "semantic_incomplete",
     ]
     llm_candidate_error: str | None = None
     llm_candidate_count: int = 0
@@ -192,20 +288,27 @@ class DocumentCandidateExtractionDiagnostics:
     quality_filtered_candidate_count: int = 0
     llm_extraction_chunk_count: int = 0
     llm_extraction_text_char_count: int = 0
+    claim_extraction_routing_status: ClaimExtractionRoutingStatus = "not_run"
+    candidate_overflow_count: int = 0
+    claim_lineage: tuple[ClaimExtractionLineage, ...] = ()
+    raw_agent_outputs: tuple[dict[str, object], ...] = ()
+    model_attempt_records: tuple[dict[str, object], ...] = ()
 
     @property
     def agent_extraction_completed(self) -> bool:
         """Return whether the agent path completed relation extraction."""
 
-        return self.llm_candidate_status == "completed"
+        return (
+            self.llm_candidate_status == "completed"
+            and self.claim_extraction_routing_status != "semantic_incomplete"
+        )
 
     @property
     def fallback_output_used(self) -> bool:
         """Return whether candidates came from a fallback/non-agent source."""
 
         return (
-            self.llm_candidate_status
-            in {"fallback", "fallback_error", "unavailable"}
+            self.llm_candidate_status in {"fallback", "fallback_error", "unavailable"}
             or self.fallback_candidate_count > 0
         )
 
@@ -213,7 +316,12 @@ class DocumentCandidateExtractionDiagnostics:
     def trusted_evidence_eligible(self) -> bool:
         """Return whether candidate output may enter trusted-evidence gates."""
 
-        return self.agent_extraction_completed and not self.fallback_output_used
+        return (
+            self.agent_extraction_completed
+            and not self.fallback_output_used
+            and self.claim_extraction_routing_status in {"not_run", "complete"}
+            and self.candidate_overflow_count == 0
+        )
 
     def as_metadata(self) -> JSONObject:
         """Serialize diagnostics into JSON-safe metadata."""
@@ -221,9 +329,15 @@ class DocumentCandidateExtractionDiagnostics:
         payload: JSONObject = {
             "llm_candidate_status": self.llm_candidate_status,
             "llm_candidate_attempted": self.llm_candidate_status
-            in {"completed", "llm_empty", "fallback", "fallback_error"},
+            in {
+                "completed",
+                "llm_empty",
+                "fallback",
+                "fallback_error",
+                "semantic_incomplete",
+            },
             "llm_candidate_failed": self.llm_candidate_status
-            in {"fallback", "fallback_error", "unavailable"},
+            in {"fallback", "fallback_error", "unavailable", "semantic_incomplete"},
             "agent_extraction_completed": self.agent_extraction_completed,
             "fallback_output_used": self.fallback_output_used,
             "trusted_evidence_eligible": self.trusted_evidence_eligible,
@@ -246,12 +360,30 @@ class DocumentCandidateExtractionDiagnostics:
             payload["llm_extraction_text_char_count"] = (
                 self.llm_extraction_text_char_count
             )
+        if self.claim_extraction_routing_status != "not_run":
+            payload["claim_extraction_routing_status"] = (
+                self.claim_extraction_routing_status
+            )
+        if self.candidate_overflow_count > 0:
+            payload["candidate_overflow_count"] = self.candidate_overflow_count
+        if self.claim_lineage:
+            payload["claim_lineage"] = [
+                lineage.as_metadata() for lineage in self.claim_lineage
+            ]
+        if self.raw_agent_outputs:
+            payload["raw_agent_outputs"] = json_value(self.raw_agent_outputs)
+        if self.model_attempt_records:
+            payload["model_attempt_records"] = json_value(
+                self.model_attempt_records,
+            )
         if self.llm_candidate_error is not None:
             payload["llm_candidate_error"] = self.llm_candidate_error
         return payload
 
 
 __all__ = [
+    "ClaimExtractionLineage",
+    "ClaimExtractionRoutingStatus",
     "DocumentCandidateExtractionDiagnostics",
     "DocumentExtractionReviewContext",
     "DocumentProposalReview",
@@ -270,5 +402,6 @@ __all__ = [
     "ProposalReviewItemLike",
     "ProposalReviewResultLike",
     "RelationGovernanceStatus",
+    "normalize_claim_extraction_routing_status",
     "PdfTextExtractionOutcome",
 ]

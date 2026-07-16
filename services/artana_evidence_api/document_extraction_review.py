@@ -218,23 +218,16 @@ def build_fallback_document_review(
     """Build a deterministic proposal review when model review is unavailable."""
 
     normalized_sentence = f" {candidate.sentence.casefold()} "
+    factual_support: FactualSupportScale = "tentative"
     if any(marker in normalized_sentence for marker in _FACTUAL_HEDGE_MARKERS):
-        factual_support: FactualSupportScale = "tentative"
         factual_rationale = (
-            "The source sentence uses hedged or indirect language, so the claim "
-            "should be treated cautiously."
-        )
-    elif candidate.relation_type == "ASSOCIATED_WITH":
-        factual_support = "moderate"
-        factual_rationale = (
-            "The source sentence states an association, but the extracted claim "
-            "should remain below strong support by default."
+            "The source sentence uses hedged or indirect language. Deterministic "
+            "fallback can only route the claim for cautious review."
         )
     else:
-        factual_support = "strong"
         factual_rationale = (
-            "The source sentence states the extracted relation directly and without "
-            "obvious hedging language."
+            "Deterministic fallback cannot establish biomedical support. The literal "
+            "sentence is retained for triage pending agent review."
         )
 
     goal_tokens = _goal_context_tokens(review_context)

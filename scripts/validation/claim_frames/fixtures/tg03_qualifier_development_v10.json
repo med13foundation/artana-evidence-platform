@@ -1,0 +1,319 @@
+{
+  "schema_version": "tg03_qualifier_benchmark.v1",
+  "cases": [
+    {
+      "case_id": "variant_egfr_t790m",
+      "title": "EGFR T790M variant state",
+      "category": "variant_state",
+      "source_text": "The EGFR T790M mutation conferred resistance to gefitinib in lung cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "variant_egfr_t790m_01",
+          "subject": "EGFR T790M mutation",
+          "predicate": "CONFERS_RESISTANCE_TO",
+          "object": "gefitinib",
+          "source_span": "The EGFR T790M mutation conferred resistance to gefitinib in lung cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "T790M mutation", "exact_span": "T790M mutation"},
+            "population": {"state": "PRESENT", "value": "lung cancer", "exact_span": "lung cancer"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "variant_brca1_zygosity",
+      "title": "BRCA1 loss and zygosity",
+      "category": "variant_state",
+      "source_text": "Biallelic BRCA1 loss sensitized triple-negative breast cancer to cisplatin.",
+      "expected_frames": [
+        {
+          "frame_id": "variant_brca1_zygosity_01",
+          "subject": "Biallelic BRCA1 loss",
+          "predicate": "SENSITIZES_TO",
+          "object": "cisplatin",
+          "source_span": "Biallelic BRCA1 loss sensitized triple-negative breast cancer to cisplatin.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "Biallelic BRCA1 loss", "exact_span": "Biallelic BRCA1 loss"},
+            "population": {"state": "PRESENT", "value": "triple-negative breast cancer", "exact_span": "triple-negative breast cancer"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "disease_subtype",
+      "title": "Disease subtype preservation",
+      "category": "disease_subtype",
+      "source_text": "Pembrolizumab treated HER2-low metastatic breast cancer in the cohort.",
+      "expected_frames": [
+        {
+          "frame_id": "disease_subtype_01",
+          "subject": "Pembrolizumab",
+          "predicate": "TREATS",
+          "object": "HER2-low metastatic breast cancer",
+          "source_span": "Pembrolizumab treated HER2-low metastatic breast cancer in the cohort.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "HER2-low", "exact_span": "HER2-low"},
+            "population": {"state": "PRESENT", "value": "the cohort", "exact_span": "the cohort"},
+            "study_design": {"state": "PRESENT", "value": "cohort", "exact_span": "cohort"},
+            "treatment_setting": {"state": "PRESENT", "value": "metastatic", "exact_span": "metastatic"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "population",
+      "title": "Population qualifier",
+      "category": "population",
+      "source_text": "Among adults with metastatic melanoma, nivolumab improved survival.",
+      "expected_frames": [
+        {
+          "frame_id": "population_01",
+          "subject": "nivolumab",
+          "predicate": "TREATS",
+          "object": "metastatic melanoma",
+          "source_span": "Among adults with metastatic melanoma, nivolumab improved survival.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "population": {"state": "PRESENT", "value": "adults", "exact_span": "adults"},
+            "outcome": {"state": "PRESENT", "value": "survival", "exact_span": "survival"},
+            "treatment_setting": {"state": "PRESENT", "value": "metastatic", "exact_span": "metastatic"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "treatment_line",
+      "title": "Treatment line qualifier",
+      "category": "treatment_setting",
+      "source_text": "In the second-line setting, trastuzumab treated HER2-positive gastric cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "treatment_line_01",
+          "subject": "trastuzumab",
+          "predicate": "TREATS",
+          "object": "HER2-positive gastric cancer",
+          "source_span": "In the second-line setting, trastuzumab treated HER2-positive gastric cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "HER2-positive", "exact_span": "HER2-positive"},
+            "treatment_setting": {"state": "PRESENT", "value": "second-line", "exact_span": "second-line setting"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "assay_cutoff",
+      "title": "Assay cutoff and source measurement",
+      "category": "threshold",
+      "source_text": "PD-L1 expression at or above the 50% assay cutoff predicted response to pembrolizumab.",
+      "expected_frames": [
+        {
+          "frame_id": "assay_cutoff_01",
+          "subject": "PD-L1 expression",
+          "predicate": "BIOMARKER_FOR",
+          "object": "response to pembrolizumab",
+          "source_span": "PD-L1 expression at or above the 50% assay cutoff predicted response to pembrolizumab.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "threshold": {"state": "PRESENT", "value": "50%", "exact_span": "50% assay cutoff"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "comparator",
+      "title": "Comparator preservation",
+      "category": "comparator",
+      "source_text": "Osimertinib improved response compared with docetaxel in EGFR-mutant lung cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "comparator_01",
+          "subject": "osimertinib",
+          "predicate": "TREATS",
+          "object": "EGFR-mutant lung cancer",
+          "source_span": "Osimertinib improved response compared with docetaxel in EGFR-mutant lung cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "comparator": {"state": "PRESENT", "value": "docetaxel", "exact_span": "docetaxel"},
+            "biological_or_variant_state": {"state": "PRESENT", "value": "EGFR-mutant", "exact_span": "EGFR-mutant"},
+            "outcome": {"state": "PRESENT", "value": "response", "exact_span": "improved response"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "endpoint",
+      "title": "Endpoint qualifier",
+      "category": "endpoint",
+      "source_text": "Olaparib increased objective response rate in recurrent ovarian cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "endpoint_01",
+          "subject": "Olaparib",
+          "predicate": "TREATS",
+          "object": "recurrent ovarian cancer",
+          "source_span": "Olaparib increased objective response rate in recurrent ovarian cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "outcome": {"state": "PRESENT", "value": "objective response rate", "exact_span": "objective response rate"},
+            "treatment_setting": {"state": "PRESENT", "value": "recurrent", "exact_span": "recurrent"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "timeframe",
+      "title": "Timeframe qualifier",
+      "category": "timeframe",
+      "source_text": "At 12 months, alpelisib was associated with sustained response in PIK3CA-mutant breast cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "timeframe_01",
+          "subject": "alpelisib",
+          "predicate": "ASSOCIATED_WITH",
+          "object": "sustained response",
+          "source_span": "At 12 months, alpelisib was associated with sustained response in PIK3CA-mutant breast cancer.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "timeframe": {"state": "PRESENT", "value": "12 months", "exact_span": "12 months"},
+            "biological_or_variant_state": {"state": "PRESENT", "value": "PIK3CA-mutant", "exact_span": "PIK3CA-mutant"},
+            "population": {"state": "PRESENT", "value": "PIK3CA-mutant breast cancer", "exact_span": "PIK3CA-mutant breast cancer"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "explicit_negation",
+      "title": "Explicit negative association",
+      "category": "negation",
+      "source_text": "The replication study refuted the claim that BRCA1 expression is a biomarker for platinum response.",
+      "expected_frames": [
+        {
+          "frame_id": "explicit_negation_01",
+          "subject": "BRCA1 expression",
+          "predicate": "BIOMARKER_FOR",
+          "object": "platinum response",
+          "source_span": "The replication study refuted the claim that BRCA1 expression is a biomarker for platinum response.",
+          "polarity": "REFUTE",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "study_design": {"state": "PRESENT", "value": "replication study", "exact_span": "replication study"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "failed_threshold_null",
+      "title": "Failed threshold and null result",
+      "category": "null_result",
+      "source_text": "Erlotinib did not meet the prespecified 30% response threshold in EGFR-mutant lung cancer.",
+      "expected_frames": [
+        {
+          "frame_id": "failed_threshold_null_01",
+          "subject": "Erlotinib",
+          "predicate": "TREATS",
+          "object": "EGFR-mutant lung cancer",
+          "source_span": "Erlotinib did not meet the prespecified 30% response threshold in EGFR-mutant lung cancer.",
+          "polarity": "NULL_RESULT",
+          "epistemic_status": "NULL_RESULT",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "EGFR-mutant", "exact_span": "EGFR-mutant"},
+            "outcome": {"state": "PRESENT", "value": "response", "exact_span": "response threshold"},
+            "threshold": {"state": "PRESENT", "value": "30%", "exact_span": "30% response threshold"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "provisional_claim",
+      "title": "Provisional claim",
+      "category": "epistemic_status",
+      "source_text": "Preliminary data suggest that vemurafenib improves outcomes in BRAF V600E melanoma.",
+      "expected_frames": [
+        {
+          "frame_id": "provisional_claim_01",
+          "subject": "vemurafenib",
+          "predicate": "TREATS",
+          "object": "BRAF V600E melanoma",
+          "source_span": "Preliminary data suggest that vemurafenib improves outcomes in BRAF V600E melanoma.",
+          "polarity": "SUPPORT",
+          "epistemic_status": "PROVISIONAL",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "BRAF V600E", "exact_span": "BRAF V600E"},
+            "outcome": {"state": "PRESENT", "value": "outcomes", "exact_span": "outcomes"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "novel_hypothesis",
+      "title": "Novel hypothesis",
+      "category": "hypothesis",
+      "source_text": "We hypothesize that STK11 loss predisposes tumors to resistance to immunotherapy.",
+      "expected_frames": [
+        {
+          "frame_id": "novel_hypothesis_01",
+          "subject": "STK11 loss",
+          "predicate": "PREDISPOSES_TO",
+          "object": "resistance to immunotherapy",
+          "source_span": "We hypothesize that STK11 loss predisposes tumors to resistance to immunotherapy.",
+          "polarity": "HYPOTHESIS",
+          "epistemic_status": "HYPOTHESIS",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "STK11 loss", "exact_span": "STK11 loss"},
+            "population": {"state": "PRESENT", "value": "tumors", "exact_span": "tumors"},
+            "intervention": {"state": "PRESENT", "value": "immunotherapy", "exact_span": "immunotherapy"}
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "multi_clause_binding",
+      "title": "Multi-clause qualifier binding",
+      "category": "multi_clause",
+      "source_text": "Among adolescents with BRAF V600E melanoma, dabrafenib treated BRAF-positive disease versus dacarbazine and improved progression-free survival at 12 months, while NRAS Q61R melanoma was not associated with response to dabrafenib.",
+      "expected_frames": [
+        {
+          "frame_id": "multi_clause_binding_01",
+          "subject": "dabrafenib",
+          "predicate": "TREATS",
+          "object": "BRAF-positive disease",
+          "source_span": "Among adolescents with BRAF V600E melanoma, dabrafenib treated BRAF-positive disease versus dacarbazine and improved progression-free survival at 12 months",
+          "polarity": "SUPPORT",
+          "epistemic_status": "ASSERTED",
+          "qualifiers": {
+            "population": {"state": "PRESENT", "value": "adolescents with BRAF V600E melanoma", "exact_span": "adolescents with BRAF V600E melanoma"},
+            "biological_or_variant_state": {"state": "PRESENT", "value": "BRAF V600E", "exact_span": "BRAF V600E"},
+            "comparator": {"state": "PRESENT", "value": "dacarbazine", "exact_span": "dacarbazine"},
+            "outcome": {"state": "PRESENT", "value": "progression-free survival", "exact_span": "progression-free survival"},
+            "timeframe": {"state": "PRESENT", "value": "12 months", "exact_span": "12 months"}
+          }
+        },
+        {
+          "frame_id": "multi_clause_binding_02",
+          "subject": "NRAS Q61R melanoma",
+          "predicate": "ASSOCIATED_WITH",
+          "object": "response to dabrafenib",
+          "source_span": "NRAS Q61R melanoma was not associated with response to dabrafenib.",
+          "polarity": "NULL_RESULT",
+          "epistemic_status": "NULL_RESULT",
+          "qualifiers": {
+            "biological_or_variant_state": {"state": "PRESENT", "value": "NRAS Q61R", "exact_span": "NRAS Q61R"}
+          }
+        }
+      ]
+    }
+  ]
+}

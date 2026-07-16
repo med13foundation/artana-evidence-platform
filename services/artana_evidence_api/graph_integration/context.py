@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     )
 
 GraphCallRole = Literal["admin", "curator", "researcher", "viewer"]
-GraphServiceCapability = Literal["space_sync"]
+GraphServiceCapability = Literal["source_provenance_submit", "space_sync"]
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,9 @@ class GraphCallContext:
         role: GraphCallRole = "researcher",
         graph_admin: bool = False,
         graph_ai_principal: str | None = None,
-        graph_service_capabilities: tuple[GraphServiceCapability, ...] = (),
+        graph_service_capabilities: tuple[GraphServiceCapability, ...] = (
+            "source_provenance_submit",
+        ),
         request_id: str | None = None,
     ) -> GraphCallContext:
         """Build one service-owned graph call context."""

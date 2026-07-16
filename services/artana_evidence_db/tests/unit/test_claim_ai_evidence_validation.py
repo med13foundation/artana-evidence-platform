@@ -154,9 +154,54 @@ def test_ai_claim_requires_entailing_support_verification() -> None:
     assert issue is not None
     assert issue.code == "insufficient_evidence"
     assert issue.message == (
-        "AI-authored claims require support verification with support=ENTAILS."
+        "AI-authored claims require independent agent support verification with "
+        "support=ENTAILS and verification_method=agent."
     )
     assert len(issue.next_actions) == 1
+    assert issue.next_actions[0].action == "attach_support_verification"
+
+
+@pytest.mark.parametrize(
+    ("verification_method", "model_id"),
+    [
+        ("fallback", "openai:gpt-5.6-luna"),
+        ("heuristic", "openai:gpt-5.6-luna"),
+        ("deterministic", "openai:gpt-5.6-luna"),
+        ("rules", "openai:gpt-5.6-luna"),
+        ("agent", None),
+        ("agent", "deterministic-support-v1"),
+        ("agent", "rules-support-v1"),
+        ("agent", "fallback-support-v1"),
+        ("agent", "heuristic-support-v1"),
+    ],
+)
+def test_ai_claim_rejects_untrusted_verification_impersonation(
+    verification_method: str,
+    model_id: str | None,
+) -> None:
+    support_verification = {
+        "support": "ENTAILS",
+        "rationale": "Caller-supplied verification cannot establish trust.",
+        "verification_method": verification_method,
+        "model_id": model_id,
+    }
+
+    issue = validate_ai_claim_evidence(
+        _claim_request(
+            agent_run_id="ai-run-1",
+            ai_provenance=_AI_PROVENANCE,
+            evidence_sentence_source="artana_generated",
+            metadata={
+                "origin": "graph_harness",
+                "evidence_grounding": _VALID_GROUNDING,
+                "support_verification": support_verification,
+            },
+        ),
+        requires_evidence=True,
+    )
+
+    assert issue is not None
+    assert issue.code == "insufficient_evidence"
     assert issue.next_actions[0].action == "attach_support_verification"
 
 
@@ -350,7 +395,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
         ),
         (
             {"support_verification": {**_VALID_SUPPORT_VERIFICATION, "support": "NEUTRAL"}},
-            "AI-authored claims require support verification with support=ENTAILS.",
+            "AI-authored claims require independent agent support verification "
+            "with support=ENTAILS and verification_method=agent.",
             "attach_support_verification",
         ),
         (
@@ -361,8 +407,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "Trusted AI evidence requires independent agent support "
-                "verification with support=ENTAILS."
+                "AI-authored claims require independent agent support verification "
+                "with support=ENTAILS and verification_method=agent."
             ),
             "attach_support_verification",
         ),
@@ -374,8 +420,8 @@ def test_ai_claim_rejects_claimed_trusted_tier_from_fallback_output() -> None:
                 },
             },
             (
-                "Trusted AI evidence requires independent agent support "
-                "verification with support=ENTAILS."
+                "AI-authored claims require independent agent support verification "
+                "with support=ENTAILS and verification_method=agent."
             ),
             "attach_support_verification",
         ),
@@ -492,7 +538,7 @@ def test_ai_claim_rejects_forged_agent_method_without_server_receipt() -> None:
     metadata["support_verification"] = {
         "support": "ENTAILS",
         "rationale": "A deterministic cue matched both endpoints.",
-        "model_id": "artana-heuristic-support-v1",
+        "model_id": "openai:gpt-5.6-luna",
         "verification_method": "agent",
     }
 
@@ -584,7 +630,8 @@ def test_ai_relation_create_requires_entailing_support_verification() -> None:
     assert issue is not None
     assert issue.code == "insufficient_evidence"
     assert issue.message == (
-        "AI-authored claims require support verification with support=ENTAILS."
+        "AI-authored claims require independent agent support verification with "
+        "support=ENTAILS and verification_method=agent."
     )
 
 

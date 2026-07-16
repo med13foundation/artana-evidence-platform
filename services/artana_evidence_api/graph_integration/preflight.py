@@ -983,6 +983,16 @@ def _claim_validation_payload(request: KernelRelationClaimCreateRequest) -> JSON
         "evidence_summary": request.evidence_summary,
         "evidence_sentence": request.evidence_sentence,
         "source_document_ref": request.source_document_ref,
+        "source_document_id": (
+            str(request.source_document_id)
+            if request.source_document_id is not None
+            else None
+        ),
+        "source_evidence": (
+            cast("JSONObject", request.source_evidence.model_dump(mode="json"))
+            if request.source_evidence is not None
+            else None
+        ),
     }
 
 
@@ -994,6 +1004,16 @@ def _relation_validation_payload(request: KernelRelationCreateRequest) -> JSONOb
         "evidence_summary": request.evidence_summary,
         "evidence_sentence": request.evidence_sentence,
         "source_document_ref": request.source_document_ref,
+        "source_document_id": (
+            str(request.source_document_id)
+            if request.source_document_id is not None
+            else None
+        ),
+        "source_evidence": (
+            cast("JSONObject", request.source_evidence.model_dump(mode="json"))
+            if request.source_evidence is not None
+            else None
+        ),
     }
 
 

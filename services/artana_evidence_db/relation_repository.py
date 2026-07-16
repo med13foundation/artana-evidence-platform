@@ -151,6 +151,7 @@ class SqlAlchemyKernelRelationRepository(
                         evidence_write.source_document_ref,
                         max_length=512,
                     ),
+                    source_snapshot_id=evidence_write.source_snapshot_id,
                     agent_run_id=_normalize_optional_text(
                         evidence_write.agent_run_id,
                         max_length=255,

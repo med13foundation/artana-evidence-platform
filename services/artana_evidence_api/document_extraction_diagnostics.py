@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Literal
 
 from artana_evidence_api.document_extraction_contracts import (
+    ClaimExtractionLineage,
+    ClaimExtractionRoutingStatus,
     DocumentCandidateExtractionDiagnostics,
     DocumentProposalReviewDiagnostics,
 )
@@ -25,6 +27,11 @@ def candidate_completed(
     quality_filtered_candidate_count: int = 0,
     llm_extraction_chunk_count: int = 0,
     llm_extraction_text_char_count: int = 0,
+    claim_extraction_routing_status: ClaimExtractionRoutingStatus = "not_run",
+    candidate_overflow_count: int = 0,
+    claim_lineage: tuple[ClaimExtractionLineage, ...] = (),
+    raw_agent_outputs: tuple[dict[str, object], ...] = (),
+    model_attempt_records: tuple[dict[str, object], ...] = (),
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics for a successful LLM candidate extraction."""
 
@@ -35,6 +42,11 @@ def candidate_completed(
         quality_filtered_candidate_count=quality_filtered_candidate_count,
         llm_extraction_chunk_count=llm_extraction_chunk_count,
         llm_extraction_text_char_count=llm_extraction_text_char_count,
+        claim_extraction_routing_status=claim_extraction_routing_status,
+        candidate_overflow_count=candidate_overflow_count,
+        claim_lineage=claim_lineage,
+        raw_agent_outputs=raw_agent_outputs,
+        model_attempt_records=model_attempt_records,
     )
 
 
@@ -45,6 +57,10 @@ def candidate_llm_empty(
     quality_filtered_candidate_count: int = 0,
     llm_extraction_chunk_count: int = 0,
     llm_extraction_text_char_count: int = 0,
+    claim_extraction_routing_status: ClaimExtractionRoutingStatus = "not_run",
+    claim_lineage: tuple[ClaimExtractionLineage, ...] = (),
+    raw_agent_outputs: tuple[dict[str, object], ...] = (),
+    model_attempt_records: tuple[dict[str, object], ...] = (),
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics when the LLM succeeded but produced no usable claims."""
 
@@ -56,6 +72,34 @@ def candidate_llm_empty(
         quality_filtered_candidate_count=quality_filtered_candidate_count,
         llm_extraction_chunk_count=llm_extraction_chunk_count,
         llm_extraction_text_char_count=llm_extraction_text_char_count,
+        claim_extraction_routing_status=claim_extraction_routing_status,
+        claim_lineage=claim_lineage,
+        raw_agent_outputs=raw_agent_outputs,
+        model_attempt_records=model_attempt_records,
+    )
+
+
+def candidate_semantic_incomplete(
+    *,
+    claim_lineage: tuple[ClaimExtractionLineage, ...],
+    raw_agent_outputs: tuple[dict[str, object], ...],
+    model_attempt_records: tuple[dict[str, object], ...],
+    llm_extraction_chunk_count: int,
+    llm_extraction_text_char_count: int,
+) -> DocumentCandidateExtractionDiagnostics:
+    """Return fail-closed diagnostics for an incomplete reviewed inventory."""
+
+    return DocumentCandidateExtractionDiagnostics(
+        llm_candidate_status="semantic_incomplete",
+        llm_candidate_error=(
+            "Inventory completeness remained INCOMPLETE after one agent recovery pass"
+        ),
+        llm_extraction_chunk_count=llm_extraction_chunk_count,
+        llm_extraction_text_char_count=llm_extraction_text_char_count,
+        claim_extraction_routing_status="semantic_incomplete",
+        claim_lineage=claim_lineage,
+        raw_agent_outputs=raw_agent_outputs,
+        model_attempt_records=model_attempt_records,
     )
 
 
@@ -121,6 +165,7 @@ __all__ = [
     "candidate_fallback",
     "candidate_llm_empty",
     "candidate_not_needed",
+    "candidate_semantic_incomplete",
     "proposal_review_completed",
     "proposal_review_fallback_error",
     "proposal_review_not_needed",

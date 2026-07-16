@@ -631,6 +631,15 @@
           "assessment": {
             "$ref": "#/components/schemas/FactAssessment"
           },
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
+          },
           "evidence_summary": {
             "anyOf": [
               {
@@ -2635,6 +2644,15 @@
       "CreateManualHypothesisRequest": {
         "description": "Request payload for manually logging one hypothesis.",
         "properties": {
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
+          },
           "rationale": {
             "maxLength": 4000,
             "minLength": 1,
@@ -5047,6 +5065,118 @@
         "title": "EntityTypeProposalCreateRequest",
         "type": "object"
       },
+      "ExactEvidenceLocator": {
+        "additionalProperties": false,
+        "description": "Exact character-span locator against a hashed source snapshot.",
+        "properties": {
+          "char_end": {
+            "title": "Char End",
+            "type": "integer"
+          },
+          "char_start": {
+            "minimum": 0.0,
+            "title": "Char Start",
+            "type": "integer"
+          },
+          "exact_quote": {
+            "maxLength": 12000,
+            "minLength": 1,
+            "title": "Exact Quote",
+            "type": "string"
+          },
+          "figure_reference": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figure Reference"
+          },
+          "page_number": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Number"
+          },
+          "paragraph_index": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paragraph Index"
+          },
+          "quote_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Quote Sha256",
+            "type": "string"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "sentence_index": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentence Index"
+          },
+          "source_content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Source Content Sha256",
+            "type": "string"
+          },
+          "table_reference": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Reference"
+          }
+        },
+        "required": [
+          "source_content_sha256",
+          "char_start",
+          "char_end",
+          "exact_quote",
+          "quote_sha256"
+        ],
+        "title": "ExactEvidenceLocator",
+        "type": "object"
+      },
       "ExplanationResponse": {
         "description": "Human-readable explanation for graph workflow resources.",
         "properties": {
@@ -7355,6 +7485,16 @@
             "title": "Created At",
             "type": "string"
           },
+          "evidence_locator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExactEvidenceLocator"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "figure_reference": {
             "anyOf": [
               {
@@ -7384,6 +7524,48 @@
             },
             "title": "Paper Links",
             "type": "array"
+          },
+          "provenance_reason_codes": {
+            "items": {
+              "enum": [
+                "verified",
+                "legacy_evidence_without_typed_provenance",
+                "missing_source_document_id",
+                "missing_source_identity",
+                "missing_evidence_locator",
+                "missing_source_snapshot_text",
+                "source_attestation_capability_missing",
+                "source_attestation_service_missing",
+                "source_attestation_service_mismatch",
+                "upstream_document_id_mismatch",
+                "upstream_research_space_mismatch",
+                "authoritative_identifier_invalid",
+                "authoritative_identifier_mismatch",
+                "source_identifier_field_missing",
+                "source_identifier_field_mismatch",
+                "source_version_unverifiable",
+                "source_version_mismatch",
+                "source_content_unavailable",
+                "source_content_hash_mismatch",
+                "identity_locator_hash_mismatch",
+                "evidence_bounds_invalid",
+                "evidence_quote_mismatch",
+                "quote_hash_mismatch"
+              ],
+              "type": "string"
+            },
+            "title": "Provenance Reason Codes",
+            "type": "array"
+          },
+          "provenance_status": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "INVALID",
+              "LEGACY_UNVERIFIED"
+            ],
+            "title": "Provenance Status",
+            "type": "string"
           },
           "sentence": {
             "anyOf": [
@@ -7452,6 +7634,28 @@
             ],
             "title": "Source Document Ref"
           },
+          "source_identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Snapshot Id"
+          },
           "table_reference": {
             "anyOf": [
               {
@@ -7475,6 +7679,8 @@
           "table_reference",
           "confidence",
           "metadata",
+          "provenance_status",
+          "provenance_reason_codes",
           "created_at"
         ],
         "title": "KernelClaimEvidenceResponse",
@@ -8924,6 +9130,7 @@
               "unknown_provenance",
               "cross_space_provenance",
               "insufficient_evidence",
+              "invalid_source_provenance",
               "permission_denied"
             ],
             "title": "Code",
@@ -10129,6 +10336,15 @@
           "assessment": {
             "$ref": "#/components/schemas/FactAssessment"
           },
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
+          },
           "claim_text": {
             "anyOf": [
               {
@@ -10214,6 +10430,18 @@
             "title": "Relation Type",
             "type": "string"
           },
+          "source_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Id"
+          },
           "source_document_ref": {
             "anyOf": [
               {
@@ -10230,6 +10458,16 @@
             "format": "uuid",
             "title": "Source Entity Id",
             "type": "string"
+          },
+          "source_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceEvidenceHandoff"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "source_ref": {
             "anyOf": [
@@ -10639,6 +10877,15 @@
           "assessment": {
             "$ref": "#/components/schemas/FactAssessment"
           },
+          "authorship": {
+            "default": "MANUAL",
+            "enum": [
+              "MANUAL",
+              "AGENT"
+            ],
+            "title": "Authorship",
+            "type": "string"
+          },
           "evidence_sentence": {
             "anyOf": [
               {
@@ -10735,6 +10982,18 @@
             "title": "Relation Type",
             "type": "string"
           },
+          "source_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Id"
+          },
           "source_document_ref": {
             "anyOf": [
               {
@@ -10746,6 +11005,16 @@
               }
             ],
             "title": "Source Document Ref"
+          },
+          "source_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceEvidenceHandoff"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "source_id": {
             "format": "uuid",
@@ -11342,6 +11611,18 @@
             "title": "Relation Type",
             "type": "string"
           },
+          "source_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Id"
+          },
           "source_document_ref": {
             "anyOf": [
               {
@@ -11358,6 +11639,16 @@
             "format": "uuid",
             "title": "Source Entity Id",
             "type": "string"
+          },
+          "source_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceEvidenceHandoff"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "target_entity_id": {
             "format": "uuid",
@@ -12693,6 +12984,213 @@
           "total_suggestions"
         ],
         "title": "SearchSuggestionResponse",
+        "type": "object"
+      },
+      "SourceEvidenceHandoff": {
+        "additionalProperties": false,
+        "description": "All-or-nothing local source proof accepted by Graph.",
+        "properties": {
+          "canonical_text": {
+            "minLength": 1,
+            "title": "Canonical Text",
+            "type": "string"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/SourceIdentity"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/ExactEvidenceLocator"
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/SourceEvidenceUpstream"
+          }
+        },
+        "required": [
+          "upstream",
+          "identity",
+          "canonical_text",
+          "locator"
+        ],
+        "title": "SourceEvidenceHandoff",
+        "type": "object"
+      },
+      "SourceEvidenceUpstream": {
+        "additionalProperties": false,
+        "description": "Authenticated upstream document identity for one evidence handoff.",
+        "properties": {
+          "attested_at": {
+            "format": "date-time",
+            "title": "Attested At",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "research_space_id": {
+            "format": "uuid",
+            "title": "Research Space Id",
+            "type": "string"
+          },
+          "service": {
+            "const": "artana_evidence_api",
+            "default": "artana_evidence_api",
+            "title": "Service",
+            "type": "string"
+          }
+        },
+        "required": [
+          "research_space_id",
+          "document_id",
+          "attested_at"
+        ],
+        "title": "SourceEvidenceUpstream",
+        "type": "object"
+      },
+      "SourceIdentity": {
+        "additionalProperties": false,
+        "description": "Canonical identity snapshot for one authoritative source record.",
+        "properties": {
+          "artifact_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Sha256"
+          },
+          "authoritative_identifier": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Authoritative Identifier",
+            "type": "string"
+          },
+          "canonical_url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Canonical Url",
+            "type": "string"
+          },
+          "clinvar_accession": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinvar Accession"
+          },
+          "content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "doi": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doi"
+          },
+          "nct_id": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nct Id"
+          },
+          "pmcid": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pmcid"
+          },
+          "pmid": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pmid"
+          },
+          "publisher_record_id": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publisher Record Id"
+          },
+          "retrieved_at": {
+            "format": "date-time",
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "source_kind": {
+            "enum": [
+              "pubmed",
+              "pmc",
+              "doi",
+              "clinicaltrials",
+              "clinvar",
+              "publisher"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "source_kind",
+          "authoritative_identifier",
+          "canonical_url",
+          "retrieved_at",
+          "content_sha256"
+        ],
+        "title": "SourceIdentity",
         "type": "object"
       },
       "SpeculationLevel": {

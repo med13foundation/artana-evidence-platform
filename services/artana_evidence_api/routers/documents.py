@@ -48,6 +48,11 @@ from artana_evidence_api.document_extraction_support.draft_reuse import (
     effective_proposals_for_drafts,
     effective_review_items_for_drafts,
 )
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    model_attempt_audit_manifest,
+    start_model_attempt_audit,
+    stop_model_attempt_audit,
+)
 from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
     with_variant_aware_trust_metadata,
 )
@@ -65,6 +70,9 @@ from artana_evidence_api.document_store import (
 )
 from artana_evidence_api.graph_client import (
     GraphTransportBundle,  # noqa: TC001
+)
+from artana_evidence_api.graph_integration.source_provenance import (
+    bind_source_provenance_to_drafts,
 )
 from artana_evidence_api.proposal_store import HarnessProposalStore  # noqa: TC001
 from artana_evidence_api.research_state import (
@@ -92,7 +100,10 @@ from artana_evidence_api.study_outcomes import (
     HarnessStudyOutcomeStore,  # noqa: TC001
     extract_study_outcome_drafts,
 )
-from artana_evidence_api.types.common import JSONObject  # noqa: TC001
+from artana_evidence_api.types.common import (  # noqa: TC001
+    JSONObject,
+    json_object_or_empty,
+)
 from artana_evidence_api.variant_aware_document_extraction import (
     document_supports_variant_aware_extraction,
     extract_variant_aware_document,
@@ -114,6 +125,7 @@ router = APIRouter(
     tags=["documents"],
 )
 _PDF_SIGNATURE = b"%PDF-"
+_MODEL_ATTEMPT_AUDIT_ARTIFACT_KEY = "document_extraction_model_attempt_audit"
 
 _RUN_REGISTRY_DEPENDENCY = Depends(get_run_registry)
 _ARTIFACT_STORE_DEPENDENCY = Depends(get_artifact_store)
@@ -671,6 +683,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
         last_extraction_run_id=run.id,
         extraction_status="running",
     )
+    model_attempt_audit = start_model_attempt_audit()
     try:
         research_state = research_state_store.get_state(space_id=space_id)
         review_context = build_document_review_context(
@@ -696,16 +709,20 @@ async def extract_document(  # noqa: PLR0913, PLR0915
             dismech_result = build_dismech_structured_extraction_drafts(
                 document=document,
             )
+            dismech_proposal_drafts = bind_source_provenance_to_drafts(
+                document=document,
+                drafts=dismech_result.proposal_drafts,
+            )
             created_proposals = proposal_store.create_proposals(
                 space_id=space_id,
                 run_id=run.id,
-                proposals=dismech_result.proposal_drafts,
+                proposals=dismech_proposal_drafts,
             )
             proposals, reused_existing_proposal_count = effective_proposals_for_drafts(
                 space_id=space_id,
                 document_id=document.id,
                 created_proposals=created_proposals,
-                proposal_drafts=dismech_result.proposal_drafts,
+                proposal_drafts=dismech_proposal_drafts,
                 proposal_store=proposal_store,
             )
             created_study_outcomes = study_outcome_store.create_outcomes(
@@ -798,10 +815,14 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 review_context=review_context,
             )
             variant_result = with_variant_aware_trust_metadata(variant_result)
+            variant_proposal_drafts = bind_source_provenance_to_drafts(
+                document=document,
+                drafts=variant_result.proposal_drafts,
+            )
             created_proposals = proposal_store.create_proposals(
                 space_id=space_id,
                 run_id=run.id,
-                proposals=variant_result.proposal_drafts,
+                proposals=variant_proposal_drafts,
             )
             created_review_items = review_item_store.create_review_items(
                 space_id=space_id,
@@ -818,7 +839,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 space_id=space_id,
                 document_id=document.id,
                 created_proposals=created_proposals,
-                proposal_drafts=variant_result.proposal_drafts,
+                proposal_drafts=variant_proposal_drafts,
                 proposal_store=proposal_store,
             )
             effective_review_items, reused_existing_review_item_count = (
@@ -929,11 +950,12 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 skipped_candidates=skipped_candidates,
             )
         if use_llm:
-            candidates, candidate_diagnostics = (
-                await extract_relation_candidates_with_diagnostics(
-                    document.text_content,
-                    space_context=review_context.objective or "",
-                )
+            (
+                candidates,
+                candidate_diagnostics,
+            ) = await extract_relation_candidates_with_diagnostics(
+                document.text_content,
+                space_context=review_context.objective or "",
             )
             candidate_discovery = _candidate_discovery_metadata(
                 method=(
@@ -962,11 +984,12 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                     "llm_status": "not_needed",
                 }
             else:
-                candidates, candidate_diagnostics = (
-                    await extract_relation_candidates_with_diagnostics(
-                        document.text_content,
-                        space_context=review_context.objective or "",
-                    )
+                (
+                    candidates,
+                    candidate_diagnostics,
+                ) = await extract_relation_candidates_with_diagnostics(
+                    document.text_content,
+                    space_context=review_context.objective or "",
                 )
                 candidate_discovery = _candidate_discovery_metadata(
                     method=(
@@ -1012,6 +1035,10 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                     ),
                 },
             )
+        drafts = bind_source_provenance_to_drafts(
+            document=document,
+            drafts=drafts,
+        )
         created_proposals = proposal_store.create_proposals(
             space_id=space_id,
             run_id=run.id,
@@ -1066,9 +1093,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                 "review_item_count": len(review_item_responses),
                 "review_item_ids": [],
                 "study_outcome_count": len(created_study_outcomes),
-                "study_outcome_ids": [
-                    outcome.id for outcome in created_study_outcomes
-                ],
+                "study_outcome_ids": [outcome.id for outcome in created_study_outcomes],
                 "skipped_candidates": skipped_candidates,
                 "reused_existing_proposal_count": reused_existing_proposal_count,
                 "candidate_discovery": candidate_discovery,
@@ -1110,7 +1135,22 @@ async def extract_document(  # noqa: PLR0913, PLR0915
         )
         raise
     finally:
-        graph_api_gateway.close()
+        try:
+            artifact_store.put_artifact(
+                space_id=space_id,
+                run_id=run.id,
+                artifact_key=_MODEL_ATTEMPT_AUDIT_ARTIFACT_KEY,
+                media_type="application/json",
+                content=json_object_or_empty(
+                    model_attempt_audit_manifest(
+                        document_id=document.id,
+                        records=model_attempt_audit.records,
+                    ),
+                ),
+            )
+        finally:
+            stop_model_attempt_audit(model_attempt_audit)
+            graph_api_gateway.close()
     return _document_extraction_response(
         run=updated_run,
         document=updated_document,
