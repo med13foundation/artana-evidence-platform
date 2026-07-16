@@ -2,7 +2,8 @@
 
 Created: 2026-07-16
 
-Status: frozen development benchmark before model execution
+Status: invalidated after first live arm by an experiment-design conflict; see
+`reports/2026-07-16-tg04-nary-live-controlled-stop.md`
 
 ## Decision Question
 
