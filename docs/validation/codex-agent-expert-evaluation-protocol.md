@@ -203,10 +203,19 @@ describing what would change the decision.
 
 ## Required Artifacts
 
-Store one immutable evaluation bundle under
-`reports/luna-agent-expert-evaluation/<run-id>/`:
+Store one immutable evaluation bundle under the versioned path
+`docs/validation/reports/luna-agent-expert-evaluation/<run-id>/`. An external
+write-once archive is allowed only when its URI and digest are committed in the
+run manifest; an ignored top-level `reports/` directory cannot satisfy this
+protocol.
 
-- `run-manifest.json`: commit, model, configuration, case, and artifact hashes;
+- `run-manifest.json`: commit, model, configuration, case, artifact hashes, and
+  the URI plus digest for any externally archived artifact;
+- `provider-receipts.json`: one record per credited semantic call containing
+  the retrievable provider response ID, expected and retrieved model IDs,
+  completion status, normalized prompt hash, canonical provider-output hash,
+  structured-payload hash, retrieval timestamp, and categorical verification
+  result;
 - `metric-protocol.json`: pre-registered definitions, denominators, thresholds,
   aggregation rules, and calculation-command or script hash;
 - `reviewer-assignments.json`: roles, unique agent run IDs, model IDs, prompt
@@ -215,7 +224,8 @@ Store one immutable evaluation bundle under
   reviewer;
 - `tool-policies/<agent-run-id>.md`: exact tool and access policy supplied to
   each reviewer;
-- `artana-output/`: untouched results from every Luna run;
+- `artana-output/`: untouched results from every Luna run, each joined to its
+  `provider-receipts.json` record;
 - `reviews/packet-only/<agent-run-id>/`: independent network-disabled findings;
 - `reviews/source-enriched/<agent-run-id>/`: independent tool-enabled findings;
 - `raw-responses/<agent-run-id>.txt`: complete unedited reviewer responses;

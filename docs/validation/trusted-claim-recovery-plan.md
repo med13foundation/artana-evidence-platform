@@ -239,16 +239,20 @@ Strict live-agent regression template:
 set -a
 source .env.postgres
 set +a
+export ARTANA_AI_EVIDENCE_EXTRACTION_MODEL=openai:gpt-5.6-luna
 uv run python scripts/run_relation_feasibility_audit.py \
   --extractor agent \
-  --output-dir reports/relation_feasibility/<date>-<plan-id>-run-01
+  --output-dir \
+    docs/validation/reports/relation_feasibility/<date>-<plan-id>-run-01
 ```
 
 For semantic PRs, repeat into `run-02` and `run-03`, then evaluate worst-run
 results with the existing readiness gate. Do not overwrite a prior run or retry
 only failed cases. Store the exact command, environment-name allowlist, model,
 prompt/configuration hashes, and output hashes in the evidence report. Never
-record secret values.
+record secret values. The run preflight and manifest must both prove that the
+configured and retrieved provider model is exactly `openai:gpt-5.6-luna`; a
+runtime-default substitution invalidates the run.
 
 ## TG-01: Truthful Safety Floor
 
