@@ -772,6 +772,7 @@ def build_manual_hypothesis_request(
             proposal.payload,
             field_name="hypothesis_statement",
         ),
+        authorship="MANUAL",
         rationale=_require_payload_string(
             proposal.payload,
             field_name="hypothesis_rationale",

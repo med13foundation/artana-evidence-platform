@@ -107,6 +107,8 @@ class _WorkflowPlan:
 class _GeneratedResourcesApplication:
     status: GraphWorkflowStatus | None
     generated_updates: JSONObject
+    plan_update: JSONObject | None = None
+    explanation_update: JSONObject | None = None
 
 
 class WorkflowActionRejected(ValueError):  # noqa: N818

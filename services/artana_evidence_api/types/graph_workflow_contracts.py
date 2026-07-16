@@ -196,12 +196,12 @@ class ValidationExplanationRequest(BaseModel):
 
 
 class CreateManualHypothesisRequest(BaseModel):
-    """Request payload for an agent-authored hypothesis review candidate."""
+    """Request payload for manually logging one hypothesis."""
 
     model_config = ConfigDict(strict=True)
 
     statement: str = Field(..., min_length=1, max_length=4000)
-    authorship: Literal["AGENT"] = "AGENT"
+    authorship: Literal["MANUAL", "AGENT"] = "MANUAL"
     rationale: str = Field(..., min_length=1, max_length=4000)
     seed_entity_ids: list[str] = Field(default_factory=list, max_length=100)
     source_type: str = Field(default="manual", min_length=1, max_length=64)

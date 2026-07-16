@@ -27,6 +27,7 @@ from artana_evidence_api.proposal_actions import (
     build_graph_claim_request,
     build_graph_observation_request,
     build_graph_relation_request,
+    build_manual_hypothesis_request,
     infer_graph_entity_type_from_label,
     promote_to_graph_claim,
     promote_to_graph_entity,
@@ -1159,6 +1160,23 @@ def _proposal_mechanism_type() -> HarnessProposalRecord:
         created_at=now,
         updated_at=now,
     )
+
+
+def test_manual_mechanism_promotion_preserves_human_authorship() -> None:
+    proposal = replace(
+        _proposal_mechanism_type(),
+        payload={
+            "hypothesis_statement": "MED13 may regulate CDK8.",
+            "hypothesis_rationale": "A reviewer accepted the staged mechanism.",
+            "seed_entity_ids": [str(uuid4())],
+            "source_type": "mechanism_discovery",
+        },
+    )
+
+    request = build_manual_hypothesis_request(proposal=proposal)
+
+    assert request.authorship == "MANUAL"
+    assert request.model_dump(mode="json")["authorship"] == "MANUAL"
 
 
 def test_build_graph_relation_request_rejects_non_candidate_claim() -> None:

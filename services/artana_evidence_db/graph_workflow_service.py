@@ -62,6 +62,64 @@ def _json_string_list(value: JSONValue | None) -> list[str]:
     return [item for item in value if isinstance(item, str)]
 
 
+def _claim_plan_application(
+    *,
+    claim_plan: JSONObject,
+    claim_request: JSONObject,
+) -> _GeneratedResourcesApplication:
+    """Keep one claim plan's status, explanation, and resources together."""
+
+    status = cast("GraphWorkflowStatus", claim_plan["status"])
+    explanation_update = cast(
+        "JSONObject",
+        claim_plan["explanation_payload"],
+    )
+    plan_payload = {
+        **cast("JSONObject", claim_plan["plan_payload"]),
+        "next_action": explanation_update.get("next_action", "inspect_workflow"),
+    }
+    generated_updates = cast(
+        "JSONObject",
+        claim_plan["generated_resources_payload"],
+    )
+    if status != "APPLIED":
+        generated_updates = {
+            **generated_updates,
+            "pending_claim_request": claim_request,
+            "pending_claim_plan": plan_payload,
+        }
+    return _GeneratedResourcesApplication(
+        status=status,
+        generated_updates=generated_updates,
+        plan_update=plan_payload,
+        explanation_update=explanation_update,
+    )
+
+
+def _merge_claim_plan_update(
+    *,
+    existing: JSONObject,
+    update: JSONObject,
+) -> JSONObject:
+    outcome_keys = {"claim_request", "next_action", "next_actions", "validation"}
+    return {
+        **{key: value for key, value in existing.items() if key not in outcome_keys},
+        **update,
+    }
+
+
+def _merge_claim_explanation_update(
+    *,
+    existing: JSONObject,
+    update: JSONObject,
+) -> JSONObject:
+    outcome_keys = {"next_action", "validation_code", "why_this_exists"}
+    return {
+        **{key: value for key, value in existing.items() if key not in outcome_keys},
+        **update,
+    }
+
+
 class GraphWorkflowService(
     GraphWorkflowPolicyMixin,
     GraphWorkflowPlanningMixin,
@@ -492,6 +550,16 @@ class GraphWorkflowService(
                 **merged_generated,
                 **application.generated_updates,
             }
+            if application.plan_update is not None:
+                model.plan_payload = _merge_claim_plan_update(
+                    existing=model.plan_payload,
+                    update=application.plan_update,
+                )
+            if application.explanation_update is not None:
+                model.explanation_payload = _merge_claim_explanation_update(
+                    existing=model.explanation_payload,
+                    update=application.explanation_update,
+                )
             model.status = application.status or "APPLIED"
         model.generated_resources_payload = merged_generated
         model.explanation_payload = self._build_workflow_explanation_payload(model)
@@ -647,6 +715,9 @@ class GraphWorkflowService(
 
         actor = actor_context.effective_actor
         generated_updates: JSONObject = {}
+        application_status: GraphWorkflowStatus | None = None
+        plan_update: JSONObject | None = None
+        explanation_update: JSONObject | None = None
         graph_change_ids = self._workflow_graph_change_ids(workflow)
         if ai_decision_payload is not None and graph_change_ids:
             self._apply_workflow_graph_change_proposals(
@@ -692,22 +763,16 @@ class GraphWorkflowService(
                         else None
                     ),
                 )
-                if claim_plan.get("status") == "APPLIED":
-                    generated_updates = cast(
-                        "JSONObject",
-                        claim_plan["generated_resources_payload"],
-                    )
-                else:
-                    return _GeneratedResourcesApplication(
-                        status=cast("GraphWorkflowStatus", claim_plan["status"]),
-                        generated_updates={
-                            "pending_claim_request": pending_claim_payload,
-                            "pending_claim_plan": cast(
-                                "JSONObject",
-                                claim_plan["plan_payload"],
-                            ),
-                        },
-                    )
+                claim_application = _claim_plan_application(
+                    claim_plan=claim_plan,
+                    claim_request=pending_claim_payload,
+                )
+                if claim_application.status != "APPLIED":
+                    return claim_application
+                application_status = claim_application.status
+                generated_updates = claim_application.generated_updates
+                plan_update = claim_application.plan_update
+                explanation_update = claim_application.explanation_update
         if (
             workflow.kind == "evidence_approval"
             and not workflow.generated_resources_payload
@@ -726,14 +791,21 @@ class GraphWorkflowService(
                         else None
                     ),
                 )
-                if claim_plan.get("status") == "APPLIED":
-                    generated_updates = cast(
-                        "JSONObject",
-                        claim_plan["generated_resources_payload"],
-                    )
+                claim_application = _claim_plan_application(
+                    claim_plan=claim_plan,
+                    claim_request=claim_payload,
+                )
+                if claim_application.status != "APPLIED":
+                    return claim_application
+                application_status = claim_application.status
+                generated_updates = claim_application.generated_updates
+                plan_update = claim_application.plan_update
+                explanation_update = claim_application.explanation_update
         return _GeneratedResourcesApplication(
-            status=None,
+            status=application_status,
             generated_updates=generated_updates,
+            plan_update=plan_update,
+            explanation_update=explanation_update,
         )
 
     def _workflow_graph_change_ids(self, workflow: GraphWorkflowModel) -> list[str]:
@@ -1011,6 +1083,7 @@ class GraphWorkflowService(
         model: GraphWorkflowModel,
     ) -> JSONObject:
         return {
+            **model.explanation_payload,
             "why_this_exists": (
                 model.explanation_payload.get("why_this_exists")
                 or f"Workflow '{model.kind}' records a governed graph decision."

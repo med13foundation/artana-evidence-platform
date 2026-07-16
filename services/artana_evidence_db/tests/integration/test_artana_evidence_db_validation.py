@@ -109,6 +109,7 @@ def _enable_ai_workflows(
     headers: dict[str, str],
     ai_principal: str,
     batch_auto_apply_low_risk: bool,
+    allow_ai_evidence_decisions: bool = False,
 ) -> None:
     response = graph_client.patch(
         f"/v1/spaces/{space_id}/operating-mode",
@@ -117,7 +118,7 @@ def _enable_ai_workflows(
             "mode": "ai_full_graph",
             "workflow_policy": {
                 "allow_ai_graph_repair": True,
-                "allow_ai_evidence_decisions": False,
+                "allow_ai_evidence_decisions": allow_ai_evidence_decisions,
                 "batch_auto_apply_low_risk": batch_auto_apply_low_risk,
                 "trusted_ai_principals": [ai_principal],
                 "min_ai_confidence": 0.85,
@@ -773,6 +774,342 @@ def test_legacy_pending_agent_workflow_is_blocked_on_approval(
         "qualified_claim_persistence_not_ready"
     )
     assert _graph_mutation_row_counts() == baseline
+
+
+def test_trusted_ai_direct_claim_approval_propagates_quarantine(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    principal = "agent:direct-claim-reviewer"
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    workflow_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers=admin_headers,
+        json={
+            "kind": "evidence_approval",
+            "input_payload": {
+                "claim_request": {
+                    "source_entity_id": source_id,
+                    "target_entity_id": target_id,
+                    "relation_type": "ASSOCIATED_WITH",
+                    "assessment": _SUPPORTED_ASSESSMENT,
+                    "evidence_summary": "A curator reviewed this evidence.",
+                    "evidence_sentence": (
+                        "MED13 is associated with developmental delay."
+                    ),
+                    "metadata": {"origin": "curator_import"},
+                },
+            },
+            "source_ref": "trusted-ai-direct-claim-review",
+        },
+    )
+    assert workflow_response.status_code == 201, workflow_response.text
+    workflow = workflow_response.json()
+    assert workflow["status"] == "PLAN_READY"
+    assert "claim_request" in workflow["input_payload"]
+    with graph_database.SessionLocal() as session:
+        model = session.get(GraphWorkflowModel, UUID(workflow["id"]))
+        assert model is not None
+        model.generated_resources_payload = {}
+        session.commit()
+    _enable_ai_workflows(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        ai_principal=principal,
+        batch_auto_apply_low_risk=False,
+        allow_ai_evidence_decisions=True,
+    )
+    baseline = _graph_mutation_row_counts()
+
+    action_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{workflow['id']}/actions",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": principal,
+        },
+        json={
+            "action": "approve",
+            "input_hash": workflow["workflow_hash"],
+            "risk_tier": "low",
+            "confidence_assessment": _AI_DECISION_CONFIDENCE_ASSESSMENT,
+            "ai_decision": {
+                "ai_principal": principal,
+                "rationale": "Review the human-staged direct claim.",
+            },
+        },
+    )
+
+    assert action_response.status_code == 200, action_response.text
+    action_payload = action_response.json()
+    assert action_payload["status"] == "BLOCKED"
+    assert action_payload["plan_payload"]["validation"]["code"] == (
+        "qualified_claim_persistence_not_ready"
+    )
+    assert action_payload["explanation_payload"]["validation_code"] == (
+        "qualified_claim_persistence_not_ready"
+    )
+    assert action_payload["explanation_payload"]["next_action"] == "defer_to_human"
+    assert action_payload["plan_payload"]["next_action"] == "defer_to_human"
+    pending_plan = action_payload["generated_resources_payload"][
+        "pending_claim_plan"
+    ]
+    assert pending_plan["validation"]["code"] == (
+        "qualified_claim_persistence_not_ready"
+    )
+    assert _graph_mutation_row_counts() == baseline
+
+
+def test_legacy_direct_claim_plan_preserves_dictionary_proposal_lineage(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    workflow_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers=admin_headers,
+        json={
+            "kind": "evidence_approval",
+            "input_payload": {
+                "claim_request": {
+                    "source_entity_id": source_id,
+                    "target_entity_id": target_id,
+                    "relation_type": "PROTECTS_AGAINST",
+                    "assessment": _SUPPORTED_ASSESSMENT,
+                    "evidence_summary": "A curator reviewed this evidence.",
+                    "evidence_sentence": (
+                        "MED13 protects against developmental delay."
+                    ),
+                    "metadata": {"origin": "curator_import"},
+                },
+            },
+            "source_ref": "legacy-direct-dictionary-plan",
+        },
+    )
+    assert workflow_response.status_code == 201, workflow_response.text
+    workflow = workflow_response.json()
+    assert workflow["status"] == "PLAN_READY"
+    assert workflow["generated_resources_payload"]["dictionary_proposal_ids"]
+    with graph_database.SessionLocal() as session:
+        model = session.get(GraphWorkflowModel, UUID(workflow["id"]))
+        assert model is not None
+        model.generated_resources_payload = {}
+        session.commit()
+
+    action_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{workflow['id']}/actions",
+        headers=admin_headers,
+        json={
+            "action": "approve",
+            "input_hash": workflow["workflow_hash"],
+            "reason": "Review the legacy direct claim plan.",
+        },
+    )
+
+    assert action_response.status_code == 200, action_response.text
+    action_payload = action_response.json()
+    assert action_payload["status"] == "PLAN_READY"
+    generated = action_payload["generated_resources_payload"]
+    assert generated["dictionary_proposal_ids"]
+    assert generated["pending_claim_request"]["relation_type"] == (
+        "PROTECTS_AGAINST"
+    )
+    pending_plan = generated["pending_claim_plan"]
+    assert action_payload["plan_payload"]["validation"] == pending_plan["validation"]
+    assert action_payload["plan_payload"]["input"] == workflow["plan_payload"]["input"]
+    assert action_payload["explanation_payload"]["next_action"] == (
+        "review_dictionary_proposals"
+    )
+    assert action_payload["plan_payload"]["next_action"] == (
+        "review_dictionary_proposals"
+    )
+
+
+def test_pending_claim_application_preserves_workflow_governance_plan(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    workflow_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers=admin_headers,
+        json={
+            "kind": "evidence_approval",
+            "input_payload": {
+                "claim_request": {
+                    "source_entity_id": source_id,
+                    "target_entity_id": target_id,
+                    "relation_type": "ASSOCIATED_WITH",
+                    "assessment": _SUPPORTED_ASSESSMENT,
+                    "evidence_summary": "A curator reviewed this evidence.",
+                    "evidence_sentence": (
+                        "MED13 is associated with developmental delay."
+                    ),
+                    "metadata": {"origin": "curator_import"},
+                },
+            },
+            "source_ref": "pending-claim-plan-history",
+        },
+    )
+    assert workflow_response.status_code == 201, workflow_response.text
+    workflow = workflow_response.json()
+    assert workflow["status"] == "PLAN_READY"
+    original_plan = workflow["plan_payload"]
+
+    action_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{workflow['id']}/actions",
+        headers=admin_headers,
+        json={
+            "action": "approve",
+            "input_hash": workflow["workflow_hash"],
+            "reason": "Apply the reviewed pending claim.",
+        },
+    )
+
+    assert action_response.status_code == 200, action_response.text
+    action_payload = action_response.json()
+    assert action_payload["status"] == "APPLIED"
+    assert action_payload["plan_payload"]["input"] == original_plan["input"]
+    assert action_payload["plan_payload"]["claim_plan"] == original_plan["claim_plan"]
+    assert action_payload["plan_payload"]["next_action"] == "inspect_claim"
+    assert action_payload["explanation_payload"]["next_action"] == "inspect_claim"
+    assert action_payload["generated_resources_payload"]["claim_ids"]
+
+
+def test_human_application_clears_superseded_ai_quarantine_instructions(
+    graph_client: TestClient,
+) -> None:
+    space_id, admin_headers = _create_space(graph_client)
+    principal = "agent:temporary-claim-reviewer"
+    source_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="GENE",
+        display_label="MED13",
+    )
+    target_id = _create_entity(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        entity_type="PHENOTYPE",
+        display_label="Developmental delay",
+    )
+    workflow_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows",
+        headers=admin_headers,
+        json={
+            "kind": "evidence_approval",
+            "input_payload": {
+                "claim_request": {
+                    "source_entity_id": source_id,
+                    "target_entity_id": target_id,
+                    "relation_type": "ASSOCIATED_WITH",
+                    "assessment": _SUPPORTED_ASSESSMENT,
+                    "evidence_summary": "A curator reviewed this evidence.",
+                    "evidence_sentence": (
+                        "MED13 is associated with developmental delay."
+                    ),
+                    "metadata": {"origin": "curator_import"},
+                },
+            },
+            "source_ref": "ai-quarantine-then-human-application",
+        },
+    )
+    assert workflow_response.status_code == 201, workflow_response.text
+    workflow = workflow_response.json()
+    assert workflow["status"] == "PLAN_READY"
+    _enable_ai_workflows(
+        graph_client,
+        space_id=space_id,
+        headers=admin_headers,
+        ai_principal=principal,
+        batch_auto_apply_low_risk=False,
+        allow_ai_evidence_decisions=True,
+    )
+
+    blocked_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{workflow['id']}/actions",
+        headers={
+            **admin_headers,
+            "X-TEST-GRAPH-AI-PRINCIPAL": principal,
+        },
+        json={
+            "action": "approve",
+            "input_hash": workflow["workflow_hash"],
+            "risk_tier": "low",
+            "confidence_assessment": _AI_DECISION_CONFIDENCE_ASSESSMENT,
+            "ai_decision": {
+                "ai_principal": principal,
+                "rationale": "Attempt the claim review before human approval.",
+            },
+        },
+    )
+    assert blocked_response.status_code == 200, blocked_response.text
+    blocked = blocked_response.json()
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["plan_payload"]["next_action"] == "defer_to_human"
+    assert blocked["explanation_payload"]["validation_code"] == (
+        "qualified_claim_persistence_not_ready"
+    )
+
+    applied_response = graph_client.post(
+        f"/v1/spaces/{space_id}/workflows/{workflow['id']}/actions",
+        headers=admin_headers,
+        json={
+            "action": "approve",
+            "input_hash": blocked["workflow_hash"],
+            "reason": "A human reviewer approved the grounded claim.",
+        },
+    )
+
+    assert applied_response.status_code == 200, applied_response.text
+    applied = applied_response.json()
+    assert applied["status"] == "APPLIED"
+    assert applied["plan_payload"]["next_action"] == "inspect_claim"
+    assert "next_actions" not in applied["plan_payload"]
+    assert applied["explanation_payload"]["next_action"] == "inspect_claim"
+    assert "validation_code" not in applied["explanation_payload"]
+    assert applied["generated_resources_payload"]["claim_ids"]
 
 
 def test_authenticated_ai_principal_cannot_forge_manual_workflow_approval(

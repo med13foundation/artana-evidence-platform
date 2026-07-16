@@ -27,6 +27,7 @@ from artana_evidence_api.document_extraction_support.llm_extraction.claim_framin
     run_single_claim_framing_stage,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    record_skipped_zero_inventory_retry,
     run_claim_inventory_stage,
     run_inventory_completeness_review_stage,
     run_missing_claim_recovery_stage,
@@ -238,6 +239,30 @@ async def _inventory_chunk_with_recovery(
     )
     raw_outputs = list(inventory_result.raw_agent_outputs)
     inventory_claims = inventory_result.claims
+    if inventory_claims:
+        record_skipped_zero_inventory_retry(
+            chunk=chunk,
+            total_chunks=total_chunks,
+            document_fingerprint=document_fingerprint,
+            output_schema=inventory_output_schema,
+            model_id=model_id,
+            execution_namespace=execution_namespace,
+        )
+    else:
+        retry_result = await run_claim_inventory_stage(
+            chunk=chunk,
+            total_chunks=total_chunks,
+            document_fingerprint=document_fingerprint,
+            output_schema=inventory_output_schema,
+            client=client,
+            tenant=tenant,
+            model_id=model_id,
+            step_runner=step_runner,
+            execution_namespace=execution_namespace,
+            zero_retry=True,
+        )
+        raw_outputs.extend(retry_result.raw_agent_outputs)
+        inventory_claims = retry_result.claims
     review_result = await run_inventory_completeness_review_stage(
         chunk=chunk,
         total_chunks=total_chunks,

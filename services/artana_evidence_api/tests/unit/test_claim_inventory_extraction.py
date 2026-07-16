@@ -317,6 +317,53 @@ async def test_inventory_frames_each_claim_in_multi_claim_sentence() -> None:
     )
 
 
+@pytest.mark.asyncio
+async def test_empty_inventory_runs_audited_agent_retry_before_completeness() -> None:
+    text = "MED13 causes cardiomyopathy."
+    claim = _inventory_claim(
+        exact_span=text,
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": []},
+            {"claims": [claim]},
+            _complete_inventory(),
+            _framed_relation(
+                sentence=text,
+                subject="MED13",
+                relation_type="CAUSES",
+                object_="cardiomyopathy",
+            ),
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.inventory_claim_count == 1
+    assert [(item.subject_label, item.object_label) for item in result.candidates] == [
+        ("MED13", "cardiomyopathy"),
+    ]
+    inventory_records = [
+        record
+        for record in result.model_attempt_records
+        if record.pass_role == "claim_inventory"
+        and record.validation_outcome != "intentionally_skipped"
+    ]
+    assert [record.attempt_role for record in inventory_records] == [
+        "claim_inventory",
+        "zero_candidate_retry",
+    ]
+    assert [record.validation_outcome for record in inventory_records] == [
+        "accepted",
+        "accepted",
+    ]
+    retry_prompt = str(runner.calls[1]["prompt"])
+    assert "ZERO-INVENTORY RETRY" in retry_prompt
+
+
 @pytest.mark.parametrize(
     "claim_span",
     [

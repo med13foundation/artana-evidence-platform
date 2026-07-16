@@ -2344,6 +2344,7 @@ class _FakeWorkerRuntime:
                 space_id=str(arguments.space_id),
                 request=CreateManualHypothesisRequest(
                     statement=arguments.statement,
+                    authorship="AGENT",
                     rationale=arguments.rationale,
                     seed_entity_ids=list(arguments.seed_entity_ids),
                     source_type=arguments.source_type,

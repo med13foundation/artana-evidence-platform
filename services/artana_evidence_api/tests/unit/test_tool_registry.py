@@ -186,9 +186,10 @@ def test_agent_hypothesis_tool_returns_visible_nonpersisted_review_candidate(
     assert payload["review_ref"].endswith(":agent-hypothesis-1")
 
 
-def test_evidence_api_hypothesis_contract_marks_mechanism_work_as_agent_authored() -> None:
+def test_evidence_api_hypothesis_contract_requires_explicit_agent_authorship() -> None:
     request = CreateManualHypothesisRequest(
         statement="MED13 may regulate CDK8 during development.",
+        authorship="AGENT",
         rationale="Converging literature suggests this mechanism.",
         seed_entity_ids=[str(uuid4())],
         source_type="mechanism_discovery",
