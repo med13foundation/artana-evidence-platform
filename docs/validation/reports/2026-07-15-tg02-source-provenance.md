@@ -14,8 +14,8 @@ Model: `openai:gpt-5.6-luna`
 
 ## Decision
 
-**TG-02 source-provenance gate: PASS. Overall trusted-graph readiness: NOT
-READY.**
+**TG-02 implementation safety gate: PASS. TG-02 experimental evidence:
+NOT EVALUABLE. Overall trusted-graph readiness: NOT READY.**
 
 Every evidence row eligible for canonical curation, auto-promotion,
 materialization, or readiness must now reference an immutable Graph-owned
@@ -24,6 +24,19 @@ revalidates the attesting service, research space, upstream document, source
 identity, content hash, locator bounds, exact quote, and quote hash from
 persisted data. Missing, legacy, malformed, mismatched, or caller-forged
 provenance remains readable but cannot become eligible.
+
+The July 16 consolidation added a server-owned ingestion-lineage requirement.
+User-submitted text and PDFs may retain claimed PMID, DOI, registry, or
+publisher metadata for review, but those claims cannot establish authoritative
+identity. Authority requires a document ingested through the matching
+server-owned source path. This closes a forged-metadata gap found during the
+post-merge adversarial review.
+
+Research-init replay bundles are also categorically review-only, including
+bundles prepared by the server, because the current replay contract does not
+carry a provider-verifiable retrieval receipt. Direct source handoffs remain
+eligible. Replay authority may be reconsidered only after upstream retrieval
+identity and content are independently verifiable.
 
 This PR does not unlock the trusted lane introduced by TG-01 and makes no
 human-expert or clinical-validity claim. The strict Luna audit remains `RED`
@@ -72,7 +85,9 @@ complete source-local proof.
 | Internal-only references counted as authority | 0 | Typed source authority validation rejects internal proposal identities. |
 | Cross-space/document snapshot reuse accepted | 0 | Snapshot fingerprint and eligibility both bind service, space, and document. |
 | Legacy evidence eligible | 0 | Migration defaults old rows to explicit ineligible provenance status. |
-| Live API-to-Graph round trips | 1/1 | Verified PubMed identity and locator persisted; claim resolved and relation materialized. |
+| Raw text/PDF metadata accepted as source authority | 0 | Server-owned document source type must match the claimed authority family. |
+| Replay-derived PubMed content accepted as source authority | 0 | Replay remains review-only without a verifiable upstream retrieval receipt. |
+| Live API-to-Graph trusted writes | 0 | The consolidated TG-03 boundary returns HTTP 409 and verifies zero claim or relation writes until qualified-claim persistence exists. |
 
 Focused validation:
 
@@ -92,7 +107,7 @@ uv run pytest -q \
   tests/unit/database/test_artana_evidence_api_alembic_migration_regressions.py
 
 uv run pytest -q \
-  tests/e2e/artana_evidence_api/test_live_graph_promotion.py::test_promote_proposal_persists_claim_through_live_graph_service
+  tests/e2e/artana_evidence_api/test_live_graph_promotion.py::test_promote_qualified_claim_fails_closed_without_live_graph_writes
 ```
 
 Repository validation:
@@ -110,11 +125,13 @@ Both complete service suites passed against fresh PostgreSQL databases with all
 migrations applied. Graph and Evidence API lint, type, boundary, generated
 contract, and architecture gates passed. Commit hooks ran without skips.
 
-## Strict Luna Audit
+## Historical Strict Luna Diagnostic
 
-The frozen 30-case v2 fixture was run once because TG-02 changes provenance and
-projection eligibility, not extraction semantics. No run used
-`--allow-fallback`.
+The following run was reported during TG-02 development. Its raw outputs remain
+under the ignored `reports/` tree and are not part of a protocol-compliant,
+retrievable artifact bundle. The values therefore identify diagnostic
+hypotheses only and receive no scientific-improvement, readiness, or merge
+credit.
 
 ```bash
 uv run python scripts/run_relation_feasibility_audit.py \
@@ -124,17 +141,17 @@ uv run python scripts/run_relation_feasibility_audit.py \
 
 | Metric | Result | Interpretation |
 |---|---:|---|
-| Agent completion | 30/30 | PASS |
-| Fallback cases | 0 | PASS |
-| Invalid agent cases | 0 | PASS |
-| Negative leakage | 0/5 | PASS |
-| Precision / recall | 0.9600 / 0.9600 | Diagnostic |
-| High-value recall | 0.9500 | Diagnostic |
-| Grounded / both arguments present | 1.0000 / 1.0000 | PASS |
-| Generic relation rate | 0.1200 | Above later-stage target |
-| Verified CURIE match rate | 0.7143 | Below TG-06 target |
-| Trusted candidates | 0 | TG-01 quarantine remains active |
-| Overall verdict | RED | Expected; trusted CURIE recovery remains blocked |
+| Agent completion | Reported 30/30 | Not independently reproducible |
+| Fallback cases | Reported 0 | Not a current safety proof |
+| Invalid agent cases | Reported 0 | Not independently reproducible |
+| Negative leakage | Reported 0/5 | Diagnostic hypothesis |
+| Precision / recall | Reported 0.9600 / 0.9600 | Diagnostic hypothesis |
+| High-value recall | Reported 0.9500 | Diagnostic hypothesis |
+| Grounded / both arguments present | Reported 1.0000 / 1.0000 | Diagnostic hypothesis |
+| Generic relation rate | Reported 0.1200 | Suggests a later-stage gap |
+| Verified CURIE match rate | Reported 0.7143 | Suggests a TG-06 gap |
+| Trusted candidates | Reported 0 | Consistent with TG-01 quarantine |
+| Overall verdict | Reported RED | Trusted CURIE recovery remained blocked |
 
 The `RED` result is not repaired by weakening a threshold. TG-03 owns qualified
 claim completeness and generic-output reduction. TG-06 owns authoritative
@@ -143,8 +160,18 @@ lane can become non-empty.
 
 ## Adversarial Review
 
-An independent Luna reviewer tested service forgery, cross-boundary reuse,
-immutability, and canonical projection paths.
+The original independent Luna review is a historical note because its raw
+response is not committed in the protocol-required artifact bundle. A July 16
+post-merge adversarial code review identified one additional valid finding:
+raw text or PDF metadata could claim an authoritative identifier because the
+identity builder did not distinguish user-controlled metadata from
+server-owned ingestion lineage. The root fix requires the document's
+server-owned source type to match the authority family; focused regressions
+prove `text` and `pdf` records remain review-only even when they claim a PMID.
+A second review found that client-supplied research-init replay data could still
+receive `source_type=pubmed`. The final boundary therefore quarantines all
+replay-derived source content until a provider-verifiable retrieval receipt is
+available.
 
 One finding was valid: snapshots were deduplicated by authority and content,
 so a second upstream document could reuse the first document's snapshot. The
@@ -164,10 +191,9 @@ Three concerns did not represent trust bypasses:
   an intentional user-data deletion workflow. Once evidence reaches Graph DB,
   the independent source snapshot cannot be updated or deleted.
 
-The reviewer confirmed that direct relation creation and projection
-materialization fail closed without eligible provenance. An attempted Claude
-CLI review did not return a completed finding set and is not counted as review
-evidence.
+The current implementation and full repository gate confirm that direct
+relation creation and projection materialization fail closed without eligible
+provenance. No agent review is counted as scientific ground truth.
 
 ## Artifact Manifest
 
@@ -183,8 +209,11 @@ Raw run artifacts:
 - `reports/relation_feasibility/2026-07-15-tg02-run-01/relation_feasibility_report.md`
   - SHA-256: `042f5de03d26a6a92930de23fbaa427fad6ca87e324944b51ec6dc44d257b64e`
 
-Raw generated reports remain in the ignored `reports/` workspace tree. Their
-content hashes are frozen here; this tracked report is the review record.
+Raw generated reports remain in the ignored `reports/` workspace tree and are
+not retrievable from this commit. Their recorded hashes do not satisfy the
+current evidence protocol and cannot support recalculation or scientific merge
+credit. This tracked report preserves the historical claims without validating
+them.
 
 ## Next Gate
 

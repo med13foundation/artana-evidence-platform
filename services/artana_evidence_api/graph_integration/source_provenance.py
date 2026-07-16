@@ -40,6 +40,15 @@ _FIGURE_RE = re.compile(r"\b(fig(?:ure)?\s+[A-Za-z0-9.-]+)", re.ASCII | re.IGNOR
 _PARAGRAPH_BOUNDARY_RE = re.compile(r"\n\s*\n")
 _SENTENCE_BOUNDARY_RE = re.compile(r"(?<=[.!?])\s+")
 
+_TRUSTED_INGESTION_TYPES: dict[SourceKind, frozenset[str]] = {
+    "pubmed": frozenset({"pubmed"}),
+    "pmc": frozenset({"pmc", "pubmed"}),
+    "doi": frozenset({"publisher", "pubmed"}),
+    "clinicaltrials": frozenset({"clinical_trials", "clinicaltrials"}),
+    "clinvar": frozenset({"clinvar"}),
+    "publisher": frozenset({"publisher"}),
+}
+
 
 class SourceProvenanceError(ValueError):
     """A categorical source provenance failure safe to expose to review flows."""
@@ -117,6 +126,11 @@ def source_identity_for_document(document: HarnessDocumentRecord) -> SourceIdent
         identifiers=identifiers,
         metadata=metadata,
         source_capture=source_capture,
+    )
+    _require_trusted_ingestion_lineage(
+        document_source_type=document.source_type,
+        metadata=metadata,
+        source_kind=source_kind,
     )
 
     source_text_sha256 = hashlib.sha256(
@@ -254,6 +268,35 @@ def _source_authority(
             "accession, or publisher record identifier.",
         )
     return authority
+
+
+def _require_trusted_ingestion_lineage(
+    *,
+    document_source_type: str,
+    metadata: JSONObject,
+    source_kind: SourceKind,
+) -> None:
+    is_replay_derived = (
+        metadata.get("source") == "research-init-pubmed"
+        or metadata.get("replayed_source_document_id") is not None
+        or metadata.get("document_extraction_replayed") is True
+    )
+    if is_replay_derived:
+        raise SourceProvenanceError(
+            "unverified_replay_source",
+            "Replay-derived source content is review-only until it is tied to "
+            "a verifiable upstream retrieval receipt.",
+        )
+
+    normalized_source_type = document_source_type.strip().casefold().replace("-", "_")
+    trusted_types = _TRUSTED_INGESTION_TYPES[source_kind]
+    if normalized_source_type not in trusted_types:
+        raise SourceProvenanceError(
+            "untrusted_source_ingestion",
+            "Authoritative source identity requires server-owned ingestion "
+            f"lineage for {source_kind}; document source type "
+            f"'{document_source_type}' is review-only.",
+        )
 
 
 def _pmc_authority(pmcid: str) -> tuple[SourceKind, str, str]:
@@ -499,7 +542,10 @@ def verify_persisted_source_provenance(
             "source_identity_snapshot_mismatch",
             "The source identity or immutable content snapshot changed after extraction.",
         )
-    if document.text_content[locator.char_start : locator.char_end] != locator.exact_quote:
+    if (
+        document.text_content[locator.char_start : locator.char_end]
+        != locator.exact_quote
+    ):
         raise SourceProvenanceError(
             "persisted_locator_mismatch",
             "The persisted exact locator no longer recovers its source quote.",

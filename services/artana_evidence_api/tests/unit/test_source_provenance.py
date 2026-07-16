@@ -28,6 +28,7 @@ def _document(
     *,
     text: str = "Background. MED13 was associated with cardiomyopathy.",
     metadata: dict[str, object] | None = None,
+    source_type: str = "pubmed",
 ) -> HarnessDocumentRecord:
     now = datetime(2026, 7, 14, 12, 30, tzinfo=UTC)
     return HarnessDocumentRecord(
@@ -35,7 +36,7 @@ def _document(
         space_id=str(uuid4()),
         created_by=str(uuid4()),
         title="MED13 study",
-        source_type="pubmed",
+        source_type=source_type,
         filename=None,
         media_type="text/plain",
         sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
@@ -126,9 +127,12 @@ def test_source_identity_preserves_all_pubmed_identifiers_and_snapshot_hash() ->
     assert identity.pmid == "12345678"
     assert identity.pmcid == "PMC7654321"
     assert identity.doi == "10.1000/example"
-    assert identity.content_sha256 == hashlib.sha256(
-        document.text_content.encode("utf-8"),
-    ).hexdigest()
+    assert (
+        identity.content_sha256
+        == hashlib.sha256(
+            document.text_content.encode("utf-8"),
+        ).hexdigest()
+    )
     assert identity.artifact_sha256 == document.sha256
     assert identity.version == "efetch-2026-07-14"
     assert identity.retrieved_at == datetime(2026, 7, 14, 12, 0, tzinfo=UTC)
@@ -183,8 +187,46 @@ def test_internal_document_reference_is_not_an_authoritative_identity() -> None:
     assert exc_info.value.reason_code == "missing_authoritative_source_identifier"
 
 
+@pytest.mark.parametrize("source_type", ["text", "pdf"])
+def test_user_supplied_metadata_cannot_claim_authoritative_pubmed_lineage(
+    source_type: str,
+) -> None:
+    document = _document(source_type=source_type)
+
+    with pytest.raises(SourceProvenanceError) as exc_info:
+        source_identity_for_document(document)
+
+    assert exc_info.value.reason_code == "untrusted_source_ingestion"
+    assert f"'{source_type}' is review-only" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "replay_marker",
+    [
+        {"source": "research-init-pubmed"},
+        {"replayed_source_document_id": "caller-controlled-document"},
+        {"document_extraction_replayed": True},
+    ],
+)
+def test_replay_derived_pubmed_content_remains_review_only(
+    replay_marker: dict[str, object],
+) -> None:
+    baseline = _document()
+    document = replace(
+        baseline,
+        metadata={**baseline.metadata, **replay_marker},
+    )
+
+    with pytest.raises(SourceProvenanceError) as exc_info:
+        source_identity_for_document(document)
+
+    assert exc_info.value.reason_code == "unverified_replay_source"
+    assert "verifiable upstream retrieval receipt" in str(exc_info.value)
+
+
 def test_clinical_trials_handoff_uses_external_nct_identifier() -> None:
     document = _document(
+        source_type="clinical_trials",
         metadata={
             "source_capture": {
                 "source_key": "clinical_trials",

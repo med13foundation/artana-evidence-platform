@@ -66,17 +66,17 @@ prevalence.
 
 | Measure | Baseline | Interpretation |
 |---|---:|---|
-| Strict agent completion | 300/300 | The live `openai:gpt-5.6-luna` path completes. |
-| Credited fallback | 0 | Fallback did not masquerade as agent evidence. |
-| Invalid agent results | 0 | Structured extraction completed. |
-| Stable cases across three runs | 88/100 | Twelve cases changed under identical inputs. |
-| Worst-run generic relation rate | 36.76% | Generic output is far above the 5% limit. |
-| Worst-run verified CURIE match rate | 75.86% | Entity grounding is below the 95% target. |
-| Negative-control leakage | 1 | One explicit negative produced a candidate. |
-| Source-reviewed packet sufficiency | 8/47 | Most packets could not support the claim on their own. |
-| Final action `keep` | 1/47 | Most risk cases required revision, rejection, or human routing. |
-| Strong provenance | 2/47 | Source identity and locators are usually missing. |
-| Generic or overstated outcomes | 13/47 | The tuple often loses scientifically material context. |
+| Strict agent completion | 300/300 | Reported completion; must be re-established from committed provider evidence. |
+| Credited fallback | 0 | Reported fallback count; not a current safety proof. |
+| Invalid agent results | 0 | Reported structured-output count; not independently reproducible. |
+| Stable cases across three runs | 88/100 | Suggests a repeatability failure requiring a frozen rerun. |
+| Worst-run generic relation rate | 36.76% | Suggests generic output substantially exceeded the planned 5% limit. |
+| Worst-run verified CURIE match rate | 75.86% | Suggests entity grounding was below the planned 95% target. |
+| Negative-control leakage | 1 | Suggests at least one positive candidate escaped a negative control. |
+| Source-reviewed packet sufficiency | 8/47 | Suggests most risk packets lacked self-contained support. |
+| Final action `keep` | 1/47 | Suggests most risk cases required revision, rejection, or human routing. |
+| Strong provenance | 2/47 | Suggests source identity and locators were usually missing. |
+| Generic or overstated outcomes | 13/47 | Suggests binary tuples lost scientifically material context. |
 
 Current decision: **not ready for automatic trusted-graph promotion**.
 
