@@ -1,0 +1,41 @@
+{
+  "schema_version": "tg03.holdout_methodology_adjudication.v1",
+  "transition": "v2_to_v3",
+  "source_cases_changed": false,
+  "production_semantic_policy_imported": false,
+  "from": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v2.json",
+    "sha256": "22fbdf50333811d52e26296e9f1ddd561bfe0f29b0ed7d3771017199552ab956",
+    "methodology_status": "legacy_incomplete"
+  },
+  "to": {
+    "path": "scripts/validation/claim_frames/fixtures/tg03_qualifier_holdout_v3.json",
+    "sha256": "a5b31c2111a4f2f25017a70c3ce3d33f844e3a939eb918c621ba7e5d9d6d3658",
+    "methodology_status": "complete"
+  },
+  "additions": [
+    "independent closed benchmark categories",
+    "explicit per-frame promotion eligibility",
+    "explicit per-frame source-measurement gold",
+    "explicit case adjudication status",
+    "adjudicated-only quality denominator policy"
+  ],
+  "source_measurement_gold": {
+    "frame_id": "holdout_source_measurement_repoterctinib_01",
+    "literal_span": "8.7 months",
+    "value": "8.7",
+    "unit": "months",
+    "field_name": "progression_free_interval"
+  },
+  "unresolved_cases": [
+    {
+      "case_id": "holdout_multi_clause_ret_ntrk",
+      "unresolved_frame_ids": ["holdout_multi_clause_ret_ntrk_02"]
+    },
+    {
+      "case_id": "holdout_population_futibatinib",
+      "unresolved_frame_ids": ["holdout_population_futibatinib_01"]
+    }
+  ],
+  "policy": "Unresolved cases are reported but excluded from semantic quality and stability denominators."
+}

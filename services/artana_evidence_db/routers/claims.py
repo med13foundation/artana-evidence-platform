@@ -8,12 +8,6 @@ from uuid import UUID
 from artana_evidence_db._claim_paper_links import (
     resolve_claim_evidence_paper_links,
 )
-from artana_evidence_db._claim_relation_normalization import (
-    normalize_relation_type as normalize_claim_relation_type,
-)
-from artana_evidence_db._claim_relation_normalization import (
-    normalize_review_status,
-)
 from artana_evidence_db.auth import (
     get_current_active_user,
     graph_service_capability_for_user,
@@ -41,7 +35,6 @@ from artana_evidence_db.dependencies import (
     get_dictionary_service,
     get_kernel_claim_evidence_service,
     get_kernel_claim_participant_service,
-    get_kernel_claim_relation_service,
     get_kernel_entity_service,
     get_kernel_relation_claim_service,
     get_kernel_relation_projection_materialization_service,
@@ -55,11 +48,9 @@ from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
     KernelGraphValidationResponse,
 )
 from artana_evidence_db.graph_validation_service import GraphValidationService
-from artana_evidence_db.kernel_domain_ports import ClaimRelationConstraintError
 from artana_evidence_db.kernel_services import (
     KernelClaimEvidenceService,
     KernelClaimParticipantService,
-    KernelClaimRelationService,
     KernelEntityService,
     KernelRelationClaimService,
     KernelRelationProjectionMaterializationService,
@@ -68,14 +59,24 @@ from artana_evidence_db.ports import SpaceAccessPort
 from artana_evidence_db.relation_projection_materialization_support import (
     RelationProjectionMaterializationError,
 )
+from artana_evidence_db.routers.claim_routes.claim_relations import (
+    create_claim_relation,
+    list_claim_relations,
+    update_claim_relation_review_status,
+)
+from artana_evidence_db.routers.claim_routes.claim_relations import (
+    router as claim_relations_router,
+)
+from artana_evidence_db.routers.claim_routes.write_quarantine import (
+    effective_authorship_for_request,
+    ensure_ai_claim_persistence_not_ready,
+    ensure_claim_update_not_quarantined,
+    raise_ai_persistence_violation,
+)
 from artana_evidence_db.semantic_ports import DictionaryPort
 from artana_evidence_db.service_contracts import (
     ClaimParticipantListResponse,
     ClaimParticipantResponse,
-    ClaimRelationCreateRequest,
-    ClaimRelationListResponse,
-    ClaimRelationResponse,
-    ClaimRelationReviewUpdateRequest,
     KernelClaimEvidenceListResponse,
     KernelClaimEvidenceResponse,
     KernelRelationClaimCreateRequest,
@@ -96,6 +97,12 @@ from artana_evidence_db.source_provenance.snapshot_repository import (
 )
 from artana_evidence_db.space_membership import MembershipRole
 from artana_evidence_db.user_models import User
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
+)
+from artana_evidence_db.validation.source_evidence_write_validation import (
+    SourceEvidenceWriteValidationService,
+)
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -113,6 +120,30 @@ _TRUSTED_AI_EVIDENCE_NEXT_ACTIONS = frozenset(
         "run_agent_extraction",
     },
 )
+_SOURCE_EVIDENCE_WRITE_VALIDATION = SourceEvidenceWriteValidationService()
+
+
+def _validate_source_evidence_write_or_raise(
+    request: KernelRelationClaimCreateRequest,
+    *,
+    subject_names: tuple[str, ...],
+    object_names: tuple[str, ...],
+) -> None:
+    issue = _SOURCE_EVIDENCE_WRITE_VALIDATION.validate(
+        request,
+        subject_names=subject_names,
+        object_names=object_names,
+    )
+    if issue is None:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={
+            "code": issue.code,
+            "message": issue.message,
+            "persistability": "NON_PERSISTABLE",
+        },
+    )
 
 
 def _build_validation_error_detail(
@@ -258,6 +289,15 @@ def create_claim(  # noqa: PLR0915
         session=session,
         required_role=MembershipRole.RESEARCHER,
     )
+    request = request.model_copy(
+        update={
+            "authorship": effective_authorship_for_request(
+                current_user=current_user,
+                requested_authorship=request.authorship,
+            ),
+        },
+    )
+    ensure_ai_claim_persistence_not_ready(request)
     try:
         source_entity = entity_service.get_entity(str(request.source_entity_id))
         target_entity = entity_service.get_entity(str(request.target_entity_id))
@@ -271,6 +311,19 @@ def create_claim(  # noqa: PLR0915
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Source or target entity not found",
             )
+        _validate_source_evidence_write_or_raise(
+            request,
+            subject_names=tuple(
+                name
+                for name in [source_entity.display_label, *source_entity.aliases]
+                if name is not None
+            ),
+            object_names=tuple(
+                name
+                for name in [target_entity.display_label, *target_entity.aliases]
+                if name is not None
+            ),
+        )
         validation_service = GraphValidationService(
             entity_service=entity_service,
             dictionary_service=dictionary_service,
@@ -423,6 +476,7 @@ def create_claim(  # noqa: PLR0915
             ),
             source_document_ref=request.source_document_ref,
             source_ref=claim_source_ref,
+            authorship=request.authorship,
             agent_run_id=request.agent_run_id,
             source_type=source_entity.entity_type,
             relation_type=normalized_relation_type,
@@ -440,6 +494,7 @@ def create_claim(  # noqa: PLR0915
             linked_relation_id=None,
             metadata={
                 **request.metadata,
+                "authorship": request.authorship,
                 "origin": "claim_api",
                 "source_entity_id": source_entity_id,
                 "target_entity_id": target_entity_id,
@@ -824,6 +879,10 @@ def update_claim_status(  # noqa: PLR0915
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Relation claim not found",
         )
+    ensure_claim_update_not_quarantined(
+        current_user=current_user,
+        claim=existing,
+    )
     try:
         normalized_status = _normalize_claim_status_filter(request.claim_status)
         if normalized_status is None:
@@ -882,6 +941,9 @@ def update_claim_status(  # noqa: PLR0915
             )
         session.commit()
         return KernelRelationClaimResponse.from_model(updated)
+    except AIPersistenceQuarantineError as exc:
+        session.rollback()
+        raise_ai_persistence_violation(exc.violation)
     except RelationProjectionMaterializationError as exc:
         session.rollback()
         raise HTTPException(
@@ -902,192 +964,7 @@ def update_claim_status(  # noqa: PLR0915
         ) from exc
 
 
-@router.get(
-    "/{space_id}/claim-relations",
-    response_model=ClaimRelationListResponse,
-    summary="List claim-to-claim relation edges",
-)
-def list_claim_relations(
-    space_id: UUID,
-    *,
-    relation_type: str | None = Query(default=None),
-    review_status: str | None = Query(default=None),
-    source_claim_id: UUID | None = Query(default=None),
-    target_claim_id: UUID | None = Query(default=None),
-    claim_id: UUID | None = Query(default=None),
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
-    current_user: User = Depends(get_current_active_user),
-    space_access: SpaceAccessPort = Depends(get_space_access_port),
-    claim_relation_service: KernelClaimRelationService = Depends(
-        get_kernel_claim_relation_service,
-    ),
-    session: Session = Depends(get_session),
-) -> ClaimRelationListResponse:
-    verify_space_membership(
-        space_id=space_id,
-        current_user=current_user,
-        space_access=space_access,
-        session=session,
-    )
-    try:
-        normalized_relation_type = (
-            normalize_claim_relation_type(relation_type)
-            if relation_type is not None and relation_type.strip()
-            else None
-        )
-        normalized_review_status = (
-            normalize_review_status(review_status)
-            if review_status is not None and review_status.strip()
-            else None
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-    claim_relations = claim_relation_service.list_by_research_space(
-        str(space_id),
-        relation_type=normalized_relation_type,
-        review_status=normalized_review_status,
-        source_claim_id=str(source_claim_id) if source_claim_id is not None else None,
-        target_claim_id=str(target_claim_id) if target_claim_id is not None else None,
-        claim_id=str(claim_id) if claim_id is not None else None,
-        limit=limit,
-        offset=offset,
-    )
-    total = claim_relation_service.count_by_research_space(
-        str(space_id),
-        relation_type=normalized_relation_type,
-        review_status=normalized_review_status,
-        source_claim_id=str(source_claim_id) if source_claim_id is not None else None,
-        target_claim_id=str(target_claim_id) if target_claim_id is not None else None,
-        claim_id=str(claim_id) if claim_id is not None else None,
-    )
-    return ClaimRelationListResponse(
-        claim_relations=[
-            ClaimRelationResponse.from_model(relation) for relation in claim_relations
-        ],
-        total=total,
-        offset=offset,
-        limit=limit,
-    )
-
-
-@router.post(
-    "/{space_id}/claim-relations",
-    response_model=ClaimRelationResponse,
-    summary="Create one claim-to-claim relation edge",
-)
-def create_claim_relation(
-    space_id: UUID,
-    request: ClaimRelationCreateRequest,
-    current_user: User = Depends(get_current_active_user),
-    space_access: SpaceAccessPort = Depends(get_space_access_port),
-    relation_claim_service: KernelRelationClaimService = Depends(
-        get_kernel_relation_claim_service,
-    ),
-    claim_relation_service: KernelClaimRelationService = Depends(
-        get_kernel_claim_relation_service,
-    ),
-    session: Session = Depends(get_session),
-) -> ClaimRelationResponse:
-    require_space_role(
-        space_id=space_id,
-        current_user=current_user,
-        space_access=space_access,
-        session=session,
-        required_role=MembershipRole.RESEARCHER,
-    )
-    source_claim = relation_claim_service.get_claim(str(request.source_claim_id))
-    target_claim = relation_claim_service.get_claim(str(request.target_claim_id))
-    if source_claim is None or str(source_claim.research_space_id) != str(space_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Source claim not found",
-        )
-    if target_claim is None or str(target_claim.research_space_id) != str(space_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Target claim not found",
-        )
-    try:
-        confidence_metadata = fact_assessment_metadata(request.assessment)
-        relation = claim_relation_service.create_claim_relation(
-            research_space_id=str(space_id),
-            source_claim_id=str(request.source_claim_id),
-            target_claim_id=str(request.target_claim_id),
-            relation_type=normalize_claim_relation_type(request.relation_type),
-            agent_run_id=request.agent_run_id,
-            source_document_id=(
-                str(request.source_document_id)
-                if request.source_document_id is not None
-                else None
-            ),
-            source_document_ref=request.source_document_ref,
-            confidence=request.derived_confidence,
-            review_status=normalize_review_status(request.review_status),
-            evidence_summary=request.evidence_summary,
-            metadata={**request.metadata, **confidence_metadata},
-        )
-        session.commit()
-        return ClaimRelationResponse.from_model(relation)
-    except ValueError as exc:
-        session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-    except ClaimRelationConstraintError as exc:
-        session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Duplicate or invalid claim relation edge",
-        ) from exc
-
-
-@router.patch(
-    "/{space_id}/claim-relations/{relation_id}",
-    response_model=ClaimRelationResponse,
-    summary="Update one claim relation review status",
-)
-def update_claim_relation_review_status(
-    space_id: UUID,
-    relation_id: UUID,
-    request: ClaimRelationReviewUpdateRequest,
-    current_user: User = Depends(get_current_active_user),
-    space_access: SpaceAccessPort = Depends(get_space_access_port),
-    claim_relation_service: KernelClaimRelationService = Depends(
-        get_kernel_claim_relation_service,
-    ),
-    session: Session = Depends(get_session),
-) -> ClaimRelationResponse:
-    require_space_role(
-        space_id=space_id,
-        current_user=current_user,
-        space_access=space_access,
-        session=session,
-        required_role=MembershipRole.CURATOR,
-    )
-    existing = claim_relation_service.get_claim_relation(str(relation_id))
-    if existing is None or str(existing.research_space_id) != str(space_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Claim relation not found",
-        )
-    try:
-        updated = claim_relation_service.update_review_status(
-            str(relation_id),
-            review_status=normalize_review_status(request.review_status),
-        )
-        session.commit()
-        return ClaimRelationResponse.from_model(updated)
-    except ValueError as exc:
-        session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+router.include_router(claim_relations_router)
 
 
 __all__ = [

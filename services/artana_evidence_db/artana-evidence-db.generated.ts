@@ -103,6 +103,7 @@ export interface ClaimParticipantResponse {
 
 export interface ClaimRelationCreateRequest {
   source_claim_id: string;
+  authorship?: 'AGENT' | 'MANUAL';
   target_claim_id: string;
   relation_type: string;
   agent_run_id?: string | null;
@@ -358,6 +359,7 @@ export interface ConnectorProposalResponse {
 
 export interface CreateManualHypothesisRequest {
   statement: string;
+  authorship?: 'AGENT' | 'MANUAL';
   rationale: string;
   seed_entity_ids?: string[];
   source_type?: string;
@@ -1285,6 +1287,7 @@ export interface KernelReasoningPathStepResponse {
 
 export interface KernelRelationClaimCreateRequest {
   source_entity_id: string;
+  authorship?: 'AGENT' | 'MANUAL';
   target_entity_id: string;
   relation_type: string;
   assessment: FactAssessment;
@@ -1363,6 +1366,7 @@ export interface KernelRelationConflictResponse {
 
 export interface KernelRelationCreateRequest {
   source_id: string;
+  authorship?: 'AGENT' | 'MANUAL';
   relation_type: string;
   target_id: string;
   assessment: FactAssessment;

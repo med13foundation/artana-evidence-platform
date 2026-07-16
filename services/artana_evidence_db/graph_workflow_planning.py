@@ -13,6 +13,9 @@ from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
     KernelRelationClaimCreateRequest,
 )
 from artana_evidence_db.graph_validation_service import GraphValidationService
+from artana_evidence_db.graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+)
 from artana_evidence_db.graph_workflow_support import (
     _AUTO_CLAIM_MODES,
     _CLAIM_VALIDATION_STATE_MAP,
@@ -30,6 +33,12 @@ from artana_evidence_db.graph_workflow_support import (
     _WorkflowPlan,
 )
 from artana_evidence_db.relation_claim_models import RelationClaimPersistability
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    GraphAIPersistenceQuarantinePolicy,
+)
+from artana_evidence_db.validation.source_evidence_write_validation import (
+    SourceEvidenceWriteValidationService,
+)
 from artana_evidence_db.workflow_models import (
     GraphOperatingMode,
     GraphWorkflowKind,
@@ -43,6 +52,32 @@ def _json_string_list(value: JSONValue | None) -> list[str]:
     if not isinstance(value, list | tuple):
         return []
     return [item for item in value if isinstance(item, str)]
+
+
+_AI_PERSISTENCE_QUARANTINE = GraphAIPersistenceQuarantinePolicy()
+_SOURCE_EVIDENCE_WRITE_VALIDATION = SourceEvidenceWriteValidationService()
+
+
+def _blocked_claim_plan(
+    *,
+    detail: JSONObject,
+    next_action: str,
+) -> JSONObject:
+    """Build one stable fail-closed workflow result without graph mutations."""
+
+    return {
+        "status": "BLOCKED",
+        "plan_payload": {
+            "validation": detail,
+            "next_actions": [next_action],
+        },
+        "generated_resources_payload": {},
+        "explanation_payload": {
+            "why_this_exists": detail["message"],
+            "validation_code": detail["code"],
+            "next_action": next_action,
+        },
+    }
 
 
 class GraphWorkflowPlanningMixin:
@@ -131,7 +166,9 @@ class GraphWorkflowPlanningMixin:
                 status=(
                     "PLAN_READY"
                     if ai_policy.ai_allowed
-                    else "BLOCKED" if ai_policy.blocked else "WAITING_REVIEW"
+                    else "BLOCKED"
+                    if ai_policy.blocked
+                    else "WAITING_REVIEW"
                 ),
                 plan_payload={
                     "ai_decision_recorded": True,
@@ -150,7 +187,9 @@ class GraphWorkflowPlanningMixin:
                 policy_payload=_policy_payload(ai_policy, confidence_result),
                 explanation_payload={
                     "why_this_exists": "An AI evidence decision envelope was recorded for governed review.",
-                    "next_action": "approve" if ai_policy.ai_allowed else "defer_to_human",
+                    "next_action": "approve"
+                    if ai_policy.ai_allowed
+                    else "defer_to_human",
                     "computed_confidence": (
                         confidence_result.computed_confidence
                         if confidence_result is not None
@@ -264,7 +303,9 @@ class GraphWorkflowPlanningMixin:
                 should_apply=mode in _AUTO_CLAIM_MODES and not pending_resources,
             )
             claim_plan_payload = cast("JSONObject", claim_plan["plan_payload"])
-            claim_generated = cast("JSONObject", claim_plan["generated_resources_payload"])
+            claim_generated = cast(
+                "JSONObject", claim_plan["generated_resources_payload"]
+            )
             claim_status = cast("GraphWorkflowStatus", claim_plan["status"])
             plan_payload["claim_plan"] = claim_plan_payload
             plan_payload["validation"] = claim_plan_payload.get("validation")
@@ -286,15 +327,21 @@ class GraphWorkflowPlanningMixin:
 
             if claim_status == "APPLIED":
                 generated = {**generated, **claim_generated}
-                explanation_payload = cast("JSONObject", claim_plan["explanation_payload"])
+                explanation_payload = cast(
+                    "JSONObject", claim_plan["explanation_payload"]
+                )
             elif claim_status == "BLOCKED" and not pending_resources:
                 blocked_claim = True
-                explanation_payload = cast("JSONObject", claim_plan["explanation_payload"])
+                explanation_payload = cast(
+                    "JSONObject", claim_plan["explanation_payload"]
+                )
             else:
                 pending_claim_request = claim_request_payload
                 generated["pending_claim_request"] = pending_claim_request
                 plan_payload["pending_claim_request"] = pending_claim_request
-                explanation_payload = cast("JSONObject", claim_plan["explanation_payload"])
+                explanation_payload = cast(
+                    "JSONObject", claim_plan["explanation_payload"]
+                )
 
         if pending_resources or pending_claim_request is not None:
             return _WorkflowPlan(
@@ -340,8 +387,50 @@ class GraphWorkflowPlanningMixin:
         actor: str,
         source_ref: str | None,
         should_apply: bool,
+        authorship_override: GraphWriteAuthorship | None = None,
     ) -> JSONObject:
-        request = KernelRelationClaimCreateRequest.model_validate(request_payload)
+        effective_request_payload = dict(request_payload)
+        if authorship_override is not None:
+            effective_request_payload["authorship"] = authorship_override
+            if authorship_override == "AGENT" and not _normalize_optional_text(
+                _json_optional_str(effective_request_payload.get("agent_run_id")),
+            ):
+                effective_request_payload["agent_run_id"] = actor
+        request = KernelRelationClaimCreateRequest.model_validate(
+            effective_request_payload,
+        )
+        quarantine_violation = _AI_PERSISTENCE_QUARANTINE.violation_for_request(request)
+        if quarantine_violation is not None:
+            detail = cast("JSONObject", quarantine_violation.as_detail())
+            return _blocked_claim_plan(
+                detail=detail,
+                next_action="defer_to_human",
+            )
+        source_entity = self._entity_service.get_entity(str(request.source_entity_id))
+        target_entity = self._entity_service.get_entity(str(request.target_entity_id))
+        if source_entity is not None and target_entity is not None:
+            source_issue = _SOURCE_EVIDENCE_WRITE_VALIDATION.validate(
+                request,
+                subject_names=tuple(
+                    name
+                    for name in [source_entity.display_label, *source_entity.aliases]
+                    if name is not None
+                ),
+                object_names=tuple(
+                    name
+                    for name in [target_entity.display_label, *target_entity.aliases]
+                    if name is not None
+                ),
+            )
+            if source_issue is not None:
+                return _blocked_claim_plan(
+                    detail={
+                        "code": source_issue.code,
+                        "message": source_issue.message,
+                        "persistability": "NON_PERSISTABLE",
+                    },
+                    next_action="attach_grounded_evidence",
+                )
         validation_service = GraphValidationService(
             entity_service=self._entity_service,
             dictionary_service=self._dictionary_service,
@@ -383,7 +472,7 @@ class GraphWorkflowPlanningMixin:
                 "status": "WAITING_REVIEW",
                 "plan_payload": {
                     "validation": validation_payload,
-                    "claim_request": request_payload,
+                    "claim_request": effective_request_payload,
                     "next_action": "approve",
                 },
                 "generated_resources_payload": {},
@@ -454,6 +543,8 @@ class GraphWorkflowPlanningMixin:
             (
                 request.evidence_summary,
                 request.evidence_sentence,
+                request.source_document_id,
+                request.source_evidence,
                 request.source_document_ref,
             ),
         )
@@ -463,9 +554,14 @@ class GraphWorkflowPlanningMixin:
         )
         claim = self._relation_claim_service.create_claim(
             research_space_id=research_space_id,
-            source_document_id=None,
+            source_document_id=(
+                str(request.source_document_id)
+                if request.source_document_id is not None
+                else None
+            ),
             source_document_ref=request.source_document_ref,
             source_ref=claim_source_ref,
+            authorship=request.authorship,
             agent_run_id=request.agent_run_id,
             source_type=source_entity.entity_type,
             relation_type=relation_type,
@@ -486,6 +582,7 @@ class GraphWorkflowPlanningMixin:
             linked_relation_id=None,
             metadata={
                 **request.metadata,
+                "authorship": request.authorship,
                 "origin": "graph_workflow",
                 "created_by": actor,
                 "source_entity_id": str(source_entity.id),
@@ -513,12 +610,24 @@ class GraphWorkflowPlanningMixin:
             qualifiers={"origin": "graph_workflow"},
         )
         if has_evidence:
+            source_evidence = request.source_evidence
             self._claim_evidence_service.create_evidence(
                 claim_id=claim_id,
-                source_document_id=None,
+                source_document_id=(
+                    str(request.source_document_id)
+                    if request.source_document_id is not None
+                    else None
+                ),
                 source_document_ref=request.source_document_ref,
                 agent_run_id=request.agent_run_id,
-                sentence=request.evidence_sentence,
+                sentence=(
+                    request.evidence_sentence
+                    or (
+                        source_evidence.locator.exact_quote
+                        if source_evidence is not None
+                        else None
+                    )
+                ),
                 sentence_source=_normalize_sentence_source(
                     request.evidence_sentence_source,
                 ),
@@ -526,12 +635,43 @@ class GraphWorkflowPlanningMixin:
                     request.evidence_sentence_confidence,
                 ),
                 sentence_rationale=request.evidence_sentence_rationale,
-                figure_reference=None,
-                table_reference=None,
+                figure_reference=(
+                    source_evidence.locator.figure_reference
+                    if source_evidence is not None
+                    else None
+                ),
+                table_reference=(
+                    source_evidence.locator.table_reference
+                    if source_evidence is not None
+                    else None
+                ),
                 confidence=request.derived_confidence,
+                evidence_locator=(
+                    source_evidence.locator if source_evidence is not None else None
+                ),
+                provenance_status=(
+                    "UNVERIFIED" if source_evidence is not None else "LEGACY_UNVERIFIED"
+                ),
+                provenance_reason_codes=(
+                    ("source_attestation_capability_missing",)
+                    if source_evidence is not None
+                    else ("legacy_evidence_without_typed_provenance",)
+                ),
                 metadata={
                     "origin": "graph_workflow",
                     "evidence_summary": request.evidence_summary,
+                    **(
+                        {
+                            "source_identity": source_evidence.identity.model_dump(
+                                mode="json",
+                            ),
+                            "source_upstream": source_evidence.upstream.model_dump(
+                                mode="json",
+                            ),
+                        }
+                        if source_evidence is not None
+                        else {}
+                    ),
                     **confidence_metadata,
                 },
             )
@@ -545,7 +685,9 @@ class GraphWorkflowPlanningMixin:
     ) -> list[str]:
         proposal_ids: list[str] = []
         for payload in _json_object_list(input_payload.get("dictionary_proposals")):
-            proposal_type = _json_str(payload.get("proposal_type"), field_name="proposal_type")
+            proposal_type = _json_str(
+                payload.get("proposal_type"), field_name="proposal_type"
+            )
             proposal = self._create_dictionary_proposal(
                 proposal_type=proposal_type,
                 payload=payload,
@@ -606,23 +748,32 @@ class GraphWorkflowPlanningMixin:
                 source_ref=_json_optional_str(payload.get("source_ref")),
             )
         if proposal_type == "RELATION_CONSTRAINT":
-            return self._dictionary_proposal_service.create_relation_constraint_proposal(
-                source_type=_json_str(payload.get("source_type"), field_name="source_type"),
-                relation_type=_json_str(
-                    payload.get("relation_type"),
-                    field_name="relation_type",
-                ),
-                target_type=_json_str(payload.get("target_type"), field_name="target_type"),
-                rationale=_json_str(payload.get("rationale"), field_name="rationale"),
-                proposed_by=actor,
-                evidence_payload=_json_object(payload.get("evidence_payload")) or {},
-                is_allowed=_json_bool(payload.get("is_allowed"), default=True),
-                requires_evidence=_json_bool(
-                    payload.get("requires_evidence"),
-                    default=True,
-                ),
-                profile=_json_optional_str(payload.get("profile")) or "ALLOWED",
-                source_ref=_json_optional_str(payload.get("source_ref")),
+            return (
+                self._dictionary_proposal_service.create_relation_constraint_proposal(
+                    source_type=_json_str(
+                        payload.get("source_type"), field_name="source_type"
+                    ),
+                    relation_type=_json_str(
+                        payload.get("relation_type"),
+                        field_name="relation_type",
+                    ),
+                    target_type=_json_str(
+                        payload.get("target_type"), field_name="target_type"
+                    ),
+                    rationale=_json_str(
+                        payload.get("rationale"), field_name="rationale"
+                    ),
+                    proposed_by=actor,
+                    evidence_payload=_json_object(payload.get("evidence_payload"))
+                    or {},
+                    is_allowed=_json_bool(payload.get("is_allowed"), default=True),
+                    requires_evidence=_json_bool(
+                        payload.get("requires_evidence"),
+                        default=True,
+                    ),
+                    profile=_json_optional_str(payload.get("profile")) or "ALLOWED",
+                    source_ref=_json_optional_str(payload.get("source_ref")),
+                )
             )
         msg = f"Unsupported dictionary proposal type '{proposal_type}'"
         raise ValueError(msg)

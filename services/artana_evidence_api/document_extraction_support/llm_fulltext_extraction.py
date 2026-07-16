@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import re
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import replace
-from typing import Protocol, cast
+from typing import cast
 from uuid import uuid4
 
 from artana_evidence_api.document_extraction_contracts import (
@@ -25,6 +26,15 @@ from artana_evidence_api.document_extraction_relation_taxonomy import (
     LLM_RELATION_SYNONYMS,
     LLM_VALID_RELATION_TYPES,
     normalize_relation_type_label,
+)
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFrame,
+    ClaimFrameNormalizationError,
+    EpistemicStatus,
+    Polarity,
+    QualifierState,
+    SourceEvidenceSpan,
+    normalize_claim_frame,
 )
 from artana_evidence_api.document_extraction_support.entity_curie_linking import (
     CurieSource,
@@ -47,6 +57,28 @@ from artana_evidence_api.document_extraction_support.evidence_support.cues impor
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
 )
+from artana_evidence_api.document_extraction_support.llm_extraction.attempt_audit import (
+    ModelAttemptAuditContext,
+    ModelAttemptAuditRecord,
+    ModelAttemptAuditSession,
+    ModelAttemptPassRole,
+    ModelAttemptRole,
+    ModelAttemptValidationOutcome,
+    ModelStepResult,
+    ModelStepRunner,
+    canonical_openai_response_id,
+    current_model_attempt_audit,
+    freeze_model_boundary_output,
+    model_attempt_audit_manifest,
+    model_attempt_evidence_unit_sha256,
+    record_model_attempt,
+    record_skipped_model_attempt,
+    start_model_attempt_audit,
+    stop_model_attempt_audit,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.prompt_versions import (
+    CLAIM_FRAME_PIPELINE_PROMPT_VERSION,
+)
 from artana_evidence_api.document_extraction_support.proposal_relation_type_guard import (
     normalize_proposed_relation_type,
 )
@@ -57,12 +89,13 @@ from artana_evidence_api.document_extraction_support.relation_specificity_prunin
 from artana_evidence_api.document_extraction_support.review_policy.review_only_candidate_policy import (
     classify_review_only_candidate,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v7"
+LLM_EXTRACTION_PROMPT_VERSION = "document_extraction.llm_extraction.v12"
 LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION = (
-    "document_extraction.weak_review_extraction.v2"
+    "document_extraction.weak_review_extraction.v6"
 )
+CLAIM_FRAME_SOURCE_LOCATOR = "normalized_extraction_text"
 _MIN_ENTITY_LABEL_LENGTH = 2
 _DIRECT_TARGET_ACTIVITY_RELATION_TYPES = frozenset(
     {
@@ -81,13 +114,8 @@ _DIRECT_TARGET_ACTIVITY_OBJECT_RE = re.compile(
 logger = logging.getLogger(__name__)
 
 
-class ModelStepResult(Protocol):
-    """Minimal model-step result needed by relation extraction."""
-
-    output: object
-
-
-ModelStepRunner = Callable[..., Awaitable[ModelStepResult]]
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def llm_extraction_document_fingerprint(normalized_text: str) -> str:
@@ -113,6 +141,7 @@ def llm_extraction_step_key(
     chunk_index: int = 0,
     total_chunks: int = 1,
     document_fingerprint: str | None = None,
+    execution_namespace: str = "",
 ) -> str:
     """Return the stable extraction step key for one extraction chunk."""
 
@@ -128,6 +157,7 @@ def llm_extraction_step_key(
         str(chunk_index),
         str(total_chunks),
         chunk_fingerprint,
+        execution_namespace,
     )
 
 
@@ -146,17 +176,20 @@ def build_llm_extraction_prompt(
         f"- document_sha256: {document_fingerprint}\n"
         f"- chunk_index: {chunk.index + 1} of {total_chunks}\n"
         f"- chunk_char_range: {chunk.start_char}-{chunk.end_char}\n"
-        f"- chunk_sha256: {chunk.sha256}\n\n"
+        f"- chunk_sha256: {chunk.sha256}\n"
+        f"- source_locator: {CLAIM_FRAME_SOURCE_LOCATOR}\n\n"
         "---\nTEXT CHUNK TO ANALYZE:\n---\n"
         f"{chunk.text}\n"
         "---\n\n"
         "Extract only relationships directly supported inside this chunk. "
         "Return the relations as JSON. Remember: subject and object must each "
-        "be a short canonical entity name, usually 1-4 words, but disease or "
+        "be a concise source-native entity span copied verbatim from the "
+        "evidence clause, usually 1-4 words, but disease or "
         "molecular subtype labels may be up to 6 tokens when the modifier "
         "defines the biomedical entity, like EGFR exon 19 deletion lung "
-        "adenocarcinoma or NTRK fusion solid tumors. Never use sentence "
-        "fragments as entity names."
+        "adenocarcinoma or NTRK fusion solid tumors. Never paraphrase, reorder, "
+        "or canonicalize endpoint text, and never use sentence fragments as "
+        "entity names."
     )
 
 
@@ -195,7 +228,8 @@ def build_llm_weak_review_extraction_prompt(
         f"- document_sha256: {document_fingerprint}\n"
         f"- chunk_index: {chunk.index + 1} of {total_chunks}\n"
         f"- chunk_char_range: {chunk.start_char}-{chunk.end_char}\n"
-        f"- chunk_sha256: {chunk.sha256}\n\n"
+        f"- chunk_sha256: {chunk.sha256}\n"
+        f"- source_locator: {CLAIM_FRAME_SOURCE_LOCATOR}\n\n"
         "---\nTEXT CHUNK TO ANALYZE:\n---\n"
         f"{chunk.text}\n"
         "---\n\n"
@@ -207,6 +241,8 @@ def llm_relations_to_candidates(
     parsed: LLMExtractionResultLike,
     *,
     force_review_only_reason_codes: Sequence[str] = (),
+    source_text: str | None = None,
+    source_hash: str | None = None,
 ) -> tuple[list[ExtractedRelationCandidate], set[str]]:
     """Convert structured LLM relations into normalized candidate triples."""
 
@@ -217,6 +253,8 @@ def llm_relations_to_candidates(
         candidate, unknown_relation_type = _llm_relation_to_candidate(
             rel,
             force_review_only_reason_codes=force_review_only_reason_codes,
+            source_text=source_text,
+            source_hash=source_hash,
         )
         if candidate is None:
             continue
@@ -227,41 +265,77 @@ def llm_relations_to_candidates(
     return candidates, unknown_relation_types
 
 
+def llm_relation_to_candidate(
+    relation: LLMRelationLike,
+    *,
+    source_text: str,
+    source_hash: str,
+) -> tuple[ExtractedRelationCandidate | None, str | None]:
+    """Convert one qualified agent relation without creating semantic content."""
+
+    return _llm_relation_to_candidate(
+        relation,
+        source_text=source_text,
+        source_hash=source_hash,
+    )
+
+
 def _llm_relation_to_candidate(
     rel: LLMRelationLike,
     *,
     force_review_only_reason_codes: Sequence[str] = (),
+    source_text: str | None = None,
+    source_hash: str | None = None,
 ) -> tuple[ExtractedRelationCandidate | None, str | None]:
     relation_type = normalize_relation_type_label(rel.relation_type)
     relation_type = LLM_RELATION_SYNONYMS.get(relation_type, relation_type)
-    subject = clean_llm_entity_label(rel.subject)
-    obj = clean_llm_entity_label(rel.object)
-    obj = _repair_relation_object_label(
-        relation_type=relation_type,
-        subject_label=subject,
-        object_label=obj,
-        sentence=rel.sentence,
+    has_claim_frame = hasattr(rel, "polarity")
+    if has_claim_frame:
+        subject = rel.subject.strip()
+        obj = rel.object.strip()
+    else:
+        subject = clean_llm_entity_label(rel.subject)
+        obj = clean_llm_entity_label(rel.object)
+        obj = _repair_relation_object_label(
+            relation_type=relation_type,
+            subject_label=subject,
+            object_label=obj,
+            sentence=rel.sentence,
+        )
+    claim_frame, invalid_claim_frame = _claim_frame_from_relation(
+        rel=rel,
+        subject=subject,
+        predicate=relation_type,
+        object_=obj,
+        source_text=source_text,
+        source_hash=source_hash,
     )
     if (
-        not subject
+        invalid_claim_frame
+        or not subject
         or not obj
         or len(subject) < _MIN_ENTITY_LABEL_LENGTH
         or len(obj) < _MIN_ENTITY_LABEL_LENGTH
-        or has_broadened_entity_label(
-            label=subject,
-            sentence=rel.sentence,
-            counterpart_label=obj,
-        )
-        or has_broadened_entity_label(
-            label=obj,
-            sentence=rel.sentence,
-            counterpart_label=subject,
-        )
-        or has_context_tail_entity_label(
-            label=obj,
-            sentence=rel.sentence,
-            counterpart_label=subject,
-            relation_type=relation_type,
+        or (
+            claim_frame is None
+            and (
+                has_broadened_entity_label(
+                    label=subject,
+                    sentence=rel.sentence,
+                    counterpart_label=obj,
+                )
+                or has_broadened_entity_label(
+                    label=obj,
+                    sentence=rel.sentence,
+                    counterpart_label=subject,
+                )
+                or has_context_tail_entity_label(
+                    label=obj,
+                    sentence=rel.sentence,
+                    counterpart_label=subject,
+                    relation_type=relation_type,
+                )
+            )
         )
     ):
         return None, None
@@ -279,6 +353,7 @@ def _llm_relation_to_candidate(
         subject_curie_link=subject_curie_link,
         object_curie_link=object_curie_link,
     )
+    claim_frame_reason_codes = _claim_frame_review_reason_codes(claim_frame)
 
     if relation_type == LLM_PROPOSE_NEW_RELATION_TYPE:
         if force_review_only_reason_codes:
@@ -288,8 +363,7 @@ def _llm_relation_to_candidate(
             getattr(rel, "proposed_relation_type", None),
         )
         logger.info(
-            "LLM proposed new relation type %s; returning review-required "
-            "candidate",
+            "LLM proposed new relation type %s; returning review-required candidate",
             proposed_relation_type.relation_type,
         )
         rationale = getattr(rel, "new_relation_type_rationale", None)
@@ -300,7 +374,10 @@ def _llm_relation_to_candidate(
             )
         review_status, review_reason_codes = _candidate_review_metadata(
             rel=rel,
-            policy_reason_codes=endpoint_review_reason_codes,
+            policy_reason_codes=(
+                *endpoint_review_reason_codes,
+                *claim_frame_reason_codes,
+            ),
             policy_review_only=False,
             force_review_only_reason_codes=force_review_only_reason_codes,
         )
@@ -319,6 +396,7 @@ def _llm_relation_to_candidate(
                 relation_governance_status="requires_relation_review",
                 review_status=review_status,
                 review_reason_codes=review_reason_codes,
+                claim_frame=claim_frame,
             ),
             None,
         )
@@ -353,6 +431,7 @@ def _llm_relation_to_candidate(
         policy_reason_codes=(
             *review_only_decision.reason_codes,
             *endpoint_review_reason_codes,
+            *claim_frame_reason_codes,
         ),
         policy_review_only=review_only_decision.review_only,
         force_review_only_reason_codes=force_review_only_reason_codes,
@@ -369,9 +448,95 @@ def _llm_relation_to_candidate(
             object_curie_source=_candidate_curie_source(object_curie_link),
             review_status=review_status,
             review_reason_codes=review_reason_codes,
+            claim_frame=claim_frame,
         ),
         unknown_relation_type,
     )
+
+
+def _claim_frame_from_relation(
+    *,
+    rel: LLMRelationLike,
+    subject: str,
+    predicate: str,
+    object_: str,
+    source_text: str | None,
+    source_hash: str | None,
+) -> tuple[ClaimFrame | None, bool]:
+    if not hasattr(rel, "polarity"):
+        return None, False
+    try:
+        frame = ClaimFrame(
+            subject=subject,
+            predicate=predicate,
+            object=object_,
+            source_evidence=SourceEvidenceSpan(
+                exact_span=rel.sentence.strip(),
+                locator=CLAIM_FRAME_SOURCE_LOCATOR,
+            ),
+            polarity=rel.polarity,
+            epistemic_status=rel.epistemic_status,
+            biological_or_variant_state=rel.biological_or_variant_state,
+            population=rel.population,
+            intervention=rel.intervention,
+            comparator=rel.comparator,
+            outcome=rel.outcome,
+            study_design=rel.study_design,
+            treatment_setting=rel.treatment_setting,
+            timeframe=rel.timeframe,
+            threshold=rel.threshold,
+            source_measurements=tuple(rel.source_measurements),
+            extraction_rationale=rel.extraction_rationale,
+        )
+        if source_text is not None:
+            frame = normalize_claim_frame(
+                frame,
+                source_text,
+                chunk_locator=CLAIM_FRAME_SOURCE_LOCATOR,
+                expected_source_hash=source_hash,
+            )
+    except (ClaimFrameNormalizationError, ValueError) as exc:
+        logger.info("Dropping invalid qualified claim frame: %s", exc)
+        return None, True
+    return frame, False
+
+
+def _claim_frame_review_reason_codes(
+    claim_frame: ClaimFrame | None,
+) -> tuple[str, ...]:
+    if claim_frame is None:
+        return ()
+    reasons: list[str] = []
+    if not claim_frame.is_positive_projection_candidate:
+        reasons.append("non_positive_claim_frame")
+    if any(
+        qualifier.state is QualifierState.UNRESOLVED
+        for qualifier in (
+            claim_frame.biological_or_variant_state,
+            claim_frame.population,
+            claim_frame.intervention,
+            claim_frame.comparator,
+            claim_frame.outcome,
+            claim_frame.study_design,
+            claim_frame.treatment_setting,
+            claim_frame.timeframe,
+            claim_frame.threshold,
+        )
+    ):
+        reasons.append("unresolved_claim_qualifier")
+    if claim_frame.polarity in {
+        Polarity.REFUTE,
+        Polarity.UNCERTAIN,
+        Polarity.HYPOTHESIS,
+        Polarity.NULL_RESULT,
+    } or claim_frame.epistemic_status in {
+        EpistemicStatus.PROVISIONAL,
+        EpistemicStatus.UNCERTAIN,
+        EpistemicStatus.HYPOTHESIS,
+        EpistemicStatus.NULL_RESULT,
+    }:
+        reasons.append("non_assertive_claim_semantics")
+    return tuple(dict.fromkeys(reasons))
 
 
 def _repair_relation_object_label(
@@ -390,12 +555,15 @@ def _repair_relation_object_label(
         )
         if repaired is not None:
             return repaired
-    return _repair_direct_target_activity_object(
-        relation_type=relation_type,
-        subject_label=subject_label,
-        object_label=object_label,
-        sentence=sentence,
-    ) or object_label
+    return (
+        _repair_direct_target_activity_object(
+            relation_type=relation_type,
+            subject_label=subject_label,
+            object_label=object_label,
+            sentence=sentence,
+        )
+        or object_label
+    )
 
 
 def _repair_direct_target_activity_object(
@@ -577,7 +745,9 @@ def _candidate_review_metadata(
     forced_reason_codes = _model_review_reason_codes(force_review_only_reason_codes)
     model_review_only = getattr(rel, "review_status", "candidate") == "review_only"
     review_reason_codes = tuple(
-        dict.fromkeys((*policy_reason_codes, *model_reason_codes, *forced_reason_codes)),
+        dict.fromkeys(
+            (*policy_reason_codes, *model_reason_codes, *forced_reason_codes)
+        ),
     )
     review_only = (
         policy_review_only
@@ -624,8 +794,10 @@ def merge_duplicate_relation_candidates(
 ) -> list[ExtractedRelationCandidate]:
     """Merge duplicate relation candidates while preserving safer review metadata."""
 
-    merged_by_key: dict[tuple[str, str, str, str, str], ExtractedRelationCandidate] = {}
-    ordered_keys: list[tuple[str, str, str, str, str]] = []
+    merged_by_key: dict[
+        tuple[str, str, str, str, str, str], ExtractedRelationCandidate
+    ] = {}
+    ordered_keys: list[tuple[str, str, str, str, str, str]] = []
     for candidate in candidates:
         key = _relation_candidate_merge_key(candidate)
         existing = merged_by_key.get(key)
@@ -654,8 +826,7 @@ def merge_duplicate_relation_candidates(
             ),
             review_status=(
                 "review_only"
-                if "review_only"
-                in {existing.review_status, candidate.review_status}
+                if "review_only" in {existing.review_status, candidate.review_status}
                 or bool(review_reason_codes)
                 else "candidate"
             ),
@@ -666,7 +837,7 @@ def merge_duplicate_relation_candidates(
 
 def _relation_candidate_merge_key(
     candidate: ExtractedRelationCandidate,
-) -> tuple[str, str, str, str, str]:
+) -> tuple[str, str, str, str, str, str]:
     """Return a governance-aware identity for relation candidate deduplication."""
 
     return (
@@ -675,6 +846,9 @@ def _relation_candidate_merge_key(
         (candidate.proposed_relation_type or "").casefold(),
         candidate.object_label.casefold(),
         candidate.sentence.casefold(),
+        candidate.claim_frame.dedupe_identity
+        if candidate.claim_frame is not None
+        else "",
     )
 
 
@@ -688,34 +862,113 @@ async def run_llm_relation_extraction_pass(
     output_schema: type[BaseModel],
     step_key: str,
     force_review_only_reason_codes: tuple[str, ...] = (),
-) -> tuple[list[ExtractedRelationCandidate], set[str], int]:
+    source_text: str | None = None,
+    source_hash: str | None = None,
+    audit_context: ModelAttemptAuditContext | None = None,
+) -> tuple[list[ExtractedRelationCandidate], set[str], int, dict[str, object]]:
     """Run one LLM relation extraction pass and normalize candidates."""
 
-    result = await step_runner(
-        client,
-        run_id=f"research-init-extraction:{uuid4()}",
-        tenant=tenant,
-        model=model_id,
+    invocation_id = str(uuid4())
+    effective_audit_context = audit_context or ModelAttemptAuditContext(
+        attempt_role="primary",
+        pass_role="primary",
+        retry_context=None,
+        source_sha256=source_hash or _sha256_text(source_text or ""),
+        input_sha256=_sha256_text(source_text or ""),
+    )
+    raw_output: object | None = None
+    result: ModelStepResult | None = None
+    try:
+        result = await step_runner(
+            client,
+            run_id=f"research-init-extraction:{invocation_id}",
+            tenant=tenant,
+            model=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            schema_id="document_extraction.relation.v3",
+            step_key=step_key,
+            replay_policy="fork_on_drift",
+        )
+        output = result.output
+        raw_output = freeze_model_boundary_output(output)
+        parsed = cast(
+            "LLMExtractionResultLike",
+            (
+                output
+                if isinstance(output, output_schema)
+                else output_schema.model_validate(output)
+            ),
+        )
+    except asyncio.CancelledError as exc:
+        record_model_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=effective_audit_context,
+            model_result=result,
+            raw_output=raw_output,
+            validation_outcome="invocation_failed",
+            error_type=type(exc).__name__,
+        )
+        raise
+    except ValidationError as exc:
+        record_model_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=effective_audit_context,
+            model_result=result,
+            raw_output=raw_output,
+            validation_outcome="schema_invalid",
+            error_type=type(exc).__name__,
+        )
+        raise
+    except Exception as exc:
+        record_model_attempt(
+            invocation_id=invocation_id,
+            model_id=model_id,
+            prompt=prompt,
+            output_schema=output_schema,
+            step_key=step_key,
+            audit_context=effective_audit_context,
+            model_result=result,
+            raw_output=raw_output,
+            validation_outcome="invocation_failed",
+            error_type=type(exc).__name__,
+        )
+        raise
+    record = record_model_attempt(
+        invocation_id=invocation_id,
+        model_id=model_id,
         prompt=prompt,
         output_schema=output_schema,
-        schema_id="document_extraction.relation.v2",
         step_key=step_key,
-        replay_policy="fork_on_drift",
+        audit_context=effective_audit_context,
+        model_result=result,
+        raw_output=raw_output,
+        validation_outcome="accepted",
+        error_type=None,
     )
-    output = result.output
-    parsed = cast(
-        "LLMExtractionResultLike",
-        (
-            output
-            if isinstance(output, output_schema)
-            else output_schema.model_validate(output)
-        ),
-    )
+    immutable_raw_output = record.raw_model_payload
+    if immutable_raw_output is None:
+        raise AssertionError("accepted extraction output must have a raw snapshot")
     candidates, unknown_relation_types = llm_relations_to_candidates(
         parsed,
         force_review_only_reason_codes=force_review_only_reason_codes,
+        source_text=source_text,
+        source_hash=source_hash,
     )
-    return candidates, unknown_relation_types, len(parsed.relations)
+    return (
+        candidates,
+        unknown_relation_types,
+        len(parsed.relations),
+        immutable_raw_output,
+    )
 
 
 def _normalize_text_document_for_key(text: str) -> str:
@@ -726,14 +979,32 @@ def _normalize_text_document_for_key(text: str) -> str:
 
 
 __all__ = [
+    "CLAIM_FRAME_PIPELINE_PROMPT_VERSION",
     "LLM_EXTRACTION_PROMPT_VERSION",
     "LLM_WEAK_REVIEW_EXTRACTION_PROMPT_VERSION",
+    "ModelAttemptAuditContext",
+    "ModelAttemptPassRole",
+    "ModelAttemptAuditRecord",
+    "ModelAttemptAuditSession",
+    "ModelAttemptRole",
+    "ModelAttemptValidationOutcome",
+    "ModelStepResult",
+    "ModelStepRunner",
     "build_llm_extraction_prompt",
     "build_llm_weak_review_extraction_prompt",
+    "canonical_openai_response_id",
+    "current_model_attempt_audit",
     "fingerprinted_step_key",
     "llm_extraction_step_key",
     "llm_extraction_document_fingerprint",
     "llm_relations_to_candidates",
+    "llm_relation_to_candidate",
     "merge_duplicate_relation_candidates",
+    "model_attempt_audit_manifest",
+    "model_attempt_evidence_unit_sha256",
+    "record_model_attempt",
+    "record_skipped_model_attempt",
     "run_llm_relation_extraction_pass",
+    "start_model_attempt_audit",
+    "stop_model_attempt_audit",
 ]

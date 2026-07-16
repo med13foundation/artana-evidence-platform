@@ -154,7 +154,13 @@ def _assessment_from_proposal_review(
     factual_support = _string_mapping_value(proposal_review, "factual_support")
     if factual_support is None:
         return None
-    support_band = _FACTUAL_SUPPORT_BANDS.get(factual_support.strip().lower())
+    review_method = _string_mapping_value(proposal_review, "method")
+    is_heuristic_fallback = review_method == "heuristic_fallback_v1"
+    support_band = (
+        SupportBand.TENTATIVE
+        if is_heuristic_fallback
+        else _FACTUAL_SUPPORT_BANDS.get(factual_support.strip().lower())
+    )
     if support_band is None:
         return None
     factual_rationale = _string_mapping_value(proposal_review, "factual_rationale")
@@ -163,7 +169,11 @@ def _assessment_from_proposal_review(
         support_band=support_band,
         grounding_level=GroundingLevel.SPAN,
         mapping_status=_proposal_mapping_status(proposal),
-        speculation_level=_proposal_speculation_level(proposal),
+        speculation_level=(
+            SpeculationLevel.HEDGED
+            if is_heuristic_fallback
+            else _proposal_speculation_level(proposal)
+        ),
         confidence_rationale=(
             factual_rationale
             or review_rationale

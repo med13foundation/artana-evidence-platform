@@ -57,6 +57,14 @@ from artana_evidence_api.dependencies import (
     get_run_registry,
     get_schedule_store,
 )
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFrame,
+    ClaimQualifier,
+    EpistemicStatus,
+    Polarity,
+    SourceEvidenceSpan,
+    bind_claim_frame,
+)
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.graph_chat_runtime import HarnessGraphChatRunner
 from artana_evidence_api.graph_connection_runtime import (
@@ -727,6 +735,116 @@ def _candidate_claim_payload(
         "proposed_subject": source_entity_id,
         "proposed_object": target_entity_id,
         "proposed_claim_type": relation_type,
+    }
+
+
+def _source_bound_positive_claim_frame(
+    *,
+    source_text: str,
+    source_locator: str,
+    subject_label: str,
+    relation_type: str,
+    object_label: str,
+    population: str,
+) -> ClaimFrame:
+    frame = ClaimFrame(
+        subject=subject_label,
+        predicate=relation_type,
+        object=object_label,
+        source_evidence=SourceEvidenceSpan(
+            exact_span=source_text,
+            locator=source_locator,
+        ),
+        polarity=Polarity.SUPPORT,
+        epistemic_status=EpistemicStatus.ASSERTED,
+        biological_or_variant_state=ClaimQualifier.not_applicable(),
+        population=ClaimQualifier.present(
+            value=population,
+            exact_span=population,
+        ),
+        intervention=ClaimQualifier.not_applicable(),
+        comparator=ClaimQualifier.not_applicable(),
+        outcome=ClaimQualifier.not_applicable(),
+        study_design=ClaimQualifier.not_applicable(),
+        treatment_setting=ClaimQualifier.not_applicable(),
+        timeframe=ClaimQualifier.not_applicable(),
+        threshold=ClaimQualifier.not_applicable(),
+        extraction_rationale=(
+            "The exact source sentence states the qualified positive relation."
+        ),
+    )
+    return bind_claim_frame(
+        frame,
+        source_text,
+        chunk_locator=source_locator,
+    )
+
+
+def _qualified_candidate_claim_payload(
+    *,
+    source_entity_id: str,
+    target_entity_id: str,
+    relation_type: str,
+    frame: ClaimFrame,
+) -> dict[str, object]:
+    return {
+        **_candidate_claim_payload(
+            source_entity_id=source_entity_id,
+            target_entity_id=target_entity_id,
+            relation_type=relation_type,
+        ),
+        "proposed_subject_label": frame.subject,
+        "proposed_object_label": frame.object,
+        "claim_frame": frame.model_dump(mode="json"),
+    }
+
+
+def _qualified_agent_claim_metadata(
+    *,
+    agent_run_id: str,
+    frame: ClaimFrame,
+    subject_curie: str,
+    object_curie: str,
+) -> dict[str, object]:
+    return {
+        "agent_run_id": agent_run_id,
+        "agent_extraction_completed": True,
+        "fallback_output_used": False,
+        "trusted_evidence_eligible": False,
+        "trust_tier": "verified_evidence",
+        "trust_floor_failures": [],
+        "review_status": "candidate",
+        "review_reason_codes": [],
+        "qualified_claim_frame_present": True,
+        "claim_frame_positive_projection_candidate": True,
+        "claim_frame_positive_projection_eligible": False,
+        "claim_frame_semantic_fingerprint": frame.semantic_fingerprint,
+        "evidence_grounding": {
+            "anchor_start": 0,
+            "anchor_end": len(frame.source_evidence.exact_span),
+            "match_kind": "exact",
+            "subject_present": True,
+            "object_present": True,
+            "grounded": True,
+        },
+        "entity_linking": {
+            "subject": {
+                "status": "linked",
+                "curie": subject_curie,
+                "source": "verified_linker",
+            },
+            "object": {
+                "status": "linked",
+                "curie": object_curie,
+                "source": "verified_linker",
+            },
+        },
+        "support_verification": {
+            "support": "ENTAILS",
+            "rationale": "The exact source span directly entails the claim.",
+            "model_id": "test-agent-entailment-verifier",
+            "verification_method": "agent",
+        },
     }
 
 
@@ -3724,7 +3842,7 @@ def test_research_onboarding_turn_preserves_durable_state_when_agent_crashes(
 
 
 @pytest.mark.integration
-def test_promote_proposal_creates_graph_claim_and_updates_artana_workspace(
+def test_promote_qualified_claim_fails_closed_without_graph_writes(
     db_session: Session,
 ) -> None:
     runtime = FakeKernelRuntime()
@@ -3742,6 +3860,15 @@ def test_promote_proposal_creates_graph_claim_and_updates_artana_workspace(
         graph_service_version="test-graph",
     )
     services.artifact_store.seed_for_run(run=source_run)
+    source_text = "In a pediatric cohort, MED13 regulates CDK8."
+    claim_frame = _source_bound_positive_claim_frame(
+        source_text=source_text,
+        source_locator="integration_test:source_text",
+        subject_label="MED13",
+        relation_type="REGULATES",
+        object_label="CDK8",
+        population="pediatric cohort",
+    )
     proposal = services.proposal_store.create_proposals(
         space_id=space_id,
         run_id=source_run.id,
@@ -3751,16 +3878,29 @@ def test_promote_proposal_creates_graph_claim_and_updates_artana_workspace(
                 source_kind="integration_test",
                 source_key=f"{source_entity_id}:REGULATES:{target_entity_id}",
                 title="Promote MED13 claim",
-                summary="Synthetic promotion proposal.",
+                summary=source_text,
                 confidence=0.88,
                 ranking_score=0.95,
-                reasoning_path={"reasoning": "Synthetic promotion reasoning."},
-                evidence_bundle=[{"source_type": "db", "locator": source_entity_id}],
-                payload=_candidate_claim_payload(
+                reasoning_path={"reasoning": source_text},
+                evidence_bundle=[
+                    {
+                        "source_type": "paper",
+                        "locator": claim_frame.source_locator,
+                        "excerpt": source_text,
+                    },
+                ],
+                payload=_qualified_candidate_claim_payload(
                     source_entity_id=source_entity_id,
                     target_entity_id=target_entity_id,
+                    relation_type="REGULATES",
+                    frame=claim_frame,
                 ),
-                metadata={"agent_run_id": "integration-promotion"},
+                metadata=_qualified_agent_claim_metadata(
+                    agent_run_id="integration-promotion",
+                    frame=claim_frame,
+                    subject_curie="HGNC:22474",
+                    object_curie="HGNC:1773",
+                ),
             ),
         ),
     )[0]
@@ -3770,18 +3910,38 @@ def test_promote_proposal_creates_graph_claim_and_updates_artana_workspace(
         headers=auth_headers(),
         json={"reason": "Integration promotion"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 409
     payload = response.json()
-    assert payload["status"] == "promoted"
-    graph_claim_id = payload["metadata"].get("graph_claim_id")
-    assert isinstance(graph_claim_id, str)
-    assert graph_claim_id != ""
+    assert payload["reason_code"] == "missing_source_document"
+    assert "requires the stored source document" in payload["detail"]
+
+    proposal_after_response = client.get(
+        f"/v1/spaces/{space_id}/proposals/{proposal.id}",
+        headers=auth_headers(),
+    )
+    assert proposal_after_response.status_code == 200
+    proposal_after_payload = proposal_after_response.json()
+    assert proposal_after_payload["status"] == "pending_review"
+    assert proposal_after_payload["decision_reason"] is None
+    assert proposal_after_payload["decided_at"] is None
+
+    pending_response = client.get(
+        f"/v1/spaces/{space_id}/proposals",
+        headers=auth_headers(),
+        params={"status": "pending_review"},
+    )
+    assert pending_response.status_code == 200
+    pending_payload = pending_response.json()
+    assert pending_payload["total"] == 1
+    assert [item["id"] for item in pending_payload["proposals"]] == [proposal.id]
+
     workspace = services.artifact_store.get_workspace(
         space_id=space_id,
         run_id=source_run.id,
     )
     assert workspace is not None
-    assert workspace.snapshot["last_promoted_graph_claim_id"] == graph_claim_id
+    assert workspace.snapshot.get("last_promoted_graph_claim_id") is None
+    assert workspace.snapshot.get("last_promoted_graph_relation_id") is None
 
 
 @pytest.mark.integration

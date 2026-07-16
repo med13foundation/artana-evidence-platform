@@ -6,7 +6,7 @@ from typing import NoReturn, cast
 from uuid import uuid4
 
 from artana_evidence_db.ai_full_mode_service import AIFullModeService
-from artana_evidence_db.common_types import JSONObject, JSONValue, ResearchSpaceSettings
+from artana_evidence_db.common_types import JSONObject, JSONValue
 from artana_evidence_db.decision_confidence import (
     DecisionConfidenceAssessment,
     DecisionConfidenceResult,
@@ -14,13 +14,11 @@ from artana_evidence_db.decision_confidence import (
 )
 from artana_evidence_db.dictionary_proposal_service import DictionaryProposalService
 from artana_evidence_db.graph_api_schemas.workflow_schemas import ExplanationResponse
+from artana_evidence_db.graph_workflow.actor_context import WorkflowActorContext
+from artana_evidence_db.graph_workflow.policy import GraphWorkflowPolicyMixin
 from artana_evidence_db.graph_workflow_batch import GraphWorkflowBatchMixin
 from artana_evidence_db.graph_workflow_planning import GraphWorkflowPlanningMixin
 from artana_evidence_db.graph_workflow_support import (
-    _AI_EVIDENCE_MODES,
-    _AI_GRAPH_MODES,
-    _SUPPORTED_WORKFLOW_ACTIONS,
-    _SUPPORTED_WORKFLOW_KINDS,
     WorkflowActionRejected,
     _as_uuid,
     _confidence_assessment_payload,
@@ -42,8 +40,6 @@ from artana_evidence_db.kernel_services import (
 from artana_evidence_db.semantic_ports import DictionaryPort
 from artana_evidence_db.space_models import GraphSpaceModel
 from artana_evidence_db.workflow_models import (
-    GraphOperatingMode,
-    GraphOperatingModeConfig,
     GraphWorkflow,
     GraphWorkflowAction,
     GraphWorkflowKind,
@@ -55,7 +51,6 @@ from artana_evidence_db.workflow_persistence_models import (
     GraphWorkflowEventModel,
     GraphWorkflowModel,
 )
-from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -67,7 +62,69 @@ def _json_string_list(value: JSONValue | None) -> list[str]:
     return [item for item in value if isinstance(item, str)]
 
 
-class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
+def _claim_plan_application(
+    *,
+    claim_plan: JSONObject,
+    claim_request: JSONObject,
+) -> _GeneratedResourcesApplication:
+    """Keep one claim plan's status, explanation, and resources together."""
+
+    status = cast("GraphWorkflowStatus", claim_plan["status"])
+    explanation_update = cast(
+        "JSONObject",
+        claim_plan["explanation_payload"],
+    )
+    plan_payload = {
+        **cast("JSONObject", claim_plan["plan_payload"]),
+        "next_action": explanation_update.get("next_action", "inspect_workflow"),
+    }
+    generated_updates = cast(
+        "JSONObject",
+        claim_plan["generated_resources_payload"],
+    )
+    if status != "APPLIED":
+        generated_updates = {
+            **generated_updates,
+            "pending_claim_request": claim_request,
+            "pending_claim_plan": plan_payload,
+        }
+    return _GeneratedResourcesApplication(
+        status=status,
+        generated_updates=generated_updates,
+        plan_update=plan_payload,
+        explanation_update=explanation_update,
+    )
+
+
+def _merge_claim_plan_update(
+    *,
+    existing: JSONObject,
+    update: JSONObject,
+) -> JSONObject:
+    outcome_keys = {"claim_request", "next_action", "next_actions", "validation"}
+    return {
+        **{key: value for key, value in existing.items() if key not in outcome_keys},
+        **update,
+    }
+
+
+def _merge_claim_explanation_update(
+    *,
+    existing: JSONObject,
+    update: JSONObject,
+) -> JSONObject:
+    outcome_keys = {"next_action", "validation_code", "why_this_exists"}
+    return {
+        **{key: value for key, value in existing.items() if key not in outcome_keys},
+        **update,
+    }
+
+
+class GraphWorkflowService(
+    GraphWorkflowPolicyMixin,
+    GraphWorkflowPlanningMixin,
+    GraphWorkflowBatchMixin,
+):
     """Application service for unified graph workflows."""
 
     def __init__(
@@ -91,154 +148,6 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         self._dictionary_proposal_service = dictionary_proposal_service
         self._ai_full_mode_service = ai_full_mode_service
 
-    def get_operating_mode(self, research_space_id: str) -> GraphOperatingModeConfig:
-        """Return the configured operating mode, defaulting safely to manual."""
-        space = self._get_space_model(research_space_id)
-        raw_settings = space.settings if isinstance(space.settings, dict) else {}
-        raw_operating_mode = raw_settings.get("operating_mode")
-        if raw_operating_mode is None:
-            return GraphOperatingModeConfig()
-        try:
-            return GraphOperatingModeConfig.model_validate(raw_operating_mode)
-        except ValidationError as exc:
-            msg = "Stored operating_mode settings are invalid"
-            raise ValueError(msg) from exc
-
-    def update_operating_mode(
-        self,
-        *,
-        research_space_id: str,
-        mode: GraphOperatingMode,
-        workflow_policy: JSONObject,
-    ) -> GraphOperatingModeConfig:
-        """Persist one operating mode under graph_spaces.settings."""
-        space = self._get_space_model(research_space_id)
-        config = GraphOperatingModeConfig.model_validate(
-            {"mode": mode, "workflow_policy": workflow_policy},
-        )
-        settings = (
-            dict(space.settings)
-            if isinstance(space.settings, dict)
-            else {}
-        )
-        settings["operating_mode"] = config.model_dump(mode="json")
-        settings["ai_full_mode"] = self._compatible_ai_full_mode_settings(
-            config=config,
-            current=_json_object(cast("JSONValue", settings.get("ai_full_mode"))),
-        )
-        space.settings = cast("ResearchSpaceSettings", settings)
-        self._session.flush()
-        return config
-
-    def capabilities(self, research_space_id: str) -> JSONObject:
-        """Return product capabilities for the active operating mode."""
-        config = self.get_operating_mode(research_space_id)
-        policy = config.workflow_policy
-        ai_graph = policy.allow_ai_graph_repair or config.mode in _AI_GRAPH_MODES
-        ai_evidence = (
-            policy.allow_ai_evidence_decisions or config.mode in _AI_EVIDENCE_MODES
-        )
-        return {
-            "mode": config.mode,
-            "workflow_pattern": "create workflow -> inspect workflow -> take action -> explain result",
-            "supported_workflow_kinds": list(_SUPPORTED_WORKFLOW_KINDS),
-            "supported_actions": list(_SUPPORTED_WORKFLOW_ACTIONS),
-            "ai_graph_repair_allowed": ai_graph,
-            "ai_evidence_decisions_allowed": ai_evidence,
-            "batch_auto_apply_low_risk": policy.batch_auto_apply_low_risk,
-            "human_review_required_by_default": config.mode
-            in {"manual", "ai_assist_human_batch"},
-        }
-
-    def evaluate_policy(  # noqa: PLR0911
-        self,
-        *,
-        research_space_id: str,
-        kind: GraphWorkflowKind,
-        action: GraphWorkflowAction | None,
-        risk_tier: GraphWorkflowRiskTier,
-        ai_principal: str | None,
-        computed_confidence: float | None,
-    ) -> GraphWorkflowPolicyOutcome:
-        """Evaluate one workflow action against the active operating mode."""
-        config = self.get_operating_mode(research_space_id)
-        policy = config.workflow_policy
-        ai_graph_allowed = policy.allow_ai_graph_repair or config.mode in _AI_GRAPH_MODES
-        ai_evidence_allowed = (
-            policy.allow_ai_evidence_decisions or config.mode in _AI_EVIDENCE_MODES
-        )
-        if ai_principal is None:
-            return GraphWorkflowPolicyOutcome(
-                ai_allowed=False,
-                ai_allowed_when_low_risk=False,
-                human_required=True,
-                blocked=False,
-                outcome="human_required",
-                reason="No AI decision envelope was supplied; human action is required.",
-            )
-        if ai_principal not in policy.trusted_ai_principals:
-            return GraphWorkflowPolicyOutcome(
-                ai_allowed=False,
-                ai_allowed_when_low_risk=False,
-                human_required=False,
-                blocked=True,
-                outcome="blocked",
-                reason="AI principal is not trusted for this graph space.",
-            )
-        if computed_confidence is None:
-            return GraphWorkflowPolicyOutcome(
-                ai_allowed=False,
-                ai_allowed_when_low_risk=False,
-                human_required=False,
-                blocked=True,
-                outcome="blocked",
-                reason="Decision confidence assessment is required for AI authority.",
-            )
-        if computed_confidence < policy.min_ai_confidence:
-            return GraphWorkflowPolicyOutcome(
-                ai_allowed=False,
-                ai_allowed_when_low_risk=False,
-                human_required=True,
-                blocked=False,
-                outcome="human_required",
-                reason="Computed confidence is below operating-mode policy.",
-            )
-        if kind == "ai_evidence_decision" and not ai_evidence_allowed:
-            return GraphWorkflowPolicyOutcome(
-                ai_allowed=False,
-                ai_allowed_when_low_risk=False,
-                human_required=True,
-                blocked=False,
-                outcome="human_required",
-                reason="AI evidence decisions are not enabled for this space.",
-            )
-        if action in {"apply_plan", "approve"} and not ai_graph_allowed:
-            return GraphWorkflowPolicyOutcome(
-                ai_allowed=False,
-                ai_allowed_when_low_risk=False,
-                human_required=True,
-                blocked=False,
-                outcome="human_required",
-                reason="AI graph repair is not enabled for this space.",
-            )
-        if risk_tier == "low":
-            return GraphWorkflowPolicyOutcome(
-                ai_allowed=True,
-                ai_allowed_when_low_risk=True,
-                human_required=False,
-                blocked=False,
-                outcome="ai_allowed_when_low_risk",
-                reason="Trusted low-risk AI action is allowed by operating mode.",
-            )
-        return GraphWorkflowPolicyOutcome(
-            ai_allowed=False,
-            ai_allowed_when_low_risk=False,
-            human_required=True,
-            blocked=False,
-            outcome="human_required",
-            reason="Medium and high-risk AI actions require human review.",
-        )
-
     def create_workflow(
         self,
         *,
@@ -248,10 +157,25 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         decision_payload: JSONObject,
         source_ref: str | None,
         created_by: str,
+        authenticated_ai_principal: str | None = None,
     ) -> GraphWorkflow:
         """Create or replay one unified graph workflow."""
         normalized_space_id = str(_as_uuid(research_space_id))
         normalized_source_ref = _normalize_optional_text(source_ref)
+        actor_context = WorkflowActorContext(
+            authenticated_user_actor=created_by,
+            authenticated_ai_principal=_normalize_optional_text(
+                authenticated_ai_principal,
+            ),
+        )
+        effective_decision_payload = {
+            **decision_payload,
+            "actor_context": actor_context.as_payload(),
+        }
+        input_payload = _workflow_input_for_authenticated_principal(
+            input_payload=input_payload,
+            authenticated_ai_principal=authenticated_ai_principal,
+        )
         existing = self._get_workflow_by_source_ref(
             research_space_id=normalized_space_id,
             source_ref=normalized_source_ref,
@@ -267,9 +191,9 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
             research_space_id=normalized_space_id,
             kind=kind,
             input_payload=input_payload,
-            decision_payload=decision_payload,
+            decision_payload=effective_decision_payload,
             source_ref=normalized_source_ref,
-            actor=created_by,
+            actor=actor_context.effective_actor,
             mode=mode_config.mode,
         )
         model = GraphWorkflowModel(
@@ -291,8 +215,8 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                 input_payload=input_payload,
                 source_ref=normalized_source_ref,
             ),
-            created_by=created_by,
-            updated_by=created_by,
+            created_by=actor_context.effective_actor,
+            updated_by=actor_context.effective_actor,
         )
         self._session.add(model)
         self._session.flush()
@@ -300,7 +224,7 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         self._session.flush()
         self._record_event(
             workflow=model,
-            actor=created_by,
+            actor=actor_context.effective_actor,
             action="create",
             before_status=None,
             after_status=model.status,
@@ -313,7 +237,10 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
             policy_outcome_payload=model.policy_payload,
             generated_resources_payload=model.generated_resources_payload,
             reason="Workflow created.",
-            event_payload={"kind": kind},
+            event_payload={
+                "kind": kind,
+                "actor_context": actor_context.as_payload(),
+            },
         )
         return _workflow_from_model(model)
 
@@ -339,8 +266,7 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         if status is not None:
             stmt = stmt.where(GraphWorkflowModel.status == status)
         return [
-            _workflow_from_model(model)
-            for model in self._session.scalars(stmt).all()
+            _workflow_from_model(model) for model in self._session.scalars(stmt).all()
         ]
 
     def count_workflows(
@@ -351,8 +277,12 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         status: GraphWorkflowStatus | None,
     ) -> int:
         """Count workflows in one graph space."""
-        stmt = select(func.count()).select_from(GraphWorkflowModel).where(
-            GraphWorkflowModel.research_space_id == _as_uuid(research_space_id),
+        stmt = (
+            select(func.count())
+            .select_from(GraphWorkflowModel)
+            .where(
+                GraphWorkflowModel.research_space_id == _as_uuid(research_space_id),
+            )
         )
         if kind is not None:
             stmt = stmt.where(GraphWorkflowModel.kind == kind)
@@ -360,7 +290,9 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
             stmt = stmt.where(GraphWorkflowModel.status == status)
         return int(self._session.scalar(stmt) or 0)
 
-    def get_workflow(self, *, research_space_id: str, workflow_id: str) -> GraphWorkflow:
+    def get_workflow(
+        self, *, research_space_id: str, workflow_id: str
+    ) -> GraphWorkflow:
         """Return one workflow by ID and space."""
         return _workflow_from_model(
             self._get_workflow_model(
@@ -406,15 +338,34 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                 decision_payload=decision_payload,
                 ai_decision_payload=ai_decision_payload,
             )
+        normalized_authenticated_ai_principal = _normalize_optional_text(
+            authenticated_ai_principal,
+        )
+        if (
+            normalized_authenticated_ai_principal is not None
+            and ai_decision_payload is None
+        ):
+            self._reject_workflow_action(
+                workflow=model,
+                actor=actor,
+                action=action,
+                risk_tier=risk_tier,
+                confidence_assessment=confidence_assessment,
+                confidence_result=None,
+                input_hash=input_hash,
+                reason=(
+                    "Authenticated AI principals cannot submit manual workflow actions"
+                ),
+                generated_resources_payload=generated_resources_payload,
+                decision_payload=decision_payload,
+                ai_decision_payload=None,
+            )
         ai_principal = (
             _json_optional_str(ai_decision_payload.get("ai_principal"))
             if ai_decision_payload is not None
             else None
         )
         if ai_decision_payload is not None:
-            normalized_authenticated_ai_principal = _normalize_optional_text(
-                authenticated_ai_principal,
-            )
             if normalized_authenticated_ai_principal is None:
                 self._reject_workflow_action(
                     workflow=model,
@@ -446,6 +397,10 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                     decision_payload=decision_payload,
                     ai_decision_payload=ai_decision_payload,
                 )
+        actor_context = WorkflowActorContext(
+            authenticated_user_actor=actor,
+            authenticated_ai_principal=normalized_authenticated_ai_principal,
+        )
         try:
             confidence_result = self._score_workflow_action_confidence(
                 action=action,
@@ -515,7 +470,9 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                 ai_decision_payload=ai_decision_payload,
                 policy=policy,
             )
-        if ai_decision_payload is not None and (policy.blocked or policy.human_required):
+        if ai_decision_payload is not None and (
+            policy.blocked or policy.human_required
+        ):
             msg = policy.reason
             self._reject_workflow_action(
                 workflow=model,
@@ -563,11 +520,12 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         model.decision_payload = {
             **model.decision_payload,
             **decision_payload,
+            "actor_context": actor_context.as_payload(),
             "confidence_assessment": confidence_payload,
             "confidence_result": confidence_result_payload,
         }
         model.policy_payload = _policy_payload(policy, confidence_result)
-        model.updated_by = ai_principal or actor
+        model.updated_by = actor_context.effective_actor
 
         if action == "reject":
             model.status = "REJECTED"
@@ -583,16 +541,25 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
             application = self._apply_generated_resources(
                 research_space_id=research_space_id,
                 workflow=model,
-                actor=ai_principal or actor,
+                actor_context=actor_context,
                 confidence_assessment=confidence_assessment,
                 risk_tier=risk_tier,
                 ai_decision_payload=ai_decision_payload,
-                authenticated_ai_principal=authenticated_ai_principal,
             )
             merged_generated = {
                 **merged_generated,
                 **application.generated_updates,
             }
+            if application.plan_update is not None:
+                model.plan_payload = _merge_claim_plan_update(
+                    existing=model.plan_payload,
+                    update=application.plan_update,
+                )
+            if application.explanation_update is not None:
+                model.explanation_payload = _merge_claim_explanation_update(
+                    existing=model.explanation_payload,
+                    update=application.explanation_update,
+                )
             model.status = application.status or "APPLIED"
         model.generated_resources_payload = merged_generated
         model.explanation_payload = self._build_workflow_explanation_payload(model)
@@ -601,7 +568,7 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         self._session.flush()
         self._record_event(
             workflow=model,
-            actor=ai_principal or actor,
+            actor=actor_context.effective_actor,
             action=action,
             before_status=before_status,
             after_status=model.status,
@@ -688,7 +655,10 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                     "applied_claim_ids": proposal.applied_claim_ids_payload,
                 },
                 validation=proposal.resolution_plan_payload,
-                next_action={"action": "review_graph_change", "status": proposal.status},
+                next_action={
+                    "action": "review_graph_change",
+                    "status": proposal.status,
+                },
                 details=cast("JSONObject", proposal.model_dump(mode="json")),
             )
         msg = f"Explanation for resource_type '{resource_type}' is not available"
@@ -724,26 +694,30 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
             details={"valid": valid, "code": code},
         )
 
-
     def _apply_generated_resources(  # noqa: PLR0913
         self,
         *,
         research_space_id: str,
         workflow: GraphWorkflowModel,
-        actor: str,
+        actor_context: WorkflowActorContext,
         confidence_assessment: DecisionConfidenceAssessment | None,
         risk_tier: GraphWorkflowRiskTier,
         ai_decision_payload: JSONObject | None,
-        authenticated_ai_principal: str | None,
     ) -> _GeneratedResourcesApplication:
         if workflow.kind == "batch_review":
             return self._apply_batch_review_resources(
                 research_space_id=research_space_id,
                 workflow=workflow,
-                actor=actor,
+                actor_context=actor_context,
+                confidence_assessment=confidence_assessment,
+                ai_decision_payload=ai_decision_payload,
             )
 
+        actor = actor_context.effective_actor
         generated_updates: JSONObject = {}
+        application_status: GraphWorkflowStatus | None = None
+        plan_update: JSONObject | None = None
+        explanation_update: JSONObject | None = None
         graph_change_ids = self._workflow_graph_change_ids(workflow)
         if ai_decision_payload is not None and graph_change_ids:
             self._apply_workflow_graph_change_proposals(
@@ -753,7 +727,9 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                 confidence_assessment=confidence_assessment,
                 risk_tier=risk_tier,
                 ai_decision_payload=ai_decision_payload,
-                authenticated_ai_principal=authenticated_ai_principal,
+                authenticated_ai_principal=(
+                    actor_context.authenticated_ai_principal
+                ),
                 graph_change_ids=graph_change_ids,
             )
         if workflow.kind == "evidence_approval":
@@ -781,24 +757,26 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                     actor=actor,
                     source_ref=workflow.source_ref,
                     should_apply=True,
+                    authorship_override=(
+                        "AGENT"
+                        if actor_context.is_ai
+                        else None
+                    ),
                 )
-                if claim_plan.get("status") == "APPLIED":
-                    generated_updates = cast(
-                        "JSONObject",
-                        claim_plan["generated_resources_payload"],
-                    )
-                else:
-                    return _GeneratedResourcesApplication(
-                        status=cast("GraphWorkflowStatus", claim_plan["status"]),
-                        generated_updates={
-                            "pending_claim_request": pending_claim_payload,
-                            "pending_claim_plan": cast(
-                                "JSONObject",
-                                claim_plan["plan_payload"],
-                            ),
-                        },
-                    )
-        if workflow.kind == "evidence_approval" and not workflow.generated_resources_payload:
+                claim_application = _claim_plan_application(
+                    claim_plan=claim_plan,
+                    claim_request=pending_claim_payload,
+                )
+                if claim_application.status != "APPLIED":
+                    return claim_application
+                application_status = claim_application.status
+                generated_updates = claim_application.generated_updates
+                plan_update = claim_application.plan_update
+                explanation_update = claim_application.explanation_update
+        if (
+            workflow.kind == "evidence_approval"
+            and not workflow.generated_resources_payload
+        ):
             claim_payload = _json_object(workflow.input_payload.get("claim_request"))
             if claim_payload is not None:
                 claim_plan = self._plan_claim_request(
@@ -807,15 +785,27 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                     actor=actor,
                     source_ref=workflow.source_ref,
                     should_apply=True,
+                    authorship_override=(
+                        "AGENT"
+                        if actor_context.is_ai
+                        else None
+                    ),
                 )
-                if claim_plan.get("status") == "APPLIED":
-                    generated_updates = cast(
-                        "JSONObject",
-                        claim_plan["generated_resources_payload"],
-                    )
+                claim_application = _claim_plan_application(
+                    claim_plan=claim_plan,
+                    claim_request=claim_payload,
+                )
+                if claim_application.status != "APPLIED":
+                    return claim_application
+                application_status = claim_application.status
+                generated_updates = claim_application.generated_updates
+                plan_update = claim_application.plan_update
+                explanation_update = claim_application.explanation_update
         return _GeneratedResourcesApplication(
-            status=None,
+            status=application_status,
             generated_updates=generated_updates,
+            plan_update=plan_update,
+            explanation_update=explanation_update,
         )
 
     def _workflow_graph_change_ids(self, workflow: GraphWorkflowModel) -> list[str]:
@@ -879,17 +869,6 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                 return False
         return True
 
-
-
-
-
-
-
-
-
-
-
-
     def _score_workflow_action_confidence(
         self,
         *,
@@ -944,7 +923,9 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
                 proposal_id,
             )
             if connector_proposal.research_space_id != str(research_space_id):
-                msg = f"Generated connector proposal '{proposal_id}' is not in this space"
+                msg = (
+                    f"Generated connector proposal '{proposal_id}' is not in this space"
+                )
                 raise ValueError(msg)
         claim_ids = _json_string_list(generated_resources_payload.get("claim_ids"))
         for claim_id in claim_ids:
@@ -1102,6 +1083,7 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
         model: GraphWorkflowModel,
     ) -> JSONObject:
         return {
+            **model.explanation_payload,
             "why_this_exists": (
                 model.explanation_payload.get("why_this_exists")
                 or f"Workflow '{model.kind}' records a governed graph decision."
@@ -1132,28 +1114,32 @@ class GraphWorkflowService(GraphWorkflowPlanningMixin, GraphWorkflowBatchMixin):
             },
         )
 
-    def _compatible_ai_full_mode_settings(
-        self,
-        *,
-        config: GraphOperatingModeConfig,
-        current: JSONObject | None,
-    ) -> JSONObject:
-        current_payload = current or {}
-        trusted = config.workflow_policy.trusted_ai_principals or _json_string_list(
-            current_payload.get("trusted_principals"),
+def _workflow_input_for_authenticated_principal(
+    *,
+    input_payload: JSONObject,
+    authenticated_ai_principal: str | None,
+) -> JSONObject:
+    """Make server-owned AI authorship explicit before planning or replay."""
+
+    principal = _normalize_optional_text(authenticated_ai_principal)
+    claim_request = _json_object(input_payload.get("claim_request"))
+    if principal is None or claim_request is None:
+        return input_payload
+    effective_claim_request = {
+        **claim_request,
+        "authorship": "AGENT",
+    }
+    if (
+        _normalize_optional_text(
+            _json_optional_str(effective_claim_request.get("agent_run_id")),
         )
-        governance_mode = (
-            "ai_full"
-            if config.mode in {"ai_full_graph", "ai_full_evidence", "continuous_learning"}
-            else "human_review"
-        )
-        return {
-            **current_payload,
-            "governance_mode": governance_mode,
-            "trusted_principals": trusted,
-            "min_confidence": config.workflow_policy.min_ai_confidence,
-            "allow_high_risk_actions": False,
-        }
+        is None
+    ):
+        effective_claim_request["agent_run_id"] = principal
+    return {
+        **input_payload,
+        "claim_request": effective_claim_request,
+    }
 
 
 __all__ = ["GraphWorkflowService", "stable_workflow_input_hash"]

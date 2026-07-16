@@ -46,11 +46,9 @@ from artana_evidence_api.tool_catalog import (
 from artana_evidence_api.types.common import JSONObject
 from artana_evidence_api.types.graph_contracts import (
     AIDecisionSubmitRequest,
-    ClaimAIProvenanceEnvelope,
     ConceptExternalRefRequest,
     ConceptProposalCreateRequest,
     ConnectorProposalCreateRequest,
-    CreateManualHypothesisRequest,
     DecisionConfidenceAssessment,
     GraphChangeClaimRequest,
     GraphChangeConceptRequest,
@@ -59,7 +57,6 @@ from artana_evidence_api.types.graph_contracts import (
     KernelGraphDocumentMeta,
     KernelGraphDocumentRequest,
     KernelGraphDocumentResponse,
-    KernelRelationClaimCreateRequest,
     KernelRelationSuggestionRequest,
 )
 from artana_evidence_api.types.graph_fact_assessment import FactAssessment
@@ -74,6 +71,15 @@ if TYPE_CHECKING:
 
 _HTTP_NOT_FOUND = 404
 _NULLISH_TOOL_TOKENS = frozenset({"", "null", "none", "nil", "undefined"})
+_QUALIFIED_CLAIM_PERSISTENCE_NOT_READY = "qualified_claim_persistence_not_ready"
+_QUALIFIED_CLAIM_PERSISTENCE_NOT_READY_MESSAGE = (
+    "The create_graph_claim tool cannot persist a qualified claim until the graph "
+    "contract can store its complete ClaimFrame without loss."
+)
+_HYPOTHESIS_PERSISTENCE_NOT_READY_MESSAGE = (
+    "Agent-authored hypotheses remain non-persisted review candidates until the "
+    "graph can store their complete ClaimFrame without loss."
+)
 logger = logging.getLogger(__name__)
 
 
@@ -695,67 +701,29 @@ async def create_graph_claim(  # noqa: PLR0913
     assessment: FactAssessment,
     evidence_summary: str,
     artana_context: ToolExecutionContext,
-) -> str:
-    """Create one unresolved graph claim through the governed graph-service path."""
-    gateway = _scoped_graph_gateway()
-    preflight_service = _graph_preflight_service()
-    submission_service = _graph_submission_service()
-    try:
-        input_payload: dict[str, object] = {
-            "space_id": space_id,
-            "source_entity_id": source_entity_id,
-            "target_entity_id": target_entity_id,
-            "relation_type": relation_type,
-            "claim_text": claim_text,
-            "source_document_ref": source_document_ref,
-            "assessment": assessment.model_dump(mode="json"),
-            "evidence_summary": evidence_summary,
-        }
-        input_hash = _stable_tool_input_hash(input_payload)
-        idempotency_key = (
-            artana_context.idempotency_key.strip()
-            if artana_context.idempotency_key
-            else input_hash[:16]
-        )
-        request = KernelRelationClaimCreateRequest(
-            source_entity_id=UUID(source_entity_id),
-            target_entity_id=UUID(target_entity_id),
-            relation_type=relation_type,
-            assessment=assessment,
-            claim_text=claim_text,
-            evidence_summary=evidence_summary,
-            source_document_ref=source_document_ref,
-            source_ref=f"artana-tool:{artana_context.run_id}:{idempotency_key}",
-            agent_run_id=artana_context.run_id,
-            ai_provenance=ClaimAIProvenanceEnvelope(
-                model_id="artana-kernel",
-                model_version="runtime",
-                prompt_id="graph_harness.create_graph_claim",
-                prompt_version="v1",
-                input_hash=input_hash,
-                rationale=evidence_summary or claim_text,
-                evidence_references=[source_document_ref],
-                tool_trace_ref=f"artana-run:{artana_context.run_id}",
-            ),
-            metadata={
-                "artana_idempotency_key": artana_context.idempotency_key,
-                "origin": "graph_harness",
+) -> ToolExecutionResult:
+    """Fail closed until graph claims can persist a complete ClaimFrame."""
+    del (
+        space_id,
+        source_entity_id,
+        target_entity_id,
+        relation_type,
+        claim_text,
+        source_document_ref,
+        assessment,
+        evidence_summary,
+        artana_context,
+    )
+    return ToolExecutionResult(
+        outcome="permanent_error",
+        result_json=_json_result(
+            {
+                "reason_code": _QUALIFIED_CLAIM_PERSISTENCE_NOT_READY,
+                "message": _QUALIFIED_CLAIM_PERSISTENCE_NOT_READY_MESSAGE,
             },
-        )
-        resolved_intent = await preflight_service.prepare_claim_create(
-            space_id=UUID(space_id),
-            request=request,
-            graph_transport=gateway,
-        )
-        response = submission_service.submit_resolved_intent(
-            resolved_intent=resolved_intent,
-            graph_transport=gateway,
-        )
-        if isinstance(response, BaseModel):
-            return _json_result(response.model_dump(mode="json"))
-        return _json_result(response)
-    finally:
-        gateway.close()
+        ),
+        error_message=_QUALIFIED_CLAIM_PERSISTENCE_NOT_READY_MESSAGE,
+    )
 
 
 async def create_manual_hypothesis(  # noqa: PLR0913
@@ -765,23 +733,37 @@ async def create_manual_hypothesis(  # noqa: PLR0913
     seed_entity_ids: list[str],
     source_type: str,
     artana_context: ToolExecutionContext,
-) -> str:
-    """Create one manual graph hypothesis through the graph-service path."""
-    _ = artana_context
-    gateway = _scoped_graph_gateway()
-    try:
-        response = gateway.create_manual_hypothesis(
-            space_id=space_id,
-            request=CreateManualHypothesisRequest(
-                statement=statement,
-                rationale=rationale,
-                seed_entity_ids=seed_entity_ids,
-                source_type=source_type,
-            ),
-        )
-        return _json_result(response.model_dump(mode="json"))
-    finally:
-        gateway.close()
+) -> ToolExecutionResult:
+    """Expose an agent hypothesis for review without graph persistence."""
+    review_candidate: dict[str, object] = {
+        "kind": "hypothesis",
+        "authorship": "AGENT",
+        "review_status": "PENDING_REVIEW",
+        "persistability": "NON_PERSISTABLE",
+        "space_id": space_id,
+        "statement": statement,
+        "rationale": rationale,
+        "seed_entity_ids": seed_entity_ids,
+        "source_type": source_type,
+    }
+    review_ref = _tool_source_ref(
+        explicit_source_ref=None,
+        prefix="hypothesis-review",
+        artana_context=artana_context,
+        input_payload=review_candidate,
+    )
+    return ToolExecutionResult(
+        outcome="permanent_error",
+        result_json=_json_result(
+            {
+                "reason_code": _QUALIFIED_CLAIM_PERSISTENCE_NOT_READY,
+                "message": _HYPOTHESIS_PERSISTENCE_NOT_READY_MESSAGE,
+                "review_ref": review_ref,
+                "review_candidate": review_candidate,
+            },
+        ),
+        error_message=_HYPOTHESIS_PERSISTENCE_NOT_READY_MESSAGE,
+    )
 
 
 async def propose_graph_concept(  # noqa: PLR0913

@@ -10,6 +10,9 @@ from artana_evidence_db.graph_api_schemas.kernel_relation_schemas import (
     KernelRelationClaimCreateRequest,
     KernelRelationCreateRequest,
 )
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    GraphAIPersistenceQuarantinePolicy,
+)
 from artana_evidence_db.validation.trusted_evidence_floor import (
     trusted_evidence_floor_issue,
 )
@@ -21,6 +24,7 @@ ClaimAIEvidenceValidationCode = Literal[
 AIEvidenceValidationRequest = (
     KernelRelationClaimCreateRequest | KernelRelationCreateRequest
 )
+_AI_PERSISTENCE_QUARANTINE = GraphAIPersistenceQuarantinePolicy()
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,7 +107,7 @@ def validate_ai_claim_evidence(
 def _claim_ai_provenance_error(
     request: AIEvidenceValidationRequest,
 ) -> str | None:
-    if not _is_ai_authored_claim(request):
+    if not is_ai_authored_claim(request):
         return None
     if isinstance(request, KernelRelationCreateRequest):
         return None
@@ -129,7 +133,7 @@ def _claim_ai_grounding_error(
 ) -> str | None:
     if not requires_evidence:
         return None
-    if not _is_ai_authored_claim(request):
+    if not is_ai_authored_claim(request):
         return None
     grounding = request.metadata.get("evidence_grounding")
     if not isinstance(grounding, dict):
@@ -150,12 +154,16 @@ def _claim_ai_support_error(
 ) -> str | None:
     if not requires_evidence:
         return None
-    if not _is_ai_authored_claim(request):
+    if not is_ai_authored_claim(request):
         return None
     support_verification = request.metadata.get("support_verification")
     if not isinstance(support_verification, dict):
         return _AI_SUPPORT_ERROR
-    if support_verification.get("support") != "ENTAILS":
+    if (
+        support_verification.get("support") != "ENTAILS"
+        or support_verification.get("verification_method") != "agent"
+        or _is_fallback_verifier_model(support_verification.get("model_id"))
+    ):
         return _AI_SUPPORT_ERROR
     return None
 
@@ -166,25 +174,15 @@ def _request_evidence_tier(request: AIEvidenceValidationRequest) -> str | None:
     return None
 
 
-def _is_ai_authored_claim(request: AIEvidenceValidationRequest) -> bool:
-    if (
-        isinstance(request, KernelRelationClaimCreateRequest)
-        and request.ai_provenance is not None
-    ):
+def is_ai_authored_claim(request: AIEvidenceValidationRequest) -> bool:
+    return _AI_PERSISTENCE_QUARANTINE.is_agent_authored_request(request)
+
+
+def _is_fallback_verifier_model(model_id: object) -> bool:
+    if not isinstance(model_id, str) or not model_id.strip():
         return True
-    if (
-        isinstance(request, KernelRelationClaimCreateRequest)
-        and _normalize_optional_text(request.agent_run_id) is not None
-    ):
-        return True
-    evidence_source = _normalize_optional_text(request.evidence_sentence_source)
-    if evidence_source is not None and evidence_source.lower() in _AI_SOURCE_MARKERS:
-        return True
-    for key in ("origin", "source", "author_type", "created_by"):
-        marker = request.metadata.get(key)
-        if isinstance(marker, str) and marker.strip().lower() in _AI_AUTHOR_MARKERS:
-            return True
-    return "artana_idempotency_key" in request.metadata
+    normalized = model_id.casefold()
+    return any(marker in normalized for marker in _FORBIDDEN_VERIFIER_MODEL_MARKERS)
 
 
 def _normalize_optional_text(value: str | None) -> str | None:
@@ -199,28 +197,24 @@ _AI_GROUNDING_ERROR = (
     "subject and object present."
 )
 _AI_SUPPORT_ERROR = (
-    "AI-authored claims require support verification with support=ENTAILS."
+    "AI-authored claims require independent agent support verification with "
+    "support=ENTAILS and verification_method=agent."
 )
-_AI_SOURCE_MARKERS = frozenset(
+_FORBIDDEN_VERIFIER_MODEL_MARKERS = frozenset(
     {
-        "ai_generated",
-        "artana_generated",
-        "llm_generated",
-    }
-)
-_AI_AUTHOR_MARKERS = frozenset(
-    {
-        "ai",
-        "agent",
-        "artana",
-        "artana_kernel",
-        "graph_harness",
-        "llm",
-    }
+        "deterministic",
+        "fallback",
+        "heuristic",
+        "regex",
+        "rule",
+        "symbolic",
+        "template",
+    },
 )
 
 
 __all__ = [
     "ClaimAIEvidenceValidationIssue",
+    "is_ai_authored_claim",
     "validate_ai_claim_evidence",
 ]

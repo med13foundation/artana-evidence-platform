@@ -201,6 +201,7 @@ class CreateManualHypothesisRequest(BaseModel):
     model_config = ConfigDict(strict=True)
 
     statement: str = Field(..., min_length=1, max_length=4000)
+    authorship: Literal["MANUAL", "AGENT"] = "MANUAL"
     rationale: str = Field(..., min_length=1, max_length=4000)
     seed_entity_ids: list[str] = Field(default_factory=list, max_length=100)
     source_type: str = Field(default="manual", min_length=1, max_length=64)

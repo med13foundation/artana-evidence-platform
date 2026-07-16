@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from artana_evidence_db.auth import get_current_active_user
+from artana_evidence_db.auth import (
+    get_current_active_user,
+    graph_write_authorship_for_user,
+)
 from artana_evidence_db.claim_metrics import increment_metric
 from artana_evidence_db.common_types import JSONObject
 from artana_evidence_db.database import get_session
@@ -31,10 +34,15 @@ from artana_evidence_db.service_contracts import (
 )
 from artana_evidence_db.space_membership import MembershipRole
 from artana_evidence_db.user_models import User
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
+    GraphAIPersistenceQuarantinePolicy,
+)
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/v1/spaces", tags=["hypotheses"])
+_AI_PERSISTENCE_QUARANTINE = GraphAIPersistenceQuarantinePolicy()
 
 
 @router.get(
@@ -106,6 +114,20 @@ def create_manual_hypothesis(  # noqa: PLR0912,PLR0915
         session=session,
         required_role=MembershipRole.RESEARCHER,
     )
+    effective_authorship = graph_write_authorship_for_user(
+        current_user,
+        requested_authorship=request.authorship,
+    )
+    violation = _AI_PERSISTENCE_QUARANTINE.violation_for_authorship_signals(
+        authorship=effective_authorship,
+        agent_run_id=None,
+        metadata={},
+    )
+    if violation is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=violation.as_detail(),
+        )
     try:
         normalized_statement = request.statement.strip()
         normalized_rationale = request.rationale.strip()
@@ -176,6 +198,7 @@ def create_manual_hypothesis(  # noqa: PLR0912,PLR0915
             "requested_seed_entity_ids": seed_entity_ids,
             "source_type": normalized_source_type,
             "actor_user_id": str(current_user.id),
+            "authorship": effective_authorship,
         }
         if unresolved_seed_entity_ids:
             metadata_payload["unresolved_seed_entity_ids"] = unresolved_seed_entity_ids
@@ -203,6 +226,7 @@ def create_manual_hypothesis(  # noqa: PLR0912,PLR0915
             claim_text=normalized_statement,
             metadata=metadata_payload,
             claim_status="OPEN",
+            authorship=effective_authorship,
         )
         if participant_seed_entity_ids:
             for index, seed_entity_id in enumerate(participant_seed_entity_ids):
@@ -235,6 +259,12 @@ def create_manual_hypothesis(  # noqa: PLR0912,PLR0915
     except HTTPException:
         session.rollback()
         raise
+    except AIPersistenceQuarantineError as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.violation.as_detail(),
+        ) from exc
     except ValueError as exc:
         session.rollback()
         raise HTTPException(

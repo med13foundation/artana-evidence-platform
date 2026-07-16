@@ -10,6 +10,16 @@ from artana_evidence_db.claim_relation_models import (
     KernelClaimRelation,
 )
 from artana_evidence_db.common_types import JSONObject
+from artana_evidence_db.graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+)
+from artana_evidence_db.relation_claim_models import KernelRelationClaim
+from artana_evidence_db.validation.ai_persistence_quarantine import (
+    AIPersistenceQuarantineError,
+    GraphAIPersistenceQuarantinePolicy,
+)
+
+_AI_PERSISTENCE_QUARANTINE = GraphAIPersistenceQuarantinePolicy()
 
 
 class ReasoningPathInvalidationServiceLike(Protocol):
@@ -95,6 +105,13 @@ class ClaimRelationRepositoryLike(Protocol):
         """Update review status for one claim-relation row."""
 
 
+class RelationClaimRepositoryLike(Protocol):
+    """Minimal claim lookup surface for claim-edge governance."""
+
+    def get_by_id(self, claim_id: str) -> KernelRelationClaim | None:
+        """Fetch one endpoint claim by ID."""
+
+
 class KernelClaimRelationService:
     """Application service for claim-to-claim relation graph workflows."""
 
@@ -102,9 +119,11 @@ class KernelClaimRelationService:
         self,
         claim_relation_repo: ClaimRelationRepositoryLike,
         *,
+        relation_claim_repo: RelationClaimRepositoryLike,
         reasoning_path_invalidation_service: ReasoningPathInvalidationServiceLike,
     ) -> None:
         self._claim_relations = claim_relation_repo
+        self._relation_claims = relation_claim_repo
         self._reasoning_path_invalidation = reasoning_path_invalidation_service
 
     def create_claim_relation(  # noqa: PLR0913
@@ -121,8 +140,22 @@ class KernelClaimRelationService:
         evidence_summary: str | None,
         source_document_ref: str | None = None,
         metadata: JSONObject | None = None,
+        authorship: GraphWriteAuthorship = "MANUAL",
     ) -> KernelClaimRelation:
         """Create one claim relation row."""
+        normalized_metadata = metadata or {}
+        violation = _AI_PERSISTENCE_QUARANTINE.violation_for_authorship_signals(
+            authorship=authorship,
+            agent_run_id=agent_run_id,
+            metadata=normalized_metadata,
+        )
+        if violation is not None:
+            raise AIPersistenceQuarantineError(violation)
+        self._ensure_endpoint_claims_mutation_allowed(
+            research_space_id=research_space_id,
+            source_claim_id=source_claim_id,
+            target_claim_id=target_claim_id,
+        )
         relation = self._claim_relations.create(
             research_space_id=research_space_id,
             source_claim_id=source_claim_id,
@@ -134,7 +167,7 @@ class KernelClaimRelationService:
             confidence=confidence,
             review_status=review_status,
             evidence_summary=evidence_summary,
-            metadata=metadata,
+            metadata=normalized_metadata,
         )
         self._invalidate_relation(relation)
         return relation
@@ -142,6 +175,28 @@ class KernelClaimRelationService:
     def get_claim_relation(self, relation_id: str) -> KernelClaimRelation | None:
         """Fetch one claim relation by ID."""
         return self._claim_relations.get_by_id(relation_id)
+
+    def _ensure_endpoint_claims_mutation_allowed(
+        self,
+        *,
+        research_space_id: str,
+        source_claim_id: str,
+        target_claim_id: str,
+    ) -> None:
+        source_claim = self._relation_claims.get_by_id(source_claim_id)
+        target_claim = self._relation_claims.get_by_id(target_claim_id)
+        if (
+            source_claim is None
+            or target_claim is None
+            or str(source_claim.research_space_id) != research_space_id
+            or str(target_claim.research_space_id) != research_space_id
+        ):
+            msg = "Source or target claim not found in research space"
+            raise ValueError(msg)
+        for claim in (source_claim, target_claim):
+            violation = _AI_PERSISTENCE_QUARANTINE.violation_for_claim(claim)
+            if violation is not None:
+                raise AIPersistenceQuarantineError(violation)
 
     def list_by_claim_ids(
         self,
@@ -208,6 +263,19 @@ class KernelClaimRelationService:
         review_status: ClaimRelationReviewStatus,
     ) -> KernelClaimRelation:
         """Update review status for one claim relation row."""
+        existing = self._claim_relations.get_by_id(relation_id)
+        if existing is not None:
+            violation = _AI_PERSISTENCE_QUARANTINE.violation_for_claim_relation(
+                existing,
+            )
+            if violation is not None:
+                raise AIPersistenceQuarantineError(violation)
+            if review_status == "ACCEPTED":
+                self._ensure_endpoint_claims_mutation_allowed(
+                    research_space_id=str(existing.research_space_id),
+                    source_claim_id=str(existing.source_claim_id),
+                    target_claim_id=str(existing.target_claim_id),
+                )
         relation = self._claim_relations.update_review_status(
             relation_id,
             review_status=review_status,

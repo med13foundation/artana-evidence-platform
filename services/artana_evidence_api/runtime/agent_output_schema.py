@@ -572,6 +572,7 @@ def _walk_schema(  # noqa: PLR0912, PLR0913 - recursive JSON Schema node variant
         return
 
     raw_numeric_origin = mapping.get("x-artana-numeric-origin")
+    numeric_envelope_fields: frozenset[str] = frozenset()
     if isinstance(raw_numeric_origin, str):
         try:
             numeric_origin = NumericOrigin(raw_numeric_origin)
@@ -579,7 +580,9 @@ def _walk_schema(  # noqa: PLR0912, PLR0913 - recursive JSON Schema node variant
             msg = f"Unknown numeric-origin schema marker {raw_numeric_origin!r}."
             raise AgentOutputSchemaRegistrationError(msg) from exc
         numeric_paths[f"{path}.value"] = numeric_origin
-        return
+        # The envelope marker governs the numeric value and its structural origin,
+        # but sibling enums and literals remain agent-authored categorical fields.
+        numeric_envelope_fields = frozenset({"origin", "value"})
 
     field_type = mapping.get("type")
     if field_type in {"number", "integer"}:
@@ -609,6 +612,8 @@ def _walk_schema(  # noqa: PLR0912, PLR0913 - recursive JSON Schema node variant
     properties = mapping.get("properties")
     if isinstance(properties, Mapping):
         for field_name, field_schema in properties.items():
+            if field_name in numeric_envelope_fields:
+                continue
             _walk_schema(
                 node=field_schema,
                 root=root,

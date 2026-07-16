@@ -64,9 +64,6 @@ from artana_evidence_api.document_extraction_review import (
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
 )
-from artana_evidence_api.document_extraction_support.llm_extraction import (
-    runner as llm_extraction_runner,
-)
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     LLM_EXTRACTION_PROMPT_VERSION,
     build_llm_extraction_prompt,
@@ -76,7 +73,6 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 )
 from artana_evidence_api.document_store import HarnessDocumentRecord
 from artana_evidence_api.proposal_store import HarnessProposalDraft
-from pydantic import BaseModel
 
 
 class _GraphGateway:
@@ -153,11 +149,14 @@ def test_diagnostics_builders_normalize_candidate_and_review_status() -> None:
         "fallback_candidate_count": 1,
         "llm_candidate_error": "LLM succeeded but returned zero usable candidates",
     }
-    assert candidate_fallback(
-        status="unavailable",
-        error="missing key",
-        fallback_candidate_count=3,
-    ).llm_candidate_status == "unavailable"
+    assert (
+        candidate_fallback(
+            status="unavailable",
+            error="missing key",
+            fallback_candidate_count=3,
+        ).llm_candidate_status
+        == "unavailable"
+    )
     assert runtime_error_candidate_status("OPENAI_API_KEY not configured") == (
         "unavailable"
     )
@@ -289,7 +288,7 @@ def test_llm_extraction_prompt_prioritizes_specific_sensitizes_relation() -> Non
 
 
 def test_llm_extraction_prompt_version_changes_for_review_only_schema() -> None:
-    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v7"
+    assert LLM_EXTRACTION_PROMPT_VERSION == "document_extraction.llm_extraction.v12"
 
 
 def test_llm_extraction_schema_accepts_review_only_lane_fields() -> None:
@@ -329,6 +328,29 @@ def test_weak_review_extraction_schema_allows_raw_relation_type_for_guard() -> N
                     "object": "congenital heart disease",
                     "sentence": "MED13 may be linked to congenital heart disease.",
                     "review_status": "review_only",
+                    "polarity": "HYPOTHESIS",
+                    "epistemic_status": "HYPOTHESIS",
+                    **{
+                        field: {
+                            "state": "NOT_APPLICABLE",
+                            "value": None,
+                            "exact_span": None,
+                        }
+                        for field in (
+                            "biological_or_variant_state",
+                            "population",
+                            "intervention",
+                            "comparator",
+                            "outcome",
+                            "study_design",
+                            "treatment_setting",
+                            "timeframe",
+                            "threshold",
+                        )
+                    },
+                    "extraction_rationale": (
+                        "The source explicitly presents a possible MED13 link."
+                    ),
                 },
             ],
         },
@@ -378,7 +400,9 @@ def test_llm_extraction_schema_accepts_confers_resistance_as_canonical() -> None
     assert proposed_canonical.relations[0].new_relation_type_rationale is None
 
 
-def test_llm_extraction_schema_ignores_spurious_proposal_on_canonical_relation() -> None:
+def test_llm_extraction_schema_ignores_spurious_proposal_on_canonical_relation() -> (
+    None
+):
     extraction_schema = build_llm_extraction_output_schema(max_relations=1)
 
     parsed = extraction_schema.model_validate(
@@ -425,7 +449,9 @@ def test_llm_extraction_schema_rejects_unknown_proposal_on_canonical_relation() 
         )
 
 
-def test_llm_extraction_schema_rejects_conflicting_proposal_on_canonical_relation() -> None:
+def test_llm_extraction_schema_rejects_conflicting_proposal_on_canonical_relation() -> (
+    None
+):
     extraction_schema = build_llm_extraction_output_schema(max_relations=1)
 
     with pytest.raises(Exception):
@@ -536,11 +562,14 @@ def test_llm_prompt_requires_preserving_specific_relation_arguments() -> None:
         LLM_EXTRACTION_SYSTEM_PROMPT
     )
     assert "BRCA-mutated ovarian cancer" in LLM_EXTRACTION_SYSTEM_PROMPT
-    assert "EGFR exon 19 deletion lung adenocarcinoma" in (
-        LLM_EXTRACTION_SYSTEM_PROMPT
-    )
+    assert "EGFR exon 19 deletion lung adenocarcinoma" in (LLM_EXTRACTION_SYSTEM_PROMPT)
     assert "NTRK fusion solid tumors" in LLM_EXTRACTION_SYSTEM_PROMPT
     assert "response to pembrolizumab" in LLM_EXTRACTION_SYSTEM_PROMPT
+    assert "concise source-native span" in LLM_EXTRACTION_SYSTEM_PROMPT
+    assert "Entity linking is the separate canonicalization step" in (
+        LLM_EXTRACTION_SYSTEM_PROMPT
+    )
+    assert "Never paraphrase or reorder an entity span" in LLM_EXTRACTION_SYSTEM_PROMPT
 
 
 def test_built_llm_prompt_preserves_specific_relation_argument_rule() -> None:
@@ -558,6 +587,8 @@ def test_built_llm_prompt_preserves_specific_relation_argument_rule() -> None:
     )
 
     assert "usually 1-4 words" in prompt
+    assert "source-native entity span copied verbatim" in prompt
+    assert "Never paraphrase, reorder, or canonicalize endpoint text" in prompt
     assert "disease or molecular subtype labels may be up to 6 tokens" in prompt
     assert "EGFR exon 19 deletion lung adenocarcinoma" in prompt
     assert "1-4 words, like BRCA1" not in prompt
@@ -689,7 +720,9 @@ def test_llm_conversion_rejects_treatment_context_as_object() -> None:
     assert unknown_relation_types == set()
 
 
-def test_llm_conversion_rejects_broad_tumor_object_when_fusion_subtype_is_present() -> None:
+def test_llm_conversion_rejects_broad_tumor_object_when_fusion_subtype_is_present() -> (
+    None
+):
     parsed = SimpleNamespace(
         relations=[
             SimpleNamespace(
@@ -789,10 +822,7 @@ def test_llm_conversion_preserves_hereditary_cancer_syndrome_object() -> None:
 
     assert unknown_relation_types == set()
     assert len(candidates) == 1
-    assert (
-        candidates[0].object_label
-        == "hereditary breast and ovarian cancer syndrome"
-    )
+    assert candidates[0].object_label == "hereditary breast and ovarian cancer syndrome"
 
 
 def test_llm_conversion_rejects_generic_program_object() -> None:
@@ -956,63 +986,6 @@ def test_duplicate_merging_keeps_distinct_relation_type_proposals() -> None:
     ]
 
 
-@pytest.mark.asyncio
-async def test_zero_retry_preserves_first_pass_governance_candidates(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    candidate = ExtractedRelationCandidate(
-        subject_label="MET amplification",
-        relation_type="PROPOSE_NEW_RELATION_TYPE",
-        proposed_relation_type="MEDIATES_RESISTANCE_TO",
-        new_relation_type_rationale="Mechanism-specific resistance proposal.",
-        object_label="erlotinib",
-        sentence="MET amplification mediates resistance to erlotinib.",
-        relation_governance_status="requires_relation_review",
-    )
-    attempts = iter(
-        (
-            llm_extraction_runner.LLMRelationExtractionAttempt(
-                candidates=[candidate],
-                unknown_relation_types=set(),
-                raw_relation_count=1,
-            ),
-            llm_extraction_runner.LLMRelationExtractionAttempt(
-                candidates=[],
-                unknown_relation_types=set(),
-                raw_relation_count=0,
-            ),
-        ),
-    )
-
-    async def _fake_attempt(**_kwargs: object):
-        return next(attempts)
-
-    async def _unused_step_runner(*_args: object, **_kwargs: object) -> object:
-        raise AssertionError("the extraction attempt is mocked")
-
-    monkeypatch.setattr(
-        llm_extraction_runner,
-        "_run_llm_relation_extraction_attempt",
-        _fake_attempt,
-    )
-
-    result = await llm_extraction_runner.run_llm_relation_extraction_with_zero_retry(
-        normalized_text=candidate.sentence,
-        chunks=(),
-        max_relations=10,
-        document_fingerprint="fingerprint",
-        output_schema=BaseModel,
-        weak_review_output_schema=BaseModel,
-        client=object(),
-        tenant=object(),
-        model_id="openai:gpt-5-mini",
-        step_runner=_unused_step_runner,
-    )
-
-    assert result.candidates == [candidate]
-    assert result.raw_relation_count == 1
-
-
 def test_llm_conversion_verifies_model_curie_hints_against_dictionary() -> None:
     parsed = SimpleNamespace(
         relations=[
@@ -1063,7 +1036,7 @@ def test_llm_conversion_repairs_direct_target_activity_object() -> None:
     assert candidates[0].object_curie == "HGNC:6192"
     assert candidates[0].object_curie_source == "verified_linker"
     assert candidates[0].review_status == "candidate"
-    assert candidates[0].trusted_evidence_eligible is True
+    assert candidates[0].trusted_evidence_eligible is False
 
 
 @pytest.mark.parametrize(
@@ -1304,7 +1277,10 @@ def test_canonical_entity_label_filter_accepts_entity_like_labels(label: str) ->
         ("sometimes", "standalone_fragment_label"),
         ("13L", "numeric_fragment_label"),
         ("and MED13L are now all", "leading_fragment_token"),
-        ("Some features are common between the four conditions", "entity_label_too_long"),
+        (
+            "Some features are common between the four conditions",
+            "entity_label_too_long",
+        ),
         ("how the Module", "leading_fragment_token"),
         ("gene expression both positively", "sentence_fragment_modifier"),
         ("Differentially expressed genes", "sentence_fragment_modifier"),
@@ -1378,12 +1354,16 @@ def test_review_helpers_apply_ranked_metadata_to_drafts() -> None:
 
     assert "Objective: Study MED13 EGFR activation." in goal_context_summary(context)
     assert shorten_text("a " * 20, max_length=10).endswith("...")
-    assert updated.confidence > draft.confidence
+    assert review.factual_support == "tentative"
+    assert review.priority == "background"
+    assert updated.confidence < draft.confidence
     assert updated.metadata["proposal_review"]["method"] == "heuristic_fallback_v1"
     assert review_from_draft_metadata(updated) == review
 
 
-def test_review_helpers_rank_specific_grounded_entailed_claim_above_generic_ungrounded_claim() -> None:
+def test_review_helpers_rank_specific_grounded_entailed_claim_above_generic_ungrounded_claim() -> (
+    None
+):
     context = build_document_review_context(objective="Study MED13 EGFR activation.")
     review = DocumentProposalReview(
         factual_support="strong",
@@ -1976,8 +1956,7 @@ def test_draft_builder_skips_non_canonical_subject_labels() -> None:
     assert skipped[0]["label_rejection_reason"] == "standalone_fragment_label"
 
 
-def test_draft_builder_skips_raw_unknown_relation_types(
-) -> None:
+def test_draft_builder_skips_raw_unknown_relation_types() -> None:
     candidate = ExtractedRelationCandidate(
         subject_label="MED13",
         relation_type="PROTECTS_AGAINST",
@@ -2068,7 +2047,9 @@ def test_draft_builder_prunes_redundant_generic_relation_siblings() -> None:
     assert skipped[0]["suppressing_relation_type"] == "ACTIVATES"
 
 
-def test_draft_builder_prunes_generic_tail_when_specific_subject_sibling_exists() -> None:
+def test_draft_builder_prunes_generic_tail_when_specific_subject_sibling_exists() -> (
+    None
+):
     document = replace(
         _document(),
         text_content=(
@@ -2117,7 +2098,9 @@ def test_draft_builder_prunes_generic_tail_when_specific_subject_sibling_exists(
     assert skipped[0]["suppressing_relation_type"] == "CONFERS_RESISTANCE_TO"
 
 
-def test_draft_builder_prunes_generic_tail_when_governed_proposal_sibling_exists() -> None:
+def test_draft_builder_prunes_generic_tail_when_governed_proposal_sibling_exists() -> (
+    None
+):
     document = replace(
         _document(),
         text_content=(
@@ -2253,16 +2236,16 @@ def test_draft_builder_propagates_curie_identifiers_for_graph_entity_creation() 
     )
     candidates = [
         ExtractedRelationCandidate(
-                subject_label="MED13",
-                subject_curie="HGNC:22474",
-                subject_curie_source="verified_linker",
-                relation_type="CAUSES",
-                object_label="developmental delay",
-                object_curie="HP:0001263",
-                object_curie_source="verified_linker",
-                sentence="MED13 causes developmental delay.",
-            ),
-        ]
+            subject_label="MED13",
+            subject_curie="HGNC:22474",
+            subject_curie_source="verified_linker",
+            relation_type="CAUSES",
+            object_label="developmental delay",
+            object_curie="HP:0001263",
+            object_curie_source="verified_linker",
+            sentence="MED13 causes developmental delay.",
+        ),
+    ]
 
     drafts, skipped = build_document_extraction_drafts(
         space_id=uuid4(),

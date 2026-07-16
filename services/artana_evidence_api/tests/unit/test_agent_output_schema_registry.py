@@ -328,8 +328,12 @@ def test_category_vocabulary_drift_fails_registry_validation() -> None:
 def test_production_manifest_covers_current_model_output_schemas() -> None:
     from artana_evidence_api.agent_contracts import OnboardingAssistantModelOutput
     from artana_evidence_api.document_extraction_prompting import (
+        build_claim_inventory_completeness_output_schema,
+        build_claim_inventory_output_schema,
         build_llm_guarded_extraction_output_schema,
+        build_missing_claim_recovery_output_schema,
         build_proposal_review_output_schema,
+        build_single_claim_framing_output_schema,
     )
     from artana_evidence_api.evidence_selection.semantic.contracts import (
         EvidenceSelectionSemanticBatchContract,
@@ -357,8 +361,20 @@ def test_production_manifest_covers_current_model_output_schemas() -> None:
     from artana_evidence_api.variant_extraction_contracts import LLMExtractionContract
 
     schemas = {
+        "document_extraction.claim_inventory_completeness.v2": (
+            build_claim_inventory_completeness_output_schema()
+        ),
+        "document_extraction.claim_inventory_recovery.v2": (
+            build_missing_claim_recovery_output_schema()
+        ),
+        "document_extraction.claim_framing.v1": (
+            build_single_claim_framing_output_schema()
+        ),
+        "document_extraction.claim_inventory.v2": (
+            build_claim_inventory_output_schema(max_claims=64)
+        ),
         "document_extraction.proposal_review.v1": build_proposal_review_output_schema(),
-        "document_extraction.relation.v2": (
+        "document_extraction.relation.v3": (
             build_llm_guarded_extraction_output_schema(max_relations=3)
         ),
         "entity_resolution.agent.v1": EntityDecision,
@@ -394,9 +410,9 @@ def test_debt_manifest_exactly_covers_registered_legacy_fields() -> None:
 def test_registry_report_exposes_merge_gate_counts() -> None:
     report = build_agent_output_registry_report()
 
-    assert report["registered_schema_count"] == 15
-    assert report["registered_numeric_field_count"] == 1
-    assert report["origin_governed_numeric_field_count"] == 1
+    assert report["registered_schema_count"] == 19
+    assert report["registered_numeric_field_count"] == 3
+    assert report["origin_governed_numeric_field_count"] == 3
     assert report["debt_numeric_field_count"] == 0
     assert report["active_debt_count"] == 0
     assert report["unquarantined_debt_count"] == 0

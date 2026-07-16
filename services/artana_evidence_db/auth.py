@@ -17,6 +17,10 @@ from .graph_access import (
     GraphTenantMembership,
     create_graph_rls_session_context,
 )
+from .graph_api_schemas.governance.authorship import (
+    GraphWriteAuthorship,
+    effective_graph_write_authorship,
+)
 from .space_membership import MembershipRole
 from .user_models import User, UserRole, UserStatus
 
@@ -63,13 +67,32 @@ def _normalize_optional_text(value: str | None) -> str | None:
     return normalized or None
 
 
+def _validated_graph_ai_principal(value: object) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="graph_ai_principal must be a canonical agent identity",
+        )
+    normalized = value.strip()
+    if (
+        not normalized.startswith("agent:")
+        or not normalized.removeprefix("agent:")
+        or any(character.isspace() for character in normalized)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="graph_ai_principal must use the canonical agent:<id> form",
+        )
+    return normalized
+
+
 def _normalize_capabilities(value: object) -> tuple[str, ...]:
     if not isinstance(value, list):
         return ()
     normalized = [
-        item.strip()
-        for item in value
-        if isinstance(item, str) and item.strip()
+        item.strip() for item in value if isinstance(item, str) and item.strip()
     ]
     return tuple(normalized)
 
@@ -148,7 +171,7 @@ def _build_user_from_test_headers(request: Request) -> GraphServiceUser | None:
         is_graph_admin=_parse_graph_admin_flag(
             request.headers.get("X-TEST-GRAPH-ADMIN"),
         ),
-        graph_ai_principal=_normalize_optional_text(
+        graph_ai_principal=_validated_graph_ai_principal(
             request.headers.get("X-TEST-GRAPH-AI-PRINCIPAL"),
         ),
         graph_service_capabilities=tuple(
@@ -212,11 +235,7 @@ async def get_current_user(
         status=UserStatus.ACTIVE,
         hashed_password="token",
         is_graph_admin=_parse_graph_admin_flag(payload.get("graph_admin")),
-        graph_ai_principal=(
-            graph_ai_principal.strip()
-            if isinstance(graph_ai_principal, str) and graph_ai_principal.strip()
-            else None
-        ),
+        graph_ai_principal=_validated_graph_ai_principal(graph_ai_principal),
         graph_service_capabilities=_normalize_capabilities(graph_service_capabilities),
         graph_source_attestation_service=(
             graph_source_attestation_service.strip()
@@ -249,6 +268,18 @@ def graph_ai_principal_for_user(current_user: User) -> str | None:
     if not isinstance(current_user, GraphServiceUser):
         return None
     return current_user.graph_ai_principal
+
+
+def graph_write_authorship_for_user(
+    current_user: User,
+    *,
+    requested_authorship: GraphWriteAuthorship,
+) -> GraphWriteAuthorship:
+    """Return effective write authorship owned by authenticated graph identity."""
+    return effective_graph_write_authorship(
+        requested_authorship=requested_authorship,
+        authenticated_ai_principal=graph_ai_principal_for_user(current_user),
+    )
 
 
 def graph_service_capability_for_user(

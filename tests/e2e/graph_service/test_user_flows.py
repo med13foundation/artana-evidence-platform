@@ -162,7 +162,7 @@ def test_owner_entity_workflow_and_admin_relation_canonicalization(
     )
     assert constraint_response.status_code == 201, constraint_response.text
 
-    source_text = "Synthetic end-to-end evidence directly supports the relation."
+    source_text = "MED13 directly modulates developmental delay."
     source_document_id = uuid4()
     relation_response = graph_client.post(
         f"/v1/spaces/{space_id}/relations",

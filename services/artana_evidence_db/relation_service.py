@@ -10,6 +10,7 @@ from artana_evidence_db.graph_core_models import (
     KernelMechanisticGap,
     KernelReachabilityGap,
     KernelRelation,
+    KernelRelationEvidence,
 )
 
 _ALLOWED_CURATION_STATUSES = frozenset(
@@ -23,6 +24,14 @@ class EntityRepositoryLike(Protocol):
 
 
 class RelationRepositoryLike(Protocol):
+    def list_evidence_for_relation(
+        self,
+        *,
+        research_space_id: str,
+        relation_id: str,
+    ) -> list[KernelRelationEvidence]:
+        """Return persisted evidence lineage for one relation."""
+
     def update_curation(
         self,
         relation_id: str,
@@ -163,6 +172,19 @@ class KernelRelationService:
         return self._relations.get_by_id(
             relation_id,
             claim_backed_only=claim_backed_only,
+        )
+
+    def list_evidence_for_relation(
+        self,
+        *,
+        research_space_id: str,
+        relation_id: str,
+    ) -> list[KernelRelationEvidence]:
+        """Return evidence rows used to classify persisted authorship."""
+
+        return self._relations.list_evidence_for_relation(
+            research_space_id=research_space_id,
+            relation_id=relation_id,
         )
 
     def get_neighborhood(

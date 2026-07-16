@@ -1,6 +1,5 @@
 """Batch-review helpers for graph workflows."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -9,6 +8,7 @@ from artana_evidence_db.ai_full_mode_service import AIFullModeService
 from artana_evidence_db.common_types import JSONObject, JSONValue
 from artana_evidence_db.decision_confidence import DecisionConfidenceAssessment
 from artana_evidence_db.dictionary_proposal_service import DictionaryProposalService
+from artana_evidence_db.graph_workflow.actor_context import WorkflowActorContext
 from artana_evidence_db.graph_workflow_support import (
     _BATCH_RESOURCE_ACTIONS,
     _CLAIM_BATCH_STATUS_BY_ACTION,
@@ -31,6 +31,15 @@ from artana_evidence_db.workflow_persistence_models import (
     GraphWorkflowModel,
 )
 from pydantic import ValidationError
+
+_NESTED_WORKFLOW_RISK_BY_KIND: dict[str, GraphWorkflowRiskTier] = {
+    "evidence_approval": "medium",
+    "batch_review": "medium",
+    "ai_evidence_decision": "high",
+    "conflict_resolution": "high",
+    "continuous_learning_review": "high",
+    "bootstrap_review": "medium",
+}
 
 
 class GraphWorkflowBatchMixin:
@@ -70,7 +79,9 @@ class GraphWorkflowBatchMixin:
         *,
         research_space_id: str,
         workflow: GraphWorkflowModel,
-        actor: str,
+        actor_context: WorkflowActorContext,
+        confidence_assessment: DecisionConfidenceAssessment | None,
+        ai_decision_payload: JSONObject | None,
     ) -> _GeneratedResourcesApplication:
         items = _json_object_list(workflow.input_payload.get("generated_resources"))
         applied_refs: list[JSONValue] = []
@@ -92,7 +103,9 @@ class GraphWorkflowBatchMixin:
                     research_space_id=research_space_id,
                     workflow=workflow,
                     item=item,
-                    actor=actor,
+                    actor_context=actor_context,
+                    confidence_assessment=confidence_assessment,
+                    ai_decision_payload=ai_decision_payload,
                     index=index,
                 )
                 applied_refs.append(result)
@@ -121,7 +134,9 @@ class GraphWorkflowBatchMixin:
         research_space_id: str,
         workflow: GraphWorkflowModel,
         item: JSONObject,
-        actor: str,
+        actor_context: WorkflowActorContext,
+        confidence_assessment: DecisionConfidenceAssessment | None,
+        ai_decision_payload: JSONObject | None,
         index: int,
     ) -> JSONObject:
         resource_type = _json_str(
@@ -149,6 +164,7 @@ class GraphWorkflowBatchMixin:
         reason = _json_optional_str(item.get("reason")) or "Batch review action"
         input_hash = _json_optional_str(item.get("input_hash"))
         decision_payload = _json_object(item.get("decision_payload")) or {}
+        actor = actor_context.effective_actor
 
         if resource_type == "concept_proposal":
             return self._apply_batch_concept_proposal(
@@ -189,7 +205,7 @@ class GraphWorkflowBatchMixin:
                 research_space_id=research_space_id,
                 resource_id=resource_id,
                 action=action,
-                actor=actor,
+                actor_context=actor_context,
             )
         return self._apply_batch_workflow(
             research_space_id=research_space_id,
@@ -199,7 +215,9 @@ class GraphWorkflowBatchMixin:
             input_hash=input_hash,
             reason=reason,
             decision_payload=decision_payload,
-            actor=actor,
+            actor_context=actor_context,
+            confidence_assessment=confidence_assessment,
+            ai_decision_payload=ai_decision_payload,
         )
 
     def _apply_batch_concept_proposal(
@@ -221,10 +239,7 @@ class GraphWorkflowBatchMixin:
             (action == "approve" and proposal.status == "APPLIED")
             or (action == "merge" and proposal.status == "MERGED")
             or (action == "reject" and proposal.status == "REJECTED")
-            or (
-                action == "request_changes"
-                and proposal.status == "CHANGES_REQUESTED"
-            )
+            or (action == "request_changes" and proposal.status == "CHANGES_REQUESTED")
         ):
             return self._batch_result(
                 resource_type="concept_proposal",
@@ -352,10 +367,7 @@ class GraphWorkflowBatchMixin:
         if (
             (action == "apply" and proposal.status == "APPLIED")
             or (action == "reject" and proposal.status == "REJECTED")
-            or (
-                action == "request_changes"
-                and proposal.status == "CHANGES_REQUESTED"
-            )
+            or (action == "request_changes" and proposal.status == "CHANGES_REQUESTED")
         ):
             return self._batch_result(
                 resource_type="graph_change_proposal",
@@ -455,8 +467,14 @@ class GraphWorkflowBatchMixin:
         research_space_id: str,
         resource_id: str,
         action: str,
-        actor: str,
+        actor_context: WorkflowActorContext,
     ) -> JSONObject:
+        if actor_context.is_ai:
+            msg = (
+                "AI batch claim triage requires human review because claim "
+                "triage does not persist a distinct AI reviewer identity"
+            )
+            raise ValueError(msg)
         claim = self._relation_claim_service.get_claim(resource_id)
         if claim is None or str(claim.research_space_id) != str(research_space_id):
             msg = f"Claim '{resource_id}' is not in this space"
@@ -466,7 +484,7 @@ class GraphWorkflowBatchMixin:
             claim = self._relation_claim_service.update_claim_status(
                 resource_id,
                 claim_status=target_status,
-                triaged_by=_claim_triage_actor(actor),
+                triaged_by=_claim_triage_actor(actor_context.effective_actor),
             )
         return self._batch_result(
             resource_type="claim",
@@ -489,7 +507,9 @@ class GraphWorkflowBatchMixin:
         input_hash: str | None,
         reason: str,
         decision_payload: JSONObject,
-        actor: str,
+        actor_context: WorkflowActorContext,
+        confidence_assessment: DecisionConfidenceAssessment | None,
+        ai_decision_payload: JSONObject | None,
     ) -> JSONObject:
         if resource_id == str(workflow.id):
             msg = "A batch_review workflow cannot apply itself"
@@ -507,21 +527,31 @@ class GraphWorkflowBatchMixin:
         }
         target_status = terminal_status_by_action[action]
         if target_workflow.status != target_status:
+            nested_risk_tier = _NESTED_WORKFLOW_RISK_BY_KIND.get(
+                target_workflow.kind,
+                "high",
+            )
             nested = self.act_on_workflow(
                 research_space_id=research_space_id,
                 workflow_id=resource_id,
                 action=workflow_action,
-                actor=actor,
+                actor=actor_context.authenticated_user_actor,
                 input_hash=input_hash,
-                risk_tier="low",
-                confidence_assessment=None,
+                risk_tier=nested_risk_tier,
+                confidence_assessment=confidence_assessment,
                 reason=reason,
                 decision_payload=decision_payload,
                 generated_resources_payload={},
-                ai_decision_payload=None,
-                authenticated_ai_principal=None,
+                ai_decision_payload=ai_decision_payload,
+                authenticated_ai_principal=(actor_context.authenticated_ai_principal),
             )
             resource_status = nested.status
+            if resource_status != target_status:
+                msg = (
+                    f"Nested workflow '{resource_id}' reached {resource_status}; "
+                    f"batch action requires {target_status}"
+                )
+                raise ValueError(msg)
         else:
             resource_status = target_workflow.status
         return self._batch_result(
@@ -555,8 +585,7 @@ class GraphWorkflowBatchMixin:
         reason: str,
     ) -> JSONObject:
         return {
-            "resource_type": _json_optional_str(item.get("resource_type"))
-            or "unknown",
+            "resource_type": _json_optional_str(item.get("resource_type")) or "unknown",
             "resource_id": _json_optional_str(item.get("resource_id"))
             or f"generated_resources[{index}]",
             "action": _json_optional_str(item.get("action")) or "unknown",

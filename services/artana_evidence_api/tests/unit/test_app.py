@@ -6,6 +6,7 @@ import asyncio
 import json
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Final, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
@@ -64,6 +65,13 @@ from artana_evidence_api.dependencies import (
     get_research_state_store,
     get_run_registry,
     get_schedule_store,
+)
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimFrame,
+    ClaimQualifier,
+    EpistemicStatus,
+    Polarity,
+    SourceEvidenceSpan,
 )
 from artana_evidence_api.document_store import HarnessDocumentStore
 from artana_evidence_api.graph_chat_runtime import (
@@ -344,6 +352,103 @@ def _allowed_relation_validation(relation_type: str) -> KernelGraphValidationRes
         validation_reason="test_validation",
         persistability="PERSISTABLE",
     )
+
+
+def _with_qualified_agent_claim(
+    proposal: HarnessProposalDraft,
+) -> HarnessProposalDraft:
+    """Attach source-bound agent evidence to a synthetic canonical claim."""
+    if proposal.proposal_type != "candidate_claim":
+        return proposal
+    subject = proposal.payload.get("proposed_subject")
+    predicate = proposal.payload.get("proposed_claim_type")
+    object_ = proposal.payload.get("proposed_object")
+    if (
+        not isinstance(subject, str)
+        or not isinstance(predicate, str)
+        or not isinstance(object_, str)
+    ):
+        return proposal
+    if not all(value.strip() for value in (subject, predicate, object_)):
+        return proposal
+
+    exact_evidence = f"In a synthetic agent test, {subject} {predicate} {object_}."
+    absent = ClaimQualifier.not_applicable()
+    claim_frame = ClaimFrame(
+        subject=subject,
+        predicate=predicate,
+        object=object_,
+        source_evidence=SourceEvidenceSpan(
+            exact_span=exact_evidence,
+            locator="test_agent_output.exact_evidence",
+        ),
+        polarity=Polarity.SUPPORT,
+        epistemic_status=EpistemicStatus.ASSERTED,
+        biological_or_variant_state=absent,
+        population=absent,
+        intervention=absent,
+        comparator=absent,
+        outcome=absent,
+        study_design=ClaimQualifier.present(
+            value="synthetic agent test",
+            exact_span="synthetic agent test",
+        ),
+        treatment_setting=absent,
+        timeframe=absent,
+        threshold=absent,
+        extraction_rationale=(
+            "The synthetic agent output directly asserts the qualified relation."
+        ),
+    )
+    return replace(
+        proposal,
+        evidence_bundle=[
+            *proposal.evidence_bundle,
+            {
+                "source_type": "agent_test_fixture",
+                "locator": claim_frame.source_locator,
+                "excerpt": exact_evidence,
+                "relevance": 1.0,
+            },
+        ],
+        payload={
+            **proposal.payload,
+            "proposed_subject_label": subject,
+            "proposed_object_label": object_,
+            "claim_frame": claim_frame.model_dump(mode="json"),
+        },
+        metadata={
+            **proposal.metadata,
+            "agent_extraction_completed": True,
+            "fallback_output_used": False,
+            "review_status": "candidate",
+            "qualified_claim_frame_present": True,
+            "claim_frame_positive_projection_candidate": True,
+            "claim_frame_positive_projection_eligible": False,
+            "claim_frame_semantic_fingerprint": claim_frame.semantic_fingerprint,
+            "evidence_grounding": {
+                "grounded": True,
+                "subject_present": True,
+                "object_present": True,
+            },
+            "support_verification": {
+                "support": "ENTAILS",
+                "verification_method": "agent",
+            },
+        },
+    )
+
+
+class _QualifiedAgentProposalStore(HarnessProposalStore):
+    """Test store that qualifies normalized agent claims before persistence."""
+
+    @classmethod
+    def normalize_proposal_draft(
+        cls,
+        proposal: HarnessProposalDraft,
+    ) -> HarnessProposalDraft:
+        normalized = super().normalize_proposal_draft(proposal)
+        return _with_qualified_agent_claim(normalized)
 
 
 class _FakeGraphApiGateway:
@@ -2239,6 +2344,7 @@ class _FakeWorkerRuntime:
                 space_id=str(arguments.space_id),
                 request=CreateManualHypothesisRequest(
                     statement=arguments.statement,
+                    authorship="AGENT",
                     rationale=arguments.rationale,
                     seed_entity_ids=list(arguments.seed_entity_ids),
                     source_type=arguments.source_type,
@@ -2867,7 +2973,12 @@ def _auth_headers(*, role: str = "researcher") -> dict[str, str]:
     }
 
 
-def _build_role_scoped_client(*, space_id: str, role: str) -> TestClient:
+def _build_role_scoped_client(
+    *,
+    space_id: str,
+    role: str,
+    proposal_store: HarnessProposalStore | None = None,
+) -> TestClient:
     research_space_store = (
         _SelectiveHarnessResearchSpaceStore(admin_fallback=True)
         if role == "admin"
@@ -2875,7 +2986,10 @@ def _build_role_scoped_client(*, space_id: str, role: str) -> TestClient:
             accessible_roles_by_space={space_id: role},
         )
     )
-    return _build_client(research_space_store=research_space_store)
+    return _build_client(
+        research_space_store=research_space_store,
+        proposal_store=proposal_store,
+    )
 
 
 def _build_rate_limit_request(
@@ -3755,8 +3869,9 @@ def test_supervisor_run_composes_bootstrap_chat_and_curation() -> None:
         == "supervisor_child_approval_gate"
     )
     assert workspace_payload["snapshot"]["pending_approvals"] == 1
-    assert workspace_payload["snapshot"]["selected_curation_proposal_ids"] == (
-        payload["selected_curation_proposal_ids"]
+    assert (
+        workspace_payload["snapshot"]["selected_curation_proposal_ids"]
+        == (payload["selected_curation_proposal_ids"])
     )
 
     capabilities_response = client.get(
@@ -3972,8 +4087,9 @@ def test_get_supervisor_run_detail_returns_typed_composed_state() -> None:
     assert payload["curation_status"] == "paused"
     assert payload["curation_source"] == create_payload["curation_source"]
     assert payload["chat_graph_write_proposal_ids"] == []
-    assert payload["selected_curation_proposal_ids"] == (
-        create_payload["selected_curation_proposal_ids"]
+    assert (
+        payload["selected_curation_proposal_ids"]
+        == (create_payload["selected_curation_proposal_ids"])
     )
     assert payload["skipped_steps"] == []
     assert payload["chat_graph_write_review_count"] == 0
@@ -4137,7 +4253,7 @@ def test_list_supervisor_runs_supports_status_source_and_review_filters() -> Non
             f"/v1/spaces/{space_id}/agents/supervisor/runs/{completed_reviewed_id}/"
             "chat-graph-write-candidates/0/review"
         ),
-        json={"decision": "promote", "reason": "Promote directly from supervisor."},
+        json={"decision": "reject", "reason": "Record a reviewed filter fixture."},
         headers=_auth_headers(),
     )
     assert review_response.status_code == 200
@@ -4439,7 +4555,7 @@ def test_list_supervisor_runs_supports_sorting_and_pagination() -> None:
             f"/v1/spaces/{space_id}/agents/supervisor/runs/{third_run_id}/"
             "chat-graph-write-candidates/0/review"
         ),
-        json={"decision": "promote", "reason": "Promote for review-count sorting."},
+        json={"decision": "reject", "reason": "Record a review-count fixture."},
         headers=_auth_headers(),
     )
     assert review_response.status_code == 200
@@ -4583,7 +4699,7 @@ def test_list_supervisor_runs_supports_created_and_updated_time_windows() -> Non
             f"/v1/spaces/{space_id}/agents/supervisor/runs/{third_run_id}/"
             "chat-graph-write-candidates/0/review"
         ),
-        json={"decision": "promote", "reason": "Promote for updated-window filter."},
+        json={"decision": "reject", "reason": "Record an updated-window fixture."},
         headers=_auth_headers(),
     )
     assert review_response.status_code == 200
@@ -4735,7 +4851,7 @@ def test_get_supervisor_dashboard_returns_summary_without_paginated_runs() -> No
             f"/v1/spaces/{space_id}/agents/supervisor/runs/{completed_reviewed_id}/"
             "chat-graph-write-candidates/0/review"
         ),
-        json={"decision": "promote", "reason": "Promote for dashboard summary."},
+        json={"decision": "reject", "reason": "Record a dashboard review fixture."},
         headers=_auth_headers(),
     )
     assert review_response.status_code == 200
@@ -4758,29 +4874,35 @@ def test_get_supervisor_dashboard_returns_summary_without_paginated_runs() -> No
     assert dashboard_payload["highlights"]["latest_completed_run"]["run_id"] == (
         completed_reviewed_id
     )
-    assert dashboard_payload["highlights"]["latest_completed_run"]["timestamp"] == (
-        completed_reviewed_response.json()["run"]["updated_at"]
+    assert (
+        dashboard_payload["highlights"]["latest_completed_run"]["timestamp"]
+        == (completed_reviewed_response.json()["run"]["updated_at"])
     )
     assert dashboard_payload["highlights"]["latest_reviewed_run"]["run_id"] == (
         completed_reviewed_id
     )
-    assert dashboard_payload["highlights"]["latest_reviewed_run"]["timestamp"] == (
-        review_response.json()["latest_chat_graph_write_review"]["reviewed_at"]
+    assert (
+        dashboard_payload["highlights"]["latest_reviewed_run"]["timestamp"]
+        == (review_response.json()["latest_chat_graph_write_review"]["reviewed_at"])
     )
-    assert dashboard_payload["highlights"]["oldest_paused_run"]["run_id"] == (
-        paused_bootstrap_response.json()["run"]["id"]
+    assert (
+        dashboard_payload["highlights"]["oldest_paused_run"]["run_id"]
+        == (paused_bootstrap_response.json()["run"]["id"])
     )
-    assert dashboard_payload["highlights"]["oldest_paused_run"]["timestamp"] == (
-        paused_bootstrap_response.json()["run"]["created_at"]
+    assert (
+        dashboard_payload["highlights"]["oldest_paused_run"]["timestamp"]
+        == (paused_bootstrap_response.json()["run"]["created_at"])
     )
     assert dashboard_payload["highlights"]["latest_bootstrap_run"]["run_id"] == (
         completed_reviewed_id
     )
-    assert dashboard_payload["highlights"]["latest_bootstrap_run"]["timestamp"] == (
-        completed_reviewed_response.json()["run"]["created_at"]
+    assert (
+        dashboard_payload["highlights"]["latest_bootstrap_run"]["timestamp"]
+        == (completed_reviewed_response.json()["run"]["created_at"])
     )
-    assert dashboard_payload["highlights"]["latest_chat_graph_write_run"]["run_id"] == (
-        paused_chat_graph_write_response.json()["run"]["id"]
+    assert (
+        dashboard_payload["highlights"]["latest_chat_graph_write_run"]["run_id"]
+        == (paused_chat_graph_write_response.json()["run"]["id"])
     )
     assert (
         dashboard_payload["highlights"]["latest_chat_graph_write_run"]["timestamp"]
@@ -4982,14 +5104,15 @@ def test_supervisor_can_auto_derive_chat_graph_write_proposals() -> None:
     assert workspace_response.status_code == 200
     workspace_payload = workspace_response.json()
     assert workspace_payload["snapshot"]["curation_source"] == "chat_graph_write"
-    assert workspace_payload["snapshot"]["chat_graph_write_proposal_ids"] == (
-        payload["chat_graph_write_proposal_ids"]
+    assert (
+        workspace_payload["snapshot"]["chat_graph_write_proposal_ids"]
+        == (payload["chat_graph_write_proposal_ids"])
     )
 
 
 def test_supervisor_can_directly_review_briefing_chat_candidate() -> None:
-    """Supervisor runs should promote briefing-chat candidates without child curation."""
-    client = _build_client()
+    """Supervisor direct review should fail closed for qualified claims."""
+    client = _build_client(proposal_store=_QualifiedAgentProposalStore())
     space_id = str(uuid4())
     seed_entity_id = "11111111-1111-1111-1111-111111111111"
 
@@ -5007,7 +5130,6 @@ def test_supervisor_can_directly_review_briefing_chat_candidate() -> None:
     create_payload = create_response.json()
     supervisor_run_id = create_payload["run"]["id"]
     chat_run_id = create_payload["chat"]["run"]["id"]
-    chat_session_id = create_payload["chat"]["session"]["id"]
 
     review_response = client.post(
         (
@@ -5018,21 +5140,8 @@ def test_supervisor_can_directly_review_briefing_chat_candidate() -> None:
         headers=_auth_headers(),
     )
 
-    assert review_response.status_code == 200
-    payload = review_response.json()
-    assert payload["run"]["id"] == supervisor_run_id
-    assert payload["chat_run_id"] == chat_run_id
-    assert payload["chat_session_id"] == chat_session_id
-    assert payload["candidate_index"] == 0
-    assert payload["candidate"]["target_entity_id"] == _GRAPH_CHAT_SUGGESTION_TARGET_ID
-    assert payload["proposal"]["status"] == "promoted"
-    assert payload["proposal"]["metadata"]["graph_claim_id"] is not None
-    assert payload["proposal"]["metadata"]["supervisor_run_id"] == supervisor_run_id
-    assert payload["chat_graph_write_review_count"] == 1
-    assert len(payload["chat_graph_write_reviews"]) == 1
-    assert payload["latest_chat_graph_write_review"]["reviewed_at"] is not None
-    assert payload["latest_chat_graph_write_review"]["candidate_index"] == 0
-    assert payload["latest_chat_graph_write_review"]["proposal_status"] == "promoted"
+    assert review_response.status_code == 409
+    assert "missing_source_document" in review_response.text
 
     proposals_response = client.get(
         f"/v1/spaces/{space_id}/proposals",
@@ -5042,51 +5151,8 @@ def test_supervisor_can_directly_review_briefing_chat_candidate() -> None:
     assert proposals_response.status_code == 200
     proposals_payload = proposals_response.json()
     assert proposals_payload["total"] == 1
-    assert proposals_payload["proposals"][0]["status"] == "promoted"
-
-    workspace_response = client.get(
-        f"/v1/spaces/{space_id}/runs/{supervisor_run_id}/workspace",
-        headers=_auth_headers(role="viewer"),
-    )
-    assert workspace_response.status_code == 200
-    workspace_payload = workspace_response.json()["snapshot"]
-    assert workspace_payload["last_supervisor_chat_graph_write_candidate_index"] == 0
-    assert workspace_payload["last_supervisor_chat_graph_write_candidate_decision"] == (
-        "promote"
-    )
-    assert (
-        workspace_payload["last_supervisor_chat_graph_write_chat_run_id"] == chat_run_id
-    )
-    assert workspace_payload["last_supervisor_chat_graph_write_chat_session_id"] == (
-        chat_session_id
-    )
-    assert (
-        workspace_payload["last_supervisor_chat_graph_write_graph_claim_id"] is not None
-    )
-    assert workspace_payload["last_supervisor_chat_graph_write_review_key"] == (
-        "supervisor_chat_graph_write_review"
-    )
-
-    summary_response = client.get(
-        f"/v1/spaces/{space_id}/runs/{supervisor_run_id}/artifacts/supervisor_summary",
-        headers=_auth_headers(role="viewer"),
-    )
-    assert summary_response.status_code == 200
-    summary_payload = summary_response.json()["content"]
-    assert summary_payload["completed_at"] is not None
-    assert summary_payload["chat_graph_write_review_count"] == 1
-    assert len(summary_payload["chat_graph_write_reviews"]) == 1
-    assert summary_payload["latest_chat_graph_write_review"]["reviewed_at"] is not None
-    assert summary_payload["latest_chat_graph_write_review"]["candidate_index"] == 0
-    assert (
-        summary_payload["latest_chat_graph_write_review"]["proposal_status"]
-        == "promoted"
-    )
-    assert (
-        summary_payload["latest_chat_graph_write_review"]["graph_claim_id"] is not None
-    )
-    assert summary_payload["steps"][-1]["step"] == "chat_graph_write_review"
-    assert summary_payload["steps"][-1]["status"] == "completed"
+    assert proposals_payload["proposals"][0]["status"] == "pending_review"
+    assert proposals_payload["proposals"][0]["metadata"].get("graph_claim_id") is None
 
     detail_response = client.get(
         f"/v1/spaces/{space_id}/agents/supervisor/runs/{supervisor_run_id}",
@@ -5094,21 +5160,9 @@ def test_supervisor_can_directly_review_briefing_chat_candidate() -> None:
     )
     assert detail_response.status_code == 200
     detail_payload = detail_response.json()
-    assert (
-        detail_payload["bootstrap"]["run"]["id"]
-        == create_payload["bootstrap"]["run"]["id"]
-    )
     assert detail_payload["chat"]["run"]["id"] == chat_run_id
     assert detail_payload["curation"] is None
-    assert detail_payload["artifact_keys"]["curation"] is None
-    assert detail_payload["completed_at"] is not None
-    assert detail_payload["chat_graph_write_review_count"] == 1
-    assert len(detail_payload["chat_graph_write_reviews"]) == 1
-    assert detail_payload["latest_chat_graph_write_review"]["reviewed_at"] is not None
-    assert detail_payload["latest_chat_graph_write_review"]["candidate_index"] == 0
-    assert detail_payload["latest_chat_graph_write_review"]["proposal_status"] == (
-        "promoted"
-    )
+    assert detail_payload["chat_graph_write_review_count"] == 0
     assert detail_payload["curation_run_id"] is None
     assert detail_payload["curation_status"] is None
     assert detail_payload["progress"]["status"] == "completed"
@@ -5141,7 +5195,7 @@ def test_supervisor_summary_accumulates_direct_chat_review_history() -> None:
             f"/v1/spaces/{space_id}/agents/supervisor/runs/{supervisor_run_id}/"
             "chat-graph-write-candidates/0/review"
         ),
-        json={"decision": "promote", "reason": "Promote the top suggestion."},
+        json={"decision": "reject", "reason": "Reject the top suggestion."},
         headers=_auth_headers(),
     )
     assert first_review_response.status_code == 200
@@ -5180,7 +5234,7 @@ def test_supervisor_summary_accumulates_direct_chat_review_history() -> None:
     assert summary_payload["chat_graph_write_reviews"][0]["reviewed_at"] is not None
     assert summary_payload["chat_graph_write_reviews"][1]["reviewed_at"] is not None
     assert (
-        summary_payload["chat_graph_write_reviews"][0]["decision_status"] == "promoted"
+        summary_payload["chat_graph_write_reviews"][0]["decision_status"] == "rejected"
     )
     assert (
         summary_payload["chat_graph_write_reviews"][1]["decision_status"] == "rejected"
@@ -5234,7 +5288,7 @@ def test_supervisor_chat_candidate_review_blocks_when_child_curation_owns_chat_c
 
 
 def test_supervisor_run_completes_after_child_curation_resume() -> None:
-    """Supervisor resume should reconcile the child curation run and complete the parent."""
+    """Supervisor resume should reconcile a rejected child curation decision."""
     client = _build_client()
     space_id = str(uuid4())
     seed_entity_id = "11111111-1111-1111-1111-111111111111"
@@ -5261,12 +5315,12 @@ def test_supervisor_run_completes_after_child_curation_resume() -> None:
     assert approvals_response.status_code == 200
     approval_key = approvals_response.json()["approvals"][0]["approval_key"]
 
-    approve_response = client.post(
+    reject_response = client.post(
         f"/v1/spaces/{space_id}/runs/{curation_run_id}/approvals/{approval_key}",
-        json={"decision": "approved", "reason": "Promote through supervisor."},
+        json={"decision": "rejected", "reason": "Keep claim review-only."},
         headers=_auth_headers(),
     )
-    assert approve_response.status_code == 200
+    assert reject_response.status_code == 200
 
     resume_response = client.post(
         f"/v1/spaces/{space_id}/runs/{supervisor_run_id}/resume",
@@ -5282,8 +5336,8 @@ def test_supervisor_run_completes_after_child_curation_resume() -> None:
         resume_payload["progress"]["metadata"]["child_curation_run_id"]
         == curation_run_id
     )
-    assert resume_payload["progress"]["metadata"]["promoted_count"] == 1
-    assert resume_payload["progress"]["metadata"]["rejected_count"] == 0
+    assert resume_payload["progress"]["metadata"]["promoted_count"] == 0
+    assert resume_payload["progress"]["metadata"]["rejected_count"] == 1
 
     parent_workspace_response = client.get(
         f"/v1/spaces/{space_id}/runs/{supervisor_run_id}/workspace",
@@ -5307,7 +5361,7 @@ def test_supervisor_run_completes_after_child_curation_resume() -> None:
     assert parent_artifact_response.status_code == 200
     parent_summary = parent_artifact_response.json()["content"]
     assert parent_summary["curation_status"] == "completed"
-    assert parent_summary["curation_summary"]["promoted_count"] == 1
+    assert parent_summary["curation_summary"]["promoted_count"] == 0
     assert parent_summary["steps"][-1]["status"] == "completed"
 
     detail_response = client.get(
@@ -5334,7 +5388,7 @@ def test_supervisor_run_completes_after_child_curation_resume() -> None:
     )
     assert detail_payload["curation_run_id"] == curation_run_id
     assert detail_payload["curation_status"] == "completed"
-    assert detail_payload["curation_summary"]["promoted_count"] == 1
+    assert detail_payload["curation_summary"]["promoted_count"] == 0
     assert detail_payload["curation_summary"]["applied_proposal_ids"] == [proposal_id]
 
     capabilities_response = client.get(
@@ -5348,7 +5402,6 @@ def test_supervisor_run_completes_after_child_curation_resume() -> None:
         "graph_harness.graph_grounding",
         "graph_harness.graph_write_review",
         "graph_harness.claim_validation",
-        "graph_harness.governed_graph_write",
     ]
 
     policy_response = client.get(
@@ -5359,7 +5412,7 @@ def test_supervisor_run_completes_after_child_curation_resume() -> None:
     policy_payload = policy_response.json()
     assert policy_payload["summary"]["tool_record_count"] == 0
     assert policy_payload["summary"]["manual_review_count"] == 0
-    assert policy_payload["summary"]["skill_record_count"] == 5
+    assert policy_payload["summary"]["skill_record_count"] == 4
     assert detail_payload["curation_actions"]["action_count"] == 1
     assert (
         detail_payload["curation_actions"]["actions"][0]["proposal_id"] == proposal_id
@@ -5378,7 +5431,7 @@ def test_supervisor_run_completes_after_child_curation_resume() -> None:
         headers=_auth_headers(role="viewer"),
     )
     assert proposal_response.status_code == 200
-    assert proposal_response.json()["status"] == "promoted"
+    assert proposal_response.json()["status"] == "rejected"
 
 
 def test_create_and_list_runs_returns_queued_run() -> None:
@@ -6280,8 +6333,9 @@ def test_graph_chat_session_uses_bootstrap_research_memory() -> None:
     assert workspace_response.status_code == 200
     workspace_payload = workspace_response.json()["snapshot"]
     assert workspace_payload["research_objective"] == "Map MED13 mechanism evidence."
-    assert workspace_payload["research_state_last_graph_snapshot_id"] == (
-        bootstrap_payload["graph_snapshot"]["id"]
+    assert (
+        workspace_payload["research_state_last_graph_snapshot_id"]
+        == (bootstrap_payload["graph_snapshot"]["id"])
     )
     assert workspace_payload["pending_question_count"] == len(
         bootstrap_payload["pending_questions"],
@@ -6549,7 +6603,7 @@ def test_chat_graph_write_endpoint_stages_proposals_from_latest_chat_run() -> No
 
 def test_chat_graph_write_candidate_review_promotes_inline_candidate() -> None:
     """Chat sessions should promote one inline graph-write candidate directly."""
-    client = _build_client()
+    client = _build_client(proposal_store=_QualifiedAgentProposalStore())
     space_id = str(uuid4())
 
     session_response = client.post(
@@ -6576,14 +6630,8 @@ def test_chat_graph_write_candidate_review_promotes_inline_candidate() -> None:
         headers=_auth_headers(),
     )
 
-    assert review_response.status_code == 200
-    payload = review_response.json()
-    assert payload["run"]["id"] == run_id
-    assert payload["candidate_index"] == 0
-    assert payload["candidate"]["target_entity_id"] == _GRAPH_CHAT_SUGGESTION_TARGET_ID
-    assert payload["proposal"]["status"] == "promoted"
-    assert payload["proposal"]["metadata"]["graph_claim_id"] is not None
-    assert payload["proposal"]["metadata"]["chat_candidate_index"] == 0
+    assert review_response.status_code == 409
+    assert "missing_source_document" in review_response.text
 
     proposals_response = client.get(
         f"/v1/spaces/{space_id}/proposals",
@@ -6593,22 +6641,8 @@ def test_chat_graph_write_candidate_review_promotes_inline_candidate() -> None:
     assert proposals_response.status_code == 200
     proposals_payload = proposals_response.json()
     assert proposals_payload["total"] == 1
-    assert proposals_payload["proposals"][0]["status"] == "promoted"
-
-    workspace_response = client.get(
-        f"/v1/spaces/{space_id}/runs/{run_id}/workspace",
-        headers=_auth_headers(role="viewer"),
-    )
-    assert workspace_response.status_code == 200
-    workspace_payload = workspace_response.json()["snapshot"]
-    assert workspace_payload["last_chat_graph_write_candidate_index"] == 0
-    assert workspace_payload["last_chat_graph_write_candidate_decision"] == "promote"
-    assert workspace_payload["last_promoted_graph_claim_id"] is not None
-    assert workspace_payload["proposal_counts"] == {
-        "pending_review": 0,
-        "promoted": 1,
-        "rejected": 0,
-    }
+    assert proposals_payload["proposals"][0]["status"] == "pending_review"
+    assert proposals_payload["proposals"][0]["metadata"].get("graph_claim_id") is None
 
 
 def test_chat_graph_write_candidate_review_reuses_pending_proposal_for_rejection() -> (
@@ -6710,7 +6744,10 @@ def test_chat_candidate_review_is_reflected_in_policy_decisions() -> None:
             f"/v1/spaces/{space_id}/chat-sessions/{session_id}/"
             "graph-write-candidates/0/review"
         ),
-        json={"decision": "promote", "reason": "Grounded evidence is sufficient"},
+        json={
+            "decision": "reject",
+            "reason": "The policy trace does not require a write",
+        },
         headers=_auth_headers(),
     )
     assert review_response.status_code == 200
@@ -6728,8 +6765,8 @@ def test_chat_candidate_review_is_reflected_in_policy_decisions() -> None:
         if record["decision_source"] == "manual_review"
     ]
     assert len(manual_records) == 1
-    assert manual_records[0]["tool_name"] == "create_graph_claim"
-    assert manual_records[0]["decision"] == "promote"
+    assert manual_records[0]["tool_name"] == "chat_graph_write_review"
+    assert manual_records[0]["decision"] == "reject"
     assert manual_records[0]["artifact_key"] == "graph_write_candidate_suggestions"
 
 
@@ -6904,8 +6941,9 @@ def test_continuous_learning_run_reuses_bootstrap_memory_context() -> None:
     assert response.status_code == 201
     payload = response.json()
     run_payload = payload["run"]
-    assert payload["delta_report"]["previous_graph_snapshot_id"] == (
-        bootstrap_payload["graph_snapshot"]["id"]
+    assert (
+        payload["delta_report"]["previous_graph_snapshot_id"]
+        == (bootstrap_payload["graph_snapshot"]["id"])
     )
     assert payload["delta_report"]["research_objective"] == (
         "Map MED13 mechanism evidence."
@@ -7370,7 +7408,7 @@ def test_send_chat_message_rejects_missing_session() -> None:
 
 def test_hypothesis_agent_run_completes_and_stages_candidates() -> None:
     """Harness-owned hypothesis runs should stage candidate artifacts."""
-    client = _build_client()
+    client = _build_client(proposal_store=_QualifiedAgentProposalStore())
     space_id = str(uuid4())
     first_seed_id = str(uuid4())
     second_seed_id = str(uuid4())
@@ -7435,12 +7473,8 @@ def test_hypothesis_agent_run_completes_and_stages_candidates() -> None:
         json={"reason": "Escalate into reviewed claim flow."},
         headers=_auth_headers(),
     )
-    assert promote_response.status_code == 200
-    promoted_payload = promote_response.json()
-    assert promoted_payload["status"] == "promoted"
-    assert promoted_payload["metadata"]["graph_claim_id"] is not None
-    assert promoted_payload["metadata"]["graph_claim_status"] == "OPEN"
-    assert promoted_payload["metadata"]["graph_relation_id"] is None
+    assert promote_response.status_code == 409
+    assert "missing_source_document" in promote_response.text
 
     reject_response = client.post(
         f"/v1/spaces/{space_id}/proposals/{proposal_ids[1]}/reject",
@@ -7462,10 +7496,10 @@ def test_hypothesis_agent_run_completes_and_stages_candidates() -> None:
     )
     assert workspace_payload["snapshot"]["last_proposal_pack_key"] == "proposal_pack"
     assert workspace_payload["snapshot"]["proposal_count"] == 2
-    assert workspace_payload["snapshot"]["last_promoted_graph_claim_id"] is not None
+    assert workspace_payload["snapshot"].get("last_promoted_graph_claim_id") is None
     assert workspace_payload["snapshot"]["proposal_counts"] == {
-        "pending_review": 0,
-        "promoted": 1,
+        "pending_review": 1,
+        "promoted": 0,
         "rejected": 1,
     }
 
@@ -7690,8 +7724,8 @@ def test_mechanism_discovery_run_returns_503_and_persists_failed_run_when_graph_
     )
 
 
-def test_claim_curation_run_applies_approved_actions_on_resume() -> None:
-    """Claim-curation runs should pause for approval and apply decisions on resume."""
+def test_claim_curation_run_applies_rejected_actions_on_resume() -> None:
+    """Claim-curation runs should apply review-only decisions on resume."""
     client = _build_client()
     space_id = str(uuid4())
 
@@ -7759,15 +7793,15 @@ def test_claim_curation_run_applies_approved_actions_on_resume() -> None:
         approval["target_id"]: approval for approval in approvals_payload["approvals"]
     }
 
-    approve_response = client.post(
+    first_reject_response = client.post(
         (
             f"/v1/spaces/{space_id}/runs/{curation_run_id}/approvals/"
             f"{approvals_by_target[proposal_ids[0]]['approval_key']}"
         ),
-        json={"decision": "approved", "reason": "Promote this proposal."},
+        json={"decision": "rejected", "reason": "Keep claim review-only."},
         headers=_auth_headers(),
     )
-    assert approve_response.status_code == 200
+    assert first_reject_response.status_code == 200
 
     reject_response = client.post(
         (
@@ -7790,8 +7824,8 @@ def test_claim_curation_run_applies_approved_actions_on_resume() -> None:
     assert resume_payload["run"]["status"] == "completed"
     assert resume_payload["progress"]["phase"] == "completed"
     assert resume_payload["progress"]["metadata"]["action_count"] == 2
-    assert resume_payload["progress"]["metadata"]["promoted_count"] == 1
-    assert resume_payload["progress"]["metadata"]["rejected_count"] == 1
+    assert resume_payload["progress"]["metadata"]["promoted_count"] == 0
+    assert resume_payload["progress"]["metadata"]["rejected_count"] == 2
 
     promoted_proposal_response = client.get(
         f"/v1/spaces/{space_id}/proposals/{proposal_ids[0]}",
@@ -7803,10 +7837,9 @@ def test_claim_curation_run_applies_approved_actions_on_resume() -> None:
     )
     assert promoted_proposal_response.status_code == 200
     assert rejected_proposal_response.status_code == 200
-    promoted_payload = promoted_proposal_response.json()
+    first_rejected_payload = promoted_proposal_response.json()
     rejected_payload = rejected_proposal_response.json()
-    assert promoted_payload["status"] == "promoted"
-    assert promoted_payload["metadata"]["graph_claim_id"] is not None
+    assert first_rejected_payload["status"] == "rejected"
     assert rejected_payload["status"] == "rejected"
 
     artifacts_response = client.get(
@@ -7840,8 +7873,8 @@ def test_claim_curation_run_applies_approved_actions_on_resume() -> None:
         "curation_summary"
     )
     assert workspace_payload["snapshot"]["curation_action_counts"] == {
-        "promoted": 1,
-        "rejected": 1,
+        "promoted": 0,
+        "rejected": 2,
     }
 
     completed_capabilities_response = client.get(
@@ -7852,7 +7885,6 @@ def test_claim_curation_run_applies_approved_actions_on_resume() -> None:
     completed_capabilities_payload = completed_capabilities_response.json()
     assert completed_capabilities_payload["active_skill_names"] == [
         "graph_harness.claim_validation",
-        "graph_harness.governed_graph_write",
     ]
 
     events_response = client.get(
@@ -8150,7 +8182,11 @@ def test_write_capable_roles_can_promote_pending_proposals_when_space_access_all
     role: str,
 ) -> None:
     space_id = str(uuid4())
-    client = _build_role_scoped_client(space_id=space_id, role=role)
+    client = _build_role_scoped_client(
+        space_id=space_id,
+        role=role,
+        proposal_store=_QualifiedAgentProposalStore(),
+    )
 
     hypothesis_response = client.post(
         f"/v1/spaces/{space_id}/agents/hypotheses/runs",
@@ -8178,9 +8214,14 @@ def test_write_capable_roles_can_promote_pending_proposals_when_space_access_all
         headers=_auth_headers(role=role),
     )
 
-    assert promote_response.status_code == 200
-    assert promote_response.json()["status"] == "promoted"
-    assert promote_response.json()["metadata"]["graph_claim_id"] is not None
+    assert promote_response.status_code == 409
+    assert "missing_source_document" in promote_response.text
+    proposal_detail_response = client.get(
+        f"/v1/spaces/{space_id}/proposals/{proposal_id}",
+        headers=_auth_headers(role=role),
+    )
+    assert proposal_detail_response.status_code == 200
+    assert proposal_detail_response.json()["status"] == "pending_review"
 
 
 def test_viewer_cannot_promote_pending_proposals_without_side_effects() -> None:

@@ -279,6 +279,7 @@ def get_kernel_claim_relation_service(
     """Return kernel claim-relation service."""
     return KernelClaimRelationService(
         claim_relation_repo=SqlAlchemyKernelClaimRelationRepository(session),
+        relation_claim_repo=SqlAlchemyKernelRelationClaimRepository(session),
         reasoning_path_invalidation_service=(
             get_kernel_reasoning_path_invalidation_service(session)
         ),
