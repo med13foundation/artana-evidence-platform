@@ -5,17 +5,17 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+from contextlib import suppress
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, Protocol, cast
 from uuid import uuid4
 
 from artana_evidence_api.document_extraction_prompting import (
     build_claim_inventory_completeness_output_schema,
     build_claim_inventory_output_schema,
     build_missing_claim_recovery_output_schema,
-    build_single_claim_framing_output_schema,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     output_schema_json_sha256,
@@ -32,8 +32,11 @@ from scripts.validation.claim_frames.provider_receipts import (
 )
 
 if TYPE_CHECKING:
-    from artana_evidence_api.document_extraction_contracts import (
-        ClaimExtractionLineage,
+    from artana_evidence_api.document_extraction_support.claim_frames import (
+        BoundClaimInventoryItem,
+    )
+    from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+        ModelAttemptAuditRecord,
     )
 
     from scripts.validation.claim_events.contracts import NaryClaimFixture
@@ -42,9 +45,12 @@ if TYPE_CHECKING:
 _ALLOWED_MODELS: Final = frozenset(
     {"openai:gpt-5.6-luna", "openai:gpt-5.6-sol"},
 )
-_SPACE_CONTEXT: Final = "TG-04 untouched BioNLP event benchmark."
 _REPO_ROOT: Final = Path(__file__).resolve().parents[3]
 _TASK_ID: Final = "nary_event_inventory"
+
+
+class _AsyncClosable(Protocol):
+    async def close(self) -> None: ...
 
 
 def run_live_arm(
@@ -77,80 +83,95 @@ async def _run_live_arm(
     run_id: str,
     repository_evidence: dict[str, object],
 ) -> dict[str, object]:
+    from artana_evidence_api.document_extraction import (
+        normalize_text_document,
+    )
+    from artana_evidence_api.document_extraction_support.full_text_chunking import (
+        build_relation_extraction_text_chunks,
+    )
+    from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
+        run_llm_claim_inventory_with_zero_retry,
+    )
     from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+        llm_extraction_document_fingerprint,
         start_model_attempt_audit,
         stop_model_attempt_audit,
     )
-    from artana_evidence_api.document_extraction_support.strict_relation_discovery import (
-        discover_relation_candidates_strict,
-    )
-    from artana_evidence_api.runtime import ModelCapability, get_model_registry
+    from artana_evidence_api.step_helpers import run_single_step_with_policy
 
-    configured = (
-        get_model_registry()
-        .get_default_model(
-            ModelCapability.EVIDENCE_EXTRACTION,
-        )
-        .model_id
+    client, tenant, execution_model_id, kernel, store = _build_inventory_runtime(
+        model_id,
     )
-    if configured != model_id:
-        raise RuntimeError(
-            f"TG-04 requested {model_id}, but Artana configured {configured}",
-        )
 
     predictions: list[dict[str, object]] = []
     case_evidence: list[dict[str, object]] = []
     provider_ids: set[str] = set()
     receipt_expectations: list[ProviderReceiptExpectation] = []
     fallback_count = invalid_count = unidentified_provider_count = 0
-    for case in fixture.cases:
-        invocation_namespace = f"tg04-{_TASK_ID}-{uuid4().hex}"
-        audit = start_model_attempt_audit(evidence_unit_id=case.case_id)
-        try:
-            _candidates, diagnostics = await discover_relation_candidates_strict(
-                case.source_text,
-                max_relations=64,
-                space_context=_SPACE_CONTEXT,
-                execution_namespace=invocation_namespace,
-            )
-            events = _nary_events(diagnostics.claim_lineage)
-            fallback_count += int(diagnostics.fallback_output_used)
-        finally:
-            stop_model_attempt_audit(audit)
-
-        attempts = [record.as_json() for record in audit.records]
-        for record in audit.records:
-            if record.validation_outcome == "intentionally_skipped":
-                continue
-            invalid_count += int(record.validation_outcome != "accepted")
-            _require_attempt_model(record.model_id, model_id)
-            unidentified_provider_count += int(record.provider_response_id is None)
-            if record.provider_response_id is not None:
-                if record.provider_response_id in provider_ids:
-                    raise RuntimeError("TG-04 provider response IDs must be unique")
-                provider_ids.add(record.provider_response_id)
-                receipt_expectations.append(
-                    receipt_expectation_from_attempt(
-                        case_id=case.case_id,
-                        report_model_id=model_id,
-                        record=record.as_json(),
+    try:
+        for case in fixture.cases:
+            invocation_namespace = f"tg04-{_TASK_ID}-{uuid4().hex}"
+            normalized_text = normalize_text_document(case.source_text)
+            audit = start_model_attempt_audit(evidence_unit_id=case.case_id)
+            try:
+                inventory = await run_llm_claim_inventory_with_zero_retry(
+                    normalized_text=normalized_text,
+                    chunks=build_relation_extraction_text_chunks(normalized_text),
+                    document_fingerprint=llm_extraction_document_fingerprint(
+                        normalized_text,
                     ),
+                    client=client,
+                    tenant=tenant,
+                    model_id=execution_model_id,
+                    step_runner=run_single_step_with_policy,
+                    execution_namespace=invocation_namespace,
                 )
-        predictions.append(
-            {
-                "case_id": case.case_id,
-                "events": events,
-                "abstained": not events,
-            },
-        )
-        case_evidence.append(
-            {
-                "case_id": case.case_id,
-                "invocation_namespace": invocation_namespace,
-                "attempts": attempts,
-                "diagnostics": diagnostics.as_metadata(),
-            },
-        )
+                events = _nary_events(inventory.claims)
+            finally:
+                stop_model_attempt_audit(audit)
+
+            attempts = [record.as_json() for record in audit.records]
+            case_expectations, case_invalid, case_unidentified = (
+                _case_receipt_expectations(
+                    records=tuple(audit.records),
+                    case_id=case.case_id,
+                    model_id=model_id,
+                )
+            )
+            invalid_count += case_invalid
+            unidentified_provider_count += case_unidentified
+            for expectation in case_expectations:
+                if expectation.response_id in provider_ids:
+                    raise RuntimeError("TG-04 provider response IDs must be unique")
+                provider_ids.add(expectation.response_id)
+                receipt_expectations.append(expectation)
+            predictions.append(
+                {
+                    "case_id": case.case_id,
+                    "events": events,
+                    "abstained": not events,
+                },
+            )
+            case_evidence.append(
+                {
+                    "case_id": case.case_id,
+                    "invocation_namespace": invocation_namespace,
+                    "attempts": attempts,
+                    "diagnostics": {
+                        "fallback_output_used": False,
+                        "claim_extraction_routing_status": (
+                            "complete"
+                            if inventory.semantic_inventory_complete
+                            else "semantic_incomplete"
+                        ),
+                    },
+                },
+            )
+    finally:
+        with suppress(Exception):
+            await kernel.close()
+        with suppress(Exception):
+            await store.close()
 
     final_repository_evidence = collect_repository_evidence(_REPO_ROOT)
     if final_repository_evidence != repository_evidence:
@@ -186,12 +207,80 @@ async def _run_live_arm(
     return report
 
 
+def _build_inventory_runtime(
+    model_id: str,
+) -> tuple[object, object, str, _AsyncClosable, _AsyncClosable]:
+    from artana.agent import SingleStepModelClient
+    from artana.kernel import ArtanaKernel
+    from artana.models import TenantContext
+    from artana.ports.model import LiteLLMAdapter
+    from artana_evidence_api.runtime import (
+        ModelCapability,
+        create_artana_postgres_store,
+        get_model_registry,
+        normalize_litellm_model_id,
+    )
+
+    configured = (
+        get_model_registry()
+        .get_default_model(
+            ModelCapability.EVIDENCE_EXTRACTION,
+        )
+        .model_id
+    )
+    if configured != model_id:
+        raise RuntimeError(
+            f"TG-04 requested {model_id}, but Artana configured {configured}",
+        )
+    store = create_artana_postgres_store()
+    kernel = ArtanaKernel(
+        store=store,
+        model_port=LiteLLMAdapter(timeout_seconds=60.0),
+    )
+    return (
+        SingleStepModelClient(kernel=kernel),
+        TenantContext(
+            tenant_id="tg04-nary-inventory",
+            capabilities=frozenset(),
+            budget_usd_limit=20.0,
+        ),
+        normalize_litellm_model_id(model_id),
+        kernel,
+        store,
+    )
+
+
+def _case_receipt_expectations(
+    *,
+    records: tuple[ModelAttemptAuditRecord, ...],
+    case_id: str,
+    model_id: str,
+) -> tuple[list[ProviderReceiptExpectation], int, int]:
+    expectations: list[ProviderReceiptExpectation] = []
+    invalid_count = unidentified_count = 0
+    for record in records:
+        if record.validation_outcome == "intentionally_skipped":
+            continue
+        invalid_count += int(record.validation_outcome != "accepted")
+        _require_attempt_model(record.model_id, model_id)
+        unidentified_count += int(record.provider_response_id is None)
+        if record.provider_response_id is not None:
+            expectations.append(
+                receipt_expectation_from_attempt(
+                    case_id=case_id,
+                    report_model_id=model_id,
+                    record=record.as_json(),
+                ),
+            )
+    return expectations, invalid_count, unidentified_count
+
+
 def _nary_events(
-    lineage: tuple[ClaimExtractionLineage, ...],
+    claims: tuple[BoundClaimInventoryItem, ...],
 ) -> list[dict[str, object]]:
     events: list[dict[str, object]] = []
-    for claim in lineage:
-        item = claim.inventory_payload
+    for claim in claims:
+        item = claim.item.model_dump(mode="json")
         exact_span = item.get("exact_span")
         if not isinstance(exact_span, str):
             raise TypeError("TG-04 inventory exact_span must be text")
@@ -273,16 +362,17 @@ def receipt_expectation_from_attempt(
 
 def _attempt_output_schema_sha256(record: dict[str, object]) -> str:
     role = record.get("attempt_role")
-    if role in {"claim_inventory", "zero_candidate_retry"}:
+    schema_role = record.get("pass_role") if role == "schema_retry" else role
+    if schema_role == "claim_inventory":
         schema = build_claim_inventory_output_schema(64)
-    elif role == "claim_inventory_completeness":
+    elif schema_role == "claim_inventory_completeness":
         schema = build_claim_inventory_completeness_output_schema()
-    elif role == "claim_inventory_recovery":
+    elif schema_role == "claim_inventory_recovery":
         schema = build_missing_claim_recovery_output_schema()
-    elif role == "claim_framing":
-        schema = build_single_claim_framing_output_schema()
     else:
-        raise RuntimeError(f"TG-04 attempt has unsupported schema role: {role}")
+        raise RuntimeError(
+            f"TG-04 attempt has unsupported schema role: {schema_role}",
+        )
     return output_schema_json_sha256(schema)
 
 

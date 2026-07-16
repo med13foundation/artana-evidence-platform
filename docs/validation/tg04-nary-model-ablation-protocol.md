@@ -124,9 +124,8 @@ structured schema, and tool policy. The evaluator enforces the same accepted
 inventory source/input/schema topology for every case across all six runs.
 
 Every scored event must reproduce its production inventory identity from the
-frozen source and occur in an accepted raw inventory payload. It must also bind
-to an accepted provider-verified framing attempt with the same inventory input
-hash. Every credited call must have a unique retrievable provider response ID,
+frozen source and occur in an accepted raw inventory payload. Inventory and
+completeness calls must have unique retrievable provider response IDs,
 matching model identity, completed status, empty tools, matching normalized
 prompt hash, canonical output hash, and structured-payload hash. Credited
 semantic fallback and agent-authored metric counts must remain zero.
@@ -214,14 +213,18 @@ runs satisfies:
 2. If Sol clears the gate and Luna does not, record an explicit model-quality,
    cost, latency, and reproducibility decision. Do not silently substitute Sol.
 3. Model differences are descriptive unless one model clears every absolute
-   gate. Stable but wrong output never qualifies a model.
+   gate. Repeatability cannot compensate for failure of any absolute gate;
+   qualifying results may still contain errors within the preregistered
+   tolerances.
 4. If the development event gate passes, persistence, projection, and
    valuable-claim readiness remain blocked pending independent held-out labels.
 
-The current framing and persistence contracts do not carry `event_type` from
-the inventory. Therefore this experiment cannot qualify framing or graph
-storage even when the inventory gate passes. A later change must preserve and
-independently test event type across those boundaries before either can advance.
+This inventory-only experiment does not evaluate framing or graph persistence.
+The current downstream contracts do not carry `event_type`, and the pre-TG-04
+live smoke run also observed framing drop the material `POPULATION` argument
+`B cells`. Therefore preserving event type alone cannot unblock those stages.
+A later experiment must independently prove that framing and persistence retain
+the complete event and every material argument before either can advance.
 
 This panel executes 40 documents: 17 with 53 representable events, 5 true
 no-event negative controls, and 18 representability-stress cases. It covers 6

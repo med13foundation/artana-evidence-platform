@@ -147,8 +147,8 @@ def evaluate_matrix(
         "gate_passed": gate_passed,
         "value_readiness": "BLOCKED_UNADJUDICATED",
         "projection_readiness": "BLOCKED_UNADJUDICATED",
-        "framing_readiness": "BLOCKED_EVENT_TYPE_NOT_PERSISTED",
-        "persistence_readiness": "BLOCKED_EVENT_TYPE_NOT_PERSISTED",
+        "framing_readiness": "NOT_EVALUATED_INVENTORY_ONLY",
+        "persistence_readiness": "BLOCKED_UPSTREAM_FRAMING_NOT_VALIDATED",
         "input_report_sha256s": sorted(report_sha256s),
     }
     result["evaluation_sha256"] = _sha256_json(result)

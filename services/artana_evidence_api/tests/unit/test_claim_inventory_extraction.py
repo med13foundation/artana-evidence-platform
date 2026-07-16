@@ -45,7 +45,9 @@ from artana_evidence_api.document_extraction_support.llm_extraction.prompt_versi
     MISSING_CLAIM_RECOVERY_PROMPT_VERSION,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
+    LLMClaimInventoryAttempt,
     LLMRelationExtractionAttempt,
+    run_llm_claim_inventory_with_zero_retry,
     run_llm_relation_extraction_with_zero_retry,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
@@ -62,6 +64,8 @@ from artana_evidence_api.document_extraction_support.relation_specificity_prunin
     RelationSpecificityPruningResult,
 )
 from pydantic import BaseModel, ValidationError
+
+from scripts.validation.claim_events.runner import _case_receipt_expectations
 
 
 class ScriptedStepRunner:
@@ -335,6 +339,85 @@ async def _run_pipeline(
         step_runner=runner,
         execution_namespace="unit-test",
     )
+
+
+async def _run_inventory(
+    *,
+    text: str,
+    runner: ScriptedStepRunner,
+) -> LLMClaimInventoryAttempt:
+    return await run_llm_claim_inventory_with_zero_retry(
+        normalized_text=text,
+        chunks=(_chunk(text),),
+        document_fingerprint=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        client=object(),
+        tenant=object(),
+        model_id="openai/gpt-5.6-luna",
+        step_runner=runner,
+        execution_namespace="unit-test-inventory",
+    )
+
+
+@pytest.mark.asyncio
+async def test_inventory_entry_point_stops_before_claim_framing() -> None:
+    text = "AKT1 phosphorylation increased in B cells."
+    runner = ScriptedStepRunner(
+        (
+            {"claims": "invalid provider schema"},
+            {
+                "claims": [
+                    _inventory_claim(
+                        exact_span=text,
+                        endpoint_a_span="AKT1",
+                        relation_cue_span="phosphorylation",
+                        endpoint_b_span="B cells",
+                        event_type="PHOSPHORYLATION",
+                    ),
+                ],
+            },
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert len(result.claims) == 1
+    assert result.claims[0].item.event_type is ClaimEventType.PHOSPHORYLATION
+    assert result.semantic_inventory_complete is True
+    assert [call["output_schema"].__name__ for call in runner.calls] == [
+        "LLMClaimInventoryResult",
+        "LLMClaimInventoryResult",
+        "ClaimInventoryCompletenessReview",
+    ]
+    assert [record.pass_role for record in result.model_attempt_records] == [
+        "claim_inventory",
+        "claim_inventory",
+        "claim_inventory",
+        "claim_inventory_completeness",
+        "claim_inventory_completeness",
+    ]
+    assert [record.attempt_role for record in result.model_attempt_records] == [
+        "claim_inventory",
+        "schema_retry",
+        "zero_candidate_retry",
+        "claim_inventory_completeness",
+        "schema_retry",
+    ]
+    assert [record.validation_outcome for record in result.model_attempt_records] == [
+        "schema_invalid",
+        "accepted",
+        "intentionally_skipped",
+        "accepted",
+        "intentionally_skipped",
+    ]
+    expectations, invalid_count, unidentified_count = _case_receipt_expectations(
+        records=result.model_attempt_records,
+        case_id="schema-repair-case",
+        model_id="openai:gpt-5.6-luna",
+    )
+    assert len(expectations) == 3
+    assert invalid_count == 1
+    assert unidentified_count == 0
 
 
 @pytest.mark.asyncio

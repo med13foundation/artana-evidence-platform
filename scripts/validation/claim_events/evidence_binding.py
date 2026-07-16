@@ -12,7 +12,6 @@ from artana_evidence_api.document_extraction import normalize_text_document
 from artana_evidence_api.document_extraction_prompting import (
     build_claim_inventory_completeness_output_schema,
     build_claim_inventory_output_schema,
-    build_single_claim_framing_output_schema,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
@@ -20,15 +19,11 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryItem,
     bind_claim_inventory,
     claim_inventory_identity,
-    claim_inventory_input_sha256,
     coalesce_long_sentence_chunks,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
     build_relation_extraction_text_chunks,
-)
-from artana_evidence_api.document_extraction_support.llm_extraction.claim_framing import (
-    build_single_claim_framing_prompt,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
     build_claim_inventory_prompt,
@@ -74,7 +69,6 @@ class _PromptContext:
 @dataclass(slots=True)
 class _CollectedAttempts:
     expectations: list[ProviderReceiptExpectation]
-    framing_attempts: dict[str, Mapping[str, object]]
     completeness_attempts: list[Mapping[str, object]]
     recovery_attempts: list[Mapping[str, object]]
     initial_by_input: dict[str, Mapping[str, object]]
@@ -96,9 +90,6 @@ class _InventoryWorkflowInput:
 class _PredictionValidationContext:
     normalized_source: str
     source_sha256: str
-    chunks: Sequence[RelationExtractionTextChunk]
-    evidence_unit_sha256: str
-    framing_attempts: Mapping[str, Mapping[str, object]]
 
 
 def bind_case_evidence(
@@ -153,17 +144,12 @@ def bind_case_evidence(
         context=_PredictionValidationContext(
             normalized_source=normalized_source,
             source_sha256=source_sha256,
-            chunks=chunks,
-            evidence_unit_sha256=evidence_unit_sha256,
-            framing_attempts=collected.framing_attempts,
         ),
     )
     if predicted_inventory != accepted_inventory:
         raise ValueError(
             "TG-04 scored predictions differ from accepted inventory claims"
         )
-    if set(predicted_inventory) != set(collected.framing_attempts):
-        raise ValueError("TG-04 scored predictions differ from framed inventory claims")
     return tuple(collected.expectations), topology
 
 
@@ -175,7 +161,7 @@ def _collect_attempts(
     source_sha256: str,
     evidence_unit_sha256: str,
 ) -> _CollectedAttempts:
-    collected = _CollectedAttempts([], {}, [], [], {}, {})
+    collected = _CollectedAttempts([], [], [], {}, {})
     for attempt in attempts:
         outcome = attempt.get("validation_outcome")
         if outcome not in {"accepted", "intentionally_skipped"}:
@@ -213,15 +199,6 @@ def _collect_attempt_by_role(
         collected.completeness_attempts.append(attempt)
     elif outcome == "accepted" and role == "claim_inventory_recovery":
         collected.recovery_attempts.append(attempt)
-    if outcome != "accepted" or role != "claim_framing":
-        return
-    semantic_unit_id = _text(
-        attempt.get("semantic_unit_id"),
-        "framing semantic_unit_id",
-    )
-    if semantic_unit_id in collected.framing_attempts:
-        raise ValueError("TG-04 inventory claim has duplicate framing attempts")
-    collected.framing_attempts[semantic_unit_id] = attempt
 
 
 def _validate_inventory_workflow(
@@ -451,41 +428,6 @@ def _validate_predictions(
         )
         if event.get("inventory_id") != inventory_id:
             raise ValueError("TG-04 prediction inventory identity mismatch")
-        framing = context.framing_attempts.get(inventory_id)
-        if framing is None:
-            raise ValueError("TG-04 prediction lacks provider-bound framing evidence")
-        expected_input_sha256 = claim_inventory_input_sha256(
-            inventory_id=inventory_id,
-            item=item,
-        )
-        if framing.get("input_sha256") != expected_input_sha256:
-            raise ValueError("TG-04 framing input differs from scored inventory claim")
-        chunk = _chunk_for_source_start(context.chunks, source_start)
-        bound_claim = BoundClaimInventoryItem(
-            inventory_id=inventory_id,
-            item=item,
-            source_sha256=context.source_sha256,
-            chunk_index=chunk.index,
-            source_start=source_start,
-            source_end=source_end,
-        )
-        framing_schema = build_single_claim_framing_output_schema()
-        framing_schema_identity = (
-            f"{framing_schema.__module__}.{framing_schema.__qualname__}"
-        )
-        if framing.get("output_schema_identity") != framing_schema_identity:
-            raise ValueError("TG-04 framing schema differs from production schema")
-        invocation_id = _text(framing.get("invocation_id"), "framing invocation_id")
-        framing_prompt = bind_prompt_to_invocation(
-            prompt=build_single_claim_framing_prompt(inventory_claim=bound_claim),
-            invocation_id=invocation_id,
-            source_sha256=context.source_sha256,
-            input_sha256=expected_input_sha256,
-            evidence_unit_sha256=context.evidence_unit_sha256,
-            output_schema_sha256=output_schema_json_sha256(framing_schema),
-        )
-        if framing.get("prompt_sha256") != _sha256_text(framing_prompt):
-            raise ValueError("TG-04 framing prompt differs from production prompt")
         if inventory_id in inventory:
             raise ValueError("TG-04 prediction repeats an inventory identity")
         inventory[inventory_id] = _canonical_json(item.model_dump(mode="json"))
@@ -526,7 +468,6 @@ def _validate_attempt_record(attempt: Mapping[str, object], outcome: object) -> 
         "zero_candidate_retry": ("claim_inventory", "zero_candidate_retry"),
         "claim_inventory_completeness": ("claim_inventory_completeness", None),
         "claim_inventory_recovery": ("claim_inventory_recovery", None),
-        "claim_framing": ("claim_framing", None),
     }
     if role not in expected_topology:
         raise ValueError("TG-04 report contains an unexpected attempt role")
@@ -578,18 +519,6 @@ def _agent_arguments(value: object) -> list[dict[str, object]]:
         for item in _sequence(value, "prediction arguments")
         if (argument := _object(item, "prediction argument"))
     ]
-
-
-def _chunk_for_source_start(
-    chunks: Sequence[RelationExtractionTextChunk],
-    source_start: int,
-) -> RelationExtractionTextChunk:
-    matches = [
-        chunk for chunk in chunks if chunk.start_char <= source_start < chunk.end_char
-    ]
-    if len(matches) != 1:
-        raise ValueError("TG-04 prediction is not bound to exactly one source chunk")
-    return matches[0]
 
 
 def _inventory_ids_sha256(inventory: Sequence[BoundClaimInventoryItem]) -> str:

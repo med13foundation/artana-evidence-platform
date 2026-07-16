@@ -3,6 +3,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimInventoryItem,
+)
 
 from scripts.validation.claim_events.runner import (
     _nary_events,
@@ -19,23 +22,32 @@ def test_nary_adapter_preserves_agent_event_semantics() -> None:
         SimpleNamespace(
             inventory_id="inventory-1",
             source_start=0,
-            source_end=20,
-            inventory_payload={
-                "exact_span": "AKT1 phosphorylation",
-                "relation_cue_span": "phosphorylation",
-                "source_locator": "normalized_extraction_text",
-                "event_type": "PHOSPHORYLATION",
-                "polarity": "SUPPORT",
-                "epistemic_status": "ASSERTED",
-                "inventory_rationale": "explicit source event",
-                "arguments": [
-                    {
-                        "role": "GENE_OR_PROTEIN",
-                        "event_role": "THEME",
-                        "exact_span": "AKT1",
-                    },
-                ],
-            },
+            source_end=31,
+            item=ClaimInventoryItem.model_validate(
+                {
+                    "exact_span": "AKT1 phosphorylation in B cells",
+                    "relation_cue_span": "phosphorylation",
+                    "source_locator": "normalized_extraction_text",
+                    "event_type": "PHOSPHORYLATION",
+                    "polarity": "SUPPORT",
+                    "epistemic_status": "ASSERTED",
+                    "inventory_rationale": "explicit source event",
+                    "arguments": [
+                        {
+                            "role": "GENE_OR_PROTEIN",
+                            "event_role": "THEME",
+                            "exact_span": "AKT1",
+                            "role_rationale": "phosphorylated theme",
+                        },
+                        {
+                            "role": "POPULATION",
+                            "event_role": "CONTEXT",
+                            "exact_span": "B cells",
+                            "role_rationale": "cell population context",
+                        },
+                    ],
+                }
+            ),
         ),
     )
 
@@ -43,8 +55,8 @@ def test_nary_adapter_preserves_agent_event_semantics() -> None:
         {
             "inventory_id": "inventory-1",
             "source_start": 0,
-            "source_end": 20,
-            "exact_span": "AKT1 phosphorylation",
+            "source_end": 31,
+            "exact_span": "AKT1 phosphorylation in B cells",
             "trigger_span": "phosphorylation",
             "trigger_source_start": 5,
             "relation_cue_span": "phosphorylation",
@@ -57,7 +69,15 @@ def test_nary_adapter_preserves_agent_event_semantics() -> None:
                     "role": "GENE_OR_PROTEIN",
                     "event_role": "THEME",
                     "exact_span": "AKT1",
+                    "role_rationale": "phosphorylated theme",
                     "source_start": 0,
+                },
+                {
+                    "role": "POPULATION",
+                    "event_role": "CONTEXT",
+                    "exact_span": "B cells",
+                    "role_rationale": "cell population context",
+                    "source_start": 24,
                 },
             ],
             "inventory_rationale": "explicit source event",

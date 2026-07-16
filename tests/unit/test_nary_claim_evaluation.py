@@ -8,20 +8,14 @@ import pytest
 from artana_evidence_api.document_extraction_prompting import (
     build_claim_inventory_completeness_output_schema,
     build_claim_inventory_output_schema,
-    build_single_claim_framing_output_schema,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
-    BoundClaimInventoryItem,
     ClaimInventoryItem,
     bind_claim_inventory,
     claim_inventory_identity,
-    claim_inventory_input_sha256,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     build_relation_extraction_text_chunks,
-)
-from artana_evidence_api.document_extraction_support.llm_extraction.claim_framing import (
-    build_single_claim_framing_prompt,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
     build_claim_inventory_prompt,
@@ -243,7 +237,6 @@ def _report(
             evidence_unit_sha256=evidence_unit_sha256,
             output_schema_sha256=output_schema_json_sha256(schema),
         )
-        inventory_id = event["inventory_id"]
         item = ClaimInventoryItem.model_validate(
             {
                 key: event[key]
@@ -300,32 +293,6 @@ def _report(
             input_sha256=completeness_input_sha256,
             evidence_unit_sha256=evidence_unit_sha256,
             output_schema_sha256=output_schema_json_sha256(completeness_schema),
-        )
-        framing_schema = build_single_claim_framing_output_schema()
-        framing_schema_identity = (
-            f"{framing_schema.__module__}.{framing_schema.__qualname__}"
-        )
-        framing_invocation = f"framing-{slug}-{run_index}-{case.case_id}"
-        framing_input_sha256 = claim_inventory_input_sha256(
-            inventory_id=inventory_id,
-            item=item,
-        )
-        framing_prompt = bind_prompt_to_invocation(
-            prompt=build_single_claim_framing_prompt(
-                inventory_claim=BoundClaimInventoryItem(
-                    inventory_id=inventory_id,
-                    item=item,
-                    source_sha256=source_sha256,
-                    chunk_index=chunk.index,
-                    source_start=0,
-                    source_end=len(case.source_text),
-                ),
-            ),
-            invocation_id=framing_invocation,
-            source_sha256=source_sha256,
-            input_sha256=framing_input_sha256,
-            evidence_unit_sha256=evidence_unit_sha256,
-            output_schema_sha256=output_schema_json_sha256(framing_schema),
         )
         case_evidence.append(
             {
@@ -407,27 +374,6 @@ def _report(
                             "review_rationale": "complete",
                         },
                     },
-                    {
-                        "invocation_id": framing_invocation,
-                        "attempt_role": "claim_framing",
-                        "model_id": model.replace(":", "/", 1),
-                        "pass_role": "claim_framing",
-                        "retry_context": None,
-                        "validation_outcome": "accepted",
-                        "provider_response_id": f"resp_framing_{slug}_{run_index}_{case.case_id}",
-                        "provider_output_sha256": "e" * 64,
-                        "payload_sha256": _sha256_json({"decision": "ABSTAIN"}),
-                        "prompt_sha256": hashlib.sha256(
-                            framing_prompt.encode(),
-                        ).hexdigest(),
-                        "kernel_run_id": f"research-init-extraction:{framing_invocation}",
-                        "source_sha256": source_sha256,
-                        "input_sha256": framing_input_sha256,
-                        "evidence_unit_sha256": evidence_unit_sha256,
-                        "output_schema_identity": framing_schema_identity,
-                        "semantic_unit_id": inventory_id,
-                        "raw_model_payload": {"decision": "ABSTAIN"},
-                    },
                 ],
             },
         )
@@ -461,9 +407,9 @@ def _report(
         "safety": {
             "fallback_count": 0,
             "invalid_agent_output_count": 0,
-            "provider_response_id_count": len(fixture.cases) * 3,
+            "provider_response_id_count": len(expectations),
             "provider_receipt_status": "verified_live",
-            "verified_provider_receipt_count": len(fixture.cases) * 3,
+            "verified_provider_receipt_count": len(expectations),
             "unidentified_provider_attempt_count": 0,
         },
         "provider_receipts": receipt_verification.as_json(),
@@ -516,8 +462,11 @@ def test_absolute_gate_selects_sol_when_only_sol_clears_quality() -> None:
     assert result["gate_passed"] is True
     assert result["selected_model"] == "openai:gpt-5.6-sol"
     assert result["decision"] == "QUALIFY_FOR_HELD_OUT_CONFIRMATION"
-    assert result["framing_readiness"] == "BLOCKED_EVENT_TYPE_NOT_PERSISTED"
-    assert result["persistence_readiness"] == "BLOCKED_EVENT_TYPE_NOT_PERSISTED"
+    assert result["framing_readiness"] == "NOT_EVALUATED_INVENTORY_ONLY"
+    assert (
+        result["persistence_readiness"]
+        == "BLOCKED_UPSTREAM_FRAMING_NOT_VALIDATED"
+    )
 
 
 def test_inventory_schema_digest_binds_dynamic_claim_limit() -> None:
@@ -728,15 +677,9 @@ def test_evaluator_rejects_prediction_substitution_after_provider_execution() ->
         source_start=event["source_start"],
     )
     event["inventory_id"] = inventory_id
-    framing = report["case_evidence"][0]["attempts"][3]
-    framing["semantic_unit_id"] = inventory_id
-    framing["input_sha256"] = claim_inventory_input_sha256(
-        inventory_id=inventory_id,
-        item=item,
-    )
     _reseal_with_recomputed_score(fixture, report)
 
-    with pytest.raises(ValueError, match="framing prompt|accepted inventory payloads"):
+    with pytest.raises(ValueError, match="accepted inventory claims"):
         evaluate_matrix(
             fixture,  # type: ignore[arg-type]
             reports,
@@ -761,6 +704,32 @@ def test_evaluator_rejects_noncanonical_inventory_prompt() -> None:
         )
 
 
+def test_evaluator_rejects_downstream_framing_attempt_in_inventory_task() -> None:
+    fixture = _fixture()
+    reports = _matrix(fixture)
+    report = reports[0]
+    framing = dict(report["case_evidence"][0]["attempts"][0])
+    framing.update(
+        {
+            "invocation_id": "unexpected-framing",
+            "attempt_role": "claim_framing",
+            "pass_role": "claim_framing",
+            "provider_response_id": "resp_unexpected_framing",
+            "kernel_run_id": "research-init-extraction:unexpected-framing",
+        },
+    )
+    report["case_evidence"][0]["attempts"].append(framing)
+    _reseal_with_recomputed_score(fixture, report)
+
+    with pytest.raises(ValueError, match="unexpected attempt role"):
+        evaluate_matrix(
+            fixture,  # type: ignore[arg-type]
+            reports,
+            provider_receipt_verifier=_LiveVerifier(),
+            enforce_frozen_fixture=False,
+        )
+
+
 def test_evaluator_rejects_missing_completeness_review() -> None:
     fixture = _fixture()
     reports = _matrix(fixture)
@@ -771,22 +740,6 @@ def test_evaluator_rejects_missing_completeness_review() -> None:
     _reseal_with_recomputed_score(fixture, report)
 
     with pytest.raises(ValueError, match="canonical completeness review"):
-        evaluate_matrix(
-            fixture,  # type: ignore[arg-type]
-            reports,
-            provider_receipt_verifier=_LiveVerifier(),
-            enforce_frozen_fixture=False,
-        )
-
-
-def test_evaluator_rejects_noncanonical_framing_prompt() -> None:
-    fixture = _fixture()
-    reports = _matrix(fixture)
-    report = reports[0]
-    report["case_evidence"][0]["attempts"][3]["prompt_sha256"] = "9" * 64
-    _reseal_with_recomputed_score(fixture, report)
-
-    with pytest.raises(ValueError, match="framing prompt differs"):
         evaluate_matrix(
             fixture,  # type: ignore[arg-type]
             reports,
