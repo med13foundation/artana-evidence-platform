@@ -32,6 +32,13 @@ from scripts.validation.claim_events.evaluation import (
     _run_passes,
     evaluate_matrix,
 )
+from scripts.validation.claim_events.evidence_binding import (
+    bind_unbindable_case_evidence,
+)
+from scripts.validation.claim_events.operational import (
+    OperationalSafetyEvidence,
+    build_operational_summary,
+)
 from scripts.validation.claim_events.runner import receipt_expectation_from_attempt
 from scripts.validation.claim_events.scoring import score_fixture
 from scripts.validation.claim_frames.provider_receipts import (
@@ -207,6 +214,7 @@ def _prediction(case: _Case, *, correct: bool) -> dict[str, object]:
             },
         ],
         "abstained": False,
+        "execution_outcome": "BOUND_OUTPUT",
     }
 
 
@@ -406,7 +414,7 @@ def _report(
     )
     receipt_verification = verify_provider_receipts(expectations, _LiveVerifier())
     report: dict[str, object] = {
-        "schema_version": "tg04_live_arm.v1",
+        "schema_version": "tg04_live_arm.v2",
         "run_id": f"tg04-{slug}-nary-{run_index:02d}",
         "generated_at": "2026-07-16T00:00:00+00:00",
         "fixture_sha256": fixture.sha256,
@@ -421,9 +429,22 @@ def _report(
         "predictions": predictions,
         "metrics": asdict(score.metrics),
         "case_scores": [asdict(case) for case in score.cases],
+        "operational_summary": build_operational_summary(
+            cases=fixture.cases,
+            predictions=predictions,
+            safety=OperationalSafetyEvidence(
+                fallback_count=0,
+                unidentified_provider_attempt_count=0,
+                qualification_invalid_agent_output_count=0,
+                representability_stress_invalid_agent_output_count=0,
+                provider_receipt_gate_passed=True,
+            ),
+        ),
         "safety": {
             "fallback_count": 0,
             "invalid_agent_output_count": 0,
+            "qualification_invalid_agent_output_count": 0,
+            "representability_stress_invalid_agent_output_count": 0,
             "provider_response_id_count": len(expectations),
             "provider_receipt_status": "verified_live",
             "verified_provider_receipt_count": len(expectations),
@@ -453,6 +474,201 @@ def _sha256_json(value: object) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode(),
     ).hexdigest()
+
+
+def _unbindable_stress_artifact(
+    *,
+    control_status: str = "REPRESENTABILITY_STRESS",
+) -> tuple[_Case, dict[str, object], dict[str, object]]:
+    case = _Case(
+        "stress",
+        "WT1 increased expression.",
+        (),
+        control_status=control_status,
+    )
+    source_sha256 = hashlib.sha256(case.source_text.encode()).hexdigest()
+    evidence_unit_sha256 = hashlib.sha256(case.case_id.encode()).hexdigest()
+    chunk = build_relation_extraction_text_chunks(case.source_text)[0]
+    schema = build_claim_inventory_output_schema(64)
+    schema_identity = f"{schema.__module__}.{schema.__qualname__}"
+    raw_payload = {"claims": [{"exact_span": "not copied from source"}]}
+    attempts = []
+    for index, (role, schema_retry) in enumerate(
+        (("claim_inventory", False), ("schema_retry", True)),
+        start=1,
+    ):
+        invocation_id = f"stress-invocation-{index}"
+        provider_prompt = bind_prompt_to_invocation(
+            prompt=build_claim_inventory_prompt(
+                chunk=chunk,
+                total_chunks=1,
+                document_fingerprint=source_sha256,
+                schema_retry=schema_retry,
+            ),
+            invocation_id=invocation_id,
+            source_sha256=source_sha256,
+            input_sha256=chunk.sha256,
+            evidence_unit_sha256=evidence_unit_sha256,
+            output_schema_sha256=output_schema_json_sha256(schema),
+        )
+        attempts.append(
+            {
+                "invocation_id": invocation_id,
+                "attempt_role": role,
+                "model_id": "openai/gpt-5.6-luna",
+                "pass_role": "claim_inventory",
+                "retry_context": None,
+                "validation_outcome": "schema_invalid",
+                "error_type": "ValidationError",
+                "provider_response_id": f"resp_stress_{index}",
+                "provider_output_sha256": str(index) * 64,
+                "payload_sha256": _sha256_json(raw_payload),
+                "prompt_sha256": hashlib.sha256(provider_prompt.encode()).hexdigest(),
+                "kernel_run_id": f"research-init-extraction:{invocation_id}",
+                "source_sha256": source_sha256,
+                "input_sha256": chunk.sha256,
+                "evidence_unit_sha256": evidence_unit_sha256,
+                "output_schema_identity": schema_identity,
+                "semantic_unit_id": None,
+                "raw_model_payload": raw_payload,
+            },
+        )
+    prediction = {
+        "case_id": case.case_id,
+        "events": [],
+        "abstained": True,
+        "execution_outcome": "UNBINDABLE_OUTPUT",
+    }
+    evidence = {
+        "case_id": case.case_id,
+        "invocation_namespace": "stress-run",
+        "diagnostics": {
+            "fallback_output_used": False,
+            "claim_extraction_routing_status": "unbound",
+            "terminal_error_category": "ValidationError",
+        },
+        "attempts": attempts,
+    }
+    return case, prediction, evidence
+
+
+def _semantic_invalid_inventory_payload() -> dict[str, object]:
+    item = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": "TP53 increased expression.",
+            "relation_cue_span": "increased",
+            "event_type": "INCREASE",
+            "polarity": "SUPPORT",
+            "epistemic_status": "ASSERTED",
+            "arguments": [
+                {
+                    "role": "GENE_OR_PROTEIN",
+                    "event_role": "THEME",
+                    "exact_span": "TP53",
+                    "role_rationale": "source theme",
+                },
+                {
+                    "role": "MEASUREMENT",
+                    "event_role": "MEASURE",
+                    "exact_span": "expression",
+                    "role_rationale": "source measure",
+                },
+            ],
+            "source_locator": "normalized_extraction_text",
+            "inventory_rationale": "explicit synthetic claim",
+        },
+    )
+    return {"claims": [item.model_dump(mode="json")]}
+
+
+def test_stress_unbindable_output_retains_provider_custody() -> None:
+    case, prediction, evidence = _unbindable_stress_artifact()
+
+    expectations, topology = bind_unbindable_case_evidence(
+        case=case,
+        prediction=prediction,
+        case_record=evidence,
+        model_id="openai:gpt-5.6-luna",
+    )
+
+    assert len(expectations) == 2
+    assert topology
+
+
+def test_stress_unbindable_allows_schema_to_semantic_retry_failure() -> None:
+    case, prediction, evidence = _unbindable_stress_artifact()
+    semantic_payload = _semantic_invalid_inventory_payload()
+    evidence["attempts"][1]["validation_outcome"] = "semantic_invalid"
+    evidence["attempts"][1]["error_type"] = "StructuredModelSemanticError"
+    evidence["attempts"][1]["raw_model_payload"] = semantic_payload
+    evidence["attempts"][1]["payload_sha256"] = _sha256_json(semantic_payload)
+    evidence["diagnostics"]["terminal_error_category"] = "StructuredModelSemanticError"
+
+    expectations, _ = bind_unbindable_case_evidence(
+        case=case,
+        prediction=prediction,
+        case_record=evidence,
+        model_id="openai:gpt-5.6-luna",
+    )
+
+    assert len(expectations) == 2
+
+
+def test_stress_unbindable_rejects_valid_payload_relabelled_invalid() -> None:
+    case, prediction, evidence = _unbindable_stress_artifact()
+    valid_payload = {"claims": []}
+    for attempt in evidence["attempts"]:
+        attempt["raw_model_payload"] = valid_payload
+        attempt["payload_sha256"] = _sha256_json(valid_payload)
+
+    with pytest.raises(ValueError, match="validation outcome differs from replay"):
+        bind_unbindable_case_evidence(
+            case=case,
+            prediction=prediction,
+            case_record=evidence,
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
+def test_qualification_case_cannot_use_unbindable_stress_exception() -> None:
+    case, prediction, evidence = _unbindable_stress_artifact(
+        control_status="EVENT_GOLD",
+    )
+
+    with pytest.raises(ValueError, match="qualification cases cannot be unbindable"):
+        bind_unbindable_case_evidence(
+            case=case,
+            prediction=prediction,
+            case_record=evidence,
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
+@pytest.mark.parametrize("field", ["payload_sha256", "prompt_sha256"])
+def test_stress_unbindable_output_rejects_custody_tampering(field: str) -> None:
+    case, prediction, evidence = _unbindable_stress_artifact()
+    evidence["attempts"][1][field] = "f" * 64
+
+    with pytest.raises(ValueError, match="payload hash|production prompt"):
+        bind_unbindable_case_evidence(
+            case=case,
+            prediction=prediction,
+            case_record=evidence,
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
+def test_stress_unbindable_rejects_schema_retry_from_another_pass() -> None:
+    case, prediction, evidence = _unbindable_stress_artifact()
+    evidence["attempts"][1]["pass_role"] = "claim_framing"
+
+    with pytest.raises(ValueError, match="workflow boundaries"):
+        bind_unbindable_case_evidence(
+            case=case,
+            prediction=prediction,
+            case_record=evidence,
+            model_id="openai:gpt-5.6-luna",
+        )
 
 
 def _reseal_with_recomputed_score(

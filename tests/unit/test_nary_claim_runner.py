@@ -7,9 +7,17 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryItem,
     bind_claim_inventory,
 )
+from artana_evidence_api.document_extraction_support.full_text_chunking import (
+    build_relation_extraction_text_chunks,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    build_claim_inventory_prompt,
+)
 
+from scripts.validation.claim_events.operational import CaseExecutionOutcome
 from scripts.validation.claim_events.runner import (
     _attempt_output_schema_sha256,
+    _execution_outcome,
     _nary_events,
     _require_attempt_model,
     _require_model,
@@ -242,7 +250,6 @@ def test_zero_candidate_retry_uses_inventory_pass_schema() -> None:
             "pass_role": "claim_inventory",
         },
     )
-
     assert (
         _attempt_output_schema_sha256(
             {
@@ -252,3 +259,33 @@ def test_zero_candidate_retry_uses_inventory_pass_schema() -> None:
         )
         == primary
     )
+
+
+def test_runner_categorizes_bound_empty_and_unbindable_results() -> None:
+    assert (
+        _execution_outcome(events=[{"event_type": "BINDING"}], failed=False)
+        is CaseExecutionOutcome.BOUND_OUTPUT
+    )
+    assert _execution_outcome(events=[], failed=False) is CaseExecutionOutcome.NO_OUTPUT
+    assert (
+        _execution_outcome(events=[], failed=True)
+        is CaseExecutionOutcome.UNBINDABLE_OUTPUT
+    )
+
+
+def test_schema_retry_prompt_is_canonically_reconstructable() -> None:
+    chunk = build_relation_extraction_text_chunks("WT1 increased expression.")[0]
+    base = build_claim_inventory_prompt(
+        chunk=chunk,
+        total_chunks=1,
+        document_fingerprint="a" * 64,
+    )
+    retry = build_claim_inventory_prompt(
+        chunk=chunk,
+        total_chunks=1,
+        document_fingerprint="a" * 64,
+        schema_retry=True,
+    )
+
+    assert retry.startswith(base)
+    assert "SCHEMA AND SOURCE-BINDING RETRY" in retry

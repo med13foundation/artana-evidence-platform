@@ -95,10 +95,12 @@ def build_claim_inventory_prompt(
     total_chunks: int,
     document_fingerprint: str,
     zero_retry: bool = False,
+    schema_retry: bool = False,
 ) -> str:
     """Build one source-only inventory prompt for a frozen chunk."""
 
     retry_instruction = _ZERO_RETRY_INSTRUCTION if zero_retry else ""
+    schema_retry_instruction = _SCHEMA_RETRY_INSTRUCTION if schema_retry else ""
     return (
         f"{CLAIM_INVENTORY_SYSTEM_PROMPT}\n\n"
         "MODEL CONTRACT\n"
@@ -112,6 +114,7 @@ def build_claim_inventory_prompt(
         f"{chunk.text}\n"
         "---\n"
         f"{retry_instruction}"
+        f"{schema_retry_instruction}"
     )
 
 
@@ -153,7 +156,13 @@ async def run_claim_inventory_stage(
         zero_retry=zero_retry,
         schema_retry=False,
     )
-    schema_retry_prompt = f"{prompt}{_SCHEMA_RETRY_INSTRUCTION}"
+    schema_retry_prompt = build_claim_inventory_prompt(
+        chunk=chunk,
+        total_chunks=total_chunks,
+        document_fingerprint=document_fingerprint,
+        zero_retry=zero_retry,
+        schema_retry=True,
+    )
     schema_retry_step_key = _inventory_step_key(
         prompt_version=f"{prompt_version}.{_SCHEMA_RETRY_SUFFIX}",
         chunk=chunk,
@@ -220,6 +229,7 @@ def build_inventory_completeness_prompt(
     document_fingerprint: str,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     confirmation: bool,
+    schema_retry: bool = False,
 ) -> str:
     """Build an independent source-only completeness review prompt."""
 
@@ -251,6 +261,7 @@ def build_inventory_completeness_prompt(
         "---\nFROZEN SOURCE CHUNK\n---\n"
         f"{chunk.text}\n"
         "---\n"
+        f"{_SCHEMA_RETRY_INSTRUCTION if schema_retry else ''}"
     )
 
 
@@ -291,7 +302,14 @@ async def run_inventory_completeness_review_stage(
         current_inventory=current_inventory,
         schema_retry=False,
     )
-    retry_prompt = f"{prompt}{_SCHEMA_RETRY_INSTRUCTION}"
+    retry_prompt = build_inventory_completeness_prompt(
+        chunk=chunk,
+        total_chunks=total_chunks,
+        document_fingerprint=document_fingerprint,
+        current_inventory=current_inventory,
+        confirmation=confirmation,
+        schema_retry=True,
+    )
     retry_step_key = _inventory_review_step_key(
         prompt_version=(
             f"{CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION}.{_SCHEMA_RETRY_SUFFIX}"
