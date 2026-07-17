@@ -64,6 +64,18 @@ ProviderReceiptFailure = Literal[
     "prompt_hash_mismatch",
     "duplicate_response_id",
 ]
+OutputSchemaVerificationSource = Literal[
+    "unverified",
+    "not_required",
+    "provider_response",
+    "provider_input_binding",
+    "provider_response_and_input_binding",
+]
+ProviderOutputVerificationSource = Literal[
+    "unverified",
+    "exact_provider_output",
+    "structured_payload_with_verified_envelope",
+]
 
 
 def canonical_provider_model_id(model_id: str) -> str:
@@ -117,6 +129,8 @@ class ProviderReceiptEvidence:
     retrieved_model_id: str | None
     expected_output_sha256: str
     retrieved_output_sha256: str | None
+    provider_output_hash_matched: bool
+    provider_output_verification_source: ProviderOutputVerificationSource
     expected_payload_sha256: str | None
     retrieved_payload_sha256: str | None
     expected_prompt_sha256: str
@@ -133,6 +147,8 @@ class ProviderReceiptEvidence:
     retrieved_evidence_unit_sha256: str | None
     expected_output_schema_sha256: str | None
     retrieved_output_schema_sha256: str | None
+    output_schema_verification_source: OutputSchemaVerificationSource
+    provider_response_schema_supported: bool
     provider_status: str | None
     response_completed_verified: bool
     incomplete_details_absent: bool
@@ -152,6 +168,10 @@ class ProviderReceiptEvidence:
             "retrieved_model_id": self.retrieved_model_id,
             "expected_output_sha256": self.expected_output_sha256,
             "retrieved_output_sha256": self.retrieved_output_sha256,
+            "provider_output_hash_matched": self.provider_output_hash_matched,
+            "provider_output_verification_source": (
+                self.provider_output_verification_source
+            ),
             "expected_payload_sha256": self.expected_payload_sha256,
             "retrieved_payload_sha256": self.retrieved_payload_sha256,
             "expected_prompt_sha256": self.expected_prompt_sha256,
@@ -168,6 +188,12 @@ class ProviderReceiptEvidence:
             "retrieved_evidence_unit_sha256": self.retrieved_evidence_unit_sha256,
             "expected_output_schema_sha256": self.expected_output_schema_sha256,
             "retrieved_output_schema_sha256": self.retrieved_output_schema_sha256,
+            "output_schema_verification_source": (
+                self.output_schema_verification_source
+            ),
+            "provider_response_schema_supported": (
+                self.provider_response_schema_supported
+            ),
             "provider_status": self.provider_status,
             "response_completed_verified": self.response_completed_verified,
             "incomplete_details_absent": self.incomplete_details_absent,
@@ -226,6 +252,10 @@ ProviderInputItemsRetriever = Callable[[str], Sequence[Mapping[str, object]]]
 class _RetrievedReceiptFields:
     model_id: str | None = None
     output_sha256: str | None = None
+    provider_output_hash_matched: bool = False
+    provider_output_verification_source: ProviderOutputVerificationSource = (
+        "unverified"
+    )
     payload_sha256: str | None = None
     prompt_sha256: str | None = None
     invocation_id: str | None = None
@@ -234,6 +264,8 @@ class _RetrievedReceiptFields:
     input_sha256: str | None = None
     evidence_unit_sha256: str | None = None
     output_schema_sha256: str | None = None
+    output_schema_verification_source: OutputSchemaVerificationSource = "unverified"
+    provider_response_schema_supported: bool = False
     provider_status: str | None = None
     response_completed_verified: bool = False
     incomplete_details_absent: bool = False
@@ -339,14 +371,12 @@ def _verify_response_output(
             retrieved=fields,
         )
     output_hash = canonical_provider_output_sha256(output)
-    fields = replace(fields, output_sha256=output_hash)
-    if output_hash != expectation.expected_output_sha256:
-        return _receipt_evidence(
-            expectation,
-            status="mismatched",
-            failure="output_hash_mismatch",
-            retrieved=fields,
-        )
+    output_hash_matched = output_hash == expectation.expected_output_sha256
+    fields = replace(
+        fields,
+        output_sha256=output_hash,
+        provider_output_hash_matched=output_hash_matched,
+    )
     if expectation.expected_payload_sha256 is None:
         return _receipt_evidence(
             expectation,
@@ -369,10 +399,21 @@ def _verify_response_output(
         return _receipt_evidence(
             expectation,
             status="mismatched",
-            failure="payload_hash_mismatch",
+            failure=(
+                "payload_hash_mismatch"
+                if output_hash_matched
+                else "output_hash_mismatch"
+            ),
             retrieved=fields,
         )
-    return fields
+    return replace(
+        fields,
+        provider_output_verification_source=(
+            "exact_provider_output"
+            if output_hash_matched
+            else "structured_payload_with_verified_envelope"
+        ),
+    )
 
 
 def _verify_response_schema(
@@ -382,33 +423,33 @@ def _verify_response_schema(
 ) -> _RetrievedReceiptFields | ProviderReceiptEvidence:
     expected = expectation.expected_output_schema_sha256
     if expected is None:
-        return retrieved
+        return replace(
+            retrieved,
+            output_schema_verification_source="not_required",
+        )
     text = response.get("text")
     if not isinstance(text, Mapping):
-        return _receipt_evidence(
-            expectation,
-            status="mismatched",
-            failure="output_schema_missing",
-            retrieved=retrieved,
-        )
+        return retrieved
     output_format = text.get("format")
     if not isinstance(output_format, Mapping):
-        return _receipt_evidence(
-            expectation,
-            status="mismatched",
-            failure="output_schema_missing",
-            retrieved=retrieved,
-        )
+        return retrieved
     schema = output_format.get("schema")
+    if schema is None:
+        return retrieved
     if not isinstance(schema, Mapping):
         return _receipt_evidence(
             expectation,
             status="mismatched",
-            failure="output_schema_missing",
+            failure="output_schema_mismatch",
             retrieved=retrieved,
         )
     schema_sha256 = canonical_provider_output_sha256(schema)
-    fields = replace(retrieved, output_schema_sha256=schema_sha256)
+    fields = replace(
+        retrieved,
+        output_schema_sha256=schema_sha256,
+        output_schema_verification_source="provider_response",
+        provider_response_schema_supported=True,
+    )
     if schema_sha256 != expected:
         return _receipt_evidence(
             expectation,
@@ -586,17 +627,14 @@ def _verify_provider_input(
             failure="invocation_topology_mismatch",
             retrieved=retrieved,
         )
-    if (
-        expectation.expected_output_schema_sha256 is not None
-        and invocation_binding.output_schema_sha256
-        != expectation.expected_output_schema_sha256
-    ):
-        return _receipt_evidence(
-            expectation,
-            status="mismatched",
-            failure="output_schema_mismatch",
-            retrieved=retrieved,
-        )
+    schema_result = _bind_retrieved_output_schema(
+        expectation,
+        retrieved=retrieved,
+        input_schema_sha256=invocation_binding.output_schema_sha256,
+    )
+    if isinstance(schema_result, ProviderReceiptEvidence):
+        return schema_result
+    retrieved = schema_result
     prompt_hash = _sha256_text(retrieved_prompt)
     bound_fields = replace(
         retrieved,
@@ -656,6 +694,39 @@ def _verify_provider_input(
         status="verified_live",
         failure="none",
         retrieved=bound_fields,
+    )
+
+
+def _bind_retrieved_output_schema(
+    expectation: ProviderReceiptExpectation,
+    *,
+    retrieved: _RetrievedReceiptFields,
+    input_schema_sha256: str,
+) -> _RetrievedReceiptFields | ProviderReceiptEvidence:
+    """Bind schema custody to provider response metadata or retrieved input."""
+
+    expected = expectation.expected_output_schema_sha256
+    if expected is not None and input_schema_sha256 != expected:
+        return _receipt_evidence(
+            expectation,
+            status="mismatched",
+            failure="output_schema_mismatch",
+            retrieved=retrieved,
+        )
+    if expected is None:
+        return replace(
+            retrieved,
+            output_schema_verification_source="not_required",
+        )
+    source: OutputSchemaVerificationSource = (
+        "provider_response_and_input_binding"
+        if retrieved.provider_response_schema_supported
+        else "provider_input_binding"
+    )
+    return replace(
+        retrieved,
+        output_schema_sha256=input_schema_sha256,
+        output_schema_verification_source=source,
     )
 
 
@@ -726,6 +797,10 @@ def _receipt_evidence(
         retrieved_model_id=fields.model_id,
         expected_output_sha256=expectation.expected_output_sha256,
         retrieved_output_sha256=fields.output_sha256,
+        provider_output_hash_matched=fields.provider_output_hash_matched,
+        provider_output_verification_source=(
+            fields.provider_output_verification_source
+        ),
         expected_payload_sha256=expectation.expected_payload_sha256,
         retrieved_payload_sha256=fields.payload_sha256,
         expected_prompt_sha256=expectation.expected_prompt_sha256,
@@ -742,6 +817,12 @@ def _receipt_evidence(
         retrieved_evidence_unit_sha256=fields.evidence_unit_sha256,
         expected_output_schema_sha256=expectation.expected_output_schema_sha256,
         retrieved_output_schema_sha256=fields.output_schema_sha256,
+        output_schema_verification_source=(
+            fields.output_schema_verification_source
+        ),
+        provider_response_schema_supported=(
+            fields.provider_response_schema_supported
+        ),
         provider_status=fields.provider_status,
         response_completed_verified=fields.response_completed_verified,
         incomplete_details_absent=fields.incomplete_details_absent,
@@ -755,29 +836,101 @@ def _receipt_evidence(
 
 def _structured_payload_from_output(output: Sequence[object]) -> JsonObject:
     output_texts: list[str] = []
+    message_count = reasoning_count = 0
     for raw_item in output:
         if not isinstance(raw_item, Mapping):
             raise TypeError("provider output items must be objects")
         item_type = raw_item.get("type")
-        if item_type == "output_text":
-            output_texts.append(_output_text(raw_item))
+        if item_type == "reasoning":
+            reasoning_count += 1
+            _validate_inert_reasoning_item(raw_item)
             continue
         if item_type != "message":
-            continue
+            raise ValueError("provider output contains an unsupported item type")
+        message_count += 1
+        _validate_output_message_item(raw_item)
         content = raw_item.get("content")
         if not isinstance(content, Sequence) or isinstance(content, str | bytes):
             raise TypeError("provider message content must be a list")
         for raw_part in content:
             if not isinstance(raw_part, Mapping):
                 raise TypeError("provider message content parts must be objects")
-            if raw_part.get("type") == "output_text":
-                output_texts.append(_output_text(raw_part))
-    if len(output_texts) != 1:
-        raise ValueError("provider response must contain one structured output text")
+            if raw_part.get("type") != "output_text":
+                raise ValueError("provider message contains non-output text content")
+            _validate_output_text_part(raw_part)
+            output_texts.append(_output_text(raw_part))
+    if message_count != 1 or reasoning_count > 1 or len(output_texts) != 1:
+        raise ValueError(
+            "provider response must contain one message and one structured output text",
+        )
     parsed = json.loads(output_texts[0])
     if not isinstance(parsed, dict):
         raise TypeError("provider structured output must parse to an object")
     return cast("JsonObject", parsed)
+
+
+def _validate_inert_reasoning_item(item: Mapping[str, object]) -> None:
+    """Accept only the provider reasoning envelope omitted by the adapter."""
+
+    _reject_unknown_keys(
+        item,
+        allowed={
+            "content",
+            "encrypted_content",
+            "id",
+            "status",
+            "summary",
+            "type",
+        },
+        label="provider reasoning item",
+    )
+    if not isinstance(item.get("id"), str):
+        raise TypeError("provider reasoning item ID must be text")
+    if item.get("status") not in (None, "completed"):
+        raise ValueError("provider reasoning item status is unsupported")
+    summary = item.get("summary")
+    if summary != []:
+        raise ValueError("provider reasoning summary must be empty")
+    content = item.get("content")
+    if content not in (None, []):
+        raise ValueError("provider reasoning content must be opaque")
+    encrypted_content = item.get("encrypted_content")
+    if encrypted_content is not None and not isinstance(encrypted_content, str):
+        raise TypeError("provider encrypted reasoning must be text or null")
+
+
+def _validate_output_message_item(item: Mapping[str, object]) -> None:
+    _reject_unknown_keys(
+        item,
+        allowed={"content", "id", "phase", "role", "status", "type"},
+        label="provider output message",
+    )
+    if not isinstance(item.get("id"), str):
+        raise TypeError("provider output message ID must be text")
+    if item.get("phase") not in (None, "final_answer"):
+        raise ValueError("provider output message phase is unsupported")
+
+
+def _validate_output_text_part(part: Mapping[str, object]) -> None:
+    _reject_unknown_keys(
+        part,
+        allowed={"annotations", "logprobs", "text", "type"},
+        label="provider output text",
+    )
+    if part.get("annotations") not in (None, []):
+        raise ValueError("provider output text annotations must be empty")
+    if part.get("logprobs") not in (None, []):
+        raise ValueError("provider output text logprobs must be empty")
+
+
+def _reject_unknown_keys(
+    value: Mapping[str, object],
+    *,
+    allowed: set[str],
+    label: str,
+) -> None:
+    if unknown := set(value) - allowed:
+        raise ValueError(f"{label} contains unsupported fields: {sorted(unknown)}")
 
 
 def _output_message_failure(
@@ -852,6 +1005,8 @@ def _aggregate_receipt_status(
 __all__ = [
     "EXECUTION_MODEL_ID",
     "OpenAIProviderReceiptVerifier",
+    "OutputSchemaVerificationSource",
+    "ProviderOutputVerificationSource",
     "PROVIDER_MODEL_ID",
     "ProviderReceiptEvidence",
     "ProviderReceiptExpectation",
