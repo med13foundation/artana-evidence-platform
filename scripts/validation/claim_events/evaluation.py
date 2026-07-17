@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from scripts.validation.claim_events.evidence_binding import (
     bind_case_evidence,
+    bind_semantically_incomplete_case_evidence,
     bind_unbindable_case_evidence,
 )
 from scripts.validation.claim_events.fixture import require_frozen_development_fixture
@@ -364,12 +365,22 @@ def _receipt_expectations(
         prediction = predictions_by_id.get(case_id)
         if case is None or prediction is None:
             raise ValueError("TG-04 audit evidence references an unknown fixture case")
-        if prediction.get("execution_outcome") == "UNBINDABLE_OUTPUT":
+        execution_outcome = prediction.get("execution_outcome")
+        if execution_outcome == "UNBINDABLE_OUTPUT":
             case_expectations, case_topology = bind_unbindable_case_evidence(
                 case=case,
                 prediction=prediction,
                 case_record=case_record,
                 model_id=model_id,
+            )
+        elif execution_outcome == "SEMANTICALLY_INCOMPLETE":
+            case_expectations, case_topology = (
+                bind_semantically_incomplete_case_evidence(
+                    case=case,
+                    prediction=prediction,
+                    case_record=case_record,
+                    model_id=model_id,
+                )
             )
         else:
             case_expectations, case_topology = bind_case_evidence(

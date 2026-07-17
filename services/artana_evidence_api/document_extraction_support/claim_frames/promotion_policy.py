@@ -6,6 +6,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Never
 
+from artana_evidence_api.document_extraction_support.claim_adjudication.contracts import (
+    ClaimAdjudicationDecision,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.contracts import (
     ClaimFrame,
 )
@@ -41,7 +44,7 @@ def require_canonical_claim_promotion(
         metadata=metadata,
     )
     try:
-        return bind_claim_frame(
+        bound_frame = bind_claim_frame(
             frame,
             source_text,
             chunk_locator=frame.source_locator,
@@ -52,6 +55,16 @@ def require_canonical_claim_promotion(
             "claim_frame_source_binding_failed",
             "Canonical promotion requires the complete ClaimFrame to bind to the stored source.",
         ) from exc
+    adjudication = _require_promotable_claim_adjudication(metadata)
+    if any(
+        span not in bound_frame.source_evidence.exact_span
+        for span in adjudication.evidence_spans
+    ):
+        _reject(
+            "claim_adjudication_evidence_mismatch",
+            "Canonical promotion requires adjudication evidence from the claim's exact source region.",
+        )
+    return bound_frame
 
 
 def require_claim_frame_promotion_preflight(
@@ -103,6 +116,7 @@ def require_claim_frame_promotion_preflight(
             "review_only_claim_frame",
             "Review-only claims cannot become canonical relations.",
         )
+    _require_promotable_claim_adjudication(metadata)
     grounding = _mapping(metadata.get("evidence_grounding"))
     if not all(
         grounding.get(field) is True
@@ -116,12 +130,41 @@ def require_claim_frame_promotion_preflight(
     if (
         support.get("support") != "ENTAILS"
         or support.get("verification_method") != "agent"
+        or not isinstance(support.get("model_id"), str)
+        or not str(support["model_id"]).strip()
     ):
         _reject(
             "agent_support_not_verified",
             "Canonical promotion requires an agent entailment verification.",
         )
     return frame
+
+
+def _require_promotable_claim_adjudication(
+    metadata: Mapping[str, object],
+) -> ClaimAdjudicationDecision:
+    """Validate the complete categorical adjudication artifact."""
+
+    raw_adjudication = metadata.get("claim_semantic_adjudication")
+    try:
+        adjudication = ClaimAdjudicationDecision.model_validate(raw_adjudication)
+    except ValidationError as exc:
+        raise ClaimFramePromotionError(
+            "invalid_claim_semantic_adjudication",
+            "Canonical promotion requires a complete valid claim adjudication artifact.",
+        ) from exc
+    if any(
+        (
+            adjudication.atomicity != "ATOMIC",
+            adjudication.source_support != "ENTAILED",
+            adjudication.relationship != "CANONICAL",
+        ),
+    ):
+        _reject(
+            "claim_semantic_adjudication_not_promotable",
+            "Canonical promotion requires atomic, entailed, canonical adjudication.",
+        )
+    return adjudication
 
 
 def _require_resolved_framing_decision(

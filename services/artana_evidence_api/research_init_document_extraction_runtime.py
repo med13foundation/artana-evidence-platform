@@ -11,6 +11,9 @@ from artana_evidence_api import document_extraction as _document_extraction
 from artana_evidence_api.document_extraction import (
     build_document_review_context,
 )
+from artana_evidence_api.document_extraction_support.claim_adjudication.runtime import (
+    adjudicate_and_review_document_drafts,
+)
 from artana_evidence_api.document_extraction_support.variant_aware_trust_metadata import (
     with_variant_aware_trust_metadata,
 )
@@ -214,9 +217,7 @@ async def run_research_init_document_extraction(
         text_observations_created = upload_result.text_observations_created
         pdf_observations_created = upload_result.pdf_observations_created
 
-        source_results["pubmed"][
-            "observations_created"
-        ] = pubmed_observations_created
+        source_results["pubmed"]["observations_created"] = pubmed_observations_created
         source_results["text"]["observations_created"] = text_observations_created
         source_results["pdf"]["observations_created"] = pdf_observations_created
 
@@ -515,9 +516,7 @@ async def _run_pubmed_observation_bridge_batches(
                 "pubmed_observation_bridge_batch_count": len(pubmed_bridge_batches),
                 "pubmed_observation_bridge_batch_index": batch_index,
                 "pubmed_documents_to_bridge_count": len(pubmed_documents_to_bridge),
-                "pubmed_documents_bridged_count": len(
-                    aggregated_pubmed_bridge_results
-                ),
+                "pubmed_documents_bridged_count": len(aggregated_pubmed_bridge_results),
                 "source_results": source_results,
             },
             progress_observer=progress_observer,
@@ -743,11 +742,13 @@ async def _prepare_document_extractions(
                             ),
                         )
 
-                    ai_resolved_entities = await _document_extraction.pre_resolve_entities_with_ai(
-                        space_id=space_id,
-                        candidates=candidates,
-                        graph_api_gateway=doc_gateway,
-                        space_context=objective,
+                    ai_resolved_entities = (
+                        await _document_extraction.pre_resolve_entities_with_ai(
+                            space_id=space_id,
+                            candidates=candidates,
+                            graph_api_gateway=doc_gateway,
+                            space_context=objective,
+                        )
                     )
                     drafts, _skipped = await asyncio.to_thread(
                         _document_extraction.build_document_extraction_drafts,
@@ -758,15 +759,11 @@ async def _prepare_document_extractions(
                         review_context=review_context,
                         ai_resolved_entities=ai_resolved_entities,
                     )
-                    reviewed_drafts = await _document_extraction.review_document_extraction_drafts(
+                    reviewed_drafts = await adjudicate_and_review_document_drafts(
                         document=current_document,
                         candidates=candidates,
-                        drafts=(
-                            _document_extraction.with_candidate_extraction_trust_metadata(
-                                drafts=drafts,
-                                diagnostics=candidate_diagnostics,
-                            )
-                        ),
+                        drafts=drafts,
+                        candidate_diagnostics=candidate_diagnostics,
                         review_context=review_context,
                     )
                     return _PreparedDocumentExtraction(
@@ -845,7 +842,10 @@ async def _prepare_document_extractions(
             progress_percent=min(
                 0.72,
                 0.6
-                + (extraction_progress_span * (completed_count / extraction_total_count)),
+                + (
+                    extraction_progress_span
+                    * (completed_count / extraction_total_count)
+                ),
             ),
             completed_steps=3,
             metadata={
@@ -925,11 +925,13 @@ async def _sync_upload_observation_documents(
         progress_observer=progress_observer,
     )
     try:
-        batch_result = await _sync_file_upload_documents_into_shared_observation_ingestion(
-            space_id=space_id,
-            owner_id=_SYSTEM_OWNER_ID,
-            documents=upload_documents_to_bridge,
-            pipeline_run_id=run.id,
+        batch_result = (
+            await _sync_file_upload_documents_into_shared_observation_ingestion(
+                space_id=space_id,
+                owner_id=_SYSTEM_OWNER_ID,
+                documents=upload_documents_to_bridge,
+                pipeline_run_id=run.id,
+            )
         )
         errors.extend(batch_result.errors)
         _append_unique_entity_ids(

@@ -85,10 +85,12 @@ def candidate_llm_empty(
 
 def candidate_semantic_incomplete(
     *,
+    candidate_count: int,
     claim_lineage: tuple[ClaimExtractionLineage, ...],
     raw_agent_outputs: tuple[dict[str, object], ...],
     model_attempt_records: tuple[dict[str, object], ...],
     inventory_binding_rejections: tuple[dict[str, object], ...],
+    inventory_incompleteness: tuple[dict[str, object], ...],
     llm_extraction_chunk_count: int,
     llm_extraction_text_char_count: int,
 ) -> DocumentCandidateExtractionDiagnostics:
@@ -101,11 +103,13 @@ def candidate_semantic_incomplete(
         ),
         llm_extraction_chunk_count=llm_extraction_chunk_count,
         llm_extraction_text_char_count=llm_extraction_text_char_count,
+        llm_candidate_count=candidate_count,
         claim_extraction_routing_status="semantic_incomplete",
         claim_lineage=claim_lineage,
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
         inventory_binding_rejections=inventory_binding_rejections,
+        inventory_incompleteness=inventory_incompleteness,
     )
 
 

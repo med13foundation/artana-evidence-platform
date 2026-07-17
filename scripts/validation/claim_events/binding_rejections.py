@@ -11,6 +11,7 @@ from artana_evidence_api.document_extraction_prompting import (
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryBindingRejection,
+    ClaimInventoryItem,
     bind_claim_inventory_items,
     merge_claim_inventory_binding_rejections,
 )
@@ -165,7 +166,7 @@ def _replay_inventory_attempt_binding(
     payload = _object(attempt.get("raw_model_payload"), "raw model payload")
     schema = build_claim_inventory_output_schema(_MAX_INVENTORY_CLAIMS_PER_CHUNK)
     try:
-        parsed = schema.model_validate(payload)
+        schema.model_validate(payload)
     except ValidationError as exc:
         if outcome != "schema_invalid":
             raise ValueError(
@@ -173,7 +174,10 @@ def _replay_inventory_attempt_binding(
             ) from exc
         return ()
     result = bind_claim_inventory_items(
-        tuple(parsed.claims),
+        tuple(
+            ClaimInventoryItem.model_validate(item)
+            for item in _sequence(payload.get("claims"), "raw inventory claims")
+        ),
         source_text=chunk.text,
         source_sha256=source_sha256,
         chunk_index=chunk.index,
@@ -191,6 +195,12 @@ def _object(value: object, label: str) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise TypeError(f"{label} must be an object")
     return cast("Mapping[str, object]", value)
+
+
+def _sequence(value: object, label: str) -> Sequence[object]:
+    if not isinstance(value, list | tuple):
+        raise TypeError(f"{label} must be an array")
+    return cast("Sequence[object]", value)
 
 
 def _text(value: object, label: str) -> str:

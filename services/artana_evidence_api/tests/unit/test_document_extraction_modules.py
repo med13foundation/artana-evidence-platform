@@ -1433,6 +1433,49 @@ def test_review_helpers_rank_specific_grounded_entailed_claim_above_generic_ungr
     assert ranked_weak.metadata["evidence_quality_component"] == 0.0
 
 
+def test_proposal_review_cannot_overwrite_adjudication_safety_ceiling() -> None:
+    context = build_document_review_context(objective="Study IL-4 and FOXP3.")
+    strong_review = DocumentProposalReview(
+        factual_support="strong",
+        goal_relevance="direct",
+        priority="prioritize",
+        rationale="The later reviewer rated this highly.",
+        factual_rationale="Strong according to the later pass.",
+        relevance_rationale="Directly relevant.",
+        method="unit_test",
+    )
+    draft = HarnessProposalDraft(
+        proposal_type="candidate_claim",
+        source_kind="document_extraction",
+        source_key="document-1:unsafe",
+        title="Bundled IL-4 claim",
+        summary="IL-4 inhibits FOXP3 without changing TGF-beta signaling.",
+        confidence=0.25,
+        ranking_score=0.25,
+        reasoning_path={},
+        evidence_bundle=[{"relevance": 0.1}],
+        payload={"proposed_claim_type": "INHIBITS"},
+        metadata={
+            "review_status": "review_only",
+            "claim_semantic_adjudication": {
+                "atomicity": "BUNDLED",
+                "source_support": "INSUFFICIENT",
+                "relationship": "ABSTAIN",
+            },
+        },
+        document_id="document-1",
+    )
+
+    updated = apply_document_proposal_review(
+        draft=draft,
+        review=strong_review,
+        review_context=context,
+    )
+
+    assert updated.confidence == 0.25
+    assert updated.ranking_score == 0.25
+
+
 def test_draft_builder_assembles_reviewed_proposals_from_candidates() -> None:
     gateway = _GraphGateway()
     candidate = ExtractedRelationCandidate(

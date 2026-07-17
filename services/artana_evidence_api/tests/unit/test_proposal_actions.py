@@ -600,8 +600,9 @@ def test_build_graph_observation_request_preserves_source_measurement_provenance
     assert request.provenance.extraction_run_id == run_id
     assert request.provenance.mapping_method == "agent_source_measurement"
     assert request.provenance.raw_input is not None
-    assert request.provenance.raw_input["source_measurement"] == (
-        proposal.payload["source_measurement"]
+    assert (
+        request.provenance.raw_input["source_measurement"]
+        == (proposal.payload["source_measurement"])
     )
 
 
@@ -928,6 +929,17 @@ def _proposal_with_resolved_entities(
             "support_verification": {
                 "support": "ENTAILS",
                 "verification_method": "agent",
+                "model_id": "test:claim-adjudicator",
+            },
+            "claim_semantic_adjudication": {
+                "claim_ref": "claim-0001",
+                "atomicity": "ATOMIC",
+                "source_support": "ENTAILED",
+                "relationship": "CANONICAL",
+                "target_claim_ref": None,
+                "evidence_spans": [quote],
+                "reasoning": "The exact source supports the complete claim.",
+                "falsification": "An explicit source contradiction would falsify it.",
             },
             "proposal_review": {
                 "factual_support": "strong",
@@ -1573,6 +1585,83 @@ def test_promote_to_graph_claim_requires_agent_entailment_verification() -> None
     assert exc_info.value.detail["reason_code"] == "agent_support_not_verified"
     assert gateway.calls == []
     assert gateway.claim_calls == []
+
+
+def test_promote_to_graph_claim_requires_atomic_canonical_adjudication() -> None:
+    proposal = _proposal_with_resolved_entities()
+    gateway = _MockRelationGateway()
+    adjudication = {
+        **proposal.metadata["claim_semantic_adjudication"],
+        "atomicity": "BUNDLED",
+        "relationship": "ABSTAIN",
+    }
+
+    with pytest.raises(HTTPException) as exc_info:
+        promote_to_graph_claim(
+            space_id=UUID(proposal.space_id),
+            proposal=replace(
+                proposal,
+                metadata={
+                    **proposal.metadata,
+                    "claim_semantic_adjudication": adjudication,
+                },
+            ),
+            request_metadata={},
+            graph_api_gateway=gateway,
+            source_document=_source_document_for_proposal(proposal),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail["reason_code"] == (
+        "claim_semantic_adjudication_not_promotable"
+    )
+    assert gateway.calls == []
+    assert gateway.claim_calls == []
+
+
+def test_promotion_rejects_structurally_incomplete_adjudication_metadata() -> None:
+    proposal = _proposal_with_resolved_entities()
+    invalid_adjudication = {
+        key: value
+        for key, value in proposal.metadata["claim_semantic_adjudication"].items()
+        if key != "falsification"
+    }
+
+    with pytest.raises(ClaimFramePromotionError) as exc_info:
+        require_canonical_claim_promotion(
+            payload=proposal.payload,
+            metadata={
+                **proposal.metadata,
+                "claim_semantic_adjudication": invalid_adjudication,
+            },
+            source_text=proposal.summary,
+            source_sha256=hashlib.sha256(proposal.summary.encode("utf-8")).hexdigest(),
+        )
+
+    assert exc_info.value.reason_code == "invalid_claim_semantic_adjudication"
+
+
+def test_promotion_rejects_adjudication_evidence_from_another_source_region() -> None:
+    proposal = _proposal_with_resolved_entities()
+    unrelated_span = "IL-4 activates STAT6."
+    source_text = f"{proposal.summary} {unrelated_span}"
+    adjudication = {
+        **proposal.metadata["claim_semantic_adjudication"],
+        "evidence_spans": [unrelated_span],
+    }
+
+    with pytest.raises(ClaimFramePromotionError) as exc_info:
+        require_canonical_claim_promotion(
+            payload=proposal.payload,
+            metadata={
+                **proposal.metadata,
+                "claim_semantic_adjudication": adjudication,
+            },
+            source_text=source_text,
+            source_sha256=hashlib.sha256(source_text.encode("utf-8")).hexdigest(),
+        )
+
+    assert exc_info.value.reason_code == "claim_adjudication_evidence_mismatch"
 
 
 def test_source_document_gate_follows_structural_claim_preflight() -> None:

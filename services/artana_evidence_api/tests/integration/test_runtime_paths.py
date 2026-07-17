@@ -872,6 +872,16 @@ def _qualified_agent_claim_metadata(
             "model_id": "test-agent-entailment-verifier",
             "verification_method": "agent",
         },
+        "claim_semantic_adjudication": {
+            "claim_ref": "claim-0001",
+            "atomicity": "ATOMIC",
+            "source_support": "ENTAILED",
+            "relationship": "CANONICAL",
+            "target_claim_ref": None,
+            "evidence_spans": [frame.source_evidence.exact_span],
+            "reasoning": "The exact source supports one atomic canonical claim.",
+            "falsification": "An explicit source conflict would falsify the claim.",
+        },
     }
 
 

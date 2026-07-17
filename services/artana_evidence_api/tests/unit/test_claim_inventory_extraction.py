@@ -34,6 +34,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryCompletenessReview,
     ClaimInventoryItem,
     bind_claim_inventory,
+    claim_inventory_batch_input_sha256,
     derive_claim_local_source_region,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
@@ -80,6 +81,11 @@ from artana_evidence_api.graph_client import GraphTransportBundle
 from artana_evidence_api.proposal_store import HarnessProposalDraft
 from pydantic import BaseModel, ValidationError
 
+from scripts.validation.claim_events.inventory_workflow_replay import (
+    InventoryWorkflowInput,
+    InventoryWorkflowReplay,
+    replay_inventory_workflow,
+)
 from scripts.validation.claim_events.runner import _case_receipt_expectations
 
 
@@ -151,8 +157,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v13:claim_inventory.v9+"
-        "claim_inventory_completeness.v9+claim_inventory_recovery.v8+"
+        "document_extraction.claim_pipeline.v15:claim_inventory.v9+"
+        "claim_inventory_completeness.v10+claim_inventory_recovery.v9+"
         "claim_framing.v7"
     )
 
@@ -497,6 +503,48 @@ async def _run_inventory(
         model_id="openai/gpt-5.6-luna",
         step_runner=runner,
         execution_namespace="unit-test-inventory",
+    )
+
+
+def _replay_inventory_attempt(
+    *,
+    text: str,
+    result: LLMClaimInventoryAttempt,
+    require_complete: bool,
+) -> InventoryWorkflowReplay:
+    chunk = _chunk(text)
+    attempts = tuple(record.as_json() for record in result.model_attempt_records)
+    initial = next(
+        attempt for attempt in attempts if attempt["attempt_role"] == "claim_inventory"
+    )
+    zero = next(
+        attempt
+        for attempt in attempts
+        if attempt["attempt_role"] == "zero_candidate_retry"
+    )
+    return replay_inventory_workflow(
+        InventoryWorkflowInput(
+            chunks=(chunk,),
+            initial_by_input={chunk.sha256: initial},
+            zero_by_input={chunk.sha256: zero},
+            source_sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            evidence_unit_sha256=cast("str", initial["evidence_unit_sha256"]),
+            completeness_attempts=tuple(
+                attempt
+                for attempt in attempts
+                if attempt["pass_role"] == "claim_inventory_completeness"
+                and attempt["validation_outcome"] == "accepted"
+            ),
+            recovery_attempts=tuple(
+                attempt
+                for attempt in attempts
+                if attempt["pass_role"] == "claim_inventory_recovery"
+                and attempt["validation_outcome"] == "accepted"
+            ),
+            inventory_binding_rejections_by_chunk={},
+            completeness_binding_rejection_events=(),
+        ),
+        require_complete=require_complete,
     )
 
 
@@ -1880,6 +1928,302 @@ async def test_partial_inventory_gets_reviewed_missing_only_recovery() -> None:
 
 
 @pytest.mark.asyncio
+async def test_inventory_converges_after_two_bounded_recovery_rounds() -> None:
+    first_span = "MED13 causes cardiomyopathy."
+    second_span = "BRCA1 loss sensitizes tumors to cisplatin."
+    third_span = "KRAS predicts toxicity."
+    text = f"{first_span} {second_span} {third_span}"
+    first = _inventory_claim(
+        exact_span=first_span,
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    second = _inventory_claim(
+        exact_span=second_span,
+        endpoint_a_span="BRCA1 loss",
+        relation_cue_span="sensitizes",
+        endpoint_b_span="cisplatin",
+    )
+    third = _inventory_claim(
+        exact_span=third_span,
+        endpoint_a_span="KRAS",
+        relation_cue_span="predicts",
+        endpoint_b_span="toxicity",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [first]},
+            _incomplete_inventory(second),
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+            _incomplete_inventory(third),
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert result.semantic_inventory_complete is True
+    assert len(result.claims) == 3
+    assert result.inventory_recovery_round_count == 2
+    assert result.inventory_convergence_stop_reasons == ("CONFIRMED_COMPLETE",)
+    assert (
+        len(
+            [
+                record
+                for record in result.model_attempt_records
+                if record.pass_role == "claim_inventory_completeness"
+                and record.validation_outcome == "accepted"
+            ]
+        )
+        == 3
+    )
+    assert (
+        len(
+            [
+                record
+                for record in result.model_attempt_records
+                if record.pass_role == "claim_inventory_recovery"
+            ]
+        )
+        == 2
+    )
+    replay = _replay_inventory_attempt(
+        text=text,
+        result=result,
+        require_complete=True,
+    )
+    assert replay.recovery_round_count == result.inventory_recovery_round_count
+    assert replay.stop_reasons == result.inventory_convergence_stop_reasons
+    assert replay.round_traces == result.inventory_convergence_round_traces
+
+
+@pytest.mark.asyncio
+async def test_recovery_adjudicates_every_descriptor_before_abstaining() -> None:
+    first_span = "MED13 may affect a cardiac phenotype."
+    second_span = "BRCA1 loss sensitizes tumors to cisplatin."
+    text = f"{first_span} {second_span}"
+    uncertain = _inventory_claim(
+        exact_span=first_span,
+        endpoint_a_span="MED13",
+        relation_cue_span="may affect",
+        endpoint_b_span="cardiac phenotype",
+        epistemic_status="UNCERTAIN",
+    )
+    explicit = _inventory_claim(
+        exact_span=second_span,
+        endpoint_a_span="BRCA1 loss",
+        relation_cue_span="sensitizes",
+        endpoint_b_span="cisplatin",
+    )
+
+    async def run(missing: tuple[dict[str, object], ...]) -> LLMClaimInventoryAttempt:
+        return await _run_inventory(
+            text=text,
+            runner=ScriptedStepRunner(
+                (
+                    {"claims": []},
+                    {"claims": []},
+                    _incomplete_inventory(*missing),
+                    _recovery_decision("ABSTAIN"),
+                    _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+                ),
+            ),
+        )
+
+    forward = await run((uncertain, explicit))
+    reversed_result = await run((explicit, uncertain))
+
+    assert [claim.item for claim in forward.claims] == [
+        ClaimInventoryItem.model_validate(explicit)
+    ]
+    assert [claim.item for claim in forward.inventory_incompleteness] == [
+        ClaimInventoryItem.model_validate(uncertain)
+    ]
+    assert forward.inventory_convergence_round_traces == (
+        reversed_result.inventory_convergence_round_traces
+    )
+    assert forward.inventory_convergence_stop_reasons == ("RECOVERY_ABSTAINED",)
+    assert (
+        len(
+            [
+                record
+                for record in forward.model_attempt_records
+                if record.pass_role == "claim_inventory_recovery"
+            ]
+        )
+        == 2
+    )
+
+
+def test_inventory_batch_hash_is_independent_of_agent_output_order() -> None:
+    text = "MED13 causes cardiomyopathy. BRCA1 loss sensitizes tumors to cisplatin."
+    first, second = bind_claim_inventory(
+        (
+            ClaimInventoryItem.model_validate(
+                _inventory_claim(
+                    exact_span="MED13 causes cardiomyopathy.",
+                    endpoint_a_span="MED13",
+                    relation_cue_span="causes",
+                    endpoint_b_span="cardiomyopathy",
+                )
+            ),
+            ClaimInventoryItem.model_validate(
+                _inventory_claim(
+                    exact_span="BRCA1 loss sensitizes tumors to cisplatin.",
+                    endpoint_a_span="BRCA1 loss",
+                    relation_cue_span="sensitizes",
+                    endpoint_b_span="cisplatin",
+                )
+            ),
+        ),
+        source_text=text,
+        source_sha256=hashlib.sha256(text.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    assert claim_inventory_batch_input_sha256((first, second)) == (
+        claim_inventory_batch_input_sha256((second, first))
+    )
+
+
+@pytest.mark.asyncio
+async def test_inventory_stops_incomplete_after_two_recovery_rounds() -> None:
+    first_span = "MED13 causes cardiomyopathy."
+    second_span = "BRCA1 loss sensitizes tumors to cisplatin."
+    third_span = "KRAS predicts toxicity."
+    fourth_span = "ALK increased response to lorlatinib."
+    text = f"{first_span} {second_span} {third_span} {fourth_span}"
+    first = _inventory_claim(
+        exact_span=first_span,
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    second = _inventory_claim(
+        exact_span=second_span,
+        endpoint_a_span="BRCA1 loss",
+        relation_cue_span="sensitizes",
+        endpoint_b_span="cisplatin",
+    )
+    third = _inventory_claim(
+        exact_span=third_span,
+        endpoint_a_span="KRAS",
+        relation_cue_span="predicts",
+        endpoint_b_span="toxicity",
+    )
+    fourth = _inventory_claim(
+        exact_span=fourth_span,
+        endpoint_a_span="ALK",
+        relation_cue_span="increased response to",
+        endpoint_b_span="lorlatinib",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [first]},
+            _incomplete_inventory(second),
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+            _incomplete_inventory(third),
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+            _incomplete_inventory(fourth),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert result.semantic_inventory_complete is False
+    assert len(result.claims) == 3
+    assert [item.item for item in result.inventory_incompleteness] == [
+        ClaimInventoryItem.model_validate(fourth),
+    ]
+    assert result.inventory_recovery_round_count == 2
+    assert result.inventory_convergence_stop_reasons == ("MAX_RECOVERY_ROUNDS",)
+    assert len(runner.calls) == 6
+
+
+@pytest.mark.asyncio
+async def test_completeness_duplicate_does_not_hide_novel_second_round_claim() -> None:
+    first_span = "MED13 causes cardiomyopathy."
+    second_span = "BRCA1 loss sensitizes tumors to cisplatin."
+    third_span = "KRAS predicts toxicity."
+    text = f"{first_span} {second_span} {third_span}"
+    first = _inventory_claim(
+        exact_span=first_span,
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    second = _inventory_claim(
+        exact_span=second_span,
+        endpoint_a_span="BRCA1 loss",
+        relation_cue_span="sensitizes",
+        endpoint_b_span="cisplatin",
+    )
+    third = _inventory_claim(
+        exact_span=third_span,
+        endpoint_a_span="KRAS",
+        relation_cue_span="predicts",
+        endpoint_b_span="toxicity",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [first]},
+            _incomplete_inventory(second),
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+            _incomplete_inventory(second, third),
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert result.semantic_inventory_complete is True
+    assert len(result.claims) == 3
+    assert len({claim.inventory_id for claim in result.claims}) == 3
+    assert result.inventory_binding_rejection_count == 1
+    assert result.inventory_recovery_round_count == 2
+    recovery_calls = [
+        call
+        for call in runner.calls
+        if call["schema_id"] == "document_extraction.claim_inventory_recovery.v4"
+    ]
+    assert len(recovery_calls) == 2
+    final_recovery_prompt = str(recovery_calls[-1]["prompt"])
+    assert f'"exact_span":"{second_span}"' not in final_recovery_prompt
+    assert f'"exact_span":"{third_span}"' in final_recovery_prompt
+
+
+@pytest.mark.asyncio
+async def test_duplicate_only_completeness_review_stops_without_another_agent_call() -> (
+    None
+):
+    text = "MED13 causes cardiomyopathy."
+    claim = _inventory_claim(
+        exact_span=text,
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [claim]},
+            _incomplete_inventory(claim),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert result.semantic_inventory_complete is False
+    assert result.inventory_incompleteness == ()
+    assert result.unresolved_binding_rejection_count == 1
+    assert result.inventory_recovery_round_count == 0
+    assert result.inventory_convergence_stop_reasons == ("NO_NEW_IDENTITIES",)
+    assert len(runner.calls) == 2
+
+
+@pytest.mark.asyncio
 async def test_procedural_method_is_categorically_excluded_from_recovery() -> None:
     text = "Primers and probes were provided by Assay-on-Demand (Applied Biosystems)."
     procedural_descriptor = _inventory_claim(
@@ -1986,7 +2330,6 @@ async def test_recovery_abstention_remains_semantically_incomplete() -> None:
             {"claims": []},
             _incomplete_inventory(descriptor),
             _recovery_decision("ABSTAIN"),
-            _complete_inventory(),
         ),
     )
 
@@ -1998,6 +2341,9 @@ async def test_recovery_abstention_remains_semantically_incomplete() -> None:
     assert result.inventory_incompleteness[0].item == ClaimInventoryItem.model_validate(
         descriptor,
     )
+    assert result.inventory_recovery_round_count == 1
+    assert result.inventory_convergence_stop_reasons == ("RECOVERY_ABSTAINED",)
+    assert len(runner.calls) == 4
 
 
 @pytest.mark.asyncio
@@ -2367,9 +2713,11 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
 
     assert len(result.candidates) == 2
     assert len(result.claim_lineage) == 2
-    assert len(routed) == 1
+    assert len(routed) == 2
     assert routed.claim_extraction_routing_status == "candidate_overflow"
     assert routed.candidate_overflow_count == 1
+    assert routed[1].review_status == "review_only"
+    assert "candidate_overflow" in routed[1].review_reason_codes
     assert routed.overflow_candidates[0].claim_frame is not None
     assert routed.overflow_candidates[0].claim_frame.polarity.value == "SUPPORT"
     assert (
@@ -2378,7 +2726,7 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
 
 
 @pytest.mark.asyncio
-async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
+async def test_post_recovery_incomplete_inventory_preserves_review_only_lineage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     first_span = "MED13 causes cardiomyopathy."
@@ -2409,6 +2757,7 @@ async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
             _incomplete_inventory(second),
             _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
             _incomplete_inventory(third),
+            _recovery_decision("ABSTAIN"),
             _framed_relation(
                 sentence=first_span,
                 subject="MED13",
@@ -2444,9 +2793,15 @@ async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
     assert result.semantic_inventory_complete is False
     assert len(result.inventory_incompleteness) == 1
     assert len(result.claim_lineage) == 2
-    assert routed == []
+    assert len(routed) == 2
+    assert all(candidate.review_status == "review_only" for candidate in routed)
+    assert all(
+        "semantic_inventory_incomplete" in candidate.review_reason_codes
+        for candidate in routed
+    )
+    assert all(not candidate.trusted_evidence_eligible for candidate in routed)
     assert routed.claim_extraction_routing_status == "semantic_incomplete"
-    assert tuple(routed.overflow_candidates) == tuple(result.candidates)
+    assert routed.overflow_candidates == ()
 
     async def _incomplete_agent_result(
         _text: str,
@@ -2472,9 +2827,24 @@ async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
 
     assert discovered is routed
     assert diagnostics.llm_candidate_status == "semantic_incomplete"
+    assert diagnostics.llm_candidate_count == 2
     assert diagnostics.fallback_output_used is False
     assert diagnostics.trusted_evidence_eligible is False
     assert diagnostics.claim_lineage == result.claim_lineage
+    assert len(diagnostics.inventory_incompleteness) == 1
+    assert diagnostics.inventory_incompleteness[0]["claim"]["exact_span"] == third_span
+
+    drafts = _build_pipeline_drafts(
+        monkeypatch=monkeypatch,
+        text=text,
+        candidates=list(discovered),
+    )
+    assert len(drafts) == 2
+    assert all(draft.metadata["review_status"] == "review_only" for draft in drafts)
+    assert all(
+        "semantic_inventory_incomplete" in draft.metadata["review_reason_codes"]
+        for draft in drafts
+    )
 
 
 @pytest.mark.asyncio

@@ -26,6 +26,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     MissingClaimRecoveryDisposition,
     bind_claim_inventory_items,
     bind_inventory_completeness_review,
+    canonicalize_bound_claim_inventory,
     claim_inventory_batch_input_sha256,
     merge_bound_claim_inventories,
 )
@@ -387,12 +388,20 @@ def build_inventory_completeness_prompt(
     document_fingerprint: str,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     confirmation: bool,
+    recovery_round: int = 0,
     excluded_inventory: tuple[BoundClaimInventoryItem, ...] = (),
     binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = (),
     schema_retry: bool = False,
 ) -> str:
     """Build an independent source-only completeness review prompt."""
 
+    if confirmation != (recovery_round > 0):
+        raise ValueError(
+            "completeness confirmation and recovery round must change together"
+        )
+
+    current_inventory = canonicalize_bound_claim_inventory(current_inventory)
+    excluded_inventory = canonicalize_bound_claim_inventory(excluded_inventory)
     inventory_payload = [
         {
             "inventory_id": claim.inventory_id,
@@ -431,12 +440,17 @@ def build_inventory_completeness_prompt(
         separators=(",", ":"),
         ensure_ascii=True,
     )
-    phase = "post_recovery_confirmation" if confirmation else "initial_review"
+    phase = (
+        f"post_recovery_confirmation_round_{recovery_round}"
+        if confirmation
+        else "initial_review"
+    )
     return (
         f"{CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT}\n\n"
         "MODEL CONTRACT\n"
         f"- prompt_version: {CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION}\n"
         f"- review_phase: {phase}\n"
+        f"- recovery_round: {recovery_round}\n"
         f"- document_sha256: {document_fingerprint}\n"
         f"- chunk_index: {chunk.index + 1} of {total_chunks}\n"
         f"- chunk_sha256: {chunk.sha256}\n"
@@ -467,6 +481,7 @@ async def run_inventory_completeness_review_stage(
     step_runner: ModelStepRunner,
     execution_namespace: str,
     confirmation: bool = False,
+    recovery_round: int = 0,
     excluded_inventory: tuple[BoundClaimInventoryItem, ...] = (),
     binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = (),
 ) -> InventoryCompletenessStageResult:
@@ -480,8 +495,9 @@ async def run_inventory_completeness_review_stage(
         excluded_inventory=excluded_inventory,
         binding_rejections=binding_rejections,
         confirmation=confirmation,
+        recovery_round=recovery_round,
     )
-    phase = "confirmation" if confirmation else "initial"
+    phase = f"confirmation_{recovery_round}" if confirmation else "initial"
     step_key = _inventory_review_step_key(
         prompt_version=CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION,
         phase=phase,
@@ -507,6 +523,7 @@ async def run_inventory_completeness_review_stage(
         excluded_inventory=excluded_inventory,
         binding_rejections=binding_rejections,
         confirmation=confirmation,
+        recovery_round=recovery_round,
         schema_retry=True,
     )
     retry_step_key = _inventory_review_step_key(
@@ -657,8 +674,13 @@ def build_missing_claim_recovery_prompt(
     chunk: RelationExtractionTextChunk,
     document_fingerprint: str,
     missing_claim: BoundClaimInventoryItem,
+    recovery_round: int,
+    parent_completeness_input_sha256: str,
 ) -> str:
     """Build one claim-unit recovery prompt from a reviewed missing descriptor."""
+
+    if recovery_round < 1:
+        raise ValueError("missing-claim recovery requires a positive recovery round")
 
     missing_json = json.dumps(
         missing_claim.item.model_dump(mode="json"),
@@ -672,6 +694,9 @@ def build_missing_claim_recovery_prompt(
         f"- prompt_version: {MISSING_CLAIM_RECOVERY_PROMPT_VERSION}\n"
         f"- document_sha256: {document_fingerprint}\n"
         f"- inventory_id: {missing_claim.inventory_id}\n"
+        f"- recovery_round: {recovery_round}\n"
+        "- parent_completeness_input_sha256: "
+        f"{parent_completeness_input_sha256}\n"
         f"- chunk_index: {chunk.index + 1}\n"
         "- source_locator: normalized_extraction_text\n\n"
         "---\nREVIEWED MISSING CLAIM\n---\n"
@@ -687,6 +712,8 @@ async def run_missing_claim_recovery_stage(
     chunk: RelationExtractionTextChunk,
     document_fingerprint: str,
     missing_claim: BoundClaimInventoryItem,
+    recovery_round: int,
+    parent_completeness_input_sha256: str,
     output_schema: type[BaseModel],
     client: object,
     tenant: object,
@@ -700,6 +727,8 @@ async def run_missing_claim_recovery_stage(
         chunk=chunk,
         document_fingerprint=document_fingerprint,
         missing_claim=missing_claim,
+        recovery_round=recovery_round,
+        parent_completeness_input_sha256=parent_completeness_input_sha256,
     )
     step_key = fingerprinted_step_key(
         "research_init.claim_inventory_recovery.v4",
@@ -707,6 +736,8 @@ async def run_missing_claim_recovery_stage(
         model_id,
         document_fingerprint,
         claim_inventory_batch_input_sha256((missing_claim,)),
+        str(recovery_round),
+        parent_completeness_input_sha256,
         execution_namespace,
     )
     audit_context = ModelAttemptAuditContext(
@@ -982,6 +1013,8 @@ def inventory_completeness_input_sha256(
     excluded_inventory: tuple[BoundClaimInventoryItem, ...],
     binding_rejections: tuple[ClaimInventoryBindingRejection, ...],
 ) -> str:
+    current_inventory = canonicalize_bound_claim_inventory(current_inventory)
+    excluded_inventory = canonicalize_bound_claim_inventory(excluded_inventory)
     if not excluded_inventory and not binding_rejections:
         return claim_inventory_batch_input_sha256(current_inventory)
     payload = {
