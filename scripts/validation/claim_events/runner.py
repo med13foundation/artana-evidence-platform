@@ -67,6 +67,7 @@ class _CaseRunResult:
     prediction: dict[str, object]
     evidence: dict[str, object]
     records: tuple[ModelAttemptAuditRecord, ...]
+    binding_rejection_count: int
 
 
 def run_live_arm(
@@ -109,6 +110,7 @@ async def _run_live_arm(
     receipt_expectations: list[ProviderReceiptExpectation] = []
     fallback_count = invalid_count = unidentified_provider_count = 0
     qualification_invalid_count = stress_invalid_count = 0
+    qualification_binding_rejections = stress_binding_rejections = 0
     try:
         for case in fixture.cases:
             case_result = await _execute_case(
@@ -127,8 +129,10 @@ async def _run_live_arm(
             invalid_count += case_invalid
             if str(case.control_status) == "REPRESENTABILITY_STRESS":
                 stress_invalid_count += case_invalid
+                stress_binding_rejections += case_result.binding_rejection_count
             else:
                 qualification_invalid_count += case_invalid
+                qualification_binding_rejections += case_result.binding_rejection_count
             unidentified_provider_count += case_unidentified
             for expectation in case_expectations:
                 if expectation.response_id in provider_ids:
@@ -163,7 +167,7 @@ async def _run_live_arm(
         ),
     )
     report: dict[str, object] = {
-        "schema_version": "tg04_live_arm.v2",
+        "schema_version": "tg04_live_arm.v3",
         "run_id": run_id,
         "generated_at": datetime.now(UTC).isoformat(),
         "fixture_sha256": fixture.sha256,
@@ -180,6 +184,15 @@ async def _run_live_arm(
             "qualification_invalid_agent_output_count": (qualification_invalid_count),
             "representability_stress_invalid_agent_output_count": (
                 stress_invalid_count
+            ),
+            "inventory_binding_rejection_count": (
+                qualification_binding_rejections + stress_binding_rejections
+            ),
+            "qualification_inventory_binding_rejection_count": (
+                qualification_binding_rejections
+            ),
+            "representability_stress_inventory_binding_rejection_count": (
+                stress_binding_rejections
             ),
             "provider_response_id_count": len(provider_ids),
             "provider_receipt_status": provider_receipts.status,
@@ -203,6 +216,10 @@ async def _execute_case(
     from artana_evidence_api.document_extraction import normalize_text_document
     from artana_evidence_api.document_extraction_support.full_text_chunking import (
         build_relation_extraction_text_chunks,
+    )
+    from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+        ClaimInventoryItemsRejectedError,
+        ClaimInventoryRepairFailedError,
     )
     from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
         run_llm_claim_inventory_with_zero_retry,
@@ -246,18 +263,27 @@ async def _execute_case(
         require_sealable_unbindable_attempts(
             tuple(record.as_json() for record in audit.records),
         )
-        if audit.records[-1].error_type != type(terminal_error).__name__:
+        if audit.records[-1].error_type != _terminal_error_category(terminal_error):
             raise RuntimeError("TG-04 terminal audit error differs from raised error")
 
-    events = [] if inventory is None else _nary_events(inventory.claims)
-    outcome = _execution_outcome(events=events, failed=terminal_error is not None)
-    routing_status = "unbound"
-    if terminal_error is None:
-        routing_status = (
-            "complete"
-            if inventory is not None and inventory.semantic_inventory_complete
-            else "semantic_incomplete"
-        )
+    binding_rejections = (
+        inventory.inventory_binding_rejections if inventory is not None else ()
+    )
+    if isinstance(
+        terminal_error,
+        ClaimInventoryItemsRejectedError | ClaimInventoryRepairFailedError,
+    ):
+        binding_rejections = terminal_error.rejection_events
+
+    executable, routing_status = _inventory_execution_state(
+        inventory_available=inventory is not None,
+        semantic_inventory_complete=(
+            inventory is not None and inventory.semantic_inventory_complete
+        ),
+        terminal_error=terminal_error,
+    )
+    events = _nary_events(inventory.claims) if executable and inventory else []
+    outcome = _execution_outcome(events=events, failed=not executable)
     return _CaseRunResult(
         prediction={
             "case_id": case.case_id,
@@ -273,11 +299,23 @@ async def _execute_case(
                 "fallback_output_used": False,
                 "claim_extraction_routing_status": routing_status,
                 "terminal_error_category": (
-                    None if terminal_error is None else type(terminal_error).__name__
+                    None
+                    if terminal_error is None
+                    else _terminal_error_category(terminal_error)
+                ),
+                "inventory_binding_rejection_count": (len(binding_rejections)),
+                "inventory_binding_rejections": (
+                    [rejection.as_json() for rejection in binding_rejections]
+                ),
+                "unresolved_binding_rejection_count": (
+                    0
+                    if inventory is None
+                    else inventory.unresolved_binding_rejection_count
                 ),
             },
         },
         records=tuple(audit.records),
+        binding_rejection_count=(len(binding_rejections)),
     )
 
 
@@ -290,6 +328,35 @@ def _execution_outcome(
         return CaseExecutionOutcome.UNBINDABLE_OUTPUT
     return (
         CaseExecutionOutcome.BOUND_OUTPUT if events else CaseExecutionOutcome.NO_OUTPUT
+    )
+
+
+def _inventory_execution_state(
+    *,
+    inventory_available: bool,
+    semantic_inventory_complete: bool,
+    terminal_error: BaseException | None,
+) -> tuple[bool, str]:
+    """Require complete reviewed inventory before any event can be scored."""
+
+    if terminal_error is not None or not inventory_available:
+        return False, "unbound"
+    if not semantic_inventory_complete:
+        return False, "semantic_incomplete"
+    return True, "complete"
+
+
+def _terminal_error_category(error: BaseException) -> str:
+    """Return the provider-audited category beneath a lineage wrapper."""
+
+    from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+        ClaimInventoryRepairFailedError,
+    )
+
+    return (
+        type(error.cause).__name__
+        if isinstance(error, ClaimInventoryRepairFailedError)
+        else type(error).__name__
     )
 
 

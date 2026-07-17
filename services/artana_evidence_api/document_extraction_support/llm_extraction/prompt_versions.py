@@ -6,7 +6,7 @@ from typing import Final
 
 CLAIM_INVENTORY_PROMPT_VERSION: Final = "document_extraction.claim_inventory.v9"
 CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION: Final = (
-    "document_extraction.claim_inventory_completeness.v8"
+    "document_extraction.claim_inventory_completeness.v9"
 )
 MISSING_CLAIM_RECOVERY_PROMPT_VERSION: Final = (
     "document_extraction.claim_inventory_recovery.v8"
@@ -20,7 +20,7 @@ CLAIM_FRAME_PIPELINE_COMPONENT_PROMPT_VERSIONS: Final = (
     CLAIM_FRAMING_PROMPT_VERSION,
 )
 CLAIM_FRAME_PIPELINE_PROMPT_VERSION: Final = (
-    "document_extraction.claim_pipeline.v12:"
+    "document_extraction.claim_pipeline.v13:"
     + "+".join(
         version.removeprefix("document_extraction.")
         for version in CLAIM_FRAME_PIPELINE_COMPONENT_PROMPT_VERSIONS

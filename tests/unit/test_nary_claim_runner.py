@@ -11,16 +11,22 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
     build_relation_extraction_text_chunks,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    ClaimInventoryRepairFailedError,
     build_claim_inventory_prompt,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+    StructuredModelSchemaError,
 )
 
 from scripts.validation.claim_events.operational import CaseExecutionOutcome
 from scripts.validation.claim_events.runner import (
     _attempt_output_schema_sha256,
     _execution_outcome,
+    _inventory_execution_state,
     _nary_events,
     _require_attempt_model,
     _require_model,
+    _terminal_error_category,
 )
 from scripts.validation.claim_frames.provider_receipts import (
     canonical_provider_model_id,
@@ -275,6 +281,43 @@ def test_runner_categorizes_bound_empty_and_unbindable_results() -> None:
         _execution_outcome(events=[], failed=True)
         is CaseExecutionOutcome.UNBINDABLE_OUTPUT
     )
+
+
+def test_runner_blocks_scoring_until_inventory_is_semantically_complete() -> None:
+    executable, routing_status = _inventory_execution_state(
+        inventory_available=True,
+        semantic_inventory_complete=False,
+        terminal_error=None,
+    )
+
+    assert executable is False
+    assert routing_status == "semantic_incomplete"
+    assert (
+        _execution_outcome(events=[], failed=not executable)
+        is CaseExecutionOutcome.UNBINDABLE_OUTPUT
+    )
+
+
+def test_runner_routes_complete_inventory_and_terminal_failure_separately() -> None:
+    assert _inventory_execution_state(
+        inventory_available=True,
+        semantic_inventory_complete=True,
+        terminal_error=None,
+    ) == (True, "complete")
+    assert _inventory_execution_state(
+        inventory_available=False,
+        semantic_inventory_complete=False,
+        terminal_error=RuntimeError("model failed"),
+    ) == (False, "unbound")
+
+
+def test_runner_reports_underlying_audited_repair_error_category() -> None:
+    error = ClaimInventoryRepairFailedError(
+        cause=StructuredModelSchemaError("invalid repair"),
+        rejection_events=(),
+    )
+
+    assert _terminal_error_category(error) == "StructuredModelSchemaError"
 
 
 def test_schema_retry_prompt_is_canonically_reconstructable() -> None:

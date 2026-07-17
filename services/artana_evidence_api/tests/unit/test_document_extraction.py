@@ -42,6 +42,9 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
     start_model_attempt_audit,
     stop_model_attempt_audit,
 )
+from artana_evidence_api.document_extraction_support.relation_specificity_pruning import (
+    SpecificityFilteredCandidateList,
+)
 from artana_evidence_api.document_extraction_support.strict_relation_discovery import (
     discover_relation_candidates_strict,
 )
@@ -538,6 +541,51 @@ async def test_strict_relation_discovery_reports_empty_agent_without_fallback(
     )
     assert diagnostics.fallback_output_used is False
     assert diagnostics.as_metadata()["fallback_output_used"] is False
+
+
+@pytest.mark.asyncio
+async def test_strict_discovery_preserves_serialized_item_rejection_diagnostics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidate = ExtractedRelationCandidate(
+        subject_label="IL-4",
+        relation_type="NEGATIVELY_REGULATES",
+        object_label="FOXP3",
+        sentence="IL-4 inhibited FOXP3 induction.",
+    )
+    rejection = {
+        "event_id": "binding-rejection-1",
+        "phase": "CLAIM_INVENTORY",
+        "rejection": {"disposition": "EXACT_SPAN_MISSING"},
+        "attempt_lineage": {"invocation_id": "inventory-1"},
+    }
+
+    async def _mixed_agent_candidates(
+        text: str,
+        *,
+        max_relations: int = 10,
+        space_context: str = "",
+    ) -> SpecificityFilteredCandidateList:
+        del text, max_relations, space_context
+        return SpecificityFilteredCandidateList(
+            (candidate,),
+            pruned_generic_relation_count=0,
+            claim_extraction_routing_status="complete",
+            inventory_binding_rejections=(rejection,),
+        )
+
+    monkeypatch.setattr(
+        "artana_evidence_api.document_extraction_support.strict_relation_discovery."
+        "extract_relation_candidates_with_llm",
+        _mixed_agent_candidates,
+    )
+
+    candidates, diagnostics = await discover_relation_candidates_strict(
+        candidate.sentence,
+    )
+
+    assert candidates == [candidate]
+    assert diagnostics.inventory_binding_rejections == (rejection,)
 
 
 @pytest.mark.asyncio

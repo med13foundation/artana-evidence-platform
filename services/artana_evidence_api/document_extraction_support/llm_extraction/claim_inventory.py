@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from enum import Enum
 from typing import Protocol, cast
 
 from artana_evidence_api.document_extraction_prompting import (
@@ -15,14 +16,18 @@ from artana_evidence_api.document_extraction_prompting import (
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
     BoundInventoryCompletenessReview,
+    ClaimInventoryBindingDisposition,
     ClaimInventoryBindingError,
+    ClaimInventoryBindingRejection,
+    ClaimInventoryBindingResult,
     ClaimInventoryCompletenessReview,
     ClaimInventoryItem,
     MissingClaimRecoveryDecision,
     MissingClaimRecoveryDisposition,
-    bind_claim_inventory,
+    bind_claim_inventory_items,
     bind_inventory_completeness_review,
     claim_inventory_batch_input_sha256,
+    merge_bound_claim_inventories,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
@@ -40,8 +45,10 @@ from artana_evidence_api.document_extraction_support.llm_extraction.structured_s
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     ModelAttemptAuditContext,
+    ModelAttemptAuditRecord,
     ModelStepResult,
     ModelStepRunner,
+    current_model_attempt_audit,
     fingerprinted_step_key,
     record_skipped_model_attempt,
 )
@@ -80,11 +87,91 @@ class ClaimInventoryResultLike(Protocol):
     claims: list[ClaimInventoryItem]
 
 
+class ClaimInventoryItemsRejectedError(StructuredModelSemanticError):
+    """Raised when a schema-valid inventory has no source-bindable items."""
+
+    def __init__(self, result: ClaimInventoryBindingResult) -> None:
+        super().__init__("all claim inventory items failed source binding")
+        self.result = result
+        self.rejection_events: tuple[ClaimInventoryBindingRejectionEvent, ...] = ()
+
+
+class InventoryBatchBindingStatus(str, Enum):
+    """Categorical item-binding result for one inventory stage."""
+
+    EMPTY = "EMPTY"
+    COMPLETE = "COMPLETE"
+    MIXED = "MIXED"
+    ALL_REJECTED = "ALL_REJECTED"
+
+
+class InventoryBindingPhase(str, Enum):
+    """Agent stage that authored a rejected source-bound descriptor."""
+
+    CLAIM_INVENTORY = "CLAIM_INVENTORY"
+    COMPLETENESS_REVIEW = "COMPLETENESS_REVIEW"
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimInventoryBindingRejectionEvent:
+    """One item rejection bound to the exact provider-backed invocation."""
+
+    event_id: str
+    phase: InventoryBindingPhase
+    rejection: ClaimInventoryBindingRejection
+    attempt_record: ModelAttemptAuditRecord
+
+    @property
+    def rejection_id(self) -> str:
+        return self.rejection.rejection_id
+
+    @property
+    def item(self) -> ClaimInventoryItem:
+        return self.rejection.item
+
+    @property
+    def disposition(self) -> ClaimInventoryBindingDisposition:
+        return self.rejection.disposition
+
+    def as_json(self) -> dict[str, object]:
+        """Serialize full rejection evidence plus its provider lineage."""
+
+        return {
+            "event_id": self.event_id,
+            "phase": self.phase.value,
+            "rejection": self.rejection.as_json(),
+            "attempt_lineage": {
+                "invocation_id": self.attempt_record.invocation_id,
+                "provider_response_id": self.attempt_record.provider_response_id,
+                "provider_output_sha256": (self.attempt_record.provider_output_sha256),
+                "payload_sha256": self.attempt_record.payload_sha256,
+                "source_sha256": self.attempt_record.source_sha256,
+                "input_sha256": self.attempt_record.input_sha256,
+            },
+        }
+
+
+class ClaimInventoryRepairFailedError(StructuredModelValidationError):
+    """Terminal repair failure retaining earlier provider-bound rejections."""
+
+    def __init__(
+        self,
+        *,
+        cause: ValidationError | StructuredModelValidationError,
+        rejection_events: tuple[ClaimInventoryBindingRejectionEvent, ...],
+    ) -> None:
+        super().__init__(f"claim inventory repair failed: {cause}")
+        self.cause = cause
+        self.rejection_events = rejection_events
+
+
 @dataclass(frozen=True, slots=True)
 class ClaimInventoryStageResult:
     """Bound inventory plus immutable raw outputs from its model calls."""
 
     claims: tuple[BoundClaimInventoryItem, ...]
+    binding_status: InventoryBatchBindingStatus
+    binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...]
     raw_agent_outputs: tuple[dict[str, object], ...]
 
 
@@ -93,6 +180,7 @@ class InventoryCompletenessStageResult:
     """Source-bound categorical review plus its immutable agent output."""
 
     review: BoundInventoryCompletenessReview
+    binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...]
     raw_agent_outputs: tuple[dict[str, object], ...]
 
 
@@ -208,22 +296,78 @@ async def run_claim_inventory_stage(
             step_key=step_key,
             audit_context=audit_context,
         )
-    except (ValidationError, StructuredModelValidationError):
-        retry_result = await _run_inventory_step(
-            chunk=chunk,
-            document_fingerprint=document_fingerprint,
-            output_schema=output_schema,
-            client=client,
-            tenant=tenant,
-            model_id=model_id,
-            step_runner=step_runner,
-            prompt=schema_retry_prompt,
-            step_key=schema_retry_step_key,
-            audit_context=schema_retry_context,
+    except ClaimInventoryItemsRejectedError as exc:
+        rejected_attempt = _latest_model_attempt_record()
+        rejected_events = _binding_rejection_events(
+            rejections=exc.result.rejected,
+            attempt_record=rejected_attempt,
+            phase=InventoryBindingPhase.CLAIM_INVENTORY,
         )
+        try:
+            retry_result = await _run_inventory_step(
+                chunk=chunk,
+                document_fingerprint=document_fingerprint,
+                output_schema=output_schema,
+                client=client,
+                tenant=tenant,
+                model_id=model_id,
+                step_runner=step_runner,
+                prompt=schema_retry_prompt,
+                step_key=schema_retry_step_key,
+                audit_context=schema_retry_context,
+            )
+        except ClaimInventoryItemsRejectedError as retry_exc:
+            retry_exc.rejection_events = rejected_events + _binding_rejection_events(
+                rejections=retry_exc.result.rejected,
+                attempt_record=_latest_model_attempt_record(),
+                phase=InventoryBindingPhase.CLAIM_INVENTORY,
+            )
+            raise
+        except (ValidationError, StructuredModelValidationError) as retry_exc:
+            raise ClaimInventoryRepairFailedError(
+                cause=retry_exc,
+                rejection_events=rejected_events,
+            ) from retry_exc
+        repaired = _claim_inventory_stage_result((retry_result,))
+        rejected_raw = rejected_attempt.raw_model_payload
+        if rejected_raw is None:
+            raise AssertionError(
+                "rejected inventory attempt lost its raw payload"
+            ) from exc
+        combined_events = rejected_events + repaired.binding_rejections
         return ClaimInventoryStageResult(
-            claims=retry_result.value,
-            raw_agent_outputs=(retry_result.raw_output,),
+            claims=repaired.claims,
+            binding_status=(
+                InventoryBatchBindingStatus.MIXED
+                if repaired.claims
+                else InventoryBatchBindingStatus.ALL_REJECTED
+            ),
+            binding_rejections=combined_events,
+            raw_agent_outputs=(rejected_raw, *repaired.raw_agent_outputs),
+        )
+    except (ValidationError, StructuredModelValidationError):
+        try:
+            retry_result = await _run_inventory_step(
+                chunk=chunk,
+                document_fingerprint=document_fingerprint,
+                output_schema=output_schema,
+                client=client,
+                tenant=tenant,
+                model_id=model_id,
+                step_runner=step_runner,
+                prompt=schema_retry_prompt,
+                step_key=schema_retry_step_key,
+                audit_context=schema_retry_context,
+            )
+        except ClaimInventoryItemsRejectedError as retry_exc:
+            retry_exc.rejection_events = _binding_rejection_events(
+                rejections=retry_exc.result.rejected,
+                attempt_record=_latest_model_attempt_record(),
+                phase=InventoryBindingPhase.CLAIM_INVENTORY,
+            )
+            raise
+        return _claim_inventory_stage_result(
+            (retry_result,),
         )
 
     record_skipped_model_attempt(
@@ -233,10 +377,7 @@ async def run_claim_inventory_stage(
         step_key=schema_retry_step_key,
         audit_context=schema_retry_context,
     )
-    return ClaimInventoryStageResult(
-        claims=result.value,
-        raw_agent_outputs=(result.raw_output,),
-    )
+    return _claim_inventory_stage_result((result,))
 
 
 def build_inventory_completeness_prompt(
@@ -247,6 +388,7 @@ def build_inventory_completeness_prompt(
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     confirmation: bool,
     excluded_inventory: tuple[BoundClaimInventoryItem, ...] = (),
+    binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = (),
     schema_retry: bool = False,
 ) -> str:
     """Build an independent source-only completeness review prompt."""
@@ -276,6 +418,19 @@ def build_inventory_completeness_prompt(
         separators=(",", ":"),
         ensure_ascii=True,
     )
+    rejection_json = json.dumps(
+        [
+            {
+                "rejection_id": rejection.rejection_id,
+                "batch_index": rejection.batch_index,
+                "disposition": rejection.disposition.value,
+            }
+            for rejection in binding_rejections
+        ],
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
     phase = "post_recovery_confirmation" if confirmation else "initial_review"
     return (
         f"{CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT}\n\n"
@@ -290,6 +445,8 @@ def build_inventory_completeness_prompt(
         f"{inventory_json}\n"
         "---\nEXCLUDED REVIEWED ITEMS\n---\n"
         f"{excluded_json}\n"
+        "---\nREJECTED INVENTORY ITEM EVIDENCE\n---\n"
+        f"{rejection_json}\n"
         "---\nFROZEN SOURCE CHUNK\n---\n"
         f"{chunk.text}\n"
         "---\n"
@@ -311,6 +468,7 @@ async def run_inventory_completeness_review_stage(
     execution_namespace: str,
     confirmation: bool = False,
     excluded_inventory: tuple[BoundClaimInventoryItem, ...] = (),
+    binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = (),
 ) -> InventoryCompletenessStageResult:
     """Review completeness with one audited schema-repair opportunity."""
 
@@ -320,6 +478,7 @@ async def run_inventory_completeness_review_stage(
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
         excluded_inventory=excluded_inventory,
+        binding_rejections=binding_rejections,
         confirmation=confirmation,
     )
     phase = "confirmation" if confirmation else "initial"
@@ -329,6 +488,7 @@ async def run_inventory_completeness_review_stage(
         chunk=chunk,
         current_inventory=current_inventory,
         excluded_inventory=excluded_inventory,
+        binding_rejections=binding_rejections,
         model_id=model_id,
         execution_namespace=execution_namespace,
     )
@@ -336,6 +496,7 @@ async def run_inventory_completeness_review_stage(
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
         excluded_inventory=excluded_inventory,
+        binding_rejections=binding_rejections,
         schema_retry=False,
     )
     retry_prompt = build_inventory_completeness_prompt(
@@ -344,6 +505,7 @@ async def run_inventory_completeness_review_stage(
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
         excluded_inventory=excluded_inventory,
+        binding_rejections=binding_rejections,
         confirmation=confirmation,
         schema_retry=True,
     )
@@ -355,6 +517,7 @@ async def run_inventory_completeness_review_stage(
         chunk=chunk,
         current_inventory=current_inventory,
         excluded_inventory=excluded_inventory,
+        binding_rejections=binding_rejections,
         model_id=model_id,
         execution_namespace=execution_namespace,
     )
@@ -362,6 +525,7 @@ async def run_inventory_completeness_review_stage(
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
         excluded_inventory=excluded_inventory,
+        binding_rejections=binding_rejections,
         schema_retry=True,
     )
     try:
@@ -396,6 +560,11 @@ async def run_inventory_completeness_review_stage(
         )
         return InventoryCompletenessStageResult(
             review=retry_result.value,
+            binding_rejections=_binding_rejection_events(
+                rejections=retry_result.value.binding_rejections,
+                attempt_record=retry_result.attempt_record,
+                phase=InventoryBindingPhase.COMPLETENESS_REVIEW,
+            ),
             raw_agent_outputs=(retry_result.raw_output,),
         )
 
@@ -408,8 +577,79 @@ async def run_inventory_completeness_review_stage(
     )
     return InventoryCompletenessStageResult(
         review=result.value,
+        binding_rejections=_binding_rejection_events(
+            rejections=result.value.binding_rejections,
+            attempt_record=result.attempt_record,
+            phase=InventoryBindingPhase.COMPLETENESS_REVIEW,
+        ),
         raw_agent_outputs=(result.raw_output,),
     )
+
+
+def _claim_inventory_stage_result(
+    results: tuple[
+        AuditedStructuredStepResult[BaseModel, ClaimInventoryBindingResult], ...
+    ],
+) -> ClaimInventoryStageResult:
+    claims = merge_bound_claim_inventories(
+        *(result.value.accepted for result in results),
+    )
+    binding_rejections = tuple(
+        event
+        for result in results
+        for event in _binding_rejection_events(
+            rejections=result.value.rejected,
+            attempt_record=result.attempt_record,
+            phase=InventoryBindingPhase.CLAIM_INVENTORY,
+        )
+    )
+    if claims:
+        status = (
+            InventoryBatchBindingStatus.MIXED
+            if binding_rejections
+            else InventoryBatchBindingStatus.COMPLETE
+        )
+    else:
+        status = (
+            InventoryBatchBindingStatus.ALL_REJECTED
+            if binding_rejections
+            else InventoryBatchBindingStatus.EMPTY
+        )
+    return ClaimInventoryStageResult(
+        claims=claims,
+        binding_status=status,
+        binding_rejections=binding_rejections,
+        raw_agent_outputs=tuple(result.raw_output for result in results),
+    )
+
+
+def _binding_rejection_events(
+    *,
+    rejections: tuple[ClaimInventoryBindingRejection, ...],
+    attempt_record: ModelAttemptAuditRecord,
+    phase: InventoryBindingPhase,
+) -> tuple[ClaimInventoryBindingRejectionEvent, ...]:
+    return tuple(
+        ClaimInventoryBindingRejectionEvent(
+            event_id=hashlib.sha256(
+                (
+                    f"{phase.value}:{attempt_record.invocation_id}:"
+                    f"{rejection.rejection_id}"
+                ).encode(),
+            ).hexdigest(),
+            phase=phase,
+            rejection=rejection,
+            attempt_record=attempt_record,
+        )
+        for rejection in rejections
+    )
+
+
+def _latest_model_attempt_record() -> ModelAttemptAuditRecord:
+    session = current_model_attempt_audit()
+    if session is None or not session.records:
+        raise AssertionError("inventory rejection lacks an audit record")
+    return session.records[-1]
 
 
 def build_missing_claim_recovery_prompt(
@@ -565,11 +805,11 @@ async def _run_inventory_step(
     prompt: str,
     step_key: str,
     audit_context: ModelAttemptAuditContext,
-) -> AuditedStructuredStepResult[BaseModel, tuple[BoundClaimInventoryItem, ...]]:
-    def _bind(parsed: BaseModel) -> tuple[BoundClaimInventoryItem, ...]:
+) -> AuditedStructuredStepResult[BaseModel, ClaimInventoryBindingResult]:
+    def _bind(parsed: BaseModel) -> ClaimInventoryBindingResult:
         output = cast("ClaimInventoryResultLike", parsed)
         try:
-            return bind_claim_inventory(
+            result = bind_claim_inventory_items(
                 tuple(output.claims),
                 source_text=chunk.text,
                 source_sha256=document_fingerprint,
@@ -578,6 +818,9 @@ async def _run_inventory_step(
             )
         except ClaimInventoryBindingError as exc:
             raise StructuredModelSemanticError(str(exc)) from exc
+        if not result.accepted and result.rejected:
+            raise ClaimInventoryItemsRejectedError(result)
+        return result
 
     async def _invoke_model(
         invocation_id: str,
@@ -691,6 +934,7 @@ def _inventory_review_step_key(
     chunk: RelationExtractionTextChunk,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     excluded_inventory: tuple[BoundClaimInventoryItem, ...],
+    binding_rejections: tuple[ClaimInventoryBindingRejection, ...],
     model_id: str,
     execution_namespace: str,
 ) -> str:
@@ -700,7 +944,11 @@ def _inventory_review_step_key(
         phase,
         model_id,
         chunk.sha256,
-        _inventory_review_input_sha256(current_inventory, excluded_inventory),
+        inventory_completeness_input_sha256(
+            current_inventory,
+            excluded_inventory,
+            binding_rejections,
+        ),
         execution_namespace,
     )
 
@@ -710,6 +958,7 @@ def _inventory_review_audit_context(
     document_fingerprint: str,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     excluded_inventory: tuple[BoundClaimInventoryItem, ...],
+    binding_rejections: tuple[ClaimInventoryBindingRejection, ...],
     schema_retry: bool,
 ) -> ModelAttemptAuditContext:
     return ModelAttemptAuditContext(
@@ -719,23 +968,28 @@ def _inventory_review_audit_context(
         pass_role="claim_inventory_completeness",
         retry_context=None,
         source_sha256=document_fingerprint,
-        input_sha256=_inventory_review_input_sha256(
+        input_sha256=inventory_completeness_input_sha256(
             current_inventory,
             excluded_inventory,
+            binding_rejections,
         ),
         semantic_unit_id=None,
     )
 
 
-def _inventory_review_input_sha256(
+def inventory_completeness_input_sha256(
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     excluded_inventory: tuple[BoundClaimInventoryItem, ...],
+    binding_rejections: tuple[ClaimInventoryBindingRejection, ...],
 ) -> str:
-    if not excluded_inventory:
+    if not excluded_inventory and not binding_rejections:
         return claim_inventory_batch_input_sha256(current_inventory)
     payload = {
         "current_inventory_ids": [claim.inventory_id for claim in current_inventory],
         "excluded_inventory_ids": [claim.inventory_id for claim in excluded_inventory],
+        "binding_rejection_ids": [
+            rejection.rejection_id for rejection in binding_rejections
+        ],
     }
     encoded = json.dumps(
         payload,
@@ -773,7 +1027,13 @@ __all__ = [
     "CLAIM_INVENTORY_PROMPT_VERSION",
     "MISSING_CLAIM_RECOVERY_PROMPT_VERSION",
     "ClaimInventoryStageResult",
+    "ClaimInventoryBindingRejectionEvent",
+    "ClaimInventoryItemsRejectedError",
+    "ClaimInventoryRepairFailedError",
+    "InventoryBatchBindingStatus",
+    "InventoryBindingPhase",
     "InventoryCompletenessStageResult",
+    "inventory_completeness_input_sha256",
     "MissingClaimRecoveryStageResult",
     "build_inventory_completeness_prompt",
     "build_missing_claim_recovery_prompt",

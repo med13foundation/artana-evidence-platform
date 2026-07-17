@@ -308,6 +308,7 @@ class DocumentCandidateExtractionDiagnostics:
     claim_lineage: tuple[ClaimExtractionLineage, ...] = ()
     raw_agent_outputs: tuple[dict[str, object], ...] = ()
     model_attempt_records: tuple[dict[str, object], ...] = ()
+    inventory_binding_rejections: tuple[dict[str, object], ...] = ()
 
     @property
     def agent_extraction_completed(self) -> bool:
@@ -357,24 +358,16 @@ class DocumentCandidateExtractionDiagnostics:
             "fallback_output_used": self.fallback_output_used,
             "trusted_evidence_eligible": self.trusted_evidence_eligible,
         }
-        if self.llm_candidate_count > 0:
-            payload["llm_candidate_count"] = self.llm_candidate_count
-        if self.fallback_candidate_count > 0:
-            payload["fallback_candidate_count"] = self.fallback_candidate_count
-        if self.pruned_generic_relation_count > 0:
-            payload["pruned_generic_relation_count"] = (
-                self.pruned_generic_relation_count
-            )
-        if self.quality_filtered_candidate_count > 0:
-            payload["quality_filtered_candidate_count"] = (
-                self.quality_filtered_candidate_count
-            )
-        if self.llm_extraction_chunk_count > 0:
-            payload["llm_extraction_chunk_count"] = self.llm_extraction_chunk_count
-        if self.llm_extraction_text_char_count > 0:
-            payload["llm_extraction_text_char_count"] = (
-                self.llm_extraction_text_char_count
-            )
+        for field_name, value in (
+            ("llm_candidate_count", self.llm_candidate_count),
+            ("fallback_candidate_count", self.fallback_candidate_count),
+            ("pruned_generic_relation_count", self.pruned_generic_relation_count),
+            ("quality_filtered_candidate_count", self.quality_filtered_candidate_count),
+            ("llm_extraction_chunk_count", self.llm_extraction_chunk_count),
+            ("llm_extraction_text_char_count", self.llm_extraction_text_char_count),
+        ):
+            if value > 0:
+                payload[field_name] = value
         if self.claim_extraction_routing_status != "not_run":
             payload["claim_extraction_routing_status"] = (
                 self.claim_extraction_routing_status
@@ -390,6 +383,10 @@ class DocumentCandidateExtractionDiagnostics:
         if self.model_attempt_records:
             payload["model_attempt_records"] = json_value(
                 self.model_attempt_records,
+            )
+        if self.inventory_binding_rejections:
+            payload["inventory_binding_rejections"] = json_value(
+                self.inventory_binding_rejections,
             )
         if self.llm_candidate_error is not None:
             payload["llm_candidate_error"] = self.llm_candidate_error

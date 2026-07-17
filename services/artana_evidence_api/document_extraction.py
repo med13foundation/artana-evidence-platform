@@ -310,6 +310,10 @@ def _route_agent_extraction_result(
             }
             for claim in extraction_attempt.non_relation_items
         ),
+        inventory_binding_rejections=tuple(
+            rejection.as_json()
+            for rejection in extraction_attempt.inventory_binding_rejections
+        ),
     )
 
 
@@ -600,6 +604,9 @@ async def discover_relation_candidates(  # noqa: PLR0911
     model_attempt_records = tuple(
         getattr(llm_candidates, "model_attempt_records", ()),
     )
+    inventory_binding_rejections = tuple(
+        getattr(llm_candidates, "inventory_binding_rejections", ()),
+    )
 
     if routing_status == "semantic_incomplete":
         return (
@@ -608,6 +615,7 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 claim_lineage=claim_lineage,
                 raw_agent_outputs=raw_agent_outputs,
                 model_attempt_records=model_attempt_records,
+                inventory_binding_rejections=inventory_binding_rejections,
                 llm_extraction_chunk_count=llm_extraction_chunk_count,
                 llm_extraction_text_char_count=llm_extraction_text_char_count,
             ),
@@ -627,6 +635,7 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 claim_lineage=claim_lineage,
                 raw_agent_outputs=raw_agent_outputs,
                 model_attempt_records=model_attempt_records,
+                inventory_binding_rejections=inventory_binding_rejections,
             ),
         )
 
@@ -648,6 +657,7 @@ async def discover_relation_candidates(  # noqa: PLR0911
             claim_lineage=claim_lineage,
             raw_agent_outputs=raw_agent_outputs,
             model_attempt_records=model_attempt_records,
+            inventory_binding_rejections=inventory_binding_rejections,
         ),
     )
 

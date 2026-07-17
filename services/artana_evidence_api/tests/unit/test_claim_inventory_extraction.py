@@ -40,6 +40,10 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
     build_relation_extraction_text_chunks,
 )
+from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    ClaimInventoryItemsRejectedError,
+    ClaimInventoryRepairFailedError,
+)
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     output_schema_json_sha256,
     parse_provider_invocation_binding,
@@ -147,8 +151,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v12:claim_inventory.v9+"
-        "claim_inventory_completeness.v8+claim_inventory_recovery.v8+"
+        "document_extraction.claim_pipeline.v13:claim_inventory.v9+"
+        "claim_inventory_completeness.v9+claim_inventory_recovery.v8+"
         "claim_framing.v7"
     )
 
@@ -764,6 +768,224 @@ async def test_inventory_frames_each_claim_in_multi_claim_sentence(
         lineage.framing_attempt["provider_response_id"] is not None
         for lineage in result.claim_lineage
     )
+
+
+@pytest.mark.asyncio
+async def test_mixed_inventory_rejects_one_item_without_discarding_valid_claim() -> (
+    None
+):
+    valid_span = "IL-4 inhibited FOXP3."
+    text = f"{valid_span} GATA3 expression was unchanged."
+    invalid_claim = _inventory_claim(
+        exact_span="GATA3 ... was unchanged.",
+        endpoint_a_span="GATA3",
+        relation_cue_span="unchanged",
+        endpoint_b_span="unchanged",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {
+                "claims": [
+                    _inventory_claim(
+                        exact_span=valid_span,
+                        endpoint_a_span="IL-4",
+                        relation_cue_span="inhibited",
+                        endpoint_b_span="FOXP3",
+                    ),
+                    invalid_claim,
+                ],
+            },
+            _complete_inventory(),
+            _framed_relation(
+                sentence=valid_span,
+                subject="IL-4",
+                relation_type="INHIBITS",
+                object_="FOXP3",
+            ),
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.inventory_claim_count == 1
+    assert result.raw_relation_count == 1
+    assert len(result.inventory_binding_rejections) == 1
+    rejection = result.inventory_binding_rejections[0]
+    assert rejection.item.exact_span == "GATA3 ... was unchanged."
+    assert rejection.disposition.value == "EXACT_SPAN_MISSING"
+    assert [candidate.subject_label for candidate in result.candidates] == ["IL-4"]
+    completeness_prompt = str(runner.calls[1]["prompt"])
+    assert rejection.rejection_id in completeness_prompt
+    assert "GATA3 ... was unchanged." not in completeness_prompt
+    framing_prompt = str(runner.calls[2]["prompt"])
+    assert rejection.rejection_id not in framing_prompt
+    assert "GATA3 ... was unchanged." not in framing_prompt
+
+
+@pytest.mark.asyncio
+async def test_all_rejected_inventory_uses_semantic_repair_not_zero_retry() -> None:
+    valid_span = "IL-4 inhibited FOXP3."
+    text = valid_span
+    runner = ScriptedStepRunner(
+        (
+            {
+                "claims": [
+                    _inventory_claim(
+                        exact_span="IL-4 ... FOXP3.",
+                        endpoint_a_span="IL-4",
+                        relation_cue_span="inhibited",
+                        endpoint_b_span="FOXP3",
+                    ),
+                ],
+            },
+            {
+                "claims": [
+                    _inventory_claim(
+                        exact_span=valid_span,
+                        endpoint_a_span="IL-4",
+                        relation_cue_span="inhibited",
+                        endpoint_b_span="FOXP3",
+                    ),
+                ],
+            },
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert [claim.item.exact_span for claim in result.claims] == [valid_span]
+    assert len(result.inventory_binding_rejections) == 1
+    rejection = result.inventory_binding_rejections[0]
+    assert rejection.phase.value == "CLAIM_INVENTORY"
+    assert rejection.attempt_record.provider_response_id == "resp_unit_test_1"
+    assert rejection.item.exact_span == "IL-4 ... FOXP3."
+    assert [call["schema_id"] for call in runner.calls] == [
+        "document_extraction.claim_inventory.v3",
+        "document_extraction.claim_inventory.v3",
+        "document_extraction.claim_inventory_completeness.v3",
+    ]
+    assert "SCHEMA AND SOURCE-BINDING RETRY" in str(runner.calls[1]["prompt"])
+    assert all(
+        call["schema_id"] != "document_extraction.claim_inventory.v3"
+        or "ZERO-INVENTORY RETRY" not in str(call["prompt"])
+        for call in runner.calls
+    )
+
+
+@pytest.mark.asyncio
+async def test_all_rejected_then_schema_invalid_repair_retains_lineage() -> None:
+    text = "IL-4 inhibited FOXP3."
+    unbound = _inventory_claim(
+        exact_span="IL-4 ... FOXP3.",
+        endpoint_a_span="IL-4",
+        relation_cue_span="inhibited",
+        endpoint_b_span="FOXP3",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [unbound]},
+            {"claims": "invalid repair"},
+        ),
+    )
+
+    with pytest.raises(ClaimInventoryRepairFailedError) as raised:
+        await _run_inventory(text=text, runner=runner)
+
+    assert len(raised.value.rejection_events) == 1
+    event = raised.value.rejection_events[0]
+    assert event.item.exact_span == "IL-4 ... FOXP3."
+    assert event.attempt_record.attempt_role == "claim_inventory"
+    assert event.attempt_record.provider_response_id == "resp_unit_test_1"
+
+
+@pytest.mark.asyncio
+async def test_zero_retry_all_rejected_then_invalid_repair_retains_lineage() -> None:
+    text = "IL-4 inhibited FOXP3."
+    unbound = _inventory_claim(
+        exact_span="IL-4 ... FOXP3.",
+        endpoint_a_span="IL-4",
+        relation_cue_span="inhibited",
+        endpoint_b_span="FOXP3",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": []},
+            {"claims": [unbound]},
+            {"claims": "invalid repair"},
+        ),
+    )
+
+    with pytest.raises(ClaimInventoryRepairFailedError) as raised:
+        await _run_inventory(text=text, runner=runner)
+
+    assert len(raised.value.rejection_events) == 1
+    event = raised.value.rejection_events[0]
+    assert event.item.exact_span == "IL-4 ... FOXP3."
+    assert event.attempt_record.attempt_role == "zero_candidate_retry"
+    assert event.attempt_record.retry_context == "zero_candidate_retry"
+    assert event.attempt_record.provider_response_id == "resp_unit_test_2"
+
+
+@pytest.mark.asyncio
+async def test_completeness_recovery_preserves_valid_missing_descriptor_sibling() -> (
+    None
+):
+    first_span = "IL-4 inhibited FOXP3."
+    second_span = "STAT3 increased GATA3 expression."
+    text = f"{first_span} {second_span} AKT1 abundance was unchanged."
+    valid_missing = _inventory_claim(
+        exact_span=second_span,
+        endpoint_a_span="STAT3",
+        relation_cue_span="increased",
+        endpoint_b_span="GATA3 expression",
+    )
+    invalid_missing = _inventory_claim(
+        exact_span="AKT1 ... was unchanged.",
+        endpoint_a_span="AKT1",
+        relation_cue_span="unchanged",
+        endpoint_b_span="abundance",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {
+                "claims": [
+                    _inventory_claim(
+                        exact_span=first_span,
+                        endpoint_a_span="IL-4",
+                        relation_cue_span="inhibited",
+                        endpoint_b_span="FOXP3",
+                    ),
+                ],
+            },
+            {
+                "decision": "INCOMPLETE",
+                "missing_claims": [valid_missing, invalid_missing],
+                "review_rationale": "One valid claim and one malformed descriptor.",
+            },
+            {
+                "decision": "RECOVER_EXPLICIT_CLAIM",
+                "decision_rationale": "The second source sentence is explicit.",
+            },
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert [claim.item.exact_span for claim in result.claims] == [
+        first_span,
+        second_span,
+    ]
+    assert result.semantic_inventory_complete is True
+    assert result.unresolved_binding_rejection_count == 0
+    assert len(result.inventory_binding_rejections) == 1
+    rejection = result.inventory_binding_rejections[0]
+    assert rejection.phase.value == "COMPLETENESS_REVIEW"
+    assert rejection.item.exact_span == "AKT1 ... was unchanged."
+    confirmation_prompt = str(runner.calls[3]["prompt"])
+    assert rejection.rejection_id in confirmation_prompt
+    assert "AKT1 ... was unchanged." not in confirmation_prompt
 
 
 @pytest.mark.asyncio
@@ -1449,6 +1671,33 @@ async def test_inventory_schema_failure_is_audited_and_repaired_by_agent() -> No
     ]
     assert inventory_records[0].raw_model_payload == {"claims": [invalid_claim]}
     assert result.raw_relation_count == 1
+
+
+@pytest.mark.asyncio
+async def test_schema_retry_all_rejected_retains_provider_bound_rejection() -> None:
+    text = "MED13 causes cardiomyopathy."
+    invalid_schema = {"claims": "not an inventory array"}
+    unbound_claim = _inventory_claim(
+        exact_span="MED13 ... cardiomyopathy.",
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    runner = ScriptedStepRunner(
+        (
+            invalid_schema,
+            {"claims": [unbound_claim]},
+        ),
+    )
+
+    with pytest.raises(ClaimInventoryItemsRejectedError) as raised:
+        await _run_inventory(text=text, runner=runner)
+
+    assert len(raised.value.rejection_events) == 1
+    rejection = raised.value.rejection_events[0]
+    assert rejection.item.exact_span == "MED13 ... cardiomyopathy."
+    assert rejection.attempt_record.attempt_role == "schema_retry"
+    assert rejection.attempt_record.provider_response_id == "resp_unit_test_2"
 
 
 @pytest.mark.asyncio
