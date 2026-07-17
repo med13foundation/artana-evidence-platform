@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from typing import Protocol, cast
@@ -17,11 +18,11 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryBindingError,
     ClaimInventoryCompletenessReview,
     ClaimInventoryItem,
-    MissingClaimRecoveryResult,
+    MissingClaimRecoveryDecision,
+    MissingClaimRecoveryDisposition,
     bind_claim_inventory,
     bind_inventory_completeness_review,
     claim_inventory_batch_input_sha256,
-    require_recovery_matches_review,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
@@ -87,6 +88,15 @@ class InventoryCompletenessStageResult:
     """Source-bound categorical review plus its immutable agent output."""
 
     review: BoundInventoryCompletenessReview
+    raw_agent_outputs: tuple[dict[str, object], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class MissingClaimRecoveryStageResult:
+    """Categorical recovery decision bound to one immutable reviewed claim."""
+
+    decision: MissingClaimRecoveryDisposition
+    reviewed_claim: BoundClaimInventoryItem
     raw_agent_outputs: tuple[dict[str, object], ...]
 
 
@@ -230,6 +240,7 @@ def build_inventory_completeness_prompt(
     document_fingerprint: str,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
     confirmation: bool,
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...] = (),
     schema_retry: bool = False,
 ) -> str:
     """Build an independent source-only completeness review prompt."""
@@ -247,6 +258,18 @@ def build_inventory_completeness_prompt(
         separators=(",", ":"),
         ensure_ascii=True,
     )
+    excluded_json = json.dumps(
+        [
+            {
+                "inventory_id": claim.inventory_id,
+                "claim": claim.item.model_dump(mode="json"),
+            }
+            for claim in excluded_inventory
+        ],
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
     phase = "post_recovery_confirmation" if confirmation else "initial_review"
     return (
         f"{CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT}\n\n"
@@ -259,6 +282,8 @@ def build_inventory_completeness_prompt(
         "- source_locator: normalized_extraction_text\n\n"
         "---\nCOMPLETE RETURNED INVENTORY\n---\n"
         f"{inventory_json}\n"
+        "---\nEXCLUDED REVIEWED ITEMS\n---\n"
+        f"{excluded_json}\n"
         "---\nFROZEN SOURCE CHUNK\n---\n"
         f"{chunk.text}\n"
         "---\n"
@@ -279,6 +304,7 @@ async def run_inventory_completeness_review_stage(
     step_runner: ModelStepRunner,
     execution_namespace: str,
     confirmation: bool = False,
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...] = (),
 ) -> InventoryCompletenessStageResult:
     """Review completeness with one audited schema-repair opportunity."""
 
@@ -287,6 +313,7 @@ async def run_inventory_completeness_review_stage(
         total_chunks=total_chunks,
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
+        excluded_inventory=excluded_inventory,
         confirmation=confirmation,
     )
     phase = "confirmation" if confirmation else "initial"
@@ -295,12 +322,14 @@ async def run_inventory_completeness_review_stage(
         phase=phase,
         chunk=chunk,
         current_inventory=current_inventory,
+        excluded_inventory=excluded_inventory,
         model_id=model_id,
         execution_namespace=execution_namespace,
     )
     audit_context = _inventory_review_audit_context(
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
+        excluded_inventory=excluded_inventory,
         schema_retry=False,
     )
     retry_prompt = build_inventory_completeness_prompt(
@@ -308,6 +337,7 @@ async def run_inventory_completeness_review_stage(
         total_chunks=total_chunks,
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
+        excluded_inventory=excluded_inventory,
         confirmation=confirmation,
         schema_retry=True,
     )
@@ -318,12 +348,14 @@ async def run_inventory_completeness_review_stage(
         phase=phase,
         chunk=chunk,
         current_inventory=current_inventory,
+        excluded_inventory=excluded_inventory,
         model_id=model_id,
         execution_namespace=execution_namespace,
     )
     retry_context = _inventory_review_audit_context(
         document_fingerprint=document_fingerprint,
         current_inventory=current_inventory,
+        excluded_inventory=excluded_inventory,
         schema_retry=True,
     )
     try:
@@ -331,6 +363,7 @@ async def run_inventory_completeness_review_stage(
             chunk=chunk,
             document_fingerprint=document_fingerprint,
             current_inventory=current_inventory,
+            excluded_inventory=excluded_inventory,
             output_schema=output_schema,
             client=client,
             tenant=tenant,
@@ -345,6 +378,7 @@ async def run_inventory_completeness_review_stage(
             chunk=chunk,
             document_fingerprint=document_fingerprint,
             current_inventory=current_inventory,
+            excluded_inventory=excluded_inventory,
             output_schema=output_schema,
             client=client,
             tenant=tenant,
@@ -413,8 +447,8 @@ async def run_missing_claim_recovery_stage(
     model_id: str,
     step_runner: ModelStepRunner,
     execution_namespace: str,
-) -> ClaimInventoryStageResult:
-    """Run exactly one audited recovery call for one reviewed missing claim."""
+) -> MissingClaimRecoveryStageResult:
+    """Adjudicate one reviewed descriptor without allowing span rewrites."""
 
     prompt = build_missing_claim_recovery_prompt(
         chunk=chunk,
@@ -422,7 +456,7 @@ async def run_missing_claim_recovery_stage(
         missing_claim=missing_claim,
     )
     step_key = fingerprinted_step_key(
-        "research_init.claim_inventory_recovery.v3",
+        "research_init.claim_inventory_recovery.v4",
         MISSING_CLAIM_RECOVERY_PROMPT_VERSION,
         model_id,
         document_fingerprint,
@@ -438,23 +472,9 @@ async def run_missing_claim_recovery_stage(
         semantic_unit_id=missing_claim.inventory_id,
     )
 
-    def _bind_recovery(parsed: BaseModel) -> tuple[BoundClaimInventoryItem, ...]:
-        output = cast("MissingClaimRecoveryResult", parsed)
-        try:
-            recovered = bind_claim_inventory(
-                output.claims,
-                source_text=chunk.text,
-                source_sha256=document_fingerprint,
-                chunk_index=chunk.index,
-                source_start_offset=chunk.start_char,
-            )
-            require_recovery_matches_review(
-                recovered_claims=recovered,
-                reviewed_missing_claims=(missing_claim,),
-            )
-        except ClaimInventoryBindingError as exc:
-            raise StructuredModelSemanticError(str(exc)) from exc
-        return recovered
+    def _bind_recovery(parsed: BaseModel) -> MissingClaimRecoveryDisposition:
+        output = cast("MissingClaimRecoveryDecision", parsed)
+        return output.decision
 
     async def _invoke_model(
         invocation_id: str,
@@ -467,7 +487,7 @@ async def run_missing_claim_recovery_stage(
             model=model_id,
             prompt=provider_prompt,
             output_schema=output_schema,
-            schema_id="document_extraction.claim_inventory_recovery.v3",
+            schema_id="document_extraction.claim_inventory_recovery.v4",
             step_key=step_key,
             replay_policy="fork_on_drift",
         )
@@ -481,8 +501,9 @@ async def run_missing_claim_recovery_stage(
         audit_context=audit_context,
         validate_semantics=_bind_recovery,
     )
-    return ClaimInventoryStageResult(
-        claims=result.value,
+    return MissingClaimRecoveryStageResult(
+        decision=result.value,
+        reviewed_claim=missing_claim,
         raw_agent_outputs=(result.raw_output,),
     )
 
@@ -584,6 +605,7 @@ async def _run_inventory_completeness_step(
     chunk: RelationExtractionTextChunk,
     document_fingerprint: str,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...],
     output_schema: type[BaseModel],
     client: object,
     tenant: object,
@@ -603,6 +625,7 @@ async def _run_inventory_completeness_step(
                 chunk_index=chunk.index,
                 source_start_offset=chunk.start_char,
                 current_inventory=current_inventory,
+                excluded_inventory=excluded_inventory,
             )
         except ClaimInventoryBindingError as exc:
             raise StructuredModelSemanticError(str(exc)) from exc
@@ -661,6 +684,7 @@ def _inventory_review_step_key(
     phase: str,
     chunk: RelationExtractionTextChunk,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...],
     model_id: str,
     execution_namespace: str,
 ) -> str:
@@ -670,7 +694,7 @@ def _inventory_review_step_key(
         phase,
         model_id,
         chunk.sha256,
-        claim_inventory_batch_input_sha256(current_inventory),
+        _inventory_review_input_sha256(current_inventory, excluded_inventory),
         execution_namespace,
     )
 
@@ -679,6 +703,7 @@ def _inventory_review_audit_context(
     *,
     document_fingerprint: str,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...],
     schema_retry: bool,
 ) -> ModelAttemptAuditContext:
     return ModelAttemptAuditContext(
@@ -688,9 +713,35 @@ def _inventory_review_audit_context(
         pass_role="claim_inventory_completeness",
         retry_context=None,
         source_sha256=document_fingerprint,
-        input_sha256=claim_inventory_batch_input_sha256(current_inventory),
+        input_sha256=_inventory_review_input_sha256(
+            current_inventory,
+            excluded_inventory,
+        ),
         semantic_unit_id=None,
     )
+
+
+def _inventory_review_input_sha256(
+    current_inventory: tuple[BoundClaimInventoryItem, ...],
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...],
+) -> str:
+    if not excluded_inventory:
+        return claim_inventory_batch_input_sha256(current_inventory)
+    payload = {
+        "current_inventory_ids": [
+            claim.inventory_id for claim in current_inventory
+        ],
+        "excluded_inventory_ids": [
+            claim.inventory_id for claim in excluded_inventory
+        ],
+    }
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _inventory_audit_context(
@@ -721,6 +772,7 @@ __all__ = [
     "MISSING_CLAIM_RECOVERY_PROMPT_VERSION",
     "ClaimInventoryStageResult",
     "InventoryCompletenessStageResult",
+    "MissingClaimRecoveryStageResult",
     "build_inventory_completeness_prompt",
     "build_missing_claim_recovery_prompt",
     "build_claim_inventory_prompt",

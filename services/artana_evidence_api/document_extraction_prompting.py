@@ -22,7 +22,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimQualifier,
     ClaimSourceMeasurement,
     EpistemicStatus,
-    MissingClaimRecoveryResult,
+    MissingClaimRecoveryDecision,
     Polarity,
 )
 from pydantic import (
@@ -94,9 +94,9 @@ def build_claim_inventory_completeness_output_schema() -> type[BaseModel]:
 
 
 def build_missing_claim_recovery_output_schema() -> type[BaseModel]:
-    """Return the missing-only inventory recovery schema."""
+    """Return the categorical missing-claim adjudication schema."""
 
-    return MissingClaimRecoveryResult
+    return MissingClaimRecoveryDecision
 
 
 class _SingleClaimFramingEnvelope(BaseModel):
@@ -576,12 +576,20 @@ Inventory sibling predicates as separate claims even when they occur in one sent
 
 CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT = """You independently review whether a supplied claim inventory completely covers one frozen source chunk.
 
-Return one categorical decision only: COMPLETE when every explicit biomedical event and every material typed argument is represented, or INCOMPLETE when at least one event or argument is absent. For INCOMPLETE, return a source-bound descriptor for every missing claim using its complete exact span, typed arguments, event roles, relation cue, event_type, polarity, and epistemic status. When an argument is repeated, aliased, or coreferential, copy each intended verbatim mention_span plus adjacent verbatim context, including the canonical exact_span; when a relation cue repeats, do the same for the intended cue; never return numeric offsets. event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT. For COMPLETE, return no missing descriptors. Include negative, null, uncertain, provisional, hypothesis, and sibling claims. Do not frame final graph endpoints or relation types, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score."""
+Return one categorical decision only: COMPLETE when every explicit biomedical event and every material typed argument is represented, or INCOMPLETE when at least one event or argument is absent. A qualifying event states a biological relationship, experimental finding, treatment effect, measured outcome, explicit hypothesis, or null result between at least two material biomedical participants. A sentence that only identifies primers, probes, reagents, catalog numbers, vendors, instruments, software, assay setup, sample handling, or another procedural method is not a biomedical claim. Do not report such procedural metadata as missing. A methods sentence can still qualify when it explicitly states a biological intervention, mechanism, comparison, or result; classify the source meaning, not its section label or vocabulary alone.
+
+For INCOMPLETE, return a source-bound descriptor for every missing claim using its complete exact span, typed arguments, event roles, relation cue, event_type, polarity, and epistemic status. When an argument is repeated, aliased, or coreferential, copy each intended verbatim mention_span plus adjacent verbatim context, including the canonical exact_span; when a relation cue repeats, do the same for the intended cue; never return numeric offsets. event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT. For COMPLETE, return no missing descriptors. Include negative, null, uncertain, provisional, hypothesis, and sibling claims. Descriptors listed under EXCLUDED REVIEWED ITEMS have already received an independent categorical decision; do not report them again. Do not frame final graph endpoints or relation types, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score."""
 
 
-MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT = """You recover only claims identified as missing by an independent inventory-completeness review.
+MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT = """You independently adjudicate one source-bound descriptor identified as missing by an inventory-completeness review.
 
-Return every reviewed missing claim and no existing or additional claim. Copy every reviewed field exactly, including the complete event span, relation cue, typed arguments, event roles, mention anchors, and rationales; preserve event_type, polarity, and epistemic status; and use source_locator=normalized_extraction_text. For repeated, aliased, or coreferential argument mentions, copy the reviewed verbatim mention_span and adjacent context, including the canonical exact_span; for repeated relation cues, copy the reviewed cue mention_span and context; never return numeric offsets. event_type is exactly one of EXPRESSION, TRANSCRIPTION, DEGRADATION, PHOSPHORYLATION, LOCALIZATION, BINDING, REGULATION, POSITIVE_REGULATION, NEGATIVE_REGULATION, INCREASE, DECREASE, ASSOCIATION, TREATMENT_RESPONSE, NO_EFFECT, or OTHER_EXPLICIT. Do not frame final graph endpoints or relations, rank claims, use outside knowledge, or return confidence, probability, quality, importance, or any other numeric score. If a reviewed descriptor cannot be recovered exactly, return schema-invalid output rather than inventing content."""
+Return exactly one categorical decision and a source-only rationale:
+- RECOVER_EXPLICIT_CLAIM when the frozen source explicitly states a biological relationship, experimental finding, treatment effect, measured outcome, hypothesis, refutation, or null result with at least two material biomedical participants;
+- EXCLUDE_PROCEDURAL_METHOD when the span only documents primers, probes, reagents, catalog numbers, vendors, instruments, software, assay setup, sample handling, or another procedure without stating a biological relationship or result;
+- EXCLUDE_NOT_EXPLICIT when the reviewed descriptor adds a relation, participant, direction, or meaning that the frozen source does not state;
+- ABSTAIN when the source does not support a safe categorical decision.
+
+A methods sentence can still be an explicit scientific claim when it states a biological intervention, mechanism, comparison, or result. Decide from the frozen source and reviewed descriptor, not from section labels, keywords, outside knowledge, or perceived importance. Do not rewrite the descriptor, spans, arguments, anchors, event type, polarity, or epistemic status. Deterministic code preserves the already-bound descriptor unchanged only after RECOVER_EXPLICIT_CLAIM. Do not return confidence, probability, quality, importance, or any numeric score."""
 
 
 SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT = f"""You frame exactly one source-bound, role-typed biomedical assertion. This is not a search or ranking task.

@@ -536,7 +536,7 @@ _POLICIES = (
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v6",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v7",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -585,49 +585,25 @@ _POLICIES = (
         ),
     ),
     AgentOutputSchemaPolicy(
-        schema_id="document_extraction.claim_inventory_recovery.v3",
-        schema_names=("MissingClaimRecoveryResult",),
-        shape_hash="ffdc56f2350b801840891aa82eef0f4d51abaee21a6900f8b4ba0d83dc932601",
+        schema_id="document_extraction.claim_inventory_recovery.v4",
+        schema_names=("MissingClaimRecoveryDecision",),
+        shape_hash="a97e2bcfe7ac51a317407f5e59f5ba66bbd575546fe491ebc4dbf51cd220d33f",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_recovery.v6",),
+        prompt_identifiers=("document_extraction.claim_inventory_recovery.v7",),
         categorical_fields=(
             _category(
-                "$.claims[].source_locator",
+                "$.decision",
                 {
-                    "normalized_extraction_text": (
-                        "the recovered missing claim binds to the frozen normalized source chunk."
-                    ),
+                    "RECOVER_EXPLICIT_CLAIM": "the reviewed descriptor is an explicit source-supported biomedical claim.",
+                    "EXCLUDE_PROCEDURAL_METHOD": "the reviewed descriptor is procedural metadata without a biomedical relationship or result.",
+                    "EXCLUDE_NOT_EXPLICIT": "the reviewed descriptor adds meaning not explicit in the frozen source.",
+                    "ABSTAIN": "the source does not support a safe categorical adjudication.",
                 },
                 evidence_requirement=(
-                    "Every recovered span must exactly match the reviewed missing descriptor."
+                    "The decision must use only the frozen source and the reviewed source-bound descriptor."
                 ),
-            ),
-            _category(
-                "$.claims[].arguments[].role",
-                _CLAIM_ARGUMENT_ROLE,
-                evidence_requirement="The recovered claim must preserve every reviewed argument role.",
-            ),
-            _category(
-                "$.claims[].arguments[].event_role",
-                _CLAIM_EVENT_ROLE,
-                evidence_requirement="The recovered claim must preserve every reviewed event role.",
-            ),
-            _category(
-                "$.claims[].event_type",
-                _CLAIM_EVENT_TYPE,
-                evidence_requirement="The recovered claim must preserve reviewed event semantics.",
-            ),
-            _category(
-                "$.claims[].polarity",
-                _CLAIM_POLARITY,
-                evidence_requirement="The recovered claim must preserve reviewed direction.",
-            ),
-            _category(
-                "$.claims[].epistemic_status",
-                _CLAIM_EPISTEMIC_STATUS,
-                evidence_requirement="The recovered claim must preserve reviewed status.",
             ),
         ),
     ),

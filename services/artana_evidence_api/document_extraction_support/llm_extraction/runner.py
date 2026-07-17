@@ -17,6 +17,7 @@ from artana_evidence_api.document_extraction_prompting import (
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
     InventoryCompletenessDecision,
+    MissingClaimRecoveryDisposition,
     coalesce_long_sentence_chunks,
     merge_bound_claim_inventories,
 )
@@ -359,6 +360,8 @@ async def _inventory_chunk_with_recovery(
         )
 
     recovered_claims: tuple[BoundClaimInventoryItem, ...] = ()
+    excluded_claims: tuple[BoundClaimInventoryItem, ...] = ()
+    unresolved_recovery_claims: tuple[BoundClaimInventoryItem, ...] = ()
     for missing_claim in review_result.review.missing_claims:
         recovery_result = await run_missing_claim_recovery_stage(
             chunk=chunk,
@@ -371,11 +374,28 @@ async def _inventory_chunk_with_recovery(
             step_runner=step_runner,
             execution_namespace=execution_namespace,
         )
-        recovered_claims = merge_bound_claim_inventories(
-            recovered_claims,
-            recovery_result.claims,
-        )
         raw_outputs.extend(recovery_result.raw_agent_outputs)
+        if (
+            recovery_result.decision
+            is MissingClaimRecoveryDisposition.RECOVER_EXPLICIT_CLAIM
+        ):
+            recovered_claims = merge_bound_claim_inventories(
+                recovered_claims,
+                (recovery_result.reviewed_claim,),
+            )
+        elif recovery_result.decision in {
+            MissingClaimRecoveryDisposition.EXCLUDE_PROCEDURAL_METHOD,
+            MissingClaimRecoveryDisposition.EXCLUDE_NOT_EXPLICIT,
+        }:
+            excluded_claims = merge_bound_claim_inventories(
+                excluded_claims,
+                (recovery_result.reviewed_claim,),
+            )
+        else:
+            unresolved_recovery_claims = merge_bound_claim_inventories(
+                unresolved_recovery_claims,
+                (recovery_result.reviewed_claim,),
+            )
 
     combined_inventory = merge_bound_claim_inventories(
         inventory_claims,
@@ -393,12 +413,17 @@ async def _inventory_chunk_with_recovery(
         step_runner=step_runner,
         execution_namespace=execution_namespace,
         confirmation=True,
+        excluded_inventory=excluded_claims,
     )
     raw_outputs.extend(confirmation.raw_agent_outputs)
-    unresolved = (
+    confirmation_missing = (
         ()
         if confirmation.review.decision is InventoryCompletenessDecision.COMPLETE
         else confirmation.review.missing_claims
+    )
+    unresolved = merge_bound_claim_inventories(
+        unresolved_recovery_claims,
+        confirmation_missing,
     )
     return _ChunkInventoryOutcome(
         claims=combined_inventory,
