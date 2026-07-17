@@ -1,0 +1,375 @@
+"""Audited extraction and verification for finite TG-04 source units."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Protocol, cast
+
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    BoundClaimInventoryItem,
+    ClaimInventoryBindingRejection,
+    bind_claim_inventory_items,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+    AuditedStructuredStepResult,
+    StructuredModelSemanticError,
+    run_audited_structured_step,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    ModelAttemptAuditContext,
+    ModelStepResult,
+    fingerprinted_step_key,
+)
+
+from scripts.validation.claim_events.finite_source_unit.contracts import (
+    CandidateVerification,
+    EntailmentDecision,
+    SourceUnitCoverageDecision,
+    SourceUnitExtractionOutput,
+    SourceUnitVerificationOutput,
+)
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+    from scripts.validation.claim_events.finite_source_unit.source_units import (
+        FrozenSourceUnit,
+    )
+
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v1"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v1"
+
+
+class FiniteSourceUnitModelClient(Protocol):
+    """Model-client surface required by the sealed diagnostic."""
+
+    async def step(  # noqa: PLR0913
+        self,
+        *,
+        run_id: str,
+        tenant: object,
+        model: str,
+        prompt: str,
+        output_schema: type[BaseModel],
+        step_key: str,
+        replay_policy: str,
+    ) -> ModelStepResult: ...
+
+
+@dataclass(frozen=True, slots=True)
+class SourceUnitExtractionResult:
+    """Schema-valid categorical output plus item-level source binding."""
+
+    output: SourceUnitExtractionOutput
+    accepted: tuple[BoundClaimInventoryItem, ...]
+    rejected: tuple[ClaimInventoryBindingRejection, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedEventCandidate:
+    """A bound event and its independent categorical source verification."""
+
+    claim: BoundClaimInventoryItem
+    verification: CandidateVerification
+
+
+def bind_source_unit_extraction(
+    output: SourceUnitExtractionOutput,
+    *,
+    unit: FrozenSourceUnit,
+) -> SourceUnitExtractionResult:
+    """Bind every event independently and preserve rejected siblings."""
+
+    if output.unit_id != unit.unit_id:
+        raise StructuredModelSemanticError("extraction output unit_id mismatch")
+    binding = bind_claim_inventory_items(
+        output.events,
+        source_text=unit.text,
+        source_sha256=unit.source_sha256,
+        chunk_index=unit.index,
+        source_start_offset=unit.source_start,
+    )
+    return SourceUnitExtractionResult(
+        output=output,
+        accepted=binding.accepted,
+        rejected=binding.rejected,
+    )
+
+
+def bind_source_unit_verification(
+    output: SourceUnitVerificationOutput,
+    *,
+    unit: FrozenSourceUnit,
+    candidates: tuple[BoundClaimInventoryItem, ...],
+) -> tuple[VerifiedEventCandidate, ...]:
+    """Require one source-bound categorical decision per supplied candidate."""
+
+    if output.unit_id != unit.unit_id:
+        raise StructuredModelSemanticError("verification output unit_id mismatch")
+    by_id = {candidate.inventory_id: candidate for candidate in candidates}
+    decision_by_id = {
+        decision.candidate_id: decision for decision in output.decisions
+    }
+    if set(decision_by_id) != set(by_id):
+        raise StructuredModelSemanticError(
+            "verification decisions must cover the supplied candidates exactly",
+        )
+    if (
+        not candidates
+        and output.coverage_decision is SourceUnitCoverageDecision.CANDIDATES_COMPLETE
+    ):
+        raise StructuredModelSemanticError(
+            "CANDIDATES_COMPLETE requires supplied candidates",
+        )
+
+    verified: list[VerifiedEventCandidate] = []
+    for candidate in candidates:
+        decision = decision_by_id[candidate.inventory_id]
+        claim_text = candidate.item.exact_span
+        if any(span not in claim_text for span in decision.evidence_spans):
+            raise StructuredModelSemanticError(
+                "verification evidence must occur inside the candidate claim",
+            )
+        if decision.decision is EntailmentDecision.ENTAILED:
+            required_spans = (
+                candidate.item.relation_cue_span,
+                *(argument.exact_span for argument in candidate.item.arguments),
+            )
+            if any(
+                not any(required in evidence for evidence in decision.evidence_spans)
+                for required in required_spans
+            ):
+                raise StructuredModelSemanticError(
+                    "ENTAILED evidence must cover the trigger and every argument",
+                )
+        verified.append(
+            VerifiedEventCandidate(claim=candidate, verification=decision),
+        )
+    return tuple(verified)
+
+
+async def extract_source_unit(
+    *,
+    client: FiniteSourceUnitModelClient,
+    tenant: object,
+    model_id: str,
+    execution_namespace: str,
+    unit: FrozenSourceUnit,
+) -> AuditedStructuredStepResult[
+    SourceUnitExtractionOutput,
+    SourceUnitExtractionResult,
+]:
+    """Run one categorical event decision through Artana's audited agent path."""
+
+    prompt = _extraction_prompt(unit)
+    step_key = fingerprinted_step_key(
+        _EXTRACTION_PROMPT_VERSION,
+        model_id,
+        unit.input_sha256,
+        execution_namespace,
+    )
+
+    async def invoke(invocation_id: str, provider_prompt: str) -> ModelStepResult:
+        return await client.step(
+            run_id=f"tg04-finite-source-unit:{invocation_id}",
+            tenant=tenant,
+            model=model_id,
+            prompt=provider_prompt,
+            output_schema=SourceUnitExtractionOutput,
+            step_key=step_key,
+            replay_policy="fork_on_drift",
+        )
+
+    return await run_audited_structured_step(
+        invoke_model=invoke,
+        model_id=model_id,
+        prompt=prompt,
+        output_schema=SourceUnitExtractionOutput,
+        step_key=step_key,
+        audit_context=ModelAttemptAuditContext(
+            attempt_role="primary",
+            pass_role="primary",  # noqa: S106 - categorical audit role
+            retry_context=None,
+            source_sha256=unit.source_sha256,
+            input_sha256=unit.input_sha256,
+            semantic_unit_id=unit.unit_id,
+        ),
+        validate_semantics=lambda output: bind_source_unit_extraction(
+            output,
+            unit=unit,
+        ),
+    )
+
+
+async def verify_source_unit_candidates(  # noqa: PLR0913
+    *,
+    client: FiniteSourceUnitModelClient,
+    tenant: object,
+    model_id: str,
+    execution_namespace: str,
+    unit: FrozenSourceUnit,
+    candidates: tuple[BoundClaimInventoryItem, ...],
+) -> AuditedStructuredStepResult[
+    SourceUnitVerificationOutput,
+    tuple[VerifiedEventCandidate, ...],
+]:
+    """Independently verify every accepted candidate using only its source unit."""
+
+    prompt = _verification_prompt(unit=unit, candidates=candidates)
+    candidate_identity = "\n".join(
+        candidate.inventory_id for candidate in candidates
+    )
+    step_key = fingerprinted_step_key(
+        _VERIFICATION_PROMPT_VERSION,
+        model_id,
+        unit.input_sha256,
+        candidate_identity,
+        execution_namespace,
+    )
+
+    async def invoke(invocation_id: str, provider_prompt: str) -> ModelStepResult:
+        return await client.step(
+            run_id=f"tg04-finite-source-verification:{invocation_id}",
+            tenant=tenant,
+            model=model_id,
+            prompt=provider_prompt,
+            output_schema=SourceUnitVerificationOutput,
+            step_key=step_key,
+            replay_policy="fork_on_drift",
+        )
+
+    return await run_audited_structured_step(
+        invoke_model=invoke,
+        model_id=model_id,
+        prompt=prompt,
+        output_schema=SourceUnitVerificationOutput,
+        step_key=step_key,
+        audit_context=ModelAttemptAuditContext(
+            attempt_role="weak_review",
+            pass_role="weak_review",  # noqa: S106 - categorical audit role
+            retry_context=None,
+            source_sha256=unit.source_sha256,
+            input_sha256=unit.input_sha256,
+            semantic_unit_id=unit.unit_id,
+        ),
+        validate_semantics=lambda output: bind_source_unit_verification(
+            output,
+            unit=unit,
+            candidates=candidates,
+        ),
+    )
+
+
+def _extraction_prompt(unit: FrozenSourceUnit) -> str:
+    return f"""You are the event-extraction agent in a sealed biomedical diagnostic.
+
+Use only the frozen source unit below. Do not use outside knowledge. Decide one
+closed category: EXPLICIT_EVENT, NO_EVENT, or ABSTAIN. EXPLICIT_EVENT means the
+unit literally states at least one biomedical event with a trigger and at least
+two material typed arguments. Return every distinct explicit event in this unit.
+NO_EVENT means it contains no explicit biomedical event, including procedural
+instructions that merely describe an assay. ABSTAIN means the source cannot
+safely resolve the category.
+
+For each event, copy exact_span, relation_cue_span, and every argument span
+verbatim. Use normalized_extraction_text as source_locator. Keep claim_kind,
+event_type, polarity, and epistemic_status independent. Do not invent missing
+participants, normalize surface text, merge events, or return numeric scores.
+
+prompt_version: {_EXTRACTION_PROMPT_VERSION}
+unit_id: {unit.unit_id}
+unit_char_range: {unit.source_start}-{unit.source_end}
+unit_input_sha256: {unit.input_sha256}
+
+--- FROZEN SOURCE UNIT ---
+{unit.text}
+--- END SOURCE UNIT ---
+"""
+
+
+def _verification_prompt(
+    *,
+    unit: FrozenSourceUnit,
+    candidates: tuple[BoundClaimInventoryItem, ...],
+) -> str:
+    payload = [
+        {
+            "candidate_id": candidate.inventory_id,
+            "candidate": _blinded_candidate(candidate),
+        }
+        for candidate in candidates
+    ]
+    return f"""You are an independent source-only biomedical verifier.
+
+Use only the frozen source unit. First decide whether the candidate inventory is
+CANDIDATES_COMPLETE, NO_EVENT_CONFIRMED, MISSING_EVENT, or ABSTAIN. Review the
+unit even when no candidates were supplied. NO_EVENT_CONFIRMED is valid only
+when the unit contains no explicit biomedical event. CANDIDATES_COMPLETE is
+valid only when supplied candidates cover every explicit event in the unit.
+Return covered_candidate_ids as exactly the candidate IDs judged ENTAILED. A
+false extracted candidate may be rejected while the unit is NO_EVENT_CONFIRMED.
+
+For every supplied candidate, return exactly one categorical decision:
+ENTAILED, CONTRADICTED, INSUFFICIENT, or ABSTAIN.
+ENTAILED requires the complete event, its direction, polarity, epistemic status,
+trigger, and all material arguments to be explicit in the source. Copy literal
+evidence spans from inside that candidate's exact_span. The evidence must cover
+the trigger and every material argument. Provide concise reasoning and a
+condition that would falsify your decision. Do not repair candidates, use
+outside knowledge, compare against benchmark labels, or return numeric scores.
+
+prompt_version: {_VERIFICATION_PROMPT_VERSION}
+unit_id: {unit.unit_id}
+unit_input_sha256: {unit.input_sha256}
+
+--- FROZEN SOURCE UNIT ---
+{unit.text}
+--- END SOURCE UNIT ---
+
+--- CANDIDATES ---
+{json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True)}
+--- END CANDIDATES ---
+"""
+
+
+def _blinded_candidate(candidate: BoundClaimInventoryItem) -> dict[str, object]:
+    """Remove extractor reasoning and mention choices from verifier input."""
+
+    item = candidate.item
+    return {
+        "exact_span": item.exact_span,
+        "relation_cue_span": item.relation_cue_span,
+        "source_locator": item.source_locator,
+        "claim_kind": item.claim_kind.value,
+        "event_type": item.event_type.value,
+        "polarity": item.polarity.value,
+        "epistemic_status": item.epistemic_status.value,
+        "arguments": [
+            {
+                "role": argument.role.value,
+                "event_role": argument.event_role.value,
+                "exact_span": argument.exact_span,
+            }
+            for argument in item.arguments
+        ],
+    }
+
+
+def as_model_client(client: object) -> FiniteSourceUnitModelClient:
+    """Narrow the runtime's dynamic model client at one checked boundary."""
+
+    if not callable(getattr(client, "step", None)):
+        raise TypeError("finite source-unit runtime client lacks step()")
+    return cast("FiniteSourceUnitModelClient", client)
+
+
+__all__ = [
+    "SourceUnitExtractionResult",
+    "VerifiedEventCandidate",
+    "as_model_client",
+    "bind_source_unit_extraction",
+    "bind_source_unit_verification",
+    "extract_source_unit",
+    "verify_source_unit_candidates",
+]

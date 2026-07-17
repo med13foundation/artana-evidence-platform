@@ -100,7 +100,7 @@ async def _run_live_arm(
     run_id: str,
     repository_evidence: dict[str, object],
 ) -> dict[str, object]:
-    client, tenant, execution_model_id, kernel, store = _build_inventory_runtime(
+    client, tenant, execution_model_id, kernel, store = build_tg04_runtime(
         model_id,
     )
 
@@ -282,7 +282,11 @@ async def _execute_case(
         ),
         terminal_error=terminal_error,
     )
-    framed_events = _nary_events(inventory.claims) if inventory is not None else []
+    framed_events = (
+        nary_events_from_bound_inventory(inventory.claims)
+        if inventory is not None
+        else []
+    )
     events = framed_events if executable else []
     review_only_events = framed_events if inventory is not None and not executable else []
     outcome = _execution_outcome(
@@ -384,7 +388,7 @@ def _terminal_error_category(error: BaseException) -> str:
     )
 
 
-def _build_inventory_runtime(
+def build_tg04_runtime(
     model_id: str,
 ) -> tuple[object, object, str, _AsyncClosable, _AsyncClosable]:
     from artana.agent import SingleStepModelClient
@@ -452,7 +456,7 @@ def _case_receipt_expectations(
     return expectations, invalid_count, unidentified_count
 
 
-def _nary_events(
+def nary_events_from_bound_inventory(
     claims: tuple[BoundClaimInventoryItem, ...],
 ) -> list[dict[str, object]]:
     events: list[dict[str, object]] = []
@@ -528,6 +532,7 @@ def receipt_expectation_from_attempt(
     case_id: str,
     report_model_id: str,
     record: dict[str, object],
+    expected_output_schema_sha256: str | None = None,
 ) -> ProviderReceiptExpectation:
     def required(name: str) -> str:
         value = record.get(name)
@@ -550,7 +555,11 @@ def receipt_expectation_from_attempt(
         expected_source_sha256=required("source_sha256"),
         expected_input_sha256=required("input_sha256"),
         expected_evidence_unit_sha256=required("evidence_unit_sha256"),
-        expected_output_schema_sha256=_attempt_output_schema_sha256(record),
+        expected_output_schema_sha256=(
+            expected_output_schema_sha256
+            if expected_output_schema_sha256 is not None
+            else _attempt_output_schema_sha256(record)
+        ),
     )
 
 
@@ -586,4 +595,12 @@ def _sha256_json(value: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-__all__ = ["receipt_expectation_from_attempt", "run_live_arm"]
+_nary_events = nary_events_from_bound_inventory
+
+
+__all__ = [
+    "build_tg04_runtime",
+    "nary_events_from_bound_inventory",
+    "receipt_expectation_from_attempt",
+    "run_live_arm",
+]
