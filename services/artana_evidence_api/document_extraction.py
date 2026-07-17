@@ -63,6 +63,11 @@ from artana_evidence_api.document_extraction_review import (
     review_from_draft_metadata,
     shorten_text,
 )
+from artana_evidence_api.document_extraction_support.claim_adjudication.candidate_preservation import (
+    as_review_only_candidate,
+    preserve_pruned_candidates_for_adjudication,
+    preserve_quality_filtered_candidates_for_adjudication,
+)
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     build_relation_extraction_text_chunks,
 )
@@ -273,12 +278,21 @@ def _route_agent_extraction_result(
     usable_candidates = tuple(quality_filter_result.candidates)
     routing_status: ClaimExtractionRoutingStatus
     if not extraction_attempt.semantic_inventory_complete:
-        visible_candidates: tuple[ExtractedRelationCandidate, ...] = ()
-        overflow_candidates = usable_candidates
+        visible_candidates = tuple(
+            as_review_only_candidate(candidate, "semantic_inventory_incomplete")
+            for candidate in usable_candidates
+        )
+        overflow_candidates: tuple[ExtractedRelationCandidate, ...] = ()
         routing_status = "semantic_incomplete"
     else:
-        visible_candidates = usable_candidates[:max_relations]
         overflow_candidates = usable_candidates[max_relations:]
+        visible_candidates = (
+            *usable_candidates[:max_relations],
+            *(
+                as_review_only_candidate(candidate, "candidate_overflow")
+                for candidate in overflow_candidates
+            ),
+        )
         routing_status = "candidate_overflow" if overflow_candidates else "complete"
     return SpecificityFilteredCandidateList(
         visible_candidates,
@@ -418,8 +432,16 @@ async def extract_relation_candidates_with_llm(
                 "Suppressed %s generic relation candidates after LLM extraction",
                 pruning_result.pruned_count,
             )
+        candidates_for_adjudication = preserve_pruned_candidates_for_adjudication(
+            candidates=candidates,
+            pruning_result=pruning_result,
+        )
         quality_filter_result = _filter_relation_candidate_quality(
-            pruning_result.candidates,
+            candidates_for_adjudication,
+        )
+        quality_filter_result = preserve_quality_filtered_candidates_for_adjudication(
+            candidates=candidates_for_adjudication,
+            quality_filter_result=quality_filter_result,
         )
         filtered_candidates = _route_agent_extraction_result(
             extraction_attempt=extraction_attempt,
@@ -592,7 +614,12 @@ async def discover_relation_candidates(  # noqa: PLR0911
     if not hasattr(llm_candidates, "claim_extraction_routing_status"):
         llm_pruning = _prune_relation_candidate_specificity(llm_candidates)
         llm_pruned_generic_relation_count += llm_pruning.pruned_count
-        llm_candidates = list(llm_pruning.candidates)
+        llm_candidates = list(
+            preserve_pruned_candidates_for_adjudication(
+                candidates=llm_candidates,
+                pruning_result=llm_pruning,
+            ),
+        )
     routing_status = normalize_claim_extraction_routing_status(
         getattr(llm_candidates, "claim_extraction_routing_status", "not_run"),
     )
@@ -607,15 +634,20 @@ async def discover_relation_candidates(  # noqa: PLR0911
     inventory_binding_rejections = tuple(
         getattr(llm_candidates, "inventory_binding_rejections", ()),
     )
+    inventory_incompleteness = tuple(
+        getattr(llm_candidates, "inventory_incompleteness", ()),
+    )
 
     if routing_status == "semantic_incomplete":
         return (
             llm_candidates,
             candidate_semantic_incomplete(
+                candidate_count=len(llm_candidates),
                 claim_lineage=claim_lineage,
                 raw_agent_outputs=raw_agent_outputs,
                 model_attempt_records=model_attempt_records,
                 inventory_binding_rejections=inventory_binding_rejections,
+                inventory_incompleteness=inventory_incompleteness,
                 llm_extraction_chunk_count=llm_extraction_chunk_count,
                 llm_extraction_text_char_count=llm_extraction_text_char_count,
             ),

@@ -282,7 +282,9 @@ async def _execute_case(
         ),
         terminal_error=terminal_error,
     )
-    events = _nary_events(inventory.claims) if executable and inventory else []
+    framed_events = _nary_events(inventory.claims) if inventory is not None else []
+    events = framed_events if executable else []
+    review_only_events = framed_events if inventory is not None and not executable else []
     outcome = _execution_outcome(
         events=events,
         terminal_failure=terminal_error is not None or inventory is None,
@@ -292,6 +294,7 @@ async def _execute_case(
         prediction={
             "case_id": case.case_id,
             "events": events,
+            "review_only_events": review_only_events,
             "abstained": not events,
             "execution_outcome": outcome.value,
         },
@@ -316,6 +319,7 @@ async def _execute_case(
                     if inventory is None
                     else inventory.unresolved_binding_rejection_count
                 ),
+                "review_only_event_count": len(review_only_events),
                 "inventory_recovery_round_count": (
                     0 if inventory is None else inventory.inventory_recovery_round_count
                 ),

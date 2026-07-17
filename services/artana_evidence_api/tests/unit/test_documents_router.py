@@ -1377,9 +1377,13 @@ def test_extract_document_surfaces_llm_review_fallback_in_metadata(
         "llm_candidate_error": "synthetic candidate outage",
         "llm_review_status": "fallback_error",
         "llm_review_attempted": True,
-        "llm_review_failed": True,
-        "llm_review_error": "synthetic llm outage",
-    }
+            "llm_review_failed": True,
+            "llm_review_error": "synthetic llm outage",
+            "claim_adjudication": {
+                "status": "not_needed",
+                "decision_count": 0,
+            },
+        }
 
     stored_document = document_store.get_document(
         space_id=space_id,

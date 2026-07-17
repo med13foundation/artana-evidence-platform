@@ -830,6 +830,46 @@ _POLICIES = (
         ),
     ),
     AgentOutputSchemaPolicy(
+        schema_id="document_extraction.claim_adjudication.v1",
+        schema_names=("ClaimAdjudicationOutput",),
+        shape_hash="fca1813bd051bf51168f278950c2a2345e740cc01e464838300c12dc4d77da78",
+        producer_paths=("document_extraction_support/claim_adjudication/service.py",),
+        prompt_identifiers=("document_extraction.claim_adjudication.v1",),
+        categorical_fields=(
+            _category(
+                "$.decisions[].atomicity",
+                {
+                    "ATOMIC": "the item contains one scientific assertion with one predicate and endpoint pair.",
+                    "BUNDLED": "the item combines multiple scientific assertions or predicates.",
+                    "ABSTAIN": "the supplied source cannot resolve whether the item is atomic.",
+                },
+                evidence_requirement="The exact source excerpt and reasoning must establish claim atomicity.",
+            ),
+            _category(
+                "$.decisions[].source_support",
+                {
+                    "ENTAILED": "exact cited source spans explicitly support the complete claim.",
+                    "CONTRADICTED": "the cited source explicitly conflicts with the complete claim.",
+                    "INSUFFICIENT": "the cited source does not establish the complete claim.",
+                    "ABSTAIN": "source support cannot be resolved safely from the supplied text.",
+                },
+                evidence_requirement="ENTAILED requires exact source spans; every value requires reasoning and a falsification condition.",
+            ),
+            _category(
+                "$.decisions[].relationship",
+                {
+                    "CANONICAL": "the claim is the first independent representation of its source-local meaning.",
+                    "SAME_AS": "the claim is semantically equivalent to an earlier claim.",
+                    "REFINES": "the claim adds source-supported material context to an earlier claim.",
+                    "GENERALIZES": "the claim removes material context from an earlier claim.",
+                    "CONTRADICTS": "the claim conflicts with an earlier claim.",
+                    "ABSTAIN": "the relationship cannot be resolved safely.",
+                },
+                evidence_requirement="Relational values require an earlier target claim and source-grounded reasoning.",
+            ),
+        ),
+    ),
+    AgentOutputSchemaPolicy(
         schema_id="document_extraction.proposal_review.v1",
         schema_names=("ProposalReviewResult",),
         shape_hash="172c1f2ab7a2a8d6f3b47dfab1fe2a50a185aac1460b30adb27a4fea22058247",

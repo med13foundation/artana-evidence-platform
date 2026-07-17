@@ -36,9 +36,14 @@ from artana_evidence_api.document_extraction import (
     extract_relation_candidates,
     extract_relation_candidates_with_diagnostics,
     normalize_text_document,
+    pre_resolve_entities_with_ai,
     review_document_extraction_drafts_with_diagnostics,
     sha256_hex,
     with_candidate_extraction_trust_metadata,
+)
+from artana_evidence_api.document_extraction_support.claim_adjudication import (
+    ClaimAdjudicationDiagnostics,
+    adjudicate_document_claims,
 )
 from artana_evidence_api.document_extraction_support.dismech_structured import (
     build_dismech_structured_extraction_drafts,
@@ -143,10 +148,12 @@ def _extraction_diagnostics_metadata(
     *,
     candidate_diagnostics: DocumentCandidateExtractionDiagnostics,
     review_diagnostics: DocumentProposalReviewDiagnostics,
+    claim_adjudication_diagnostics: ClaimAdjudicationDiagnostics,
 ) -> JSONObject:
     return {
         **candidate_diagnostics.as_metadata(),
         **review_diagnostics.as_metadata(),
+        "claim_adjudication": claim_adjudication_diagnostics.as_metadata(),
     }
 
 
@@ -1000,16 +1007,27 @@ async def extract_document(  # noqa: PLR0913, PLR0915
                     regex_candidate_count=0,
                     llm_diagnostics=candidate_diagnostics.as_metadata(),
                 )
+        ai_resolved_entities = await pre_resolve_entities_with_ai(
+            space_id=space_id,
+            candidates=candidates,
+            graph_api_gateway=graph_api_gateway,
+            space_context=review_context.objective or "",
+        )
         drafts, skipped_candidates = build_document_extraction_drafts(
             space_id=space_id,
             document=document,
             candidates=candidates,
             graph_api_gateway=graph_api_gateway,
             review_context=review_context,
+            ai_resolved_entities=ai_resolved_entities,
         )
         drafts = with_candidate_extraction_trust_metadata(
             drafts=drafts,
             diagnostics=candidate_diagnostics,
+        )
+        drafts, claim_adjudication_diagnostics = await adjudicate_document_claims(
+            document=document,
+            drafts=drafts,
         )
         (
             drafts,
@@ -1023,6 +1041,7 @@ async def extract_document(  # noqa: PLR0913, PLR0915
         extraction_diagnostics = _extraction_diagnostics_metadata(
             candidate_diagnostics=candidate_diagnostics,
             review_diagnostics=review_diagnostics,
+            claim_adjudication_diagnostics=claim_adjudication_diagnostics,
         )
         if not candidates:
             skipped_candidates.append(

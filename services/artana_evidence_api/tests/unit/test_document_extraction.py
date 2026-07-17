@@ -1539,8 +1539,14 @@ async def test_extract_relation_candidates_with_llm_filters_pathway_target_sibli
         "Vemurafenib targets BRAF V600E and inhibits MAPK signaling.",
     )
 
-    assert len(candidates) == 1
+    assert len(candidates) == 2
     assert candidates[0].relation_type == "TARGETS"
+    assert candidates[1].relation_type == "INHIBITS"
+    assert candidates[1].review_status == "review_only"
+    assert (
+        "quality_filter_pathway_effect_shadowed_by_direct_target"
+        in candidates[1].review_reason_codes
+    )
     assert candidates[0].trusted_evidence_eligible is False
     assert candidates[0].review_status == "review_only"
     assert "review_only_object_grounding" in candidates[0].review_reason_codes
@@ -2100,8 +2106,14 @@ async def test_extract_relation_candidates_with_llm_prunes_redundant_generic_sib
         "MED13 activates EGFR and is associated with EGFR.",
     )
 
-    assert len(candidates) == 1
-    assert candidates[0].relation_type == "ACTIVATES"
+    assert len(candidates) == 2
+    assert candidates[0].relation_type == "ASSOCIATED_WITH"
+    assert candidates[0].review_status == "review_only"
+    assert (
+        "generic_relation_shadowed_by_specific_sibling"
+        in candidates[0].review_reason_codes
+    )
+    assert candidates[1].relation_type == "ACTIVATES"
     assert candidates[0].subject_label == "MED13"
     assert candidates[0].object_label == "EGFR"
 
@@ -2138,10 +2150,12 @@ async def test_discover_relation_candidates_reports_llm_pruned_generic_siblings(
         "MED13 activates EGFR and is associated with EGFR.",
     )
 
-    assert len(candidates) == 1
-    assert candidates[0].relation_type == "ACTIVATES"
+    assert len(candidates) == 2
+    assert candidates[0].relation_type == "ASSOCIATED_WITH"
+    assert candidates[0].review_status == "review_only"
+    assert candidates[1].relation_type == "ACTIVATES"
     assert diagnostics.llm_candidate_status == "completed"
-    assert diagnostics.llm_candidate_count == 1
+    assert diagnostics.llm_candidate_count == 2
     assert diagnostics.pruned_generic_relation_count == 1
     assert diagnostics.as_metadata()["pruned_generic_relation_count"] == 1
 

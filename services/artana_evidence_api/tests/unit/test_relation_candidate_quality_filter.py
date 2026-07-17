@@ -6,6 +6,9 @@ import pytest
 from artana_evidence_api.document_extraction_contracts import (
     ExtractedRelationCandidate,
 )
+from artana_evidence_api.document_extraction_support.claim_adjudication.candidate_preservation import (
+    preserve_quality_filtered_candidates_for_adjudication,
+)
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimFrame,
     ClaimQualifier,
@@ -360,7 +363,9 @@ def test_quality_filter_merges_weak_review_and_promotion_safety_reasons() -> Non
     }
 
 
-def test_quality_filter_removes_companion_phenotype_when_disease_sibling_exists() -> None:
+def test_quality_filter_removes_companion_phenotype_when_disease_sibling_exists() -> (
+    None
+):
     disease_candidate = ExtractedRelationCandidate(
         subject_label="MECP2 pathogenic variants",
         relation_type="ASSOCIATED_WITH",
@@ -418,7 +423,9 @@ def test_quality_filter_marks_single_companion_phenotype_review_only() -> None:
     assert result.filtered_candidates == ()
 
 
-def test_quality_filter_marks_single_biochemical_companion_phenotype_review_only() -> None:
+def test_quality_filter_marks_single_biochemical_companion_phenotype_review_only() -> (
+    None
+):
     candidate = ExtractedRelationCandidate(
         subject_label="PAH pathogenic variants",
         relation_type="ASSOCIATED_WITH",
@@ -439,7 +446,9 @@ def test_quality_filter_marks_single_biochemical_companion_phenotype_review_only
     assert result.filtered_candidates == ()
 
 
-def test_quality_filter_removes_biochemical_companion_when_disease_sibling_exists() -> None:
+def test_quality_filter_removes_biochemical_companion_when_disease_sibling_exists() -> (
+    None
+):
     disease_candidate = ExtractedRelationCandidate(
         subject_label="PAH pathogenic variants",
         relation_type="ASSOCIATED_WITH",
@@ -482,8 +491,7 @@ def test_quality_filter_keeps_correlated_only_specific_relation_review_only() ->
         relation_type="CONFERS_RESISTANCE_TO",
         object_label="EGFR inhibition",
         sentence=(
-            "MET amplification was correlated with resistance to EGFR "
-            "inhibition."
+            "MET amplification was correlated with resistance to EGFR inhibition."
         ),
         review_status="review_only",
         review_reason_codes=("hedged_language", "correlated_only"),
@@ -518,7 +526,9 @@ def test_quality_filter_repairs_correlated_resistance_review_object() -> None:
     assert result.filtered_candidates == ()
 
 
-def test_quality_filter_clears_stale_object_curie_after_resistance_object_repair() -> None:
+def test_quality_filter_clears_stale_object_curie_after_resistance_object_repair() -> (
+    None
+):
     candidate = ExtractedRelationCandidate(
         subject_label="MET amplification",
         relation_type="ASSOCIATED_WITH",
@@ -601,7 +611,9 @@ def test_quality_filter_does_not_repair_bare_and_trend_but_reviews_response() ->
     )
 
 
-def test_quality_filter_does_not_repair_resistance_object_from_unrelated_clause() -> None:
+def test_quality_filter_does_not_repair_resistance_object_from_unrelated_clause() -> (
+    None
+):
     candidate = ExtractedRelationCandidate(
         subject_label="MET amplification",
         relation_type="ASSOCIATED_WITH",
@@ -618,7 +630,9 @@ def test_quality_filter_does_not_repair_resistance_object_from_unrelated_clause(
     assert result.candidates[0].object_label == "EGFR inhibition"
 
 
-def test_quality_filter_does_not_repair_resistance_object_from_bare_and_clause() -> None:
+def test_quality_filter_does_not_repair_resistance_object_from_bare_and_clause() -> (
+    None
+):
     candidate = ExtractedRelationCandidate(
         subject_label="MET amplification",
         relation_type="ASSOCIATED_WITH",
@@ -670,9 +684,23 @@ def test_quality_filter_deduplicates_repaired_review_candidates() -> None:
         "weak_review_agent_pass",
     )
     assert result.filtered_candidates == ()
+    assert len(result.unmerged_candidates) == 2
+
+    preserved = preserve_quality_filtered_candidates_for_adjudication(
+        candidates=(primary_candidate, weak_pass_candidate),
+        quality_filter_result=result,
+    )
+
+    assert len(preserved.candidates) == 2
+    assert all(
+        candidate.object_label == "resistance to EGFR inhibition"
+        for candidate in preserved.candidates
+    )
 
 
-def test_quality_filter_repairs_trend_response_relation_type_to_review_association() -> None:
+def test_quality_filter_repairs_trend_response_relation_type_to_review_association() -> (
+    None
+):
     candidate = ExtractedRelationCandidate(
         subject_label="EGFR expression",
         relation_type="BIOMARKER_FOR",
@@ -807,7 +835,9 @@ def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_invalid() ->
     assert result.filtered_candidates[0].reason == "missing_relation_arguments"
 
 
-def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_not_molecular() -> None:
+def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_not_molecular() -> (
+    None
+):
     disease_target_candidate = ExtractedRelationCandidate(
         subject_label="Vemurafenib",
         relation_type="TARGETS",
@@ -840,7 +870,9 @@ def test_quality_filter_keeps_pathway_effect_when_target_sibling_is_not_molecula
     )
 
 
-def test_quality_filter_removes_binding_site_target_with_molecular_target_sibling() -> None:
+def test_quality_filter_removes_binding_site_target_with_molecular_target_sibling() -> (
+    None
+):
     target_candidate = ExtractedRelationCandidate(
         subject_label="Sotorasib",
         relation_type="TARGETS",
@@ -871,7 +903,9 @@ def test_quality_filter_removes_binding_site_target_with_molecular_target_siblin
     )
 
 
-def test_quality_filter_keeps_binding_site_target_without_molecular_target_sibling() -> None:
+def test_quality_filter_keeps_binding_site_target_without_molecular_target_sibling() -> (
+    None
+):
     pathway_target_candidate = ExtractedRelationCandidate(
         subject_label="SHP099",
         relation_type="TARGETS",
@@ -1029,7 +1063,9 @@ def test_quality_filter_marks_cell_context_activation_review_only() -> None:
     assert result.filtered_candidates == ()
 
 
-def test_quality_filter_removes_cell_context_activation_when_primary_relation_exists() -> None:
+def test_quality_filter_removes_cell_context_activation_when_primary_relation_exists() -> (
+    None
+):
     primary_candidate = ExtractedRelationCandidate(
         subject_label="IL6",
         relation_type="REGULATES",
@@ -1112,7 +1148,9 @@ def test_quality_filter_removes_candidate_that_drops_subject_modifier() -> None:
     assert result.filtered_candidates[0].reason == "dropped_subject_modifier"
 
 
-def test_quality_filter_removes_candidate_that_drops_common_biomedical_modifier() -> None:
+def test_quality_filter_removes_candidate_that_drops_common_biomedical_modifier() -> (
+    None
+):
     candidates = (
         ExtractedRelationCandidate(
             subject_label="BRCA1",
@@ -1137,12 +1175,14 @@ def test_quality_filter_removes_candidate_that_drops_common_biomedical_modifier(
     result = filter_low_value_relation_candidates(candidates)
 
     assert result.candidates == ()
-    assert {
-        filtered.reason for filtered in result.filtered_candidates
-    } == {"dropped_subject_modifier"}
+    assert {filtered.reason for filtered in result.filtered_candidates} == {
+        "dropped_subject_modifier"
+    }
 
 
-def test_quality_filter_removes_candidate_that_drops_hyphenated_object_modifier() -> None:
+def test_quality_filter_removes_candidate_that_drops_hyphenated_object_modifier() -> (
+    None
+):
     candidate = ExtractedRelationCandidate(
         subject_label="Homologous recombination DNA repair",
         relation_type="REGULATES",
@@ -1196,8 +1236,7 @@ def test_quality_filter_keeps_unmodified_claim_in_coordinated_clause() -> None:
         relation_type="ACTIVATES",
         object_label="DNA repair",
         sentence=(
-            "BRCA1 loss sensitizes tumors to cisplatin, and BRCA1 activates "
-            "DNA repair."
+            "BRCA1 loss sensitizes tumors to cisplatin, and BRCA1 activates DNA repair."
         ),
     )
 

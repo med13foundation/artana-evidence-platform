@@ -76,13 +76,18 @@ async def discover_relation_candidates_strict(
     inventory_binding_rejections = tuple(
         getattr(llm_candidates, "inventory_binding_rejections", ()),
     )
+    inventory_incompleteness = tuple(
+        getattr(llm_candidates, "inventory_incompleteness", ()),
+    )
 
     if routing_status == "semantic_incomplete":
         return candidates, candidate_semantic_incomplete(
+            candidate_count=len(candidates),
             claim_lineage=claim_lineage,
             raw_agent_outputs=raw_agent_outputs,
             model_attempt_records=model_attempt_records,
             inventory_binding_rejections=inventory_binding_rejections,
+            inventory_incompleteness=inventory_incompleteness,
             llm_extraction_chunk_count=llm_extraction_chunk_count,
             llm_extraction_text_char_count=llm_extraction_text_char_count,
         )

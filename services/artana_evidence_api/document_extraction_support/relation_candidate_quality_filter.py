@@ -177,6 +177,7 @@ class RelationCandidateQualityFilterResult:
 
     candidates: tuple[ExtractedRelationCandidate, ...]
     filtered_candidates: tuple[QualityFilteredRelationCandidate, ...]
+    unmerged_candidates: tuple[ExtractedRelationCandidate, ...] = ()
 
     @property
     def filtered_count(self) -> int:
@@ -263,6 +264,7 @@ def filter_low_value_relation_candidates(
     return RelationCandidateQualityFilterResult(
         candidates=_merge_duplicate_kept_candidates(kept_candidates),
         filtered_candidates=tuple(filtered_candidates),
+        unmerged_candidates=tuple(kept_candidates),
     )
 
 
@@ -316,8 +318,7 @@ def _merge_duplicate_kept_candidates(
             ),
             review_status=(
                 "review_only"
-                if "review_only"
-                in {existing.review_status, candidate.review_status}
+                if "review_only" in {existing.review_status, candidate.review_status}
                 or bool(review_reason_codes)
                 else "candidate"
             ),
@@ -838,10 +839,13 @@ def _is_specific_molecular_target_object(label: str) -> bool:
 
 
 def _is_specific_biomarker_response_object(label: str) -> bool:
-    return re.search(
-        r"\b(response|sensitivity|benefit)\b",
-        _normalize_entity_label(label),
-    ) is not None
+    return (
+        re.search(
+            r"\b(response|sensitivity|benefit)\b",
+            _normalize_entity_label(label),
+        )
+        is not None
+    )
 
 
 def _candidate_relation_cue_present(candidate: ExtractedRelationCandidate) -> bool:
