@@ -16,6 +16,7 @@ from artana_evidence_api.document_extraction_support.llm_extraction.invocation_b
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     ModelAttemptAuditContext,
+    ModelAttemptAuditRecord,
     ModelAttemptValidationOutcome,
     ModelStepResult,
     model_attempt_evidence_unit_sha256,
@@ -51,6 +52,7 @@ class AuditedStructuredStepResult(Generic[ParsedModelT, ValidatedValueT]):
     parsed: ParsedModelT
     value: ValidatedValueT
     raw_output: dict[str, object]
+    attempt_record: ModelAttemptAuditRecord
 
 
 async def run_audited_structured_step(
@@ -186,6 +188,7 @@ async def run_audited_structured_step(
         parsed=parsed,
         value=validated,
         raw_output=immutable_raw_output,
+        attempt_record=record,
     )
 
 

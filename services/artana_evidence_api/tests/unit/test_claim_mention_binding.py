@@ -6,10 +6,12 @@ import hashlib
 
 import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimInventoryBindingDisposition,
     ClaimInventoryBindingError,
     ClaimInventoryItem,
     ClaimMentionAnchor,
     bind_claim_inventory,
+    bind_claim_inventory_items,
     claim_inventory_batch_input_sha256,
     claim_inventory_identity,
     claim_inventory_input_sha256,
@@ -80,6 +82,132 @@ def test_repeated_argument_without_anchor_fails_closed() -> None:
             source_sha256=hashlib.sha256(text.encode()).hexdigest(),
             chunk_index=0,
         )
+
+
+def test_item_level_binding_preserves_valid_sibling_and_rejects_invalid_span() -> None:
+    valid_span = "IL-4 inhibited FOXP3."
+    source = f"{valid_span} GATA3 expression was unchanged."
+    valid = _inventory_item(
+        text=valid_span,
+        cue="inhibited",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "AGENT",
+            "exact_span": "IL-4",
+            "role_rationale": "IL-4 is the stated regulator.",
+        },
+        second_span="FOXP3",
+    )
+    invalid = _inventory_item(
+        text="GATA3 ... was unchanged.",
+        cue="unchanged",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "THEME",
+            "exact_span": "GATA3",
+            "role_rationale": "GATA3 is the measured participant.",
+        },
+        second_span="unchanged",
+    )
+
+    result = bind_claim_inventory_items(
+        (valid, invalid),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=3,
+        source_start_offset=200,
+    )
+
+    assert [claim.item for claim in result.accepted] == [valid]
+    assert result.accepted[0].source_start == 200
+    assert len(result.rejected) == 1
+    rejection = result.rejected[0]
+    assert rejection.batch_index == 1
+    assert rejection.item == invalid
+    assert rejection.disposition is ClaimInventoryBindingDisposition.EXACT_SPAN_MISSING
+    assert rejection.validation_evidence == (
+        "claim inventory exact_span does not occur in the source chunk"
+    )
+    assert len(rejection.rejection_id) == 64
+
+
+def test_invalid_item_does_not_block_later_corrected_semantic_sibling() -> None:
+    source = "WT1 in fibroblasts and WT1 in lymphocytes suggests regulation."
+    invalid = _inventory_item(
+        text=source,
+        cue="suggests",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "THEME",
+            "exact_span": "WT1",
+            "role_rationale": "WT1 is the repeated participant.",
+        },
+        second_span="regulation",
+    )
+    corrected = _inventory_item(
+        text=source,
+        cue="suggests",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "THEME",
+            "exact_span": "WT1",
+            "mention_anchors": [
+                {
+                    "mention_span": "WT1",
+                    "left_context": "",
+                    "right_context": " in fibroblasts",
+                },
+                {
+                    "mention_span": "WT1",
+                    "left_context": " and ",
+                    "right_context": " in lymphocytes",
+                },
+            ],
+            "role_rationale": "Both WT1 mentions are source-local participants.",
+        },
+        second_span="regulation",
+    )
+
+    result = bind_claim_inventory_items(
+        (invalid, corrected),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    assert [claim.item for claim in result.accepted] == [corrected]
+    assert [rejection.batch_index for rejection in result.rejected] == [0]
+    assert result.rejected[0].disposition is (
+        ClaimInventoryBindingDisposition.ARGUMENT_MENTION_INVALID
+    )
+
+
+def test_valid_item_blocks_later_duplicate_without_losing_first_binding() -> None:
+    source = "BRCA1 loss sensitized tumors to cisplatin."
+    item = _inventory_item(
+        text=source,
+        cue="sensitized",
+        first_argument={
+            "role": "VARIANT",
+            "event_role": "AGENT",
+            "exact_span": "BRCA1 loss",
+            "role_rationale": "The source states the variant state.",
+        },
+        second_span="cisplatin",
+    )
+
+    result = bind_claim_inventory_items(
+        (item, item),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    assert [claim.item for claim in result.accepted] == [item]
+    assert result.rejected[0].batch_index == 1
+    assert result.rejected[0].disposition is (
+        ClaimInventoryBindingDisposition.DUPLICATE_SEMANTIC_CLAIM
+    )
 
 
 def test_one_argument_preserves_multiple_context_anchored_mentions() -> None:

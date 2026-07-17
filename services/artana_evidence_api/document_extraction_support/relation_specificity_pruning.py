@@ -220,6 +220,7 @@ class SpecificityFilteredCandidateList(list[ExtractedRelationCandidate]):
         claim_lineage: tuple[ClaimExtractionLineage, ...] = (),
         inventory_incompleteness: tuple[dict[str, object], ...] = (),
         inventory_non_relation_items: tuple[dict[str, object], ...] = (),
+        inventory_binding_rejections: tuple[dict[str, object], ...] = (),
     ) -> None:
         super().__init__(candidates)
         self.pruned_generic_relation_count = pruned_generic_relation_count
@@ -234,6 +235,7 @@ class SpecificityFilteredCandidateList(list[ExtractedRelationCandidate]):
         self.claim_lineage = claim_lineage
         self.inventory_incompleteness = inventory_incompleteness
         self.inventory_non_relation_items = inventory_non_relation_items
+        self.inventory_binding_rejections = inventory_binding_rejections
 
     @property
     def candidate_overflow_count(self) -> int:

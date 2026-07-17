@@ -8,8 +8,9 @@ from enum import Enum
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
     BoundClaimInventoryItem,
     ClaimInventoryBindingError,
+    ClaimInventoryBindingRejection,
     ClaimInventoryItem,
-    bind_claim_inventory,
+    bind_claim_inventory_items,
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -78,6 +79,7 @@ class BoundInventoryCompletenessReview:
 
     decision: InventoryCompletenessDecision
     missing_claims: tuple[BoundClaimInventoryItem, ...]
+    binding_rejections: tuple[ClaimInventoryBindingRejection, ...]
     review_rationale: str
 
 
@@ -93,7 +95,7 @@ def bind_inventory_completeness_review(
 ) -> BoundInventoryCompletenessReview:
     """Bind missing descriptors and reject already adjudicated identities."""
 
-    missing_claims = bind_claim_inventory(
+    binding_result = bind_claim_inventory_items(
         review.missing_claims,
         source_text=source_text,
         source_sha256=source_sha256,
@@ -104,7 +106,7 @@ def bind_inventory_completeness_review(
         claim.inventory_id for claim in (*current_inventory, *excluded_inventory)
     }
     duplicated_ids = adjudicated_ids.intersection(
-        claim.inventory_id for claim in missing_claims
+        claim.inventory_id for claim in binding_result.accepted
     )
     if duplicated_ids:
         raise ClaimInventoryBindingError(
@@ -112,7 +114,8 @@ def bind_inventory_completeness_review(
         )
     return BoundInventoryCompletenessReview(
         decision=review.decision,
-        missing_claims=missing_claims,
+        missing_claims=binding_result.accepted,
+        binding_rejections=binding_result.rejected,
         review_rationale=review.review_rationale,
     )
 

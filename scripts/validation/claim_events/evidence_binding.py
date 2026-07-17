@@ -12,16 +12,24 @@ from artana_evidence_api.document_extraction import normalize_text_document
 from artana_evidence_api.document_extraction_prompting import (
     build_claim_inventory_completeness_output_schema,
     build_claim_inventory_output_schema,
+    build_missing_claim_recovery_output_schema,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
-    ClaimInventoryBindingError,
+    BoundInventoryCompletenessReview,
+    ClaimInventoryBindingRejection,
     ClaimInventoryCompletenessReview,
     ClaimInventoryItem,
-    bind_claim_inventory,
+    InventoryCompletenessDecision,
+    MissingClaimRecoveryDecision,
+    MissingClaimRecoveryDisposition,
     bind_claim_inventory_item_at_source,
+    bind_claim_inventory_items,
+    bind_inventory_completeness_review,
     claim_inventory_batch_input_sha256,
     coalesce_long_sentence_chunks,
+    merge_bound_claim_inventories,
+    merge_claim_inventory_binding_rejections,
     partition_bound_claim_inventory,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
@@ -31,6 +39,8 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
     build_claim_inventory_prompt,
     build_inventory_completeness_prompt,
+    build_missing_claim_recovery_prompt,
+    inventory_completeness_input_sha256,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     bind_prompt_to_invocation,
@@ -41,6 +51,15 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 )
 from pydantic import ValidationError
 
+from scripts.validation.claim_events.binding_rejections import (
+    expected_rejection_event as _expected_rejection_event,
+)
+from scripts.validation.claim_events.binding_rejections import (
+    require_exact_rejection_events as _require_exact_rejection_events,
+)
+from scripts.validation.claim_events.binding_rejections import (
+    validate_binding_rejection_events as _validate_binding_rejection_events,
+)
 from scripts.validation.claim_events.operational import (
     require_sealable_unbindable_attempts,
 )
@@ -74,6 +93,8 @@ class _PromptContext:
     output_schema_sha256: str
     completeness_schema_identity: str
     completeness_schema_sha256: str
+    recovery_schema_identity: str
+    recovery_schema_sha256: str
 
 
 @dataclass(slots=True)
@@ -94,12 +115,32 @@ class _InventoryWorkflowInput:
     evidence_unit_sha256: str
     completeness_attempts: Sequence[Mapping[str, object]]
     recovery_attempts: Sequence[Mapping[str, object]]
+    inventory_binding_rejections_by_chunk: Mapping[
+        int,
+        tuple[ClaimInventoryBindingRejection, ...],
+    ]
+    completeness_binding_rejection_events: Sequence[Mapping[str, object]]
 
 
 @dataclass(frozen=True, slots=True)
 class _PredictionValidationContext:
     normalized_source: str
     source_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class _RecoveryDecisionEvidence:
+    attempt: Mapping[str, object]
+    decision: MissingClaimRecoveryDecision
+
+
+@dataclass(frozen=True, slots=True)
+class _CompletenessReviewSelection:
+    chunk: RelationExtractionTextChunk
+    inventory: tuple[BoundClaimInventoryItem, ...]
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...]
+    binding_rejections: tuple[ClaimInventoryBindingRejection, ...]
+    confirmation: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,6 +181,26 @@ def bind_case_evidence(
         _object(item, "attempt")
         for item in _sequence(case_record.get("attempts"), "attempts")
     )
+    reported_rejection_events = tuple(
+        _object(item, "inventory binding rejection event")
+        for item in _sequence(
+            diagnostics.get("inventory_binding_rejections", []),
+            "inventory binding rejections",
+        )
+    )
+    if diagnostics.get("inventory_binding_rejection_count", 0) != len(
+        reported_rejection_events
+    ):
+        raise ValueError("TG-04 binding rejection count differs from evidence")
+    (
+        inventory_rejections_by_chunk,
+        completeness_rejection_events,
+    ) = _validate_binding_rejection_events(
+        attempts=attempts,
+        reported_events=reported_rejection_events,
+        chunks=chunks,
+        source_sha256=source_sha256,
+    )
     collected = _collect_attempts(
         attempts=attempts,
         case_id=case.case_id,
@@ -157,6 +218,8 @@ def bind_case_evidence(
             evidence_unit_sha256=evidence_unit_sha256,
             completeness_attempts=collected.completeness_attempts,
             recovery_attempts=collected.recovery_attempts,
+            inventory_binding_rejections_by_chunk=(inventory_rejections_by_chunk),
+            completeness_binding_rejection_events=(completeness_rejection_events),
         ),
     )
     predicted_inventory = _validate_predictions(
@@ -185,21 +248,11 @@ def bind_unbindable_case_evidence(
 ) -> tuple[tuple[ProviderReceiptExpectation, ...], str]:
     """Bind a descriptive stress failure to raw provider-backed attempts."""
 
-    if str(case.control_status) != "REPRESENTABILITY_STRESS":
-        raise ValueError("TG-04 qualification cases cannot be unbindable")
-    if prediction.get("execution_outcome") != "UNBINDABLE_OUTPUT":
-        raise ValueError("TG-04 unbindable evidence has the wrong outcome")
-    if _sequence(prediction.get("events"), "prediction events"):
-        raise ValueError("TG-04 unbindable output cannot contain scored events")
-    if prediction.get("abstained") is not True:
-        raise ValueError("TG-04 unbindable output must abstain")
-    if _text(case_record.get("case_id"), "case evidence case_id") != case.case_id:
-        raise ValueError("TG-04 case evidence is bound to the wrong fixture case")
-    diagnostics = _object(case_record.get("diagnostics"), "diagnostics")
-    if diagnostics.get("fallback_output_used") is True:
-        raise ValueError("TG-04 case used fallback output")
-    if diagnostics.get("claim_extraction_routing_status") != "unbound":
-        raise ValueError("TG-04 unbindable evidence must be routed as unbound")
+    diagnostics = _validate_unbindable_case_contract(
+        case=case,
+        prediction=prediction,
+        case_record=case_record,
+    )
 
     normalized_source = normalize_text_document(case.source_text)
     source_sha256 = llm_extraction_document_fingerprint(normalized_source)
@@ -218,6 +271,8 @@ def bind_unbindable_case_evidence(
         output_schema_sha256=output_schema_json_sha256(schema),
         completeness_schema_identity="unused",
         completeness_schema_sha256="unused",
+        recovery_schema_identity="unused",
+        recovery_schema_sha256="unused",
     )
     attempts = tuple(
         _object(item, "attempt")
@@ -225,6 +280,25 @@ def bind_unbindable_case_evidence(
     )
     if not attempts:
         raise ValueError("TG-04 unbindable output lacks audited attempts")
+    reported_rejection_events = tuple(
+        _object(item, "inventory binding rejection event")
+        for item in _sequence(
+            diagnostics.get("inventory_binding_rejections", []),
+            "inventory binding rejections",
+        )
+    )
+    if diagnostics.get("inventory_binding_rejection_count", 0) != len(
+        reported_rejection_events
+    ):
+        raise ValueError("TG-04 binding rejection count differs from evidence")
+    _, completeness_rejection_events = _validate_binding_rejection_events(
+        attempts=attempts,
+        reported_events=reported_rejection_events,
+        chunks=chunks,
+        source_sha256=source_sha256,
+    )
+    if completeness_rejection_events:
+        raise ValueError("TG-04 unbindable inventory has completeness rejections")
     require_sealable_unbindable_attempts(attempts)
     terminal_error = _text(
         diagnostics.get("terminal_error_category"),
@@ -248,6 +322,30 @@ def bind_unbindable_case_evidence(
     if not expectations:
         raise ValueError("TG-04 unbindable output lacks provider-bound attempts")
     return tuple(expectations), _canonical_sha256(signatures)
+
+
+def _validate_unbindable_case_contract(
+    *,
+    case: EvidenceCaseContract,
+    prediction: Mapping[str, object],
+    case_record: Mapping[str, object],
+) -> Mapping[str, object]:
+    if str(case.control_status) != "REPRESENTABILITY_STRESS":
+        raise ValueError("TG-04 qualification cases cannot be unbindable")
+    if prediction.get("execution_outcome") != "UNBINDABLE_OUTPUT":
+        raise ValueError("TG-04 unbindable evidence has the wrong outcome")
+    if _sequence(prediction.get("events"), "prediction events"):
+        raise ValueError("TG-04 unbindable output cannot contain scored events")
+    if prediction.get("abstained") is not True:
+        raise ValueError("TG-04 unbindable output must abstain")
+    if _text(case_record.get("case_id"), "case evidence case_id") != case.case_id:
+        raise ValueError("TG-04 case evidence is bound to the wrong fixture case")
+    diagnostics = _object(case_record.get("diagnostics"), "diagnostics")
+    if diagnostics.get("fallback_output_used") is True:
+        raise ValueError("TG-04 case used fallback output")
+    if diagnostics.get("claim_extraction_routing_status") != "unbound":
+        raise ValueError("TG-04 unbindable evidence must be routed as unbound")
+    return diagnostics
 
 
 def _collect_unbindable_attempts(
@@ -343,24 +441,27 @@ def _validate_reported_inventory_outcome(
             ClaimInventoryItem.model_validate(item)
             for item in _sequence(payload.get("claims"), "raw inventory claims")
         )
-        try:
-            bind_claim_inventory(
-                claims,
-                source_text=chunk.text,
-                source_sha256=source_sha256,
-                chunk_index=chunk.index,
-                source_start_offset=chunk.start_char,
-            )
-        except ClaimInventoryBindingError:
-            derived = "semantic_invalid"
-        else:
-            derived = "accepted"
+        result = bind_claim_inventory_items(
+            claims,
+            source_text=chunk.text,
+            source_sha256=source_sha256,
+            chunk_index=chunk.index,
+            source_start_offset=chunk.start_char,
+        )
+        derived = (
+            "semantic_invalid"
+            if not result.accepted and result.rejected
+            else "accepted"
+        )
     if reported != derived:
         raise ValueError("TG-04 reported validation outcome differs from replay")
     expected_error_types = {
         "accepted": {None},
         "schema_invalid": {"StructuredModelSchemaError", "ValidationError"},
-        "semantic_invalid": {"StructuredModelSemanticError"},
+        "semantic_invalid": {
+            "StructuredModelSemanticError",
+            "ClaimInventoryItemsRejectedError",
+        },
     }[derived]
     if attempt.get("error_type") not in expected_error_types:
         raise ValueError("TG-04 reported error type differs from validation replay")
@@ -440,10 +541,6 @@ def _collect_attempt_by_role(
 def _validate_inventory_workflow(
     workflow: _InventoryWorkflowInput,
 ) -> tuple[str, dict[str, str]]:
-    if workflow.recovery_attempts:
-        raise ValueError(
-            "TG-04 development qualification requires complete initial inventory",
-        )
     expected_inputs = {chunk.sha256 for chunk in workflow.chunks}
     if (
         set(workflow.initial_by_input) != expected_inputs
@@ -455,6 +552,7 @@ def _validate_inventory_workflow(
     )
     output_schema_identity = f"{output_schema.__module__}.{output_schema.__qualname__}"
     completeness_schema = build_claim_inventory_completeness_output_schema()
+    recovery_schema = build_missing_claim_recovery_output_schema()
     context = _PromptContext(
         total_chunks=len(workflow.chunks),
         source_sha256=workflow.source_sha256,
@@ -465,10 +563,18 @@ def _validate_inventory_workflow(
             f"{completeness_schema.__module__}.{completeness_schema.__qualname__}"
         ),
         completeness_schema_sha256=output_schema_json_sha256(completeness_schema),
+        recovery_schema_identity=(
+            f"{recovery_schema.__module__}.{recovery_schema.__qualname__}"
+        ),
+        recovery_schema_sha256=output_schema_json_sha256(recovery_schema),
     )
     signatures: list[dict[str, object]] = []
     accepted_inventory: dict[str, str] = {}
     unused_completeness = list(workflow.completeness_attempts)
+    unused_recovery = list(workflow.recovery_attempts)
+    unused_completeness_rejections = list(
+        workflow.completeness_binding_rejection_events
+    )
     for chunk in workflow.chunks:
         input_sha256 = chunk.sha256
         initial = workflow.initial_by_input[input_sha256]
@@ -483,8 +589,14 @@ def _validate_inventory_workflow(
         )
         zero = workflow.zero_by_input[input_sha256]
         initial_claims = _raw_claim_payloads(initial)
+        prompt_rejections = workflow.inventory_binding_rejections_by_chunk.get(
+            chunk.index,
+            (),
+        )
         expected_zero_outcome = (
-            "intentionally_skipped" if initial_claims else "accepted"
+            "intentionally_skipped"
+            if initial_claims or prompt_rejections
+            else "accepted"
         )
         if zero.get("validation_outcome") != expected_zero_outcome:
             raise ValueError(
@@ -498,7 +610,7 @@ def _validate_inventory_workflow(
             schema_retry=zero.get("attempt_role") == "schema_retry",
         )
         inventory_attempt = initial if initial_claims else zero
-        inventory = bind_claim_inventory(
+        binding_result = bind_claim_inventory_items(
             tuple(
                 ClaimInventoryItem.model_validate(item)
                 for item in _sequence(
@@ -514,22 +626,55 @@ def _validate_inventory_workflow(
             chunk_index=chunk.index,
             source_start_offset=chunk.start_char,
         )
-        relation_inventory, _non_relation_inventory = partition_bound_claim_inventory(
-            inventory
-        )
-        for claim in relation_inventory:
-            if claim.inventory_id in accepted_inventory:
-                raise ValueError(
-                    "TG-04 accepted inventory identity repeats across chunks"
-                )
-            accepted_inventory[claim.inventory_id] = _canonical_json(
-                claim.item.model_dump(mode="json"),
-            )
-        _take_complete_review_attempt(
+        inventory = binding_result.accepted
+        review = _take_completeness_review_attempt(
             attempts=unused_completeness,
-            chunk=chunk,
-            inventory=inventory,
+            selection=_CompletenessReviewSelection(
+                chunk=chunk,
+                inventory=inventory,
+                excluded_inventory=(),
+                binding_rejections=prompt_rejections,
+                confirmation=False,
+            ),
+            reported_rejection_events=unused_completeness_rejections,
             context=context,
+        )
+        recovered, excluded, recovery_signatures = _validate_recovery_decisions(
+            review=review,
+            attempts=unused_recovery,
+            chunk=chunk,
+            context=context,
+        )
+        combined_inventory = merge_bound_claim_inventories(inventory, recovered)
+        if review.decision is InventoryCompletenessDecision.INCOMPLETE:
+            confirmation_rejections = merge_claim_inventory_binding_rejections(
+                prompt_rejections,
+                review.binding_rejections,
+            )
+            confirmation = _take_completeness_review_attempt(
+                attempts=unused_completeness,
+                selection=_CompletenessReviewSelection(
+                    chunk=chunk,
+                    inventory=combined_inventory,
+                    excluded_inventory=excluded,
+                    binding_rejections=confirmation_rejections,
+                    confirmation=True,
+                ),
+                reported_rejection_events=unused_completeness_rejections,
+                context=context,
+            )
+            if (
+                confirmation.decision is not InventoryCompletenessDecision.COMPLETE
+                or confirmation.missing_claims
+                or confirmation.binding_rejections
+            ):
+                raise ValueError("TG-04 recovered inventory was not confirmed complete")
+        relation_inventory, _non_relation_inventory = partition_bound_claim_inventory(
+            combined_inventory
+        )
+        _merge_accepted_inventory(
+            accepted_inventory=accepted_inventory,
+            claims=relation_inventory,
         )
         signatures.append(
             {
@@ -553,21 +698,34 @@ def _validate_inventory_workflow(
                 "completeness_output_schema_identity": (
                     context.completeness_schema_identity
                 ),
+                "binding_rejection_ids": [
+                    rejection.rejection_id for rejection in prompt_rejections
+                ],
+                "recovery": recovery_signatures,
+                "excluded_inventory_ids": [claim.inventory_id for claim in excluded],
             },
         )
     if unused_completeness:
         raise ValueError("TG-04 report contains unbound completeness attempts")
+    if unused_completeness_rejections:
+        raise ValueError("TG-04 report contains unbound completeness rejections")
+    if unused_recovery:
+        raise ValueError("TG-04 report contains an orphan recovery attempt")
     return _canonical_sha256(signatures), accepted_inventory
 
 
-def _take_complete_review_attempt(
+def _take_completeness_review_attempt(
     *,
     attempts: list[Mapping[str, object]],
-    chunk: RelationExtractionTextChunk,
-    inventory: tuple[BoundClaimInventoryItem, ...],
+    selection: _CompletenessReviewSelection,
+    reported_rejection_events: list[Mapping[str, object]],
     context: _PromptContext,
-) -> Mapping[str, object]:
-    input_sha256 = claim_inventory_batch_input_sha256(inventory)
+) -> BoundInventoryCompletenessReview:
+    input_sha256 = inventory_completeness_input_sha256(
+        selection.inventory,
+        selection.excluded_inventory,
+        selection.binding_rejections,
+    )
     matches: list[Mapping[str, object]] = []
     for attempt in attempts:
         if attempt.get("input_sha256") != input_sha256:
@@ -577,11 +735,13 @@ def _take_complete_review_attempt(
             "completeness invocation_id",
         )
         prompt = build_inventory_completeness_prompt(
-            chunk=chunk,
+            chunk=selection.chunk,
             total_chunks=context.total_chunks,
             document_fingerprint=context.source_sha256,
-            current_inventory=inventory,
-            confirmation=False,
+            current_inventory=selection.inventory,
+            excluded_inventory=selection.excluded_inventory,
+            binding_rejections=selection.binding_rejections,
+            confirmation=selection.confirmation,
             schema_retry=attempt.get("attempt_role") == "schema_retry",
         )
         provider_prompt = bind_prompt_to_invocation(
@@ -599,13 +759,145 @@ def _take_complete_review_attempt(
     attempt = matches[0]
     if attempt.get("output_schema_identity") != context.completeness_schema_identity:
         raise ValueError("TG-04 completeness schema differs from production schema")
-    review = ClaimInventoryCompletenessReview.model_validate(
+    raw_review = ClaimInventoryCompletenessReview.model_validate(
         _object(attempt.get("raw_model_payload"), "completeness raw payload"),
     )
-    if review.decision.value != "COMPLETE" or review.missing_claims:
-        raise ValueError("TG-04 initial inventory was not independently complete")
+    review = bind_inventory_completeness_review(
+        raw_review,
+        source_text=selection.chunk.text,
+        source_sha256=context.source_sha256,
+        chunk_index=selection.chunk.index,
+        source_start_offset=selection.chunk.start_char,
+        current_inventory=selection.inventory,
+        excluded_inventory=selection.excluded_inventory,
+    )
+    invocation_id = _text(
+        attempt.get("invocation_id"),
+        "completeness invocation_id",
+    )
+    matching_rejection_events = tuple(
+        event
+        for event in reported_rejection_events
+        if _object(event.get("attempt_lineage"), "attempt lineage").get("invocation_id")
+        == invocation_id
+    )
+    _require_exact_rejection_events(
+        attempt=attempt,
+        phase="COMPLETENESS_REVIEW",
+        expected_rejections=review.binding_rejections,
+        reported_events=matching_rejection_events,
+    )
+    for event in matching_rejection_events:
+        reported_rejection_events.remove(event)
     attempts.remove(attempt)
-    return attempt
+    return review
+
+
+def _validate_recovery_decisions(
+    *,
+    review: BoundInventoryCompletenessReview,
+    attempts: list[Mapping[str, object]],
+    chunk: RelationExtractionTextChunk,
+    context: _PromptContext,
+) -> tuple[
+    tuple[BoundClaimInventoryItem, ...],
+    tuple[BoundClaimInventoryItem, ...],
+    list[dict[str, object]],
+]:
+    if review.decision is InventoryCompletenessDecision.COMPLETE:
+        if review.missing_claims or review.binding_rejections:
+            raise ValueError("TG-04 complete review contains unresolved descriptors")
+        return (), (), []
+
+    recovered: tuple[BoundClaimInventoryItem, ...] = ()
+    excluded: tuple[BoundClaimInventoryItem, ...] = ()
+    signatures: list[dict[str, object]] = []
+    for missing_claim in review.missing_claims:
+        evidence = _take_recovery_attempt(
+            attempts=attempts,
+            chunk=chunk,
+            missing_claim=missing_claim,
+            context=context,
+        )
+        decision = evidence.decision.decision
+        if decision is MissingClaimRecoveryDisposition.RECOVER_EXPLICIT_CLAIM:
+            recovered = merge_bound_claim_inventories(recovered, (missing_claim,))
+        elif decision in {
+            MissingClaimRecoveryDisposition.EXCLUDE_PROCEDURAL_METHOD,
+            MissingClaimRecoveryDisposition.EXCLUDE_NOT_EXPLICIT,
+        }:
+            excluded = merge_bound_claim_inventories(excluded, (missing_claim,))
+        else:
+            raise ValueError(
+                "TG-04 complete routing cannot contain recovery abstention"
+            )
+        signatures.append(
+            {
+                "inventory_id": missing_claim.inventory_id,
+                "decision": decision.value,
+                "invocation_id": evidence.attempt.get("invocation_id"),
+                "prompt_sha256": evidence.attempt.get("prompt_sha256"),
+            },
+        )
+    return recovered, excluded, signatures
+
+
+def _take_recovery_attempt(
+    *,
+    attempts: list[Mapping[str, object]],
+    chunk: RelationExtractionTextChunk,
+    missing_claim: BoundClaimInventoryItem,
+    context: _PromptContext,
+) -> _RecoveryDecisionEvidence:
+    input_sha256 = claim_inventory_batch_input_sha256((missing_claim,))
+    matches: list[Mapping[str, object]] = []
+    for attempt in attempts:
+        if (
+            attempt.get("input_sha256") != input_sha256
+            or attempt.get("semantic_unit_id") != missing_claim.inventory_id
+        ):
+            continue
+        invocation_id = _text(attempt.get("invocation_id"), "recovery invocation_id")
+        prompt = build_missing_claim_recovery_prompt(
+            chunk=chunk,
+            document_fingerprint=context.source_sha256,
+            missing_claim=missing_claim,
+        )
+        provider_prompt = bind_prompt_to_invocation(
+            prompt=prompt,
+            invocation_id=invocation_id,
+            source_sha256=context.source_sha256,
+            input_sha256=input_sha256,
+            evidence_unit_sha256=context.evidence_unit_sha256,
+            output_schema_sha256=context.recovery_schema_sha256,
+        )
+        if attempt.get("prompt_sha256") == _sha256_text(provider_prompt):
+            matches.append(attempt)
+    if len(matches) != 1:
+        raise ValueError("TG-04 missing descriptor lacks one canonical recovery")
+    attempt = matches[0]
+    if attempt.get("validation_outcome") != "accepted":
+        raise ValueError("TG-04 complete routing contains invalid recovery output")
+    if attempt.get("output_schema_identity") != context.recovery_schema_identity:
+        raise ValueError("TG-04 recovery schema differs from production schema")
+    decision = MissingClaimRecoveryDecision.model_validate(
+        _object(attempt.get("raw_model_payload"), "recovery raw payload"),
+    )
+    attempts.remove(attempt)
+    return _RecoveryDecisionEvidence(attempt=attempt, decision=decision)
+
+
+def _merge_accepted_inventory(
+    *,
+    accepted_inventory: dict[str, str],
+    claims: Sequence[BoundClaimInventoryItem],
+) -> None:
+    for claim in claims:
+        if claim.inventory_id in accepted_inventory:
+            raise ValueError("TG-04 accepted inventory identity repeats across chunks")
+        accepted_inventory[claim.inventory_id] = _canonical_json(
+            claim.item.model_dump(mode="json"),
+        )
 
 
 def _validate_inventory_prompt(
@@ -880,6 +1172,7 @@ def _sha256_text(value: str) -> str:
 
 __all__ = [
     "EvidenceCaseContract",
+    "_expected_rejection_event",
     "bind_case_evidence",
     "bind_unbindable_case_evidence",
 ]

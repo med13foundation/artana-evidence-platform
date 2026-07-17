@@ -32,6 +32,7 @@ def candidate_completed(
     claim_lineage: tuple[ClaimExtractionLineage, ...] = (),
     raw_agent_outputs: tuple[dict[str, object], ...] = (),
     model_attempt_records: tuple[dict[str, object], ...] = (),
+    inventory_binding_rejections: tuple[dict[str, object], ...] = (),
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics for a successful LLM candidate extraction."""
 
@@ -47,6 +48,7 @@ def candidate_completed(
         claim_lineage=claim_lineage,
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
+        inventory_binding_rejections=inventory_binding_rejections,
     )
 
 
@@ -61,6 +63,7 @@ def candidate_llm_empty(
     claim_lineage: tuple[ClaimExtractionLineage, ...] = (),
     raw_agent_outputs: tuple[dict[str, object], ...] = (),
     model_attempt_records: tuple[dict[str, object], ...] = (),
+    inventory_binding_rejections: tuple[dict[str, object], ...] = (),
 ) -> DocumentCandidateExtractionDiagnostics:
     """Return diagnostics when the LLM succeeded but produced no usable claims."""
 
@@ -76,6 +79,7 @@ def candidate_llm_empty(
         claim_lineage=claim_lineage,
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
+        inventory_binding_rejections=inventory_binding_rejections,
     )
 
 
@@ -84,6 +88,7 @@ def candidate_semantic_incomplete(
     claim_lineage: tuple[ClaimExtractionLineage, ...],
     raw_agent_outputs: tuple[dict[str, object], ...],
     model_attempt_records: tuple[dict[str, object], ...],
+    inventory_binding_rejections: tuple[dict[str, object], ...],
     llm_extraction_chunk_count: int,
     llm_extraction_text_char_count: int,
 ) -> DocumentCandidateExtractionDiagnostics:
@@ -100,6 +105,7 @@ def candidate_semantic_incomplete(
         claim_lineage=claim_lineage,
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
+        inventory_binding_rejections=inventory_binding_rejections,
     )
 
 

@@ -73,12 +73,17 @@ async def discover_relation_candidates_strict(
     model_attempt_records = tuple(
         getattr(llm_candidates, "model_attempt_records", ()),
     )
+    inventory_binding_rejections = tuple(
+        event.as_json()
+        for event in getattr(llm_candidates, "inventory_binding_rejections", ())
+    )
 
     if routing_status == "semantic_incomplete":
         return candidates, candidate_semantic_incomplete(
             claim_lineage=claim_lineage,
             raw_agent_outputs=raw_agent_outputs,
             model_attempt_records=model_attempt_records,
+            inventory_binding_rejections=inventory_binding_rejections,
             llm_extraction_chunk_count=llm_extraction_chunk_count,
             llm_extraction_text_char_count=llm_extraction_text_char_count,
         )
@@ -95,6 +100,7 @@ async def discover_relation_candidates_strict(
             claim_lineage=claim_lineage,
             raw_agent_outputs=raw_agent_outputs,
             model_attempt_records=model_attempt_records,
+            inventory_binding_rejections=inventory_binding_rejections,
         )
 
     return [], candidate_llm_empty(
@@ -107,6 +113,7 @@ async def discover_relation_candidates_strict(
         claim_lineage=claim_lineage,
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
+        inventory_binding_rejections=inventory_binding_rejections,
     )
 
 

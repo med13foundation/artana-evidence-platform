@@ -17,11 +17,13 @@ from artana_evidence_api.document_extraction_prompting import (
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
+    ClaimInventoryBindingRejection,
     ClaimInventoryItem,
     InventoryCompletenessDecision,
     MissingClaimRecoveryDisposition,
     coalesce_long_sentence_chunks,
     merge_bound_claim_inventories,
+    merge_claim_inventory_binding_rejections,
     partition_bound_claim_inventory,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
@@ -31,6 +33,8 @@ from artana_evidence_api.document_extraction_support.llm_extraction.claim_framin
     run_single_claim_framing_stage,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    ClaimInventoryBindingRejectionEvent,
+    InventoryBatchBindingStatus,
     record_skipped_zero_inventory_retry,
     run_claim_inventory_stage,
     run_inventory_completeness_review_stage,
@@ -81,11 +85,14 @@ class LLMRelationExtractionAttempt:
     unknown_relation_types: set[str]
     raw_relation_count: int
     inventory_claim_count: int = 0
+    inventory_binding_rejection_count: int = 0
     non_relation_item_count: int = 0
     framing_abstention_count: int = 0
     processed_chunk_count: int = 0
     semantic_inventory_complete: bool = True
     inventory_incompleteness: tuple[BoundClaimInventoryItem, ...] = ()
+    inventory_binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...] = ()
+    unresolved_binding_rejection_count: int = 0
     non_relation_items: tuple[NonRelationInventoryItem, ...] = ()
     claim_lineage: tuple[ClaimExtractionLineage, ...] = ()
     raw_agent_outputs: tuple[dict[str, object], ...] = ()
@@ -100,6 +107,8 @@ class LLMClaimInventoryAttempt:
     processed_chunk_count: int
     semantic_inventory_complete: bool
     inventory_incompleteness: tuple[BoundClaimInventoryItem, ...]
+    inventory_binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...]
+    unresolved_binding_rejection_count: int
     non_relation_items: tuple[NonRelationInventoryItem, ...]
     raw_agent_outputs: tuple[dict[str, object], ...]
     model_attempt_records: tuple[ModelAttemptAuditRecord, ...]
@@ -112,11 +121,16 @@ class _ChunkInventoryOutcome:
     claims: tuple[BoundClaimInventoryItem, ...]
     non_relation_items: tuple[NonRelationInventoryItem, ...]
     unresolved_missing_claims: tuple[BoundClaimInventoryItem, ...]
+    binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...]
+    unresolved_binding_rejection_count: int
     raw_agent_outputs: tuple[dict[str, object], ...]
 
     @property
     def complete(self) -> bool:
-        return not self.unresolved_missing_claims
+        return (
+            not self.unresolved_missing_claims
+            and self.unresolved_binding_rejection_count == 0
+        )
 
 
 async def run_llm_relation_extraction_with_zero_retry(
@@ -164,6 +178,8 @@ async def run_llm_relation_extraction_with_zero_retry(
     raw_agent_outputs: list[dict[str, object]] = []
     claim_lineage: list[ClaimExtractionLineage] = []
     unresolved_missing_claims: list[BoundClaimInventoryItem] = []
+    inventory_binding_rejections: list[ClaimInventoryBindingRejectionEvent] = []
+    unresolved_binding_rejection_count = 0
     inventory_claim_count = 0
     non_relation_items: list[NonRelationInventoryItem] = []
     framing_abstention_count = 0
@@ -189,6 +205,12 @@ async def run_llm_relation_extraction_with_zero_retry(
             non_relation_items.extend(inventory_outcome.non_relation_items)
             unresolved_missing_claims.extend(
                 inventory_outcome.unresolved_missing_claims,
+            )
+            inventory_binding_rejections.extend(
+                inventory_outcome.binding_rejections,
+            )
+            unresolved_binding_rejection_count += (
+                inventory_outcome.unresolved_binding_rejection_count
             )
 
             inventory_claim_count += len(inventory_claims)
@@ -241,11 +263,17 @@ async def run_llm_relation_extraction_with_zero_retry(
             unknown_relation_types=unknown_relation_types,
             raw_relation_count=raw_relation_count,
             inventory_claim_count=inventory_claim_count,
+            inventory_binding_rejection_count=len(inventory_binding_rejections),
             non_relation_item_count=len(non_relation_items),
             framing_abstention_count=framing_abstention_count,
             processed_chunk_count=len(extraction_chunks),
-            semantic_inventory_complete=not unresolved_missing_claims,
+            semantic_inventory_complete=(
+                not unresolved_missing_claims
+                and unresolved_binding_rejection_count == 0
+            ),
             inventory_incompleteness=tuple(unresolved_missing_claims),
+            inventory_binding_rejections=tuple(inventory_binding_rejections),
+            unresolved_binding_rejection_count=(unresolved_binding_rejection_count),
             non_relation_items=tuple(non_relation_items),
             claim_lineage=tuple(claim_lineage),
             raw_agent_outputs=tuple(raw_agent_outputs),
@@ -287,6 +315,8 @@ async def run_llm_claim_inventory_with_zero_retry(
     first_record_index = len(audit_session.records)
     claims: tuple[BoundClaimInventoryItem, ...] = ()
     unresolved: tuple[BoundClaimInventoryItem, ...] = ()
+    binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...] = ()
+    unresolved_binding_rejection_count = 0
     non_relation_items: tuple[NonRelationInventoryItem, ...] = ()
     raw_outputs: tuple[dict[str, object], ...] = ()
     try:
@@ -309,6 +339,10 @@ async def run_llm_claim_inventory_with_zero_retry(
                 unresolved,
                 outcome.unresolved_missing_claims,
             )
+            binding_rejections += outcome.binding_rejections
+            unresolved_binding_rejection_count += (
+                outcome.unresolved_binding_rejection_count
+            )
             non_relation_items = _merge_non_relation_items(
                 non_relation_items,
                 outcome.non_relation_items,
@@ -317,8 +351,12 @@ async def run_llm_claim_inventory_with_zero_retry(
         return LLMClaimInventoryAttempt(
             claims=claims,
             processed_chunk_count=len(extraction_chunks),
-            semantic_inventory_complete=not unresolved,
+            semantic_inventory_complete=(
+                not unresolved and unresolved_binding_rejection_count == 0
+            ),
             inventory_incompleteness=unresolved,
+            inventory_binding_rejections=binding_rejections,
+            unresolved_binding_rejection_count=(unresolved_binding_rejection_count),
             non_relation_items=non_relation_items,
             raw_agent_outputs=raw_outputs,
             model_attempt_records=tuple(
@@ -357,7 +395,8 @@ async def _inventory_chunk_with_recovery(
     )
     raw_outputs = list(inventory_result.raw_agent_outputs)
     inventory_claims = inventory_result.claims
-    if inventory_claims:
+    binding_rejections = inventory_result.binding_rejections
+    if inventory_result.binding_status is not InventoryBatchBindingStatus.EMPTY:
         record_skipped_zero_inventory_retry(
             chunk=chunk,
             total_chunks=total_chunks,
@@ -381,11 +420,14 @@ async def _inventory_chunk_with_recovery(
         )
         raw_outputs.extend(retry_result.raw_agent_outputs)
         inventory_claims = retry_result.claims
+        binding_rejections += retry_result.binding_rejections
+    prompt_rejections = _prompt_binding_rejections(binding_rejections)
     review_result = await run_inventory_completeness_review_stage(
         chunk=chunk,
         total_chunks=total_chunks,
         document_fingerprint=document_fingerprint,
         current_inventory=inventory_claims,
+        binding_rejections=prompt_rejections,
         output_schema=completeness_output_schema,
         client=client,
         tenant=tenant,
@@ -394,12 +436,15 @@ async def _inventory_chunk_with_recovery(
         execution_namespace=execution_namespace,
     )
     raw_outputs.extend(review_result.raw_agent_outputs)
+    binding_rejections += review_result.binding_rejections
     if review_result.review.decision is InventoryCompletenessDecision.COMPLETE:
         claims, non_relation_items = _partition_inventory(inventory_claims)
         return _ChunkInventoryOutcome(
             claims=claims,
             non_relation_items=non_relation_items,
             unresolved_missing_claims=(),
+            binding_rejections=binding_rejections,
+            unresolved_binding_rejection_count=0,
             raw_agent_outputs=tuple(raw_outputs),
         )
 
@@ -463,6 +508,7 @@ async def _inventory_chunk_with_recovery(
         total_chunks=total_chunks,
         document_fingerprint=document_fingerprint,
         current_inventory=combined_inventory,
+        binding_rejections=_prompt_binding_rejections(binding_rejections),
         output_schema=completeness_output_schema,
         client=client,
         tenant=tenant,
@@ -473,6 +519,7 @@ async def _inventory_chunk_with_recovery(
         excluded_inventory=excluded_claims,
     )
     raw_outputs.extend(confirmation.raw_agent_outputs)
+    binding_rejections += confirmation.binding_rejections
     confirmation_missing = (
         ()
         if confirmation.review.decision is InventoryCompletenessDecision.COMPLETE
@@ -482,6 +529,11 @@ async def _inventory_chunk_with_recovery(
         unresolved_recovery_claims,
         confirmation_missing,
     )
+    unresolved_binding_rejection_count = (
+        0
+        if confirmation.review.decision is InventoryCompletenessDecision.COMPLETE
+        else len(confirmation.binding_rejections)
+    )
     claims, non_relation_items = _partition_inventory(combined_inventory)
     return _ChunkInventoryOutcome(
         claims=claims,
@@ -490,7 +542,19 @@ async def _inventory_chunk_with_recovery(
             excluded_items,
         ),
         unresolved_missing_claims=unresolved,
+        binding_rejections=binding_rejections,
+        unresolved_binding_rejection_count=unresolved_binding_rejection_count,
         raw_agent_outputs=tuple(raw_outputs),
+    )
+
+
+def _prompt_binding_rejections(
+    events: tuple[ClaimInventoryBindingRejectionEvent, ...],
+) -> tuple[ClaimInventoryBindingRejection, ...]:
+    """Deduplicate opaque prompt summaries without collapsing audit events."""
+
+    return merge_claim_inventory_binding_rejections(
+        tuple(event.rejection for event in events),
     )
 
 

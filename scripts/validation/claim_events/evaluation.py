@@ -286,7 +286,7 @@ def _validate_report_identity(report: dict[str, object], fixture_sha256: str) ->
     del unsealed["report_sha256"]
     if _sha256_json(unsealed) != report_sha256:
         raise ValueError("TG-04 live report digest mismatch")
-    if report.get("schema_version") != "tg04_live_arm.v2":
+    if report.get("schema_version") != "tg04_live_arm.v3":
         raise ValueError("unknown TG-04 live report schema")
     if report.get("fixture_sha256") != fixture_sha256:
         raise ValueError("TG-04 report fixture hash mismatch")

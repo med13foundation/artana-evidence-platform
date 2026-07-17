@@ -41,8 +41,29 @@ _ATTACHED_VARIANT_STATE_SUFFIXES = (
 )
 
 
+class ClaimInventoryBindingDisposition(str, Enum):
+    """Deterministic reason one schema-valid inventory item was rejected."""
+
+    EXACT_SPAN_MISSING = "EXACT_SPAN_MISSING"
+    EXACT_SPAN_AMBIGUOUS = "EXACT_SPAN_AMBIGUOUS"
+    DUPLICATE_SEMANTIC_CLAIM = "DUPLICATE_SEMANTIC_CLAIM"
+    SOURCE_SPAN_MISMATCH = "SOURCE_SPAN_MISMATCH"
+    TRIGGER_MENTION_INVALID = "TRIGGER_MENTION_INVALID"
+    ARGUMENT_MENTION_INVALID = "ARGUMENT_MENTION_INVALID"
+    VARIANT_STATE_SUFFIX_OMITTED = "VARIANT_STATE_SUFFIX_OMITTED"
+
+
 class ClaimInventoryBindingError(ValueError):
     """Raised when an agent inventory cannot be bound to its frozen source."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        disposition: ClaimInventoryBindingDisposition | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.disposition = disposition
 
 
 class ClaimFramingDecision(str, Enum):
@@ -162,6 +183,40 @@ class BoundClaimInventoryItem:
     bound_arguments: tuple[BoundClaimArgument, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class ClaimInventoryBindingRejection:
+    """One rejected agent item with stable identity and validation evidence."""
+
+    rejection_id: str
+    source_sha256: str
+    chunk_index: int
+    batch_index: int
+    item: ClaimInventoryItem
+    disposition: ClaimInventoryBindingDisposition
+    validation_evidence: str
+
+    def as_json(self) -> dict[str, object]:
+        """Return a JSON-safe non-lossy diagnostic record."""
+
+        return {
+            "rejection_id": self.rejection_id,
+            "source_sha256": self.source_sha256,
+            "chunk_index": self.chunk_index,
+            "batch_index": self.batch_index,
+            "item": self.item.model_dump(mode="json"),
+            "disposition": self.disposition.value,
+            "validation_evidence": self.validation_evidence,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimInventoryBindingResult:
+    """Accepted and rejected members of one schema-valid agent batch."""
+
+    accepted: tuple[BoundClaimInventoryItem, ...]
+    rejected: tuple[ClaimInventoryBindingRejection, ...]
+
+
 def bind_claim_inventory(
     items: tuple[ClaimInventoryItem, ...],
     *,
@@ -170,7 +225,33 @@ def bind_claim_inventory(
     chunk_index: int,
     source_start_offset: int = 0,
 ) -> tuple[BoundClaimInventoryItem, ...]:
-    """Bind every agent-authored span exactly without adding biomedical meaning."""
+    """Strictly bind every item, preserving all-or-nothing callers."""
+
+    result = bind_claim_inventory_items(
+        items,
+        source_text=source_text,
+        source_sha256=source_sha256,
+        chunk_index=chunk_index,
+        source_start_offset=source_start_offset,
+    )
+    if result.rejected:
+        rejection = result.rejected[0]
+        raise ClaimInventoryBindingError(
+            rejection.validation_evidence,
+            disposition=rejection.disposition,
+        )
+    return result.accepted
+
+
+def bind_claim_inventory_items(
+    items: tuple[ClaimInventoryItem, ...],
+    *,
+    source_text: str,
+    source_sha256: str,
+    chunk_index: int,
+    source_start_offset: int = 0,
+) -> ClaimInventoryBindingResult:
+    """Bind each item independently and fail closed only for that item."""
 
     if not source_text:
         raise ClaimInventoryBindingError("claim inventory source text is empty")
@@ -181,16 +262,41 @@ def bind_claim_inventory(
         )
 
     bound: list[BoundClaimInventoryItem] = []
+    rejected: list[ClaimInventoryBindingRejection] = []
     seen_item_fingerprints: set[str] = set()
-    for item in items:
+    for batch_index, item in enumerate(items):
         occurrence_starts = _overlapping_occurrence_starts(
             source_text,
             item.exact_span,
         )
-        if len(occurrence_starts) != 1:
-            raise ClaimInventoryBindingError(
-                "claim inventory exact_span must occur exactly once in the source chunk",
+        if not occurrence_starts:
+            rejected.append(
+                _binding_rejection(
+                    batch_index=batch_index,
+                    item=item,
+                    source_sha256=source_sha256,
+                    chunk_index=chunk_index,
+                    disposition=ClaimInventoryBindingDisposition.EXACT_SPAN_MISSING,
+                    validation_evidence=(
+                        "claim inventory exact_span does not occur in the source chunk"
+                    ),
+                ),
             )
+            continue
+        if len(occurrence_starts) > 1:
+            rejected.append(
+                _binding_rejection(
+                    batch_index=batch_index,
+                    item=item,
+                    source_sha256=source_sha256,
+                    chunk_index=chunk_index,
+                    disposition=ClaimInventoryBindingDisposition.EXACT_SPAN_AMBIGUOUS,
+                    validation_evidence=(
+                        "claim inventory exact_span must occur exactly once in the source chunk"
+                    ),
+                ),
+            )
+            continue
         source_start = source_start_offset + occurrence_starts[0]
         item_fingerprint = claim_inventory_identity(
             item=item,
@@ -198,21 +304,94 @@ def bind_claim_inventory(
             source_start=source_start,
         )
         if item_fingerprint in seen_item_fingerprints:
-            raise ClaimInventoryBindingError(
-                "one inventory response cannot repeat a semantic claim",
+            rejected.append(
+                _binding_rejection(
+                    batch_index=batch_index,
+                    item=item,
+                    source_sha256=source_sha256,
+                    chunk_index=chunk_index,
+                    disposition=(
+                        ClaimInventoryBindingDisposition.DUPLICATE_SEMANTIC_CLAIM
+                    ),
+                    validation_evidence=(
+                        "one inventory response cannot repeat a semantic claim"
+                    ),
+                ),
             )
-        seen_item_fingerprints.add(item_fingerprint)
-        bound.append(
-            bind_claim_inventory_item_at_source(
+            continue
+        try:
+            bound_item = bind_claim_inventory_item_at_source(
                 item=item,
                 source_text=source_text,
                 source_sha256=source_sha256,
                 chunk_index=chunk_index,
                 source_start=source_start,
                 source_start_offset=source_start_offset,
-            ),
-        )
-    return tuple(bound)
+            )
+        except ClaimInventoryBindingError as exc:
+            if exc.disposition is None:
+                raise
+            rejected.append(
+                _binding_rejection(
+                    batch_index=batch_index,
+                    item=item,
+                    source_sha256=source_sha256,
+                    chunk_index=chunk_index,
+                    disposition=exc.disposition,
+                    validation_evidence=str(exc),
+                ),
+            )
+            continue
+        seen_item_fingerprints.add(item_fingerprint)
+        bound.append(bound_item)
+    return ClaimInventoryBindingResult(
+        accepted=tuple(bound),
+        rejected=tuple(rejected),
+    )
+
+
+def merge_claim_inventory_binding_rejections(
+    *rejection_groups: tuple[ClaimInventoryBindingRejection, ...],
+) -> tuple[ClaimInventoryBindingRejection, ...]:
+    """Merge rejection evidence without duplicating the same source item."""
+
+    merged: list[ClaimInventoryBindingRejection] = []
+    seen_ids: set[str] = set()
+    for group in rejection_groups:
+        for rejection in group:
+            if rejection.rejection_id in seen_ids:
+                continue
+            seen_ids.add(rejection.rejection_id)
+            merged.append(rejection)
+    return tuple(merged)
+
+
+def _binding_rejection(
+    *,
+    batch_index: int,
+    item: ClaimInventoryItem,
+    source_sha256: str,
+    chunk_index: int,
+    disposition: ClaimInventoryBindingDisposition,
+    validation_evidence: str,
+) -> ClaimInventoryBindingRejection:
+    return ClaimInventoryBindingRejection(
+        rejection_id=_canonical_sha256(
+            {
+                "source_sha256": source_sha256,
+                "chunk_index": chunk_index,
+                "batch_index": batch_index,
+                "item": item.model_dump(mode="json"),
+                "disposition": disposition.value,
+            },
+        ),
+        source_sha256=source_sha256,
+        chunk_index=chunk_index,
+        batch_index=batch_index,
+        item=item,
+        disposition=disposition,
+        validation_evidence=validation_evidence,
+    )
 
 
 def merge_bound_claim_inventories(
@@ -279,7 +458,8 @@ def bind_claim_inventory_item_at_source(
     relative_claim_end = relative_claim_start + len(item.exact_span)
     if source_text[relative_claim_start:relative_claim_end] != item.exact_span:
         raise ClaimInventoryBindingError(
-            "claim inventory exact_span differs from the source at source_start"
+            "claim inventory exact_span differs from the source at source_start",
+            disposition=ClaimInventoryBindingDisposition.SOURCE_SPAN_MISMATCH,
         )
     trigger_mention = _bind_inventory_trigger(
         item=item,
@@ -303,6 +483,9 @@ def bind_claim_inventory_item_at_source(
                 if following_text.startswith(_ATTACHED_VARIANT_STATE_SUFFIXES):
                     raise ClaimInventoryBindingError(
                         "variant argument omits an attached material state suffix",
+                        disposition=(
+                            ClaimInventoryBindingDisposition.VARIANT_STATE_SUFFIX_OMITTED
+                        ),
                     )
         bound_arguments.append(
             BoundClaimArgument(
@@ -371,6 +554,7 @@ def _bind_inventory_argument_mentions(
     except MentionBindingError as exc:
         raise ClaimInventoryBindingError(
             f"claim inventory argument mention binding failed: {exc}",
+            disposition=ClaimInventoryBindingDisposition.ARGUMENT_MENTION_INVALID,
         ) from exc
     return mentions
 
@@ -404,6 +588,7 @@ def _bind_inventory_trigger(
     except MentionBindingError as exc:
         raise ClaimInventoryBindingError(
             f"claim inventory trigger mention binding failed: {exc}",
+            disposition=ClaimInventoryBindingDisposition.TRIGGER_MENTION_INVALID,
         ) from exc
     return mentions[0]
 
@@ -524,13 +709,17 @@ __all__ = [
     "CLAIM_INVENTORY_SOURCE_LOCATOR",
     "BoundClaimArgument",
     "BoundClaimInventoryItem",
+    "ClaimInventoryBindingDisposition",
     "ClaimInventoryBindingError",
+    "ClaimInventoryBindingRejection",
+    "ClaimInventoryBindingResult",
     "ClaimInventoryArgument",
     "ClaimInventoryItem",
     "ClaimKind",
     "ClaimFramingAbstentionReason",
     "ClaimFramingDecision",
     "bind_claim_inventory",
+    "bind_claim_inventory_items",
     "bind_claim_inventory_item_at_source",
     "claim_inventory_batch_input_sha256",
     "claim_inventory_identity",
@@ -538,5 +727,6 @@ __all__ = [
     "InventoryEpistemicStatus",
     "InventoryPolarity",
     "merge_bound_claim_inventories",
+    "merge_claim_inventory_binding_rejections",
     "partition_bound_claim_inventory",
 ]
