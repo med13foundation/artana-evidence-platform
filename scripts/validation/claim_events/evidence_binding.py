@@ -190,6 +190,23 @@ def bind_semantically_incomplete_case_evidence(
         require_complete=False,
     )
     _validate_convergence_diagnostics(diagnostics, replay.workflow)
+    review_only_events = _sequence(
+        prediction.get("review_only_events", ()),
+        "review-only prediction events",
+    )
+    review_inventory = _validate_predictions(
+        prediction={"events": review_only_events},
+        context=_PredictionValidationContext(
+            normalized_source=replay.normalized_source,
+            source_sha256=replay.source_sha256,
+        ),
+    )
+    if review_inventory != replay.workflow.accepted_inventory:
+        raise ValueError(
+            "TG-04 review-only events differ from accepted inventory claims"
+        )
+    if diagnostics.get("review_only_event_count") != len(review_only_events):
+        raise ValueError("TG-04 review-only event count is not deterministic")
     return replay.expectations, replay.workflow.topology_sha256
 
 
@@ -223,13 +240,11 @@ def _replay_case_inventory(
         reported_rejection_events
     ):
         raise ValueError("TG-04 binding rejection count differs from evidence")
-    inventory_rejections, completeness_rejections = (
-        _validate_binding_rejection_events(
-            attempts=attempts,
-            reported_events=reported_rejection_events,
-            chunks=chunks,
-            source_sha256=source_sha256,
-        )
+    inventory_rejections, completeness_rejections = _validate_binding_rejection_events(
+        attempts=attempts,
+        reported_events=reported_rejection_events,
+        chunks=chunks,
+        source_sha256=source_sha256,
     )
     collected = _collect_attempts(
         attempts=attempts,
@@ -496,13 +511,11 @@ def _validate_reported_inventory_outcome(
         raise ValueError("TG-04 reported validation outcome differs from replay")
     error_types_by_outcome: dict[str, frozenset[str | None]] = {
         "accepted": frozenset({None}),
-        "schema_invalid": frozenset(
-            {"StructuredModelSchemaError", "ValidationError"}
-        ),
+        "schema_invalid": frozenset({"StructuredModelSchemaError", "ValidationError"}),
         "semantic_invalid": frozenset(
             {
-            "StructuredModelSemanticError",
-            "ClaimInventoryItemsRejectedError",
+                "StructuredModelSemanticError",
+                "ClaimInventoryItemsRejectedError",
             }
         ),
     }

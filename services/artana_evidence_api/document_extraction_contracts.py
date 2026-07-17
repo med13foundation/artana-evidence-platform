@@ -309,6 +309,7 @@ class DocumentCandidateExtractionDiagnostics:
     raw_agent_outputs: tuple[dict[str, object], ...] = ()
     model_attempt_records: tuple[dict[str, object], ...] = ()
     inventory_binding_rejections: tuple[dict[str, object], ...] = ()
+    inventory_incompleteness: tuple[dict[str, object], ...] = ()
 
     @property
     def agent_extraction_completed(self) -> bool:
@@ -387,6 +388,10 @@ class DocumentCandidateExtractionDiagnostics:
         if self.inventory_binding_rejections:
             payload["inventory_binding_rejections"] = json_value(
                 self.inventory_binding_rejections,
+            )
+        if self.inventory_incompleteness:
+            payload["inventory_incompleteness"] = json_value(
+                self.inventory_incompleteness,
             )
         if self.llm_candidate_error is not None:
             payload["llm_candidate_error"] = self.llm_candidate_error

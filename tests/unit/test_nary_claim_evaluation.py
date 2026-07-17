@@ -553,9 +553,7 @@ def _recovery_case_artifact(
             "provider_response_id": "resp_zero_recovery",
             "provider_output_sha256": "e" * 64,
             "payload_sha256": _sha256_json(empty_payload),
-            "prompt_sha256": hashlib.sha256(
-                zero_provider_prompt.encode()
-            ).hexdigest(),
+            "prompt_sha256": hashlib.sha256(zero_provider_prompt.encode()).hexdigest(),
             "kernel_run_id": f"research-init-extraction:{zero['invocation_id']}",
             "raw_model_payload": empty_payload,
         }
@@ -706,9 +704,7 @@ def _recovery_case_artifact(
     evidence["diagnostics"]["inventory_convergence_stop_reasons"] = [
         "RECOVERY_ABSTAINED" if decision == "ABSTAIN" else "CONFIRMED_COMPLETE"
     ]
-    evidence["diagnostics"]["inventory_convergence_round_traces"] = [
-        recovery_trace
-    ]
+    evidence["diagnostics"]["inventory_convergence_round_traces"] = [recovery_trace]
     return case, prediction, evidence
 
 
@@ -1268,13 +1264,13 @@ def test_evaluator_accepts_audited_semantic_incompleteness() -> None:
     prediction.update(
         {
             "events": [],
+            "review_only_events": [],
             "abstained": True,
             "execution_outcome": "SEMANTICALLY_INCOMPLETE",
         }
     )
-    evidence["diagnostics"]["claim_extraction_routing_status"] = (
-        "semantic_incomplete"
-    )
+    evidence["diagnostics"]["claim_extraction_routing_status"] = "semantic_incomplete"
+    evidence["diagnostics"]["review_only_event_count"] = 0
 
     expectations, topology = bind_semantically_incomplete_case_evidence(
         case=case,
@@ -1287,6 +1283,51 @@ def test_evaluator_accepts_audited_semantic_incompleteness() -> None:
     assert topology
 
 
+def test_evaluator_rejects_substituted_review_only_event() -> None:
+    case, prediction, evidence = _recovery_case_artifact(decision="ABSTAIN")
+    review_only_events = list(prediction["events"])
+    prediction.update(
+        {
+            "events": [],
+            "review_only_events": review_only_events,
+            "abstained": True,
+            "execution_outcome": "SEMANTICALLY_INCOMPLETE",
+        }
+    )
+    evidence["diagnostics"]["claim_extraction_routing_status"] = "semantic_incomplete"
+    evidence["diagnostics"]["review_only_event_count"] = len(review_only_events)
+
+    with pytest.raises(ValueError, match="review-only events differ"):
+        bind_semantically_incomplete_case_evidence(
+            case=case,
+            prediction=prediction,
+            case_record=evidence,
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
+def test_evaluator_checks_review_only_count_even_when_inventory_is_empty() -> None:
+    case, prediction, evidence = _recovery_case_artifact(decision="ABSTAIN")
+    prediction.update(
+        {
+            "events": [],
+            "review_only_events": [],
+            "abstained": True,
+            "execution_outcome": "SEMANTICALLY_INCOMPLETE",
+        }
+    )
+    evidence["diagnostics"]["claim_extraction_routing_status"] = "semantic_incomplete"
+    evidence["diagnostics"]["review_only_event_count"] = 1
+
+    with pytest.raises(ValueError, match="review-only event count"):
+        bind_semantically_incomplete_case_evidence(
+            case=case,
+            prediction=prediction,
+            case_record=evidence,
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
 def test_evaluator_rejects_fabricated_convergence_trace() -> None:
     case, prediction, evidence = _recovery_case_artifact(decision="ABSTAIN")
     prediction.update(
@@ -1296,9 +1337,7 @@ def test_evaluator_rejects_fabricated_convergence_trace() -> None:
             "execution_outcome": "SEMANTICALLY_INCOMPLETE",
         }
     )
-    evidence["diagnostics"]["claim_extraction_routing_status"] = (
-        "semantic_incomplete"
-    )
+    evidence["diagnostics"]["claim_extraction_routing_status"] = "semantic_incomplete"
     evidence["diagnostics"]["inventory_convergence_round_traces"][0][
         "recovery_round"
     ] = 2

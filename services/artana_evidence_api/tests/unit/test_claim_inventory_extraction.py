@@ -515,9 +515,7 @@ def _replay_inventory_attempt(
     chunk = _chunk(text)
     attempts = tuple(record.as_json() for record in result.model_attempt_records)
     initial = next(
-        attempt
-        for attempt in attempts
-        if attempt["attempt_role"] == "claim_inventory"
+        attempt for attempt in attempts if attempt["attempt_role"] == "claim_inventory"
     )
     zero = next(
         attempt
@@ -1969,24 +1967,28 @@ async def test_inventory_converges_after_two_bounded_recovery_rounds() -> None:
     assert result.semantic_inventory_complete is True
     assert len(result.claims) == 3
     assert result.inventory_recovery_round_count == 2
-    assert result.inventory_convergence_stop_reasons == (
-        "CONFIRMED_COMPLETE",
+    assert result.inventory_convergence_stop_reasons == ("CONFIRMED_COMPLETE",)
+    assert (
+        len(
+            [
+                record
+                for record in result.model_attempt_records
+                if record.pass_role == "claim_inventory_completeness"
+                and record.validation_outcome == "accepted"
+            ]
+        )
+        == 3
     )
-    assert len(
-        [
-            record
-            for record in result.model_attempt_records
-            if record.pass_role == "claim_inventory_completeness"
-            and record.validation_outcome == "accepted"
-        ]
-    ) == 3
-    assert len(
-        [
-            record
-            for record in result.model_attempt_records
-            if record.pass_role == "claim_inventory_recovery"
-        ]
-    ) == 2
+    assert (
+        len(
+            [
+                record
+                for record in result.model_attempt_records
+                if record.pass_role == "claim_inventory_recovery"
+            ]
+        )
+        == 2
+    )
     replay = _replay_inventory_attempt(
         text=text,
         result=result,
@@ -2043,13 +2045,16 @@ async def test_recovery_adjudicates_every_descriptor_before_abstaining() -> None
         reversed_result.inventory_convergence_round_traces
     )
     assert forward.inventory_convergence_stop_reasons == ("RECOVERY_ABSTAINED",)
-    assert len(
-        [
-            record
-            for record in forward.model_attempt_records
-            if record.pass_role == "claim_inventory_recovery"
-        ]
-    ) == 2
+    assert (
+        len(
+            [
+                record
+                for record in forward.model_attempt_records
+                if record.pass_role == "claim_inventory_recovery"
+            ]
+        )
+        == 2
+    )
 
 
 def test_inventory_batch_hash_is_independent_of_agent_output_order() -> None:
@@ -2133,9 +2138,7 @@ async def test_inventory_stops_incomplete_after_two_recovery_rounds() -> None:
         ClaimInventoryItem.model_validate(fourth),
     ]
     assert result.inventory_recovery_round_count == 2
-    assert result.inventory_convergence_stop_reasons == (
-        "MAX_RECOVERY_ROUNDS",
-    )
+    assert result.inventory_convergence_stop_reasons == ("MAX_RECOVERY_ROUNDS",)
     assert len(runner.calls) == 6
 
 
@@ -2216,9 +2219,7 @@ async def test_duplicate_only_completeness_review_stops_without_another_agent_ca
     assert result.inventory_incompleteness == ()
     assert result.unresolved_binding_rejection_count == 1
     assert result.inventory_recovery_round_count == 0
-    assert result.inventory_convergence_stop_reasons == (
-        "NO_NEW_IDENTITIES",
-    )
+    assert result.inventory_convergence_stop_reasons == ("NO_NEW_IDENTITIES",)
     assert len(runner.calls) == 2
 
 
@@ -2341,9 +2342,7 @@ async def test_recovery_abstention_remains_semantically_incomplete() -> None:
         descriptor,
     )
     assert result.inventory_recovery_round_count == 1
-    assert result.inventory_convergence_stop_reasons == (
-        "RECOVERY_ABSTAINED",
-    )
+    assert result.inventory_convergence_stop_reasons == ("RECOVERY_ABSTAINED",)
     assert len(runner.calls) == 4
 
 
@@ -2714,9 +2713,11 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
 
     assert len(result.candidates) == 2
     assert len(result.claim_lineage) == 2
-    assert len(routed) == 1
+    assert len(routed) == 2
     assert routed.claim_extraction_routing_status == "candidate_overflow"
     assert routed.candidate_overflow_count == 1
+    assert routed[1].review_status == "review_only"
+    assert "candidate_overflow" in routed[1].review_reason_codes
     assert routed.overflow_candidates[0].claim_frame is not None
     assert routed.overflow_candidates[0].claim_frame.polarity.value == "SUPPORT"
     assert (
@@ -2725,7 +2726,7 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
 
 
 @pytest.mark.asyncio
-async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
+async def test_post_recovery_incomplete_inventory_preserves_review_only_lineage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     first_span = "MED13 causes cardiomyopathy."
@@ -2792,9 +2793,15 @@ async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
     assert result.semantic_inventory_complete is False
     assert len(result.inventory_incompleteness) == 1
     assert len(result.claim_lineage) == 2
-    assert routed == []
+    assert len(routed) == 2
+    assert all(candidate.review_status == "review_only" for candidate in routed)
+    assert all(
+        "semantic_inventory_incomplete" in candidate.review_reason_codes
+        for candidate in routed
+    )
+    assert all(not candidate.trusted_evidence_eligible for candidate in routed)
     assert routed.claim_extraction_routing_status == "semantic_incomplete"
-    assert tuple(routed.overflow_candidates) == tuple(result.candidates)
+    assert routed.overflow_candidates == ()
 
     async def _incomplete_agent_result(
         _text: str,
@@ -2820,9 +2827,24 @@ async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
 
     assert discovered is routed
     assert diagnostics.llm_candidate_status == "semantic_incomplete"
+    assert diagnostics.llm_candidate_count == 2
     assert diagnostics.fallback_output_used is False
     assert diagnostics.trusted_evidence_eligible is False
     assert diagnostics.claim_lineage == result.claim_lineage
+    assert len(diagnostics.inventory_incompleteness) == 1
+    assert diagnostics.inventory_incompleteness[0]["claim"]["exact_span"] == third_span
+
+    drafts = _build_pipeline_drafts(
+        monkeypatch=monkeypatch,
+        text=text,
+        candidates=list(discovered),
+    )
+    assert len(drafts) == 2
+    assert all(draft.metadata["review_status"] == "review_only" for draft in drafts)
+    assert all(
+        "semantic_inventory_incomplete" in draft.metadata["review_reason_codes"]
+        for draft in drafts
+    )
 
 
 @pytest.mark.asyncio

@@ -330,10 +330,17 @@ def apply_document_proposal_review(
         }
         for item in draft.evidence_bundle
     ]
+    score_ceiling = _claim_adjudication_score_ceiling(draft)
+    confidence = (
+        factual_score if score_ceiling is None else min(factual_score, score_ceiling)
+    )
+    ranking_score = (
+        ranking.score if score_ceiling is None else min(ranking.score, score_ceiling)
+    )
     return replace(
         draft,
-        confidence=factual_score,
-        ranking_score=ranking.score,
+        confidence=confidence,
+        ranking_score=ranking_score,
         reasoning_path={
             **draft.reasoning_path,
             "proposal_review": {
@@ -350,6 +357,32 @@ def apply_document_proposal_review(
             "proposal_review": proposal_review_metadata,
         },
     )
+
+
+def _claim_adjudication_score_ceiling(
+    draft: HarnessProposalDraft,
+) -> float | None:
+    """Preserve deterministic safety ceilings across later review ranking."""
+
+    adjudication = _metadata_object(
+        draft.metadata.get("claim_semantic_adjudication"),
+    )
+    source_support = adjudication.get("source_support")
+    if source_support == "CONTRADICTED":
+        return 0.05
+    if source_support in {"INSUFFICIENT", "ABSTAIN"}:
+        return 0.25
+    if adjudication and (
+        adjudication.get("atomicity") != "ATOMIC"
+        or adjudication.get("relationship") != "CANONICAL"
+    ):
+        return 0.25
+    reason_codes = draft.metadata.get("review_reason_codes")
+    if isinstance(reason_codes, list) and "claim_adjudication_unavailable" in (
+        reason_codes
+    ):
+        return 0.25
+    return None
 
 
 def _draft_evidence_ranking_inputs(
