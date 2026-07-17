@@ -49,6 +49,8 @@ class ClaimInventoryCompletenessReview(BaseModel):
                 raise ValueError("COMPLETE cannot include missing claims")
         elif not self.missing_claims:
             raise ValueError("INCOMPLETE requires at least one missing claim")
+        if any(not claim.claim_kind.relation_eligible for claim in self.missing_claims):
+            raise ValueError("missing claims must be scientific findings or hypotheses")
         return self
 
 

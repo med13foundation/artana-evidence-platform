@@ -31,6 +31,7 @@ from artana_evidence_api.document_extraction_prompting import (
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimEventType,
     ClaimInventoryBindingError,
+    ClaimInventoryCompletenessReview,
     ClaimInventoryItem,
     bind_claim_inventory,
     derive_claim_local_source_region,
@@ -124,12 +125,15 @@ def test_inventory_prompt_requires_verbatim_context_not_numeric_offsets() -> Non
     assert "never return offsets or numeric positions" in normalized_prompt
 
 
-def test_inventory_prompt_excludes_procedural_metadata_without_keyword_filtering() -> None:
+def test_inventory_prompt_excludes_procedural_metadata_without_keyword_filtering() -> (
+    None
+):
     normalized_prompt = CLAIM_INVENTORY_SYSTEM_PROMPT.casefold()
 
-    assert "only identifies primers, probes, reagents" in normalized_prompt
-    assert "without stating a biological relationship or result" in normalized_prompt
-    assert "methods sentence can still qualify" in normalized_prompt
+    assert "only names primers, catalog numbers, vendors" in normalized_prompt
+    assert "applying an intervention" in normalized_prompt
+    assert "methods sentence is relation-eligible only" in normalized_prompt
+    assert "measurement_only" in normalized_prompt
     assert "classify the source meaning" in normalized_prompt
 
 
@@ -143,9 +147,9 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v11:claim_inventory.v8+"
-        "claim_inventory_completeness.v7+claim_inventory_recovery.v7+"
-        "claim_framing.v6"
+        "document_extraction.claim_pipeline.v12:claim_inventory.v9+"
+        "claim_inventory_completeness.v8+claim_inventory_recovery.v8+"
+        "claim_framing.v7"
     )
 
 
@@ -197,6 +201,53 @@ def test_missing_claim_recovery_is_categorical_and_score_free() -> None:
                 "confidence": 0.99,
             },
         )
+
+
+@pytest.mark.asyncio
+async def test_procedures_and_measurement_only_items_never_enter_relation_framing() -> (
+    None
+):
+    procedure = "Reporter constructs were electroporated into CD4+ T cells."
+    measurement = "Luciferase activity was measured after 24 hours."
+    text = f"{procedure} {measurement}"
+    inventory = {
+        "claims": [
+            _inventory_claim(
+                exact_span=procedure,
+                endpoint_a_span="Reporter constructs",
+                relation_cue_span="were electroporated into",
+                endpoint_b_span="CD4+ T cells",
+                claim_kind="PROCEDURAL_CONTEXT",
+                event_type="OTHER_EXPLICIT",
+            ),
+            _inventory_claim(
+                exact_span=measurement,
+                endpoint_a_span="Luciferase activity",
+                relation_cue_span="was measured after",
+                endpoint_b_span="24 hours",
+                claim_kind="MEASUREMENT_ONLY",
+                event_type="OTHER_EXPLICIT",
+            ),
+        ],
+    }
+    runner = ScriptedStepRunner((inventory, _complete_inventory()))
+
+    result = await _run_pipeline(text=text, runner=runner)
+
+    assert result.candidates == []
+    assert result.inventory_claim_count == 0
+    assert result.non_relation_item_count == 2
+    assert [item.item.claim_kind.value for item in result.non_relation_items] == [
+        "PROCEDURAL_CONTEXT",
+        "MEASUREMENT_ONLY",
+    ]
+    assert {item.disposition.value for item in result.non_relation_items} == {
+        "CLAIM_KIND_ROUTING"
+    }
+    assert not any(
+        call["schema_id"] == "document_extraction.claim_framing.v2"
+        for call in runner.calls
+    )
 
 
 def test_multi_frame_decision_requires_multiple_candidate_relations() -> None:
@@ -253,6 +304,7 @@ def _inventory_claim(
     endpoint_b_span: str,
     endpoint_role_order: str = "A_SUBJECT_B_OBJECT",
     event_type: str = "ASSOCIATION",
+    claim_kind: str = "SCIENTIFIC_FINDING",
     polarity: str = "SUPPORT",
     epistemic_status: str = "ASSERTED",
 ) -> dict[str, object]:
@@ -280,11 +332,37 @@ def _inventory_claim(
             },
         ],
         "source_locator": "normalized_extraction_text",
+        "claim_kind": claim_kind,
         "event_type": event_type,
         "polarity": polarity,
         "epistemic_status": epistemic_status,
         "inventory_rationale": "The span states one explicit source-local claim.",
     }
+
+
+@pytest.mark.parametrize(
+    "claim_kind",
+    ["PROCEDURAL_CONTEXT", "MEASUREMENT_ONLY", "AMBIGUOUS"],
+)
+def test_completeness_missing_claims_must_be_relation_eligible(
+    claim_kind: str,
+) -> None:
+    descriptor = _inventory_claim(
+        exact_span="Luciferase activity was measured after 24 hours.",
+        endpoint_a_span="Luciferase activity",
+        relation_cue_span="was measured after",
+        endpoint_b_span="24 hours",
+        claim_kind=claim_kind,
+        event_type="OTHER_EXPLICIT",
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match="scientific findings or hypotheses",
+    ):
+        ClaimInventoryCompletenessReview.model_validate(
+            _incomplete_inventory(descriptor)
+        )
 
 
 def _absent_qualifier() -> dict[str, object]:
@@ -1052,6 +1130,7 @@ async def test_alk_assertion_preserves_all_roles_and_multiple_valid_frames(
             },
         ],
         "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "TREATMENT_RESPONSE",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
@@ -1202,6 +1281,7 @@ async def test_nonclinical_entity_roles_survive_in_the_claim_frame() -> None:
             },
         ],
         "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
         "event_type": "OTHER_EXPLICIT",
         "polarity": "SUPPORT",
         "epistemic_status": "ASSERTED",
@@ -1264,14 +1344,15 @@ async def test_inventory_preserves_refutation_null_and_hypothesis_claims() -> No
                 relation_cue_span="did not improve",
                 endpoint_b_span="ovarian cancer",
                 polarity="NULL_RESULT",
-                epistemic_status="NULL_RESULT",
+                epistemic_status="ASSERTED",
             ),
             _inventory_claim(
                 exact_span=hypothesis,
                 endpoint_a_span="BRCA1 loss",
                 relation_cue_span="predisposes",
                 endpoint_b_span="cisplatin resistance",
-                polarity="HYPOTHESIS",
+                claim_kind="SCIENTIFIC_HYPOTHESIS",
+                polarity="SUPPORT",
                 epistemic_status="HYPOTHESIS",
             ),
         ],
@@ -1293,14 +1374,14 @@ async def test_inventory_preserves_refutation_null_and_hypothesis_claims() -> No
                 relation_type="TREATS",
                 object_="ovarian cancer",
                 polarity="NULL_RESULT",
-                epistemic_status="NULL_RESULT",
+                epistemic_status="ASSERTED",
             ),
             _framed_relation(
                 sentence=hypothesis,
                 subject="BRCA1 loss",
                 relation_type="PREDISPOSES_TO",
                 object_="cisplatin resistance",
-                polarity="HYPOTHESIS",
+                polarity="SUPPORT",
                 epistemic_status="HYPOTHESIS",
                 biological_state=_present_qualifier("loss", "BRCA1 loss"),
                 population=_present_qualifier("tumors", "tumors"),
@@ -1317,7 +1398,7 @@ async def test_inventory_preserves_refutation_null_and_hypothesis_claims() -> No
     ] == [
         "REFUTE",
         "NULL_RESULT",
-        "HYPOTHESIS",
+        "SUPPORT",
     ]
     assert all(
         candidate.review_status == "review_only" for candidate in result.candidates
@@ -1574,6 +1655,13 @@ async def test_procedural_method_is_categorically_excluded_from_recovery() -> No
     assert result.claims == ()
     assert result.semantic_inventory_complete is True
     assert result.inventory_incompleteness == ()
+    assert len(result.non_relation_items) == 1
+    assert result.non_relation_items[0].item.exact_span == text
+    assert result.non_relation_items[0].disposition.value == "EXCLUDE_PROCEDURAL_METHOD"
+    assert (
+        result.non_relation_items[0].decision_rationale
+        == "The frozen source supports this category."
+    )
     recovery_record = next(
         record
         for record in result.model_attempt_records
@@ -1640,7 +1728,7 @@ async def test_recovery_abstention_remains_semantically_incomplete() -> None:
         endpoint_a_span="MED13",
         relation_cue_span="may affect",
         endpoint_b_span="cardiac phenotype",
-        polarity="UNCERTAIN",
+        polarity="SUPPORT",
         epistemic_status="UNCERTAIN",
     )
     runner = ScriptedStepRunner(
@@ -1673,7 +1761,7 @@ async def test_agent_abstention_does_not_create_deterministic_meaning() -> None:
                 endpoint_a_span="MED13",
                 relation_cue_span="may affect",
                 endpoint_b_span="cardiac phenotype",
-                polarity="UNCERTAIN",
+                polarity="SUPPORT",
                 epistemic_status="UNCERTAIN",
             ),
         ],
@@ -1819,6 +1907,7 @@ def test_inventory_binding_rejects_variant_with_dropped_state_suffix() -> None:
                 },
             ],
             "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
             "event_type": "TREATMENT_RESPONSE",
             "polarity": "SUPPORT",
             "epistemic_status": "ASSERTED",
@@ -1983,7 +2072,7 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
                 endpoint_a_span="BRCA1 loss",
                 relation_cue_span="may sensitize",
                 endpoint_b_span="cisplatin",
-                polarity="UNCERTAIN",
+                polarity="SUPPORT",
                 epistemic_status="UNCERTAIN",
             ),
         ],
@@ -2004,7 +2093,7 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
                 subject="BRCA1 loss",
                 relation_type="SENSITIZES_TO",
                 object_="cisplatin",
-                polarity="UNCERTAIN",
+                polarity="SUPPORT",
                 epistemic_status="UNCERTAIN",
                 biological_state=_present_qualifier("loss", "BRCA1 loss"),
                 population=_present_qualifier("tumors", "tumors"),
@@ -2033,7 +2122,10 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
     assert routed.claim_extraction_routing_status == "candidate_overflow"
     assert routed.candidate_overflow_count == 1
     assert routed.overflow_candidates[0].claim_frame is not None
-    assert routed.overflow_candidates[0].claim_frame.polarity.value == "UNCERTAIN"
+    assert routed.overflow_candidates[0].claim_frame.polarity.value == "SUPPORT"
+    assert (
+        routed.overflow_candidates[0].claim_frame.epistemic_status.value == "UNCERTAIN"
+    )
 
 
 @pytest.mark.asyncio

@@ -54,7 +54,10 @@ _SCHEMA_RETRY_INSTRUCTION = """
 SCHEMA AND SOURCE-BINDING RETRY:
 The previous inventory output failed the strict schema or exact-span binding.
 Return the same source-local claims only when every span is copied exactly from
-the frozen chunk and every field follows the schema. Preserve attached material
+the frozen chunk and every field follows the schema. Anchor context may extend
+outside a claim exact_span, but every selected mention must remain inside it.
+Classify claim_kind explicitly, keep polarity independent from epistemic_status,
+and preserve attached material
 state suffixes such as -positive, -negative, or -mutant in a VARIANT span. Do
 not invent a claim.
 """
@@ -63,8 +66,10 @@ _ZERO_RETRY_INSTRUCTION = """
 ZERO-INVENTORY RETRY:
 The previous inventory returned no claims. Re-read the frozen chunk once. Return
 every explicit biomedical assertion with all material typed arguments, including
-negative, null, uncertain, provisional, and hypothesis claims. Return an empty
-list only when no such claim is stated. Do not use outside knowledge or
+negative, null, uncertain, provisional, and hypothesis claims. Preserve a
+procedure-like or measurement-only item with its categorical claim_kind when it
+could otherwise be mistaken for a scientific finding. Return an empty list only
+when no such item is stated. Do not use outside knowledge or
 deterministic fallback.
 """
 
@@ -96,6 +101,7 @@ class MissingClaimRecoveryStageResult:
     """Categorical recovery decision bound to one immutable reviewed claim."""
 
     decision: MissingClaimRecoveryDisposition
+    decision_rationale: str
     reviewed_claim: BoundClaimInventoryItem
     raw_agent_outputs: tuple[dict[str, object], ...]
 
@@ -472,9 +478,8 @@ async def run_missing_claim_recovery_stage(
         semantic_unit_id=missing_claim.inventory_id,
     )
 
-    def _bind_recovery(parsed: BaseModel) -> MissingClaimRecoveryDisposition:
-        output = cast("MissingClaimRecoveryDecision", parsed)
-        return output.decision
+    def _bind_recovery(parsed: BaseModel) -> MissingClaimRecoveryDecision:
+        return cast("MissingClaimRecoveryDecision", parsed)
 
     async def _invoke_model(
         invocation_id: str,
@@ -502,7 +507,8 @@ async def run_missing_claim_recovery_stage(
         validate_semantics=_bind_recovery,
     )
     return MissingClaimRecoveryStageResult(
-        decision=result.value,
+        decision=result.value.decision,
+        decision_rationale=result.value.decision_rationale,
         reviewed_claim=missing_claim,
         raw_agent_outputs=(result.raw_output,),
     )
@@ -728,12 +734,8 @@ def _inventory_review_input_sha256(
     if not excluded_inventory:
         return claim_inventory_batch_input_sha256(current_inventory)
     payload = {
-        "current_inventory_ids": [
-            claim.inventory_id for claim in current_inventory
-        ],
-        "excluded_inventory_ids": [
-            claim.inventory_id for claim in excluded_inventory
-        ],
+        "current_inventory_ids": [claim.inventory_id for claim in current_inventory],
+        "excluded_inventory_ids": [claim.inventory_id for claim in excluded_inventory],
     }
     encoded = json.dumps(
         payload,

@@ -407,6 +407,7 @@ def _nary_events(
                 "source_end": claim.source_end,
                 "exact_span": exact_span,
                 "source_locator": item.get("source_locator"),
+                "claim_kind": item.get("claim_kind"),
                 "trigger_span": item.get("relation_cue_span"),
                 "trigger_source_start": trigger_mention.source_start,
                 "trigger_source_mention": {

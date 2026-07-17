@@ -301,6 +301,15 @@ def _route_agent_extraction_result(
             }
             for claim in extraction_attempt.inventory_incompleteness
         ),
+        inventory_non_relation_items=tuple(
+            {
+                "inventory_id": claim.inventory_id,
+                "claim": claim.item.model_dump(mode="json"),
+                "disposition": claim.disposition.value,
+                "decision_rationale": claim.decision_rationale,
+            }
+            for claim in extraction_attempt.non_relation_items
+        ),
     )
 
 
