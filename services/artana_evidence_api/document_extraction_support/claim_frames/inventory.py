@@ -431,6 +431,23 @@ def merge_bound_claim_inventories(
     return tuple(merged)
 
 
+def canonicalize_bound_claim_inventory(
+    inventory: tuple[BoundClaimInventoryItem, ...],
+) -> tuple[BoundClaimInventoryItem, ...]:
+    """Deduplicate and order source-bound claims independently of model order."""
+
+    return tuple(
+        sorted(
+            merge_bound_claim_inventories(inventory),
+            key=lambda claim: (
+                claim.source_start,
+                claim.source_end,
+                claim.inventory_id,
+            ),
+        )
+    )
+
+
 def partition_bound_claim_inventory(
     inventory: tuple[BoundClaimInventoryItem, ...],
 ) -> tuple[
@@ -713,7 +730,7 @@ def claim_inventory_input_sha256(
 def claim_inventory_batch_input_sha256(
     inventory: tuple[BoundClaimInventoryItem, ...],
 ) -> str:
-    """Hash ordered semantic identities and complete provider-authored inputs."""
+    """Hash canonical semantic identities and complete provider-authored inputs."""
 
     return _canonical_sha256(
         [
@@ -721,7 +738,7 @@ def claim_inventory_batch_input_sha256(
                 "inventory_id": claim.inventory_id,
                 "item": claim.item.model_dump(mode="json"),
             }
-            for claim in inventory
+            for claim in canonicalize_bound_claim_inventory(inventory)
         ],
     )
 
@@ -743,6 +760,7 @@ __all__ = [
     "bind_claim_inventory_items",
     "bind_claim_inventory_item_at_source",
     "build_claim_inventory_binding_rejection",
+    "canonicalize_bound_claim_inventory",
     "claim_inventory_batch_input_sha256",
     "claim_inventory_identity",
     "claim_inventory_input_sha256",

@@ -42,6 +42,7 @@ from scripts.validation.claim_events.evidence_binding import (
     _select_inventory_attempt,
     _validate_predictions,
     bind_case_evidence,
+    bind_semantically_incomplete_case_evidence,
     bind_unbindable_case_evidence,
 )
 from scripts.validation.claim_events.operational import (
@@ -283,18 +284,11 @@ def _report(
             output_schema_sha256=output_schema_json_sha256(schema),
         )
         zero_invocation = f"zero-{slug}-{run_index}-{case.case_id}"
-        zero_prompt = bind_prompt_to_invocation(
-            prompt=build_claim_inventory_prompt(
-                chunk=chunk,
-                total_chunks=1,
-                document_fingerprint=source_sha256,
-                zero_retry=True,
-            ),
-            invocation_id=zero_invocation,
-            source_sha256=source_sha256,
-            input_sha256=chunk.sha256,
-            evidence_unit_sha256=evidence_unit_sha256,
-            output_schema_sha256=output_schema_json_sha256(schema),
+        zero_prompt = build_claim_inventory_prompt(
+            chunk=chunk,
+            total_chunks=1,
+            document_fingerprint=source_sha256,
+            zero_retry=True,
         )
         item = ClaimInventoryItem.model_validate(
             {
@@ -357,6 +351,9 @@ def _report(
                 "diagnostics": {
                     "fallback_output_used": False,
                     "claim_extraction_routing_status": "complete",
+                    "inventory_recovery_round_count": 0,
+                    "inventory_convergence_stop_reasons": ["INITIAL_COMPLETE"],
+                    "inventory_convergence_round_traces": [],
                 },
                 "attempts": [
                     {
@@ -535,12 +532,30 @@ def _recovery_case_artifact(
     empty_payload = {"claims": []}
     initial["raw_model_payload"] = empty_payload
     initial["payload_sha256"] = _sha256_json(empty_payload)
+    zero_provider_prompt = bind_prompt_to_invocation(
+        prompt=build_claim_inventory_prompt(
+            chunk=chunk,
+            total_chunks=1,
+            document_fingerprint=source_sha256,
+            zero_retry=True,
+        ),
+        invocation_id=zero["invocation_id"],
+        source_sha256=source_sha256,
+        input_sha256=chunk.sha256,
+        evidence_unit_sha256=evidence_unit_sha256,
+        output_schema_sha256=output_schema_json_sha256(
+            build_claim_inventory_output_schema(64)
+        ),
+    )
     zero.update(
         {
             "validation_outcome": "accepted",
             "provider_response_id": "resp_zero_recovery",
             "provider_output_sha256": "e" * 64,
             "payload_sha256": _sha256_json(empty_payload),
+            "prompt_sha256": hashlib.sha256(
+                zero_provider_prompt.encode()
+            ).hexdigest(),
             "kernel_run_id": f"research-init-extraction:{zero['invocation_id']}",
             "raw_model_payload": empty_payload,
         }
@@ -585,6 +600,8 @@ def _recovery_case_artifact(
             chunk=chunk,
             document_fingerprint=source_sha256,
             missing_claim=bound,
+            recovery_round=1,
+            parent_completeness_input_sha256=empty_input_sha256,
         ),
         invocation_id=recovery_invocation,
         source_sha256=source_sha256,
@@ -639,6 +656,7 @@ def _recovery_case_artifact(
             current_inventory=confirmation_inventory,
             excluded_inventory=confirmation_excluded,
             confirmation=True,
+            recovery_round=1,
         ),
         invocation_id=confirmation_invocation,
         source_sha256=source_sha256,
@@ -664,9 +682,33 @@ def _recovery_case_artifact(
         "input_sha256": confirmation_input_sha256,
         "raw_model_payload": confirmation_payload,
     }
-    evidence["attempts"] = [initial, zero, completeness, recovery, confirmation]
+    recovery_trace = {
+        "chunk_index": chunk.index,
+        "recovery_round": 1,
+        "parent_completeness_input_sha256": empty_input_sha256,
+        "input_inventory_ids": [],
+        "missing_descriptor_ids": [bound.inventory_id],
+        "decisions": [
+            {
+                "inventory_id": bound.inventory_id,
+                "disposition": decision,
+            }
+        ],
+        "output_inventory_ids": [bound.inventory_id] if recovered else [],
+        "excluded_inventory_ids": [bound.inventory_id] if excluded else [],
+    }
+    evidence["attempts"] = [initial, zero, completeness, recovery]
+    if decision != "ABSTAIN":
+        evidence["attempts"].append(confirmation)
     evidence["diagnostics"]["inventory_binding_rejections"] = []
     evidence["diagnostics"]["inventory_binding_rejection_count"] = 0
+    evidence["diagnostics"]["inventory_recovery_round_count"] = 1
+    evidence["diagnostics"]["inventory_convergence_stop_reasons"] = [
+        "RECOVERY_ABSTAINED" if decision == "ABSTAIN" else "CONFIRMED_COMPLETE"
+    ]
+    evidence["diagnostics"]["inventory_convergence_round_traces"] = [
+        recovery_trace
+    ]
     return case, prediction, evidence
 
 
@@ -1212,8 +1254,57 @@ def test_evaluator_rejects_excluded_claim_in_predictions() -> None:
 def test_evaluator_rejects_recovery_abstention_in_complete_route() -> None:
     case, prediction, evidence = _recovery_case_artifact(decision="ABSTAIN")
 
-    with pytest.raises(ValueError, match="recovery abstention"):
+    with pytest.raises(ValueError, match="not complete"):
         bind_case_evidence(
+            case=case,
+            prediction=prediction,
+            case_record=evidence,
+            model_id="openai:gpt-5.6-luna",
+        )
+
+
+def test_evaluator_accepts_audited_semantic_incompleteness() -> None:
+    case, prediction, evidence = _recovery_case_artifact(decision="ABSTAIN")
+    prediction.update(
+        {
+            "events": [],
+            "abstained": True,
+            "execution_outcome": "SEMANTICALLY_INCOMPLETE",
+        }
+    )
+    evidence["diagnostics"]["claim_extraction_routing_status"] = (
+        "semantic_incomplete"
+    )
+
+    expectations, topology = bind_semantically_incomplete_case_evidence(
+        case=case,
+        prediction=prediction,
+        case_record=evidence,
+        model_id="openai:gpt-5.6-luna",
+    )
+
+    assert len(expectations) == 4
+    assert topology
+
+
+def test_evaluator_rejects_fabricated_convergence_trace() -> None:
+    case, prediction, evidence = _recovery_case_artifact(decision="ABSTAIN")
+    prediction.update(
+        {
+            "events": [],
+            "abstained": True,
+            "execution_outcome": "SEMANTICALLY_INCOMPLETE",
+        }
+    )
+    evidence["diagnostics"]["claim_extraction_routing_status"] = (
+        "semantic_incomplete"
+    )
+    evidence["diagnostics"]["inventory_convergence_round_traces"][0][
+        "recovery_round"
+    ] = 2
+
+    with pytest.raises(ValueError, match="convergence round traces differ"):
+        bind_semantically_incomplete_case_evidence(
             case=case,
             prediction=prediction,
             case_record=evidence,

@@ -273,12 +273,27 @@ def test_zero_candidate_retry_uses_inventory_pass_schema() -> None:
 
 def test_runner_categorizes_bound_empty_and_unbindable_results() -> None:
     assert (
-        _execution_outcome(events=[{"event_type": "BINDING"}], failed=False)
+        _execution_outcome(
+            events=[{"event_type": "BINDING"}],
+            terminal_failure=False,
+            semantic_incomplete=False,
+        )
         is CaseExecutionOutcome.BOUND_OUTPUT
     )
-    assert _execution_outcome(events=[], failed=False) is CaseExecutionOutcome.NO_OUTPUT
     assert (
-        _execution_outcome(events=[], failed=True)
+        _execution_outcome(
+            events=[],
+            terminal_failure=False,
+            semantic_incomplete=False,
+        )
+        is CaseExecutionOutcome.NO_OUTPUT
+    )
+    assert (
+        _execution_outcome(
+            events=[],
+            terminal_failure=True,
+            semantic_incomplete=False,
+        )
         is CaseExecutionOutcome.UNBINDABLE_OUTPUT
     )
 
@@ -293,8 +308,12 @@ def test_runner_blocks_scoring_until_inventory_is_semantically_complete() -> Non
     assert executable is False
     assert routing_status == "semantic_incomplete"
     assert (
-        _execution_outcome(events=[], failed=not executable)
-        is CaseExecutionOutcome.UNBINDABLE_OUTPUT
+        _execution_outcome(
+            events=[],
+            terminal_failure=False,
+            semantic_incomplete=not executable,
+        )
+        is CaseExecutionOutcome.SEMANTICALLY_INCOMPLETE
     )
 
 

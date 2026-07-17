@@ -17,13 +17,9 @@ from artana_evidence_api.document_extraction_prompting import (
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
-    ClaimInventoryBindingRejection,
     ClaimInventoryItem,
-    InventoryCompletenessDecision,
-    MissingClaimRecoveryDisposition,
     coalesce_long_sentence_chunks,
     merge_bound_claim_inventories,
-    merge_claim_inventory_binding_rejections,
     partition_bound_claim_inventory,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
@@ -37,8 +33,10 @@ from artana_evidence_api.document_extraction_support.llm_extraction.claim_invent
     InventoryBatchBindingStatus,
     record_skipped_zero_inventory_retry,
     run_claim_inventory_stage,
-    run_inventory_completeness_review_stage,
-    run_missing_claim_recovery_stage,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.inventory_convergence import (
+    InventoryConvergenceStopReason,
+    run_inventory_completeness_convergence,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
     ModelAttemptAuditRecord,
@@ -86,6 +84,9 @@ class LLMRelationExtractionAttempt:
     raw_relation_count: int
     inventory_claim_count: int = 0
     inventory_binding_rejection_count: int = 0
+    inventory_recovery_round_count: int = 0
+    inventory_convergence_stop_reasons: tuple[str, ...] = ()
+    inventory_convergence_round_traces: tuple[dict[str, object], ...] = ()
     non_relation_item_count: int = 0
     framing_abstention_count: int = 0
     processed_chunk_count: int = 0
@@ -106,6 +107,10 @@ class LLMClaimInventoryAttempt:
     claims: tuple[BoundClaimInventoryItem, ...]
     processed_chunk_count: int
     semantic_inventory_complete: bool
+    inventory_binding_rejection_count: int
+    inventory_recovery_round_count: int
+    inventory_convergence_stop_reasons: tuple[str, ...]
+    inventory_convergence_round_traces: tuple[dict[str, object], ...]
     inventory_incompleteness: tuple[BoundClaimInventoryItem, ...]
     inventory_binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...]
     unresolved_binding_rejection_count: int
@@ -124,6 +129,9 @@ class _ChunkInventoryOutcome:
     binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...]
     unresolved_binding_rejection_count: int
     raw_agent_outputs: tuple[dict[str, object], ...]
+    recovery_round_count: int
+    convergence_stop_reason: InventoryConvergenceStopReason
+    convergence_round_traces: tuple[dict[str, object], ...]
 
     @property
     def complete(self) -> bool:
@@ -180,6 +188,7 @@ async def run_llm_relation_extraction_with_zero_retry(
     unresolved_missing_claims: list[BoundClaimInventoryItem] = []
     inventory_binding_rejections: list[ClaimInventoryBindingRejectionEvent] = []
     unresolved_binding_rejection_count = 0
+    inventory_outcomes: list[_ChunkInventoryOutcome] = []
     inventory_claim_count = 0
     non_relation_items: list[NonRelationInventoryItem] = []
     framing_abstention_count = 0
@@ -212,6 +221,7 @@ async def run_llm_relation_extraction_with_zero_retry(
             unresolved_binding_rejection_count += (
                 inventory_outcome.unresolved_binding_rejection_count
             )
+            inventory_outcomes.append(inventory_outcome)
 
             inventory_claim_count += len(inventory_claims)
             for inventory_claim in inventory_claims:
@@ -264,6 +274,17 @@ async def run_llm_relation_extraction_with_zero_retry(
             raw_relation_count=raw_relation_count,
             inventory_claim_count=inventory_claim_count,
             inventory_binding_rejection_count=len(inventory_binding_rejections),
+            inventory_recovery_round_count=sum(
+                outcome.recovery_round_count for outcome in inventory_outcomes
+            ),
+            inventory_convergence_stop_reasons=tuple(
+                outcome.convergence_stop_reason.value for outcome in inventory_outcomes
+            ),
+            inventory_convergence_round_traces=tuple(
+                trace
+                for outcome in inventory_outcomes
+                for trace in outcome.convergence_round_traces
+            ),
             non_relation_item_count=len(non_relation_items),
             framing_abstention_count=framing_abstention_count,
             processed_chunk_count=len(extraction_chunks),
@@ -317,6 +338,9 @@ async def run_llm_claim_inventory_with_zero_retry(
     unresolved: tuple[BoundClaimInventoryItem, ...] = ()
     binding_rejections: tuple[ClaimInventoryBindingRejectionEvent, ...] = ()
     unresolved_binding_rejection_count = 0
+    inventory_recovery_round_count = 0
+    inventory_convergence_stop_reasons: tuple[str, ...] = ()
+    inventory_convergence_round_traces: tuple[dict[str, object], ...] = ()
     non_relation_items: tuple[NonRelationInventoryItem, ...] = ()
     raw_outputs: tuple[dict[str, object], ...] = ()
     try:
@@ -343,6 +367,11 @@ async def run_llm_claim_inventory_with_zero_retry(
             unresolved_binding_rejection_count += (
                 outcome.unresolved_binding_rejection_count
             )
+            inventory_recovery_round_count += outcome.recovery_round_count
+            inventory_convergence_stop_reasons += (
+                outcome.convergence_stop_reason.value,
+            )
+            inventory_convergence_round_traces += outcome.convergence_round_traces
             non_relation_items = _merge_non_relation_items(
                 non_relation_items,
                 outcome.non_relation_items,
@@ -353,6 +382,14 @@ async def run_llm_claim_inventory_with_zero_retry(
             processed_chunk_count=len(extraction_chunks),
             semantic_inventory_complete=(
                 not unresolved and unresolved_binding_rejection_count == 0
+            ),
+            inventory_binding_rejection_count=len(binding_rejections),
+            inventory_recovery_round_count=inventory_recovery_round_count,
+            inventory_convergence_stop_reasons=(
+                inventory_convergence_stop_reasons
+            ),
+            inventory_convergence_round_traces=(
+                inventory_convergence_round_traces
             ),
             inventory_incompleteness=unresolved,
             inventory_binding_rejections=binding_rejections,
@@ -421,140 +458,47 @@ async def _inventory_chunk_with_recovery(
         raw_outputs.extend(retry_result.raw_agent_outputs)
         inventory_claims = retry_result.claims
         binding_rejections += retry_result.binding_rejections
-    prompt_rejections = _prompt_binding_rejections(binding_rejections)
-    review_result = await run_inventory_completeness_review_stage(
+    convergence = await run_inventory_completeness_convergence(
         chunk=chunk,
         total_chunks=total_chunks,
         document_fingerprint=document_fingerprint,
-        current_inventory=inventory_claims,
-        binding_rejections=prompt_rejections,
-        output_schema=completeness_output_schema,
+        inventory=inventory_claims,
+        binding_rejections=binding_rejections,
+        completeness_output_schema=completeness_output_schema,
+        recovery_output_schema=recovery_output_schema,
         client=client,
         tenant=tenant,
         model_id=model_id,
         step_runner=step_runner,
         execution_namespace=execution_namespace,
     )
-    raw_outputs.extend(review_result.raw_agent_outputs)
-    binding_rejections += review_result.binding_rejections
-    if review_result.review.decision is InventoryCompletenessDecision.COMPLETE:
-        claims, non_relation_items = _partition_inventory(inventory_claims)
-        return _ChunkInventoryOutcome(
-            claims=claims,
-            non_relation_items=non_relation_items,
-            unresolved_missing_claims=(),
-            binding_rejections=binding_rejections,
-            unresolved_binding_rejection_count=0,
-            raw_agent_outputs=tuple(raw_outputs),
+    raw_outputs.extend(convergence.raw_agent_outputs)
+    excluded_items = tuple(
+        NonRelationInventoryItem(
+            claim=exclusion.claim,
+            disposition=NonRelationDisposition(exclusion.disposition.value),
+            decision_rationale=exclusion.decision_rationale,
         )
-
-    recovered_claims: tuple[BoundClaimInventoryItem, ...] = ()
-    excluded_claims: tuple[BoundClaimInventoryItem, ...] = ()
-    excluded_items: tuple[NonRelationInventoryItem, ...] = ()
-    unresolved_recovery_claims: tuple[BoundClaimInventoryItem, ...] = ()
-    for missing_claim in review_result.review.missing_claims:
-        recovery_result = await run_missing_claim_recovery_stage(
-            chunk=chunk,
-            document_fingerprint=document_fingerprint,
-            missing_claim=missing_claim,
-            output_schema=recovery_output_schema,
-            client=client,
-            tenant=tenant,
-            model_id=model_id,
-            step_runner=step_runner,
-            execution_namespace=execution_namespace,
-        )
-        raw_outputs.extend(recovery_result.raw_agent_outputs)
-        if (
-            recovery_result.decision
-            is MissingClaimRecoveryDisposition.RECOVER_EXPLICIT_CLAIM
-        ):
-            recovered_claims = merge_bound_claim_inventories(
-                recovered_claims,
-                (recovery_result.reviewed_claim,),
-            )
-        elif recovery_result.decision in {
-            MissingClaimRecoveryDisposition.EXCLUDE_PROCEDURAL_METHOD,
-            MissingClaimRecoveryDisposition.EXCLUDE_NOT_EXPLICIT,
-        }:
-            excluded_claims = merge_bound_claim_inventories(
-                excluded_claims,
-                (recovery_result.reviewed_claim,),
-            )
-            excluded_items = _merge_non_relation_items(
-                excluded_items,
-                (
-                    NonRelationInventoryItem(
-                        claim=recovery_result.reviewed_claim,
-                        disposition=NonRelationDisposition(
-                            recovery_result.decision.value
-                        ),
-                        decision_rationale=recovery_result.decision_rationale,
-                    ),
-                ),
-            )
-        else:
-            unresolved_recovery_claims = merge_bound_claim_inventories(
-                unresolved_recovery_claims,
-                (recovery_result.reviewed_claim,),
-            )
-
-    combined_inventory = merge_bound_claim_inventories(
-        inventory_claims,
-        recovered_claims,
+        for exclusion in convergence.exclusions
     )
-    confirmation = await run_inventory_completeness_review_stage(
-        chunk=chunk,
-        total_chunks=total_chunks,
-        document_fingerprint=document_fingerprint,
-        current_inventory=combined_inventory,
-        binding_rejections=_prompt_binding_rejections(binding_rejections),
-        output_schema=completeness_output_schema,
-        client=client,
-        tenant=tenant,
-        model_id=model_id,
-        step_runner=step_runner,
-        execution_namespace=execution_namespace,
-        confirmation=True,
-        excluded_inventory=excluded_claims,
-    )
-    raw_outputs.extend(confirmation.raw_agent_outputs)
-    binding_rejections += confirmation.binding_rejections
-    confirmation_missing = (
-        ()
-        if confirmation.review.decision is InventoryCompletenessDecision.COMPLETE
-        else confirmation.review.missing_claims
-    )
-    unresolved = merge_bound_claim_inventories(
-        unresolved_recovery_claims,
-        confirmation_missing,
-    )
-    unresolved_binding_rejection_count = (
-        0
-        if confirmation.review.decision is InventoryCompletenessDecision.COMPLETE
-        else len(confirmation.binding_rejections)
-    )
-    claims, non_relation_items = _partition_inventory(combined_inventory)
+    claims, non_relation_items = _partition_inventory(convergence.inventory)
     return _ChunkInventoryOutcome(
         claims=claims,
         non_relation_items=_merge_non_relation_items(
             non_relation_items,
             excluded_items,
         ),
-        unresolved_missing_claims=unresolved,
-        binding_rejections=binding_rejections,
-        unresolved_binding_rejection_count=unresolved_binding_rejection_count,
+        unresolved_missing_claims=convergence.unresolved_missing_claims,
+        binding_rejections=convergence.binding_rejections,
+        unresolved_binding_rejection_count=(
+            convergence.unresolved_binding_rejection_count
+        ),
         raw_agent_outputs=tuple(raw_outputs),
-    )
-
-
-def _prompt_binding_rejections(
-    events: tuple[ClaimInventoryBindingRejectionEvent, ...],
-) -> tuple[ClaimInventoryBindingRejection, ...]:
-    """Deduplicate opaque prompt summaries without collapsing audit events."""
-
-    return merge_claim_inventory_binding_rejections(
-        tuple(event.rejection for event in events),
+        recovery_round_count=convergence.recovery_round_count,
+        convergence_stop_reason=convergence.stop_reason,
+        convergence_round_traces=tuple(
+            trace.as_json() for trace in convergence.round_traces
+        ),
     )
 
 

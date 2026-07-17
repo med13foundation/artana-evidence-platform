@@ -283,7 +283,11 @@ async def _execute_case(
         terminal_error=terminal_error,
     )
     events = _nary_events(inventory.claims) if executable and inventory else []
-    outcome = _execution_outcome(events=events, failed=not executable)
+    outcome = _execution_outcome(
+        events=events,
+        terminal_failure=terminal_error is not None or inventory is None,
+        semantic_incomplete=(inventory is not None and not executable),
+    )
     return _CaseRunResult(
         prediction={
             "case_id": case.case_id,
@@ -312,6 +316,19 @@ async def _execute_case(
                     if inventory is None
                     else inventory.unresolved_binding_rejection_count
                 ),
+                "inventory_recovery_round_count": (
+                    0 if inventory is None else inventory.inventory_recovery_round_count
+                ),
+                "inventory_convergence_stop_reasons": (
+                    []
+                    if inventory is None
+                    else list(inventory.inventory_convergence_stop_reasons)
+                ),
+                "inventory_convergence_round_traces": (
+                    []
+                    if inventory is None
+                    else list(inventory.inventory_convergence_round_traces)
+                ),
             },
         },
         records=tuple(audit.records),
@@ -322,10 +339,13 @@ async def _execute_case(
 def _execution_outcome(
     *,
     events: list[dict[str, object]],
-    failed: bool,
+    terminal_failure: bool,
+    semantic_incomplete: bool,
 ) -> CaseExecutionOutcome:
-    if failed:
+    if terminal_failure:
         return CaseExecutionOutcome.UNBINDABLE_OUTPUT
+    if semantic_incomplete:
+        return CaseExecutionOutcome.SEMANTICALLY_INCOMPLETE
     return (
         CaseExecutionOutcome.BOUND_OUTPUT if events else CaseExecutionOutcome.NO_OUTPUT
     )

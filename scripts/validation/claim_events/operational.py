@@ -20,6 +20,7 @@ class CaseExecutionOutcome(StrEnum):
 
     BOUND_OUTPUT = "BOUND_OUTPUT"
     NO_OUTPUT = "NO_OUTPUT"
+    SEMANTICALLY_INCOMPLETE = "SEMANTICALLY_INCOMPLETE"
     UNBINDABLE_OUTPUT = "UNBINDABLE_OUTPUT"
 
 
@@ -59,6 +60,7 @@ def build_operational_summary(
     outcomes: Counter[str] = Counter()
     predicted_ids: list[str] = []
     qualification_unbindable = stress_unbindable = 0
+    qualification_incomplete = stress_incomplete = 0
     for prediction in predictions:
         case_id = _text(prediction.get("case_id"), "prediction case_id")
         outcome = CaseExecutionOutcome(
@@ -71,6 +73,11 @@ def build_operational_summary(
                 stress_unbindable += 1
             else:
                 qualification_unbindable += 1
+        elif outcome is CaseExecutionOutcome.SEMANTICALLY_INCOMPLETE:
+            if case_status.get(case_id) == "REPRESENTABILITY_STRESS":
+                stress_incomplete += 1
+            else:
+                qualification_incomplete += 1
 
     coverage_complete = set(predicted_ids) == expected_ids and len(
         predicted_ids
@@ -78,6 +85,7 @@ def build_operational_summary(
     gate_passed = (
         coverage_complete
         and qualification_unbindable == 0
+        and qualification_incomplete == 0
         and safety.fallback_count == 0
         and safety.unidentified_provider_attempt_count == 0
         and safety.qualification_invalid_agent_output_count == 0
@@ -93,6 +101,7 @@ def build_operational_summary(
             outcome.value: outcomes[outcome.value] for outcome in CaseExecutionOutcome
         },
         "qualification_unbindable_count": qualification_unbindable,
+        "qualification_semantically_incomplete_count": qualification_incomplete,
         "qualification_invalid_agent_output_count": (
             safety.qualification_invalid_agent_output_count
         ),
@@ -105,6 +114,7 @@ def build_operational_summary(
         ),
         "provider_receipt_gate_passed": safety.provider_receipt_gate_passed,
         "representability_stress_unbindable_count": stress_unbindable,
+        "representability_stress_semantically_incomplete_count": stress_incomplete,
         "gate_passed": gate_passed,
     }
 
