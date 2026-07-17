@@ -8,10 +8,12 @@ import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryBindingDisposition,
     ClaimInventoryBindingError,
+    ClaimInventoryCompletenessReview,
     ClaimInventoryItem,
     ClaimMentionAnchor,
     bind_claim_inventory,
     bind_claim_inventory_items,
+    bind_inventory_completeness_review,
     claim_inventory_batch_input_sha256,
     claim_inventory_identity,
     claim_inventory_input_sha256,
@@ -206,6 +208,67 @@ def test_valid_item_blocks_later_duplicate_without_losing_first_binding() -> Non
     assert [claim.item for claim in result.accepted] == [item]
     assert result.rejected[0].batch_index == 1
     assert result.rejected[0].disposition is (
+        ClaimInventoryBindingDisposition.DUPLICATE_SEMANTIC_CLAIM
+    )
+
+
+def test_completeness_duplicate_does_not_discard_valid_missing_sibling() -> None:
+    first_span = "IL-4 inhibited FOXP3."
+    second_span = "BRCA1 loss sensitized tumors to cisplatin."
+    source = f"{first_span} {second_span}"
+    first = _inventory_item(
+        text=first_span,
+        cue="inhibited",
+        first_argument={
+            "role": "CHEMICAL_OR_DRUG",
+            "event_role": "AGENT",
+            "exact_span": "IL-4",
+            "role_rationale": "IL-4 is the stated regulator.",
+        },
+        second_span="FOXP3",
+    )
+    second = _inventory_item(
+        text=second_span,
+        cue="sensitized",
+        first_argument={
+            "role": "VARIANT",
+            "event_role": "AGENT",
+            "exact_span": "BRCA1 loss",
+            "role_rationale": "BRCA1 loss is the stated sensitizer.",
+        },
+        second_span="cisplatin",
+    )
+    source_sha256 = hashlib.sha256(source.encode()).hexdigest()
+    current = bind_claim_inventory(
+        (first,),
+        source_text=source,
+        source_sha256=source_sha256,
+        chunk_index=0,
+    )
+    review = ClaimInventoryCompletenessReview.model_validate(
+        {
+            "decision": "INCOMPLETE",
+            "missing_claims": [
+                first.model_dump(mode="json"),
+                second.model_dump(mode="json"),
+            ],
+            "review_rationale": "One repeated item and one novel missing item.",
+        },
+    )
+
+    bound_review = bind_inventory_completeness_review(
+        review,
+        source_text=source,
+        source_sha256=source_sha256,
+        chunk_index=0,
+        source_start_offset=0,
+        current_inventory=current,
+    )
+
+    assert [claim.item for claim in bound_review.missing_claims] == [second]
+    assert len(bound_review.binding_rejections) == 1
+    assert bound_review.binding_rejections[0].batch_index == 0
+    assert bound_review.binding_rejections[0].disposition is (
         ClaimInventoryBindingDisposition.DUPLICATE_SEMANTIC_CLAIM
     )
 

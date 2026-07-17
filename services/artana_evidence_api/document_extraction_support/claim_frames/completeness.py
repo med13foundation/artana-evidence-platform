@@ -7,10 +7,11 @@ from enum import Enum
 
 from artana_evidence_api.document_extraction_support.claim_frames.inventory import (
     BoundClaimInventoryItem,
-    ClaimInventoryBindingError,
+    ClaimInventoryBindingDisposition,
     ClaimInventoryBindingRejection,
     ClaimInventoryItem,
     bind_claim_inventory_items,
+    build_claim_inventory_binding_rejection,
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -105,17 +106,35 @@ def bind_inventory_completeness_review(
     adjudicated_ids = {
         claim.inventory_id for claim in (*current_inventory, *excluded_inventory)
     }
-    duplicated_ids = adjudicated_ids.intersection(
-        claim.inventory_id for claim in binding_result.accepted
-    )
-    if duplicated_ids:
-        raise ClaimInventoryBindingError(
-            "inventory completeness review repeated an adjudicated claim",
+    accepted: list[BoundClaimInventoryItem] = []
+    duplicate_rejections: list[ClaimInventoryBindingRejection] = []
+    for claim in binding_result.accepted:
+        if claim.inventory_id not in adjudicated_ids:
+            accepted.append(claim)
+            continue
+        batch_index = review.missing_claims.index(claim.item)
+        duplicate_rejections.append(
+            build_claim_inventory_binding_rejection(
+                batch_index=batch_index,
+                item=claim.item,
+                source_sha256=source_sha256,
+                chunk_index=chunk_index,
+                disposition=(ClaimInventoryBindingDisposition.DUPLICATE_SEMANTIC_CLAIM),
+                validation_evidence=(
+                    "inventory completeness review repeated an adjudicated claim"
+                ),
+            ),
         )
+    rejections = tuple(
+        sorted(
+            (*binding_result.rejected, *duplicate_rejections),
+            key=lambda rejection: rejection.batch_index,
+        ),
+    )
     return BoundInventoryCompletenessReview(
         decision=review.decision,
-        missing_claims=binding_result.accepted,
-        binding_rejections=binding_result.rejected,
+        missing_claims=tuple(accepted),
+        binding_rejections=rejections,
         review_rationale=review.review_rationale,
     )
 

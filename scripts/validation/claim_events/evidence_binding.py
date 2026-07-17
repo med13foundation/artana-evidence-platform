@@ -609,7 +609,7 @@ def _validate_inventory_workflow(
             zero_retry=True,
             schema_retry=zero.get("attempt_role") == "schema_retry",
         )
-        inventory_attempt = initial if initial_claims else zero
+        inventory_attempt = _select_inventory_attempt(initial=initial, zero=zero)
         binding_result = bind_claim_inventory_items(
             tuple(
                 ClaimInventoryItem.model_validate(item)
@@ -1091,6 +1091,16 @@ def _raw_claim_payloads(attempt: Mapping[str, object]) -> set[str]:
         _canonical_json(ClaimInventoryItem.model_validate(item).model_dump(mode="json"))
         for item in _sequence(payload.get("claims"), "raw inventory claims")
     }
+
+
+def _select_inventory_attempt(
+    *,
+    initial: Mapping[str, object],
+    zero: Mapping[str, object],
+) -> Mapping[str, object]:
+    """Select the executed inventory result without parsing a skipped retry."""
+
+    return zero if zero.get("validation_outcome") == "accepted" else initial
 
 
 def _agent_arguments(value: object) -> list[dict[str, object]]:

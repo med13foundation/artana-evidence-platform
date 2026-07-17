@@ -398,11 +398,22 @@ def _validate_safety(
     expectations: tuple[ProviderReceiptExpectation, ...],
 ) -> None:
     qualification_invalid, stress_invalid = _invalid_attempt_counts(fixture, report)
+    qualification_rejections, stress_rejections = _binding_rejection_counts(
+        fixture,
+        report,
+    )
     expected = {
         "fallback_count": 0,
         "invalid_agent_output_count": qualification_invalid + stress_invalid,
         "qualification_invalid_agent_output_count": qualification_invalid,
         "representability_stress_invalid_agent_output_count": stress_invalid,
+        "inventory_binding_rejection_count": (
+            qualification_rejections + stress_rejections
+        ),
+        "qualification_inventory_binding_rejection_count": (qualification_rejections),
+        "representability_stress_inventory_binding_rejection_count": (
+            stress_rejections
+        ),
         "provider_response_id_count": len(expectations),
         "provider_receipt_status": "verified_live",
         "verified_provider_receipt_count": len(expectations),
@@ -431,6 +442,26 @@ def _invalid_attempt_counts(
         else:
             qualification_invalid += invalid
     return qualification_invalid, stress_invalid
+
+
+def _binding_rejection_counts(
+    fixture: NaryClaimFixture,
+    report: dict[str, object],
+) -> tuple[int, int]:
+    control_by_case = {case.case_id: str(case.control_status) for case in fixture.cases}
+    qualification = stress = 0
+    for raw_case in _list(report.get("case_evidence"), "case_evidence"):
+        case_record = _object(raw_case, "case evidence")
+        case_id = _required_text(case_record, "case_id")
+        diagnostics = _object(case_record.get("diagnostics"), "diagnostics")
+        count = diagnostics.get("inventory_binding_rejection_count", 0)
+        if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+            raise ValueError("TG-04 binding rejection count must be nonnegative")
+        if control_by_case.get(case_id) == "REPRESENTABILITY_STRESS":
+            stress += count
+        else:
+            qualification += count
+    return qualification, stress
 
 
 def _stored_receipt_gate_passed(receipts: dict[str, object]) -> bool:

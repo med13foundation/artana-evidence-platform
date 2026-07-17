@@ -40,6 +40,9 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
     build_relation_extraction_text_chunks,
 )
+from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    ClaimInventoryItemsRejectedError,
+)
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     output_schema_json_sha256,
     parse_provider_invocation_binding,
@@ -1613,6 +1616,33 @@ async def test_inventory_schema_failure_is_audited_and_repaired_by_agent() -> No
     ]
     assert inventory_records[0].raw_model_payload == {"claims": [invalid_claim]}
     assert result.raw_relation_count == 1
+
+
+@pytest.mark.asyncio
+async def test_schema_retry_all_rejected_retains_provider_bound_rejection() -> None:
+    text = "MED13 causes cardiomyopathy."
+    invalid_schema = {"claims": "not an inventory array"}
+    unbound_claim = _inventory_claim(
+        exact_span="MED13 ... cardiomyopathy.",
+        endpoint_a_span="MED13",
+        relation_cue_span="causes",
+        endpoint_b_span="cardiomyopathy",
+    )
+    runner = ScriptedStepRunner(
+        (
+            invalid_schema,
+            {"claims": [unbound_claim]},
+        ),
+    )
+
+    with pytest.raises(ClaimInventoryItemsRejectedError) as raised:
+        await _run_inventory(text=text, runner=runner)
+
+    assert len(raised.value.rejection_events) == 1
+    rejection = raised.value.rejection_events[0]
+    assert rejection.item.exact_span == "MED13 ... cardiomyopathy."
+    assert rejection.attempt_record.attempt_role == "schema_retry"
+    assert rejection.attempt_record.provider_response_id == "resp_unit_test_2"
 
 
 @pytest.mark.asyncio

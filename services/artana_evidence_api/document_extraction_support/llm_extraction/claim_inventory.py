@@ -327,18 +327,26 @@ async def run_claim_inventory_stage(
             raw_agent_outputs=(rejected_raw, *repaired.raw_agent_outputs),
         )
     except (ValidationError, StructuredModelValidationError):
-        retry_result = await _run_inventory_step(
-            chunk=chunk,
-            document_fingerprint=document_fingerprint,
-            output_schema=output_schema,
-            client=client,
-            tenant=tenant,
-            model_id=model_id,
-            step_runner=step_runner,
-            prompt=schema_retry_prompt,
-            step_key=schema_retry_step_key,
-            audit_context=schema_retry_context,
-        )
+        try:
+            retry_result = await _run_inventory_step(
+                chunk=chunk,
+                document_fingerprint=document_fingerprint,
+                output_schema=output_schema,
+                client=client,
+                tenant=tenant,
+                model_id=model_id,
+                step_runner=step_runner,
+                prompt=schema_retry_prompt,
+                step_key=schema_retry_step_key,
+                audit_context=schema_retry_context,
+            )
+        except ClaimInventoryItemsRejectedError as retry_exc:
+            retry_exc.rejection_events = _binding_rejection_events(
+                rejections=retry_exc.result.rejected,
+                attempt_record=_latest_model_attempt_record(),
+                phase=InventoryBindingPhase.CLAIM_INVENTORY,
+            )
+            raise
         return _claim_inventory_stage_result(
             (retry_result,),
         )

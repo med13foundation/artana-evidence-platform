@@ -39,6 +39,7 @@ from scripts.validation.claim_events.evaluation import (
 from scripts.validation.claim_events.evidence_binding import (
     _expected_rejection_event,
     _PredictionValidationContext,
+    _select_inventory_attempt,
     _validate_predictions,
     bind_case_evidence,
     bind_unbindable_case_evidence,
@@ -475,6 +476,9 @@ def _report(
             "invalid_agent_output_count": 0,
             "qualification_invalid_agent_output_count": 0,
             "representability_stress_invalid_agent_output_count": 0,
+            "inventory_binding_rejection_count": 0,
+            "qualification_inventory_binding_rejection_count": 0,
+            "representability_stress_inventory_binding_rejection_count": 0,
             "provider_response_id_count": len(expectations),
             "provider_receipt_status": "verified_live",
             "verified_provider_receipt_count": len(expectations),
@@ -1163,6 +1167,19 @@ def test_evaluator_accepts_source_bound_recovery_and_confirmation() -> None:
 
     assert len(expectations) == 5
     assert topology
+
+
+def test_evaluator_replays_empty_repair_without_parsing_skipped_zero_retry() -> None:
+    repaired = {
+        "validation_outcome": "accepted",
+        "raw_model_payload": {"claims": []},
+    }
+    skipped_zero = {
+        "validation_outcome": "intentionally_skipped",
+        "raw_model_payload": None,
+    }
+
+    assert _select_inventory_attempt(initial=repaired, zero=skipped_zero) is repaired
 
 
 def test_evaluator_rejects_recovery_with_mismatched_semantic_identity() -> None:

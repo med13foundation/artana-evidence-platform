@@ -394,6 +394,27 @@ def _binding_rejection(
     )
 
 
+def build_claim_inventory_binding_rejection(
+    *,
+    batch_index: int,
+    item: ClaimInventoryItem,
+    source_sha256: str,
+    chunk_index: int,
+    disposition: ClaimInventoryBindingDisposition,
+    validation_evidence: str,
+) -> ClaimInventoryBindingRejection:
+    """Build deterministic rejection evidence outside the initial binder."""
+
+    return _binding_rejection(
+        batch_index=batch_index,
+        item=item,
+        source_sha256=source_sha256,
+        chunk_index=chunk_index,
+        disposition=disposition,
+        validation_evidence=validation_evidence,
+    )
+
+
 def merge_bound_claim_inventories(
     *inventories: tuple[BoundClaimInventoryItem, ...],
 ) -> tuple[BoundClaimInventoryItem, ...]:
@@ -721,6 +742,7 @@ __all__ = [
     "bind_claim_inventory",
     "bind_claim_inventory_items",
     "bind_claim_inventory_item_at_source",
+    "build_claim_inventory_binding_rejection",
     "claim_inventory_batch_input_sha256",
     "claim_inventory_identity",
     "claim_inventory_input_sha256",

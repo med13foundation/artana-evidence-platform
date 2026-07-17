@@ -74,8 +74,7 @@ async def discover_relation_candidates_strict(
         getattr(llm_candidates, "model_attempt_records", ()),
     )
     inventory_binding_rejections = tuple(
-        event.as_json()
-        for event in getattr(llm_candidates, "inventory_binding_rejections", ())
+        getattr(llm_candidates, "inventory_binding_rejections", ()),
     )
 
     if routing_status == "semantic_incomplete":

@@ -271,15 +271,15 @@ async def _execute_case(
     if isinstance(terminal_error, ClaimInventoryItemsRejectedError):
         binding_rejections = terminal_error.rejection_events
 
-    events = [] if inventory is None else _nary_events(inventory.claims)
-    outcome = _execution_outcome(events=events, failed=terminal_error is not None)
-    routing_status = "unbound"
-    if terminal_error is None:
-        routing_status = (
-            "complete"
-            if inventory is not None and inventory.semantic_inventory_complete
-            else "semantic_incomplete"
-        )
+    executable, routing_status = _inventory_execution_state(
+        inventory_available=inventory is not None,
+        semantic_inventory_complete=(
+            inventory is not None and inventory.semantic_inventory_complete
+        ),
+        terminal_error=terminal_error,
+    )
+    events = _nary_events(inventory.claims) if executable and inventory else []
+    outcome = _execution_outcome(events=events, failed=not executable)
     return _CaseRunResult(
         prediction={
             "case_id": case.case_id,
@@ -323,6 +323,21 @@ def _execution_outcome(
     return (
         CaseExecutionOutcome.BOUND_OUTPUT if events else CaseExecutionOutcome.NO_OUTPUT
     )
+
+
+def _inventory_execution_state(
+    *,
+    inventory_available: bool,
+    semantic_inventory_complete: bool,
+    terminal_error: BaseException | None,
+) -> tuple[bool, str]:
+    """Require complete reviewed inventory before any event can be scored."""
+
+    if terminal_error is not None or not inventory_available:
+        return False, "unbound"
+    if not semantic_inventory_complete:
+        return False, "semantic_incomplete"
+    return True, "complete"
 
 
 def _build_inventory_runtime(
