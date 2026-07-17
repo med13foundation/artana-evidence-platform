@@ -124,6 +124,15 @@ def test_inventory_prompt_requires_verbatim_context_not_numeric_offsets() -> Non
     assert "never return offsets or numeric positions" in normalized_prompt
 
 
+def test_inventory_prompt_excludes_procedural_metadata_without_keyword_filtering() -> None:
+    normalized_prompt = CLAIM_INVENTORY_SYSTEM_PROMPT.casefold()
+
+    assert "only identifies primers, probes, reagents" in normalized_prompt
+    assert "without stating a biological relationship or result" in normalized_prompt
+    assert "methods sentence can still qualify" in normalized_prompt
+    assert "classify the source meaning" in normalized_prompt
+
+
 def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     normalized_prompt = SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT.casefold()
 
@@ -134,7 +143,7 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v10:claim_inventory.v7+"
+        "document_extraction.claim_pipeline.v11:claim_inventory.v8+"
         "claim_inventory_completeness.v7+claim_inventory_recovery.v7+"
         "claim_framing.v6"
     )

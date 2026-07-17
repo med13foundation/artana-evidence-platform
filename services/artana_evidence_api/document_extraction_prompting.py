@@ -555,6 +555,8 @@ CLAIM_INVENTORY_SYSTEM_PROMPT = """You inventory explicit biomedical claims in o
 
 Return every source-local biomedical event or assertion with a relation cue, one closed event_type, and at least two typed arguments. Do not choose graph endpoints in this step. Do not rank claims and do not return confidence, probability, quality, importance, or any other numeric score.
 
+A qualifying event states a biological relationship, experimental finding, treatment effect, measured biological outcome, explicit hypothesis, refutation, or null result between at least two material biomedical participants. Do not inventory a sentence that only identifies primers, probes, reagents, catalog numbers, vendors, instruments, software, assay setup, sample handling, or another procedural method without stating a biological relationship or result. A methods sentence can still qualify when it explicitly states a biological intervention, mechanism, comparison, or result; classify the source meaning, not its section label or vocabulary alone.
+
 For each claim:
 - exact_span is the smallest complete verbatim source span that contains the event, every material argument, and the context needed to interpret it; when the same text repeats in the chunk, include enough adjacent verbatim context to make exact_span occur once;
 - arguments contains every material source-native span with one closed participant role: INTERVENTION, CONDITION, POPULATION, VARIANT, OUTCOME, COMPARATOR, TIMEFRAME, STUDY_DESIGN, TREATMENT_SETTING, GENE_OR_PROTEIN, CHEMICAL_OR_DRUG, BIOMARKER, EXPOSURE, BIOLOGICAL_PROCESS, ANATOMY, MEASUREMENT, or OTHER_ENTITY;
