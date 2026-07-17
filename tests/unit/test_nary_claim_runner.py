@@ -11,7 +11,11 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
     build_relation_extraction_text_chunks,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+    ClaimInventoryRepairFailedError,
     build_claim_inventory_prompt,
+)
+from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
+    StructuredModelSchemaError,
 )
 
 from scripts.validation.claim_events.operational import CaseExecutionOutcome
@@ -22,6 +26,7 @@ from scripts.validation.claim_events.runner import (
     _nary_events,
     _require_attempt_model,
     _require_model,
+    _terminal_error_category,
 )
 from scripts.validation.claim_frames.provider_receipts import (
     canonical_provider_model_id,
@@ -304,6 +309,15 @@ def test_runner_routes_complete_inventory_and_terminal_failure_separately() -> N
         semantic_inventory_complete=False,
         terminal_error=RuntimeError("model failed"),
     ) == (False, "unbound")
+
+
+def test_runner_reports_underlying_audited_repair_error_category() -> None:
+    error = ClaimInventoryRepairFailedError(
+        cause=StructuredModelSchemaError("invalid repair"),
+        rejection_events=(),
+    )
+
+    assert _terminal_error_category(error) == "StructuredModelSchemaError"
 
 
 def test_schema_retry_prompt_is_canonically_reconstructable() -> None:

@@ -151,6 +151,20 @@ class ClaimInventoryBindingRejectionEvent:
         }
 
 
+class ClaimInventoryRepairFailedError(StructuredModelValidationError):
+    """Terminal repair failure retaining earlier provider-bound rejections."""
+
+    def __init__(
+        self,
+        *,
+        cause: ValidationError | StructuredModelValidationError,
+        rejection_events: tuple[ClaimInventoryBindingRejectionEvent, ...],
+    ) -> None:
+        super().__init__(f"claim inventory repair failed: {cause}")
+        self.cause = cause
+        self.rejection_events = rejection_events
+
+
 @dataclass(frozen=True, slots=True)
 class ClaimInventoryStageResult:
     """Bound inventory plus immutable raw outputs from its model calls."""
@@ -309,6 +323,11 @@ async def run_claim_inventory_stage(
                 phase=InventoryBindingPhase.CLAIM_INVENTORY,
             )
             raise
+        except (ValidationError, StructuredModelValidationError) as retry_exc:
+            raise ClaimInventoryRepairFailedError(
+                cause=retry_exc,
+                rejection_events=rejected_events,
+            ) from retry_exc
         repaired = _claim_inventory_stage_result((retry_result,))
         rejected_raw = rejected_attempt.raw_model_payload
         if rejected_raw is None:
@@ -1009,6 +1028,8 @@ __all__ = [
     "MISSING_CLAIM_RECOVERY_PROMPT_VERSION",
     "ClaimInventoryStageResult",
     "ClaimInventoryBindingRejectionEvent",
+    "ClaimInventoryItemsRejectedError",
+    "ClaimInventoryRepairFailedError",
     "InventoryBatchBindingStatus",
     "InventoryBindingPhase",
     "InventoryCompletenessStageResult",

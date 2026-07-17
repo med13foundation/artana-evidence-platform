@@ -219,6 +219,7 @@ async def _execute_case(
     )
     from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
         ClaimInventoryItemsRejectedError,
+        ClaimInventoryRepairFailedError,
     )
     from artana_evidence_api.document_extraction_support.llm_extraction.runner import (
         run_llm_claim_inventory_with_zero_retry,
@@ -262,13 +263,16 @@ async def _execute_case(
         require_sealable_unbindable_attempts(
             tuple(record.as_json() for record in audit.records),
         )
-        if audit.records[-1].error_type != type(terminal_error).__name__:
+        if audit.records[-1].error_type != _terminal_error_category(terminal_error):
             raise RuntimeError("TG-04 terminal audit error differs from raised error")
 
     binding_rejections = (
         inventory.inventory_binding_rejections if inventory is not None else ()
     )
-    if isinstance(terminal_error, ClaimInventoryItemsRejectedError):
+    if isinstance(
+        terminal_error,
+        ClaimInventoryItemsRejectedError | ClaimInventoryRepairFailedError,
+    ):
         binding_rejections = terminal_error.rejection_events
 
     executable, routing_status = _inventory_execution_state(
@@ -295,7 +299,9 @@ async def _execute_case(
                 "fallback_output_used": False,
                 "claim_extraction_routing_status": routing_status,
                 "terminal_error_category": (
-                    None if terminal_error is None else type(terminal_error).__name__
+                    None
+                    if terminal_error is None
+                    else _terminal_error_category(terminal_error)
                 ),
                 "inventory_binding_rejection_count": (len(binding_rejections)),
                 "inventory_binding_rejections": (
@@ -338,6 +344,20 @@ def _inventory_execution_state(
     if not semantic_inventory_complete:
         return False, "semantic_incomplete"
     return True, "complete"
+
+
+def _terminal_error_category(error: BaseException) -> str:
+    """Return the provider-audited category beneath a lineage wrapper."""
+
+    from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
+        ClaimInventoryRepairFailedError,
+    )
+
+    return (
+        type(error.cause).__name__
+        if isinstance(error, ClaimInventoryRepairFailedError)
+        else type(error).__name__
+    )
 
 
 def _build_inventory_runtime(

@@ -42,6 +42,7 @@ from artana_evidence_api.document_extraction_support.full_text_chunking import (
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.claim_inventory import (
     ClaimInventoryItemsRejectedError,
+    ClaimInventoryRepairFailedError,
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
     output_schema_json_sha256,
@@ -870,6 +871,60 @@ async def test_all_rejected_inventory_uses_semantic_repair_not_zero_retry() -> N
         or "ZERO-INVENTORY RETRY" not in str(call["prompt"])
         for call in runner.calls
     )
+
+
+@pytest.mark.asyncio
+async def test_all_rejected_then_schema_invalid_repair_retains_lineage() -> None:
+    text = "IL-4 inhibited FOXP3."
+    unbound = _inventory_claim(
+        exact_span="IL-4 ... FOXP3.",
+        endpoint_a_span="IL-4",
+        relation_cue_span="inhibited",
+        endpoint_b_span="FOXP3",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [unbound]},
+            {"claims": "invalid repair"},
+        ),
+    )
+
+    with pytest.raises(ClaimInventoryRepairFailedError) as raised:
+        await _run_inventory(text=text, runner=runner)
+
+    assert len(raised.value.rejection_events) == 1
+    event = raised.value.rejection_events[0]
+    assert event.item.exact_span == "IL-4 ... FOXP3."
+    assert event.attempt_record.attempt_role == "claim_inventory"
+    assert event.attempt_record.provider_response_id == "resp_unit_test_1"
+
+
+@pytest.mark.asyncio
+async def test_zero_retry_all_rejected_then_invalid_repair_retains_lineage() -> None:
+    text = "IL-4 inhibited FOXP3."
+    unbound = _inventory_claim(
+        exact_span="IL-4 ... FOXP3.",
+        endpoint_a_span="IL-4",
+        relation_cue_span="inhibited",
+        endpoint_b_span="FOXP3",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": []},
+            {"claims": [unbound]},
+            {"claims": "invalid repair"},
+        ),
+    )
+
+    with pytest.raises(ClaimInventoryRepairFailedError) as raised:
+        await _run_inventory(text=text, runner=runner)
+
+    assert len(raised.value.rejection_events) == 1
+    event = raised.value.rejection_events[0]
+    assert event.item.exact_span == "IL-4 ... FOXP3."
+    assert event.attempt_record.attempt_role == "zero_candidate_retry"
+    assert event.attempt_record.retry_context == "zero_candidate_retry"
+    assert event.attempt_record.provider_response_id == "resp_unit_test_2"
 
 
 @pytest.mark.asyncio
