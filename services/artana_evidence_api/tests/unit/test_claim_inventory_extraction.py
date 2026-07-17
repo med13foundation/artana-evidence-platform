@@ -25,6 +25,7 @@ from artana_evidence_api.document_extraction_prompting import (
     CLAIM_INVENTORY_SYSTEM_PROMPT,
     MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT,
     SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT,
+    build_missing_claim_recovery_output_schema,
     build_single_claim_framing_output_schema,
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
@@ -123,6 +124,15 @@ def test_inventory_prompt_requires_verbatim_context_not_numeric_offsets() -> Non
     assert "never return offsets or numeric positions" in normalized_prompt
 
 
+def test_inventory_prompt_excludes_procedural_metadata_without_keyword_filtering() -> None:
+    normalized_prompt = CLAIM_INVENTORY_SYSTEM_PROMPT.casefold()
+
+    assert "only identifies primers, probes, reagents" in normalized_prompt
+    assert "without stating a biological relationship or result" in normalized_prompt
+    assert "methods sentence can still qualify" in normalized_prompt
+    assert "classify the source meaning" in normalized_prompt
+
+
 def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     normalized_prompt = SINGLE_CLAIM_FRAMING_SYSTEM_PROMPT.casefold()
 
@@ -133,8 +143,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v9:claim_inventory.v7+"
-        "claim_inventory_completeness.v6+claim_inventory_recovery.v6+"
+        "document_extraction.claim_pipeline.v11:claim_inventory.v8+"
+        "claim_inventory_completeness.v7+claim_inventory_recovery.v7+"
         "claim_framing.v6"
     )
 
@@ -162,11 +172,31 @@ def test_claim_event_type_is_closed_and_required_across_inventory_prompts() -> N
     for prompt in (
         CLAIM_INVENTORY_SYSTEM_PROMPT,
         CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT,
-        MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT,
     ):
         assert "event_type" in prompt
         assert "event_role" in prompt or "event roles" in prompt
         assert all(value in prompt for value in expected_values)
+
+
+def test_missing_claim_recovery_is_categorical_and_score_free() -> None:
+    schema = build_missing_claim_recovery_output_schema()
+    prompt = MISSING_CLAIM_RECOVERY_SYSTEM_PROMPT
+
+    assert {
+        "RECOVER_EXPLICIT_CLAIM",
+        "EXCLUDE_PROCEDURAL_METHOD",
+        "EXCLUDE_NOT_EXPLICIT",
+        "ABSTAIN",
+    }.issubset(prompt.split())
+    assert "do not rewrite the descriptor" in prompt.casefold()
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        schema.model_validate(
+            {
+                "decision": "RECOVER_EXPLICIT_CLAIM",
+                "decision_rationale": "The source states a treatment effect.",
+                "confidence": 0.99,
+            },
+        )
 
 
 def test_multi_frame_decision_requires_multiple_candidate_relations() -> None:
@@ -205,6 +235,13 @@ def _incomplete_inventory(
         "decision": "INCOMPLETE",
         "missing_claims": list(missing_claims),
         "review_rationale": "The returned inventory omitted an explicit claim.",
+    }
+
+
+def _recovery_decision(decision: str) -> dict[str, object]:
+    return {
+        "decision": decision,
+        "decision_rationale": "The frozen source supports this category.",
     }
 
 
@@ -1430,7 +1467,7 @@ async def test_missing_claim_recovery_is_single_attempt_and_fails_closed() -> No
     )
     audit_session = start_model_attempt_audit()
     try:
-        with pytest.raises(StructuredModelSemanticError):
+        with pytest.raises(ValidationError):
             await _run_pipeline(text=text, runner=runner)
     finally:
         stop_model_attempt_audit(audit_session)
@@ -1438,10 +1475,10 @@ async def test_missing_claim_recovery_is_single_attempt_and_fails_closed() -> No
     recovery_records = [
         record
         for record in audit_session.records
-        if "MissingClaimRecoveryResult" in record.output_schema_identity
+        if "MissingClaimRecoveryDecision" in record.output_schema_identity
     ]
     assert len(recovery_records) == 1
-    assert recovery_records[0].validation_outcome == "semantic_invalid"
+    assert recovery_records[0].validation_outcome == "schema_invalid"
     assert recovery_records[0].semantic_unit_id is not None
     assert not any(
         record.pass_role == "claim_framing" for record in audit_session.records
@@ -1469,7 +1506,7 @@ async def test_partial_inventory_gets_reviewed_missing_only_recovery() -> None:
         (
             {"claims": [first_claim]},
             _incomplete_inventory(second_claim),
-            {"claims": [second_claim]},
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
             _complete_inventory(),
             _framed_relation(
                 sentence=first_span,
@@ -1496,7 +1533,7 @@ async def test_partial_inventory_gets_reviewed_missing_only_recovery() -> None:
     recovery_record = next(
         record
         for record in result.model_attempt_records
-        if "MissingClaimRecoveryResult" in record.output_schema_identity
+        if "MissingClaimRecoveryDecision" in record.output_schema_identity
     )
     recovered_lineage = next(
         lineage
@@ -1509,6 +1546,120 @@ async def test_partial_inventory_gets_reviewed_missing_only_recovery() -> None:
     assert not any(
         record.attempt_role in {"primary", "weak_review"}
         for record in result.model_attempt_records
+    )
+
+
+@pytest.mark.asyncio
+async def test_procedural_method_is_categorically_excluded_from_recovery() -> None:
+    text = "Primers and probes were provided by Assay-on-Demand (Applied Biosystems)."
+    procedural_descriptor = _inventory_claim(
+        exact_span=text,
+        endpoint_a_span="Primers and probes",
+        relation_cue_span="provided by",
+        endpoint_b_span="Assay-on-Demand (Applied Biosystems)",
+        event_type="OTHER_EXPLICIT",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": []},
+            {"claims": []},
+            _incomplete_inventory(procedural_descriptor),
+            _recovery_decision("EXCLUDE_PROCEDURAL_METHOD"),
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert result.claims == ()
+    assert result.semantic_inventory_complete is True
+    assert result.inventory_incompleteness == ()
+    recovery_record = next(
+        record
+        for record in result.model_attempt_records
+        if "MissingClaimRecoveryDecision" in record.output_schema_identity
+    )
+    assert recovery_record.validation_outcome == "accepted"
+    assert recovery_record.raw_model_payload == _recovery_decision(
+        "EXCLUDE_PROCEDURAL_METHOD",
+    )
+    confirmation_prompt = cast("str", runner.calls[-1]["prompt"])
+    assert "EXCLUDED REVIEWED ITEMS" in confirmation_prompt
+    assert "Primers and probes" in confirmation_prompt
+
+
+@pytest.mark.asyncio
+async def test_recovery_reuses_reviewed_claim_without_rewriting_anchors() -> None:
+    text = "WT1 in fibroblasts and WT1 in lymphocytes suggests regulation."
+    reviewed_descriptor = _inventory_claim(
+        exact_span=text,
+        endpoint_a_span="WT1",
+        relation_cue_span="suggests",
+        endpoint_b_span="regulation",
+    )
+    first_argument = cast("list[dict[str, object]]", reviewed_descriptor["arguments"])[
+        0
+    ]
+    first_argument["mention_anchors"] = [
+        {
+            "mention_span": "WT1",
+            "left_context": "",
+            "right_context": " in fibroblasts",
+        },
+        {
+            "mention_span": "WT1",
+            "left_context": " and ",
+            "right_context": " in lymphocytes",
+        },
+    ]
+    runner = ScriptedStepRunner(
+        (
+            {"claims": []},
+            {"claims": []},
+            _incomplete_inventory(reviewed_descriptor),
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert len(result.claims) == 1
+    assert result.claims[0].item == ClaimInventoryItem.model_validate(
+        reviewed_descriptor,
+    )
+    assert len(result.claims[0].item.arguments[0].mention_anchors) == 2
+    assert result.semantic_inventory_complete is True
+
+
+@pytest.mark.asyncio
+async def test_recovery_abstention_remains_semantically_incomplete() -> None:
+    text = "MED13 may affect a cardiac phenotype."
+    descriptor = _inventory_claim(
+        exact_span=text,
+        endpoint_a_span="MED13",
+        relation_cue_span="may affect",
+        endpoint_b_span="cardiac phenotype",
+        polarity="UNCERTAIN",
+        epistemic_status="UNCERTAIN",
+    )
+    runner = ScriptedStepRunner(
+        (
+            {"claims": []},
+            {"claims": []},
+            _incomplete_inventory(descriptor),
+            _recovery_decision("ABSTAIN"),
+            _complete_inventory(),
+        ),
+    )
+
+    result = await _run_inventory(text=text, runner=runner)
+
+    assert result.claims == ()
+    assert result.semantic_inventory_complete is False
+    assert len(result.inventory_incompleteness) == 1
+    assert result.inventory_incompleteness[0].item == ClaimInventoryItem.model_validate(
+        descriptor,
     )
 
 
@@ -1915,7 +2066,7 @@ async def test_post_recovery_incomplete_inventory_fails_closed_with_lineage(
         (
             {"claims": [first]},
             _incomplete_inventory(second),
-            {"claims": [second]},
+            _recovery_decision("RECOVER_EXPLICIT_CLAIM"),
             _incomplete_inventory(third),
             _framed_relation(
                 sentence=first_span,

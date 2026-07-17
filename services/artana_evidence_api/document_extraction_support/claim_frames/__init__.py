@@ -8,9 +8,9 @@ from artana_evidence_api.document_extraction_support.claim_frames.completeness i
     BoundInventoryCompletenessReview,
     ClaimInventoryCompletenessReview,
     InventoryCompletenessDecision,
-    MissingClaimRecoveryResult,
+    MissingClaimRecoveryDecision,
+    MissingClaimRecoveryDisposition,
     bind_inventory_completeness_review,
-    require_recovery_matches_review,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.contracts import (
     ClaimFrame,
@@ -94,7 +94,8 @@ __all__ = [
     "EpistemicStatus",
     "InventoryCompletenessDecision",
     "MeasurementFieldRole",
-    "MissingClaimRecoveryResult",
+    "MissingClaimRecoveryDecision",
+    "MissingClaimRecoveryDisposition",
     "Polarity",
     "Qualifier",
     "QualifierState",
@@ -117,5 +118,4 @@ __all__ = [
     "replace_claim_frame_projection",
     "require_canonical_claim_promotion",
     "require_claim_frame_promotion_preflight",
-    "require_recovery_matches_review",
 ]

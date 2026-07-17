@@ -365,7 +365,7 @@ def test_production_manifest_covers_current_model_output_schemas() -> None:
         "document_extraction.claim_inventory_completeness.v3": (
             build_claim_inventory_completeness_output_schema()
         ),
-        "document_extraction.claim_inventory_recovery.v3": (
+        "document_extraction.claim_inventory_recovery.v4": (
             build_missing_claim_recovery_output_schema()
         ),
         "document_extraction.claim_framing.v2": (
@@ -412,7 +412,6 @@ def test_inventory_schema_registry_governs_closed_event_type() -> None:
     from artana_evidence_api.document_extraction_prompting import (
         build_claim_inventory_completeness_output_schema,
         build_claim_inventory_output_schema,
-        build_missing_claim_recovery_output_schema,
     )
     from artana_evidence_api.document_extraction_support.claim_frames import (
         ClaimEventType,
@@ -428,11 +427,6 @@ def test_inventory_schema_registry_governs_closed_event_type() -> None:
             "document_extraction.claim_inventory_completeness.v3",
             build_claim_inventory_completeness_output_schema(),
             "$.missing_claims[].event_type",
-        ),
-        (
-            "document_extraction.claim_inventory_recovery.v3",
-            build_missing_claim_recovery_output_schema(),
-            "$.claims[].event_type",
         ),
     )
     expected_values = {event_type.value for event_type in ClaimEventType}
@@ -452,7 +446,6 @@ def test_inventory_schema_registry_governs_closed_event_role() -> None:
     from artana_evidence_api.document_extraction_prompting import (
         build_claim_inventory_completeness_output_schema,
         build_claim_inventory_output_schema,
-        build_missing_claim_recovery_output_schema,
     )
     from artana_evidence_api.document_extraction_support.claim_frames import (
         ClaimEventRole,
@@ -469,11 +462,6 @@ def test_inventory_schema_registry_governs_closed_event_role() -> None:
             build_claim_inventory_completeness_output_schema(),
             "$.missing_claims[].arguments[].event_role",
         ),
-        (
-            "document_extraction.claim_inventory_recovery.v3",
-            build_missing_claim_recovery_output_schema(),
-            "$.claims[].arguments[].event_role",
-        ),
     )
     expected_values = {role.value for role in ClaimEventRole}
 
@@ -486,6 +474,27 @@ def test_inventory_schema_registry_governs_closed_event_role() -> None:
             field for field in policy.categorical_fields if field.path == event_path
         )
         assert {value.value for value in event_policy.values} == expected_values
+
+
+def test_recovery_schema_registry_governs_categorical_adjudication() -> None:
+    from artana_evidence_api.document_extraction_prompting import (
+        build_missing_claim_recovery_output_schema,
+    )
+
+    policy = AGENT_OUTPUT_SCHEMA_REGISTRY.validate(
+        schema_id="document_extraction.claim_inventory_recovery.v4",
+        output_schema=build_missing_claim_recovery_output_schema(),
+    )
+    decision_policy = next(
+        field for field in policy.categorical_fields if field.path == "$.decision"
+    )
+
+    assert {value.value for value in decision_policy.values} == {
+        "RECOVER_EXPLICIT_CLAIM",
+        "EXCLUDE_PROCEDURAL_METHOD",
+        "EXCLUDE_NOT_EXPLICIT",
+        "ABSTAIN",
+    }
 
 
 def test_registry_report_exposes_merge_gate_counts() -> None:
