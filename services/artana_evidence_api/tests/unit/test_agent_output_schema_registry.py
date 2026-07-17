@@ -476,6 +476,49 @@ def test_inventory_schema_registry_governs_closed_event_role() -> None:
         assert {value.value for value in event_policy.values} == expected_values
 
 
+def test_inventory_registry_governs_kind_and_independent_semantics() -> None:
+    from artana_evidence_api.document_extraction_prompting import (
+        build_claim_inventory_completeness_output_schema,
+        build_claim_inventory_output_schema,
+    )
+    from artana_evidence_api.document_extraction_support.claim_frames import (
+        ClaimKind,
+        InventoryEpistemicStatus,
+        InventoryPolarity,
+    )
+
+    schemas_and_prefixes = (
+        (
+            "document_extraction.claim_inventory.v3",
+            build_claim_inventory_output_schema(max_claims=64),
+            "$.claims[]",
+        ),
+        (
+            "document_extraction.claim_inventory_completeness.v3",
+            build_claim_inventory_completeness_output_schema(),
+            "$.missing_claims[]",
+        ),
+    )
+    expected = {
+        "claim_kind": {value.value for value in ClaimKind},
+        "polarity": {value.value for value in InventoryPolarity},
+        "epistemic_status": {value.value for value in InventoryEpistemicStatus},
+    }
+
+    for schema_id, output_schema, prefix in schemas_and_prefixes:
+        policy = AGENT_OUTPUT_SCHEMA_REGISTRY.validate(
+            schema_id=schema_id,
+            output_schema=output_schema,
+        )
+        for field_name, expected_values in expected.items():
+            field_policy = next(
+                field
+                for field in policy.categorical_fields
+                if field.path == f"{prefix}.{field_name}"
+            )
+            assert {value.value for value in field_policy.values} == expected_values
+
+
 def test_recovery_schema_registry_governs_categorical_adjudication() -> None:
     from artana_evidence_api.document_extraction_prompting import (
         build_missing_claim_recovery_output_schema,

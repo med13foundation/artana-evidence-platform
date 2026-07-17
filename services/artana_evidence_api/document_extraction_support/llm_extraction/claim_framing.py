@@ -346,11 +346,11 @@ def _require_inventory_consistency(
         raise StructuredModelSemanticError(
             "framed relation sentence must equal the inventory exact_span",
         )
-    if relation.polarity is not item.polarity:
+    if relation.polarity.value != item.polarity.value:
         raise StructuredModelSemanticError(
             "framed relation changed the inventoried polarity",
         )
-    if relation.epistemic_status is not item.epistemic_status:
+    if relation.epistemic_status.value != item.epistemic_status.value:
         raise StructuredModelSemanticError(
             "framed relation changed the inventoried epistemic_status",
         )

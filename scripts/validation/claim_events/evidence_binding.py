@@ -22,6 +22,7 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     bind_claim_inventory_item_at_source,
     claim_inventory_batch_input_sha256,
     coalesce_long_sentence_chunks,
+    partition_bound_claim_inventory,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
@@ -513,7 +514,10 @@ def _validate_inventory_workflow(
             chunk_index=chunk.index,
             source_start_offset=chunk.start_char,
         )
-        for claim in inventory:
+        relation_inventory, _non_relation_inventory = partition_bound_claim_inventory(
+            inventory
+        )
+        for claim in relation_inventory:
             if claim.inventory_id in accepted_inventory:
                 raise ValueError(
                     "TG-04 accepted inventory identity repeats across chunks"
@@ -649,12 +653,15 @@ def _validate_predictions(
                 "relation_cue_anchor": event.get("relation_cue_anchor"),
                 "arguments": _agent_arguments(event.get("arguments")),
                 "source_locator": event.get("source_locator"),
+                "claim_kind": event.get("claim_kind"),
                 "event_type": event.get("event_type"),
                 "polarity": event.get("polarity"),
                 "epistemic_status": event.get("epistemic_status"),
                 "inventory_rationale": event.get("inventory_rationale"),
             },
         )
+        if not item.claim_kind.relation_eligible:
+            raise ValueError("TG-04 prediction contains a non-relation inventory item")
         source_start = _integer(event.get("source_start"), "prediction source_start")
         source_end = _integer(event.get("source_end"), "prediction source_end")
         if source_end != source_start + len(item.exact_span):
@@ -663,6 +670,7 @@ def _validate_predictions(
             raise ValueError("TG-04 prediction exact_span differs from frozen source")
         bound_claim = bind_claim_inventory_item_at_source(
             item=item,
+            source_text=context.normalized_source,
             source_sha256=context.source_sha256,
             chunk_index=0,
             source_start=source_start,

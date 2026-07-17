@@ -3,7 +3,7 @@
   "debt_manifest": [],
   "debt_numeric_field_count": 0,
   "origin_governed_numeric_field_count": 3,
-  "registered_category_field_count": 111,
+  "registered_category_field_count": 113,
   "registered_numeric_field_count": 3,
   "registered_schema_count": 19,
   "registered_schemas": [
@@ -197,7 +197,7 @@
         "document_extraction_support/llm_extraction/claim_framing.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_framing.v6"
+        "document_extraction.claim_framing.v7"
       ],
       "schema_id": "document_extraction.claim_framing.v2",
       "schema_names": [
@@ -261,6 +261,18 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
+          "path": "$.claims[].claim_kind",
+          "values": [
+            "SCIENTIFIC_FINDING",
+            "SCIENTIFIC_HYPOTHESIS",
+            "PROCEDURAL_CONTEXT",
+            "MEASUREMENT_ONLY",
+            "AMBIGUOUS"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
           "path": "$.claims[].event_type",
           "values": [
             "EXPRESSION",
@@ -287,8 +299,6 @@
           "values": [
             "SUPPORT",
             "REFUTE",
-            "UNCERTAIN",
-            "HYPOTHESIS",
             "NULL_RESULT"
           ]
         },
@@ -300,8 +310,7 @@
             "ASSERTED",
             "PROVISIONAL",
             "UNCERTAIN",
-            "HYPOTHESIS",
-            "NULL_RESULT"
+            "HYPOTHESIS"
           ]
         }
       ],
@@ -310,13 +319,13 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory.v8"
+        "document_extraction.claim_inventory.v9"
       ],
       "schema_id": "document_extraction.claim_inventory.v3",
       "schema_names": [
         "LLMClaimInventoryResult"
       ],
-      "shape_hash": "5971e1fec819faa32812a0ba5dce46138031eb05df1e55e9c137ef7723b45cda"
+      "shape_hash": "116d85c696bb904f7e9f7539a048816686054839ea10e594f2ebc7f2ec75a0e2"
     },
     {
       "categorical_fields": [
@@ -383,6 +392,18 @@
         {
           "allow_schema_subset": false,
           "debt_id": null,
+          "path": "$.missing_claims[].claim_kind",
+          "values": [
+            "SCIENTIFIC_FINDING",
+            "SCIENTIFIC_HYPOTHESIS",
+            "PROCEDURAL_CONTEXT",
+            "MEASUREMENT_ONLY",
+            "AMBIGUOUS"
+          ]
+        },
+        {
+          "allow_schema_subset": false,
+          "debt_id": null,
           "path": "$.missing_claims[].event_type",
           "values": [
             "EXPRESSION",
@@ -409,8 +430,6 @@
           "values": [
             "SUPPORT",
             "REFUTE",
-            "UNCERTAIN",
-            "HYPOTHESIS",
             "NULL_RESULT"
           ]
         },
@@ -422,8 +441,7 @@
             "ASSERTED",
             "PROVISIONAL",
             "UNCERTAIN",
-            "HYPOTHESIS",
-            "NULL_RESULT"
+            "HYPOTHESIS"
           ]
         }
       ],
@@ -432,13 +450,13 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory_completeness.v7"
+        "document_extraction.claim_inventory_completeness.v8"
       ],
       "schema_id": "document_extraction.claim_inventory_completeness.v3",
       "schema_names": [
         "ClaimInventoryCompletenessReview"
       ],
-      "shape_hash": "c16184f40c2854ff40dfe85c43024e73d9d93e2599de79e9f60fdcfe741e7c23"
+      "shape_hash": "d7aacf725be8407731706a9fc24d456c339076be1638a3728afb5fd079b6641b"
     },
     {
       "categorical_fields": [
@@ -459,7 +477,7 @@
         "document_extraction_support/llm_extraction/claim_inventory.py"
       ],
       "prompt_identifiers": [
-        "document_extraction.claim_inventory_recovery.v7"
+        "document_extraction.claim_inventory_recovery.v8"
       ],
       "schema_id": "document_extraction.claim_inventory_recovery.v4",
       "schema_names": [

@@ -33,6 +33,8 @@ from scripts.validation.claim_events.evaluation import (
     evaluate_matrix,
 )
 from scripts.validation.claim_events.evidence_binding import (
+    _PredictionValidationContext,
+    _validate_predictions,
     bind_unbindable_case_evidence,
 )
 from scripts.validation.claim_events.operational import (
@@ -172,6 +174,7 @@ def _prediction(case: _Case, *, correct: bool) -> dict[str, object]:
                 for argument in event.arguments
             ],
             "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
             "inventory_rationale": "explicit synthetic claim",
         },
     )
@@ -217,6 +220,25 @@ def _prediction(case: _Case, *, correct: bool) -> dict[str, object]:
         "abstained": False,
         "execution_outcome": "BOUND_OUTPUT",
     }
+
+
+def test_tg04_prediction_validation_rejects_non_relation_claim_kind() -> None:
+    case = _fixture().cases[0]
+    prediction = _prediction(case, correct=True)
+    events = prediction["events"]
+    assert isinstance(events, list)
+    event = events[0]
+    assert isinstance(event, dict)
+    event["claim_kind"] = "PROCEDURAL_CONTEXT"
+
+    with pytest.raises(ValueError, match="non-relation inventory item"):
+        _validate_predictions(
+            prediction=prediction,
+            context=_PredictionValidationContext(
+                normalized_source=case.source_text,
+                source_sha256=hashlib.sha256(case.source_text.encode()).hexdigest(),
+            ),
+        )
 
 
 def _report(
@@ -273,6 +295,7 @@ def _report(
                 for key in (
                     "exact_span",
                     "relation_cue_span",
+                    "claim_kind",
                     "event_type",
                     "polarity",
                     "epistemic_status",
@@ -576,6 +599,7 @@ def _semantic_invalid_inventory_payload() -> dict[str, object]:
                 },
             ],
             "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
             "inventory_rationale": "explicit synthetic claim",
         },
     )
@@ -621,9 +645,7 @@ def test_stress_unbindable_accepts_provider_boundary_schema_error() -> None:
     case, prediction, evidence = _unbindable_stress_artifact()
     for attempt in evidence["attempts"]:
         attempt["error_type"] = "StructuredModelSchemaError"
-    evidence["diagnostics"]["terminal_error_category"] = (
-        "StructuredModelSchemaError"
-    )
+    evidence["diagnostics"]["terminal_error_category"] = "StructuredModelSchemaError"
 
     expectations, topology = bind_unbindable_case_evidence(
         case=case,
@@ -927,6 +949,7 @@ def test_evaluator_rejects_prediction_substitution_after_provider_execution() ->
             for key in (
                 "exact_span",
                 "relation_cue_span",
+                "claim_kind",
                 "event_type",
                 "polarity",
                 "epistemic_status",

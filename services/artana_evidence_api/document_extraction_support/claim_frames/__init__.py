@@ -47,6 +47,7 @@ from artana_evidence_api.document_extraction_support.claim_frames.inventory impo
     claim_inventory_identity,
     claim_inventory_input_sha256,
     merge_bound_claim_inventories,
+    partition_bound_claim_inventory,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.mentions import (
     BoundClaimMention,
@@ -61,6 +62,11 @@ from artana_evidence_api.document_extraction_support.claim_frames.promotion_poli
     ClaimFramePromotionError,
     require_canonical_claim_promotion,
     require_claim_frame_promotion_preflight,
+)
+from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
+    ClaimKind,
+    InventoryEpistemicStatus,
+    InventoryPolarity,
 )
 from artana_evidence_api.document_extraction_support.claim_frames.source_regions import (
     ClaimLocalSourceRegion,
@@ -87,12 +93,15 @@ __all__ = [
     "ClaimInventoryArgument",
     "ClaimInventoryCompletenessReview",
     "ClaimInventoryItem",
+    "ClaimKind",
     "ClaimLocalSourceRegion",
     "ClaimMentionAnchor",
     "ClaimQualifier",
     "ClaimSourceMeasurement",
     "EpistemicStatus",
     "InventoryCompletenessDecision",
+    "InventoryEpistemicStatus",
+    "InventoryPolarity",
     "MeasurementFieldRole",
     "MissingClaimRecoveryDecision",
     "MissingClaimRecoveryDisposition",
@@ -114,6 +123,7 @@ __all__ = [
     "derive_claim_local_source_region",
     "is_positive_projection_eligible",
     "merge_bound_claim_inventories",
+    "partition_bound_claim_inventory",
     "normalize_claim_frame",
     "replace_claim_frame_projection",
     "require_canonical_claim_promotion",

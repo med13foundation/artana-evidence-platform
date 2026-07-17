@@ -12,10 +12,6 @@ from artana_evidence_api.document_extraction_support.claim_frames.arguments impo
     ClaimArgument,
     ClaimArgumentRole,
 )
-from artana_evidence_api.document_extraction_support.claim_frames.contracts import (
-    EpistemicStatus,
-    Polarity,
-)
 from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
     ClaimEventType,
 )
@@ -24,6 +20,11 @@ from artana_evidence_api.document_extraction_support.claim_frames.mentions impor
     ClaimMentionAnchor,
     MentionBindingError,
     bind_source_mentions,
+)
+from artana_evidence_api.document_extraction_support.claim_frames.semantics import (
+    ClaimKind,
+    InventoryEpistemicStatus,
+    InventoryPolarity,
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -106,9 +107,10 @@ class ClaimInventoryItem(BaseModel):
         max_length=32,
     )
     source_locator: Literal["normalized_extraction_text"]
+    claim_kind: ClaimKind = Field(..., strict=False)
     event_type: ClaimEventType = Field(..., strict=False)
-    polarity: Polarity = Field(..., strict=False)
-    epistemic_status: EpistemicStatus = Field(..., strict=False)
+    polarity: InventoryPolarity = Field(..., strict=False)
+    epistemic_status: InventoryEpistemicStatus = Field(..., strict=False)
     inventory_rationale: str = Field(..., min_length=1, max_length=2000)
 
     @field_validator("arguments", mode="before")
@@ -121,28 +123,9 @@ class ClaimInventoryItem(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def validate_closed_epistemic_pair(self) -> ClaimInventoryItem:
-        """Reject category pairs that would erase null or hypothesis status."""
+    def validate_inventory_item(self) -> ClaimInventoryItem:
+        """Reject duplicate or incomplete typed argument inventories."""
 
-        if (self.polarity is Polarity.HYPOTHESIS) != (
-            self.epistemic_status is EpistemicStatus.HYPOTHESIS
-        ):
-            raise ValueError(
-                "hypothesis polarity and status must be preserved together"
-            )
-        if (self.polarity is Polarity.NULL_RESULT) != (
-            self.epistemic_status is EpistemicStatus.NULL_RESULT
-        ):
-            raise ValueError(
-                "null-result polarity and status must be preserved together"
-            )
-        if self.polarity is Polarity.UNCERTAIN and self.epistemic_status not in {
-            EpistemicStatus.PROVISIONAL,
-            EpistemicStatus.UNCERTAIN,
-        }:
-            raise ValueError(
-                "uncertain polarity requires provisional or uncertain status"
-            )
         argument_keys = tuple(
             (argument.role, argument.exact_span) for argument in self.arguments
         )
@@ -200,11 +183,15 @@ def bind_claim_inventory(
     bound: list[BoundClaimInventoryItem] = []
     seen_item_fingerprints: set[str] = set()
     for item in items:
-        if source_text.count(item.exact_span) != 1:
+        occurrence_starts = _overlapping_occurrence_starts(
+            source_text,
+            item.exact_span,
+        )
+        if len(occurrence_starts) != 1:
             raise ClaimInventoryBindingError(
                 "claim inventory exact_span must occur exactly once in the source chunk",
             )
-        source_start = source_start_offset + source_text.index(item.exact_span)
+        source_start = source_start_offset + occurrence_starts[0]
         item_fingerprint = claim_inventory_identity(
             item=item,
             source_sha256=source_sha256,
@@ -218,9 +205,11 @@ def bind_claim_inventory(
         bound.append(
             bind_claim_inventory_item_at_source(
                 item=item,
+                source_text=source_text,
                 source_sha256=source_sha256,
                 chunk_index=chunk_index,
                 source_start=source_start,
+                source_start_offset=source_start_offset,
             ),
         )
     return tuple(bound)
@@ -242,27 +231,70 @@ def merge_bound_claim_inventories(
     return tuple(merged)
 
 
+def partition_bound_claim_inventory(
+    inventory: tuple[BoundClaimInventoryItem, ...],
+) -> tuple[
+    tuple[BoundClaimInventoryItem, ...],
+    tuple[BoundClaimInventoryItem, ...],
+]:
+    """Apply the single deterministic relation-eligibility boundary."""
+
+    relation_claims = tuple(
+        claim for claim in inventory if claim.item.claim_kind.relation_eligible
+    )
+    non_relation_items = tuple(
+        claim for claim in inventory if not claim.item.claim_kind.relation_eligible
+    )
+    return relation_claims, non_relation_items
+
+
+def _overlapping_occurrence_starts(
+    source_text: str, exact_span: str
+) -> tuple[int, ...]:
+    last_start = len(source_text) - len(exact_span)
+    return tuple(
+        start
+        for start in range(last_start + 1)
+        if source_text.startswith(exact_span, start)
+    )
+
+
 def bind_claim_inventory_item_at_source(
     *,
     item: ClaimInventoryItem,
+    source_text: str,
     source_sha256: str,
     chunk_index: int,
     source_start: int,
+    source_start_offset: int = 0,
 ) -> BoundClaimInventoryItem:
     """Create the sole deterministic binding for one source-located inventory item."""
 
     _require_binding_metadata(source_sha256=source_sha256, chunk_index=chunk_index)
-    if source_start < 0:
+    if source_start_offset < 0 or source_start < source_start_offset:
         raise ClaimInventoryBindingError(
             "claim inventory source offset must be nonnegative"
         )
-    trigger_mention = _bind_inventory_trigger(item=item, source_start=source_start)
+    relative_claim_start = source_start - source_start_offset
+    relative_claim_end = relative_claim_start + len(item.exact_span)
+    if source_text[relative_claim_start:relative_claim_end] != item.exact_span:
+        raise ClaimInventoryBindingError(
+            "claim inventory exact_span differs from the source at source_start"
+        )
+    trigger_mention = _bind_inventory_trigger(
+        item=item,
+        source_text=source_text,
+        source_start=source_start,
+        source_start_offset=source_start_offset,
+    )
     bound_arguments: list[BoundClaimArgument] = []
     for argument in item.arguments:
         mentions = _bind_inventory_argument_mentions(
             item=item,
             argument=argument,
+            source_text=source_text,
             source_start=source_start,
+            source_start_offset=source_start_offset,
         )
         if argument.role is ClaimArgumentRole.VARIANT:
             for mention in mentions:
@@ -313,39 +345,82 @@ def _bind_inventory_argument_mentions(
     *,
     item: ClaimInventoryItem,
     argument: ClaimInventoryArgument,
+    source_text: str,
     source_start: int,
+    source_start_offset: int,
 ) -> tuple[BoundClaimMention, ...]:
     try:
-        return bind_source_mentions(
-            canonical_span=argument.exact_span,
-            source_span=item.exact_span,
-            anchors=argument.mention_anchors,
-            source_start_offset=source_start,
-        )
+        if not argument.mention_anchors:
+            mentions = bind_source_mentions(
+                canonical_span=argument.exact_span,
+                source_span=item.exact_span,
+                source_start_offset=source_start,
+            )
+        else:
+            mentions = bind_source_mentions(
+                canonical_span=argument.exact_span,
+                source_span=source_text,
+                anchors=argument.mention_anchors,
+                source_start_offset=source_start_offset,
+            )
+            _require_mentions_inside_claim(
+                mentions=mentions,
+                claim_start=source_start,
+                claim_end=source_start + len(item.exact_span),
+            )
     except MentionBindingError as exc:
         raise ClaimInventoryBindingError(
             f"claim inventory argument mention binding failed: {exc}",
         ) from exc
+    return mentions
 
 
 def _bind_inventory_trigger(
     *,
     item: ClaimInventoryItem,
+    source_text: str,
     source_start: int,
+    source_start_offset: int,
 ) -> BoundClaimMention:
     anchors = () if item.relation_cue_anchor is None else (item.relation_cue_anchor,)
     try:
+        if not anchors:
+            return bind_source_mentions(
+                canonical_span=item.relation_cue_span,
+                source_span=item.exact_span,
+                source_start_offset=source_start,
+            )[0]
         mentions = bind_source_mentions(
             canonical_span=item.relation_cue_span,
-            source_span=item.exact_span,
+            source_span=source_text,
             anchors=anchors,
-            source_start_offset=source_start,
+            source_start_offset=source_start_offset,
+        )
+        _require_mentions_inside_claim(
+            mentions=mentions,
+            claim_start=source_start,
+            claim_end=source_start + len(item.exact_span),
         )
     except MentionBindingError as exc:
         raise ClaimInventoryBindingError(
             f"claim inventory trigger mention binding failed: {exc}",
         ) from exc
     return mentions[0]
+
+
+def _require_mentions_inside_claim(
+    *,
+    mentions: tuple[BoundClaimMention, ...],
+    claim_start: int,
+    claim_end: int,
+) -> None:
+    if any(
+        mention.source_start < claim_start or mention.source_end > claim_end
+        for mention in mentions
+    ):
+        raise MentionBindingError(
+            "anchored mention must remain inside the claim exact_span"
+        )
 
 
 def _semantic_argument(argument: ClaimInventoryArgument) -> ClaimArgument:
@@ -406,6 +481,7 @@ def claim_inventory_identity(
             ),
             "relation_cue_span": item.relation_cue_span,
             "source_locator": item.source_locator,
+            "claim_kind": item.claim_kind.value,
             "event_type": item.event_type.value,
             "polarity": item.polarity.value,
             "epistemic_status": item.epistemic_status.value,
@@ -451,6 +527,7 @@ __all__ = [
     "ClaimInventoryBindingError",
     "ClaimInventoryArgument",
     "ClaimInventoryItem",
+    "ClaimKind",
     "ClaimFramingAbstentionReason",
     "ClaimFramingDecision",
     "bind_claim_inventory",
@@ -458,5 +535,8 @@ __all__ = [
     "claim_inventory_batch_input_sha256",
     "claim_inventory_identity",
     "claim_inventory_input_sha256",
+    "InventoryEpistemicStatus",
+    "InventoryPolarity",
     "merge_bound_claim_inventories",
+    "partition_bound_claim_inventory",
 ]

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 from artana_evidence_api.document_extraction_contracts import (
     ClaimExtractionLineage,
@@ -16,10 +17,12 @@ from artana_evidence_api.document_extraction_prompting import (
 )
 from artana_evidence_api.document_extraction_support.claim_frames import (
     BoundClaimInventoryItem,
+    ClaimInventoryItem,
     InventoryCompletenessDecision,
     MissingClaimRecoveryDisposition,
     coalesce_long_sentence_chunks,
     merge_bound_claim_inventories,
+    partition_bound_claim_inventory,
 )
 from artana_evidence_api.document_extraction_support.full_text_chunking import (
     RelationExtractionTextChunk,
@@ -45,6 +48,31 @@ from pydantic import BaseModel
 _MAX_INVENTORY_CLAIMS_PER_CHUNK = 64
 
 
+class NonRelationDisposition(str, Enum):
+    """Closed reason why a preserved inventory item cannot enter framing."""
+
+    CLAIM_KIND_ROUTING = "CLAIM_KIND_ROUTING"
+    EXCLUDE_PROCEDURAL_METHOD = "EXCLUDE_PROCEDURAL_METHOD"
+    EXCLUDE_NOT_EXPLICIT = "EXCLUDE_NOT_EXPLICIT"
+
+
+@dataclass(frozen=True, slots=True)
+class NonRelationInventoryItem:
+    """One non-lossy source item plus its categorical routing decision."""
+
+    claim: BoundClaimInventoryItem
+    disposition: NonRelationDisposition
+    decision_rationale: str
+
+    @property
+    def inventory_id(self) -> str:
+        return self.claim.inventory_id
+
+    @property
+    def item(self) -> ClaimInventoryItem:
+        return self.claim.item
+
+
 @dataclass(slots=True)
 class LLMRelationExtractionAttempt:
     """Observable result of the decomposed agent extraction pipeline."""
@@ -53,10 +81,12 @@ class LLMRelationExtractionAttempt:
     unknown_relation_types: set[str]
     raw_relation_count: int
     inventory_claim_count: int = 0
+    non_relation_item_count: int = 0
     framing_abstention_count: int = 0
     processed_chunk_count: int = 0
     semantic_inventory_complete: bool = True
     inventory_incompleteness: tuple[BoundClaimInventoryItem, ...] = ()
+    non_relation_items: tuple[NonRelationInventoryItem, ...] = ()
     claim_lineage: tuple[ClaimExtractionLineage, ...] = ()
     raw_agent_outputs: tuple[dict[str, object], ...] = ()
     model_attempt_records: tuple[ModelAttemptAuditRecord, ...] = ()
@@ -70,6 +100,7 @@ class LLMClaimInventoryAttempt:
     processed_chunk_count: int
     semantic_inventory_complete: bool
     inventory_incompleteness: tuple[BoundClaimInventoryItem, ...]
+    non_relation_items: tuple[NonRelationInventoryItem, ...]
     raw_agent_outputs: tuple[dict[str, object], ...]
     model_attempt_records: tuple[ModelAttemptAuditRecord, ...]
 
@@ -79,6 +110,7 @@ class _ChunkInventoryOutcome:
     """Complete-or-explicitly-incomplete inventory result for one source chunk."""
 
     claims: tuple[BoundClaimInventoryItem, ...]
+    non_relation_items: tuple[NonRelationInventoryItem, ...]
     unresolved_missing_claims: tuple[BoundClaimInventoryItem, ...]
     raw_agent_outputs: tuple[dict[str, object], ...]
 
@@ -133,6 +165,7 @@ async def run_llm_relation_extraction_with_zero_retry(
     claim_lineage: list[ClaimExtractionLineage] = []
     unresolved_missing_claims: list[BoundClaimInventoryItem] = []
     inventory_claim_count = 0
+    non_relation_items: list[NonRelationInventoryItem] = []
     framing_abstention_count = 0
     raw_relation_count = 0
 
@@ -153,6 +186,7 @@ async def run_llm_relation_extraction_with_zero_retry(
             )
             raw_agent_outputs.extend(inventory_outcome.raw_agent_outputs)
             inventory_claims = inventory_outcome.claims
+            non_relation_items.extend(inventory_outcome.non_relation_items)
             unresolved_missing_claims.extend(
                 inventory_outcome.unresolved_missing_claims,
             )
@@ -207,10 +241,12 @@ async def run_llm_relation_extraction_with_zero_retry(
             unknown_relation_types=unknown_relation_types,
             raw_relation_count=raw_relation_count,
             inventory_claim_count=inventory_claim_count,
+            non_relation_item_count=len(non_relation_items),
             framing_abstention_count=framing_abstention_count,
             processed_chunk_count=len(extraction_chunks),
             semantic_inventory_complete=not unresolved_missing_claims,
             inventory_incompleteness=tuple(unresolved_missing_claims),
+            non_relation_items=tuple(non_relation_items),
             claim_lineage=tuple(claim_lineage),
             raw_agent_outputs=tuple(raw_agent_outputs),
             model_attempt_records=tuple(
@@ -251,6 +287,7 @@ async def run_llm_claim_inventory_with_zero_retry(
     first_record_index = len(audit_session.records)
     claims: tuple[BoundClaimInventoryItem, ...] = ()
     unresolved: tuple[BoundClaimInventoryItem, ...] = ()
+    non_relation_items: tuple[NonRelationInventoryItem, ...] = ()
     raw_outputs: tuple[dict[str, object], ...] = ()
     try:
         for chunk in extraction_chunks:
@@ -272,12 +309,17 @@ async def run_llm_claim_inventory_with_zero_retry(
                 unresolved,
                 outcome.unresolved_missing_claims,
             )
+            non_relation_items = _merge_non_relation_items(
+                non_relation_items,
+                outcome.non_relation_items,
+            )
             raw_outputs += outcome.raw_agent_outputs
         return LLMClaimInventoryAttempt(
             claims=claims,
             processed_chunk_count=len(extraction_chunks),
             semantic_inventory_complete=not unresolved,
             inventory_incompleteness=unresolved,
+            non_relation_items=non_relation_items,
             raw_agent_outputs=raw_outputs,
             model_attempt_records=tuple(
                 audit_session.records[first_record_index:],
@@ -353,14 +395,17 @@ async def _inventory_chunk_with_recovery(
     )
     raw_outputs.extend(review_result.raw_agent_outputs)
     if review_result.review.decision is InventoryCompletenessDecision.COMPLETE:
+        claims, non_relation_items = _partition_inventory(inventory_claims)
         return _ChunkInventoryOutcome(
-            claims=inventory_claims,
+            claims=claims,
+            non_relation_items=non_relation_items,
             unresolved_missing_claims=(),
             raw_agent_outputs=tuple(raw_outputs),
         )
 
     recovered_claims: tuple[BoundClaimInventoryItem, ...] = ()
     excluded_claims: tuple[BoundClaimInventoryItem, ...] = ()
+    excluded_items: tuple[NonRelationInventoryItem, ...] = ()
     unresolved_recovery_claims: tuple[BoundClaimInventoryItem, ...] = ()
     for missing_claim in review_result.review.missing_claims:
         recovery_result = await run_missing_claim_recovery_stage(
@@ -390,6 +435,18 @@ async def _inventory_chunk_with_recovery(
             excluded_claims = merge_bound_claim_inventories(
                 excluded_claims,
                 (recovery_result.reviewed_claim,),
+            )
+            excluded_items = _merge_non_relation_items(
+                excluded_items,
+                (
+                    NonRelationInventoryItem(
+                        claim=recovery_result.reviewed_claim,
+                        disposition=NonRelationDisposition(
+                            recovery_result.decision.value
+                        ),
+                        decision_rationale=recovery_result.decision_rationale,
+                    ),
+                ),
             )
         else:
             unresolved_recovery_claims = merge_bound_claim_inventories(
@@ -425,16 +482,55 @@ async def _inventory_chunk_with_recovery(
         unresolved_recovery_claims,
         confirmation_missing,
     )
+    claims, non_relation_items = _partition_inventory(combined_inventory)
     return _ChunkInventoryOutcome(
-        claims=combined_inventory,
+        claims=claims,
+        non_relation_items=_merge_non_relation_items(
+            non_relation_items,
+            excluded_items,
+        ),
         unresolved_missing_claims=unresolved,
         raw_agent_outputs=tuple(raw_outputs),
     )
 
 
+def _partition_inventory(
+    inventory: tuple[BoundClaimInventoryItem, ...],
+) -> tuple[
+    tuple[BoundClaimInventoryItem, ...],
+    tuple[NonRelationInventoryItem, ...],
+]:
+    relation_claims, excluded_claims = partition_bound_claim_inventory(inventory)
+    non_relation_items = tuple(
+        NonRelationInventoryItem(
+            claim=claim,
+            disposition=NonRelationDisposition.CLAIM_KIND_ROUTING,
+            decision_rationale=claim.item.inventory_rationale,
+        )
+        for claim in excluded_claims
+    )
+    return relation_claims, non_relation_items
+
+
+def _merge_non_relation_items(
+    *inventories: tuple[NonRelationInventoryItem, ...],
+) -> tuple[NonRelationInventoryItem, ...]:
+    merged: list[NonRelationInventoryItem] = []
+    seen_ids: set[str] = set()
+    for inventory in inventories:
+        for item in inventory:
+            if item.inventory_id in seen_ids:
+                continue
+            seen_ids.add(item.inventory_id)
+            merged.append(item)
+    return tuple(merged)
+
+
 __all__ = [
     "LLMClaimInventoryAttempt",
     "LLMRelationExtractionAttempt",
+    "NonRelationDisposition",
+    "NonRelationInventoryItem",
     "run_llm_claim_inventory_with_zero_retry",
     "run_llm_relation_extraction_with_zero_retry",
 ]

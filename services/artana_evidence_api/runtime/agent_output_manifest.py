@@ -68,6 +68,24 @@ _CLAIM_EPISTEMIC_STATUS = {
     "HYPOTHESIS": "the cited source proposes the finding for future testing.",
     "NULL_RESULT": "the cited source reports a null or threshold-failing result.",
 }
+_INVENTORY_POLARITY = {
+    "SUPPORT": "the source presents the described relation or effect.",
+    "REFUTE": "the source explicitly contradicts the described relation or effect.",
+    "NULL_RESULT": "the source reports no supported effect or association.",
+}
+_INVENTORY_EPISTEMIC_STATUS = {
+    "ASSERTED": "the source states the finding as an observed conclusion.",
+    "PROVISIONAL": "the source marks the finding as preliminary or conditional.",
+    "UNCERTAIN": "the source explicitly leaves the finding uncertain.",
+    "HYPOTHESIS": "the source proposes the finding for future testing.",
+}
+_CLAIM_KIND = {
+    "SCIENTIFIC_FINDING": "the source reports a biological relationship or result.",
+    "SCIENTIFIC_HYPOTHESIS": "the source explicitly proposes a scientific explanation or mechanism.",
+    "PROCEDURAL_CONTEXT": "the source describes an action without reporting a scientific result.",
+    "MEASUREMENT_ONLY": "the source reports measurement without a result, comparison, or conclusion.",
+    "AMBIGUOUS": "the frozen source cannot safely resolve whether the statement is a scientific claim.",
+}
 _CLAIM_QUALIFIER_STATE = {
     "PRESENT": "the qualifier value and exact source span are both supplied.",
     "NOT_APPLICABLE": "the qualifier does not apply to this source-local claim.",
@@ -475,11 +493,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory.v3",
         schema_names=("LLMClaimInventoryResult",),
-        shape_hash="5971e1fec819faa32812a0ba5dce46138031eb05df1e55e9c137ef7723b45cda",
+        shape_hash="116d85c696bb904f7e9f7539a048816686054839ea10e594f2ebc7f2ec75a0e2",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v8",),
+        prompt_identifiers=("document_extraction.claim_inventory.v9",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -507,6 +525,13 @@ _POLICIES = (
                 ),
             ),
             _category(
+                "$.claims[].claim_kind",
+                _CLAIM_KIND,
+                evidence_requirement=(
+                    "The exact inventory span must establish whether the item is a finding, hypothesis, procedure, measurement, or ambiguous."
+                ),
+            ),
+            _category(
                 "$.claims[].event_type",
                 _CLAIM_EVENT_TYPE,
                 evidence_requirement=(
@@ -515,14 +540,14 @@ _POLICIES = (
             ),
             _category(
                 "$.claims[].polarity",
-                _CLAIM_POLARITY,
+                _INVENTORY_POLARITY,
                 evidence_requirement=(
                     "The exact inventory span must establish the claim direction."
                 ),
             ),
             _category(
                 "$.claims[].epistemic_status",
-                _CLAIM_EPISTEMIC_STATUS,
+                _INVENTORY_EPISTEMIC_STATUS,
                 evidence_requirement=(
                     "The exact inventory span must establish the statement status."
                 ),
@@ -532,11 +557,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory_completeness.v3",
         schema_names=("ClaimInventoryCompletenessReview",),
-        shape_hash="c16184f40c2854ff40dfe85c43024e73d9d93e2599de79e9f60fdcfe741e7c23",
+        shape_hash="d7aacf725be8407731706a9fc24d456c339076be1638a3728afb5fd079b6641b",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v7",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v8",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -568,18 +593,23 @@ _POLICIES = (
                 evidence_requirement="The missing claim span must establish every event role.",
             ),
             _category(
+                "$.missing_claims[].claim_kind",
+                _CLAIM_KIND,
+                evidence_requirement="The missing descriptor must be a relation-eligible scientific kind.",
+            ),
+            _category(
                 "$.missing_claims[].event_type",
                 _CLAIM_EVENT_TYPE,
                 evidence_requirement="The missing claim span must establish the event category.",
             ),
             _category(
                 "$.missing_claims[].polarity",
-                _CLAIM_POLARITY,
+                _INVENTORY_POLARITY,
                 evidence_requirement="The missing claim span must establish direction.",
             ),
             _category(
                 "$.missing_claims[].epistemic_status",
-                _CLAIM_EPISTEMIC_STATUS,
+                _INVENTORY_EPISTEMIC_STATUS,
                 evidence_requirement="The missing claim span must establish status.",
             ),
         ),
@@ -591,7 +621,7 @@ _POLICIES = (
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_recovery.v7",),
+        prompt_identifiers=("document_extraction.claim_inventory_recovery.v8",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -612,7 +642,7 @@ _POLICIES = (
         schema_names=("LLMSingleClaimFramingResult",),
         shape_hash="79f83b484546c7f14f337684943fd1cd46c5d65656a481f4ba78d5b7cd9a84db",
         producer_paths=("document_extraction_support/llm_extraction/claim_framing.py",),
-        prompt_identifiers=("document_extraction.claim_framing.v6",),
+        prompt_identifiers=("document_extraction.claim_framing.v7",),
         numeric_fields=(
             NumericFieldPolicy(
                 path="$.relations[].source_measurements[].value",

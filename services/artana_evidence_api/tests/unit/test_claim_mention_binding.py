@@ -24,6 +24,9 @@ def _inventory_item(
     cue_anchor: dict[str, str] | None = None,
     first_argument: dict[str, object],
     second_span: str,
+    claim_kind: str = "SCIENTIFIC_FINDING",
+    polarity: str = "SUPPORT",
+    epistemic_status: str = "ASSERTED",
 ) -> ClaimInventoryItem:
     return ClaimInventoryItem.model_validate(
         {
@@ -40,9 +43,10 @@ def _inventory_item(
                 },
             ],
             "source_locator": "normalized_extraction_text",
+            "claim_kind": claim_kind,
             "event_type": "OTHER_EXPLICIT",
-            "polarity": "SUPPORT",
-            "epistemic_status": "ASSERTED",
+            "polarity": polarity,
+            "epistemic_status": epistemic_status,
             "inventory_rationale": "The source contains one explicit event.",
         },
     )
@@ -148,6 +152,161 @@ def test_context_anchor_must_select_exactly_one_occurrence() -> None:
             source_sha256=hashlib.sha256(text.encode()).hexdigest(),
             chunk_index=0,
         )
+
+
+def test_exact_span_binding_rejects_overlapping_occurrences() -> None:
+    item = _inventory_item(
+        text="ABA",
+        cue="B",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "AGENT",
+            "exact_span": "A",
+            "role_rationale": "The first A is the source participant.",
+        },
+        second_span="B",
+    )
+
+    with pytest.raises(ClaimInventoryBindingError, match="exactly once"):
+        bind_claim_inventory(
+            (item,),
+            source_text="ABABA",
+            source_sha256=hashlib.sha256(b"ABABA").hexdigest(),
+            chunk_index=0,
+        )
+
+
+def test_argument_anchor_context_may_extend_outside_claim_boundary() -> None:
+    source = (
+        "Therefore, iTreg induction has to occur before "
+        "effector T cell differentiation occurs."
+    )
+    claim = source.removeprefix("Therefore, ")
+    item = _inventory_item(
+        text=claim,
+        cue="has to occur before",
+        first_argument={
+            "role": "BIOLOGICAL_PROCESS",
+            "event_role": "CAUSE",
+            "exact_span": "iTreg induction",
+            "mention_anchors": [
+                {
+                    "mention_span": "iTreg induction",
+                    "left_context": "Therefore, ",
+                    "right_context": " has to occur before",
+                },
+            ],
+            "role_rationale": "The source names the preceding process.",
+        },
+        second_span="effector T cell differentiation",
+    )
+
+    bound = bind_claim_inventory(
+        (item,),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )[0]
+
+    assert bound.source_start == len("Therefore, ")
+    assert bound.bound_arguments[0].primary_mention.source_start == len("Therefore, ")
+
+
+def test_trigger_anchor_context_may_extend_outside_claim_boundary() -> None:
+    claim = (
+        "The Wilms' tumor suppressor gene ( WT1 ) was previously identified "
+        "as being imprinted"
+    )
+    source = f"{claim}, with frequent maternal expression."
+    item = _inventory_item(
+        text=claim,
+        cue="was previously identified as being imprinted",
+        cue_anchor={
+            "mention_span": "was previously identified as being imprinted",
+            "left_context": "( WT1 ) ",
+            "right_context": ", with frequent maternal expression",
+        },
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "THEME",
+            "exact_span": "WT1",
+            "role_rationale": "WT1 is the source-local gene.",
+        },
+        second_span="imprinted",
+    )
+
+    bound = bind_claim_inventory(
+        (item,),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )[0]
+
+    assert bound.trigger_mention.exact_span == item.relation_cue_span
+    assert bound.trigger_mention.source_end == len(claim)
+
+
+def test_anchor_cannot_select_a_mention_outside_claim_boundary() -> None:
+    source = "WT1 baseline. WT1 increases expression."
+    claim = "WT1 increases expression."
+    item = _inventory_item(
+        text=claim,
+        cue="increases",
+        first_argument={
+            "role": "GENE_OR_PROTEIN",
+            "event_role": "AGENT",
+            "exact_span": "WT1",
+            "mention_anchors": [
+                {
+                    "mention_span": "WT1",
+                    "left_context": "",
+                    "right_context": " baseline",
+                },
+            ],
+            "role_rationale": "The anchor deliberately selects the wrong WT1.",
+        },
+        second_span="expression",
+    )
+
+    with pytest.raises(ClaimInventoryBindingError, match="inside the claim"):
+        bind_claim_inventory(
+            (item,),
+            source_text=source,
+            source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+            chunk_index=0,
+        )
+
+
+@pytest.mark.parametrize(
+    ("claim_kind", "polarity", "epistemic_status"),
+    [
+        ("SCIENTIFIC_FINDING", "NULL_RESULT", "ASSERTED"),
+        ("SCIENTIFIC_HYPOTHESIS", "SUPPORT", "PROVISIONAL"),
+        ("SCIENTIFIC_HYPOTHESIS", "SUPPORT", "HYPOTHESIS"),
+    ],
+)
+def test_inventory_direction_and_epistemic_force_are_independent(
+    claim_kind: str,
+    polarity: str,
+    epistemic_status: str,
+) -> None:
+    item = _inventory_item(
+        text="IL-4 did not alter TGF-beta signaling.",
+        cue="did not alter",
+        first_argument={
+            "role": "CHEMICAL_OR_DRUG",
+            "event_role": "AGENT",
+            "exact_span": "IL-4",
+            "role_rationale": "IL-4 is the tested factor.",
+        },
+        second_span="TGF-beta signaling",
+        claim_kind=claim_kind,
+        polarity=polarity,
+        epistemic_status=epistemic_status,
+    )
+
+    assert item.polarity.value == polarity
+    assert item.epistemic_status.value == epistemic_status
 
 
 def test_repeated_trigger_uses_verbatim_context_instead_of_agent_offset() -> None:
