@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
@@ -10,6 +11,10 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
 )
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
     StructuredModelSemanticError,
+)
+from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
+    start_model_attempt_audit,
+    stop_model_attempt_audit,
 )
 from pydantic import ValidationError
 
@@ -27,6 +32,7 @@ from scripts.validation.claim_events.finite_source_unit.runner import (
 from scripts.validation.claim_events.finite_source_unit.service import (
     bind_source_unit_extraction,
     bind_source_unit_verification,
+    extract_source_unit,
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     enumerate_source_units,
@@ -37,6 +43,21 @@ from scripts.validation.claim_events.fixture import load_fixture
 class _TimeoutClient:
     async def step(self, **_kwargs: object) -> object:
         raise TimeoutError("provider unavailable")
+
+
+class _SuccessfulClient:
+    def __init__(self, output: SourceUnitExtractionOutput) -> None:
+        self._output = output
+
+    async def step(self, **kwargs: object) -> object:
+        return SimpleNamespace(
+            output=self._output,
+            run_id=kwargs["run_id"],
+            seq=1,
+            replayed=False,
+            response_id=None,
+            response_output_items=(),
+        )
 
 
 def _event_item(
@@ -89,6 +110,33 @@ def test_source_units_preserve_deterministic_offsets_and_coverage() -> None:
     assert {unit.source_sha256 for unit in units} == {
         hashlib.sha256(source.encode()).hexdigest()
     }
+
+
+@pytest.mark.asyncio
+async def test_extraction_uses_artana_invocation_bound_run_id() -> None:
+    unit = enumerate_source_units(case_id="case-1", source_text="Methods only.")[0]
+    output = SourceUnitExtractionOutput(
+        unit_id=unit.unit_id,
+        decision="NO_EVENT",
+        events=(),
+        reasoning="No explicit event is stated.",
+    )
+    audit = start_model_attempt_audit(evidence_unit_id="case-1")
+    try:
+        result = await extract_source_unit(
+            client=_SuccessfulClient(output),
+            tenant=object(),
+            model_id="openai/gpt-5.6-luna",
+            execution_namespace="topology-regression",
+            unit=unit,
+        )
+    finally:
+        stop_model_attempt_audit(audit)
+
+    assert result.value.output.decision.value == "NO_EVENT"
+    assert result.attempt_record.kernel_run_id == (
+        f"research-init-extraction:{result.attempt_record.invocation_id}"
+    )
 
 
 def test_extraction_contract_rejects_category_payload_conflicts() -> None:

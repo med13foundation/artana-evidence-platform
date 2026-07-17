@@ -11,6 +11,9 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryBindingRejection,
     bind_claim_inventory_items,
 )
+from artana_evidence_api.document_extraction_support.llm_extraction.invocation_binding import (
+    kernel_run_id_for_invocation,
+)
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
     AuditedStructuredStepResult,
     StructuredModelSemanticError,
@@ -172,7 +175,7 @@ async def extract_source_unit(
 
     async def invoke(invocation_id: str, provider_prompt: str) -> ModelStepResult:
         return await client.step(
-            run_id=f"tg04-finite-source-unit:{invocation_id}",
+            run_id=kernel_run_id_for_invocation(invocation_id),
             tenant=tenant,
             model=model_id,
             prompt=provider_prompt,
@@ -230,7 +233,7 @@ async def verify_source_unit_candidates(  # noqa: PLR0913
 
     async def invoke(invocation_id: str, provider_prompt: str) -> ModelStepResult:
         return await client.step(
-            run_id=f"tg04-finite-source-verification:{invocation_id}",
+            run_id=kernel_run_id_for_invocation(invocation_id),
             tenant=tenant,
             model=model_id,
             prompt=provider_prompt,

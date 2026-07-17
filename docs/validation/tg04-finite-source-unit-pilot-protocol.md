@@ -140,3 +140,28 @@ uv run python scripts/run_finite_source_unit_audit.py \
 
 The result report must be generated from the immutable JSON without editing the
 payload or changing the gates after model output is observed.
+
+## Invalidated Orchestration Attempt
+
+The first invocation on committed harness `2fe238a3f212b8f34a0f634b2adeb0c73fb29f2d`
+is retained as an invalid experiment artifact:
+
+- run ID: `tg04-finite-source-unit-luna-01`
+- artifact:
+  `/tmp/artana-tg04/finite-source-unit-2026-07-17/luna-r1.json`
+- artifact SHA-256:
+  `6b2876a1340516fedde918fd6549a60c5b99f27fc642977d4e24eb2157f2e2f4`
+- provider payloads returned: `32`
+- accepted extraction attempts: `0`
+- terminal category: `StructuredModelInvocationTopologyError`
+
+The experimental client used a pilot-specific kernel run namespace instead of
+the run ID already bound into Artana's provider invocation envelope. Every
+payload therefore failed custody before schema or semantic evaluation. The
+artifact has no scientific interpretation and is not a failed model run.
+
+The owning run-ID boundary is corrected and regression-tested before one
+replacement execution named `tg04-finite-source-unit-luna-02`. The frozen
+source panel, model, prompts, schemas, metrics, and stop/go thresholds remain
+unchanged. The replacement writes create-once to `luna-r2.json`; the invalid
+artifact is never overwritten or counted as a replicate.
