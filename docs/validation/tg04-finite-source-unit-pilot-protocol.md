@@ -2,7 +2,7 @@
 
 Created: 2026-07-17
 
-Status: pre-registered before model execution
+Status: completed; restart gate failed on 2026-07-17
 
 ## Decision Question
 
@@ -165,3 +165,22 @@ replacement execution named `tg04-finite-source-unit-luna-02`. The frozen
 source panel, model, prompts, schemas, metrics, and stop/go thresholds remain
 unchanged. The replacement writes create-once to `luna-r2.json`; the invalid
 artifact is never overwritten or counted as a replicate.
+
+## Completed Replacement
+
+The authorized replacement completed on committed harness
+`13175ae50ab629fb3f1ddfe7a7a6e4a4849e21dc`:
+
+- run ID: `tg04-finite-source-unit-luna-02`
+- artifact:
+  `/tmp/artana-tg04/finite-source-unit-2026-07-17/luna-r2.json`
+- artifact SHA-256:
+  `8c59553036a4dc58eb55e5b6381058401fcbff2a9069499f7f26b5abb1f3f58e`
+- inner report SHA-256:
+  `53dea580b834f0d12481d503c1e1484746ce8a1bf9867e434b375cbf779f06e9`
+- decision: `STOP_AND_RECALIBRATE`
+
+The inner digest was recomputed from the immutable artifact after removing its
+`report_sha256` field and matched exactly. The detailed scientific and
+operational interpretation is recorded in
+`docs/validation/reports/2026-07-17-tg04-finite-source-unit-pilot.md`.
