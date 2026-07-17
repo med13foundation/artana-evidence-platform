@@ -112,15 +112,16 @@ def build_operational_summary(
 def require_sealable_unbindable_attempts(
     attempts: Sequence[Mapping[str, object]],
 ) -> None:
-    """Require one complete provider-backed inventory failure prefix."""
+    """Require one complete provider-backed terminal inventory failure chain."""
 
+    terminal_attempts = _terminal_inventory_failure_chain(attempts)
     topology = tuple(
         (
             attempt.get("attempt_role"),
             attempt.get("validation_outcome"),
             attempt.get("retry_context"),
         )
-        for attempt in attempts
+        for attempt in terminal_attempts
     )
     invalid_outcomes = ("schema_invalid", "semantic_invalid")
     allowed_topologies = {
@@ -147,24 +148,50 @@ def require_sealable_unbindable_attempts(
     if topology not in allowed_topologies:
         raise ValueError("TG-04 unbindable attempt topology is not sealable")
 
-    terminal_input = attempts[-1].get("input_sha256")
-    terminal_retry = attempts[-1].get("retry_context")
     for attempt in attempts:
+        outcome = attempt.get("validation_outcome")
+        if outcome == "intentionally_skipped":
+            _require_skipped_attempt(attempt)
+        elif outcome in {"accepted", "schema_invalid", "semantic_invalid"}:
+            _require_provider_custody(attempt)
+        else:
+            raise ValueError("TG-04 unbindable history contains an invalid outcome")
+
+    terminal_input = terminal_attempts[-1].get("input_sha256")
+    terminal_retry = terminal_attempts[-1].get("retry_context")
+    for attempt in terminal_attempts:
         if (
             attempt.get("input_sha256") != terminal_input
             or attempt.get("pass_role") != "claim_inventory"
         ):
             raise ValueError("TG-04 unbindable attempts cross workflow boundaries")
-        if attempt.get("validation_outcome") == "intentionally_skipped":
-            _require_skipped_attempt(attempt)
-        else:
-            _require_provider_custody(attempt)
-    if attempts[-2].get("retry_context") != terminal_retry:
+    if terminal_attempts[-2].get("retry_context") != terminal_retry:
         raise ValueError("TG-04 terminal retry is detached from its failed attempt")
-    if len(attempts) == _ZERO_RETRY_FAILURE_ATTEMPT_COUNT:
-        payload = attempts[0].get("raw_model_payload")
+    if len(terminal_attempts) == _ZERO_RETRY_FAILURE_ATTEMPT_COUNT:
+        payload = terminal_attempts[0].get("raw_model_payload")
         if not isinstance(payload, Mapping) or payload.get("claims") != []:
             raise ValueError("TG-04 zero retry did not follow an accepted empty output")
+
+
+def _terminal_inventory_failure_chain(
+    attempts: Sequence[Mapping[str, object]],
+) -> tuple[Mapping[str, object], ...]:
+    if not attempts:
+        raise ValueError("TG-04 unbindable output lacks attempts")
+    terminal = attempts[-1]
+    terminal_input = terminal.get("input_sha256")
+    if terminal.get("pass_role") != "claim_inventory" or terminal_input is None:
+        raise ValueError("TG-04 unbindable attempts cross workflow boundaries")
+    start = len(attempts) - 1
+    while start > 0:
+        previous = attempts[start - 1]
+        if (
+            previous.get("pass_role") != "claim_inventory"
+            or previous.get("input_sha256") != terminal_input
+        ):
+            break
+        start -= 1
+    return tuple(attempts[start:])
 
 
 def _require_provider_custody(attempt: Mapping[str, object]) -> None:

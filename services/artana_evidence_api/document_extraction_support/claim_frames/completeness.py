@@ -10,7 +10,6 @@ from artana_evidence_api.document_extraction_support.claim_frames.inventory impo
     ClaimInventoryBindingError,
     ClaimInventoryItem,
     bind_claim_inventory,
-    claim_inventory_input_sha256,
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -53,19 +52,22 @@ class ClaimInventoryCompletenessReview(BaseModel):
         return self
 
 
-class MissingClaimRecoveryResult(BaseModel):
-    """One missing-only recovery inventory returned by the agent."""
+class MissingClaimRecoveryDisposition(str, Enum):
+    """Closed source-only decision for one reviewed missing descriptor."""
+
+    RECOVER_EXPLICIT_CLAIM = "RECOVER_EXPLICIT_CLAIM"
+    EXCLUDE_PROCEDURAL_METHOD = "EXCLUDE_PROCEDURAL_METHOD"
+    EXCLUDE_NOT_EXPLICIT = "EXCLUDE_NOT_EXPLICIT"
+    ABSTAIN = "ABSTAIN"
+
+
+class MissingClaimRecoveryDecision(BaseModel):
+    """Categorical adjudication of one already source-bound descriptor."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    claims: tuple[ClaimInventoryItem, ...] = Field(..., min_length=1, max_length=64)
-
-    @field_validator("claims", mode="before")
-    @classmethod
-    def restore_claim_tuple(cls, value: object) -> object:
-        """Freeze the JSON array after schema validation."""
-
-        return tuple(value) if isinstance(value, list) else value
+    decision: MissingClaimRecoveryDisposition = Field(..., strict=False)
+    decision_rationale: str = Field(..., min_length=1, max_length=2000)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,8 +87,9 @@ def bind_inventory_completeness_review(
     chunk_index: int,
     source_start_offset: int,
     current_inventory: tuple[BoundClaimInventoryItem, ...],
+    excluded_inventory: tuple[BoundClaimInventoryItem, ...] = (),
 ) -> BoundInventoryCompletenessReview:
-    """Bind missing descriptors and reject claims already in the inventory."""
+    """Bind missing descriptors and reject already adjudicated identities."""
 
     missing_claims = bind_claim_inventory(
         review.missing_claims,
@@ -95,13 +98,15 @@ def bind_inventory_completeness_review(
         chunk_index=chunk_index,
         source_start_offset=source_start_offset,
     )
-    current_ids = {claim.inventory_id for claim in current_inventory}
-    duplicated_ids = current_ids.intersection(
+    adjudicated_ids = {
+        claim.inventory_id for claim in (*current_inventory, *excluded_inventory)
+    }
+    duplicated_ids = adjudicated_ids.intersection(
         claim.inventory_id for claim in missing_claims
     )
     if duplicated_ids:
         raise ClaimInventoryBindingError(
-            "inventory completeness review marked an existing claim as missing",
+            "inventory completeness review repeated an adjudicated claim",
         )
     return BoundInventoryCompletenessReview(
         decision=review.decision,
@@ -110,38 +115,11 @@ def bind_inventory_completeness_review(
     )
 
 
-def require_recovery_matches_review(
-    *,
-    recovered_claims: tuple[BoundClaimInventoryItem, ...],
-    reviewed_missing_claims: tuple[BoundClaimInventoryItem, ...],
-) -> None:
-    """Require recovery to return exactly the claims named by the review agent."""
-
-    recovered_inputs = {
-        claim.inventory_id: claim_inventory_input_sha256(
-            inventory_id=claim.inventory_id,
-            item=claim.item,
-        )
-        for claim in recovered_claims
-    }
-    reviewed_inputs = {
-        claim.inventory_id: claim_inventory_input_sha256(
-            inventory_id=claim.inventory_id,
-            item=claim.item,
-        )
-        for claim in reviewed_missing_claims
-    }
-    if recovered_inputs != reviewed_inputs:
-        raise ClaimInventoryBindingError(
-            "missing-claim recovery did not exactly match the completeness review",
-        )
-
-
 __all__ = [
     "BoundInventoryCompletenessReview",
     "ClaimInventoryCompletenessReview",
     "InventoryCompletenessDecision",
-    "MissingClaimRecoveryResult",
+    "MissingClaimRecoveryDecision",
+    "MissingClaimRecoveryDisposition",
     "bind_inventory_completeness_review",
-    "require_recovery_matches_review",
 ]

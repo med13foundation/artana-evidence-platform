@@ -13,7 +13,6 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     claim_inventory_batch_input_sha256,
     claim_inventory_identity,
     claim_inventory_input_sha256,
-    require_recovery_matches_review,
 )
 from pydantic import ValidationError
 
@@ -395,48 +394,4 @@ def test_duplicate_semantic_claims_cannot_hide_different_mention_payloads() -> N
             source_text=text,
             source_sha256=source_sha256,
             chunk_index=0,
-        )
-
-
-def test_recovery_must_preserve_reviewed_mention_payload() -> None:
-    text = "WT1 in fibroblasts and WT1 in lymphocytes suggests regulation."
-    source_sha256 = hashlib.sha256(text.encode()).hexdigest()
-    reviewed, recovered = (
-        bind_claim_inventory(
-            (
-                _inventory_item(
-                    text=text,
-                    cue="suggests",
-                    first_argument={
-                        "role": "GENE_OR_PROTEIN",
-                        "event_role": "THEME",
-                        "exact_span": "WT1",
-                        "mention_anchors": [anchor],
-                        "role_rationale": "WT1 is the semantic participant.",
-                    },
-                    second_span="regulation",
-                ),
-            ),
-            source_text=text,
-            source_sha256=source_sha256,
-            chunk_index=0,
-        )[0]
-        for anchor in (
-            {
-                "mention_span": "WT1",
-                "left_context": "",
-                "right_context": " in fibroblasts",
-            },
-            {
-                "mention_span": "WT1",
-                "left_context": " and ",
-                "right_context": " in lymphocytes",
-            },
-        )
-    )
-
-    with pytest.raises(ClaimInventoryBindingError, match="exactly match"):
-        require_recovery_matches_review(
-            recovered_claims=(recovered,),
-            reviewed_missing_claims=(reviewed,),
         )

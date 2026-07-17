@@ -30,6 +30,7 @@ from artana_evidence_api.document_extraction_support.llm_extraction.prompt_versi
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
     AuditedStructuredStepResult,
     StructuredModelSemanticError,
+    StructuredModelValidationError,
     run_audited_structured_step,
 )
 from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
@@ -182,7 +183,7 @@ async def run_single_claim_framing_stage(
             step_key=step_key,
             audit_context=audit_context,
         )
-    except (ValidationError, StructuredModelSemanticError):
+    except (ValidationError, StructuredModelValidationError):
         retry_result = await _run_claim_framing_step(
             inventory_claim=inventory_claim,
             source_region=source_region,
