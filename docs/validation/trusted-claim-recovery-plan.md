@@ -2,9 +2,11 @@
 
 Created: 2026-07-14
 
-Status: TG-01 through TG-03 are merged. TG-04 reached a controlled stop after
-an ephemeral development run suggested typed-role preservation but failed the
-durable-evidence protocol and did not prove scientific precision or recall.
+Status: TG-01 through TG-03 are merged. TG-04 now has durable n-ary fixtures,
+typed source binding, and bounded completeness replay. Its frozen four-case
+Luna pilot still failed scientific qualification: the only gold qualification
+case remained incomplete after two rounds and whole-event recall was `0/4`.
+Graph persistence remains paused.
 
 Baseline commit: `884ede20340d7fce7b28994f1bed617b222d2213`
 
@@ -198,23 +200,26 @@ requires `100%` precision on its prospectively frozen promotion set and an
 explicit governance decision. Agent results do not satisfy the human-expert
 finish line.
 
-### Model and task ablation decision
+### Task redesign decision
 
-TG-04 resumes with one controlled experiment: run
-`openai:gpt-5.6-luna` and one predeclared stronger model against the identical
-frozen panel, prompts, tools, and scorer. This distinguishes three root causes:
+TG-04 tested the same frozen four cases after item-level binding and a strict
+two-round completeness loop. Operational completion improved from `1/4` to
+`3/4`, but the event-gold qualification case remained
+`SEMANTICALLY_INCOMPLETE`, whole-event recall stayed `0/4`, and provider receipt
+verification remained `0/27`. The measured result is recorded in
+`docs/validation/reports/2026-07-17-tg04-bounded-convergence-pilot.md`.
 
-1. If both models fail the same cases, redesign the task representation,
-   ontology, or supplied context.
-2. If only the stronger model clears the gates, make an explicit product
-   decision about model quality, cost, latency, and reproducibility.
-3. If Luna clears the gates, continue with Luna and preserve the stronger model
-   as an adversarial comparison, not an unrecorded fallback.
+The open-ended "find every claim" task is now stopped. Do not add another
+recovery round, another completeness judge, or a stronger model to that task.
+The next controlled experiment must first freeze a finite source-unit event
+decision contract. Luna runs that frozen contract once. A predeclared stronger
+model may be compared only afterward, against identical units, prompts, tools,
+and scoring, so model strength is not confounded with task redesign.
 
-If neither model produces a positive paired net change, stop. Do not tune on
-the confirmatory panel, start Graph persistence, or add another evaluation
-layer. Publish the failed result and design the smallest new scientific
-experiment from the observed failure class.
+If the finite task still produces no exact whole-event match, stop model-only
+extraction and evaluate an expert-seeded or hybrid candidate workflow. Do not
+start Graph persistence or add another evaluation layer around a zero-recall
+result.
 
 ## Non-Negotiable Rules
 
@@ -278,7 +283,7 @@ Allowed status values are `not_started`, `in_progress`, `evidence_pending`,
 | TG-01 | [#158](https://github.com/med13foundation/artana-evidence-platform/pull/158) | `alvaro/trusted-claims-tg01-truthful-safety` | None | merged | Existing unsafe evidence cannot become trusted. Evidence: `docs/validation/reports/2026-07-14-tg01-truthful-safety.md`. |
 | TG-02 | [#159](https://github.com/med13foundation/artana-evidence-platform/pull/159) | `alvaro/trusted-claims-tg02-source-provenance` | TG-01 | merged | Every eligible claim has authoritative source identity and an exact locator. Evidence: `docs/validation/reports/2026-07-15-tg02-source-provenance.md`. |
 | TG-03 | [#160](https://github.com/med13foundation/artana-evidence-platform/pull/160) | `alvaro/trusted-claims-tg03-claim-frame` | TG-02 | merged | Runtime and safety proof is complete: the strict Luna path completed with three provider-bound calls, fallback 0, graph writes 0, and both adversarial re-reviews clear. Scientific-quality proof failed on the first clean case with 0% endpoint/full-frame precision and recall, so the remaining 18 development cases were not run. This PR merged only as a truthful safety and architecture improvement. Evidence: `docs/validation/reports/2026-07-14-tg03-qualified-claim-frame.md`. |
-| TG-04 | [#161](https://github.com/med13foundation/artana-evidence-platform/pull/161) | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | blocked | An unavailable diagnostic artifact reportedly preserved six source roles and multiple frames, but this receives no scientific or persistence credit. The binary gold no longer measures the n-ary representation and the projected predicates remain scientifically unresolved. Prompt editing and Graph persistence are paused pending an untouched n-ary event benchmark and frozen model/task ablation. Evidence: `docs/validation/reports/2026-07-15-tg04-typed-assertion-checkpoint.md`. |
+| TG-04 | [#161](https://github.com/med13foundation/artana-evidence-platform/pull/161), [#162](https://github.com/med13foundation/artana-evidence-platform/pull/162)-[#167](https://github.com/med13foundation/artana-evidence-platform/pull/167) | `alvaro/trusted-claims-tg04-claim-persistence` | TG-03 | blocked | Typed n-ary fixtures, source binding, provider lineage, and bounded replay are durable. The bounded Luna pilot improved operational completion to `3/4`, but the gold case remained incomplete and whole-event recall was `0/4`. Open-ended completeness and Graph persistence are stopped pending a finite source-unit event task. Evidence: `docs/validation/reports/2026-07-17-tg04-bounded-convergence-pilot.md`. |
 | TG-05 | TBD | `alvaro/trusted-claims-tg05-agent-verifier` | TG-04 | not_started | Independent agent verification replaces heuristic semantic trust. |
 | TG-06 | TBD | `alvaro/trusted-claims-tg06-authoritative-grounding` | TG-04 | not_started | Every promotion-eligible entity resolves to an authoritative identifier. |
 | TG-07 | TBD | `alvaro/trusted-claims-tg07-safe-projection` | TG-05, TG-06 | not_started | Only complete supported claims project to positive graph relations. |
@@ -631,13 +636,19 @@ Graph DB participant, qualifier, evidence, and projection capabilities.
 
 TG-04 has a scientific restart gate before persistence work:
 
-- freeze an untouched, set-valued n-ary event panel and its categorical gold;
-- implement only the deterministic scorer needed for the metrics defined in
-  the Scientific Improvement Measurement Protocol;
-- run the predeclared Luna-versus-stronger-model task ablation three times;
-- publish paired case transitions, worst-run metrics, provider receipts, and
+- keep the untouched, set-valued n-ary event panel and categorical gold frozen;
+- replace open-ended inventory completeness with a finite source-unit contract;
+- require extraction agents to return `EXPLICIT_EVENT`, `NO_EVENT`, or
+  `ABSTAIN`, with exact trigger and argument spans;
+- require a separate source-only verifier agent to return `ENTAILED`,
+  `CONTRADICTED`, `INSUFFICIENT`, or `ABSTAIN`, with exact evidence and a
+  falsification explanation;
+- compute every metric and readiness decision deterministically;
+- run the same four-case Luna diagnostic once, then consider a stronger-model
+  arm only against the unchanged finite task;
+- publish case transitions, metrics, provider receipts, replay evidence, and
   artifact hashes;
-- resume the persistence scope below only when the scientific gates pass.
+- resume persistence only when scientific and provider-custody gates pass.
 
 Until that gate passes, Graph schema, migration, and persistence changes remain
 paused. Preserving six roles on one diagnostic case is an information-retention
@@ -705,8 +716,8 @@ After the scientific restart gate passes:
 - graph and evidence service contract checks pass with generated artifacts
   current.
 
-**Evidence report:**
-`docs/validation/reports/<date>-tg04-claim-persistence.md`
+**Latest evidence report:**
+`docs/validation/reports/2026-07-17-tg04-bounded-convergence-pilot.md`
 
 ## TG-05: Independent Agent Semantic Verifier
 
