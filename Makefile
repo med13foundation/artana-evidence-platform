@@ -100,6 +100,9 @@ ARTANA_EVIDENCE_API_TEST_PATHS := \
 	 tests/e2e/artana_evidence_api \
 	 services/artana_evidence_api/tests/integration \
 	 services/artana_evidence_api/tests/unit \
+	 tests/unit/test_finite_source_unit_audit.py \
+	 tests/unit/test_nary_claim_evaluation.py \
+	 tests/unit/test_nary_claim_runner.py \
 	 tests/unit/test_run_evidence_selection_expert_study_gate.py \
 	 tests/unit/test_run_evidence_selection_review_calibration_gate.py \
 	 tests/unit/test_agent_output_boundary_validator.py
@@ -323,6 +326,7 @@ artana-evidence-api-type-check: ## Run strict mypy on evidence API package
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/validate_evidence_selection_semantic_benchmark_v2.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_evidence_selection_semantic_agent_evaluation.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_evidence_selection_semantic_model_comparison.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
+	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/run_finite_source_unit_audit.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 	cd services && $(USE_PYTHON_ABS) -m mypy ../scripts/ci/validate_agent_output_boundaries.py --no-warn-unused-configs $(ARTANA_EVIDENCE_API_STRICT_IMPORT_MYPY_FLAGS)
 
 artana-evidence-api-type-check-strict-imports: ## Explicit strict-import evidence API mypy gate
