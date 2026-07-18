@@ -40,8 +40,25 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v1"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v1"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v2"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v2"
+_SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
+Classify source meaning, never section labels, keywords, or perceived importance.
+Return exactly one eligibility_category:
+- FINDING: an asserted biological relationship or result;
+- HYPOTHESIS: an explicitly proposed biological explanation or mechanism;
+- NULL_RESULT: an explicit no-effect, no-association, or threshold-failing result;
+- PROCEDURE: sample handling, preparation, intervention application, assay setup,
+  instrument use, or another action without a reported biological result;
+- MEASUREMENT_ONLY: an outcome is measured but no value, direction, comparison,
+  or conclusion is reported;
+- NO_EVENT: none of the categories above is explicit;
+- ABSTAIN: the source cannot safely resolve the category.
+
+Only FINDING, HYPOTHESIS, and NULL_RESULT are scientific events. PROCEDURE and
+MEASUREMENT_ONLY remain visible categorical findings but are excluded from the
+scientific-event inventory. A methods sentence is scientific only when it
+reports a biological result or explicitly proposes a mechanism."""
 
 
 class FiniteSourceUnitModelClient(Protocol):
@@ -267,13 +284,14 @@ async def verify_source_unit_candidates(  # noqa: PLR0913
 def _extraction_prompt(unit: FrozenSourceUnit) -> str:
     return f"""You are the event-extraction agent in a sealed biomedical diagnostic.
 
-Use only the frozen source unit below. Do not use outside knowledge. Decide one
-closed category: EXPLICIT_EVENT, NO_EVENT, or ABSTAIN. EXPLICIT_EVENT means the
-unit literally states at least one biomedical event with a trigger and at least
-two material typed arguments. Return every distinct explicit event in this unit.
-NO_EVENT means it contains no explicit biomedical event, including procedural
-instructions that merely describe an assay. ABSTAIN means the source cannot
-safely resolve the category.
+Use only the frozen source unit below. Do not use outside knowledge.
+
+{_SCIENTIFIC_EVENT_ELIGIBILITY_POLICY}
+
+Map FINDING, HYPOTHESIS, and NULL_RESULT to EXPLICIT_EVENT and return every
+distinct explicit event with a trigger and at least two material typed
+arguments. Map PROCEDURE, MEASUREMENT_ONLY, and NO_EVENT to NO_EVENT with no
+events. Map ABSTAIN to ABSTAIN with no events.
 
 For each event, copy exact_span, relation_cue_span, and every argument span
 verbatim. Use normalized_extraction_text as source_locator. Keep claim_kind,
@@ -305,13 +323,18 @@ def _verification_prompt(
     ]
     return f"""You are an independent source-only biomedical verifier.
 
-Use only the frozen source unit. First decide whether the candidate inventory is
-CANDIDATES_COMPLETE, NO_EVENT_CONFIRMED, MISSING_EVENT, or ABSTAIN. Review the
-unit even when no candidates were supplied. NO_EVENT_CONFIRMED is valid only
-when the unit contains no explicit biomedical event. CANDIDATES_COMPLETE is
-valid only when supplied candidates cover every explicit event in the unit.
-Return covered_candidate_ids as exactly the candidate IDs judged ENTAILED. A
-false extracted candidate may be rejected while the unit is NO_EVENT_CONFIRMED.
+Use only the frozen source unit.
+
+{_SCIENTIFIC_EVENT_ELIGIBILITY_POLICY}
+
+First return your own eligibility_category, without using extractor reasoning.
+For FINDING, HYPOTHESIS, or NULL_RESULT, return CANDIDATES_COMPLETE when supplied
+candidates cover every scientific event or MISSING_EVENT otherwise. For
+PROCEDURE, MEASUREMENT_ONLY, or NO_EVENT, return NO_EVENT_CONFIRMED because those
+categories are not scientific events. Map ABSTAIN to ABSTAIN. Review the unit
+even when no candidates were supplied. Return covered_candidate_ids as exactly
+the candidate IDs judged ENTAILED. A false extracted candidate may be rejected
+while the unit is NO_EVENT_CONFIRMED.
 
 For every supplied candidate, return exactly one categorical decision:
 ENTAILED, CONTRADICTED, INSUFFICIENT, or ABSTAIN.

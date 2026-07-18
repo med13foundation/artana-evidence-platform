@@ -18,6 +18,28 @@ class SourceUnitDecision(StrEnum):
     ABSTAIN = "ABSTAIN"
 
 
+class SourceUnitEligibilityCategory(StrEnum):
+    """Shared scientific-eligibility category returned by both agents."""
+
+    FINDING = "FINDING"
+    HYPOTHESIS = "HYPOTHESIS"
+    NULL_RESULT = "NULL_RESULT"
+    PROCEDURE = "PROCEDURE"
+    MEASUREMENT_ONLY = "MEASUREMENT_ONLY"
+    NO_EVENT = "NO_EVENT"
+    ABSTAIN = "ABSTAIN"
+
+    @property
+    def scientific(self) -> bool:
+        """Return whether the category describes relation-eligible science."""
+
+        return self in {
+            SourceUnitEligibilityCategory.FINDING,
+            SourceUnitEligibilityCategory.HYPOTHESIS,
+            SourceUnitEligibilityCategory.NULL_RESULT,
+        }
+
+
 class EntailmentDecision(StrEnum):
     """Independent source-only judgment for one bound event candidate."""
 
@@ -42,6 +64,7 @@ class SourceUnitExtractionOutput(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     unit_id: str = Field(..., min_length=1, max_length=300)
+    eligibility_category: SourceUnitEligibilityCategory = Field(..., strict=False)
     decision: SourceUnitDecision = Field(..., strict=False)
     events: tuple[ClaimInventoryItem, ...] = Field(default=(), max_length=16)
     reasoning: str = Field(..., min_length=1, max_length=4000)
@@ -55,6 +78,20 @@ class SourceUnitExtractionOutput(BaseModel):
 
     @model_validator(mode="after")
     def require_decision_payload_consistency(self) -> SourceUnitExtractionOutput:
+        expected_decision = (
+            SourceUnitDecision.EXPLICIT_EVENT
+            if self.eligibility_category.scientific
+            else (
+                SourceUnitDecision.ABSTAIN
+                if self.eligibility_category
+                is SourceUnitEligibilityCategory.ABSTAIN
+                else SourceUnitDecision.NO_EVENT
+            )
+        )
+        if self.decision is not expected_decision:
+            raise ValueError(
+                "extraction decision must match the eligibility category",
+            )
         if self.decision is SourceUnitDecision.EXPLICIT_EVENT and not self.events:
             raise ValueError("EXPLICIT_EVENT requires at least one event")
         if self.decision is not SourceUnitDecision.EXPLICIT_EVENT and self.events:
@@ -108,6 +145,7 @@ class SourceUnitVerificationOutput(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
     unit_id: str = Field(..., min_length=1, max_length=300)
+    eligibility_category: SourceUnitEligibilityCategory = Field(..., strict=False)
     coverage_decision: SourceUnitCoverageDecision = Field(..., strict=False)
     coverage_reasoning: str = Field(..., min_length=1, max_length=4000)
     covered_candidate_ids: tuple[str, ...] = Field(default=(), max_length=16)
@@ -169,6 +207,24 @@ class SourceUnitVerificationOutput(BaseModel):
             and entailed_ids
         ):
             raise ValueError("NO_EVENT_CONFIRMED cannot contain ENTAILED candidates")
+        if (
+            self.eligibility_category is SourceUnitEligibilityCategory.ABSTAIN
+            and entailed_ids
+        ):
+            raise ValueError("ABSTAIN cannot contain ENTAILED candidates")
+        if self.eligibility_category.scientific:
+            allowed_coverage = {
+                SourceUnitCoverageDecision.CANDIDATES_COMPLETE,
+                SourceUnitCoverageDecision.MISSING_EVENT,
+            }
+        elif self.eligibility_category is SourceUnitEligibilityCategory.ABSTAIN:
+            allowed_coverage = {SourceUnitCoverageDecision.ABSTAIN}
+        else:
+            allowed_coverage = {SourceUnitCoverageDecision.NO_EVENT_CONFIRMED}
+        if self.coverage_decision not in allowed_coverage:
+            raise ValueError(
+                "verification coverage must match the eligibility category",
+            )
         return self
 
 
@@ -177,6 +233,7 @@ __all__ = [
     "EntailmentDecision",
     "SourceUnitCoverageDecision",
     "SourceUnitDecision",
+    "SourceUnitEligibilityCategory",
     "SourceUnitExtractionOutput",
     "SourceUnitVerificationOutput",
 ]
