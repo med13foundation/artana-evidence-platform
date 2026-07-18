@@ -160,8 +160,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v24:claim_inventory.v18+"
-        "claim_inventory_completeness.v18+claim_inventory_recovery.v11+"
+        "document_extraction.claim_pipeline.v25:claim_inventory.v19+"
+        "claim_inventory_completeness.v19+claim_inventory_recovery.v11+"
         "claim_framing.v7"
     )
 
@@ -184,6 +184,8 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
         normalized_prompt
     )
     assert "multiple referenced sibling events" in normalized_prompt
+    assert "symmetric physical binding" in normalized_prompt
+    assert "every binding participant theme" in normalized_prompt
     assert "include the complete contiguous span covering both clauses" in (
         normalized_prompt
     )

@@ -21,6 +21,7 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
 from scripts.validation.claim_events.finite_source_unit.service import (
     VerifiedEventCandidate,
     extract_source_unit,
+    repair_source_unit_extraction,
     verify_source_unit_candidates,
 )
 
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
     from artana_evidence_api.document_extraction_support.claim_frames import (
         BoundClaimInventoryItem,
         BoundControlledEventLink,
+        ClaimInventoryBindingRejection,
         ControlledEventLinkAmbiguity,
     )
     from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
@@ -59,17 +61,28 @@ class SingleUnitAgentRunEvidence:
     controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...]
     extracted_candidate_count: int
     binding_rejection_count: int
+    observed_binding_rejections: tuple[ClaimInventoryBindingRejection, ...]
+    unresolved_binding_rejections: tuple[ClaimInventoryBindingRejection, ...]
+    schema_retry_count: int
     records: tuple[ModelAttemptAuditRecord, ...]
     error_type: str | None
 
 
-async def execute_source_unit_agents(
+def _require_resolved_binding_repair(
+    rejections: tuple[ClaimInventoryBindingRejection, ...],
+) -> None:
+    if rejections:
+        raise RuntimeError("binding repair left unresolved inventory items")
+
+
+async def execute_source_unit_agents(  # noqa: PLR0913
     *,
     client: FiniteSourceUnitModelClient,
     tenant: object,
     model_id: str,
     execution_namespace: str,
     unit: FrozenSourceUnit,
+    allow_binding_repair: bool = False,
 ) -> SingleUnitAgentRunEvidence:
     """Run exactly one extraction and one independent verification call."""
 
@@ -82,6 +95,9 @@ async def execute_source_unit_agents(
     controlled_event_links: tuple[BoundControlledEventLink, ...] = ()
     controlled_event_link_ambiguities: tuple[ControlledEventLinkAmbiguity, ...] = ()
     extracted_candidate_count = binding_rejection_count = 0
+    observed_binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = ()
+    unresolved_binding_rejections: tuple[ClaimInventoryBindingRejection, ...] = ()
+    schema_retry_count = 0
     error_type: str | None = None
     try:
         extraction = await extract_source_unit(
@@ -92,9 +108,31 @@ async def execute_source_unit_agents(
             unit=unit,
         )
         extraction_output = extraction.value.output
-        extracted_candidate_count = len(extraction.value.accepted)
-        binding_rejection_count = len(extraction.value.rejected)
-        link_result = link_controlled_events(extraction.value.accepted)
+        current_extraction = extraction.value
+        observed_binding_rejections = current_extraction.rejected
+        if current_extraction.rejected and allow_binding_repair:
+            schema_retry_count = 1
+            repair = await repair_source_unit_extraction(
+                client=client,
+                tenant=tenant,
+                model_id=model_id,
+                execution_namespace=execution_namespace,
+                unit=unit,
+                rejected_output=current_extraction.output,
+                binding_errors=current_extraction.rejected,
+            )
+            current_extraction = repair.value
+            extraction_output = current_extraction.output
+            observed_binding_rejections = (
+                *observed_binding_rejections,
+                *current_extraction.rejected,
+            )
+        unresolved_binding_rejections = current_extraction.rejected
+        extracted_candidate_count = len(current_extraction.accepted)
+        binding_rejection_count = len(unresolved_binding_rejections)
+        if allow_binding_repair:
+            _require_resolved_binding_repair(unresolved_binding_rejections)
+        link_result = link_controlled_events(current_extraction.accepted)
         controlled_event_links = link_result.links
         controlled_event_link_ambiguities = link_result.ambiguities
         verification = await verify_source_unit_candidates(
@@ -103,7 +141,7 @@ async def execute_source_unit_agents(
             model_id=model_id,
             execution_namespace=execution_namespace,
             unit=unit,
-            candidates=extraction.value.accepted,
+            candidates=current_extraction.accepted,
         )
         verification_output = verification.parsed
         verified = verification.value
@@ -131,6 +169,9 @@ async def execute_source_unit_agents(
         controlled_event_link_ambiguities=controlled_event_link_ambiguities,
         extracted_candidate_count=extracted_candidate_count,
         binding_rejection_count=binding_rejection_count,
+        observed_binding_rejections=observed_binding_rejections,
+        unresolved_binding_rejections=unresolved_binding_rejections,
+        schema_retry_count=schema_retry_count,
         records=tuple(audit.records),
         error_type=error_type,
     )

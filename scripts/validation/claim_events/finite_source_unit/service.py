@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol, cast
@@ -40,8 +41,9 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v12"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v11"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v13"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v12"
+_BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v1"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -227,6 +229,68 @@ async def extract_source_unit(
     )
 
 
+async def repair_source_unit_extraction(  # noqa: PLR0913
+    *,
+    client: FiniteSourceUnitModelClient,
+    tenant: object,
+    model_id: str,
+    execution_namespace: str,
+    unit: FrozenSourceUnit,
+    rejected_output: SourceUnitExtractionOutput,
+    binding_errors: tuple[ClaimInventoryBindingRejection, ...],
+) -> AuditedStructuredStepResult[
+    SourceUnitExtractionOutput,
+    SourceUnitExtractionResult,
+]:
+    """Ask the agent once to correct source binding without changing meaning."""
+
+    if not binding_errors:
+        raise ValueError("binding repair requires at least one rejection")
+    prompt = _binding_repair_prompt(
+        unit=unit,
+        rejected_output=rejected_output,
+        binding_errors=binding_errors,
+    )
+    repair_input_sha256 = hashlib.sha256(prompt.encode()).hexdigest()
+    step_key = fingerprinted_step_key(
+        _BINDING_REPAIR_PROMPT_VERSION,
+        model_id,
+        unit.input_sha256,
+        repair_input_sha256,
+        execution_namespace,
+    )
+
+    async def invoke(invocation_id: str, provider_prompt: str) -> ModelStepResult:
+        return await client.step(
+            run_id=kernel_run_id_for_invocation(invocation_id),
+            tenant=tenant,
+            model=model_id,
+            prompt=provider_prompt,
+            output_schema=SourceUnitExtractionOutput,
+            step_key=step_key,
+            replay_policy="fork_on_drift",
+        )
+
+    return await run_audited_structured_step(
+        invoke_model=invoke,
+        model_id=model_id,
+        prompt=prompt,
+        output_schema=SourceUnitExtractionOutput,
+        step_key=step_key,
+        audit_context=ModelAttemptAuditContext(
+            attempt_role="schema_retry",
+            pass_role="primary",  # noqa: S106 - categorical audit role
+            retry_context=None,
+            source_sha256=unit.source_sha256,
+            input_sha256=unit.input_sha256,
+            semantic_unit_id=unit.unit_id,
+        ),
+        validate_semantics=lambda output: bind_source_unit_extraction(
+            output,
+            unit=unit,
+        ),
+    )
+
 async def verify_source_unit_candidates(  # noqa: PLR0913
     *,
     client: FiniteSourceUnitModelClient,
@@ -300,10 +364,10 @@ For each event, copy exact_span, relation_cue_span, and every argument span
 verbatim. Use normalized_extraction_text as source_locator. Keep claim_kind,
 event_type, polarity, and epistemic_status independent. Do not invent missing
 participants, normalize surface text, merge events, or return numeric scores.
-For every argument, at least one mention_anchor mention_span must exactly equal
-that argument's exact_span. Do not include a determiner or modifier in the
-argument exact_span when its canonical anchor omits it. When an argument span
-appears more than once anywhere in the frozen source unit, every intended anchor
+Leave mention_anchors empty when an argument exact_span occurs exactly once in
+its claim. When an argument span appears more than once anywhere in the frozen
+source unit, every intended anchor, including one whose mention_span exactly
+equals the argument exact_span,
 must include enough adjacent left_context and/or right_context to identify one
 occurrence exactly, even when the competing occurrence lies outside exact_span.
 Anchor context may extend immediately outside exact_span.
@@ -368,6 +432,9 @@ CAUSAL EVENT AND ENTITY SEMANTICS:
   it is not a generic label for an experimentally administered protein.
 - Preserve source-explicit population and context arguments in addition to the
   causal core; never trade away CAUSE or THEME to include context.
+- For a symmetric physical BINDING or interaction event, assign every binding
+  participant THEME. Do not invent AGENT or TARGET direction for an undirected
+  interaction.
 
 prompt_version: {_EXTRACTION_PROMPT_VERSION}
 
@@ -448,6 +515,9 @@ For every candidate, independently return these additional categorical findings:
   A biological process is not GENE_OR_PROTEIN merely because its span contains
   gene names. You may use standard biomedical entity-class knowledge for these
   type judgments, but no outside mechanistic claim may substitute for the source;
+- for a symmetric physical BINDING or interaction event, every binding participant must use THEME.
+  AGENT or TARGET is invalid unless the source
+  explicitly states a distinct directional role beyond the interaction;
 - projection_eligibility: ELIGIBLE only for an ENTAILED, COMPLETE candidate with
   STRUCTURED or NOT_APPLICABLE direction, a VALID event type, and all argument
   types and event roles VALID;
@@ -466,6 +536,40 @@ prompt_version: {_VERIFICATION_PROMPT_VERSION}
 --- CANDIDATES ---
 {json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True)}
 --- END CANDIDATES ---
+"""
+
+
+def _binding_repair_prompt(
+    *,
+    unit: FrozenSourceUnit,
+    rejected_output: SourceUnitExtractionOutput,
+    binding_errors: tuple[ClaimInventoryBindingRejection, ...],
+) -> str:
+    errors = [error.as_json() for error in binding_errors]
+    return f"""You are repairing one source-binding failure in a sealed biomedical event inventory.
+
+Use only the frozen source unit. Return the complete corrected extraction output,
+including every valid event from the previous output. Preserve the scientific
+meaning, event boundaries, event types, direction, polarity, epistemic status,
+argument roles, and source-explicit referents. Correct only fields that fail the
+reported strict schema or verbatim source binding. Copy every span and anchor
+context exactly. Leave mention_anchors empty when an argument exact_span occurs
+exactly once inside its claim. Never invent an event, delete a valid sibling to
+avoid an error, use outside knowledge, or return numeric scores.
+
+prompt_version: {_BINDING_REPAIR_PROMPT_VERSION}
+
+--- FROZEN SOURCE UNIT ---
+{unit.text}
+--- END SOURCE UNIT ---
+
+--- PREVIOUS EXTRACTION OUTPUT ---
+{json.dumps(rejected_output.model_dump(mode="json"), indent=2, sort_keys=True, ensure_ascii=True)}
+--- END PREVIOUS EXTRACTION OUTPUT ---
+
+--- SOURCE-BINDING ERRORS ---
+{json.dumps(errors, indent=2, sort_keys=True, ensure_ascii=True)}
+--- END SOURCE-BINDING ERRORS ---
 """
 
 
@@ -507,5 +611,6 @@ __all__ = [
     "bind_source_unit_extraction",
     "bind_source_unit_verification",
     "extract_source_unit",
+    "repair_source_unit_extraction",
     "verify_source_unit_candidates",
 ]

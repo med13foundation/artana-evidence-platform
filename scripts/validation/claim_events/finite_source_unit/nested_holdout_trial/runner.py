@@ -31,6 +31,7 @@ from scripts.validation.claim_frames.evidence import collect_repository_evidence
 
 _REPO_ROOT: Final = Path(__file__).resolve().parents[5]
 _MODEL_ID: Final = "openai:gpt-5.6-luna"
+_BINDING_REPAIR_MIN_TRIAL_GENERATION: Final = 3
 
 
 def run_nested_event_holdout_trial(
@@ -109,6 +110,9 @@ async def _run_trial(
                 f"{run_id}:{repeat_index}:{selection.unit.unit_id}:{uuid4().hex}"
             ),
             unit=selection.unit,
+            allow_binding_repair=(
+                selection.trial_generation >= _BINDING_REPAIR_MIN_TRIAL_GENERATION
+            ),
         )
     finally:
         with suppress(Exception):

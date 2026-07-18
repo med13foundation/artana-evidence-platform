@@ -51,6 +51,9 @@ from scripts.validation.claim_events.finite_source_unit.service import (
     bind_source_unit_verification,
     extract_source_unit,
 )
+from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
+    execute_source_unit_agents,
+)
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     enumerate_source_units,
 )
@@ -109,6 +112,54 @@ class _ProcedureSequenceClient:
             seq=len(self.calls),
             replayed=False,
             response_id=response_id,
+            response_output_items=(),
+        )
+
+
+class _BindingRepairSequenceClient:
+    def __init__(self, *, repair_succeeds: bool = True) -> None:
+        self.calls = 0
+        self.repair_succeeds = repair_succeeds
+
+    async def step(self, **kwargs: object) -> object:
+        self.calls += 1
+        if self.calls == 1:
+            output: object = SourceUnitExtractionOutput(
+                eligibility_category=SourceUnitEligibilityCategory.FINDING,
+                decision=SourceUnitDecision.EXPLICIT_EVENT,
+                events=(_event_item(exact_span="IL-4 inhibited missing protein."),),
+                reasoning="The initial item contains one binding error.",
+            )
+        elif self.calls == 2:
+            output = SourceUnitExtractionOutput(
+                eligibility_category=SourceUnitEligibilityCategory.FINDING,
+                decision=SourceUnitDecision.EXPLICIT_EVENT,
+                events=(
+                    _event_item(
+                        exact_span=(
+                            "IL-4 inhibited FOXP3 expression."
+                            if self.repair_succeeds
+                            else "IL-4 inhibited another missing protein."
+                        ),
+                    ),
+                ),
+                reasoning="The corrected complete item copies the source.",
+            )
+        else:
+            output = SourceUnitVerificationOutput.model_validate(
+                {
+                    "eligibility_category": "FINDING",
+                    "coverage_decision": "CANDIDATES_COMPLETE",
+                    "coverage_reasoning": "The corrected event covers the source.",
+                    "decisions": [_candidate_verification_payload()],
+                },
+            )
+        return SimpleNamespace(
+            output=output,
+            run_id=kwargs["run_id"],
+            seq=self.calls,
+            replayed=False,
+            response_id=f"resp_binding_repair_{self.calls}",
             response_output_items=(),
         )
 
@@ -297,6 +348,68 @@ def test_item_binding_preserves_valid_candidate_and_rejected_sibling() -> None:
     assert result.accepted[0].source_start == source.index("IL-4")
     assert len(result.rejected) == 1
     assert result.rejected[0].disposition.value == "EXACT_SPAN_MISSING"
+
+
+@pytest.mark.asyncio
+async def test_agent_binding_repair_is_bounded_audited_and_fail_closed() -> None:
+    unit = enumerate_source_units(
+        case_id="binding-repair",
+        source_text="IL-4 inhibited FOXP3 expression.",
+    )[0]
+    client = _BindingRepairSequenceClient()
+
+    result = await execute_source_unit_agents(
+        client=cast("FiniteSourceUnitModelClient", client),
+        tenant=object(),
+        model_id="openai/gpt-5.6-luna",
+        execution_namespace="binding-repair-regression",
+        unit=unit,
+        allow_binding_repair=True,
+    )
+
+    assert client.calls == 3
+    assert result.error_type is None
+    assert result.schema_retry_count == 1
+    assert len(result.observed_binding_rejections) == 1
+    assert result.unresolved_binding_rejections == ()
+    assert result.binding_rejection_count == 0
+    assert len(result.trusted) == 1
+    assert [record.attempt_role for record in result.records] == [
+        "primary",
+        "schema_retry",
+        "weak_review",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_agent_binding_repair_stops_after_one_unresolved_attempt() -> None:
+    unit = enumerate_source_units(
+        case_id="binding-repair-fail-closed",
+        source_text="IL-4 inhibited FOXP3 expression.",
+    )[0]
+    client = _BindingRepairSequenceClient(repair_succeeds=False)
+
+    result = await execute_source_unit_agents(
+        client=cast("FiniteSourceUnitModelClient", client),
+        tenant=object(),
+        model_id="openai/gpt-5.6-luna",
+        execution_namespace="binding-repair-fail-closed-regression",
+        unit=unit,
+        allow_binding_repair=True,
+    )
+
+    assert client.calls == 2
+    assert result.error_type == "RuntimeError"
+    assert result.schema_retry_count == 1
+    assert len(result.observed_binding_rejections) == 2
+    assert len(result.unresolved_binding_rejections) == 1
+    assert result.binding_rejection_count == 1
+    assert result.verified == ()
+    assert result.trusted == ()
+    assert [record.attempt_role for record in result.records] == [
+        "primary",
+        "schema_retry",
+    ]
 
 
 def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> None:
@@ -746,8 +859,11 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
     assert "every source-explicit antecedent" in prompts[0]
     assert "coreferential groups" in prompts[1]
     assert 'neutral cue such as "affects"' in prompts[0]
-    assert "mention_span must exactly equal" in prompts[0]
+    assert "leave mention_anchors empty" in prompts[0].casefold()
+    assert "mention_span exactly" in prompts[0]
     assert "appears more than once anywhere" in prompts[0]
+    assert "symmetric physical BINDING" in prompts[0]
+    assert "every binding participant must use THEME" in prompts[1]
     assert "competing occurrence lies outside exact_span" in prompts[0]
     assert "generic REGULATION duplicate" in prompts[0]
     assert "structure_decision" in prompts[1]

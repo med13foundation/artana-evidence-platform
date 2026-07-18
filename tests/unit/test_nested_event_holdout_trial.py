@@ -173,7 +173,9 @@ def _baseline_gate() -> NestedHoldoutGateInputs:
         outer_event_match_count=1,
         expert_link_match_count=1,
         complete_graph_match_count=1,
+        observed_binding_rejection_count=0,
         binding_rejection_count=0,
+        schema_retry_count=0,
         controlled_event_link_count=1,
         controlled_event_link_ambiguity_count=0,
         invalid_agent_output_count=0,
@@ -306,6 +308,8 @@ def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
         {"outer_event_match_count": 0},
         {"expert_link_match_count": 0},
         {"complete_graph_match_count": 0},
+        {"observed_binding_rejection_count": 1},
+        {"schema_retry_count": 2},
         {"controlled_event_link_count": 0},
         {"controlled_event_link_count": 2},
         {"controlled_event_link_ambiguity_count": 1},
@@ -316,6 +320,16 @@ def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
         assert not all(
             nested_holdout_gate_requirements(replace(baseline, **mutation)).values(),
         )
+
+    repaired = replace(
+        baseline,
+        observed_binding_rejection_count=1,
+        schema_retry_count=1,
+        extraction_provider_response_id_count=2,
+        distinct_provider_response_id_count=3,
+        verified_provider_receipt_count=3,
+    )
+    assert all(nested_holdout_gate_requirements(repaired).values())
 
 
 def test_selection_recomputes_frozen_holdout_when_corpus_is_available() -> None:

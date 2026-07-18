@@ -104,7 +104,9 @@ def build_nested_holdout_report(  # noqa: PLR0913
         outer_event_match_count=len(event_match.outer_inventory_ids),
         expert_link_match_count=event_match.expert_link_match_count,
         complete_graph_match_count=event_match.complete_graph_match_count,
+        observed_binding_rejection_count=len(agent_run.observed_binding_rejections),
         binding_rejection_count=agent_run.binding_rejection_count,
+        schema_retry_count=agent_run.schema_retry_count,
         controlled_event_link_count=len(agent_run.controlled_event_links),
         controlled_event_link_ambiguity_count=len(
             agent_run.controlled_event_link_ambiguities
@@ -172,6 +174,12 @@ def build_nested_holdout_report(  # noqa: PLR0913
                 "verification": candidate.verification.model_dump(mode="json"),
             }
             for candidate in agent_run.verified
+        ],
+        "observed_binding_rejections": [
+            rejection.as_json() for rejection in agent_run.observed_binding_rejections
+        ],
+        "unresolved_binding_rejections": [
+            rejection.as_json() for rejection in agent_run.unresolved_binding_rejections
         ],
         "controlled_event_links": [
             link.as_json() for link in agent_run.controlled_event_links
