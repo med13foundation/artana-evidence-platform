@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Final
 
-CLAIM_INVENTORY_PROMPT_VERSION: Final = "document_extraction.claim_inventory.v14"
+CLAIM_INVENTORY_PROMPT_VERSION: Final = "document_extraction.claim_inventory.v15"
 CLAIM_INVENTORY_COMPLETENESS_PROMPT_VERSION: Final = (
     "document_extraction.claim_inventory_completeness.v15"
 )
@@ -20,7 +20,7 @@ CLAIM_FRAME_PIPELINE_COMPONENT_PROMPT_VERSIONS: Final = (
     CLAIM_FRAMING_PROMPT_VERSION,
 )
 CLAIM_FRAME_PIPELINE_PROMPT_VERSION: Final = (
-    "document_extraction.claim_pipeline.v20:"
+    "document_extraction.claim_pipeline.v21:"
     + "+".join(
         version.removeprefix("document_extraction.")
         for version in CLAIM_FRAME_PIPELINE_COMPONENT_PROMPT_VERSIONS

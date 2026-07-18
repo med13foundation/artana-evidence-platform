@@ -157,7 +157,7 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v20:claim_inventory.v14+"
+        "document_extraction.claim_pipeline.v21:claim_inventory.v15+"
         "claim_inventory_completeness.v15+claim_inventory_recovery.v11+"
         "claim_framing.v7"
     )
@@ -167,14 +167,17 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     normalized_prompt = CLAIM_INVENTORY_SYSTEM_PROMPT.casefold()
 
     assert "preserve the outer control" in normalized_prompt
-    assert "controlled event or process as biological_process" in normalized_prompt
+    assert "controlled biological_process as theme" in normalized_prompt
     assert "separate gene_or_protein arguments" in normalized_prompt
     assert "must not survive only as free text" in normalized_prompt
     assert "agent is not a substitute for cause" in normalized_prompt
     assert "cytokines, growth factors" in normalized_prompt
     assert "not as a generic label for an administered protein" in normalized_prompt
     assert "inventory it as a separate sibling event" in normalized_prompt
-    assert "outer theme does not replace the inner event" in normalized_prompt
+    assert "separate sibling event whose own arguments" in normalized_prompt
+    assert "do not duplicate an inner participant on the outer event" in (
+        normalized_prompt
+    )
     assert "include the complete contiguous span covering both clauses" in (
         normalized_prompt
     )
@@ -186,6 +189,9 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     completeness_prompt = CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT.casefold()
     assert "controlled event as a distinct sibling claim" in completeness_prompt
     assert "outer process argument does not replace the inner event" in (
+        completeness_prompt
+    )
+    assert "inner event owns its participants and their inner roles" in (
         completeness_prompt
     )
     assert "directional language is outside exact_span" in completeness_prompt
@@ -2753,6 +2759,113 @@ async def test_non_positive_claims_over_limit_are_routed_without_loss() -> None:
     assert (
         routed.overflow_candidates[0].claim_frame.epistemic_status.value == "UNCERTAIN"
     )
+
+
+@pytest.mark.asyncio
+async def test_nested_event_identity_is_preserved_and_binary_projection_is_review_only(
+) -> None:
+    text = "Runx deficiency reduced TGF-beta induction of Foxp3."
+    outer = {
+        "exact_span": text,
+        "relation_cue_span": "reduced",
+        "arguments": [
+            {
+                "role": "OTHER_ENTITY",
+                "event_role": "CAUSE",
+                "exact_span": "Runx deficiency",
+                "role_rationale": "The source states the outer regulator.",
+            },
+            {
+                "role": "BIOLOGICAL_PROCESS",
+                "event_role": "THEME",
+                "exact_span": "TGF-beta induction of Foxp3",
+                "role_rationale": "The source states the controlled process.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "NEGATIVE_REGULATION",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source states an outer control event.",
+    }
+    inner = {
+        "exact_span": "TGF-beta induction of Foxp3",
+        "relation_cue_span": "induction",
+        "arguments": [
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "CAUSE",
+                "exact_span": "TGF-beta",
+                "role_rationale": "The source states the inner regulator.",
+            },
+            {
+                "role": "GENE_OR_PROTEIN",
+                "event_role": "THEME",
+                "exact_span": "Foxp3",
+                "role_rationale": "The source states the inner theme.",
+            },
+        ],
+        "source_locator": "normalized_extraction_text",
+        "claim_kind": "SCIENTIFIC_FINDING",
+        "event_type": "POSITIVE_REGULATION",
+        "polarity": "SUPPORT",
+        "epistemic_status": "ASSERTED",
+        "inventory_rationale": "The source states the controlled inner event.",
+    }
+    runner = ScriptedStepRunner(
+        (
+            {"claims": [outer, inner]},
+            _complete_inventory(),
+            _framed_relation(
+                sentence=text,
+                subject="Runx deficiency",
+                relation_type="INHIBITS",
+                object_="TGF-beta induction of Foxp3",
+            ),
+            _framed_relation(
+                sentence="TGF-beta induction of Foxp3",
+                subject="TGF-beta",
+                relation_type="ACTIVATES",
+                object_="Foxp3",
+            ),
+        ),
+    )
+
+    result = await _run_pipeline(text=text, runner=runner)
+    routed = _route_agent_extraction_result(
+        extraction_attempt=result,
+        quality_filter_result=RelationCandidateQualityFilterResult(
+            candidates=tuple(result.candidates),
+            filtered_candidates=(),
+        ),
+        pruning_result=RelationSpecificityPruningResult(
+            candidates=tuple(result.candidates),
+            pruned_candidates=(),
+        ),
+        max_relations=10,
+        normalized_text_length=len(text),
+    )
+
+    assert result.semantic_inventory_complete is True
+    assert result.controlled_event_link_ambiguities == ()
+    assert len(result.controlled_event_links) == 1
+    assert result.controlled_event_links[0].controller_inventory_id == (
+        result.claim_lineage[0].inventory_id
+    )
+    assert result.controlled_event_links[0].controlled_inventory_id == (
+        result.claim_lineage[1].inventory_id
+    )
+    assert result.candidates[0].review_status == "review_only"
+    assert "nested_event_projection_pending" in (
+        result.candidates[0].review_reason_codes
+    )
+    assert result.claim_lineage[0].candidates[0] == result.candidates[0]
+    assert routed[0].review_status == "review_only"
+    assert "nested_event_projection_pending" in routed[0].review_reason_codes
+    assert routed[0].trusted_evidence_eligible is False
+    assert "nested_event_projection_pending" not in routed[1].review_reason_codes
+    assert len(routed.controlled_event_links) == 1
 
 
 @pytest.mark.asyncio

@@ -35,6 +35,9 @@ class GeneralizationGateInputs:
     trusted_candidate_count: int
     expert_core_event_match_count: int
     binding_rejection_count: int
+    required_controlled_event_link_count: int
+    controlled_event_link_count: int
+    controlled_event_link_ambiguity_count: int
     invalid_agent_output_count: int
     unidentified_provider_attempt_count: int
     extraction_provider_response_id_count: int
@@ -90,6 +93,14 @@ def generalization_gate_requirements(
         ),
         "sealed_expert_core_recovered": inputs.expert_core_event_match_count == 1,
         "binding_rejection_zero": inputs.binding_rejection_count == 0,
+        "required_controlled_event_links_recovered": (
+            inputs.required_controlled_event_link_count > 0
+            and inputs.controlled_event_link_count
+            == inputs.required_controlled_event_link_count
+        ),
+        "controlled_event_link_ambiguity_zero": (
+            inputs.controlled_event_link_ambiguity_count == 0
+        ),
         "invalid_agent_output_zero": inputs.invalid_agent_output_count == 0,
         "provider_lineage_complete": (
             inputs.unidentified_provider_attempt_count == 0

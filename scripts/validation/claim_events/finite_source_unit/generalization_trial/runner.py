@@ -326,6 +326,11 @@ def _build_report(  # noqa: PLR0913
             trusted_events,
         ),
         binding_rejection_count=agent_run.binding_rejection_count,
+        required_controlled_event_link_count=1,
+        controlled_event_link_count=len(agent_run.controlled_event_links),
+        controlled_event_link_ambiguity_count=len(
+            agent_run.controlled_event_link_ambiguities
+        ),
         invalid_agent_output_count=invalid_count,
         unidentified_provider_attempt_count=unidentified_count,
         extraction_provider_response_id_count=len(extraction_ids),
@@ -391,6 +396,13 @@ def _build_report(  # noqa: PLR0913
                 "verification": candidate.verification.model_dump(mode="json"),
             }
             for candidate in agent_run.verified
+        ],
+        "controlled_event_links": [
+            link.as_json() for link in agent_run.controlled_event_links
+        ],
+        "controlled_event_link_ambiguities": [
+            ambiguity.as_json()
+            for ambiguity in agent_run.controlled_event_link_ambiguities
         ],
         "trusted_events": trusted_events,
         "sealed_minimum_expert_events": [

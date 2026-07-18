@@ -79,6 +79,12 @@ async def discover_relation_candidates_strict(
     inventory_incompleteness = tuple(
         getattr(llm_candidates, "inventory_incompleteness", ()),
     )
+    controlled_event_links = tuple(
+        getattr(llm_candidates, "controlled_event_links", ()),
+    )
+    controlled_event_link_ambiguities = tuple(
+        getattr(llm_candidates, "controlled_event_link_ambiguities", ()),
+    )
 
     if routing_status == "semantic_incomplete":
         return candidates, candidate_semantic_incomplete(
@@ -88,6 +94,8 @@ async def discover_relation_candidates_strict(
             model_attempt_records=model_attempt_records,
             inventory_binding_rejections=inventory_binding_rejections,
             inventory_incompleteness=inventory_incompleteness,
+            controlled_event_links=controlled_event_links,
+            controlled_event_link_ambiguities=controlled_event_link_ambiguities,
             llm_extraction_chunk_count=llm_extraction_chunk_count,
             llm_extraction_text_char_count=llm_extraction_text_char_count,
         )
@@ -105,6 +113,8 @@ async def discover_relation_candidates_strict(
             raw_agent_outputs=raw_agent_outputs,
             model_attempt_records=model_attempt_records,
             inventory_binding_rejections=inventory_binding_rejections,
+            controlled_event_links=controlled_event_links,
+            controlled_event_link_ambiguities=controlled_event_link_ambiguities,
         )
 
     return [], candidate_llm_empty(
@@ -118,6 +128,8 @@ async def discover_relation_candidates_strict(
         raw_agent_outputs=raw_agent_outputs,
         model_attempt_records=model_attempt_records,
         inventory_binding_rejections=inventory_binding_rejections,
+        controlled_event_links=controlled_event_links,
+        controlled_event_link_ambiguities=controlled_event_link_ambiguities,
     )
 
 

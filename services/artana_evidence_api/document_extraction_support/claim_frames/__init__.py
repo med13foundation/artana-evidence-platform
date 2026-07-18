@@ -28,6 +28,12 @@ from artana_evidence_api.document_extraction_support.claim_frames.contracts impo
     is_positive_projection_eligible,
     replace_claim_frame_projection,
 )
+from artana_evidence_api.document_extraction_support.claim_frames.controlled_events import (
+    BoundControlledEventLink,
+    ControlledEventLinkAmbiguity,
+    ControlledEventLinkResult,
+    link_controlled_events,
+)
 from artana_evidence_api.document_extraction_support.claim_frames.event_types import (
     ClaimEventRole,
     ClaimEventType,
@@ -86,6 +92,7 @@ __all__ = [
     "BoundClaimArgument",
     "BoundClaimInventoryItem",
     "BoundClaimMention",
+    "BoundControlledEventLink",
     "BoundInventoryCompletenessReview",
     "ClaimArgument",
     "ClaimArgumentRole",
@@ -108,6 +115,8 @@ __all__ = [
     "ClaimMentionAnchor",
     "ClaimQualifier",
     "ClaimSourceMeasurement",
+    "ControlledEventLinkAmbiguity",
+    "ControlledEventLinkResult",
     "EpistemicStatus",
     "InventoryCompletenessDecision",
     "InventoryEpistemicStatus",
@@ -135,6 +144,7 @@ __all__ = [
     "coalesce_long_sentence_chunks",
     "derive_claim_local_source_region",
     "is_positive_projection_eligible",
+    "link_controlled_events",
     "merge_bound_claim_inventories",
     "merge_claim_inventory_binding_rejections",
     "partition_bound_claim_inventory",

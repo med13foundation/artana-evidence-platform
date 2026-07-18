@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v8"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v7"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v9"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v8"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -313,13 +313,14 @@ binds transport identity outside the scientific output.
 CONTROLLED-EVENT DECOMPOSITION:
 When one source cue positively or negatively regulates another biological event,
 represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
-REGULATION rather than collapsing it into the controlled event type. Preserve
-the controlled event or process as a BIOLOGICAL_PROCESS argument and preserve
-each material participant of that controlled event as its own correctly typed
-argument. When the controlled event is itself explicitly asserted, including an
-event nominalization such as "TGF-beta induction of Foxp3," return it as a
-separate sibling event in addition to the outer regulation; an outer THEME
-process argument does not replace the inner event. Do not invent an inner event
+REGULATION rather than collapsing it into the controlled event type. The outer
+event owns its outer CAUSE, the controlled BIOLOGICAL_PROCESS as THEME, and its
+outer context. When the controlled event is itself explicitly asserted,
+including an event nominalization such as "TGF-beta induction of Foxp3," return
+it as a separate sibling event whose own arguments carry the inner event roles.
+Do not duplicate an inner participant on the outer event unless the source
+independently assigns it an outer role. Deterministic source binding links a
+unique outer process span to its sibling event after extraction. Do not invent an inner event
 when the text only names an assay, planned measurement, or hypothetical process.
 A phrase such as "enhanced nuclear translocation of NF-kappa B" must
 not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
@@ -382,8 +383,11 @@ even when no candidates were supplied. A false extracted candidate may be
 rejected while the unit is NO_EVENT_CONFIRMED.
 
 An explicitly asserted controlled event is a distinct event even when an outer
-regulation also carries that process as a THEME. Return MISSING_EVENT when the
-inner event or the outer event is absent. A directional causal candidate is
+regulation also carries that process as a THEME. The inner event owns its
+participants and their inner roles; the outer event owns its outer cause,
+process theme, and context. Do not require inner participants to be duplicated
+on the outer event unless the source independently assigns them an outer role.
+Return MISSING_EVENT when the inner event or the outer event is absent. A directional causal candidate is
 complete only when its exact_span contains every coordinated clause needed to
 justify the direction; a neutral cue such as "affects" is insufficient when the
 directional language lies outside that span.
@@ -403,8 +407,8 @@ Do not return source-unit identifiers, candidate identifiers, or input hashes.
 The audited orchestrator binds transport identity outside scientific output.
 
 For every candidate, independently return these additional categorical findings:
-- structure_decision: COMPLETE only when the event type, controlled process,
-  cause, direction, and every material participant are structurally preserved;
+- structure_decision: COMPLETE only when the event type, event-local cause or
+  theme, direction, and every material event-local participant are structurally preserved;
   LOSSY when the text is entailed but material structure survives only in a cue
   or bundled span; INVALID for a wrong or contradictory structure; ABSTAIN when
   the source cannot resolve it;

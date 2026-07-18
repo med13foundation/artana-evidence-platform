@@ -328,6 +328,13 @@ def _route_agent_extraction_result(
             rejection.as_json()
             for rejection in extraction_attempt.inventory_binding_rejections
         ),
+        controlled_event_links=tuple(
+            link.as_json() for link in extraction_attempt.controlled_event_links
+        ),
+        controlled_event_link_ambiguities=tuple(
+            ambiguity.as_json()
+            for ambiguity in extraction_attempt.controlled_event_link_ambiguities
+        ),
     )
 
 
@@ -637,6 +644,12 @@ async def discover_relation_candidates(  # noqa: PLR0911
     inventory_incompleteness = tuple(
         getattr(llm_candidates, "inventory_incompleteness", ()),
     )
+    controlled_event_links = tuple(
+        getattr(llm_candidates, "controlled_event_links", ()),
+    )
+    controlled_event_link_ambiguities = tuple(
+        getattr(llm_candidates, "controlled_event_link_ambiguities", ()),
+    )
 
     if routing_status == "semantic_incomplete":
         return (
@@ -648,6 +661,10 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 model_attempt_records=model_attempt_records,
                 inventory_binding_rejections=inventory_binding_rejections,
                 inventory_incompleteness=inventory_incompleteness,
+                controlled_event_links=controlled_event_links,
+                controlled_event_link_ambiguities=(
+                    controlled_event_link_ambiguities
+                ),
                 llm_extraction_chunk_count=llm_extraction_chunk_count,
                 llm_extraction_text_char_count=llm_extraction_text_char_count,
             ),
@@ -668,6 +685,10 @@ async def discover_relation_candidates(  # noqa: PLR0911
                 raw_agent_outputs=raw_agent_outputs,
                 model_attempt_records=model_attempt_records,
                 inventory_binding_rejections=inventory_binding_rejections,
+                controlled_event_links=controlled_event_links,
+                controlled_event_link_ambiguities=(
+                    controlled_event_link_ambiguities
+                ),
             ),
         )
 
@@ -690,6 +711,8 @@ async def discover_relation_candidates(  # noqa: PLR0911
             raw_agent_outputs=raw_agent_outputs,
             model_attempt_records=model_attempt_records,
             inventory_binding_rejections=inventory_binding_rejections,
+            controlled_event_links=controlled_event_links,
+            controlled_event_link_ambiguities=controlled_event_link_ambiguities,
         ),
     )
 
