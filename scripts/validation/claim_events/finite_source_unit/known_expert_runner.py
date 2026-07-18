@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import json
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -13,16 +11,7 @@ from typing import TYPE_CHECKING, Final
 from uuid import uuid4
 
 from artana_evidence_api.document_extraction import normalize_text_document
-from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
-    start_model_attempt_audit,
-    stop_model_attempt_audit,
-)
 
-from scripts.validation.claim_events.finite_source_unit.contracts import (
-    EntailmentDecision,
-    SourceUnitExtractionOutput,
-    SourceUnitVerificationOutput,
-)
 from scripts.validation.claim_events.finite_source_unit.known_expert_gate import (
     KnownExpertUnitGateInputs,
     known_expert_unit_gate_requirements,
@@ -31,10 +20,13 @@ from scripts.validation.claim_events.finite_source_unit.runner import (
     receipt_expectations_for_finite_source_records,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
-    FiniteSourceUnitModelClient,
     as_model_client,
-    extract_source_unit,
-    verify_source_unit_candidates,
+)
+from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
+    execute_source_unit_agents,
+    model_json,
+    provider_response_ids,
+    sha256_json,
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     FrozenSourceUnit,
@@ -53,13 +45,6 @@ from scripts.validation.claim_frames.provider_receipts import (
 )
 
 if TYPE_CHECKING:
-    from artana_evidence_api.document_extraction_support.claim_frames import (
-        BoundClaimInventoryItem,
-    )
-    from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
-        ModelAttemptAuditRecord,
-    )
-
     from scripts.validation.claim_events.contracts import (
         NaryClaimEvent,
         NaryClaimFixture,
@@ -87,17 +72,6 @@ class _SingleEventCase:
 @dataclass(frozen=True, slots=True)
 class _SingleEventFixture:
     cases: tuple[_SingleEventCase, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class _AgentRunEvidence:
-    extraction: SourceUnitExtractionOutput | None
-    verification: SourceUnitVerificationOutput | None
-    accepted: tuple[BoundClaimInventoryItem, ...]
-    extracted_candidate_count: int
-    binding_rejection_count: int
-    records: tuple[ModelAttemptAuditRecord, ...]
-    error_type: str | None
 
 
 def run_known_expert_source_unit_pilot(
@@ -156,7 +130,7 @@ async def _run_known_expert_source_unit(
 ) -> dict[str, object]:
     client, tenant, execution_model_id, kernel, store = build_tg04_runtime(_MODEL_ID)
     try:
-        agent_run = await _execute_agents(
+        agent_run = await execute_source_unit_agents(
             client=as_model_client(client),
             tenant=tenant,
             model_id=execution_model_id,
@@ -186,8 +160,8 @@ async def _run_known_expert_source_unit(
     receipts = verify_provider_receipts(
         expectations, OpenAIProviderReceiptVerifier.from_environment()
     )
-    extraction_ids = _provider_response_ids(agent_run.records, "primary")
-    verification_ids = _provider_response_ids(agent_run.records, "weak_review")
+    extraction_ids = provider_response_ids(agent_run.records, "primary")
+    verification_ids = provider_response_ids(agent_run.records, "weak_review")
     inputs = KnownExpertUnitGateInputs(
         agent_execution_complete=(
             agent_run.extraction is not None
@@ -241,8 +215,8 @@ async def _run_known_expert_source_unit(
             "text": unit.text,
         },
         "agent_outputs": {
-            "extraction": _model_json(agent_run.extraction),
-            "verification": _model_json(agent_run.verification),
+            "extraction": model_json(agent_run.extraction),
+            "verification": model_json(agent_run.verification),
             "error_type": agent_run.error_type,
         },
         "predicted_events": events,
@@ -263,86 +237,8 @@ async def _run_known_expert_source_unit(
             "persistence_authorized": False,
         },
     }
-    report["report_sha256"] = _sha256_json(report)
+    report["report_sha256"] = sha256_json(report)
     return report
-
-
-async def _execute_agents(
-    *,
-    client: FiniteSourceUnitModelClient,
-    tenant: object,
-    model_id: str,
-    execution_namespace: str,
-    unit: FrozenSourceUnit,
-) -> _AgentRunEvidence:
-    audit = start_model_attempt_audit(evidence_unit_id=unit.unit_id)
-    extraction_output: SourceUnitExtractionOutput | None = None
-    verification_output: SourceUnitVerificationOutput | None = None
-    accepted: tuple[BoundClaimInventoryItem, ...] = ()
-    extracted_candidate_count = binding_rejection_count = 0
-    error_type: str | None = None
-    try:
-        extraction = await extract_source_unit(
-            client=client,
-            tenant=tenant,
-            model_id=model_id,
-            execution_namespace=execution_namespace,
-            unit=unit,
-        )
-        extraction_output = extraction.value.output
-        extracted_candidate_count = len(extraction.value.accepted)
-        binding_rejection_count = len(extraction.value.rejected)
-        verification = await verify_source_unit_candidates(
-            client=client,
-            tenant=tenant,
-            model_id=model_id,
-            execution_namespace=execution_namespace,
-            unit=unit,
-            candidates=extraction.value.accepted,
-        )
-        verification_output = verification.parsed
-        accepted = tuple(
-            candidate.claim
-            for candidate in verification.value
-            if candidate.verification.decision is EntailmentDecision.ENTAILED
-        )
-    except Exception as exc:  # noqa: BLE001 - retain categorical failure evidence
-        error_type = type(exc).__name__
-    finally:
-        stop_model_attempt_audit(audit)
-    return _AgentRunEvidence(
-        extraction=extraction_output,
-        verification=verification_output,
-        accepted=accepted,
-        extracted_candidate_count=extracted_candidate_count,
-        binding_rejection_count=binding_rejection_count,
-        records=tuple(audit.records),
-        error_type=error_type,
-    )
-
-
-def _provider_response_ids(
-    records: tuple[ModelAttemptAuditRecord, ...], pass_role: str
-) -> set[str]:
-    return {
-        record.provider_response_id
-        for record in records
-        if record.pass_role == pass_role and record.provider_response_id is not None
-    }
-
-
-def _model_json(
-    model: SourceUnitExtractionOutput | SourceUnitVerificationOutput | None,
-) -> dict[str, object] | None:
-    return None if model is None else model.model_dump(mode="json")
-
-
-def _sha256_json(value: object) -> str:
-    return hashlib.sha256(
-        json.dumps(
-            value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
-        ).encode("utf-8")
-    ).hexdigest()
 
 
 __all__ = ["run_known_expert_source_unit_pilot", "select_known_expert_unit"]
