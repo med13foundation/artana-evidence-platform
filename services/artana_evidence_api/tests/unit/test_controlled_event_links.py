@@ -8,6 +8,7 @@ import hashlib
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimInventoryItem,
     bind_claim_inventory,
+    bind_claim_inventory_items,
     link_controlled_events,
 )
 
@@ -258,3 +259,204 @@ def test_source_distinct_coordinated_inner_events_form_fan_out_links() -> None:
         bound[1].inventory_id,
         bound[2].inventory_id,
     }
+
+
+def test_agent_declared_anaphoric_process_referent_links_sibling_events() -> None:
+    source = (
+        "ZEB blocks the activity of c-Myb and Ets individually, but together the "
+        "factors synergize to resist this repression."
+    )
+    inner_cmyb = _item(
+        exact_span="ZEB blocks the activity of c-Myb and Ets individually",
+        cue="blocks",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "ZEB"),
+            _argument("GENE_OR_PROTEIN", "THEME", "c-Myb"),
+        ],
+    )
+    inner_ets = _item(
+        exact_span="ZEB blocks the activity of c-Myb and Ets individually",
+        cue="blocks",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "ZEB"),
+            _argument("GENE_OR_PROTEIN", "THEME", "Ets"),
+        ],
+    )
+    outer = _item(
+        exact_span="together the factors synergize to resist this repression",
+        cue="synergize to resist",
+        event_type="NEGATIVE_REGULATION",
+        arguments=[
+            {
+                **_argument("GENE_OR_PROTEIN", "CAUSE", "the factors"),
+                "referent_anchors": [
+                    {
+                        "mention_span": "c-Myb",
+                        "left_context": "the activity of ",
+                        "right_context": " and Ets individually",
+                    },
+                    {
+                        "mention_span": "Ets",
+                        "left_context": "the activity of c-Myb and ",
+                        "right_context": " individually",
+                    },
+                ],
+            },
+            {
+                **_argument("BIOLOGICAL_PROCESS", "THEME", "this repression"),
+                "referent_anchors": [
+                    {
+                        "mention_span": (
+                            "ZEB blocks the activity of c-Myb and Ets individually"
+                        ),
+                        "left_context": "",
+                        "right_context": ", but together",
+                    },
+                ],
+            },
+        ],
+    )
+
+    bound = bind_claim_inventory(
+        (inner_cmyb, inner_ets, outer),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+    result = link_controlled_events(bound)
+
+    assert [mention.exact_span for mention in bound[2].bound_arguments[0].referent_mentions] == [
+        "c-Myb",
+        "Ets",
+    ]
+    assert result.ambiguities == ()
+    assert len(result.links) == 2
+    assert {link.controlled_inventory_id for link in result.links} == {
+        bound[0].inventory_id,
+        bound[1].inventory_id,
+    }
+
+
+def test_referent_anchors_change_claim_identity_without_rewriting_surface() -> None:
+    source = "c-Myb acts, and the factor responds."
+    without_referent = _item(
+        exact_span="the factor responds",
+        cue="responds",
+        event_type="TREATMENT_RESPONSE",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "THEME", "the factor"),
+            _argument("OTHER_ENTITY", "CONTEXT", "responds"),
+        ],
+    )
+    payload = without_referent.model_dump(mode="json")
+    payload["arguments"][0]["referent_anchors"] = [
+        {
+            "mention_span": "c-Myb",
+            "left_context": "",
+            "right_context": " acts",
+        },
+    ]
+    with_referent = ClaimInventoryItem.model_validate(payload)
+
+    first = bind_claim_inventory(
+        (without_referent,),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )[0]
+    second = bind_claim_inventory(
+        (with_referent,),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )[0]
+
+    assert first.inventory_id != second.inventory_id
+    assert second.item.arguments[0].exact_span == "the factor"
+    assert second.bound_arguments[0].referent_mentions[0].exact_span == "c-Myb"
+
+
+def test_referent_anchor_order_does_not_change_claim_identity() -> None:
+    source = "c-Myb and Ets act, and the factors respond."
+    payload = _item(
+        exact_span="the factors respond",
+        cue="respond",
+        event_type="TREATMENT_RESPONSE",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "THEME", "the factors"),
+            _argument("OTHER_ENTITY", "CONTEXT", "respond"),
+        ],
+    ).model_dump(mode="json")
+    referents = [
+        {
+            "mention_span": "c-Myb",
+            "left_context": "",
+            "right_context": " and Ets act",
+        },
+        {
+            "mention_span": "Ets",
+            "left_context": "c-Myb and ",
+            "right_context": " act",
+        },
+    ]
+    payload["arguments"][0]["referent_anchors"] = referents
+    first = ClaimInventoryItem.model_validate(payload)
+    payload["arguments"][0]["referent_anchors"] = list(reversed(referents))
+    second = ClaimInventoryItem.model_validate(payload)
+
+    bound_first = bind_claim_inventory(
+        (first,),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )[0]
+    bound_second = bind_claim_inventory(
+        (second,),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )[0]
+
+    assert bound_first.inventory_id == bound_second.inventory_id
+
+
+def test_overlapping_or_missing_referent_anchor_fails_closed() -> None:
+    source = "the factor responds."
+    payload = _item(
+        exact_span="the factor responds",
+        cue="responds",
+        event_type="TREATMENT_RESPONSE",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "THEME", "the factor"),
+            _argument("OTHER_ENTITY", "CONTEXT", "responds"),
+        ],
+    ).model_dump(mode="json")
+    payload["arguments"][0]["referent_anchors"] = [
+        {
+            "mention_span": "factor",
+            "left_context": "the ",
+            "right_context": " responds",
+        },
+    ]
+    overlapping = ClaimInventoryItem.model_validate(payload)
+    payload["arguments"][0]["referent_anchors"] = [
+        {
+            "mention_span": "c-Myb",
+            "left_context": "",
+            "right_context": " acts",
+        },
+    ]
+    missing = ClaimInventoryItem.model_validate(payload)
+
+    for item in (overlapping, missing):
+        result = bind_claim_inventory_items(
+            (item,),
+            source_text=source,
+            source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+            chunk_index=0,
+        )
+        assert result.accepted == ()
+        assert len(result.rejected) == 1
+        assert result.rejected[0].disposition.value == "ARGUMENT_MENTION_INVALID"

@@ -493,11 +493,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory.v3",
         schema_names=("LLMClaimInventoryResult",),
-        shape_hash="116d85c696bb904f7e9f7539a048816686054839ea10e594f2ebc7f2ec75a0e2",
+        shape_hash="582029e8aacc68fdb0cd742401779c2f71f87594164af35aa634dcdc8df7efdd",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v16",),
+        prompt_identifiers=("document_extraction.claim_inventory.v17",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -557,11 +557,11 @@ _POLICIES = (
     AgentOutputSchemaPolicy(
         schema_id="document_extraction.claim_inventory_completeness.v3",
         schema_names=("ClaimInventoryCompletenessReview",),
-        shape_hash="d7aacf725be8407731706a9fc24d456c339076be1638a3728afb5fd079b6641b",
+        shape_hash="bb5999c5796de8b610a0a958da187e7eed6828bba160cb0f1fc28cff76ab567e",
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v15",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v17",),
         categorical_fields=(
             _category(
                 "$.decision",

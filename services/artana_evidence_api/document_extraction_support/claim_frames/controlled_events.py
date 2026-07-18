@@ -111,7 +111,7 @@ def link_controlled_events(
                 and semantic_argument.event_role is ClaimEventRole.THEME
             ):
                 continue
-            for theme_mention in argument.mentions:
+            for theme_mention in (*argument.mentions, *argument.referent_mentions):
                 candidates = tuple(
                     candidate
                     for candidate in inventory

@@ -91,10 +91,21 @@ class ClaimInventoryArgument(ClaimArgument):
         default_factory=tuple,
         max_length=16,
     )
+    referent_anchors: tuple[ClaimMentionAnchor, ...] = Field(
+        default_factory=tuple,
+        max_length=16,
+    )
 
     @field_validator("mention_anchors", mode="before")
     @classmethod
     def freeze_json_mention_anchors(cls, value: object) -> object:
+        if isinstance(value, list):
+            return tuple(value)
+        return value
+
+    @field_validator("referent_anchors", mode="before")
+    @classmethod
+    def freeze_json_referent_anchors(cls, value: object) -> object:
         if isinstance(value, list):
             return tuple(value)
         return value
@@ -112,6 +123,30 @@ class ClaimInventoryArgument(ClaimArgument):
         if len(set(identities)) != len(identities):
             raise ValueError("claim inventory mention anchors must be unique")
         return value
+
+    @field_validator("referent_anchors")
+    @classmethod
+    def require_unique_referent_anchors(
+        cls,
+        value: tuple[ClaimMentionAnchor, ...],
+    ) -> tuple[ClaimMentionAnchor, ...]:
+        identities = tuple(
+            (anchor.mention_span, anchor.left_context, anchor.right_context)
+            for anchor in value
+        )
+        if len(set(identities)) != len(identities):
+            raise ValueError("claim inventory referent anchors must be unique")
+        return value
+
+    @model_validator(mode="after")
+    def require_distinct_anaphoric_referents(self) -> ClaimInventoryArgument:
+        if any(
+            anchor.mention_span == self.exact_span for anchor in self.referent_anchors
+        ):
+            raise ValueError(
+                "referent anchors must identify antecedents, not repeat the argument",
+            )
+        return self
 
 
 class ClaimInventoryItem(BaseModel):
@@ -167,6 +202,7 @@ class BoundClaimArgument:
     argument: ClaimArgument
     primary_mention: BoundClaimMention
     mentions: tuple[BoundClaimMention, ...]
+    referent_mentions: tuple[BoundClaimMention, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -533,6 +569,12 @@ def bind_claim_inventory_item_at_source(
                     mentions=mentions,
                 ),
                 mentions=mentions,
+                referent_mentions=_bind_inventory_argument_referents(
+                    argument=argument,
+                    argument_mentions=mentions,
+                    source_text=source_text,
+                    source_start_offset=source_start_offset,
+                ),
             ),
         )
     return BoundClaimInventoryItem(
@@ -631,6 +673,63 @@ def _bind_inventory_trigger(
     return mentions[0]
 
 
+def _bind_inventory_argument_referents(
+    *,
+    argument: ClaimInventoryArgument,
+    argument_mentions: tuple[BoundClaimMention, ...],
+    source_text: str,
+    source_start_offset: int,
+) -> tuple[BoundClaimMention, ...]:
+    referents: list[BoundClaimMention] = []
+    try:
+        for anchor in argument.referent_anchors:
+            (mention,) = bind_source_mentions(
+                canonical_span=anchor.mention_span,
+                source_span=source_text,
+                anchors=(anchor,),
+                source_start_offset=source_start_offset,
+            )
+            _require_referent_outside_argument(mention, argument_mentions)
+            _append_unique_referent(referents, mention)
+    except MentionBindingError as exc:
+        raise ClaimInventoryBindingError(
+            f"claim inventory referent binding failed: {exc}",
+            disposition=ClaimInventoryBindingDisposition.ARGUMENT_MENTION_INVALID,
+        ) from exc
+    return tuple(sorted(referents, key=lambda mention: mention.source_start))
+
+
+def _mentions_overlap(
+    first: BoundClaimMention,
+    second: BoundClaimMention,
+) -> bool:
+    return first.source_start < second.source_end and second.source_start < first.source_end
+
+
+def _require_referent_outside_argument(
+    referent: BoundClaimMention,
+    argument_mentions: tuple[BoundClaimMention, ...],
+) -> None:
+    if any(
+        _mentions_overlap(referent, argument_mention)
+        for argument_mention in argument_mentions
+    ):
+        raise MentionBindingError(
+            "referent anchor overlaps the anaphoric argument mention",
+        )
+
+
+def _append_unique_referent(
+    referents: list[BoundClaimMention],
+    mention: BoundClaimMention,
+) -> None:
+    if mention in referents:
+        raise MentionBindingError(
+            "referent anchors must identify distinct source mentions",
+        )
+    referents.append(mention)
+
+
 def _require_mentions_inside_claim(
     *,
     mentions: tuple[BoundClaimMention, ...],
@@ -693,6 +792,23 @@ def claim_inventory_identity(
                         "role": argument.role.value,
                         "event_role": argument.event_role.value,
                         "exact_span": argument.exact_span,
+                        **(
+                            {
+                                "referent_anchors": [
+                                    anchor.model_dump(mode="json")
+                                    for anchor in sorted(
+                                        argument.referent_anchors,
+                                        key=lambda item: (
+                                            item.mention_span,
+                                            item.left_context,
+                                            item.right_context,
+                                        ),
+                                    )
+                                ],
+                            }
+                            if argument.referent_anchors
+                            else {}
+                        ),
                     }
                     for argument in item.arguments
                 ),
