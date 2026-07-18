@@ -12,11 +12,6 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
     stop_model_attempt_audit,
 )
 
-from scripts.validation.claim_events.finite_source_unit.contracts import (
-    EntailmentDecision,
-    SourceUnitExtractionOutput,
-    SourceUnitVerificationOutput,
-)
 from scripts.validation.claim_events.finite_source_unit.service import (
     extract_source_unit,
     verify_source_unit_candidates,
@@ -30,6 +25,10 @@ if TYPE_CHECKING:
         ModelAttemptAuditRecord,
     )
 
+    from scripts.validation.claim_events.finite_source_unit.contracts import (
+        SourceUnitExtractionOutput,
+        SourceUnitVerificationOutput,
+    )
     from scripts.validation.claim_events.finite_source_unit.service import (
         FiniteSourceUnitModelClient,
     )
@@ -90,7 +89,7 @@ async def execute_source_unit_agents(
         accepted = tuple(
             candidate.claim
             for candidate in verification.value
-            if candidate.verification.decision is EntailmentDecision.ENTAILED
+            if candidate.verification.trusted_projection_eligible
         )
     except Exception as exc:  # noqa: BLE001 - retain categorical failure evidence
         error_type = type(exc).__name__

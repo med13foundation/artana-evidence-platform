@@ -21,7 +21,6 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 )
 
 from scripts.validation.claim_events.finite_source_unit.contracts import (
-    EntailmentDecision,
     SourceUnitCoverageDecision,
     SourceUnitEligibilityCategory,
     SourceUnitExtractionOutput,
@@ -191,9 +190,7 @@ async def _run_panel(
             empty_control_false_positive_count=(
                 score.metrics.empty_control_false_positive.count
             ),
-            negative_or_null_leakage_count=(
-                score.metrics.negative_null_leakage.count
-            ),
+            negative_or_null_leakage_count=(score.metrics.negative_null_leakage.count),
             epistemic_escalation_count=score.metrics.epistemic_escalation.count,
             binding_rejection_count=binding_rejections,
             invalid_agent_output_count=invalid_count,
@@ -287,7 +284,9 @@ async def _execute_case(
             except Exception as exc:  # noqa: BLE001 - preserve failed run evidence
                 executable = False
                 coverage_confirmed = False
-                unit_evidence.append(_failed_unit_evidence(unit.unit_id, "extraction", exc))
+                unit_evidence.append(
+                    _failed_unit_evidence(unit.unit_id, "extraction", exc)
+                )
                 continue
 
             extracted = extraction.value
@@ -296,9 +295,7 @@ async def _execute_case(
                 "unit_id": unit.unit_id,
                 "source_start": unit.source_start,
                 "source_end": unit.source_end,
-                "eligibility_category": (
-                    extracted.output.eligibility_category.value
-                ),
+                "eligibility_category": (extracted.output.eligibility_category.value),
                 "decision": extracted.output.decision.value,
                 "accepted_candidate_ids": [
                     candidate.inventory_id for candidate in extracted.accepted
@@ -384,7 +381,9 @@ def receipt_expectations_for_finite_source_records(
             unidentified_count += 1
             continue
         if record.provider_response_id in seen:
-            raise RuntimeError("finite source-unit provider response IDs must be unique")
+            raise RuntimeError(
+                "finite source-unit provider response IDs must be unique"
+            )
         seen.add(record.provider_response_id)
         expectations.append(
             receipt_expectation_from_attempt(
@@ -471,7 +470,7 @@ def _partition_verified_candidates(
             **candidate.verification.model_dump(mode="json"),
         }
         decisions.append(serialized)
-        if candidate.verification.decision is EntailmentDecision.ENTAILED:
+        if candidate.verification.trusted_projection_eligible:
             accepted.append(candidate.claim)
         else:
             rejected.append(serialized)
@@ -497,19 +496,13 @@ def restart_gate_requirements(inputs: RestartGateInputs) -> dict[str, bool]:
         "all_source_units_coverage_confirmed": (
             inputs.coverage_confirmed_case_count == inputs.case_count
         ),
-        "at_least_one_exact_whole_event": (
-            inputs.exact_whole_event_match_count >= 1
-        ),
+        "at_least_one_exact_whole_event": (inputs.exact_whole_event_match_count >= 1),
         "methods_control_empty": inputs.empty_control_false_positive_count == 0,
-        "negative_or_null_leakage_zero": (
-            inputs.negative_or_null_leakage_count == 0
-        ),
+        "negative_or_null_leakage_zero": (inputs.negative_or_null_leakage_count == 0),
         "epistemic_escalation_zero": inputs.epistemic_escalation_count == 0,
         "binding_rejection_zero": inputs.binding_rejection_count == 0,
         "invalid_agent_output_zero": inputs.invalid_agent_output_count == 0,
-        "provider_lineage_complete": (
-            inputs.unidentified_provider_attempt_count == 0
-        ),
+        "provider_lineage_complete": (inputs.unidentified_provider_attempt_count == 0),
         "provider_receipts_verified": inputs.provider_receipts_verified,
     }
 

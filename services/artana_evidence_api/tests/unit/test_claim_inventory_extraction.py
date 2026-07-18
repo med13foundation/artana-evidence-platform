@@ -157,10 +157,19 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v15:claim_inventory.v9+"
-        "claim_inventory_completeness.v10+claim_inventory_recovery.v9+"
+        "document_extraction.claim_pipeline.v16:claim_inventory.v10+"
+        "claim_inventory_completeness.v11+claim_inventory_recovery.v10+"
         "claim_framing.v7"
     )
+
+
+def test_inventory_prompt_preserves_controlled_event_structure() -> None:
+    normalized_prompt = CLAIM_INVENTORY_SYSTEM_PROMPT.casefold()
+
+    assert "preserve the outer control" in normalized_prompt
+    assert "controlled event or process as biological_process" in normalized_prompt
+    assert "separate gene_or_protein arguments" in normalized_prompt
+    assert "must not survive only as free text" in normalized_prompt
 
 
 def test_claim_event_type_is_closed_and_required_across_inventory_prompts() -> None:

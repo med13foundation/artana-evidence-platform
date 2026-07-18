@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v3"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v3"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v4"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v4"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -148,6 +148,10 @@ def bind_source_unit_verification(
     verified: list[VerifiedEventCandidate] = []
     for candidate, decision in zip(candidates, output.decisions, strict=True):
         claim_text = candidate.item.exact_span
+        if len(decision.argument_type_decisions) != len(candidate.item.arguments):
+            raise StructuredModelSemanticError(
+                "ordered argument-type decisions must cover candidate arguments exactly",
+            )
         if any(span not in claim_text for span in decision.evidence_spans):
             raise StructuredModelSemanticError(
                 "verification evidence must occur inside the candidate claim",
@@ -299,6 +303,18 @@ participants, normalize surface text, merge events, or return numeric scores.
 Do not return source-unit identifiers or input hashes. The audited orchestrator
 binds transport identity outside the scientific output.
 
+CONTROLLED-EVENT DECOMPOSITION:
+When one source cue positively or negatively regulates another biological event,
+represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
+REGULATION rather than collapsing it into the controlled event type. Preserve
+the controlled event or process as a BIOLOGICAL_PROCESS argument and preserve
+each material participant of that controlled event as its own correctly typed
+argument. A phrase such as "enhanced nuclear translocation of NF-kappa B" must
+not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
+process span such as "expression of MCP-1 and TNF-alpha" is BIOLOGICAL_PROCESS;
+the named genes or proteins are separate GENE_OR_PROTEIN arguments. Do not label
+a process as GENE_OR_PROTEIN merely because its span contains gene names.
+
 prompt_version: {_EXTRACTION_PROMPT_VERSION}
 
 --- FROZEN SOURCE UNIT ---
@@ -338,6 +354,25 @@ condition that would falsify your decision. Do not repair candidates, use
 outside knowledge, compare against benchmark labels, or return numeric scores.
 Do not return source-unit identifiers, candidate identifiers, or input hashes.
 The audited orchestrator binds transport identity outside scientific output.
+
+For every candidate, independently return these additional categorical findings:
+- structure_decision: COMPLETE only when the event type, controlled process,
+  cause, direction, and every material participant are structurally preserved;
+  LOSSY when the text is entailed but material structure survives only in a cue
+  or bundled span; INVALID for a wrong or contradictory structure; ABSTAIN when
+  the source cannot resolve it;
+- direction_encoding: STRUCTURED when a material increase/decrease/regulation is
+  encoded by event_type, SOURCE_ONLY when it appears only in source wording,
+  CONFLICT when the structured direction disagrees, NOT_APPLICABLE when the
+  source event has no material direction, or ABSTAIN;
+- one argument_type_decision in candidate argument order: VALID, INVALID, or
+  ABSTAIN, with reasoning. A biological process is not GENE_OR_PROTEIN merely
+  because its span contains gene names;
+- projection_eligibility: ELIGIBLE only for an ENTAILED, COMPLETE candidate with
+  STRUCTURED or NOT_APPLICABLE direction and all argument types VALID;
+  REVIEW_ONLY for an entailed but lossy or unresolved candidate; REJECT for a
+  contradiction, invalid event structure, direction conflict, or invalid
+  argument type; ABSTAIN only when a categorical judgment is unresolved.
 
 prompt_version: {_VERIFICATION_PROMPT_VERSION}
 

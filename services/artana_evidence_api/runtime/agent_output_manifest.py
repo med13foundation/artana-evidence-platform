@@ -497,7 +497,7 @@ _POLICIES = (
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory.v9",),
+        prompt_identifiers=("document_extraction.claim_inventory.v10",),
         categorical_fields=(
             _category(
                 "$.claims[].source_locator",
@@ -561,7 +561,7 @@ _POLICIES = (
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_completeness.v8",),
+        prompt_identifiers=("document_extraction.claim_inventory_completeness.v11",),
         categorical_fields=(
             _category(
                 "$.decision",
@@ -621,7 +621,7 @@ _POLICIES = (
         producer_paths=(
             "document_extraction_support/llm_extraction/claim_inventory.py",
         ),
-        prompt_identifiers=("document_extraction.claim_inventory_recovery.v8",),
+        prompt_identifiers=("document_extraction.claim_inventory_recovery.v10",),
         categorical_fields=(
             _category(
                 "$.decision",
