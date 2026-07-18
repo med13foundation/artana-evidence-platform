@@ -1,0 +1,207 @@
+"""Create the non-lossy scientific report for one nested holdout repeat."""
+
+from __future__ import annotations
+
+from dataclasses import asdict
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
+
+from scripts.validation.claim_events.finite_source_unit.discovery.identity_evidence import (
+    audit_identity_mismatch_count,
+    count_model_identity_fields,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.gate import (
+    NestedHoldoutGateInputs,
+    nested_holdout_gate_requirements,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.matching import (
+    match_nested_event_graph,
+)
+from scripts.validation.claim_events.finite_source_unit.runner import (
+    receipt_expectations_for_finite_source_records,
+)
+from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
+    model_json,
+    provider_response_ids,
+    sha256_json,
+)
+from scripts.validation.claim_frames.provider_receipts import (
+    OpenAIProviderReceiptVerifier,
+    verify_provider_receipts,
+)
+
+if TYPE_CHECKING:
+    from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.selection import (
+        NestedHoldoutSelection,
+    )
+    from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
+        SingleUnitAgentRunEvidence,
+    )
+
+def build_nested_holdout_report(  # noqa: PLR0913
+    *,
+    selection: NestedHoldoutSelection,
+    run_id: str,
+    repeat_index: int,
+    execution_model_id: str,
+    repository_evidence: dict[str, object],
+    agent_run: SingleUnitAgentRunEvidence,
+) -> dict[str, object]:
+    """Combine raw agent evidence and deterministic qualification findings."""
+
+    expectations, invalid_count, unidentified_count = (
+        receipt_expectations_for_finite_source_records(list(agent_run.records))
+    )
+    receipts = verify_provider_receipts(
+        expectations,
+        OpenAIProviderReceiptVerifier.from_environment(),
+    )
+    extraction_ids = provider_response_ids(agent_run.records, "primary")
+    verification_ids = provider_response_ids(agent_run.records, "weak_review")
+    agent_outputs = {
+        "extraction": model_json(agent_run.extraction),
+        "verification": model_json(agent_run.verification),
+        "error_type": agent_run.error_type,
+    }
+    event_match = match_nested_event_graph(
+        expert_graph=selection.expert_graph,
+        trusted=agent_run.trusted,
+        links=agent_run.controlled_event_links,
+    )
+    gate_inputs = NestedHoldoutGateInputs(
+        repeat_index=repeat_index,
+        hidden_expert_event_count=len(selection.expert_graph.events),
+        hidden_expert_link_count=len(selection.expert_graph.links),
+        agent_execution_complete=(
+            agent_run.extraction is not None
+            and agent_run.verification is not None
+            and agent_run.error_type is None
+        ),
+        extraction_category=(
+            None
+            if agent_run.extraction is None
+            else agent_run.extraction.eligibility_category
+        ),
+        verification_category=(
+            None
+            if agent_run.verification is None
+            else agent_run.verification.eligibility_category
+        ),
+        extraction_decision=(
+            None if agent_run.extraction is None else agent_run.extraction.decision
+        ),
+        verification_coverage=(
+            None
+            if agent_run.verification is None
+            else agent_run.verification.coverage_decision
+        ),
+        extracted_candidate_count=agent_run.extracted_candidate_count,
+        verification_decision_count=len(agent_run.verified),
+        entailed_candidate_count=len(agent_run.entailed),
+        trusted_candidate_count=len(agent_run.trusted),
+        inner_event_match_count=len(event_match.inner_inventory_ids),
+        outer_event_match_count=len(event_match.outer_inventory_ids),
+        expert_link_match_count=event_match.expert_link_match_count,
+        complete_graph_match_count=event_match.complete_graph_match_count,
+        binding_rejection_count=agent_run.binding_rejection_count,
+        controlled_event_link_count=len(agent_run.controlled_event_links),
+        controlled_event_link_ambiguity_count=len(
+            agent_run.controlled_event_link_ambiguities
+        ),
+        invalid_agent_output_count=invalid_count,
+        unidentified_provider_attempt_count=unidentified_count,
+        extraction_provider_response_id_count=len(extraction_ids),
+        verification_provider_response_id_count=len(verification_ids),
+        distinct_provider_response_id_count=len(extraction_ids | verification_ids),
+        verified_provider_receipt_count=receipts.verified_count,
+        provider_receipt_gate_passed=receipts.gate_passed,
+        model_transport_identity_field_count=count_model_identity_fields(agent_outputs),
+        audit_identity_mismatch_count=audit_identity_mismatch_count(
+            agent_run.records,
+            unit=selection.unit,
+        ),
+    )
+    requirements = nested_holdout_gate_requirements(gate_inputs)
+    passed = all(requirements.values())
+    report: dict[str, object] = {
+        "schema_version": "tg04_nested_event_holdout.v1",
+        "run_id": run_id,
+        "repeat_index": repeat_index,
+        "pre_registered_repeat_indices": [1, 2, 3],
+        "generated_at": datetime.now(UTC).isoformat(),
+        "model_id": execution_model_id,
+        "task_id": "fresh_nested_event_identity_holdout",
+        "repository_evidence": repository_evidence,
+        "freshness": {
+            "selection_seed": "4aa22b9b:nested-event-holdout",
+            "selection_rule": "lowest_sha256_eligible_unit_outside_development_panel",
+            "selection_rank": selection.selection_rank,
+            "development_document_count": 40,
+            "holdout_document_count": selection.holdout_document_count,
+            "eligible_unit_count": selection.candidate_unit_count,
+            "incompatible_document_ids": selection.incompatible_document_ids,
+            "convenience_sample": True,
+            "fresh_at_repeat_1_execution": repeat_index == 1,
+        },
+        "source_corpus": {
+            "archive_sha256": selection.archive_sha256,
+            "expert_graph_sha256": selection.expert_graph_sha256,
+        },
+        "unit": {
+            "case_id": selection.case_id,
+            "unit_id": selection.unit.unit_id,
+            "unit_index": selection.unit.index,
+            "source_start": selection.unit.source_start,
+            "source_end": selection.unit.source_end,
+            "source_sha256": selection.unit.source_sha256,
+            "input_sha256": selection.unit.input_sha256,
+            "text": selection.unit.text,
+            "authoritative_article_url": selection.authoritative_article_url,
+        },
+        "agent_outputs": agent_outputs,
+        "verified_candidates": [
+            {
+                "inventory_id": candidate.claim.inventory_id,
+                "item": candidate.claim.item.model_dump(mode="json"),
+                "verification": candidate.verification.model_dump(mode="json"),
+            }
+            for candidate in agent_run.verified
+        ],
+        "controlled_event_links": [
+            link.as_json() for link in agent_run.controlled_event_links
+        ],
+        "controlled_event_link_ambiguities": [
+            ambiguity.as_json()
+            for ambiguity in agent_run.controlled_event_link_ambiguities
+        ],
+        "sealed_expert_graph": selection.expert_graph.as_json(),
+        "deterministic_event_match": asdict(event_match),
+        "attempts": [record.as_json() for record in agent_run.records],
+        "provider_receipts": receipts.as_json(),
+        "gate_inputs": asdict(gate_inputs),
+        "gate": {
+            "passed": passed,
+            "decision": (
+                "PROCEED_TO_NEXT_PRE_REGISTERED_REPEAT"
+                if passed
+                else "STOP_AND_RECALIBRATE_NESTED_EVENT_EXTRACTION"
+            ),
+            "requirements": requirements,
+        },
+        "conclusion_scope": {
+            "single_fresh_unit_convenience_sample": True,
+            "sealed_expert_graph_was_hidden_from_agents": True,
+            "additional_source_valid_claims_are_allowed": True,
+            "all_additional_claims_must_be_entailed_and_structure_trusted": True,
+            "benchmark_credit_awarded": False,
+            "scientific_readiness_proven": False,
+            "persistence_authorized": False,
+            "execution_path": "agent_only_source_unit",
+            "deterministic_extraction_fallback_available": False,
+        },
+    }
+    report["report_sha256"] = sha256_json(report)
+    return report
+
+
+__all__ = ["build_nested_holdout_report"]
