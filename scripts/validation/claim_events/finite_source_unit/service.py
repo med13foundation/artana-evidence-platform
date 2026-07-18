@@ -27,6 +27,7 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 )
 
 from scripts.validation.claim_events.finite_source_unit.binding_repair import (
+    require_minimal_exact_span_repairs,
     require_source_binding_repair_invariant,
 )
 from scripts.validation.claim_events.finite_source_unit.contracts import (
@@ -44,15 +45,17 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v13"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v12"
-_BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v1"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v14"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v13"
+_BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v2"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
 - FINDING: an asserted biological relationship or result;
 - HYPOTHESIS: an explicitly proposed biological explanation or mechanism;
 - NULL_RESULT: an explicit no-effect, no-association, or threshold-failing result;
+- MIXED_SCIENTIFIC: the unit contains explicit events from more than one of
+  FINDING, HYPOTHESIS, and NULL_RESULT;
 - PROCEDURE: sample handling, preparation, intervention application, assay setup,
   instrument use, or another action without a reported biological result;
 - MEASUREMENT_ONLY: an outcome is measured but no value, direction, comparison,
@@ -60,7 +63,7 @@ Return exactly one eligibility_category:
 - NO_EVENT: none of the categories above is explicit;
 - ABSTAIN: the source cannot safely resolve the category.
 
-Only FINDING, HYPOTHESIS, and NULL_RESULT are scientific events. PROCEDURE and
+FINDING, HYPOTHESIS, NULL_RESULT, and MIXED_SCIENTIFIC are scientific. PROCEDURE and
 MEASUREMENT_ONLY remain visible categorical findings but are excluded from the
 scientific-event inventory. A methods sentence is scientific only when it
 reports a biological result or explicitly proposes a mechanism."""
@@ -285,6 +288,10 @@ async def repair_source_unit_extraction(  # noqa: PLR0913
             repaired=output,
             binding_errors=binding_errors,
         )
+        require_minimal_exact_span_repairs(
+            repaired=result.accepted,
+            binding_errors=binding_errors,
+        )
         return result
 
     return await run_audited_structured_step(
@@ -448,6 +455,19 @@ CAUSAL EVENT AND ENTITY SEMANTICS:
 - For a symmetric physical BINDING or interaction event, assign every binding
   participant THEME. Do not invent AGENT or TARGET direction for an undirected
   interaction.
+- Event direction describes the controller's effect on its immediate THEME. A
+  factor that mediates, enables, or causes an inhibitory process positively
+  regulates that process; do not copy the inner process's negative direction
+  onto the outer event.
+- Keep modality outside relation_cue_span when a narrower causal cue is explicit:
+  for "could be mediated by", use "mediated" as the cue and encode uncertainty
+  in claim_kind and epistemic_status.
+- Scope epistemic status per event. A referenced nominalized finding can remain
+  ASSERTED when only an outer proposed mechanism is HYPOTHESIS; do not propagate
+  outer uncertainty inward unless the source makes the inner event uncertain.
+- For a coordinated claim with a shared argument, exact_span must be one
+  contiguous verbatim source span covering the shared argument, cue, and theme.
+  Never insert "..." or omit intervening source words.
 
 prompt_version: {_EXTRACTION_PROMPT_VERSION}
 
@@ -531,6 +551,11 @@ For every candidate, independently return these additional categorical findings:
 - for a symmetric physical BINDING or interaction event, every binding participant must use THEME.
   AGENT or TARGET is invalid unless the source
   explicitly states a distinct directional role beyond the interaction;
+- an outer event that mediates, enables, or causes an inhibitory process is
+  POSITIVE_REGULATION of that process, not NEGATIVE_REGULATION copied from the
+  inner event;
+- a relation cue excludes modal auxiliaries when the causal cue remains explicit,
+  and epistemic status is scoped independently for each inner and outer event;
 - projection_eligibility: ELIGIBLE only for an ENTAILED, COMPLETE candidate with
   STRUCTURED or NOT_APPLICABLE direction, a VALID event type, and all argument
   types and event roles VALID;
@@ -562,13 +587,16 @@ def _binding_repair_prompt(
     return f"""You are repairing one source-binding failure in a sealed biomedical event inventory.
 
 Use only the frozen source unit. Return the complete corrected extraction output,
-including every event from the previous output in the same order. Change only
+including every event from the previous output in the same order. For an
+EXACT_SPAN_MISSING error only, replace that event exact_span with the minimal
+contiguous verbatim source span containing its unchanged relation cue and every
+unchanged argument exact_span; never use an ellipsis. Otherwise change only
 left_context or right_context on an existing mention anchor. Preserve every
-event and argument count, exact_span, relation_cue_span, anchor mention_span,
-referent mention_span, categorical field, role, rationale, and source-explicit
-referent exactly. Copy corrected anchor context verbatim from the source. Never
-invent or delete an event, change scientific meaning, use outside knowledge, or
-return numeric scores. Deterministic validation rejects every other mutation.
+event and argument count, relation_cue_span, argument exact_span, anchor
+mention_span, referent mention_span, categorical field, role, rationale, and
+source-explicit referent exactly. Never invent or delete an event, change
+scientific meaning, use outside knowledge, or return numeric scores.
+Deterministic validation rejects every other mutation.
 
 prompt_version: {_BINDING_REPAIR_PROMPT_VERSION}
 

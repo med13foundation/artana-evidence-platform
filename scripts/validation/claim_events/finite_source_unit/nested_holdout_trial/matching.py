@@ -83,15 +83,26 @@ def match_nested_event_graph(
     }
     inner = events_by_id[expert_link.controlled_event_id]
     outer = events_by_id[expert_link.controller_event_id]
+    trusted_by_id = {candidate.inventory_id: candidate for candidate in trusted}
     inner_ids = tuple(
         candidate.inventory_id
         for candidate in trusted
-        if _event_matches(inner, candidate, semantics_by_id.get(inner.event_id))
+        if _event_matches(
+            inner,
+            candidate,
+            semantics_by_id.get(inner.event_id),
+            expected_reference_argument_count=0,
+        )
     )
     outer_ids = tuple(
         candidate.inventory_id
         for candidate in trusted
-        if _event_matches(outer, candidate, semantics_by_id.get(outer.event_id))
+        if _event_matches(
+            outer,
+            candidate,
+            semantics_by_id.get(outer.event_id),
+            expected_reference_argument_count=1,
+        )
     )
     matched_links = tuple(
         link
@@ -99,6 +110,11 @@ def match_nested_event_graph(
         if link.controlled_inventory_id in inner_ids
         and link.controller_inventory_id in outer_ids
         and link.controller_event_role.value == expert_link.event_role
+        and _link_uses_reference_argument(
+            link=link,
+            expert=outer,
+            candidate=trusted_by_id[link.controller_inventory_id],
+        )
     )
     complete_pairs = {
         (link.controller_inventory_id, link.controlled_inventory_id)
@@ -158,18 +174,63 @@ def _event_matches(
     expert: SealedEvent,
     candidate: BoundClaimInventoryItem,
     semantics: SealedEventSemantics | None,
+    *,
+    expected_reference_argument_count: int,
 ) -> bool:
-    expected_arguments = tuple(expert.arguments)
     return (
         (semantics is None or _event_semantics_match(semantics, candidate))
         and candidate.item.event_type.value == expert.event_type
         and candidate.trigger_mention.exact_span == expert.trigger.exact_span
         and candidate.trigger_mention.source_start == expert.trigger.source_start
         and candidate.trigger_mention.source_end == expert.trigger.source_end
-        and all(
-            any(_argument_matches(expected, actual) for actual in candidate.bound_arguments)
-            for expected in expected_arguments
+        and _direct_argument_match_indices(
+            expert,
+            candidate,
+            expected_reference_argument_count=expected_reference_argument_count,
         )
+        is not None
+    )
+
+
+def _direct_argument_match_indices(
+    expert: SealedEvent,
+    candidate: BoundClaimInventoryItem,
+    *,
+    expected_reference_argument_count: int,
+) -> tuple[int, ...] | None:
+    if len(candidate.bound_arguments) != (
+        len(expert.arguments) + expected_reference_argument_count
+    ):
+        return None
+    matched_indices: list[int] = []
+    for expected in expert.arguments:
+        indices = tuple(
+            index
+            for index, actual in enumerate(candidate.bound_arguments)
+            if _argument_matches(expected, actual)
+        )
+        if len(indices) != 1:
+            return None
+        matched_indices.append(indices[0])
+    if len(set(matched_indices)) != len(matched_indices):
+        return None
+    return tuple(matched_indices)
+
+
+def _link_uses_reference_argument(
+    *,
+    link: BoundControlledEventLink,
+    expert: SealedEvent,
+    candidate: BoundClaimInventoryItem,
+) -> bool:
+    direct_indices = _direct_argument_match_indices(
+        expert,
+        candidate,
+        expected_reference_argument_count=1,
+    )
+    return (
+        direct_indices is not None
+        and link.controller_argument_index not in direct_indices
     )
 
 

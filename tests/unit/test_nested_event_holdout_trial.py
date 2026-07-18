@@ -354,6 +354,33 @@ def test_duplicate_required_event_candidate_cannot_receive_projection_credit() -
     assert len(result.projections[0].match.inner_inventory_ids) == 2
 
 
+def test_surplus_event_argument_cannot_receive_projection_credit() -> None:
+    inner, outer = _trusted_inventory()
+    outer_payload = outer.item.model_dump(mode="json")
+    outer_arguments = outer_payload["arguments"]
+    assert isinstance(outer_arguments, list)
+    outer_arguments.append(_argument("GENE_OR_PROTEIN", "SITE", "Ets"))
+    surplus_outer = ClaimInventoryItem.model_validate(outer_payload)
+    (bound_surplus_outer,) = bind_claim_inventory(
+        (surplus_outer,),
+        source_text=_SOURCE,
+        source_sha256=hashlib.sha256(_SOURCE.encode()).hexdigest(),
+        chunk_index=6,
+        source_start_offset=_SOURCE_OFFSET,
+    )
+    trusted = (inner, bound_surplus_outer)
+    links = link_controlled_events(trusted)
+
+    result = match_projection_set(
+        projection_set=_projection_set(_sealed_graph()),
+        trusted=trusted,
+        links=links.links,
+    )
+
+    assert result.fully_recovered_projection_ids == ()
+    assert result.projections[0].match.outer_inventory_ids == ()
+
+
 def test_projection_match_preserves_event_level_epistemic_status() -> None:
     trusted = _trusted_inventory()
     links = link_controlled_events(trusted)
@@ -404,11 +431,51 @@ def test_projection_set_rejects_identity_and_source_drift_before_execution() -> 
             projection.graph.events[1],
         ),
     )
+    extra_event_graph = replace(
+        projection.graph,
+        events=(*projection.graph.events, replace(projection.graph.events[0], event_id="E4")),
+    )
+    duplicate_argument_graph = replace(
+        projection.graph,
+        events=(
+            replace(
+                projection.graph.events[0],
+                arguments=(
+                    *projection.graph.events[0].arguments,
+                    projection.graph.events[0].arguments[0],
+                ),
+            ),
+            projection.graph.events[1],
+        ),
+    )
+    self_link_graph = replace(
+        projection.graph,
+        links=(
+            replace(
+                projection.graph.links[0],
+                controlled_event_id=projection.graph.links[0].controller_event_id,
+            ),
+        ),
+    )
+    unsupported_role_graph = replace(
+        projection.graph,
+        links=(replace(projection.graph.links[0], event_role="CONTEXT"),),
+    )
     invalid_sets = (
         replace(valid, canonical_projection_id="missing"),
         replace(valid, projections=(projection, projection)),
         replace(valid, projections=(replace(projection, graph=dangling_graph),)),
         replace(valid, projections=(replace(projection, graph=shifted_graph),)),
+        replace(valid, projections=(replace(projection, graph=extra_event_graph),)),
+        replace(
+            valid,
+            projections=(replace(projection, graph=duplicate_argument_graph),),
+        ),
+        replace(valid, projections=(replace(projection, graph=self_link_graph),)),
+        replace(
+            valid,
+            projections=(replace(projection, graph=unsupported_role_graph),),
+        ),
     )
 
     for invalid in invalid_sets:
@@ -640,7 +707,7 @@ def test_third_selection_freezes_projection_set_before_execution() -> None:
         "E47": ("SCIENTIFIC_HYPOTHESIS", "HYPOTHESIS"),
     }
     assert selection.expected_eligibility_category is (
-        SourceUnitEligibilityCategory.HYPOTHESIS
+        SourceUnitEligibilityCategory.MIXED_SCIENTIFIC
     )
 
 

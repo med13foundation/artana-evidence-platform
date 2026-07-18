@@ -21,6 +21,7 @@ from pydantic import ValidationError
 
 from scripts.run_procedure_source_unit_audit import procedure_report_exit_code
 from scripts.validation.claim_events.finite_source_unit.binding_repair import (
+    require_minimal_exact_span_repairs,
     require_source_binding_repair_invariant,
 )
 from scripts.validation.claim_events.finite_source_unit.contracts import (
@@ -320,6 +321,18 @@ def test_extraction_contract_rejects_category_payload_conflicts() -> None:
             },
         )
 
+    mixed = SourceUnitExtractionOutput.model_validate(
+        {
+            "eligibility_category": "MIXED_SCIENTIFIC",
+            "decision": "EXPLICIT_EVENT",
+            "events": [_event_item().model_dump(mode="json")],
+            "reasoning": "The unit contains more than one scientific category.",
+        },
+    )
+    assert mixed.eligibility_category is (
+        SourceUnitEligibilityCategory.MIXED_SCIENTIFIC
+    )
+
     with pytest.raises(ValidationError, match="cannot contain events"):
         SourceUnitExtractionOutput.model_validate(
             {
@@ -526,6 +539,72 @@ def test_binding_repair_invariant_rejects_scientific_mutation() -> None:
                 repaired=invalid_repair,
                 binding_errors=binding.rejected,
             )
+
+
+def test_missing_exact_span_repair_requires_minimal_verbatim_envelope() -> None:
+    source = "IL-13 does not reduce FOXP3 and fails to induce GATA3."
+    unit = enumerate_source_units(case_id="missing-span-repair", source_text=source)[0]
+    invalid_item = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": "IL-13 ... fails to induce GATA3",
+            "relation_cue_span": "fails to induce",
+            "arguments": [
+                {
+                    "role": "GENE_OR_PROTEIN",
+                    "event_role": "CAUSE",
+                    "exact_span": "IL-13",
+                    "role_rationale": "IL-13 is the tested inducer.",
+                },
+                {
+                    "role": "GENE_OR_PROTEIN",
+                    "event_role": "THEME",
+                    "exact_span": "GATA3",
+                    "role_rationale": "GATA3 is the failed induction theme.",
+                },
+            ],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "POSITIVE_REGULATION",
+            "polarity": "NULL_RESULT",
+            "epistemic_status": "ASSERTED",
+            "inventory_rationale": "The source reports a failed induction result.",
+        },
+    )
+    original = SourceUnitExtractionOutput(
+        eligibility_category=SourceUnitEligibilityCategory.NULL_RESULT,
+        decision=SourceUnitDecision.EXPLICIT_EVENT,
+        events=(invalid_item,),
+        reasoning="One null result with a non-verbatim claim boundary.",
+    )
+    binding = bind_source_unit_extraction(original, unit=unit)
+    assert binding.rejected[0].disposition.value == "EXACT_SPAN_MISSING"
+    repaired_item = invalid_item.model_copy(
+        update={"exact_span": "IL-13 does not reduce FOXP3 and fails to induce GATA3"},
+    )
+    repaired = original.model_copy(update={"events": (repaired_item,)})
+    repaired_binding = bind_source_unit_extraction(repaired, unit=unit)
+    assert repaired_binding.rejected == ()
+
+    require_source_binding_repair_invariant(
+        original=original,
+        repaired=repaired,
+        binding_errors=binding.rejected,
+    )
+    require_minimal_exact_span_repairs(
+        repaired=repaired_binding.accepted,
+        binding_errors=binding.rejected,
+    )
+
+    broad_item = invalid_item.model_copy(update={"exact_span": source})
+    broad_binding = bind_source_unit_extraction(
+        original.model_copy(update={"events": (broad_item,)}),
+        unit=unit,
+    )
+    with pytest.raises(StructuredModelSemanticError, match="minimal"):
+        require_minimal_exact_span_repairs(
+            repaired=broad_binding.accepted,
+            binding_errors=binding.rejected,
+        )
 
 
 def test_verification_requires_exact_candidate_coverage_and_local_evidence() -> None:
@@ -951,7 +1030,7 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
         assert "Return exactly one eligibility_category" in prompt
         assert "PROCEDURE: sample handling" in prompt
         assert "MEASUREMENT_ONLY: an outcome is measured" in prompt
-        assert "Only FINDING, HYPOTHESIS, and NULL_RESULT" in prompt
+        assert "MIXED_SCIENTIFIC" in prompt
         assert unit.unit_id not in prompt
         assert unit.input_sha256 not in prompt
         assert "unit_id:" not in prompt
@@ -980,6 +1059,11 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
     assert "appears more than once anywhere" in prompts[0]
     assert "symmetric physical BINDING" in prompts[0]
     assert "every binding participant must use THEME" in prompts[1]
+    assert "positively" in prompts[0]
+    assert "could be mediated by" in prompts[0]
+    assert "Scope epistemic status per event" in prompts[0]
+    assert 'Never insert "..."' in prompts[0]
+    assert "POSITIVE_REGULATION of that process" in prompts[1]
     assert "competing occurrence lies outside exact_span" in prompts[0]
     assert "generic REGULATION duplicate" in prompts[0]
     assert "structure_decision" in prompts[1]

@@ -24,6 +24,7 @@ class SourceUnitEligibilityCategory(StrEnum):
     FINDING = "FINDING"
     HYPOTHESIS = "HYPOTHESIS"
     NULL_RESULT = "NULL_RESULT"
+    MIXED_SCIENTIFIC = "MIXED_SCIENTIFIC"
     PROCEDURE = "PROCEDURE"
     MEASUREMENT_ONLY = "MEASUREMENT_ONLY"
     NO_EVENT = "NO_EVENT"
@@ -37,6 +38,7 @@ class SourceUnitEligibilityCategory(StrEnum):
             SourceUnitEligibilityCategory.FINDING,
             SourceUnitEligibilityCategory.HYPOTHESIS,
             SourceUnitEligibilityCategory.NULL_RESULT,
+            SourceUnitEligibilityCategory.MIXED_SCIENTIFIC,
         }
 
 

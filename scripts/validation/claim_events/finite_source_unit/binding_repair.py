@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimInventoryBindingDisposition,
+)
 from artana_evidence_api.document_extraction_support.llm_extraction.structured_step import (
     StructuredModelSemanticError,
 )
 
 if TYPE_CHECKING:
     from artana_evidence_api.document_extraction_support.claim_frames import (
+        BoundClaimInventoryItem,
         ClaimInventoryBindingRejection,
         ClaimInventoryItem,
     )
@@ -59,13 +63,59 @@ def require_source_binding_repair_invariant(
             raise StructuredModelSemanticError(
                 "binding repair changed an already source-bound sibling",
             )
-        if _scientific_identity(repaired_event) != _scientific_identity(original_event):
+        exact_span_repair = any(
+            error.batch_index == index
+            and error.disposition is ClaimInventoryBindingDisposition.EXACT_SPAN_MISSING
+            for error in binding_errors
+        )
+        if _scientific_identity(
+            repaired_event,
+            include_exact_span=not exact_span_repair,
+        ) != _scientific_identity(
+            original_event,
+            include_exact_span=not exact_span_repair,
+        ):
             raise StructuredModelSemanticError(
                 "binding repair changed event semantics or source identity",
             )
 
 
-def _scientific_identity(item: ClaimInventoryItem) -> tuple[object, ...]:
+def require_minimal_exact_span_repairs(
+    *,
+    repaired: tuple[BoundClaimInventoryItem, ...],
+    binding_errors: tuple[ClaimInventoryBindingRejection, ...],
+) -> None:
+    """Require a repaired missing span to be the minimal fixed-mention envelope."""
+
+    missing_span_indices = {
+        error.batch_index
+        for error in binding_errors
+        if error.disposition is ClaimInventoryBindingDisposition.EXACT_SPAN_MISSING
+    }
+    for index in missing_span_indices:
+        candidate = repaired[index]
+        mention_starts = (
+            candidate.trigger_mention.source_start,
+            *(argument.primary_mention.source_start for argument in candidate.bound_arguments),
+        )
+        mention_ends = (
+            candidate.trigger_mention.source_end,
+            *(argument.primary_mention.source_end for argument in candidate.bound_arguments),
+        )
+        if (
+            candidate.source_start != min(mention_starts)
+            or candidate.source_end != max(mention_ends)
+        ):
+            raise StructuredModelSemanticError(
+                "binding repair exact_span is not the minimal fixed-mention envelope",
+            )
+
+
+def _scientific_identity(
+    item: ClaimInventoryItem,
+    *,
+    include_exact_span: bool = True,
+) -> tuple[object, ...]:
     """Exclude only left/right anchor context used to localize fixed mentions."""
 
     cue_anchor_span = (
@@ -85,7 +135,7 @@ def _scientific_identity(item: ClaimInventoryItem) -> tuple[object, ...]:
         for argument in item.arguments
     )
     return (
-        item.exact_span,
+        item.exact_span if include_exact_span else None,
         item.relation_cue_span,
         cue_anchor_span,
         arguments,
@@ -98,4 +148,7 @@ def _scientific_identity(item: ClaimInventoryItem) -> tuple[object, ...]:
     )
 
 
-__all__ = ["require_source_binding_repair_invariant"]
+__all__ = [
+    "require_minimal_exact_span_repairs",
+    "require_source_binding_repair_invariant",
+]

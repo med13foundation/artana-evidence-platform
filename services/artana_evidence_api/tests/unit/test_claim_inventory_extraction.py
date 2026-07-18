@@ -160,8 +160,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v25:claim_inventory.v19+"
-        "claim_inventory_completeness.v19+claim_inventory_recovery.v11+"
+        "document_extraction.claim_pipeline.v26:claim_inventory.v20+"
+        "claim_inventory_completeness.v20+claim_inventory_recovery.v11+"
         "claim_framing.v7"
     )
 
@@ -185,6 +185,10 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     )
     assert "multiple referenced sibling events" in normalized_prompt
     assert "symmetric physical binding" in normalized_prompt
+    assert "positively regulates that process" in normalized_prompt
+    assert "keep modality outside relation_cue_span" in normalized_prompt
+    assert "scope epistemic status per event" in normalized_prompt
+    assert "never insert an ellipsis" in normalized_prompt
     assert "every binding participant theme" in normalized_prompt
     assert "include the complete contiguous span covering both clauses" in (
         normalized_prompt
@@ -196,6 +200,8 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
 
     completeness_prompt = CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT.casefold()
     assert "referenced event as a distinct sibling claim" in completeness_prompt
+    assert "mediation or causation of an inhibitory process" in completeness_prompt
+    assert "scope epistemic status independently" in completeness_prompt
     assert "outer process argument does not replace the inner event" in (
         completeness_prompt
     )

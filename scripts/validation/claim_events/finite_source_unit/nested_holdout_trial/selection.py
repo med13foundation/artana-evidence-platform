@@ -41,6 +41,8 @@ _EXPECTED_INCOMPATIBLE_DOCUMENT_IDS: Final = (
 )
 _EXPECTED_ELIGIBLE_UNIT_COUNT: Final = 16
 _MINIMUM_INNER_DIRECT_ARGUMENTS: Final = 2
+_NESTED_PROJECTION_EVENT_COUNT: Final = 2
+_NESTED_PROJECTION_LINK_COUNT: Final = 1
 _EXPECTED_SELECTION_RANK: Final = (
     "0757a19258cb5e142ad2b9828c6ee0ed9755767ab90ddbad972c75867d3577af"
 )
@@ -514,12 +516,27 @@ def _validate_projection_graph(
     *,
     unit: FrozenSourceUnit,
 ) -> None:
-    if not graph.events or not graph.links:
-        raise RuntimeError("sealed projection requires events and event links")
+    if (
+        len(graph.events) != _NESTED_PROJECTION_EVENT_COUNT
+        or len(graph.links) != _NESTED_PROJECTION_LINK_COUNT
+    ):
+        raise RuntimeError("sealed nested projection requires two events and one link")
     event_ids = tuple(event.event_id for event in graph.events)
     if len(set(event_ids)) != len(event_ids):
         raise RuntimeError("sealed projection event IDs must be unique")
     for event in graph.events:
+        argument_identities = tuple(
+            (
+                argument.event_role,
+                argument.participant_type,
+                argument.exact_span,
+                argument.source_start,
+                argument.source_end,
+            )
+            for argument in event.arguments
+        )
+        if len(set(argument_identities)) != len(argument_identities):
+            raise RuntimeError("sealed projection arguments must be unique")
         _require_verbatim_local_span(
             unit=unit,
             exact_span=event.trigger.exact_span,
@@ -539,6 +556,13 @@ def _validate_projection_graph(
             or link.controlled_event_id not in event_ids
         ):
             raise RuntimeError("sealed projection contains a dangling event link")
+        if link.controller_event_id == link.controlled_event_id:
+            raise RuntimeError("sealed projection event link cannot be self-referential")
+        if link.event_role not in {"CAUSE", "THEME"}:
+            raise RuntimeError("sealed projection event link role is unsupported")
+    link = graph.links[0]
+    if {link.controller_event_id, link.controlled_event_id} != set(event_ids):
+        raise RuntimeError("sealed projection link must connect both projected events")
 
 
 def _require_verbatim_local_span(

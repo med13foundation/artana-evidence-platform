@@ -146,7 +146,7 @@ def select_third_nested_event_holdout(
         authoritative_article_url=_ARTICLE_URL,
         projection_set=projection_set,
         projection_set_sha256=projection_set_sha256,
-        expected_eligibility_category=SourceUnitEligibilityCategory.HYPOTHESIS,
+        expected_eligibility_category=SourceUnitEligibilityCategory.MIXED_SCIENTIFIC,
     )
 
 
