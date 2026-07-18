@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v5"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v5"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v6"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v6"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -309,11 +309,24 @@ represent the outer event as POSITIVE_REGULATION, NEGATIVE_REGULATION, or
 REGULATION rather than collapsing it into the controlled event type. Preserve
 the controlled event or process as a BIOLOGICAL_PROCESS argument and preserve
 each material participant of that controlled event as its own correctly typed
-argument. A phrase such as "enhanced nuclear translocation of NF-kappa B" must
+argument. When the controlled event is itself explicitly asserted, including an
+event nominalization such as "TGF-beta induction of Foxp3," return it as a
+separate sibling event in addition to the outer regulation; an outer THEME
+process argument does not replace the inner event. Do not invent an inner event
+when the text only names an assay, planned measurement, or hypothetical process.
+A phrase such as "enhanced nuclear translocation of NF-kappa B" must
 not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
 process span such as "expression of MCP-1 and TNF-alpha" is BIOLOGICAL_PROCESS;
 the named genes or proteins are separate GENE_OR_PROTEIN arguments. Do not label
 a process as GENE_OR_PROTEIN merely because its span contains gene names.
+
+COMPOSITE EVIDENCE SPANS:
+An event exact_span must be the smallest contiguous source span containing every
+clause needed to justify its event type, direction, causal interpretation, and
+material arguments. When an earlier or later coordinated clause supplies the
+direction for a causal conclusion, include both clauses. Never assign positive
+or negative regulation from a neutral cue such as "affects" when exact_span
+omits the directional language.
 
 CAUSAL EVENT AND ENTITY SEMANTICS:
 - Use POSITIVE_REGULATION or NEGATIVE_REGULATION when the source names a cause
@@ -357,6 +370,13 @@ PROCEDURE, MEASUREMENT_ONLY, or NO_EVENT, return NO_EVENT_CONFIRMED because thos
 categories are not scientific events. Map ABSTAIN to ABSTAIN. Review the unit
 even when no candidates were supplied. A false extracted candidate may be
 rejected while the unit is NO_EVENT_CONFIRMED.
+
+An explicitly asserted controlled event is a distinct event even when an outer
+regulation also carries that process as a THEME. Return MISSING_EVENT when the
+inner event or the outer event is absent. A directional causal candidate is
+complete only when its exact_span contains every coordinated clause needed to
+justify the direction; a neutral cue such as "affects" is insufficient when the
+directional language lies outside that span.
 
 For every supplied candidate, return exactly one categorical decision:
 ENTAILED, CONTRADICTED, INSUFFICIENT, or ABSTAIN.

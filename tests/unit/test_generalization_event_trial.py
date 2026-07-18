@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import pytest
 
+from scripts.run_generalization_event_replay import generalization_replay_exit_code
 from scripts.run_generalization_event_trial import generalization_trial_exit_code
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
@@ -16,6 +17,9 @@ from scripts.validation.claim_events.finite_source_unit.generalization_trial.aut
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.gate import (
     GeneralizationGateInputs,
     generalization_gate_requirements,
+)
+from scripts.validation.claim_events.finite_source_unit.generalization_trial.replay_authorization import (
+    _verify_failed_generalization_payload,
 )
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.selection import (
     select_generalization_trial,
@@ -31,6 +35,7 @@ def _baseline_gate() -> GeneralizationGateInputs:
         authorization_verified=True,
         selection_verified=True,
         fresh_unit_declared=True,
+        adaptive_replay_declared=False,
         repeat_index=1,
         hidden_expert_event_count=1,
         agent_execution_complete=True,
@@ -109,6 +114,7 @@ def test_generalization_gate_fails_closed_on_every_boundary() -> None:
         {"authorization_verified": False},
         {"selection_verified": False},
         {"fresh_unit_declared": False},
+        {"adaptive_replay_declared": True},
         {"repeat_index": 0},
         {"repeat_index": 4},
         {"hidden_expert_event_count": 0},
@@ -168,7 +174,45 @@ def test_reassessment_authorization_requires_zero_call_success() -> None:
         _verify_authorization_payload(called_again)
 
 
+def test_generalization_replay_requires_exact_failed_boundary() -> None:
+    requirements = dict.fromkeys(
+        generalization_gate_requirements(_baseline_gate()),
+        True,
+    )
+    for failed in (
+        "all_candidates_source_entailed",
+        "all_candidates_structure_trusted",
+        "sealed_expert_core_recovered",
+    ):
+        requirements[failed] = False
+    payload: dict[str, object] = {
+        "schema_version": "tg04_generalization_trial.v1",
+        "experiment_mode": "fresh",
+        "repeat_index": 1,
+        "report_sha256": (
+            "7b742b487c0fd38674c257b1bafa319cc9a2f6c4dc1cb21b55d061001261f383"
+        ),
+        "unit": {
+            "unit_id": (
+                "source-unit-6508d78fe2bb4886b606f91f2c990c36b55f54b2ac9886448e5251693222b3fe"
+            ),
+        },
+        "gate": {
+            "passed": False,
+            "decision": "STOP_AND_RECALIBRATE_GENERALIZATION",
+            "requirements": requirements,
+        },
+    }
+    _verify_failed_generalization_payload(payload)
+
+    requirements["candidate_inventory_complete"] = False
+    with pytest.raises(RuntimeError, match="boundary changed"):
+        _verify_failed_generalization_payload(payload)
+
+
 def test_generalization_trial_cli_exit_status_follows_gate() -> None:
     assert generalization_trial_exit_code({"gate": {"passed": True}}) == 0
     assert generalization_trial_exit_code({"gate": {"passed": False}}) == 1
     assert generalization_trial_exit_code({}) == 1
+    assert generalization_replay_exit_code({"gate": {"passed": True}}) == 0
+    assert generalization_replay_exit_code({"gate": {"passed": False}}) == 1

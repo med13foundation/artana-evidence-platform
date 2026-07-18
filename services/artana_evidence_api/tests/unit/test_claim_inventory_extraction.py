@@ -157,8 +157,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v17:claim_inventory.v11+"
-        "claim_inventory_completeness.v12+claim_inventory_recovery.v11+"
+        "document_extraction.claim_pipeline.v18:claim_inventory.v12+"
+        "claim_inventory_completeness.v13+claim_inventory_recovery.v11+"
         "claim_framing.v7"
     )
 
@@ -173,6 +173,19 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "agent is not a substitute for cause" in normalized_prompt
     assert "cytokines, growth factors" in normalized_prompt
     assert "not as a generic label for an administered protein" in normalized_prompt
+    assert "inventory it as a separate sibling event" in normalized_prompt
+    assert "outer theme does not replace the inner event" in normalized_prompt
+    assert "include the complete contiguous span covering both clauses" in (
+        normalized_prompt
+    )
+    assert 'neutral cue such as "affects"' in normalized_prompt
+
+    completeness_prompt = CLAIM_INVENTORY_COMPLETENESS_SYSTEM_PROMPT.casefold()
+    assert "controlled event as a distinct sibling claim" in completeness_prompt
+    assert "outer process argument does not replace the inner event" in (
+        completeness_prompt
+    )
+    assert "directional language is outside exact_span" in completeness_prompt
 
 
 def test_claim_event_type_is_closed_and_required_across_inventory_prompts() -> None:
