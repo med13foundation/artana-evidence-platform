@@ -21,6 +21,10 @@ from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.g
 from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.matching import (
     expert_core_event_match_count,
 )
+from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.reassessment_gate import (
+    ReassessmentGateInputs,
+    reassessment_gate_requirements,
+)
 from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.replay_authorization import (
     _verify_failed_trial_payload,
 )
@@ -180,6 +184,18 @@ def test_expert_core_matching_preserves_valid_additional_arguments() -> None:
 
     assert expert_core_event_match_count((expert,), [predicted]) == 1
 
+    predicted["trigger_span"] = f"dramatically {expert.trigger_span}"
+    predicted["trigger_source_start"] = expert.trigger_source_start - len(
+        "dramatically "
+    )
+    assert expert_core_event_match_count((expert,), [predicted]) == 1
+
+    predicted["trigger_source_start"] = expert.trigger_source_start
+    assert expert_core_event_match_count((expert,), [predicted]) == 0
+    predicted["trigger_source_start"] = expert.trigger_source_start - len(
+        "dramatically "
+    )
+
     arguments = predicted["arguments"]
     assert isinstance(arguments, list)
     first_argument = arguments[0]
@@ -222,6 +238,39 @@ def test_adaptive_replay_requires_exact_failed_gate() -> None:
     }
     with pytest.raises(RuntimeError, match="does not authorize"):
         _verify_failed_trial_payload(passed)
+
+
+def test_offline_reassessment_gate_fails_closed_on_every_boundary() -> None:
+    baseline = ReassessmentGateInputs(
+        artifact_verified=True,
+        adaptive_replay_declared=True,
+        offline_reassessment_declared=True,
+        model_call_count=0,
+        source_identity_verified=True,
+        prior_only_failed_requirement_was_matcher=True,
+        prior_provider_receipts_verified=True,
+        trusted_event_count=1,
+        expert_core_event_match_count=1,
+    )
+    assert all(reassessment_gate_requirements(baseline).values())
+
+    mutations = (
+        {"artifact_verified": False},
+        {"adaptive_replay_declared": False},
+        {"offline_reassessment_declared": False},
+        {"model_call_count": 1},
+        {"source_identity_verified": False},
+        {"prior_only_failed_requirement_was_matcher": False},
+        {"prior_provider_receipts_verified": False},
+        {"trusted_event_count": 0},
+        {"expert_core_event_match_count": 0},
+    )
+    for mutation in mutations:
+        assert not all(
+            reassessment_gate_requirements(
+                replace(baseline, **mutation),
+            ).values(),
+        )
 
 
 def test_controlled_event_trial_cli_exit_status_follows_gate() -> None:

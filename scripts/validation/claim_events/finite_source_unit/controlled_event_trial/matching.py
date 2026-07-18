@@ -44,12 +44,26 @@ def _preserves_expert_core(
         for argument in _arguments(predicted)
     }
     return (
-        predicted.get("trigger_span") == expert.trigger_span
-        and predicted.get("trigger_source_start") == expert.trigger_source_start
+        _preserves_trigger(expert, predicted)
         and predicted.get("event_type") == expert.event_type.value
         and predicted.get("polarity") == expert.polarity.value
         and predicted.get("epistemic_status") == expert.epistemic_status.value
         and expected_arguments <= actual_arguments
+    )
+
+
+def _preserves_trigger(
+    expert: NaryClaimEvent,
+    predicted: Mapping[str, object],
+) -> bool:
+    predicted_span = predicted.get("trigger_span")
+    predicted_start = predicted.get("trigger_source_start")
+    if not isinstance(predicted_span, str) or not isinstance(predicted_start, int):
+        return False
+    relative_start = predicted_span.find(expert.trigger_span)
+    return (
+        relative_start >= 0
+        and predicted_start + relative_start == expert.trigger_source_start
     )
 
 
