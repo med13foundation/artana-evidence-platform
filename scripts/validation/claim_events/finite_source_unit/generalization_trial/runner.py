@@ -23,6 +23,9 @@ from scripts.validation.claim_events.finite_source_unit.generalization_trial.ada
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.authorization import (
     verify_reassessment_authorization,
 )
+from scripts.validation.claim_events.finite_source_unit.generalization_trial.final_replay_authorization import (
+    verify_final_replay_authorization,
+)
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.gate import (
     GeneralizationGateInputs,
     generalization_gate_requirements,
@@ -162,6 +165,35 @@ def run_generalization_second_replay(
             selection=selection,
             authorization_sha256=authorization_sha256,
             authorization_source="failed_first_adaptive_generalization_replay",
+            mode="adaptive_replay",
+            run_id=run_id,
+            repeat_index=1,
+            repository_evidence=repository_evidence,
+        ),
+    )
+
+
+def run_generalization_final_replay(
+    *,
+    fixture: NaryClaimFixture,
+    failed_replay_artifact: Path,
+    run_id: str,
+) -> dict[str, object]:
+    """Run the final exposed replay after isolating anchor uniqueness."""
+
+    require_frozen_development_fixture(fixture)
+    authorization_sha256 = verify_final_replay_authorization(
+        failed_replay_artifact,
+    )
+    selection = select_generalization_trial(fixture)
+    repository_evidence = collect_repository_evidence(_REPO_ROOT)
+    if repository_evidence["clean"] is not True:
+        raise RuntimeError("final generalization replay requires a clean worktree")
+    return asyncio.run(
+        _run_trial(
+            selection=selection,
+            authorization_sha256=authorization_sha256,
+            authorization_source="binding_only_second_adaptive_replay_failure",
             mode="adaptive_replay",
             run_id=run_id,
             repeat_index=1,
@@ -421,6 +453,7 @@ def _build_report(  # noqa: PLR0913
 
 
 __all__ = [
+    "run_generalization_final_replay",
     "run_generalization_replay",
     "run_generalization_second_replay",
     "run_generalization_trial",

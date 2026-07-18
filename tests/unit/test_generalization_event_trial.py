@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import pytest
 
+from scripts.run_generalization_event_final_replay import final_replay_exit_code
 from scripts.run_generalization_event_replay import generalization_replay_exit_code
 from scripts.run_generalization_event_second_replay import second_replay_exit_code
 from scripts.run_generalization_event_trial import generalization_trial_exit_code
@@ -17,6 +18,9 @@ from scripts.validation.claim_events.finite_source_unit.generalization_trial.ada
 )
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.authorization import (
     _verify_authorization_payload,
+)
+from scripts.validation.claim_events.finite_source_unit.generalization_trial.final_replay_authorization import (
+    _verify_final_replay_payload,
 )
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.gate import (
     GeneralizationGateInputs,
@@ -251,6 +255,37 @@ def test_second_replay_requires_exact_schema_and_binding_failure() -> None:
         _verify_failed_adaptive_replay_payload(payload)
 
 
+def test_final_replay_requires_only_binding_and_core_failures() -> None:
+    requirements = dict.fromkeys(
+        generalization_gate_requirements(_baseline_gate()),
+        True,
+    )
+    requirements["binding_rejection_zero"] = False
+    requirements["sealed_expert_core_recovered"] = False
+    payload: dict[str, object] = {
+        "schema_version": "tg04_generalization_replay.v1",
+        "experiment_mode": "adaptive_replay",
+        "report_sha256": (
+            "41c35bb8bbeb1e416a481001724b592cf32b786ab54ed4c877574b186feca955"
+        ),
+        "gate_inputs": {
+            "binding_rejection_count": 1,
+            "trusted_candidate_count": 2,
+            "invalid_agent_output_count": 0,
+        },
+        "gate": {
+            "passed": False,
+            "decision": "STOP_AND_RECALIBRATE_GENERALIZATION",
+            "requirements": requirements,
+        },
+    }
+    _verify_final_replay_payload(payload)
+
+    requirements["all_candidates_structure_trusted"] = False
+    with pytest.raises(RuntimeError, match="boundary changed"):
+        _verify_final_replay_payload(payload)
+
+
 def test_generalization_trial_cli_exit_status_follows_gate() -> None:
     assert generalization_trial_exit_code({"gate": {"passed": True}}) == 0
     assert generalization_trial_exit_code({"gate": {"passed": False}}) == 1
@@ -259,3 +294,5 @@ def test_generalization_trial_cli_exit_status_follows_gate() -> None:
     assert generalization_replay_exit_code({"gate": {"passed": False}}) == 1
     assert second_replay_exit_code({"gate": {"passed": True}}) == 0
     assert second_replay_exit_code({"gate": {"passed": False}}) == 1
+    assert final_replay_exit_code({"gate": {"passed": True}}) == 0
+    assert final_replay_exit_code({"gate": {"passed": False}}) == 1

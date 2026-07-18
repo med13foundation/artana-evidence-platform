@@ -40,7 +40,7 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v7"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v8"
 _VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v7"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
@@ -302,7 +302,11 @@ event_type, polarity, and epistemic_status independent. Do not invent missing
 participants, normalize surface text, merge events, or return numeric scores.
 For every argument, at least one mention_anchor mention_span must exactly equal
 that argument's exact_span. Do not include a determiner or modifier in the
-argument exact_span when its canonical anchor omits it.
+argument exact_span when its canonical anchor omits it. When an argument span
+appears more than once anywhere in the frozen source unit, every intended anchor
+must include enough adjacent left_context and/or right_context to identify one
+occurrence exactly, even when the competing occurrence lies outside exact_span.
+Anchor context may extend immediately outside exact_span.
 Do not return source-unit identifiers or input hashes. The audited orchestrator
 binds transport identity outside the scientific output.
 

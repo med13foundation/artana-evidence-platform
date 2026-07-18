@@ -738,6 +738,8 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
     assert "outer THEME" in prompts[0]
     assert 'neutral cue such as "affects"' in prompts[0]
     assert "mention_span must exactly equal" in prompts[0]
+    assert "appears more than once anywhere" in prompts[0]
+    assert "competing occurrence lies outside exact_span" in prompts[0]
     assert "generic REGULATION duplicate" in prompts[0]
     assert "structure_decision" in prompts[1]
     assert "argument_semantic_decision" in prompts[1]
