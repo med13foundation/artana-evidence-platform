@@ -836,13 +836,12 @@ def _receipt_evidence(
 
 def _structured_payload_from_output(output: Sequence[object]) -> JsonObject:
     output_texts: list[str] = []
-    message_count = reasoning_count = 0
+    message_count = 0
     for raw_item in output:
         if not isinstance(raw_item, Mapping):
             raise TypeError("provider output items must be objects")
         item_type = raw_item.get("type")
         if item_type == "reasoning":
-            reasoning_count += 1
             _validate_inert_reasoning_item(raw_item)
             continue
         if item_type != "message":
@@ -859,7 +858,7 @@ def _structured_payload_from_output(output: Sequence[object]) -> JsonObject:
                 raise ValueError("provider message contains non-output text content")
             _validate_output_text_part(raw_part)
             output_texts.append(_output_text(raw_part))
-    if message_count != 1 or reasoning_count > 1 or len(output_texts) != 1:
+    if message_count != 1 or len(output_texts) != 1:
         raise ValueError(
             "provider response must contain one message and one structured output text",
         )

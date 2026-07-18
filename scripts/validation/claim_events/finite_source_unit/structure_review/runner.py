@@ -16,9 +16,9 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 )
 
 from scripts.validation.claim_events.finite_source_unit.contracts import (
-    ArgumentTypeDecision,
     EntailmentDecision,
     EventStructureDecision,
+    SemanticValidityDecision,
     SourceUnitVerificationOutput,
 )
 from scripts.validation.claim_events.finite_source_unit.discovery.identity_evidence import (
@@ -152,9 +152,9 @@ def _build_report(  # noqa: PLR0913
         for decision in decisions
     )
     invalid_argument_type_count = sum(
-        argument.decision is ArgumentTypeDecision.INVALID
+        argument.type_decision is SemanticValidityDecision.INVALID
         for decision in decisions
-        for argument in decision.argument_type_decisions
+        for argument in decision.argument_semantic_decisions
     )
     gate_inputs = StructureReplayGateInputs(
         authorization_verified=True,

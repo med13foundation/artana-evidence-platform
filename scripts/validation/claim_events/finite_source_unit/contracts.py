@@ -77,8 +77,8 @@ class DirectionEncodingDecision(StrEnum):
     ABSTAIN = "ABSTAIN"
 
 
-class ArgumentTypeDecision(StrEnum):
-    """Source-only biomedical type judgment for one ordered argument."""
+class SemanticValidityDecision(StrEnum):
+    """Categorical validity of one event or argument semantic assignment."""
 
     VALID = "VALID"
     INVALID = "INVALID"
@@ -133,12 +133,13 @@ class SourceUnitExtractionOutput(BaseModel):
         return self
 
 
-class CandidateArgumentTypeVerification(BaseModel):
-    """One ordered categorical biomedical argument-type review."""
+class CandidateArgumentSemanticVerification(BaseModel):
+    """Ordered biomedical type and event-role review for one argument."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
 
-    decision: ArgumentTypeDecision = Field(..., strict=False)
+    type_decision: SemanticValidityDecision = Field(..., strict=False)
+    event_role_decision: SemanticValidityDecision = Field(..., strict=False)
     reasoning: str = Field(..., min_length=1, max_length=2000)
 
 
@@ -150,10 +151,13 @@ class CandidateVerification(BaseModel):
     decision: EntailmentDecision = Field(..., strict=False)
     structure_decision: EventStructureDecision = Field(..., strict=False)
     direction_encoding: DirectionEncodingDecision = Field(..., strict=False)
-    argument_type_decisions: tuple[CandidateArgumentTypeVerification, ...] = Field(
-        ...,
-        min_length=2,
-        max_length=32,
+    event_type_decision: SemanticValidityDecision = Field(..., strict=False)
+    argument_semantic_decisions: tuple[CandidateArgumentSemanticVerification, ...] = (
+        Field(
+            ...,
+            min_length=2,
+            max_length=32,
+        )
     )
     projection_eligibility: ProjectionEligibilityDecision = Field(..., strict=False)
     evidence_spans: tuple[str, ...] = Field(default=(), max_length=16)
@@ -167,9 +171,9 @@ class CandidateVerification(BaseModel):
             return tuple(value)
         return value
 
-    @field_validator("argument_type_decisions", mode="before")
+    @field_validator("argument_semantic_decisions", mode="before")
     @classmethod
-    def freeze_argument_type_decisions(cls, value: object) -> object:
+    def freeze_argument_semantic_decisions(cls, value: object) -> object:
         if isinstance(value, list):
             return tuple(value)
         return value
@@ -197,13 +201,21 @@ class CandidateVerification(BaseModel):
             and not self.evidence_spans
         ):
             raise ValueError("decisive verification requires exact evidence spans")
-        invalid_type = any(
-            item.decision is ArgumentTypeDecision.INVALID
-            for item in self.argument_type_decisions
+        invalid_semantics = (
+            self.event_type_decision is SemanticValidityDecision.INVALID
+            or any(
+                item.type_decision is SemanticValidityDecision.INVALID
+                or item.event_role_decision is SemanticValidityDecision.INVALID
+                for item in self.argument_semantic_decisions
+            )
         )
-        unresolved_type = any(
-            item.decision is ArgumentTypeDecision.ABSTAIN
-            for item in self.argument_type_decisions
+        unresolved_semantics = (
+            self.event_type_decision is SemanticValidityDecision.ABSTAIN
+            or any(
+                item.type_decision is SemanticValidityDecision.ABSTAIN
+                or item.event_role_decision is SemanticValidityDecision.ABSTAIN
+                for item in self.argument_semantic_decisions
+            )
         )
         if self.projection_eligibility is ProjectionEligibilityDecision.ELIGIBLE:
             if not self.trusted_projection_eligible:
@@ -213,7 +225,7 @@ class CandidateVerification(BaseModel):
         elif self.projection_eligibility is ProjectionEligibilityDecision.REVIEW_ONLY:
             review_reason = (
                 self.decision is EntailmentDecision.ENTAILED
-                and not invalid_type
+                and not invalid_semantics
                 and (
                     self.structure_decision
                     in {EventStructureDecision.LOSSY, EventStructureDecision.ABSTAIN}
@@ -222,7 +234,7 @@ class CandidateVerification(BaseModel):
                         DirectionEncodingDecision.SOURCE_ONLY,
                         DirectionEncodingDecision.ABSTAIN,
                     }
-                    or unresolved_type
+                    or unresolved_semantics
                 )
             )
             if not review_reason:
@@ -236,7 +248,7 @@ class CandidateVerification(BaseModel):
                 }
                 or self.structure_decision is EventStructureDecision.INVALID
                 or self.direction_encoding is DirectionEncodingDecision.CONFLICT
-                or invalid_type
+                or invalid_semantics
             )
             if not rejection_reason:
                 raise ValueError("REJECT requires contradiction or invalid structure")
@@ -244,7 +256,7 @@ class CandidateVerification(BaseModel):
             self.decision is EntailmentDecision.ABSTAIN
             or self.structure_decision is EventStructureDecision.ABSTAIN
             or self.direction_encoding is DirectionEncodingDecision.ABSTAIN
-            or unresolved_type
+            or unresolved_semantics
         ):
             raise ValueError("ABSTAIN requires an unresolved categorical judgment")
         return self
@@ -261,9 +273,11 @@ class CandidateVerification(BaseModel):
                 DirectionEncodingDecision.STRUCTURED,
                 DirectionEncodingDecision.NOT_APPLICABLE,
             }
+            and self.event_type_decision is SemanticValidityDecision.VALID
             and all(
-                item.decision is ArgumentTypeDecision.VALID
-                for item in self.argument_type_decisions
+                item.type_decision is SemanticValidityDecision.VALID
+                and item.event_role_decision is SemanticValidityDecision.VALID
+                for item in self.argument_semantic_decisions
             )
         )
 
@@ -323,13 +337,13 @@ class SourceUnitVerificationOutput(BaseModel):
 
 
 __all__ = [
-    "ArgumentTypeDecision",
-    "CandidateArgumentTypeVerification",
+    "CandidateArgumentSemanticVerification",
     "CandidateVerification",
     "DirectionEncodingDecision",
     "EntailmentDecision",
     "EventStructureDecision",
     "ProjectionEligibilityDecision",
+    "SemanticValidityDecision",
     "SourceUnitCoverageDecision",
     "SourceUnitDecision",
     "SourceUnitEligibilityCategory",

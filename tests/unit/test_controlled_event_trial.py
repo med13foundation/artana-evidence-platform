@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import pytest
 
+from scripts.run_controlled_event_replay import controlled_event_replay_exit_code
 from scripts.run_controlled_event_trial import controlled_event_trial_exit_code
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
@@ -20,6 +21,9 @@ from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.g
 from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.matching import (
     expert_core_event_match_count,
 )
+from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.replay_authorization import (
+    _verify_failed_trial_payload,
+)
 from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.selection import (
     select_controlled_event_trial,
 )
@@ -33,6 +37,8 @@ def _baseline_gate() -> ControlledEventTrialGateInputs:
     return ControlledEventTrialGateInputs(
         authorization_verified=True,
         selection_verified=True,
+        fresh_unit_declared=True,
+        adaptive_replay_declared=False,
         repeat_index=1,
         hidden_expert_event_count=1,
         agent_execution_complete=True,
@@ -83,6 +89,8 @@ def test_controlled_event_trial_gate_fails_closed_on_every_boundary() -> None:
     mutations = (
         {"authorization_verified": False},
         {"selection_verified": False},
+        {"fresh_unit_declared": False},
+        {"adaptive_replay_declared": True},
         {"repeat_index": 0},
         {"repeat_index": 4},
         {"hidden_expert_event_count": 0},
@@ -180,7 +188,45 @@ def test_expert_core_matching_preserves_valid_additional_arguments() -> None:
     assert expert_core_event_match_count((expert,), [predicted]) == 0
 
 
+def test_adaptive_replay_requires_exact_failed_gate() -> None:
+    payload: dict[str, object] = {
+        "schema_version": "tg04_controlled_event_trial.v1",
+        "report_sha256": (
+            "1503f4f1de58ab8156d960c4d4f9c888d2716bcb39255bc1b03ab95ee24464cc"
+        ),
+        "repeat_index": 1,
+        "unit": {
+            "unit_id": (
+                "source-unit-02c41780fd8d83965debdc337f89adce6283552fa76ac7d36ee12c56060ef21b"
+            ),
+        },
+        "gate": {
+            "passed": False,
+            "decision": "STOP_AND_RECALIBRATE_CONTROLLED_EVENT_EXTRACTION",
+            "requirements": {
+                "sealed_expert_core_recovered": False,
+                "provider_receipts_verified": False,
+            },
+        },
+    }
+    _verify_failed_trial_payload(payload)
+
+    passed = dict(payload)
+    passed["gate"] = {
+        "passed": True,
+        "decision": "PROCEED_TO_NEXT_REPEAT_OR_SOURCE_REVIEW",
+        "requirements": {
+            "sealed_expert_core_recovered": True,
+            "provider_receipts_verified": True,
+        },
+    }
+    with pytest.raises(RuntimeError, match="does not authorize"):
+        _verify_failed_trial_payload(passed)
+
+
 def test_controlled_event_trial_cli_exit_status_follows_gate() -> None:
     assert controlled_event_trial_exit_code({"gate": {"passed": True}}) == 0
     assert controlled_event_trial_exit_code({"gate": {"passed": False}}) == 1
     assert controlled_event_trial_exit_code({}) == 1
+    assert controlled_event_replay_exit_code({"gate": {"passed": True}}) == 0
+    assert controlled_event_replay_exit_code({"gate": {"passed": False}}) == 1

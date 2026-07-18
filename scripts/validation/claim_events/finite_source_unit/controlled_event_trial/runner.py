@@ -7,7 +7,7 @@ from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, Literal, cast
 from uuid import uuid4
 
 from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.authorization import (
@@ -19,6 +19,9 @@ from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.g
 )
 from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.matching import (
     expert_core_event_match_count,
+)
+from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.replay_authorization import (
+    verify_failed_trial_authorization,
 )
 from scripts.validation.claim_events.finite_source_unit.controlled_event_trial.selection import (
     ControlledEventTrialSelection,
@@ -62,6 +65,7 @@ if TYPE_CHECKING:
 
 _REPO_ROOT: Final = Path(__file__).resolve().parents[5]
 _MODEL_ID: Final = "openai:gpt-5.6-luna"
+TrialMode = Literal["fresh", "adaptive_replay"]
 
 
 @dataclass(slots=True)
@@ -96,8 +100,35 @@ def run_controlled_event_trial(
         _run_trial(
             selection=selection,
             authorization_sha256=authorization_sha256,
+            mode="fresh",
             run_id=run_id,
             repeat_index=repeat_index,
+            repository_evidence=repository_evidence,
+        ),
+    )
+
+
+def run_controlled_event_replay(
+    *,
+    fixture: NaryClaimFixture,
+    failed_trial_artifact: Path,
+    run_id: str,
+) -> dict[str, object]:
+    """Replay the exposed failed unit without awarding qualification credit."""
+
+    require_frozen_development_fixture(fixture)
+    authorization_sha256 = verify_failed_trial_authorization(failed_trial_artifact)
+    selection = select_controlled_event_trial(fixture)
+    repository_evidence = collect_repository_evidence(_REPO_ROOT)
+    if repository_evidence["clean"] is not True:
+        raise RuntimeError("controlled-event replay requires a clean tracked worktree")
+    return asyncio.run(
+        _run_trial(
+            selection=selection,
+            authorization_sha256=authorization_sha256,
+            mode="adaptive_replay",
+            run_id=run_id,
+            repeat_index=1,
             repository_evidence=repository_evidence,
         ),
     )
@@ -107,6 +138,7 @@ async def _run_trial(  # noqa: PLR0913
     *,
     selection: ControlledEventTrialSelection,
     authorization_sha256: str,
+    mode: TrialMode,
     run_id: str,
     repeat_index: int,
     repository_evidence: dict[str, object],
@@ -131,6 +163,7 @@ async def _run_trial(  # noqa: PLR0913
     return _build_report(
         selection=selection,
         authorization_sha256=authorization_sha256,
+        mode=mode,
         run_id=run_id,
         repeat_index=repeat_index,
         repository_evidence=repository_evidence,
@@ -142,6 +175,7 @@ def _build_report(  # noqa: PLR0913
     *,
     selection: ControlledEventTrialSelection,
     authorization_sha256: str,
+    mode: TrialMode,
     run_id: str,
     repeat_index: int,
     repository_evidence: dict[str, object],
@@ -185,6 +219,8 @@ def _build_report(  # noqa: PLR0913
     gate_inputs = ControlledEventTrialGateInputs(
         authorization_verified=True,
         selection_verified=True,
+        fresh_unit_declared=mode == "fresh",
+        adaptive_replay_declared=mode == "adaptive_replay",
         repeat_index=repeat_index,
         hidden_expert_event_count=len(selection.expert_events),
         agent_execution_complete=(
@@ -239,16 +275,29 @@ def _build_report(  # noqa: PLR0913
     requirements = controlled_event_trial_gate_requirements(gate_inputs)
     passed = all(requirements.values())
     report: dict[str, object] = {
-        "schema_version": "tg04_controlled_event_trial.v1",
+        "schema_version": (
+            "tg04_controlled_event_trial.v1"
+            if mode == "fresh"
+            else "tg04_controlled_event_replay.v1"
+        ),
         "run_id": run_id,
         "repeat_index": repeat_index,
         "generated_at": datetime.now(UTC).isoformat(),
         "model_id": _MODEL_ID,
-        "task_id": "fresh_controlled_event_trial",
+        "task_id": (
+            "fresh_controlled_event_trial"
+            if mode == "fresh"
+            else "adaptive_controlled_event_replay"
+        ),
+        "experiment_mode": mode,
         "repository_evidence": repository_evidence,
         "authorization": {
-            "merged_pr": 177,
-            "structure_replay_artifact_sha256": authorization_sha256,
+            "source": (
+                "merged_pr_177_structure_replay"
+                if mode == "fresh"
+                else "failed_fresh_repeat_1"
+            ),
+            "artifact_sha256": authorization_sha256,
         },
         "freshness": {
             "scope": "tracked TG-04 live reports through merged PR #177",
@@ -256,6 +305,7 @@ def _build_report(  # noqa: PLR0913
             "selection_rank": selection.selection_rank,
             "exposure_registry_sha256": selection.exposure_registry_sha256,
             "convenience_sample": True,
+            "fresh_at_execution": mode == "fresh",
         },
         "unit": {
             "case_id": selection.case_id,
@@ -309,14 +359,20 @@ def _build_report(  # noqa: PLR0913
         "gate": {
             "passed": passed,
             "decision": (
-                "PROCEED_TO_NEXT_REPEAT_OR_SOURCE_REVIEW"
+                (
+                    "PROCEED_TO_NEXT_REPEAT_OR_SOURCE_REVIEW"
+                    if mode == "fresh"
+                    else "PROCEED_TO_NEW_FRESH_UNIT"
+                )
                 if passed
                 else "STOP_AND_RECALIBRATE_CONTROLLED_EVENT_EXTRACTION"
             ),
             "requirements": requirements,
         },
         "conclusion_scope": {
-            "single_fresh_unit_convenience_sample": True,
+            "single_fresh_unit_convenience_sample": mode == "fresh",
+            "adaptive_replay": mode == "adaptive_replay",
+            "qualification_eligible": mode == "fresh",
             "sealed_expert_event_was_hidden_from_agents": True,
             "expert_event_is_minimum_expected_source_structure": True,
             "strict_exact_benchmark_match_is_reported_but_not_a_gate": True,
@@ -330,4 +386,4 @@ def _build_report(  # noqa: PLR0913
     return report
 
 
-__all__ = ["run_controlled_event_trial"]
+__all__ = ["run_controlled_event_replay", "run_controlled_event_trial"]

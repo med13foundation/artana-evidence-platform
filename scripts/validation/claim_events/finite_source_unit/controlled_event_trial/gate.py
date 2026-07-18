@@ -20,6 +20,8 @@ class ControlledEventTrialGateInputs:
 
     authorization_verified: bool
     selection_verified: bool
+    fresh_unit_declared: bool
+    adaptive_replay_declared: bool
     repeat_index: int
     hidden_expert_event_count: int
     agent_execution_complete: bool
@@ -54,6 +56,9 @@ def controlled_event_trial_gate_requirements(
     return {
         "authorization_verified": inputs.authorization_verified,
         "selection_verified": inputs.selection_verified,
+        "execution_mode_declared": (
+            inputs.fresh_unit_declared != inputs.adaptive_replay_declared
+        ),
         "repeat_index_pre_registered": (
             1 <= inputs.repeat_index <= _MAXIMUM_REPEAT_INDEX
         ),

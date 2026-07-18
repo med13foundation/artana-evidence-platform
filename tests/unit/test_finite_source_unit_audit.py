@@ -155,9 +155,18 @@ def _candidate_verification_payload(
         "decision": decision,
         "structure_decision": "COMPLETE",
         "direction_encoding": "STRUCTURED",
-        "argument_type_decisions": [
-            {"decision": "VALID", "reasoning": "The source span is a protein."},
-            {"decision": "VALID", "reasoning": "The source span is a protein."},
+        "event_type_decision": "VALID",
+        "argument_semantic_decisions": [
+            {
+                "type_decision": "VALID",
+                "event_role_decision": "VALID",
+                "reasoning": "The source span and event role are valid.",
+            },
+            {
+                "type_decision": "VALID",
+                "event_role_decision": "VALID",
+                "reasoning": "The source span and event role are valid.",
+            },
         ],
         "projection_eligibility": "ELIGIBLE" if entailed else "REJECT",
         "evidence_spans": (
@@ -404,10 +413,15 @@ def test_projection_eligibility_fails_closed_on_structure_and_argument_types() -
     assert reviewed.trusted_projection_eligible is False
 
     invalid_type = _candidate_verification_payload()
-    invalid_type["argument_type_decisions"] = [
-        {"decision": "VALID", "reasoning": "The first span is a protein."},
+    invalid_type["argument_semantic_decisions"] = [
         {
-            "decision": "INVALID",
+            "type_decision": "VALID",
+            "event_role_decision": "VALID",
+            "reasoning": "The first span and event role are valid.",
+        },
+        {
+            "type_decision": "INVALID",
+            "event_role_decision": "VALID",
             "reasoning": "The second span is a process, not a protein.",
         },
     ]
@@ -421,6 +435,36 @@ def test_projection_eligibility_fails_closed_on_structure_and_argument_types() -
         },
     ).decisions[0]
     assert rejected.trusted_projection_eligible is False
+
+    invalid_event_type = _candidate_verification_payload()
+    invalid_event_type["event_type_decision"] = "INVALID"
+    invalid_event_type["projection_eligibility"] = "REJECT"
+    rejected_event = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "The causal cue was encoded as an uncaused change.",
+            "decisions": [invalid_event_type],
+        },
+    ).decisions[0]
+    assert rejected_event.trusted_projection_eligible is False
+
+    invalid_event_role = _candidate_verification_payload()
+    semantic_decisions = invalid_event_role["argument_semantic_decisions"]
+    assert isinstance(semantic_decisions, list)
+    first_semantic_decision = semantic_decisions[0]
+    assert isinstance(first_semantic_decision, dict)
+    first_semantic_decision["event_role_decision"] = "INVALID"
+    invalid_event_role["projection_eligibility"] = "REJECT"
+    rejected_role = SourceUnitVerificationOutput.model_validate(
+        {
+            "eligibility_category": "FINDING",
+            "coverage_decision": "CANDIDATES_COMPLETE",
+            "coverage_reasoning": "A regulator was labeled AGENT instead of CAUSE.",
+            "decisions": [invalid_event_role],
+        },
+    ).decisions[0]
+    assert rejected_role.trusted_projection_eligible is False
 
     bad_eligible = dict(lossy)
     bad_eligible["projection_eligibility"] = "ELIGIBLE"
@@ -448,10 +492,14 @@ def test_argument_type_reviews_are_bound_to_candidate_order() -> None:
         unit=unit,
     )
     payload = _candidate_verification_payload()
-    argument_reviews = payload["argument_type_decisions"]
+    argument_reviews = payload["argument_semantic_decisions"]
     assert isinstance(argument_reviews, list)
     argument_reviews.append(
-        {"decision": "VALID", "reasoning": "Injected unmatched type decision."},
+        {
+            "type_decision": "VALID",
+            "event_role_decision": "VALID",
+            "reasoning": "Injected unmatched semantic decision.",
+        },
     )
     verification = SourceUnitVerificationOutput.model_validate(
         {
@@ -462,7 +510,7 @@ def test_argument_type_reviews_are_bound_to_candidate_order() -> None:
         },
     )
 
-    with pytest.raises(StructuredModelSemanticError, match="argument-type decisions"):
+    with pytest.raises(StructuredModelSemanticError, match="semantic decisions"):
         bind_source_unit_verification(
             verification,
             unit=unit,
@@ -682,8 +730,12 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
         assert "A methods sentence is scientific only when it" in prompt
 
     assert "CONTROLLED-EVENT DECOMPOSITION" in prompts[0]
+    assert "Use INCREASE or DECREASE only" in prompts[0]
+    assert "AGENT is not a substitute for CAUSE" in prompts[0]
+    assert "named gene products are GENE_OR_PROTEIN" in prompts[0]
     assert "structure_decision" in prompts[1]
-    assert "argument_type_decision" in prompts[1]
+    assert "argument_semantic_decision" in prompts[1]
+    assert "event_type_decision" in prompts[1]
     assert "projection_eligibility" in prompts[1]
 
 
