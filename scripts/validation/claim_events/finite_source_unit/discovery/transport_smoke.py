@@ -146,7 +146,7 @@ async def _run_transport_identity_smoke(  # noqa: PLR0913
             if agent_run.verification is None
             else len(agent_run.verification.decisions)
         ),
-        entailed_candidate_count=len(agent_run.accepted),
+        entailed_candidate_count=len(agent_run.entailed),
         binding_rejection_count=agent_run.binding_rejection_count,
         model_transport_identity_field_count=count_model_identity_fields(
             agent_outputs,
@@ -196,7 +196,7 @@ async def _run_transport_identity_smoke(  # noqa: PLR0913
                 "source_end": claim.source_end,
                 "item": claim.item.model_dump(mode="json"),
             }
-            for claim in agent_run.accepted
+            for claim in agent_run.entailed
         ],
         "attempts": [record.as_json() for record in agent_run.records],
         "provider_receipts": receipts.as_json(),

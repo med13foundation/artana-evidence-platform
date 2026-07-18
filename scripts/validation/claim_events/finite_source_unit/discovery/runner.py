@@ -143,7 +143,7 @@ async def _run_hidden_discovery(  # noqa: PLR0913
     if collect_repository_evidence(_REPO_ROOT) != repository_evidence:
         raise RuntimeError("repository changed during hidden discovery")
 
-    events = nary_events_from_bound_inventory(agent_run.accepted)
+    events = nary_events_from_bound_inventory(agent_run.trusted)
     event = events[0] if len(events) == 1 else None
     event_arguments = _event_arguments(event)
     expectations, invalid_count, unidentified_count = (
@@ -182,7 +182,7 @@ async def _run_hidden_discovery(  # noqa: PLR0913
             else agent_run.verification.coverage_decision
         ),
         extracted_candidate_count=agent_run.extracted_candidate_count,
-        entailed_candidate_count=len(agent_run.accepted),
+        entailed_candidate_count=len(agent_run.entailed),
         predicted_event_count=len(events),
         predicted_event_type=_optional_text(event, "event_type"),
         predicted_polarity=_optional_text(event, "polarity"),

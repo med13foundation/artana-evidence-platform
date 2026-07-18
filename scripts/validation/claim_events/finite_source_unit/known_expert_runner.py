@@ -147,7 +147,7 @@ async def _run_known_expert_source_unit(
             "repository state changed during known expert source-unit run"
         )
 
-    events = nary_events_from_bound_inventory(agent_run.accepted)
+    events = nary_events_from_bound_inventory(agent_run.trusted)
     score = score_fixture(
         _SingleEventFixture(
             cases=(_SingleEventCase(case_id=_CASE_ID, events=(event,)),)
@@ -181,7 +181,7 @@ async def _run_known_expert_source_unit(
         if agent_run.verification is None
         else agent_run.verification.coverage_decision,
         extracted_candidate_count=agent_run.extracted_candidate_count,
-        entailed_candidate_count=len(agent_run.accepted),
+        entailed_candidate_count=len(agent_run.entailed),
         exact_whole_event_match_count=score.metrics.whole_event_recall.count,
         predicted_event_count=score.metrics.whole_event_precision.denominator,
         binding_rejection_count=agent_run.binding_rejection_count,
