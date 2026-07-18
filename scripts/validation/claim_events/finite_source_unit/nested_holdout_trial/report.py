@@ -15,7 +15,7 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.gat
     nested_holdout_gate_requirements,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.matching import (
-    match_nested_event_graph,
+    match_projection_set,
 )
 from scripts.validation.claim_events.finite_source_unit.runner import (
     receipt_expectations_for_finite_source_records,
@@ -80,8 +80,8 @@ def build_nested_holdout_report(  # noqa: PLR0913
         "verification": model_json(agent_run.verification),
         "error_type": agent_run.error_type,
     }
-    event_match = match_nested_event_graph(
-        expert_graph=selection.expert_graph,
+    projection_match = match_projection_set(
+        projection_set=selection.projection_set,
         trusted=agent_run.trusted,
         links=agent_run.controlled_event_links,
     )
@@ -89,6 +89,7 @@ def build_nested_holdout_report(  # noqa: PLR0913
         repeat_index=repeat_index,
         hidden_expert_event_count=len(selection.expert_graph.events),
         hidden_expert_link_count=len(selection.expert_graph.links),
+        expected_eligibility_category=selection.expected_eligibility_category,
         agent_execution_complete=(
             agent_run.extraction is not None
             and agent_run.verification is not None
@@ -116,10 +117,10 @@ def build_nested_holdout_report(  # noqa: PLR0913
         verification_decision_count=len(agent_run.verified),
         entailed_candidate_count=len(agent_run.entailed),
         trusted_candidate_count=len(agent_run.trusted),
-        inner_event_match_count=len(event_match.inner_inventory_ids),
-        outer_event_match_count=len(event_match.outer_inventory_ids),
-        expert_link_match_count=event_match.expert_link_match_count,
-        complete_graph_match_count=event_match.complete_graph_match_count,
+        acceptable_projection_count=len(selection.projection_set.projections),
+        fully_recovered_projection_count=len(
+            projection_match.fully_recovered_projection_ids
+        ),
         observed_binding_rejection_count=len(agent_run.observed_binding_rejections),
         binding_rejection_count=agent_run.binding_rejection_count,
         schema_retry_count=len(repair_records),
@@ -158,6 +159,7 @@ def build_nested_holdout_report(  # noqa: PLR0913
         "configured_model_id": configured_model_id,
         "execution_model_id": execution_model_id,
         "task_id": f"fresh_nested_event_identity_holdout_v{selection.trial_generation}",
+        "expected_eligibility_category": selection.expected_eligibility_category.value,
         "repository_evidence": repository_evidence,
         "freshness": {
             "selection_seed": selection.selection_seed,
@@ -174,6 +176,7 @@ def build_nested_holdout_report(  # noqa: PLR0913
         "source_corpus": {
             "archive_sha256": selection.archive_sha256,
             "expert_graph_sha256": selection.expert_graph_sha256,
+            "projection_set_sha256": selection.projection_set_sha256,
         },
         "unit": {
             "case_id": selection.case_id,
@@ -209,7 +212,8 @@ def build_nested_holdout_report(  # noqa: PLR0913
             for ambiguity in agent_run.controlled_event_link_ambiguities
         ],
         "sealed_expert_graph": selection.expert_graph.as_json(),
-        "deterministic_event_match": asdict(event_match),
+        "sealed_projection_set": selection.projection_set.as_json(),
+        "deterministic_projection_match": asdict(projection_match),
         "attempts": [record.as_json() for record in agent_run.records],
         "provider_receipts": receipts.as_json(),
         "gate_inputs": asdict(gate_inputs),
@@ -225,6 +229,7 @@ def build_nested_holdout_report(  # noqa: PLR0913
         "conclusion_scope": {
             "single_fresh_unit_convenience_sample": True,
             "sealed_expert_graph_was_hidden_from_agents": True,
+            "sealed_projection_set_was_hidden_from_agents": True,
             "additional_source_valid_claims_are_allowed": True,
             "all_additional_claims_must_be_entailed_and_structure_trusted": True,
             "benchmark_credit_awarded": False,

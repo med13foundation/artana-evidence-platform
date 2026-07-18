@@ -22,6 +22,9 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sel
     NestedHoldoutSelection,
     select_nested_event_holdout,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.third_selection import (
+    select_third_nested_event_holdout,
+)
 from scripts.validation.claim_events.finite_source_unit.service import as_model_client
 from scripts.validation.claim_events.finite_source_unit.single_unit_execution import (
     execute_source_unit_agents,
@@ -64,6 +67,26 @@ def run_second_nested_event_holdout_trial(
 
     with verified_corpus_root(archive) as corpus_root:
         selection = select_second_nested_event_holdout(
+            corpus_root=corpus_root,
+            archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        )
+    return _run_selected_trial(
+        selection=selection,
+        run_id=run_id,
+        repeat_index=repeat_index,
+    )
+
+
+def run_third_nested_event_holdout_trial(
+    *,
+    archive: Path,
+    run_id: str,
+    repeat_index: int,
+) -> dict[str, object]:
+    """Run the sealed projection-aware v3 holdout without exposing its gold set."""
+
+    with verified_corpus_root(archive) as corpus_root:
+        selection = select_third_nested_event_holdout(
             corpus_root=corpus_root,
             archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
         )
@@ -135,4 +158,5 @@ async def _run_trial(
 __all__ = [
     "run_nested_event_holdout_trial",
     "run_second_nested_event_holdout_trial",
+    "run_third_nested_event_holdout_trial",
 ]

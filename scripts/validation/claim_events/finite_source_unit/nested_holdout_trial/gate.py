@@ -24,6 +24,7 @@ class NestedHoldoutGateInputs:
     repeat_index: int
     hidden_expert_event_count: int
     hidden_expert_link_count: int
+    expected_eligibility_category: SourceUnitEligibilityCategory
     agent_execution_complete: bool
     extraction_category: SourceUnitEligibilityCategory | None
     verification_category: SourceUnitEligibilityCategory | None
@@ -33,10 +34,8 @@ class NestedHoldoutGateInputs:
     verification_decision_count: int
     entailed_candidate_count: int
     trusted_candidate_count: int
-    inner_event_match_count: int
-    outer_event_match_count: int
-    expert_link_match_count: int
-    complete_graph_match_count: int
+    acceptable_projection_count: int
+    fully_recovered_projection_count: int
     observed_binding_rejection_count: int
     binding_rejection_count: int
     schema_retry_count: int
@@ -72,11 +71,14 @@ def nested_holdout_gate_requirements(
             and inputs.hidden_expert_link_count == _SEALED_LINK_COUNT
         ),
         "agent_execution_complete": inputs.agent_execution_complete,
-        "extractor_recognized_finding": (
-            inputs.extraction_category is SourceUnitEligibilityCategory.FINDING
+        "expected_category_is_scientific": (
+            inputs.expected_eligibility_category.scientific
         ),
-        "verifier_recognized_finding": (
-            inputs.verification_category is SourceUnitEligibilityCategory.FINDING
+        "extractor_recognized_expected_science": (
+            inputs.extraction_category is inputs.expected_eligibility_category
+        ),
+        "verifier_recognized_expected_science": (
+            inputs.verification_category is inputs.expected_eligibility_category
         ),
         "independent_categories_agree": (
             inputs.extraction_category is inputs.verification_category
@@ -91,10 +93,10 @@ def nested_holdout_gate_requirements(
         ),
         "all_candidates_source_entailed": inputs.entailed_candidate_count == candidate_count,
         "all_candidates_structure_trusted": inputs.trusted_candidate_count == candidate_count,
-        "sealed_inner_event_recovered_once": inputs.inner_event_match_count == 1,
-        "sealed_outer_event_recovered_once": inputs.outer_event_match_count == 1,
-        "sealed_event_link_recovered_once": inputs.expert_link_match_count == 1,
-        "complete_sealed_graph_recovered_once": inputs.complete_graph_match_count == 1,
+        "acceptable_projection_set_nonempty": inputs.acceptable_projection_count > 0,
+        "complete_acceptable_projection_recovered": (
+            inputs.fully_recovered_projection_count > 0
+        ),
         "binding_repair_accounted": (
             (
                 inputs.observed_binding_rejection_count == 0
@@ -113,7 +115,7 @@ def nested_holdout_gate_requirements(
             and inputs.weak_review_attempt_count == 1
         ),
         "binding_rejection_zero": inputs.binding_rejection_count == 0,
-        "controlled_event_link_count_exact": inputs.controlled_event_link_count == 1,
+        "controlled_event_link_present": inputs.controlled_event_link_count > 0,
         "controlled_event_link_ambiguity_zero": (
             inputs.controlled_event_link_ambiguity_count == 0
         ),

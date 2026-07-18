@@ -11,6 +11,8 @@ import pytest
 from artana_evidence_api.document_extraction_support.claim_frames import (
     ClaimEventRole,
     ClaimInventoryItem,
+    ClaimKind,
+    InventoryEpistemicStatus,
     bind_claim_inventory,
     link_controlled_events,
 )
@@ -19,6 +21,7 @@ from scripts.run_nested_event_holdout_trial import nested_holdout_trial_exit_cod
 from scripts.run_second_nested_event_holdout_trial import (
     second_nested_holdout_exit_code,
 )
+from scripts.run_third_nested_event_holdout_trial import third_nested_holdout_exit_code
 from scripts.validation.claim_events.bionlp_import import TG04_BIONLP_ARCHIVE_SHA256
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
@@ -34,17 +37,29 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.gat
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.matching import (
     match_nested_event_graph,
+    match_projection_set,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.second_selection import (
     select_second_nested_event_holdout,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.selection import (
+    ProjectionProvenance,
     SealedArgument,
     SealedEvent,
     SealedEventLink,
+    SealedGraphProjection,
     SealedNestedEventGraph,
+    SealedProjectionSet,
     SealedTrigger,
+    canonical_projection_set,
     select_nested_event_holdout,
+    validate_sealed_projection_set,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.third_selection import (
+    select_third_nested_event_holdout,
+)
+from scripts.validation.claim_events.finite_source_unit.source_units import (
+    FrozenSourceUnit,
 )
 
 _SOURCE = (
@@ -155,11 +170,52 @@ def _sealed_graph() -> SealedNestedEventGraph:
     )
 
 
+def _projection_set(graph: SealedNestedEventGraph) -> SealedProjectionSet:
+    return canonical_projection_set(
+        graph,
+        scientific_rationale="The complete source-supported nested graph.",
+    )
+
+
+def _frozen_test_unit() -> FrozenSourceUnit:
+    return FrozenSourceUnit(
+        unit_id="source-unit-projection-validation",
+        index=6,
+        source_start=_SOURCE_OFFSET,
+        source_end=_SOURCE_OFFSET + len(_SOURCE),
+        text=_SOURCE,
+        source_sha256=hashlib.sha256(_SOURCE.encode()).hexdigest(),
+    )
+
+
+def _alternative_sealed_graph() -> SealedNestedEventGraph:
+    graph = _sealed_graph()
+    ets_start = _SOURCE_OFFSET + _SOURCE.index("Ets")
+    ets = SealedArgument(
+        "THEME",
+        "T8",
+        "GENE_OR_PROTEIN",
+        "Ets",
+        ets_start,
+        ets_start + len("Ets"),
+    )
+    inner = replace(
+        graph.events[0],
+        arguments=(graph.events[0].arguments[0], ets),
+    )
+    outer = replace(
+        graph.events[1],
+        arguments=(replace(ets, event_role="CAUSE"),),
+    )
+    return SealedNestedEventGraph(events=(inner, outer), links=graph.links)
+
+
 def _baseline_gate() -> NestedHoldoutGateInputs:
     return NestedHoldoutGateInputs(
         repeat_index=1,
         hidden_expert_event_count=2,
         hidden_expert_link_count=1,
+        expected_eligibility_category=SourceUnitEligibilityCategory.FINDING,
         agent_execution_complete=True,
         extraction_category=SourceUnitEligibilityCategory.FINDING,
         verification_category=SourceUnitEligibilityCategory.FINDING,
@@ -169,10 +225,8 @@ def _baseline_gate() -> NestedHoldoutGateInputs:
         verification_decision_count=2,
         entailed_candidate_count=2,
         trusted_candidate_count=2,
-        inner_event_match_count=1,
-        outer_event_match_count=1,
-        expert_link_match_count=1,
-        complete_graph_match_count=1,
+        acceptable_projection_count=1,
+        fully_recovered_projection_count=1,
         observed_binding_rejection_count=0,
         binding_rejection_count=0,
         schema_retry_count=0,
@@ -226,6 +280,140 @@ def test_wrong_outer_cause_cannot_receive_nested_graph_credit() -> None:
     assert result.outer_inventory_ids == ()
     assert result.expert_link_match_count == 0
     assert result.complete_graph_match_count == 0
+
+
+def test_projection_set_requires_one_complete_projection_without_partial_credit() -> None:
+    canonical_trusted = _trusted_inventory()
+    canonical_links = link_controlled_events(canonical_trusted)
+    projection_set = _projection_set(_sealed_graph())
+
+    recovered = match_projection_set(
+        projection_set=projection_set,
+        trusted=canonical_trusted,
+        links=canonical_links.links,
+    )
+    partial_trusted = _trusted_inventory(wrong_outer_cause=True)
+    partial_links = link_controlled_events(partial_trusted)
+    partial = match_projection_set(
+        projection_set=projection_set,
+        trusted=partial_trusted,
+        links=partial_links.links,
+    )
+
+    assert recovered.fully_recovered_projection_ids == ("bionlp-expert",)
+    assert recovered.projections[0].completely_recovered_once is True
+    assert partial.fully_recovered_projection_ids == ()
+    assert partial.projections[0].match.inner_inventory_ids
+    assert partial.projections[0].match.outer_inventory_ids == ()
+
+
+def test_projection_set_never_combines_partial_matches_across_alternatives() -> None:
+    projection_set = SealedProjectionSet(
+        canonical_projection_id="bionlp-expert",
+        projections=(
+            _projection_set(_sealed_graph()).projections[0],
+            SealedGraphProjection(
+                projection_id="alternative",
+                provenance=ProjectionProvenance.SOURCE_VALID_ALTERNATIVE,
+                scientific_rationale="A distinct complete test projection.",
+                graph=_alternative_sealed_graph(),
+                event_semantics=_projection_set(
+                    _alternative_sealed_graph(),
+                ).projections[0].event_semantics,
+            ),
+        ),
+    )
+    mixed_trusted = _trusted_inventory(wrong_outer_cause=True)
+    links = link_controlled_events(mixed_trusted)
+
+    result = match_projection_set(
+        projection_set=projection_set,
+        trusted=mixed_trusted,
+        links=links.links,
+    )
+
+    assert result.fully_recovered_projection_ids == ()
+    canonical, alternative = result.projections
+    assert canonical.match.inner_inventory_ids
+    assert canonical.match.outer_inventory_ids == ()
+    assert alternative.match.inner_inventory_ids == ()
+    assert alternative.match.outer_inventory_ids
+
+
+def test_duplicate_required_event_candidate_cannot_receive_projection_credit() -> None:
+    inner, outer = _trusted_inventory()
+    links = link_controlled_events((inner, outer))
+
+    result = match_projection_set(
+        projection_set=_projection_set(_sealed_graph()),
+        trusted=(inner, inner, outer),
+        links=links.links,
+    )
+
+    assert result.fully_recovered_projection_ids == ()
+    assert len(result.projections[0].match.inner_inventory_ids) == 2
+
+
+def test_projection_match_preserves_event_level_epistemic_status() -> None:
+    trusted = _trusted_inventory()
+    links = link_controlled_events(trusted)
+    baseline = _projection_set(_sealed_graph())
+    projection = baseline.projections[0]
+    outer_semantics = replace(
+        projection.event_semantics[1],
+        claim_kind=ClaimKind.SCIENTIFIC_HYPOTHESIS,
+        epistemic_status=InventoryEpistemicStatus.HYPOTHESIS,
+    )
+    hypothesis_projection = replace(
+        baseline,
+        projections=(
+            replace(
+                projection,
+                event_semantics=(projection.event_semantics[0], outer_semantics),
+            ),
+        ),
+    )
+
+    result = match_projection_set(
+        projection_set=hypothesis_projection,
+        trusted=trusted,
+        links=links.links,
+    )
+
+    assert result.fully_recovered_projection_ids == ()
+    assert result.projections[0].match.inner_inventory_ids
+    assert result.projections[0].match.outer_inventory_ids == ()
+
+
+def test_projection_set_rejects_identity_and_source_drift_before_execution() -> None:
+    valid = _projection_set(_sealed_graph())
+    validate_sealed_projection_set(valid, unit=_frozen_test_unit())
+    projection = valid.projections[0]
+    dangling_graph = replace(
+        projection.graph,
+        links=(replace(projection.graph.links[0], controller_event_id="missing"),),
+    )
+    shifted_trigger = replace(
+        projection.graph.events[0].trigger,
+        source_start=projection.graph.events[0].trigger.source_start + 1,
+    )
+    shifted_graph = replace(
+        projection.graph,
+        events=(
+            replace(projection.graph.events[0], trigger=shifted_trigger),
+            projection.graph.events[1],
+        ),
+    )
+    invalid_sets = (
+        replace(valid, canonical_projection_id="missing"),
+        replace(valid, projections=(projection, projection)),
+        replace(valid, projections=(replace(projection, graph=dangling_graph),)),
+        replace(valid, projections=(replace(projection, graph=shifted_graph),)),
+    )
+
+    for invalid in invalid_sets:
+        with pytest.raises(RuntimeError):
+            validate_sealed_projection_set(invalid, unit=_frozen_test_unit())
 
 
 def test_wrong_event_reference_role_cannot_receive_graph_credit() -> None:
@@ -290,6 +478,7 @@ def test_gate_allows_extra_claims_only_when_all_are_entailed_and_trusted() -> No
         verification_decision_count=3,
         entailed_candidate_count=3,
         trusted_candidate_count=3,
+        controlled_event_link_count=2,
     )
     assert all(nested_holdout_gate_requirements(valid_extra).values())
 
@@ -308,10 +497,9 @@ def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
     mutations = (
         {"hidden_expert_event_count": 1},
         {"hidden_expert_link_count": 0},
-        {"inner_event_match_count": 0},
-        {"outer_event_match_count": 0},
-        {"expert_link_match_count": 0},
-        {"complete_graph_match_count": 0},
+        {"expected_eligibility_category": SourceUnitEligibilityCategory.HYPOTHESIS},
+        {"acceptable_projection_count": 0},
+        {"fully_recovered_projection_count": 0},
         {"observed_binding_rejection_count": 1},
         {"schema_retry_count": 2},
         {"reported_schema_retry_count": 1},
@@ -319,7 +507,6 @@ def test_gate_fails_closed_on_each_nested_identity_boundary() -> None:
         {"schema_retry_attempt_count": 1},
         {"weak_review_attempt_count": 2},
         {"controlled_event_link_count": 0},
-        {"controlled_event_link_count": 2},
         {"controlled_event_link_ambiguity_count": 1},
         {"provider_receipt_gate_passed": False},
         {"attempt_model_id_mismatch_count": 1},
@@ -414,6 +601,49 @@ def test_second_selection_excludes_exposed_unit_and_seals_causal_link() -> None:
     }
 
 
+def test_third_selection_freezes_projection_set_before_execution() -> None:
+    corpus = os.getenv("ARTANA_TG04_BIONLP_CORPUS_ROOT")
+    if corpus is None:
+        pytest.skip("set ARTANA_TG04_BIONLP_CORPUS_ROOT for corpus-integrity test")
+
+    selection = select_third_nested_event_holdout(
+        corpus_root=Path(corpus),
+        archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+    )
+
+    assert selection.trial_generation == 3
+    assert selection.case_id == (
+        "bionlp-ge-2011-holdout:PMC-2222968-08-Discussion"
+    )
+    assert selection.unit.index == 23
+    assert selection.candidate_unit_count == 14
+    assert selection.excluded_document_ids == (
+        "PMC-2806624-07-DISCUSSION",
+        "PMID-9233802",
+    )
+    assert selection.expert_graph_sha256 == (
+        "2de75032dafdf1072a7c86d592b89044c3b024f05ca679b0dd6461c7c81c696b"
+    )
+    assert selection.projection_set_sha256 == (
+        "7828ded0f5ccca1ed3e3af1362277688bffad30ccb7bd27318e0196d2a332a21"
+    )
+    assert len(selection.projection_set.projections) == 1
+    assert selection.projection_set.projections[0].provenance is (
+        ProjectionProvenance.BIONLP_EXPERT
+    )
+    semantics = {
+        item.event_id: (item.claim_kind.value, item.epistemic_status.value)
+        for item in selection.projection_set.projections[0].event_semantics
+    }
+    assert semantics == {
+        "E46": ("SCIENTIFIC_FINDING", "ASSERTED"),
+        "E47": ("SCIENTIFIC_HYPOTHESIS", "HYPOTHESIS"),
+    }
+    assert selection.expected_eligibility_category is (
+        SourceUnitEligibilityCategory.HYPOTHESIS
+    )
+
+
 def test_nested_holdout_cli_exit_status_follows_gate() -> None:
     assert nested_holdout_trial_exit_code({"gate": {"passed": True}}) == 0
     assert nested_holdout_trial_exit_code({"gate": {"passed": False}}) == 1
@@ -421,3 +651,6 @@ def test_nested_holdout_cli_exit_status_follows_gate() -> None:
     assert second_nested_holdout_exit_code({"gate": {"passed": True}}) == 0
     assert second_nested_holdout_exit_code({"gate": {"passed": False}}) == 1
     assert second_nested_holdout_exit_code({}) == 1
+    assert third_nested_holdout_exit_code({"gate": {"passed": True}}) == 0
+    assert third_nested_holdout_exit_code({"gate": {"passed": False}}) == 1
+    assert third_nested_holdout_exit_code({}) == 1

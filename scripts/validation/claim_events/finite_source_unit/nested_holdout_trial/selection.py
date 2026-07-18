@@ -5,8 +5,15 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Final
+
+from artana_evidence_api.document_extraction_support.claim_frames import (
+    ClaimKind,
+    InventoryEpistemicStatus,
+    InventoryPolarity,
+)
 
 from scripts.validation.claim_events.bionlp_import import (
     TG04_BIONLP_ARCHIVE_SHA256,
@@ -16,6 +23,9 @@ from scripts.validation.claim_events.bionlp_import import (
     StandoffDocument,
     TextBoundAnnotation,
     load_standoff_document,
+)
+from scripts.validation.claim_events.finite_source_unit.contracts import (
+    SourceUnitEligibilityCategory,
 )
 from scripts.validation.claim_events.finite_source_unit.source_units import (
     FrozenSourceUnit,
@@ -47,6 +57,9 @@ _EXPECTED_INPUT_SHA256: Final = (
 )
 _EXPECTED_EXPERT_GRAPH_SHA256: Final = (
     "f5b05562dd68a26024ae0fc0f88d7b7b043a9631fba43b7ea53a81ad913d4593"
+)
+_EXPECTED_PROJECTION_SET_SHA256: Final = (
+    "4811ff571a75f9324b3ff7fd93b8b5e7b6ce031fda8547b1fcba8c3d606bbb86"
 )
 _ARTICLE_URL: Final = "https://pubmed.ncbi.nlm.nih.gov/9233802/"
 _EVENT_TYPE_MAP: Final = {
@@ -117,6 +130,48 @@ class SealedNestedEventGraph:
         return asdict(self)
 
 
+class ProjectionProvenance(StrEnum):
+    """Authorship provenance for one pre-inference acceptable projection."""
+
+    BIONLP_EXPERT = "BIONLP_EXPERT"
+    SOURCE_VALID_ALTERNATIVE = "SOURCE_VALID_ALTERNATIVE"
+
+
+@dataclass(frozen=True, slots=True)
+class SealedEventSemantics:
+    """Source-adjudicated statement status for one projected event."""
+
+    event_id: str
+    claim_kind: ClaimKind
+    polarity: InventoryPolarity
+    epistemic_status: InventoryEpistemicStatus
+
+
+@dataclass(frozen=True, slots=True)
+class SealedGraphProjection:
+    """One complete graph projection accepted before agent execution."""
+
+    projection_id: str
+    provenance: ProjectionProvenance
+    scientific_rationale: str
+    graph: SealedNestedEventGraph
+    event_semantics: tuple[SealedEventSemantics, ...]
+
+    def as_json(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class SealedProjectionSet:
+    """Finite alternatives that must never be mixed for benchmark credit."""
+
+    canonical_projection_id: str
+    projections: tuple[SealedGraphProjection, ...]
+
+    def as_json(self) -> dict[str, object]:
+        return asdict(self)
+
+
 @dataclass(frozen=True, slots=True)
 class NestedHoldoutSelection:
     """One untouched source unit and independently sealed expert graph."""
@@ -135,6 +190,9 @@ class NestedHoldoutSelection:
     archive_sha256: str
     expert_graph_sha256: str
     authoritative_article_url: str
+    projection_set: SealedProjectionSet
+    projection_set_sha256: str
+    expected_eligibility_category: SourceUnitEligibilityCategory
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,6 +236,14 @@ def select_nested_event_holdout(
     selected = min(universe.candidates, key=lambda candidate: candidate.rank)
     graph = seal_nested_event_graph(selected)
     graph_sha256 = _sha256_json(graph.as_json())
+    projection_set = canonical_projection_set(
+        graph,
+        scientific_rationale=(
+            "The BioNLP expert graph is the sole pre-registered complete projection."
+        ),
+    )
+    validate_sealed_projection_set(projection_set, unit=selected.unit)
+    projection_set_sha256 = _sha256_json(projection_set.as_json())
     if (
         selected.rank != _EXPECTED_SELECTION_RANK
         or selected.case_id != _EXPECTED_CASE_ID
@@ -186,6 +252,7 @@ def select_nested_event_holdout(
         or selected.unit.source_sha256 != _EXPECTED_SOURCE_SHA256
         or selected.unit.input_sha256 != _EXPECTED_INPUT_SHA256
         or graph_sha256 != _EXPECTED_EXPERT_GRAPH_SHA256
+        or projection_set_sha256 != _EXPECTED_PROJECTION_SET_SHA256
     ):
         raise RuntimeError("pre-registered nested holdout selection changed")
     return NestedHoldoutSelection(
@@ -203,6 +270,9 @@ def select_nested_event_holdout(
         archive_sha256=archive_sha256,
         expert_graph_sha256=graph_sha256,
         authoritative_article_url=_ARTICLE_URL,
+        projection_set=projection_set,
+        projection_set_sha256=projection_set_sha256,
+        expected_eligibility_category=SourceUnitEligibilityCategory.FINDING,
     )
 
 
@@ -346,6 +416,149 @@ def seal_nested_event_graph(candidate: NestedEventCandidate) -> SealedNestedEven
     )
 
 
+def canonical_projection_set(
+    graph: SealedNestedEventGraph,
+    *,
+    scientific_rationale: str,
+    event_semantics: tuple[SealedEventSemantics, ...] | None = None,
+) -> SealedProjectionSet:
+    """Wrap one BioNLP graph in the same finite contract used by later trials."""
+
+    sealed_semantics = event_semantics or tuple(
+        SealedEventSemantics(
+            event_id=event.event_id,
+            claim_kind=ClaimKind.SCIENTIFIC_FINDING,
+            polarity=InventoryPolarity.SUPPORT,
+            epistemic_status=InventoryEpistemicStatus.ASSERTED,
+        )
+        for event in graph.events
+    )
+    return SealedProjectionSet(
+        canonical_projection_id="bionlp-expert",
+        projections=(
+            SealedGraphProjection(
+                projection_id="bionlp-expert",
+                provenance=ProjectionProvenance.BIONLP_EXPERT,
+                scientific_rationale=scientific_rationale,
+                graph=graph,
+                event_semantics=sealed_semantics,
+            ),
+        ),
+    )
+
+
+def validate_sealed_projection_set(
+    projection_set: SealedProjectionSet,
+    *,
+    unit: FrozenSourceUnit,
+) -> None:
+    """Reject projection drift, dangling links, and non-verbatim source identity."""
+
+    if not projection_set.projections:
+        raise RuntimeError("sealed projection set must not be empty")
+    projection_ids = tuple(
+        projection.projection_id for projection in projection_set.projections
+    )
+    if any(not projection_id.strip() for projection_id in projection_ids):
+        raise RuntimeError("sealed projection IDs must be nonempty")
+    if len(set(projection_ids)) != len(projection_ids):
+        raise RuntimeError("sealed projection IDs must be unique")
+    if projection_set.canonical_projection_id not in projection_ids:
+        raise RuntimeError("canonical projection is absent from the sealed set")
+    canonical = next(
+        projection
+        for projection in projection_set.projections
+        if projection.projection_id == projection_set.canonical_projection_id
+    )
+    if canonical.provenance is not ProjectionProvenance.BIONLP_EXPERT:
+        raise RuntimeError("canonical projection must preserve BioNLP provenance")
+    if (
+        sum(
+            projection.provenance is ProjectionProvenance.BIONLP_EXPERT
+            for projection in projection_set.projections
+        )
+        != 1
+    ):
+        raise RuntimeError("sealed projection set requires one BioNLP expert graph")
+
+    projection_hashes: set[str] = set()
+    for projection in projection_set.projections:
+        if not projection.scientific_rationale.strip():
+            raise RuntimeError("sealed projection rationale must be nonempty")
+        projection_hash = _sha256_json(
+            {
+                "graph": projection.graph.as_json(),
+                "event_semantics": [
+                    asdict(semantics) for semantics in projection.event_semantics
+                ],
+            },
+        )
+        if projection_hash in projection_hashes:
+            raise RuntimeError("sealed projections must be semantically distinct")
+        projection_hashes.add(projection_hash)
+        _validate_projection_graph(projection.graph, unit=unit)
+        event_ids = {event.event_id for event in projection.graph.events}
+        semantic_ids = tuple(
+            semantics.event_id for semantics in projection.event_semantics
+        )
+        if len(set(semantic_ids)) != len(semantic_ids):
+            raise RuntimeError("sealed event-semantic IDs must be unique")
+        if set(semantic_ids) != event_ids:
+            raise RuntimeError(
+                "sealed event semantics must cover projection events exactly",
+            )
+
+
+def _validate_projection_graph(
+    graph: SealedNestedEventGraph,
+    *,
+    unit: FrozenSourceUnit,
+) -> None:
+    if not graph.events or not graph.links:
+        raise RuntimeError("sealed projection requires events and event links")
+    event_ids = tuple(event.event_id for event in graph.events)
+    if len(set(event_ids)) != len(event_ids):
+        raise RuntimeError("sealed projection event IDs must be unique")
+    for event in graph.events:
+        _require_verbatim_local_span(
+            unit=unit,
+            exact_span=event.trigger.exact_span,
+            source_start=event.trigger.source_start,
+            source_end=event.trigger.source_end,
+        )
+        for argument in event.arguments:
+            _require_verbatim_local_span(
+                unit=unit,
+                exact_span=argument.exact_span,
+                source_start=argument.source_start,
+                source_end=argument.source_end,
+            )
+    for link in graph.links:
+        if (
+            link.controller_event_id not in event_ids
+            or link.controlled_event_id not in event_ids
+        ):
+            raise RuntimeError("sealed projection contains a dangling event link")
+
+
+def _require_verbatim_local_span(
+    *,
+    unit: FrozenSourceUnit,
+    exact_span: str,
+    source_start: int,
+    source_end: int,
+) -> None:
+    local_start = source_start - unit.source_start
+    local_end = source_end - unit.source_start
+    if (
+        local_start < 0
+        or local_end > len(unit.text)
+        or local_start >= local_end
+        or unit.text[local_start:local_end] != exact_span
+    ):
+        raise RuntimeError("sealed projection span is not verbatim in the source unit")
+
+
 def _seal_event(document: StandoffDocument, event: EventAnnotation) -> SealedEvent:
     trigger = document.text_bounds[event.trigger_id]
     arguments = tuple(
@@ -410,11 +623,17 @@ __all__ = [
     "NestedHoldoutSelection",
     "NestedEventCandidate",
     "NestedEventCandidateUniverse",
+    "ProjectionProvenance",
     "SealedArgument",
     "SealedEvent",
     "SealedEventLink",
+    "SealedEventSemantics",
+    "SealedGraphProjection",
     "SealedNestedEventGraph",
+    "SealedProjectionSet",
+    "canonical_projection_set",
     "enumerate_nested_event_candidates",
     "seal_nested_event_graph",
     "select_nested_event_holdout",
+    "validate_sealed_projection_set",
 ]
