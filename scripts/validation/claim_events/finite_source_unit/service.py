@@ -48,8 +48,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v16"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v15"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v17"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v16"
 _BINDING_REPAIR_PROMPT_VERSION = "tg04.finite_source_unit.binding_repair.v2"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
@@ -379,6 +379,12 @@ async def verify_source_unit_candidates(  # noqa: PLR0913
 
 
 def _extraction_prompt(unit: FrozenSourceUnit) -> str:
+    return canonical_source_unit_extraction_prompt(unit)
+
+
+def canonical_source_unit_extraction_prompt(unit: FrozenSourceUnit) -> str:
+    """Return the canonical blinded extraction prompt for one frozen unit."""
+
     return f"""You are the event-extraction agent in a sealed biomedical diagnostic.
 
 Use only the frozen source unit below. Do not use outside knowledge.
@@ -483,6 +489,16 @@ CAUSAL EVENT AND ENTITY SEMANTICS:
   only when the source states no effect and no more specific tested relationship
   is explicit. Preserve every coordinated outcome and source-explicit population
   or biological context as typed arguments.
+- When the same source reports a directional trend and says the tested increase,
+  decrease, or regulation was not statistically significant, return two sibling
+  events. Preserve the trend as SUPPORT with PROVISIONAL epistemic status, and
+  preserve the significance finding as NULL_RESULT with its source-explicit
+  epistemic status. Both siblings retain every material cause, theme, population,
+  intervention context, and the statistical significance language as a typed
+  MEASUREMENT argument. The null sibling's relation cue must retain the complete
+  negated significance phrase. Never rewrite nonsignificance as no change or no
+  effect, and never invent a p-value, effect size, confidence interval, or numeric
+  magnitude.
 - Temporal or experimental context such as "after treatment", "before or during
   treatment", "following exposure", "upon administration", or "prior to treatment"
   does not by itself assert causation. When a source reports a directional change
@@ -511,6 +527,16 @@ def _verification_prompt(
     unit: FrozenSourceUnit,
     candidates: tuple[BoundClaimInventoryItem, ...],
 ) -> str:
+    return canonical_source_unit_verification_prompt(unit=unit, candidates=candidates)
+
+
+def canonical_source_unit_verification_prompt(
+    *,
+    unit: FrozenSourceUnit,
+    candidates: tuple[BoundClaimInventoryItem, ...],
+) -> str:
+    """Return the canonical blinded verification prompt for rebound candidates."""
+
     payload = [_blinded_candidate(candidate) for candidate in candidates]
     return f"""You are an independent source-only biomedical verifier.
 
@@ -597,6 +623,15 @@ For every candidate, independently return these additional categorical findings:
   with NULL_RESULT polarity; NO_EFFECT is valid only when no more specific tested
   relationship is explicit. Every coordinated outcome and source-explicit
   population or biological context must remain structurally represented.
+- When the source also reports a directional trend, CANDIDATES_COMPLETE requires
+  two sibling events: the trend as SUPPORT plus PROVISIONAL, and the
+  statistical-significance finding as NULL_RESULT with its source-explicit
+  epistemic status. Both must preserve every material cause, theme, population,
+  intervention context, and the statistical significance MEASUREMENT argument.
+  The null cue must retain the complete negated significance phrase. Return
+  MISSING_EVENT when either sibling is absent, nonsignificance is broadened to no
+  effect or no change, or a p-value, effect size, confidence interval, or numeric
+  magnitude is invented.
 - "After treatment", "following exposure", and similar temporal or experimental
   context do not establish CAUSE without causal source language. INCREASE or
   DECREASE with a typed intervention/exposure CONTEXT is valid only when the
@@ -691,6 +726,8 @@ __all__ = [
     "as_model_client",
     "bind_source_unit_extraction",
     "bind_source_unit_verification",
+    "canonical_source_unit_extraction_prompt",
+    "canonical_source_unit_verification_prompt",
     "extract_source_unit",
     "repair_source_unit_extraction",
     "verify_source_unit_candidates",

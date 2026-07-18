@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import inspect
+import json
 import os
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 
@@ -21,6 +23,9 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
     link_controlled_events,
 )
 
+from scripts.run_eighth_nested_event_holdout_trial import (
+    eighth_nested_holdout_exit_code,
+)
 from scripts.run_fourth_nested_event_holdout_trial import (
     fourth_nested_holdout_exit_code,
 )
@@ -37,6 +42,12 @@ from scripts.validation.claim_events.finite_source_unit.contracts import (
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.corpus import (
     verified_corpus_root,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.eighth_selection import (
+    _projection_set as eighth_projection_set,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.eighth_selection import (
+    select_eighth_nested_event_holdout,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.fourth_selection import (
     _projection_set as fourth_projection_set,
@@ -786,7 +797,7 @@ def test_projection_set_requires_one_complete_projection_without_partial_credit(
 
 @pytest.mark.parametrize("split_events", [True, False])
 def test_projection_matcher_accepts_complete_zero_link_event_shapes(
-    split_events: bool,
+    split_events: bool,  # noqa: FBT001 - pytest supplies the categorical case
 ) -> None:
     trusted = _null_result_inventory(split_events=split_events)
 
@@ -1478,6 +1489,178 @@ def test_fourth_selection_is_direct_seeded_and_frozen_after_prompt_commit() -> N
         assert all(hidden_value not in prompt for prompt in agent_inputs)
 
 
+def test_eighth_selection_freezes_complete_agent_expert_gold_before_luna() -> None:
+    corpus = os.getenv("ARTANA_TG04_BIONLP_CORPUS_ROOT")
+    if corpus is None:
+        pytest.skip("set ARTANA_TG04_BIONLP_CORPUS_ROOT for corpus-integrity test")
+
+    selection = select_eighth_nested_event_holdout(
+        corpus_root=Path(corpus),
+        archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+    )
+
+    assert selection.trial_generation == 8
+    assert selection.selection_seed == (
+        "969619fd2b8faf60d81c34ba9b12c3f100d69f3af56dcda431072dd009156916"
+    )
+    assert selection.case_id == ("bionlp-ge-2011-holdout:PMC-2806624-04-RESULTS-03")
+    assert selection.unit.index == 10
+    assert selection.candidate_unit_count == 5
+    assert selection.expert_graph_sha256 == (
+        "2abda3dfab2fa4f2b35f321a7c603cf8f45c6adbb92ed63d7c69c7565dad7677"
+    )
+    assert selection.projection_set_sha256 == (
+        "5c8e13c4eac5087d151c1b4b391b1215555ce401fdbb1c38a95b61853ed6cde6"
+    )
+    assert selection.expected_eligibility_category is (
+        SourceUnitEligibilityCategory.MIXED_SCIENTIFIC
+    )
+    assert len(selection.projection_set.projections) == 2
+    assert all(
+        projection.provenance is ProjectionProvenance.AGENT_EXPERT_ADJUDICATED
+        for projection in selection.projection_set.projections
+    )
+    for projection in selection.projection_set.projections:
+        events = {event.event_id: event for event in projection.graph.events}
+        assert set(events) == {
+            "AGENT-EXPERT-TREND",
+            "AGENT-EXPERT-SIGNIFICANCE-NULL",
+        }
+        assert all(
+            event.event_type == "POSITIVE_REGULATION" for event in events.values()
+        )
+        assert events["AGENT-EXPERT-TREND"].trigger.exact_span == "trend"
+        assert (
+            events["AGENT-EXPERT-SIGNIFICANCE-NULL"].trigger.exact_span
+            == "did not lead to statistically significant increase"
+        )
+        argument_identities = {
+            (argument.participant_type, argument.event_role, argument.exact_span)
+            for argument in events["AGENT-EXPERT-SIGNIFICANCE-NULL"].arguments
+        }
+        assert (
+            "MEASUREMENT",
+            "MEASURE",
+            "statistically significant",
+        ) in argument_identities
+        assert ("POPULATION", "CONTEXT", "CD4+ T cells") in argument_identities
+        assert ("GENE_OR_PROTEIN", "CAUSE", "RUNX3") in argument_identities
+        assert ("GENE_OR_PROTEIN", "THEME", "FOXP3") in argument_identities
+        semantics = {
+            item.event_id: (item.polarity, item.epistemic_status)
+            for item in projection.event_semantics
+        }
+        assert semantics == {
+            "AGENT-EXPERT-TREND": (
+                InventoryPolarity.SUPPORT,
+                InventoryEpistemicStatus.PROVISIONAL,
+            ),
+            "AGENT-EXPERT-SIGNIFICANCE-NULL": (
+                InventoryPolarity.NULL_RESULT,
+                InventoryEpistemicStatus.ASSERTED,
+            ),
+        }
+
+    agent_inputs = (
+        _extraction_prompt(selection.unit),
+        _verification_prompt(unit=selection.unit, candidates=()),
+    )
+    for hidden_value in (
+        selection.expert_graph_sha256,
+        selection.projection_set_sha256,
+        *(item.projection_id for item in selection.projection_set.projections),
+    ):
+        assert all(hidden_value not in prompt for prompt in agent_inputs)
+
+
+def test_eighth_lineage_freezes_blinded_reviews_and_lowest_rank_in_ci() -> None:
+    repository_root = Path(__file__).resolve().parents[2]
+    lineage_path = (
+        repository_root
+        / "docs/validation/reports/2026-07-18-tg04-v8-agent-expert-lineage.json"
+    )
+    lineage = json.loads(
+        lineage_path.read_text(encoding="utf-8"),
+    )
+
+    assert lineage["agent_execution_attempted"] is False
+    assert lineage["artana_output_available_to_reviewers"] is False
+    results = lineage["candidate_review"]["results"]
+    assert len(results) == 5
+    assert all(result["reviewer_a"] == "INCOMPLETE" for result in results)
+    assert all(result["reviewer_b"] == "INCOMPLETE" for result in results)
+    selection_seed = lineage["preselection"]["selection_seed"]
+    for result in results:
+        assert (
+            result["selection_rank"]
+            == hashlib.sha256(
+                f"{selection_seed}:{result['unit_id']}".encode(),
+            ).hexdigest()
+        )
+    selected_rank = lineage["preselection"]["selection_rank"]
+    assert selected_rank == min(result["selection_rank"] for result in results)
+    selected = lineage["selected_source"]
+    selected_result = next(
+        result for result in results if result["selection_rank"] == selected_rank
+    )
+    assert selected_result["unit_id"] == selected["unit_id"]
+    v7_receipt = (
+        repository_root
+        / "docs/validation/reports/2026-07-18-tg04-v7-selection-preflight.json"
+    )
+    assert hashlib.sha256(v7_receipt.read_bytes()).hexdigest() == selection_seed
+    tree_oid = subprocess.run(
+        (
+            "git",
+            "-C",
+            str(repository_root),
+            "rev-parse",
+            f"{lineage['preselection']['repository_commit']}^{{tree}}",
+        ),
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert tree_oid == lineage["preselection"]["repository_tree_oid"]
+    frozen_unit = FrozenSourceUnit(
+        unit_id=selected["unit_id"],
+        index=selected["unit_index"],
+        source_start=selected["source_start"],
+        source_end=selected["source_end"],
+        text=selected["text"],
+        source_sha256=selected["source_sha256"],
+    )
+    assert frozen_unit.input_sha256 == selected["input_sha256"]
+    projection_payload = eighth_projection_set().as_json()
+    projection_hash = hashlib.sha256(
+        json.dumps(
+            projection_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode(),
+    ).hexdigest()
+    assert (
+        projection_hash == lineage["source_gold_adjudication"]["projection_set_sha256"]
+    )
+    authoring_submissions = {
+        item["submission_id"] for item in lineage["gold_authoring"]["reviewer_outputs"]
+    }
+    assert len(authoring_submissions) == 2
+    hidden_values = (
+        projection_hash,
+        lineage["source_gold_adjudication"]["adjudicator_run_id"],
+    )
+    prompts = (
+        _extraction_prompt(frozen_unit),
+        _verification_prompt(unit=frozen_unit, candidates=()),
+    )
+    assert all(value not in prompt for value in hidden_values for prompt in prompts)
+    assert lineage["source_gold_adjudication"]["decision"] == "COMPLETE"
+    assert lineage["qualification_scope"]["human_expert_validation_proven"] is False
+    assert lineage["qualification_scope"]["trusted_graph_promotion_authorized"] is False
+
+
 def test_agent_prompt_interfaces_cannot_receive_hidden_projection_data() -> None:
     unit = FrozenSourceUnit(
         unit_id="source-unit-prompt-blindness",
@@ -1501,6 +1684,39 @@ def test_agent_prompt_interfaces_cannot_receive_hidden_projection_data() -> None
     assert all(secret not in prompt for prompt in agent_inputs)
 
 
+def test_live_finite_prompts_require_trend_and_significance_null_siblings() -> None:
+    unit = FrozenSourceUnit(
+        unit_id="source-unit-significance-siblings",
+        index=10,
+        source_start=1909,
+        source_end=2051,
+        text=(
+            "Although there was a trend, the transfection of CD4+ T cells with "
+            "RUNX3 did not lead to statistically significant increase in FOXP3 "
+            "(Fig. S5)."
+        ),
+        source_sha256=(
+            "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35"
+        ),
+    )
+
+    extraction_prompt = " ".join(_extraction_prompt(unit).casefold().split())
+    verification_prompt = " ".join(
+        _verification_prompt(unit=unit, candidates=()).casefold().split()
+    )
+    for prompt in (extraction_prompt, verification_prompt):
+        assert "two sibling" in prompt
+        assert "support" in prompt
+        assert "provisional" in prompt
+        assert "null_result" in prompt
+        assert "statistical significance" in prompt
+        assert "measurement" in prompt
+        assert "complete negated significance phrase" in prompt
+        assert "no change" in prompt
+        assert "no effect" in prompt
+        assert "p-value" in prompt
+
+
 def test_nested_holdout_cli_exit_status_follows_gate() -> None:
     assert nested_holdout_trial_exit_code({"gate": {"passed": True}}) == 0
     assert nested_holdout_trial_exit_code({"gate": {"passed": False}}) == 1
@@ -1514,3 +1730,6 @@ def test_nested_holdout_cli_exit_status_follows_gate() -> None:
     assert fourth_nested_holdout_exit_code({"gate": {"passed": True}}) == 0
     assert fourth_nested_holdout_exit_code({"gate": {"passed": False}}) == 1
     assert fourth_nested_holdout_exit_code({}) == 1
+    assert eighth_nested_holdout_exit_code({"gate": {"passed": True}}) == 0
+    assert eighth_nested_holdout_exit_code({"gate": {"passed": False}}) == 1
+    assert eighth_nested_holdout_exit_code({}) == 1

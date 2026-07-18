@@ -1,0 +1,185 @@
+{
+  "agent_execution_attempted": false,
+  "artana_output_available_to_reviewers": false,
+  "blindness_contract": {
+    "allowed_inputs": [
+      "frozen source unit",
+      "BioNLP local events and modifiers",
+      "Artana categorical schema and prompt rules"
+    ],
+    "forbidden_inputs": [
+      "Artana extraction output",
+      "Luna output",
+      "benchmark score",
+      "numeric model confidence"
+    ]
+  },
+  "candidate_review": {
+    "model": "gpt-5.6-sol",
+    "prompt_contract": "Independently classify every remaining hidden source as COMPLETE, INCOMPLETE, or UNCERTAIN by comparing all material source claims and qualifiers with its local BioNLP graph. Fail closed and do not author alternative gold.",
+    "reviewers": [
+      {
+        "run_id": "019f7621-736d-73d2-a03c-1a3216155ac9",
+        "role": "independent-A"
+      },
+      {
+        "run_id": "019f7621-73ef-7750-a982-1c139934269d",
+        "role": "independent-B"
+      }
+    ],
+    "results": [
+      {
+        "case_id": "bionlp-ge-2011-holdout:PMC-2806624-04-RESULTS-03",
+        "reviewer_a": "INCOMPLETE",
+        "reviewer_b": "INCOMPLETE",
+        "selection_rank": "35c6070fb7790cd858ee7ee13aabf5ac4f4c78cde085025ef1fecc5164b0655e",
+        "unit_id": "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2",
+        "uncovered_meaning": [
+          "CD4+ T-cell population",
+          "directional trend",
+          "statistical-significance scope"
+        ]
+      },
+      {
+        "case_id": "bionlp-ge-2011-holdout:PMC-2806624-08-MATERIALS_AND_METHODS-01",
+        "reviewer_a": "INCOMPLETE",
+        "reviewer_b": "INCOMPLETE",
+        "selection_rank": "94e7ea4da339e6705ec4211258de674bc3f423a6efc02503b1fd9642d752e768",
+        "unit_id": "source-unit-7c8d867e63ba86da5d69978529ab5ff25686efd7035d2ba50ac899cc8f89743d",
+        "uncovered_meaning": [
+          "naive CD4+ T-cell population",
+          "mouse-genotype comparison",
+          "stimulation and neutralizing-antibody conditions"
+        ]
+      },
+      {
+        "case_id": "bionlp-ge-2011-holdout:PMC-2222968-04-Results-03",
+        "reviewer_a": "INCOMPLETE",
+        "reviewer_b": "INCOMPLETE",
+        "selection_rank": "d392b68caa84b3677d8a963cbf99a8cc1666b62dc473add4833f768ba5e1278f",
+        "unit_id": "source-unit-49c3d908558cc2fb3a814c0d18ce55ee73bf3ab5bedce0fb073afbd6742bd4f1",
+        "uncovered_meaning": [
+          "low-level magnitude",
+          "previous-observation context",
+          "unambiguous positive induction"
+        ]
+      },
+      {
+        "case_id": "bionlp-ge-2011-holdout:PMID-8622948",
+        "reviewer_a": "INCOMPLETE",
+        "reviewer_b": "INCOMPLETE",
+        "selection_rank": "e044342a1b09bb33a961d306b56b7b53f27a934f2a0b4b26ac8294fe7a1fb965",
+        "unit_id": "source-unit-eb96c6e419821d8b930aebe6c1a891e185a0fcddccd3d05efa6ba05ef37601c0",
+        "uncovered_meaning": [
+          "proliferative-response result",
+          "treated Rel-deficient T-cell population",
+          "approximately-normal comparator"
+        ]
+      },
+      {
+        "case_id": "bionlp-ge-2011-holdout:PMC-2222968-04-Results-03",
+        "reviewer_a": "INCOMPLETE",
+        "reviewer_b": "INCOMPLETE",
+        "selection_rank": "fc41bdb0e5d1996c86ec0316ad9d8ff76684d37dd1d5ea98f852353fd04fc634",
+        "unit_id": "source-unit-463bf8e1b37963d7547eb57c6d51545a466050b2c6c9faa9abc76ff8e2330914",
+        "uncovered_meaning": [
+          "pre-existing iTreg population",
+          "IL-4 exposure context",
+          "comparison with the preceding result"
+        ]
+      }
+    ]
+  },
+  "generated_at": "2026-07-18T17:17:53Z",
+  "gold_authoring": {
+    "model": "gpt-5.6-sol",
+    "phase_boundary": "After candidate review completed, each reviewer received a distinct follow-up submission that explicitly replaced the review-only assignment with blinded gold authoring for the deterministic winner.",
+    "prompt_contract": "Using only the deterministic winner's exact source, independently author complete categorical claims preserving trend, statistical nonsignificance, population, intervention, outcome, and source spans without numeric inference. This follow-up authoring contract superseded the earlier phase's prohibition on authoring alternative gold.",
+    "reviewer_outputs": [
+      {
+        "completeness_decision": "COMPLETE",
+        "proposed_claims": [
+          "provisional directional trend toward increased FOXP3",
+          "asserted null result scoped to statistical significance"
+        ],
+        "reviewer": "independent-A",
+        "run_id": "019f7621-736d-73d2-a03c-1a3216155ac9",
+        "submission_id": "019f7626-475d-7c62-84f5-10398a1b750c"
+      },
+      {
+        "completeness_decision": "COMPLETE",
+        "proposed_claims": [
+          "provisional directional trend toward increased FOXP3",
+          "asserted null result scoped to statistical significance"
+        ],
+        "reviewer": "independent-B",
+        "run_id": "019f7621-73ef-7750-a982-1c139934269d",
+        "submission_id": "019f7626-475e-7542-b782-8d6a26072697"
+      }
+    ]
+  },
+  "preselection": {
+    "candidate_count": 5,
+    "repository_commit": "068699be1b5378e15892a2dff39331ee90ac3f94",
+    "repository_tree_oid": "5637a99c366504547856cf9c5875a58e4cd85660",
+    "selection_rank": "35c6070fb7790cd858ee7ee13aabf5ac4f4c78cde085025ef1fecc5164b0655e",
+    "selection_rule": "lowest SHA-256 rank among all five remaining hidden candidates before gold authoring",
+    "selection_seed": "969619fd2b8faf60d81c34ba9b12c3f100d69f3af56dcda431072dd009156916",
+    "v7_receipt_sha256_verified": true
+  },
+  "schema_version": "tg04_v8_agent_expert_lineage.v1",
+  "selected_source": {
+    "case_id": "bionlp-ge-2011-holdout:PMC-2806624-04-RESULTS-03",
+    "input_sha256": "606efd1510850b66276d48b00a042680aa0982e9d233195c3b1906cfb9b513db",
+    "source_sha256": "09a14c9ddcfd3ef03820e5fe7f3a62164fdf051f3a46335b8523c0681ed5fe35",
+    "source_end": 2051,
+    "source_start": 1909,
+    "text": "Although there was a trend, the transfection of CD4+ T cells with RUNX3 did not lead to statistically significant increase in FOXP3 (Fig. S5).",
+    "unit_index": 10,
+    "unit_id": "source-unit-def51372591d9c4244a4dac031c801c8781aa4006f6718ddd8bfb77dece566a2"
+  },
+  "source_gold_adjudication": {
+    "adjudicator_model": "gpt-5.6-sol",
+    "adjudicator_run_id": "019f7628-9529-7d10-9d5b-30c6a9d1d2d2",
+    "decision": "COMPLETE",
+    "prompt_contract": "Resolve only categorical serialization disagreements against Artana's actual closed enums and prompt rules while preserving the reviewers' agreed scientific meaning.",
+    "canonical_claims": [
+      {
+        "claim_id": "runx3_foxp3_directional_trend",
+        "epistemic_status": "PROVISIONAL",
+        "event_type": "POSITIVE_REGULATION",
+        "polarity": "SUPPORT",
+        "relation_cue_span": "trend"
+      },
+      {
+        "claim_id": "runx3_foxp3_significance_null",
+        "epistemic_status": "ASSERTED",
+        "event_type": "POSITIVE_REGULATION",
+        "polarity": "NULL_RESULT",
+        "relation_cue_span": "did not lead to statistically significant increase"
+      }
+    ],
+    "projection_set_sha256": "5c8e13c4eac5087d151c1b4b391b1215555ce401fdbb1c38a95b61853ed6cde6",
+    "required_arguments": [
+      "INTERVENTION/CONTEXT: the transfection of CD4+ T cells with RUNX3",
+      "POPULATION/CONTEXT: CD4+ T cells",
+      "GENE_OR_PROTEIN/CAUSE: RUNX3",
+      "GENE_OR_PROTEIN/THEME: FOXP3",
+      "MEASUREMENT/MEASURE: statistically significant"
+    ],
+    "allowed_alternative": "The intervention span may omit only the leading determiner 'the'.",
+    "prohibited_interpretations": [
+      "statistically significant increase",
+      "no effect",
+      "no increase at all",
+      "confirmatory trend",
+      "invented p-value or effect size"
+    ]
+  },
+  "qualification_scope": {
+    "agent_expert_surrogate_not_human_gold": true,
+    "authorizes_luna_repeat_1_only_after_code_gates": true,
+    "human_expert_validation_proven": false,
+    "trusted_graph_promotion_authorized": false
+  }
+}

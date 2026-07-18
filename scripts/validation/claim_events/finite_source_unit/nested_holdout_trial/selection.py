@@ -41,6 +41,7 @@ _EXPECTED_INCOMPATIBLE_DOCUMENT_IDS: Final = (
 )
 _EXPECTED_ELIGIBLE_UNIT_COUNT: Final = 16
 _MINIMUM_INNER_DIRECT_ARGUMENTS: Final = 2
+_MINIMUM_COMPLETE_LOCAL_EVENTS: Final = 2
 _EXPECTED_SELECTION_RANK: Final = (
     "0757a19258cb5e142ad2b9828c6ee0ed9755767ab90ddbad972c75867d3577af"
 )
@@ -135,6 +136,7 @@ class ProjectionProvenance(StrEnum):
 
     BIONLP_EXPERT = "BIONLP_EXPERT"
     SOURCE_VALID_ALTERNATIVE = "SOURCE_VALID_ALTERNATIVE"
+    AGENT_EXPERT_ADJUDICATED = "AGENT_EXPERT_ADJUDICATED"
 
 
 class CompleteGraphSelectionProfile(StrEnum):
@@ -332,7 +334,9 @@ def enumerate_nested_event_candidates(
             incompatible.append(document_id)
             continue
         case_id = f"bionlp-ge-2011-holdout:{document_id}"
-        for unit in enumerate_source_units(case_id=case_id, source_text=document.source_text):
+        for unit in enumerate_source_units(
+            case_id=case_id, source_text=document.source_text
+        ):
             nested_pairs = _eligible_nested_pairs(document=document, unit=unit)
             if not nested_pairs:
                 continue
@@ -387,7 +391,9 @@ def enumerate_complete_event_graph_candidates(
             incompatible.append(document_id)
             continue
         case_id = f"bionlp-ge-2011-holdout:{document_id}"
-        for unit in enumerate_source_units(case_id=case_id, source_text=document.source_text):
+        for unit in enumerate_source_units(
+            case_id=case_id, source_text=document.source_text
+        ):
             local_events = _complete_local_event_graph(document=document, unit=unit)
             if local_events is None:
                 continue
@@ -451,7 +457,7 @@ def _complete_local_event_graph(
         for event in document.events
         if _event_trigger_is_local(document, event, unit)
     )
-    if len(local_events) < 2:
+    if len(local_events) < _MINIMUM_COMPLETE_LOCAL_EVENTS:
         return None
     local_ids = {event.event_id for event in local_events}
     linked_ids: set[str] = set()
@@ -498,21 +504,31 @@ def _eligible_nested_pairs(
         if not _event_trigger_is_local(document, outer, unit):
             continue
         direct_outer = tuple(
-            argument for argument in outer.arguments if argument.reference_id in document.text_bounds
+            argument
+            for argument in outer.arguments
+            if argument.reference_id in document.text_bounds
         )
         nested_outer = tuple(
-            argument for argument in outer.arguments if argument.reference_id in events_by_id
+            argument
+            for argument in outer.arguments
+            if argument.reference_id in events_by_id
         )
-        if not direct_outer or not nested_outer or not _direct_arguments_are_local(
-            document,
-            direct_outer,
-            unit,
+        if (
+            not direct_outer
+            or not nested_outer
+            or not _direct_arguments_are_local(
+                document,
+                direct_outer,
+                unit,
+            )
         ):
             continue
         for event_argument in nested_outer:
             inner = events_by_id[event_argument.reference_id]
             direct_inner = tuple(
-                argument for argument in inner.arguments if argument.reference_id in document.text_bounds
+                argument
+                for argument in inner.arguments
+                if argument.reference_id in document.text_bounds
             )
             if (
                 len(direct_inner) >= _MINIMUM_INNER_DIRECT_ARGUMENTS
@@ -551,7 +567,9 @@ def seal_nested_event_graph(candidate: NestedEventCandidate) -> SealedNestedEven
         events_by_id[inner.event_id] = _seal_event(candidate.document, inner)
         events_by_id[outer.event_id] = _seal_event(candidate.document, outer)
         event_argument = next(
-            argument for argument in outer.arguments if argument.reference_id == inner.event_id
+            argument
+            for argument in outer.arguments
+            if argument.reference_id == inner.event_id
         )
         links.append(
             SealedEventLink(
@@ -744,7 +762,9 @@ def _validate_projection_graph(
         ):
             raise RuntimeError("sealed projection contains a dangling event link")
         if link.controller_event_id == link.controlled_event_id:
-            raise RuntimeError("sealed projection event link cannot be self-referential")
+            raise RuntimeError(
+                "sealed projection event link cannot be self-referential"
+            )
         if link.event_role not in {"CAUSE", "THEME"}:
             raise RuntimeError("sealed projection event link role is unsupported")
     link_identities = tuple(
@@ -778,7 +798,9 @@ def _seal_event(document: StandoffDocument, event: EventAnnotation) -> SealedEve
     arguments = tuple(
         sorted(
             (
-                _seal_argument(document.text_bounds[argument.reference_id], argument.role)
+                _seal_argument(
+                    document.text_bounds[argument.reference_id], argument.role
+                )
                 for argument in event.arguments
                 if argument.reference_id in document.text_bounds
             ),

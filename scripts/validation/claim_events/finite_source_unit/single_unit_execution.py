@@ -83,10 +83,13 @@ async def execute_source_unit_agents(  # noqa: PLR0913
     execution_namespace: str,
     unit: FrozenSourceUnit,
     allow_binding_repair: bool = False,
+    audit_evidence_unit_id: str | None = None,
 ) -> SingleUnitAgentRunEvidence:
     """Run exactly one extraction and one independent verification call."""
 
-    audit = start_model_attempt_audit(evidence_unit_id=unit.unit_id)
+    audit = start_model_attempt_audit(
+        evidence_unit_id=audit_evidence_unit_id or unit.unit_id
+    )
     extraction_output: SourceUnitExtractionOutput | None = None
     verification_output: SourceUnitVerificationOutput | None = None
     verified: tuple[VerifiedEventCandidate, ...] = ()
