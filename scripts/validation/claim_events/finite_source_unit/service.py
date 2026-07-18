@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v6"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v6"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v7"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v7"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -300,6 +300,9 @@ For each event, copy exact_span, relation_cue_span, and every argument span
 verbatim. Use normalized_extraction_text as source_locator. Keep claim_kind,
 event_type, polarity, and epistemic_status independent. Do not invent missing
 participants, normalize surface text, merge events, or return numeric scores.
+For every argument, at least one mention_anchor mention_span must exactly equal
+that argument's exact_span. Do not include a determiner or modifier in the
+argument exact_span when its canonical anchor omits it.
 Do not return source-unit identifiers or input hashes. The audited orchestrator
 binds transport identity outside the scientific output.
 
@@ -326,7 +329,10 @@ clause needed to justify its event type, direction, causal interpretation, and
 material arguments. When an earlier or later coordinated clause supplies the
 direction for a causal conclusion, include both clauses. Never assign positive
 or negative regulation from a neutral cue such as "affects" when exact_span
-omits the directional language.
+omits the directional language. When an observed increase or decrease is
+explicitly linked to a concluding causal clause, encode the outer event with
+that direction and use a complete exact_span covering both clauses. Do not emit
+a generic REGULATION duplicate for the same directionally resolved outer event.
 
 CAUSAL EVENT AND ENTITY SEMANTICS:
 - Use POSITIVE_REGULATION or NEGATIVE_REGULATION when the source names a cause
@@ -419,6 +425,8 @@ For every candidate, independently return these additional categorical findings:
   REVIEW_ONLY for an entailed but lossy or unresolved candidate; REJECT for a
   contradiction, invalid event structure, direction conflict, or invalid
   argument type; ABSTAIN only when a categorical judgment is unresolved.
+  Specifically, INSUFFICIENT must use REJECT, never REVIEW_ONLY; REVIEW_ONLY
+  requires ENTAILED plus a non-invalid structural trust blocker.
 
 prompt_version: {_VERIFICATION_PROMPT_VERSION}
 

@@ -17,6 +17,9 @@ from scripts.validation.claim_events.finite_source_unit.discovery.identity_evide
     audit_identity_mismatch_count,
     count_model_identity_fields,
 )
+from scripts.validation.claim_events.finite_source_unit.generalization_trial.adaptive_replay_authorization import (
+    verify_failed_adaptive_replay_authorization,
+)
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.authorization import (
     verify_reassessment_authorization,
 )
@@ -100,6 +103,7 @@ def run_generalization_trial(
         _run_trial(
             selection=selection,
             authorization_sha256=authorization_sha256,
+            authorization_source="successful_zero_call_reassessment",
             mode="fresh",
             run_id=run_id,
             repeat_index=repeat_index,
@@ -128,6 +132,36 @@ def run_generalization_replay(
         _run_trial(
             selection=selection,
             authorization_sha256=authorization_sha256,
+            authorization_source="failed_fresh_generalization_repeat_1",
+            mode="adaptive_replay",
+            run_id=run_id,
+            repeat_index=1,
+            repository_evidence=repository_evidence,
+        ),
+    )
+
+
+def run_generalization_second_replay(
+    *,
+    fixture: NaryClaimFixture,
+    failed_replay_artifact: Path,
+    run_id: str,
+) -> dict[str, object]:
+    """Run one final exposed replay after the first adaptive contract failure."""
+
+    require_frozen_development_fixture(fixture)
+    authorization_sha256 = verify_failed_adaptive_replay_authorization(
+        failed_replay_artifact,
+    )
+    selection = select_generalization_trial(fixture)
+    repository_evidence = collect_repository_evidence(_REPO_ROOT)
+    if repository_evidence["clean"] is not True:
+        raise RuntimeError("second generalization replay requires a clean worktree")
+    return asyncio.run(
+        _run_trial(
+            selection=selection,
+            authorization_sha256=authorization_sha256,
+            authorization_source="failed_first_adaptive_generalization_replay",
             mode="adaptive_replay",
             run_id=run_id,
             repeat_index=1,
@@ -140,6 +174,7 @@ async def _run_trial(  # noqa: PLR0913
     *,
     selection: GeneralizationTrialSelection,
     authorization_sha256: str,
+    authorization_source: str,
     mode: TrialMode,
     run_id: str,
     repeat_index: int,
@@ -165,6 +200,7 @@ async def _run_trial(  # noqa: PLR0913
     return _build_report(
         selection=selection,
         authorization_sha256=authorization_sha256,
+        authorization_source=authorization_source,
         mode=mode,
         run_id=run_id,
         repeat_index=repeat_index,
@@ -177,6 +213,7 @@ def _build_report(  # noqa: PLR0913
     *,
     selection: GeneralizationTrialSelection,
     authorization_sha256: str,
+    authorization_source: str,
     mode: TrialMode,
     run_id: str,
     repeat_index: int,
@@ -292,11 +329,7 @@ def _build_report(  # noqa: PLR0913
         "experiment_mode": mode,
         "repository_evidence": repository_evidence,
         "authorization": {
-            "source": (
-                "successful_zero_call_reassessment"
-                if mode == "fresh"
-                else "failed_fresh_generalization_repeat_1"
-            ),
+            "source": authorization_source,
             "artifact_sha256": authorization_sha256,
         },
         "freshness": {
@@ -387,4 +420,8 @@ def _build_report(  # noqa: PLR0913
     return report
 
 
-__all__ = ["run_generalization_replay", "run_generalization_trial"]
+__all__ = [
+    "run_generalization_replay",
+    "run_generalization_second_replay",
+    "run_generalization_trial",
+]

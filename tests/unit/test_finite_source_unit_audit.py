@@ -737,12 +737,16 @@ def test_both_agents_receive_the_same_scientific_eligibility_policy() -> None:
     assert "separate sibling event" in prompts[0]
     assert "outer THEME" in prompts[0]
     assert 'neutral cue such as "affects"' in prompts[0]
+    assert "mention_span must exactly equal" in prompts[0]
+    assert "generic REGULATION duplicate" in prompts[0]
     assert "structure_decision" in prompts[1]
     assert "argument_semantic_decision" in prompts[1]
     assert "event_type_decision" in prompts[1]
     assert "projection_eligibility" in prompts[1]
     assert "inner event or the outer event is absent" in prompts[1]
     assert "directional language lies outside that span" in prompts[1]
+    assert "INSUFFICIENT must use REJECT" in prompts[1]
+    assert "requires ENTAILED plus a non-invalid" in prompts[1]
 
 
 def test_verifier_prompt_contains_no_opaque_candidate_identity() -> None:

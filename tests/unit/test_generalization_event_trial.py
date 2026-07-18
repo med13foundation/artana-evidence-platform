@@ -5,11 +5,15 @@ from dataclasses import replace
 import pytest
 
 from scripts.run_generalization_event_replay import generalization_replay_exit_code
+from scripts.run_generalization_event_second_replay import second_replay_exit_code
 from scripts.run_generalization_event_trial import generalization_trial_exit_code
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     SourceUnitCoverageDecision,
     SourceUnitDecision,
     SourceUnitEligibilityCategory,
+)
+from scripts.validation.claim_events.finite_source_unit.generalization_trial.adaptive_replay_authorization import (
+    _verify_failed_adaptive_replay_payload,
 )
 from scripts.validation.claim_events.finite_source_unit.generalization_trial.authorization import (
     _verify_authorization_payload,
@@ -210,9 +214,48 @@ def test_generalization_replay_requires_exact_failed_boundary() -> None:
         _verify_failed_generalization_payload(payload)
 
 
+def test_second_replay_requires_exact_schema_and_binding_failure() -> None:
+    requirements = dict.fromkeys(
+        generalization_gate_requirements(_baseline_gate()),
+        True,
+    )
+    for failed in (
+        "agent_execution_complete",
+        "all_candidates_source_entailed",
+        "all_candidates_structure_trusted",
+        "binding_rejection_zero",
+        "candidate_inventory_complete",
+        "independent_categories_agree",
+        "invalid_agent_output_zero",
+        "sealed_expert_core_recovered",
+        "verifier_recognized_finding",
+    ):
+        requirements[failed] = False
+    payload: dict[str, object] = {
+        "schema_version": "tg04_generalization_replay.v1",
+        "experiment_mode": "adaptive_replay",
+        "report_sha256": (
+            "9ef7bb42b224610ffc8c5fa04588b5058f877f09431a9013e3fd13150d5f3201"
+        ),
+        "agent_outputs": {"error_type": "StructuredModelSchemaError"},
+        "gate": {
+            "passed": False,
+            "decision": "STOP_AND_RECALIBRATE_GENERALIZATION",
+            "requirements": requirements,
+        },
+    }
+    _verify_failed_adaptive_replay_payload(payload)
+
+    payload["agent_outputs"] = {"error_type": None}
+    with pytest.raises(RuntimeError, match="does not authorize"):
+        _verify_failed_adaptive_replay_payload(payload)
+
+
 def test_generalization_trial_cli_exit_status_follows_gate() -> None:
     assert generalization_trial_exit_code({"gate": {"passed": True}}) == 0
     assert generalization_trial_exit_code({"gate": {"passed": False}}) == 1
     assert generalization_trial_exit_code({}) == 1
     assert generalization_replay_exit_code({"gate": {"passed": True}}) == 0
     assert generalization_replay_exit_code({"gate": {"passed": False}}) == 1
+    assert second_replay_exit_code({"gate": {"passed": True}}) == 0
+    assert second_replay_exit_code({"gate": {"passed": False}}) == 1
