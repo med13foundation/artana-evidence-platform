@@ -1,0 +1,122 @@
+{
+  "agent_execution_attempted": false,
+  "candidate_unit_count": 8,
+  "decision": "STOP_SELECTION_INCOMPLETE_EXPERT_GRAPH",
+  "excluded_document_ids": [
+    "PMC-1920263-15-DISCUSSION",
+    "PMC-2222968-00-TIAB",
+    "PMC-2222968-08-Discussion",
+    "PMC-2806624-07-DISCUSSION",
+    "PMID-9233802"
+  ],
+  "expert_graph": {
+    "events": [
+      {
+        "arguments": [
+          {
+            "event_role": "THEME",
+            "exact_span": "CD80 Ag",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T9",
+            "source_end": 985,
+            "source_start": 978
+          }
+        ],
+        "event_id": "E3",
+        "event_type": "POSITIVE_REGULATION",
+        "trigger": {
+          "exact_span": "up-regulation",
+          "source_end": 974,
+          "source_start": 961
+        }
+      },
+      {
+        "arguments": [
+          {
+            "event_role": "CAUSE",
+            "exact_span": "IL-10",
+            "participant_type": "GENE_OR_PROTEIN",
+            "reference_id": "T10",
+            "source_end": 1085,
+            "source_start": 1080
+          }
+        ],
+        "event_id": "E4",
+        "event_type": "POSITIVE_REGULATION",
+        "trigger": {
+          "exact_span": "detected",
+          "source_end": 1061,
+          "source_start": 1053
+        }
+      }
+    ],
+    "links": [
+      {
+        "controlled_event_id": "E3",
+        "controller_event_id": "E4",
+        "event_role": "THEME"
+      }
+    ]
+  },
+  "expert_graph_sha256": "095cd15b56ddd8546f72753c76fa6a68d16d583b973213a8ac2b73fca1626aee",
+  "gate": {
+    "passed": false,
+    "requirements": {
+      "complete_source_event_set": false,
+      "fresh_source_document": true,
+      "model_not_exposed_before_preflight": true,
+      "selection_seed_chained_directly": true
+    }
+  },
+  "generated_at": "2026-07-18T16:26:19Z",
+  "holdout_document_count": 219,
+  "incompatible_document_ids": [
+    "PMC-1134658-08-Discussion",
+    "PMC-1920263-11-RESULTS-03",
+    "PMID-7747440"
+  ],
+  "omitted_source_event": {
+    "cause": {
+      "exact_span": "anti-CD28 mAb CLB-CD28/1",
+      "source_end": 1119,
+      "source_start": 1095
+    },
+    "context": {
+      "exact_span": "IL-10-inhibited lymphocytes",
+      "source_end": 1195,
+      "source_start": 1168
+    },
+    "effect": {
+      "exact_span": "NF-kappa B/Rel nuclear activity",
+      "source_end": 1164,
+      "source_start": 1133
+    },
+    "event_type": "POSITIVE_REGULATION",
+    "trigger": {
+      "exact_span": "restores",
+      "source_end": 1128,
+      "source_start": 1120
+    }
+  },
+  "preflight_reason": "The source states a second scientific restoration event that is absent from the sealed expert graph, so the graph cannot define a complete finite qualification target.",
+  "repository_evidence": {
+    "commit": "5acd72250acdb99642f7359cebe94ea1ce098c4a",
+    "tracked_tree_oid": "c55a47fec7dab026ad0a8d11836377b4a12fe728"
+  },
+  "schema_version": "tg04_nested_event_holdout_selection_preflight.v1",
+  "selected_unit": {
+    "case_id": "bionlp-ge-2011-holdout:PMID-8690900",
+    "input_sha256": "fc6eda71fda17f46d401a4e349731d168a517c7f99ccadfc1655f1b315f7643d",
+    "selection_rank": "0039c9790bea307ad394943174e808efc8f85efc3bdfed6c240b02ee1e9ac4d4",
+    "source_end": 1196,
+    "source_sha256": "de4b040de5085c5c3d5af58e3a7713e949d6d8d7b1e4d84a41c87f2b99dc36c7",
+    "source_start": 938,
+    "text": "On the other hand, the up-regulation of CD80 Ag, found on monocytes obtained from PBMC incubated with OKT3, is not detected after addition of IL-10, and the anti-CD28 mAb CLB-CD28/1 restores the NF-kappa B/Rel nuclear activity in IL-10-inhibited lymphocytes.",
+    "unit_id": "source-unit-b4012fd75c3179695bb5c5a101af3064d6a35c0d2efef6cd6e9770299169c5f2",
+    "unit_index": 8
+  },
+  "selection_profile": "NEGATED_RESULT_GRAPH",
+  "selection_seed": "5209c8aa2a793af30f577afdec8d92c4164b25e1560d399f74d27cef59a31190",
+  "source_corpus_archive_sha256": "f70e5f6d6e2a7f7fcdb5c8671715f3909a77662a6238015b2916ce939f2a890f",
+  "trial_generation": 5
+}
