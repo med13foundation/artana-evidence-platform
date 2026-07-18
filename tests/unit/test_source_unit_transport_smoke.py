@@ -6,12 +6,14 @@ from pathlib import Path
 import pytest
 
 from scripts.run_source_unit_transport_smoke import transport_smoke_exit_code
+from scripts.validation.claim_events.finite_source_unit.discovery.identity_evidence import (
+    count_model_identity_fields,
+)
 from scripts.validation.claim_events.finite_source_unit.discovery.transport_gate import (
     TransportIdentityGateInputs,
     transport_identity_gate_requirements,
 )
 from scripts.validation.claim_events.finite_source_unit.discovery.transport_smoke import (
-    count_model_identity_fields,
     verify_prior_failure_report,
 )
 
