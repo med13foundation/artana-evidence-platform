@@ -23,10 +23,12 @@ from artana_evidence_api.document_extraction_support.llm_fulltext_extraction imp
 from scripts.validation.claim_events.finite_source_unit.contracts import (
     EntailmentDecision,
     SourceUnitCoverageDecision,
+    SourceUnitEligibilityCategory,
     SourceUnitExtractionOutput,
     SourceUnitVerificationOutput,
 )
 from scripts.validation.claim_events.finite_source_unit.service import (
+    VerifiedEventCandidate,
     as_model_client,
     extract_source_unit,
     verify_source_unit_candidates,
@@ -49,6 +51,9 @@ from scripts.validation.claim_frames.provider_receipts import (
 )
 
 if TYPE_CHECKING:
+    from artana_evidence_api.document_extraction_support.claim_frames import (
+        BoundClaimInventoryItem,
+    )
     from artana_evidence_api.document_extraction_support.llm_fulltext_extraction import (
         ModelAttemptAuditRecord,
     )
@@ -164,7 +169,9 @@ async def _run_panel(
         raise RuntimeError("repository state changed during the finite source-unit run")
 
     score = score_fixture(cast("BenchmarkFixtureContract", panel), predictions)
-    expectations, invalid_count, unidentified_count = _receipt_expectations(all_records)
+    expectations, invalid_count, unidentified_count = (
+        receipt_expectations_for_finite_source_records(all_records)
+    )
     receipts = verify_provider_receipts(
         expectations,
         OpenAIProviderReceiptVerifier.from_environment(),
@@ -261,7 +268,7 @@ async def _execute_case(
     units = enumerate_source_units(case_id=case.case_id, source_text=normalized_text)
     audit = start_model_attempt_audit(evidence_unit_id=case.case_id)
     unit_evidence: list[dict[str, object]] = []
-    entailed_claims = []
+    entailed_claims: list[BoundClaimInventoryItem] = []
     review_only: list[dict[str, object]] = []
     binding_rejection_count = 0
     executable = True
@@ -289,6 +296,9 @@ async def _execute_case(
                 "unit_id": unit.unit_id,
                 "source_start": unit.source_start,
                 "source_end": unit.source_end,
+                "eligibility_category": (
+                    extracted.output.eligibility_category.value
+                ),
                 "decision": extracted.output.decision.value,
                 "accepted_candidate_ids": [
                     candidate.inventory_id for candidate in extracted.accepted
@@ -313,26 +323,22 @@ async def _execute_case(
                 unit_evidence.append(unit_record)
                 continue
 
-            coverage_decision = verification.parsed.coverage_decision
-            unit_record["coverage_decision"] = coverage_decision.value
-            unit_record["coverage_reasoning"] = (
-                verification.parsed.coverage_reasoning
+            categories_agree, unit_coverage_confirmed = _record_eligibility_review(
+                unit_record,
+                extracted.output.eligibility_category,
+                verification.parsed,
             )
-            coverage_confirmed = coverage_confirmed and coverage_decision in {
-                SourceUnitCoverageDecision.CANDIDATES_COMPLETE,
-                SourceUnitCoverageDecision.NO_EVENT_CONFIRMED,
-            }
-            decisions: list[dict[str, object]] = []
-            for candidate in verification.value:
-                serialized = {
-                    "candidate_id": candidate.claim.inventory_id,
-                    **candidate.verification.model_dump(mode="json"),
-                }
-                decisions.append(serialized)
-                if candidate.verification.decision is EntailmentDecision.ENTAILED:
-                    entailed_claims.append(candidate.claim)
-                else:
-                    review_only.append(serialized)
+            if not categories_agree:
+                executable = False
+                coverage_confirmed = False
+                unit_evidence.append(unit_record)
+                continue
+            coverage_confirmed = coverage_confirmed and unit_coverage_confirmed
+            decisions, accepted, rejected = _partition_verified_candidates(
+                verification.value,
+            )
+            entailed_claims.extend(accepted)
+            review_only.extend(rejected)
             unit_record["verification_decisions"] = decisions
             unit_evidence.append(unit_record)
     finally:
@@ -362,7 +368,7 @@ async def _execute_case(
     )
 
 
-def _receipt_expectations(
+def receipt_expectations_for_finite_source_records(
     records: list[ModelAttemptAuditRecord],
 ) -> tuple[list[ProviderReceiptExpectation], int, int]:
     expectations: list[ProviderReceiptExpectation] = []
@@ -428,6 +434,59 @@ def source_supported_unmatched_count(
     return entailed_count - exact_match_count
 
 
+def _record_eligibility_review(
+    unit_record: dict[str, object],
+    extraction_category: SourceUnitEligibilityCategory,
+    verification: SourceUnitVerificationOutput,
+) -> tuple[bool, bool]:
+    verification_category = verification.eligibility_category
+    categories_agree = eligibility_categories_agree(
+        extraction_category,
+        verification_category,
+    )
+    unit_record["verification_eligibility_category"] = verification_category.value
+    unit_record["eligibility_categories_agree"] = categories_agree
+    unit_record["coverage_decision"] = verification.coverage_decision.value
+    unit_record["coverage_reasoning"] = verification.coverage_reasoning
+    coverage_confirmed = verification.coverage_decision in {
+        SourceUnitCoverageDecision.CANDIDATES_COMPLETE,
+        SourceUnitCoverageDecision.NO_EVENT_CONFIRMED,
+    }
+    return categories_agree, coverage_confirmed
+
+
+def _partition_verified_candidates(
+    candidates: tuple[VerifiedEventCandidate, ...],
+) -> tuple[
+    list[dict[str, object]],
+    tuple[BoundClaimInventoryItem, ...],
+    list[dict[str, object]],
+]:
+    decisions: list[dict[str, object]] = []
+    accepted: list[BoundClaimInventoryItem] = []
+    rejected: list[dict[str, object]] = []
+    for candidate in candidates:
+        serialized = {
+            "candidate_id": candidate.claim.inventory_id,
+            **candidate.verification.model_dump(mode="json"),
+        }
+        decisions.append(serialized)
+        if candidate.verification.decision is EntailmentDecision.ENTAILED:
+            accepted.append(candidate.claim)
+        else:
+            rejected.append(serialized)
+    return decisions, tuple(accepted), rejected
+
+
+def eligibility_categories_agree(
+    extraction: SourceUnitEligibilityCategory,
+    verification: SourceUnitEligibilityCategory,
+) -> bool:
+    """Require independent agents to return the same eligibility category."""
+
+    return extraction is verification
+
+
 def restart_gate_requirements(inputs: RestartGateInputs) -> dict[str, bool]:
     """Derive every pre-registered stop/go requirement deterministically."""
 
@@ -468,6 +527,8 @@ def _sha256_json(value: object) -> str:
 
 __all__ = [
     "RestartGateInputs",
+    "eligibility_categories_agree",
+    "receipt_expectations_for_finite_source_records",
     "restart_gate_requirements",
     "run_finite_source_unit_pilot",
     "source_supported_unmatched_count",
