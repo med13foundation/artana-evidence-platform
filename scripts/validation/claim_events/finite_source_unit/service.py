@@ -40,8 +40,8 @@ if TYPE_CHECKING:
         FrozenSourceUnit,
     )
 
-_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v9"
-_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v8"
+_EXTRACTION_PROMPT_VERSION = "tg04.finite_source_unit.extraction.v10"
+_VERIFICATION_PROMPT_VERSION = "tg04.finite_source_unit.verification.v9"
 _SCIENTIFIC_EVENT_ELIGIBILITY_POLICY = """SCIENTIFIC EVENT ELIGIBILITY POLICY
 Classify source meaning, never section labels, keywords, or perceived importance.
 Return exactly one eligibility_category:
@@ -318,9 +318,12 @@ event owns its outer CAUSE, the controlled BIOLOGICAL_PROCESS as THEME, and its
 outer context. When the controlled event is itself explicitly asserted,
 including an event nominalization such as "TGF-beta induction of Foxp3," return
 it as a separate sibling event whose own arguments carry the inner event roles.
+When one coordinated process explicitly contains multiple controlled sibling
+events, return each source-distinct inner event; deterministic source binding
+may link the outer process to each sibling.
 Do not duplicate an inner participant on the outer event unless the source
 independently assigns it an outer role. Deterministic source binding links a
-unique outer process span to its sibling event after extraction. Do not invent an inner event
+outer process spans to source-distinct sibling events after extraction. Do not invent an inner event
 when the text only names an assay, planned measurement, or hypothetical process.
 A phrase such as "enhanced nuclear translocation of NF-kappa B" must
 not become only a LOCALIZATION event that leaves "enhanced" unstructured. A
@@ -387,6 +390,8 @@ regulation also carries that process as a THEME. The inner event owns its
 participants and their inner roles; the outer event owns its outer cause,
 process theme, and context. Do not require inner participants to be duplicated
 on the outer event unless the source independently assigns them an outer role.
+When one coordinated process explicitly contains multiple source-distinct inner
+events, require every sibling rather than merging them.
 Return MISSING_EVENT when the inner event or the outer event is absent. A directional causal candidate is
 complete only when its exact_span contains every coordinated clause needed to
 justify the direction; a neutral cue such as "affects" is insufficient when the

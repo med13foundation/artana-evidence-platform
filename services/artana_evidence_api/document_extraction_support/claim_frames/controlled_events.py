@@ -121,27 +121,27 @@ def link_controlled_events(
                         theme_mention=theme_mention,
                     )
                 )
-                if len(candidates) == 1:
-                    links.append(
-                        _build_link(
-                            controller=controller,
-                            argument_index=argument_index,
-                            controlled=candidates[0],
-                            theme_mention=theme_mention,
-                        ),
-                    )
-                elif len(candidates) > 1:
+                competing = _competing_candidate_ids(candidates)
+                if competing:
                     ambiguities.append(
                         ControlledEventLinkAmbiguity(
                             controller_inventory_id=controller.inventory_id,
                             controller_theme_argument_index=argument_index,
-                            candidate_inventory_ids=tuple(
-                                sorted(candidate.inventory_id for candidate in candidates)
-                            ),
+                            candidate_inventory_ids=competing,
                             theme_source_start=theme_mention.source_start,
                             theme_source_end=theme_mention.source_end,
                         ),
                     )
+                    continue
+                links.extend(
+                    _build_link(
+                        controller=controller,
+                        argument_index=argument_index,
+                        controlled=candidate,
+                        theme_mention=theme_mention,
+                    )
+                    for candidate in candidates
+                )
     return ControlledEventLinkResult(
         links=tuple(sorted(links, key=lambda item: item.link_id)),
         ambiguities=tuple(
@@ -207,6 +207,41 @@ def _mention_is_contained(
         )
     )
     return left_boundary and right_boundary
+
+
+def _competing_candidate_ids(
+    candidates: tuple[BoundClaimInventoryItem, ...],
+) -> tuple[str, ...]:
+    competing: set[str] = set()
+    for index, candidate in enumerate(candidates):
+        for sibling in candidates[index + 1 :]:
+            if _events_compete_for_same_source_identity(candidate, sibling):
+                competing.update({candidate.inventory_id, sibling.inventory_id})
+    return tuple(sorted(competing))
+
+
+def _events_compete_for_same_source_identity(
+    first: BoundClaimInventoryItem,
+    second: BoundClaimInventoryItem,
+) -> bool:
+    if (
+        first.trigger_mention.source_start != second.trigger_mention.source_start
+        or first.trigger_mention.source_end != second.trigger_mention.source_end
+    ):
+        return False
+    first_mentions = _argument_source_mentions(first)
+    second_mentions = _argument_source_mentions(second)
+    return first_mentions <= second_mentions or second_mentions <= first_mentions
+
+
+def _argument_source_mentions(
+    candidate: BoundClaimInventoryItem,
+) -> frozenset[tuple[int, int]]:
+    return frozenset(
+        (mention.source_start, mention.source_end)
+        for argument in candidate.bound_arguments
+        for mention in argument.mentions
+    )
 
 
 def _build_link(

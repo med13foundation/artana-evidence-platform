@@ -208,3 +208,53 @@ def test_partial_token_prefix_cannot_form_a_controlled_event_link() -> None:
     outer, inner = _bind(_outer_item(), partial_inner)
 
     assert link_controlled_events((outer, inner)).links == ()
+
+
+def test_source_distinct_coordinated_inner_events_form_fan_out_links() -> None:
+    source = "CIITA controls transactivation of DR alpha at S and X2."
+    outer = _item(
+        exact_span=source,
+        cue="controls",
+        event_type="REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "CAUSE", "CIITA"),
+            _argument(
+                "BIOLOGICAL_PROCESS",
+                "THEME",
+                "transactivation of DR alpha at S and X2",
+            ),
+        ],
+    )
+    inner_s = _item(
+        exact_span="transactivation of DR alpha at S",
+        cue="transactivation",
+        event_type="POSITIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "THEME", "DR alpha"),
+            _argument("OTHER_ENTITY", "SITE", "S"),
+        ],
+    )
+    inner_x2 = _item(
+        exact_span="transactivation of DR alpha at S and X2",
+        cue="transactivation",
+        event_type="POSITIVE_REGULATION",
+        arguments=[
+            _argument("GENE_OR_PROTEIN", "THEME", "DR alpha"),
+            _argument("OTHER_ENTITY", "SITE", "X2"),
+        ],
+    )
+    bound = bind_claim_inventory(
+        (outer, inner_s, inner_x2),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=0,
+    )
+
+    result = link_controlled_events(bound)
+
+    assert result.ambiguities == ()
+    assert len(result.links) == 2
+    assert {link.controlled_inventory_id for link in result.links} == {
+        bound[1].inventory_id,
+        bound[2].inventory_id,
+    }

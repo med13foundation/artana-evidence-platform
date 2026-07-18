@@ -157,8 +157,8 @@ def test_single_claim_prompt_does_not_inherit_multi_relation_ranking() -> None:
     assert "up to 10" not in normalized_prompt
     assert "strongest, most specific relationships" not in normalized_prompt
     assert CLAIM_FRAME_PIPELINE_PROMPT_VERSION == (
-        "document_extraction.claim_pipeline.v21:claim_inventory.v15+"
-        "claim_inventory_completeness.v15+claim_inventory_recovery.v11+"
+        "document_extraction.claim_pipeline.v22:claim_inventory.v16+"
+        "claim_inventory_completeness.v16+claim_inventory_recovery.v11+"
         "claim_framing.v7"
     )
 
@@ -178,6 +178,7 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "do not duplicate an inner participant on the outer event" in (
         normalized_prompt
     )
+    assert "multiple controlled sibling events" in normalized_prompt
     assert "include the complete contiguous span covering both clauses" in (
         normalized_prompt
     )
@@ -194,6 +195,7 @@ def test_inventory_prompt_preserves_controlled_event_structure() -> None:
     assert "inner event owns its participants and their inner roles" in (
         completeness_prompt
     )
+    assert "multiple source-distinct inner events" in completeness_prompt
     assert "directional language is outside exact_span" in completeness_prompt
     assert "directionally resolved outer event" in completeness_prompt
     assert "across the complete frozen chunk" in completeness_prompt
