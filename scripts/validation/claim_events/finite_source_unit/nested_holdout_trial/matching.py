@@ -107,12 +107,11 @@ def match_nested_event_graph(
     complete_assignments = tuple(
         assignment
         for assignment in assignments
-        if _matched_link_count(
+        if _assignment_has_exact_link_topology(
             assignment=assignment,
             graph=expert_graph,
             links=links,
         )
-        == len(expert_graph.links)
     )
     first_link = expert_graph.links[0] if expert_graph.links else None
     return NestedEventMatchResult(
@@ -217,6 +216,31 @@ def _matched_link_count(
             continue
         matched_count += 1
     return matched_count
+
+
+def _assignment_has_exact_link_topology(
+    *,
+    assignment: dict[str, BoundClaimInventoryItem],
+    graph: SealedNestedEventGraph,
+    links: tuple[BoundControlledEventLink, ...],
+) -> bool:
+    assigned_controller_ids = {
+        assignment[event.event_id].inventory_id for event in graph.events
+    }
+    relevant_links = tuple(
+        link
+        for link in links
+        if link.controller_inventory_id in assigned_controller_ids
+    )
+    return (
+        len(relevant_links) == len(graph.links)
+        and _matched_link_count(
+            assignment=assignment,
+            graph=graph,
+            links=relevant_links,
+        )
+        == len(graph.links)
+    )
 
 
 def match_projection_set(

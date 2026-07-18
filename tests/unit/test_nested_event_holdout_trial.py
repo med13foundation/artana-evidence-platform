@@ -20,6 +20,9 @@ from artana_evidence_api.document_extraction_support.claim_frames import (
 )
 
 from scripts.run_nested_event_holdout_trial import nested_holdout_trial_exit_code
+from scripts.run_fourth_nested_event_holdout_trial import (
+    fourth_nested_holdout_exit_code,
+)
 from scripts.run_second_nested_event_holdout_trial import (
     second_nested_holdout_exit_code,
 )
@@ -36,6 +39,10 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.cor
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.gate import (
     NestedHoldoutGateInputs,
     nested_holdout_gate_requirements,
+)
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.fourth_selection import (
+    _projection_set as fourth_projection_set,
+    select_fourth_nested_event_holdout,
 )
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.matching import (
     match_nested_event_graph,
@@ -87,6 +94,11 @@ _MULTI_LINK_SOURCE = (
     "phosphorylation of HSI."
 )
 _MULTI_LINK_SOURCE_OFFSET = 1593
+_POPULATION_CONTRAST_SOURCE = (
+    "Another publication describes an enhanced expression of A3G after IFN-alpha "
+    "treatment in resting primary CD4 T cells, but not in activated T cells (53)."
+)
+_POPULATION_CONTRAST_OFFSET = 3398
 
 
 def _argument(role: str, event_role: str, exact_span: str) -> dict[str, object]:
@@ -380,6 +392,116 @@ def _multi_link_graph() -> SealedNestedEventGraph:
     )
 
 
+def _population_contrast_inventory(
+    *,
+    cause_kind: str,
+    cue: str,
+    theme_shape: str = "entity",
+):
+    if cause_kind == "protein":
+        cause = _argument("GENE_OR_PROTEIN", "CAUSE", "IFN-alpha")
+    else:
+        cause = _argument(
+            {
+                "process": "BIOLOGICAL_PROCESS",
+                "intervention": "INTERVENTION",
+                "exposure": "EXPOSURE",
+            }[cause_kind],
+            "CAUSE",
+            "IFN-alpha treatment",
+        )
+
+    entity_theme = _argument("GENE_OR_PROTEIN", "THEME", "A3G")
+    process_theme = _argument(
+        "BIOLOGICAL_PROCESS",
+        "THEME",
+        "expression of A3G",
+    )
+    resting_reference_theme = _argument(
+        "BIOLOGICAL_PROCESS",
+        "THEME",
+        "expression of A3G after IFN-alpha treatment in resting primary CD4 T cells",
+    )
+    outcome_theme = _argument("OUTCOME", "THEME", "expression of A3G")
+
+    def item(
+        *,
+        population: str,
+        polarity: str,
+        theme: dict[str, object],
+    ) -> ClaimInventoryItem:
+        return ClaimInventoryItem.model_validate(
+            {
+                "exact_span": _POPULATION_CONTRAST_SOURCE,
+                "relation_cue_span": cue,
+                "arguments": [
+                    cause,
+                    theme,
+                    _argument("POPULATION", "CONTEXT", population),
+                ],
+                "source_locator": "normalized_extraction_text",
+                "claim_kind": "SCIENTIFIC_FINDING",
+                "event_type": "POSITIVE_REGULATION",
+                "polarity": polarity,
+                "epistemic_status": "ASSERTED",
+                "inventory_rationale": "The population-specific outcome is explicit.",
+            },
+        )
+
+    resting_theme = (
+        resting_reference_theme
+        if theme_shape == "resting-decomposed"
+        else process_theme
+    )
+    activated_theme = (
+        outcome_theme if theme_shape == "resting-decomposed" else process_theme
+    )
+    contrast_items = (
+        item(
+            population="resting primary CD4 T cells",
+            polarity="SUPPORT",
+            theme=resting_theme,
+        ),
+        item(
+            population="activated T cells",
+            polarity="NULL_RESULT",
+            theme=activated_theme,
+        ),
+    )
+    expression_item = ClaimInventoryItem.model_validate(
+        {
+            "exact_span": _POPULATION_CONTRAST_SOURCE,
+            "relation_cue_span": "expression",
+            "arguments": [
+                entity_theme,
+                _argument(
+                    "POPULATION",
+                    "CONTEXT",
+                    "resting primary CD4 T cells",
+                ),
+            ],
+            "source_locator": "normalized_extraction_text",
+            "claim_kind": "SCIENTIFIC_FINDING",
+            "event_type": "EXPRESSION",
+            "polarity": "SUPPORT",
+            "epistemic_status": "ASSERTED",
+            "inventory_rationale": "A3G expression is explicit in resting cells.",
+        },
+    )
+    items = (
+        (expression_item, *contrast_items)
+        if theme_shape == "resting-decomposed"
+        else contrast_items
+    )
+    return bind_claim_inventory(
+        items,
+        source_text=_POPULATION_CONTRAST_SOURCE,
+        source_sha256=hashlib.sha256(_POPULATION_CONTRAST_SOURCE.encode()).hexdigest(),
+        chunk_index=25,
+        source_start_offset=_POPULATION_CONTRAST_OFFSET,
+    )
+
+
 def _alternative_sealed_graph() -> SealedNestedEventGraph:
     graph = _sealed_graph()
     ets_start = _SOURCE_OFFSET + _SOURCE.index("Ets")
@@ -518,6 +640,68 @@ def test_projection_matcher_accepts_complete_zero_link_event_shapes(
     assert result.expected_link_count == 0
     assert result.expert_link_match_count == 0
     assert result.complete_graph_match_count == 1
+
+
+def test_projection_matcher_rejects_unexpected_links_from_matched_events() -> None:
+    trusted = _null_result_inventory(split_events=True)
+    unexpected = BoundControlledEventLink(
+        link_id="unexpected-link",
+        controller_inventory_id=trusted[0].inventory_id,
+        controller_argument_index=0,
+        controller_event_role=ClaimEventRole.THEME,
+        controlled_inventory_id=trusted[1].inventory_id,
+        reference_source_start=1090,
+        reference_source_end=1118,
+    )
+
+    result = match_nested_event_graph(
+        expert_graph=_null_result_graph(split_events=True),
+        trusted=trusted,
+        links=(unexpected,),
+    )
+
+    assert result.completely_recovered_once is False
+    assert result.complete_graph_match_count == 0
+
+
+@pytest.mark.parametrize(
+    ("cue", "cue_name"),
+    [
+        ("enhanced", "direction"),
+        ("enhanced expression", "direction-and-process"),
+    ],
+)
+@pytest.mark.parametrize(
+    "cause_kind",
+    ["protein", "process", "intervention", "exposure"],
+)
+@pytest.mark.parametrize(
+    "theme_shape",
+    ["process", "resting-decomposed"],
+)
+def test_population_contrast_projection_preserves_positive_and_null_outcomes(
+    cue: str,
+    cue_name: str,
+    cause_kind: str,
+    theme_shape: str,
+) -> None:
+    trusted = _population_contrast_inventory(
+        cause_kind=cause_kind,
+        cue=cue,
+        theme_shape=theme_shape,
+    )
+    link_result = link_controlled_events(trusted)
+    assert link_result.ambiguities == ()
+
+    result = match_projection_set(
+        projection_set=fourth_projection_set(),
+        trusted=trusted,
+        links=link_result.links,
+    )
+
+    assert result.fully_recovered_projection_ids == (
+        f"source-valid-{cue_name}-{cause_kind}-{theme_shape}",
+    )
 
 
 def test_projection_matcher_requires_every_link_in_a_three_event_graph() -> None:
@@ -1043,6 +1227,62 @@ def test_third_selection_freezes_projection_set_before_execution() -> None:
     )
 
 
+def test_fourth_selection_is_direct_seeded_and_frozen_after_prompt_commit() -> None:
+    corpus = os.getenv("ARTANA_TG04_BIONLP_CORPUS_ROOT")
+    if corpus is None:
+        pytest.skip("set ARTANA_TG04_BIONLP_CORPUS_ROOT for corpus-integrity test")
+
+    selection = select_fourth_nested_event_holdout(
+        corpus_root=Path(corpus),
+        archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+    )
+
+    assert selection.trial_generation == 4
+    assert selection.selection_seed == (
+        "f2d1c55426cf241fa95b7bf06db11cab12749204b0cfd81e8d851811b230cff7"
+    )
+    assert selection.case_id == "bionlp-ge-2011-holdout:PMC-1920263-15-DISCUSSION"
+    assert selection.unit.index == 25
+    assert selection.unit.unit_id == (
+        "source-unit-372b0632f7433058002746584f09b6a55db2fcde52724d1f59104731edb29870"
+    )
+    assert selection.candidate_unit_count == 11
+    assert selection.expert_graph_sha256 == (
+        "1420609f10dbb6e2d667acdc6d3d0909a96ccd1572a032ef4986bd1ab4f746ca"
+    )
+    assert selection.projection_set_sha256 == (
+        "5d725c8feedfaf292cb3753c7c9cd8a557ceb7eeba23538068325f7f4f1f237d"
+    )
+    assert selection.expected_eligibility_category is (
+        SourceUnitEligibilityCategory.MIXED_SCIENTIFIC
+    )
+    assert len(selection.projection_set.projections) == 16
+    assert all(
+        len(projection.graph.events) in {2, 3}
+        for projection in selection.projection_set.projections
+    )
+    agent_inputs = (
+        _extraction_prompt(selection.unit),
+        _verification_prompt(
+            unit=selection.unit,
+            candidates=_population_contrast_inventory(
+                cause_kind="protein",
+                cue="enhanced",
+            ),
+        ),
+    )
+    for hidden_value in (
+        selection.expert_graph_sha256,
+        selection.projection_set_sha256,
+        *(projection.projection_id for projection in selection.projection_set.projections),
+        *(
+            projection.scientific_rationale
+            for projection in selection.projection_set.projections
+        ),
+    ):
+        assert all(hidden_value not in prompt for prompt in agent_inputs)
+
+
 def test_agent_prompt_interfaces_cannot_receive_hidden_projection_data() -> None:
     unit = FrozenSourceUnit(
         unit_id="source-unit-prompt-blindness",
@@ -1076,3 +1316,6 @@ def test_nested_holdout_cli_exit_status_follows_gate() -> None:
     assert third_nested_holdout_exit_code({"gate": {"passed": True}}) == 0
     assert third_nested_holdout_exit_code({"gate": {"passed": False}}) == 1
     assert third_nested_holdout_exit_code({}) == 1
+    assert fourth_nested_holdout_exit_code({"gate": {"passed": True}}) == 0
+    assert fourth_nested_holdout_exit_code({"gate": {"passed": False}}) == 1
+    assert fourth_nested_holdout_exit_code({}) == 1

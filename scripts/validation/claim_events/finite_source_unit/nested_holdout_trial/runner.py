@@ -12,6 +12,9 @@ from scripts.validation.claim_events.bionlp_import import TG04_BIONLP_ARCHIVE_SH
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.corpus import (
     verified_corpus_root,
 )
+from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.fourth_selection import (
+    select_fourth_nested_event_holdout,
+)
 from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.report import (
     build_nested_holdout_report,
 )
@@ -97,6 +100,26 @@ def run_third_nested_event_holdout_trial(
     )
 
 
+def run_fourth_nested_event_holdout_trial(
+    *,
+    archive: Path,
+    run_id: str,
+    repeat_index: int,
+) -> dict[str, object]:
+    """Run the sealed v4 holdout without exposing its projection set."""
+
+    with verified_corpus_root(archive) as corpus_root:
+        selection = select_fourth_nested_event_holdout(
+            corpus_root=corpus_root,
+            archive_sha256=TG04_BIONLP_ARCHIVE_SHA256,
+        )
+    return _run_selected_trial(
+        selection=selection,
+        run_id=run_id,
+        repeat_index=repeat_index,
+    )
+
+
 def _run_selected_trial(
     *,
     selection: NestedHoldoutSelection,
@@ -156,6 +179,7 @@ async def _run_trial(
 
 
 __all__ = [
+    "run_fourth_nested_event_holdout_trial",
     "run_nested_event_holdout_trial",
     "run_second_nested_event_holdout_trial",
     "run_third_nested_event_holdout_trial",
