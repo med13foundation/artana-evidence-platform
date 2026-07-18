@@ -118,6 +118,29 @@ class SealedEventLink:
     controller_event_id: str
     event_role: str
     controlled_event_id: str
+    controller_argument: SealedReferenceArgument | None = None
+
+    def as_json(self) -> dict[str, object]:
+        """Preserve legacy link JSON while emitting optional source identity."""
+
+        payload: dict[str, object] = {
+            "controller_event_id": self.controller_event_id,
+            "event_role": self.event_role,
+            "controlled_event_id": self.controlled_event_id,
+        }
+        if self.controller_argument is not None:
+            payload["controller_argument"] = asdict(self.controller_argument)
+        return payload
+
+
+@dataclass(frozen=True, slots=True)
+class SealedReferenceArgument:
+    """Source identity of the controller argument that references an event."""
+
+    participant_type: str
+    exact_span: str
+    source_start: int
+    source_end: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,7 +151,10 @@ class SealedNestedEventGraph:
     links: tuple[SealedEventLink, ...]
 
     def as_json(self) -> dict[str, object]:
-        return asdict(self)
+        return {
+            "events": tuple(asdict(event) for event in self.events),
+            "links": tuple(link.as_json() for link in self.links),
+        }
 
 
 class ProjectionProvenance(StrEnum):
@@ -167,7 +193,15 @@ class SealedGraphProjection:
     event_semantics: tuple[SealedEventSemantics, ...]
 
     def as_json(self) -> dict[str, object]:
-        return asdict(self)
+        return {
+            "projection_id": self.projection_id,
+            "provenance": self.provenance,
+            "scientific_rationale": self.scientific_rationale,
+            "graph": self.graph.as_json(),
+            "event_semantics": tuple(
+                asdict(semantics) for semantics in self.event_semantics
+            ),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,7 +212,12 @@ class SealedProjectionSet:
     projections: tuple[SealedGraphProjection, ...]
 
     def as_json(self) -> dict[str, object]:
-        return asdict(self)
+        return {
+            "canonical_projection_id": self.canonical_projection_id,
+            "projections": tuple(
+                projection.as_json() for projection in self.projections
+            ),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -767,8 +806,27 @@ def _validate_projection_graph(
             )
         if link.event_role not in {"CAUSE", "THEME"}:
             raise RuntimeError("sealed projection event link role is unsupported")
+        if link.controller_argument is not None:
+            _require_verbatim_local_span(
+                unit=unit,
+                exact_span=link.controller_argument.exact_span,
+                source_start=link.controller_argument.source_start,
+                source_end=link.controller_argument.source_end,
+            )
     link_identities = tuple(
-        (link.controller_event_id, link.event_role, link.controlled_event_id)
+        (
+            link.controller_event_id,
+            link.event_role,
+            link.controlled_event_id,
+            None
+            if link.controller_argument is None
+            else (
+                link.controller_argument.participant_type,
+                link.controller_argument.exact_span,
+                link.controller_argument.source_start,
+                link.controller_argument.source_end,
+            ),
+        )
         for link in graph.links
     )
     if len(set(link_identities)) != len(link_identities):
@@ -866,6 +924,7 @@ __all__ = [
     "SealedArgument",
     "SealedEvent",
     "SealedEventLink",
+    "SealedReferenceArgument",
     "SealedEventSemantics",
     "SealedGraphProjection",
     "SealedNestedEventGraph",

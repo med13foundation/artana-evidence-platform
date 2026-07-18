@@ -76,6 +76,7 @@ from scripts.validation.claim_events.finite_source_unit.nested_holdout_trial.sel
     SealedGraphProjection,
     SealedNestedEventGraph,
     SealedProjectionSet,
+    SealedReferenceArgument,
     SealedTrigger,
     canonical_projection_set,
     enumerate_complete_event_graph_candidates,
@@ -980,6 +981,181 @@ def test_projection_matcher_allows_one_reference_argument_for_multiple_siblings(
 
     assert result.completely_recovered_once is True
     assert result.expert_link_match_count == 3
+
+
+def test_projection_matcher_uses_reference_source_identity_for_atomic_siblings() -> (
+    None
+):
+    source = "IL-2 restores IL-5 production and TNF-alpha production."
+    source_offset = 2100
+    il5_process = _argument(
+        "BIOLOGICAL_PROCESS",
+        "THEME",
+        "IL-5 production",
+    )
+    tnf_process = _argument(
+        "BIOLOGICAL_PROCESS",
+        "THEME",
+        "TNF-alpha production",
+    )
+    trusted = bind_claim_inventory(
+        (
+            _item(
+                exact_span=source,
+                cue="restores",
+                event_type="POSITIVE_REGULATION",
+                arguments=[
+                    _argument("GENE_OR_PROTEIN", "CAUSE", "IL-2"),
+                    il5_process,
+                ],
+            ),
+            _item(
+                exact_span=source,
+                cue="restores",
+                event_type="POSITIVE_REGULATION",
+                arguments=[
+                    _argument("GENE_OR_PROTEIN", "CAUSE", "IL-2"),
+                    tnf_process,
+                ],
+            ),
+            _item(
+                exact_span="IL-5 production",
+                cue="production",
+                event_type="EXPRESSION",
+                arguments=[
+                    _argument("BIOLOGICAL_PROCESS", "EFFECT", "IL-5 production"),
+                    _argument("GENE_OR_PROTEIN", "THEME", "IL-5"),
+                ],
+            ),
+            _item(
+                exact_span="TNF-alpha production",
+                cue="production",
+                event_type="EXPRESSION",
+                arguments=[
+                    _argument(
+                        "BIOLOGICAL_PROCESS",
+                        "EFFECT",
+                        "TNF-alpha production",
+                    ),
+                    _argument("GENE_OR_PROTEIN", "THEME", "TNF-alpha"),
+                ],
+            ),
+        ),
+        source_text=source,
+        source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+        chunk_index=11,
+        source_start_offset=source_offset,
+    )
+    link_result = link_controlled_events(trusted)
+    assert link_result.ambiguities == ()
+    assert len(link_result.links) == 2
+
+    cause = SealedArgument(
+        "CAUSE",
+        "SOURCE-IL2",
+        "GENE_OR_PROTEIN",
+        "IL-2",
+        2100,
+        2104,
+    )
+    events = (
+        SealedEvent(
+            "OUTER-IL5",
+            "POSITIVE_REGULATION",
+            SealedTrigger("restores", 2105, 2113),
+            (cause,),
+        ),
+        SealedEvent(
+            "OUTER-TNF",
+            "POSITIVE_REGULATION",
+            SealedTrigger("restores", 2105, 2113),
+            (cause,),
+        ),
+        SealedEvent(
+            "INNER-IL5",
+            "EXPRESSION",
+            SealedTrigger("production", 2119, 2129),
+            (
+                SealedArgument(
+                    "EFFECT",
+                    "SOURCE-IL5-PROCESS",
+                    "BIOLOGICAL_PROCESS",
+                    "IL-5 production",
+                    2114,
+                    2129,
+                ),
+                SealedArgument(
+                    "THEME",
+                    "SOURCE-IL5",
+                    "GENE_OR_PROTEIN",
+                    "IL-5",
+                    2114,
+                    2118,
+                ),
+            ),
+        ),
+        SealedEvent(
+            "INNER-TNF",
+            "EXPRESSION",
+            SealedTrigger("production", 2144, 2154),
+            (
+                SealedArgument(
+                    "EFFECT",
+                    "SOURCE-TNF-PROCESS",
+                    "BIOLOGICAL_PROCESS",
+                    "TNF-alpha production",
+                    2134,
+                    2154,
+                ),
+                SealedArgument(
+                    "THEME",
+                    "SOURCE-TNF",
+                    "GENE_OR_PROTEIN",
+                    "TNF-alpha",
+                    2134,
+                    2143,
+                ),
+            ),
+        ),
+    )
+    graph = SealedNestedEventGraph(
+        events=events,
+        links=(
+            SealedEventLink(
+                "OUTER-IL5",
+                "THEME",
+                "INNER-IL5",
+                SealedReferenceArgument(
+                    "BIOLOGICAL_PROCESS",
+                    "IL-5 production",
+                    2114,
+                    2129,
+                ),
+            ),
+            SealedEventLink(
+                "OUTER-TNF",
+                "THEME",
+                "INNER-TNF",
+                SealedReferenceArgument(
+                    "BIOLOGICAL_PROCESS",
+                    "TNF-alpha production",
+                    2134,
+                    2154,
+                ),
+            ),
+        ),
+    )
+
+    result = match_nested_event_graph(
+        expert_graph=graph,
+        trusted=trusted,
+        links=link_result.links,
+    )
+
+    assert result.completely_recovered_once is True
+    assert dict(result.event_inventory_ids)["OUTER-IL5"] != dict(
+        result.event_inventory_ids
+    )["OUTER-TNF"]
 
 
 def test_projection_set_never_combines_partial_matches_across_alternatives() -> None:
